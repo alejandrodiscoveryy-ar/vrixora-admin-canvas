@@ -44,7 +44,7 @@ export type Payment = {
   clientId: string;
   licenseId?: string;
   amount: number;
-  currency: "EUR" | "USD";
+  currency: "CUP";
   method: "card" | "transfer" | "cash" | "paypal";
   reference: string;
   employeeId: string;
