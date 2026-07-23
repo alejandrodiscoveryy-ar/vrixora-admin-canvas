@@ -24,6 +24,7 @@ function AdminLayout() {
   return (
     <DemoAuthProvider>
       <AdminChrome />
+      <Toaster richColors position="top-right" />
     </DemoAuthProvider>
   );
 }
