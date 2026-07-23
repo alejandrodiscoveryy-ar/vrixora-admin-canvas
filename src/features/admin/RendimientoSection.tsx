@@ -52,7 +52,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
                     />
                   </div>
                   <div className="text-[10px] text-muted-foreground">{m}</div>
-                  <div className="text-xs font-medium">{v}€</div>
+                  <div className="text-xs font-medium">{v.toLocaleString()} CUP</div>
                 </div>
               ))}
             </div>
