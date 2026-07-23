@@ -37,9 +37,9 @@ function ResumenPage() {
         <Kpi icon={KeyRound} label="Licencias activas" value={activeLicenses} tone="accent" />
         <Kpi icon={Activity} label="Vencen < 30 días" value={expiringSoon} tone="destructive" />
         {user.role === "owner" ? (
-          <Kpi icon={Wallet} label="Ingresos" value={`${revenue.toLocaleString()} €`} tone="primary" />
+          <Kpi icon={Wallet} label="Ingresos" value={`${revenue.toLocaleString()} CUP`} tone="primary" />
         ) : (
-          <Kpi icon={Wallet} label="Tus cobros" value={`${revenue.toLocaleString()} €`} tone="accent" />
+          <Kpi icon={Wallet} label="Tus cobros" value={`${revenue.toLocaleString()} CUP`} tone="accent" />
         )}
       </div>
 
