@@ -4,6 +4,7 @@ import { visibleProjects } from "@/lib/mock-data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
 import { Sparkles, LogOut, LayoutDashboard, FolderKanban } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
