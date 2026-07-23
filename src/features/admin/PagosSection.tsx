@@ -26,7 +26,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           <Badge variant="outline" className="ml-2">{rows.length}</Badge>
         </CardTitle>
         <div className="text-sm text-muted-foreground">
-          Total: <span className="text-foreground font-semibold">{total.toLocaleString()} €</span>
+          Total: <span className="text-foreground font-semibold">{total.toLocaleString()} CUP</span>
           {user.role !== "owner" && <span className="ml-2 text-xs">(solo tus cobros)</span>}
         </div>
       </CardHeader>
