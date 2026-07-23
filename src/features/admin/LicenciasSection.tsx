@@ -136,7 +136,7 @@ function ActivateDialog({
   const { user } = useDemoAuth();
   const [email, setEmail] = useState("");
   const [amount, setAmount] = useState("99");
-  const [currency, setCurrency] = useState<"EUR" | "USD">("EUR");
+  const currency = "CUP" as const;
   const [method, setMethod] = useState<"card" | "transfer" | "cash" | "paypal">("card");
   const [reference, setReference] = useState("");
   const [days, setDays] = useState<30 | 90 | 365>(365);
