@@ -74,7 +74,7 @@ function ProjectsList() {
                     <Stat icon={Users} label="Clientes" value={clients} />
                     <Stat icon={KeyRound} label="Licencias" value={licenses} />
                     {user.role === "owner" ? (
-                      <Stat icon={Wallet} label="Ingresos" value={`${revenue}€`} />
+                      <Stat icon={Wallet} label="Ingresos" value={`${revenue} CUP`} />
                     ) : (
                       <Stat icon={Wallet} label="—" value="privado" />
                     )}

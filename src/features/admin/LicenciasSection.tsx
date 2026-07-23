@@ -125,7 +125,7 @@ function ActivateDialog({
       projectId: string;
       clientId: string;
       amount: number;
-      currency: "EUR" | "USD";
+      currency: "CUP";
       method: "card" | "transfer" | "cash" | "paypal";
       reference: string;
       employeeId: string;
@@ -135,8 +135,8 @@ function ActivateDialog({
   const { licenses } = useDemoStore();
   const { user } = useDemoAuth();
   const [email, setEmail] = useState("");
-  const [amount, setAmount] = useState("99");
-  const [currency, setCurrency] = useState<"EUR" | "USD">("EUR");
+  const [amount, setAmount] = useState("2500");
+  const currency = "CUP" as const;
   const [method, setMethod] = useState<"card" | "transfer" | "cash" | "paypal">("card");
   const [reference, setReference] = useState("");
   const [days, setDays] = useState<30 | 90 | 365>(365);
@@ -150,8 +150,7 @@ function ActivateDialog({
 
   const reset = () => {
     setEmail("");
-    setAmount("99");
-    setCurrency("EUR");
+    setAmount("2500");
     setMethod("card");
     setReference("");
     setDays(365);
@@ -215,13 +214,7 @@ function ActivateDialog({
               </div>
               <div>
                 <Label>Moneda</Label>
-                <Select value={currency} onValueChange={(v) => setCurrency(v as "EUR" | "USD")}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input value="CUP" readOnly className="mt-1" />
               </div>
               <div>
                 <Label>Método</Label>

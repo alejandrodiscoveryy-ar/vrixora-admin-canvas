@@ -26,7 +26,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <Metric label="Ingresos totales" value={`${projPayments.reduce((s, p) => s + p.amount, 0)} €`} />
+        <Metric label="Ingresos totales" value={`${projPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()} CUP`} />
         <Metric label="Licencias emitidas" value={projLicenses.length} />
         <Metric label="Tasa de activación" value={`${conversion}%`} />
       </div>
@@ -52,7 +52,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
                     />
                   </div>
                   <div className="text-[10px] text-muted-foreground">{m}</div>
-                  <div className="text-xs font-medium">{v}€</div>
+                  <div className="text-xs font-medium">{v.toLocaleString()} CUP</div>
                 </div>
               ))}
             </div>

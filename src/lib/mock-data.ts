@@ -44,7 +44,7 @@ export type Payment = {
   clientId: string;
   licenseId?: string;
   amount: number;
-  currency: "EUR" | "USD";
+  currency: "CUP";
   method: "card" | "transfer" | "cash" | "paypal";
   reference: string;
   employeeId: string;
@@ -165,8 +165,8 @@ export const PAYMENTS: Payment[] = CLIENTS.slice(0, 12).map((c, i) => ({
   projectId: c.projectId,
   clientId: c.id,
   licenseId: `${c.id}_lic`,
-  amount: [49, 99, 149, 299][i % 4],
-  currency: i % 3 === 0 ? "USD" : "EUR",
+  amount: [1200, 2500, 4900, 9900][i % 4],
+  currency: "CUP",
   method: (["card", "transfer", "paypal", "cash"] as const)[i % 4],
   reference: `REF-${2025000 + i}`,
   employeeId: i % 2 === 0 ? "u_emp_a" : "u_emp_b",
@@ -186,7 +186,7 @@ export const HISTORY: HistoryEntry[] = [
     id: "h2",
     projectId: "copias",
     action: "Pago registrado",
-    detail: "99 EUR por transferencia (REF-2025007)",
+    detail: "2500 CUP por transferencia (REF-2025007)",
     actor: "Empleado B",
     createdAt: "2026-07-19 16:02",
   },
