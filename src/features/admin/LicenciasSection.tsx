@@ -135,7 +135,7 @@ function ActivateDialog({
   const { licenses } = useDemoStore();
   const { user } = useDemoAuth();
   const [email, setEmail] = useState("");
-  const [amount, setAmount] = useState("99");
+  const [amount, setAmount] = useState("2500");
   const currency = "CUP" as const;
   const [method, setMethod] = useState<"card" | "transfer" | "cash" | "paypal">("card");
   const [reference, setReference] = useState("");
@@ -150,8 +150,7 @@ function ActivateDialog({
 
   const reset = () => {
     setEmail("");
-    setAmount("99");
-    setCurrency("EUR");
+    setAmount("2500");
     setMethod("card");
     setReference("");
     setDays(365);
