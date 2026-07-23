@@ -186,7 +186,7 @@ export const HISTORY: HistoryEntry[] = [
     id: "h2",
     projectId: "copias",
     action: "Pago registrado",
-    detail: "99 EUR por transferencia (REF-2025007)",
+    detail: "2500 CUP por transferencia (REF-2025007)",
     actor: "Empleado B",
     createdAt: "2026-07-19 16:02",
   },
