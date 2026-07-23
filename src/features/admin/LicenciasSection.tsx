@@ -214,13 +214,7 @@ function ActivateDialog({
               </div>
               <div>
                 <Label>Moneda</Label>
-                <Select value={currency} onValueChange={(v) => setCurrency(v as "EUR" | "USD")}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input value="CUP" readOnly className="mt-1" />
               </div>
               <div>
                 <Label>Método</Label>
