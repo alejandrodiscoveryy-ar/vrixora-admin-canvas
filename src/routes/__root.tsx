@@ -85,6 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Prototipo visual y navegable del área administrativa de Vrixora." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Vrixora Admin Panel" },
+      { name: "twitter:description", content: "Prototipo visual y navegable del área administrativa de Vrixora." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/439bf90d-da51-47dd-ac77-675f56fab5a6/id-preview-827781ab--4bc88982-61a4-4a1b-83a2-0b7a6dfa8228.lovable.app-1784823160267.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/439bf90d-da51-47dd-ac77-675f56fab5a6/id-preview-827781ab--4bc88982-61a4-4a1b-83a2-0b7a6dfa8228.lovable.app-1784823160267.png" },
     ],
     links: [
       {
