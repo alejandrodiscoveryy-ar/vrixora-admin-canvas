@@ -125,7 +125,7 @@ function ActivateDialog({
       projectId: string;
       clientId: string;
       amount: number;
-      currency: "EUR" | "USD";
+      currency: "CUP";
       method: "card" | "transfer" | "cash" | "paypal";
       reference: string;
       employeeId: string;
