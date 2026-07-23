@@ -15,6 +15,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminProyectosIndexRouteImport } from './routes/admin.proyectos.index'
 import { Route as AdminProyectosIdRouteImport } from './routes/admin.proyectos.$id'
+import { Route as AdminProyectosIdIndexRouteImport } from './routes/admin.proyectos.$id.index'
+import { Route as AdminProyectosIdSectionRouteImport } from './routes/admin.proyectos.$id.$section'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -46,21 +48,34 @@ const AdminProyectosIdRoute = AdminProyectosIdRouteImport.update({
   path: '/proyectos/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminProyectosIdIndexRoute = AdminProyectosIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminProyectosIdRoute,
+} as any)
+const AdminProyectosIdSectionRoute = AdminProyectosIdSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => AdminProyectosIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
-  '/admin/proyectos/$id': typeof AdminProyectosIdRoute
+  '/admin/proyectos/$id': typeof AdminProyectosIdRouteWithChildren
   '/admin/proyectos/': typeof AdminProyectosIndexRoute
+  '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
+  '/admin/proyectos/$id/': typeof AdminProyectosIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
-  '/admin/proyectos/$id': typeof AdminProyectosIdRoute
   '/admin/proyectos': typeof AdminProyectosIndexRoute
+  '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
+  '/admin/proyectos/$id': typeof AdminProyectosIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,8 +83,10 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
-  '/admin/proyectos/$id': typeof AdminProyectosIdRoute
+  '/admin/proyectos/$id': typeof AdminProyectosIdRouteWithChildren
   '/admin/proyectos/': typeof AdminProyectosIndexRoute
+  '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
+  '/admin/proyectos/$id/': typeof AdminProyectosIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,13 +97,16 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/proyectos/$id'
     | '/admin/proyectos/'
+    | '/admin/proyectos/$id/$section'
+    | '/admin/proyectos/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin/login'
     | '/admin'
-    | '/admin/proyectos/$id'
     | '/admin/proyectos'
+    | '/admin/proyectos/$id/$section'
+    | '/admin/proyectos/$id'
   id:
     | '__root__'
     | '/'
@@ -95,6 +115,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/proyectos/$id'
     | '/admin/proyectos/'
+    | '/admin/proyectos/$id/$section'
+    | '/admin/proyectos/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -146,20 +168,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProyectosIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/proyectos/$id/': {
+      id: '/admin/proyectos/$id/'
+      path: '/'
+      fullPath: '/admin/proyectos/$id/'
+      preLoaderRoute: typeof AdminProyectosIdIndexRouteImport
+      parentRoute: typeof AdminProyectosIdRoute
+    }
+    '/admin/proyectos/$id/$section': {
+      id: '/admin/proyectos/$id/$section'
+      path: '/$section'
+      fullPath: '/admin/proyectos/$id/$section'
+      preLoaderRoute: typeof AdminProyectosIdSectionRouteImport
+      parentRoute: typeof AdminProyectosIdRoute
+    }
   }
 }
+
+interface AdminProyectosIdRouteChildren {
+  AdminProyectosIdSectionRoute: typeof AdminProyectosIdSectionRoute
+  AdminProyectosIdIndexRoute: typeof AdminProyectosIdIndexRoute
+}
+
+const AdminProyectosIdRouteChildren: AdminProyectosIdRouteChildren = {
+  AdminProyectosIdSectionRoute: AdminProyectosIdSectionRoute,
+  AdminProyectosIdIndexRoute: AdminProyectosIdIndexRoute,
+}
+
+const AdminProyectosIdRouteWithChildren =
+  AdminProyectosIdRoute._addFileChildren(AdminProyectosIdRouteChildren)
 
 interface AdminRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  AdminProyectosIdRoute: typeof AdminProyectosIdRoute
+  AdminProyectosIdRoute: typeof AdminProyectosIdRouteWithChildren
   AdminProyectosIndexRoute: typeof AdminProyectosIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
-  AdminProyectosIdRoute: AdminProyectosIdRoute,
+  AdminProyectosIdRoute: AdminProyectosIdRouteWithChildren,
   AdminProyectosIndexRoute: AdminProyectosIndexRoute,
 }
 
