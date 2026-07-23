@@ -4,7 +4,8 @@ import { useDemoAuth } from "@/lib/demo-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ShieldCheck, User, Users } from "lucide-react";
+import { ShieldCheck, User, Users } from "lucide-react";
+import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({
@@ -36,14 +37,14 @@ function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-3xl">
-        <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
+        <div className="flex flex-col items-center gap-4 mb-10">
+          <div className="rounded-2xl p-2 bg-black brand-glow">
+            <VrixoraLogo variant="mark" size={72} className="rounded-xl" />
           </div>
-          <div>
-            <div className="text-2xl font-semibold text-gradient">Vrixora Admin</div>
-            <div className="text-xs text-muted-foreground uppercase tracking-widest">
-              Prototipo de demostración
+          <div className="text-center">
+            <div className="text-2xl font-semibold tracking-tight text-gradient">VRIXORA</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] mt-1">
+              Admin panel · Prototipo
             </div>
           </div>
         </div>
