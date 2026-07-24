@@ -1,11 +1,12 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useDemoAuth } from "@/lib/demo-auth";
-import { CLIENTS, LICENSES, PAYMENTS, visibleProjects } from "@/lib/mock-data";
+import { useSupabaseAuth } from "@/lib/supabase-auth";
+import { useUserProjects } from "@/hooks/useProjects";
+import { CLIENTS, LICENSES, PAYMENTS } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Users, KeyRound, Wallet } from "lucide-react";
+import { ArrowRight, Users, KeyRound, Wallet, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/proyectos/")({
   head: () => ({
@@ -21,15 +22,33 @@ export const Route = createFileRoute("/admin/proyectos/")({
 });
 
 function ProjectsList() {
-  const { user } = useDemoAuth();
+  const { user } = useSupabaseAuth();
+  const { data: projects = [], isLoading, error } = useUserProjects(user?.id ?? null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) navigate({ to: "/admin/login" });
-  }, [user, navigate]);
+    if (!user && !isLoading) {
+      navigate({ to: "/admin/login" });
+    }
+  }, [user, isLoading, navigate]);
 
   if (!user) return null;
-  const projects = visibleProjects(user);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 rounded-lg bg-destructive/10 text-destructive">
+        Error al cargar proyectos: {error.message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -37,9 +56,7 @@ function ProjectsList() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Proyectos</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {user.role === "owner"
-              ? "Vista global de todos los proyectos de Vrixora."
-              : "Proyectos que tienes asignados."}
+            Proyectos donde eres owner o miembro.
           </p>
         </div>
         <Badge variant="outline">{projects.length} proyecto(s)</Badge>
@@ -73,11 +90,7 @@ function ProjectsList() {
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <Stat icon={Users} label="Clientes" value={clients} />
                     <Stat icon={KeyRound} label="Licencias" value={licenses} />
-                    {user.role === "owner" ? (
-                      <Stat icon={Wallet} label="Ingresos" value={`${revenue} CUP`} />
-                    ) : (
-                      <Stat icon={Wallet} label="—" value="privado" />
-                    )}
+                    <Stat icon={Wallet} label="Ingresos" value={`${revenue} CUP`} />
                   </div>
                   <Button asChild variant="secondary" className="w-full">
                     <Link to="/admin/proyectos/$id" params={{ id: p.id }}>
