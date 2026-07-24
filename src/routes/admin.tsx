@@ -1,20 +1,22 @@
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { DemoAuthProvider, useDemoAuth } from "@/lib/demo-auth";
-import { visibleProjects } from "@/lib/mock-data";
+import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
+import { useUserProjects } from "@/hooks/useProjects";
+import { CLIENTS, LICENSES, PAYMENTS } from "@/lib/mock-data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
-import { LogOut, LayoutDashboard, FolderKanban, type LucideIcon } from "lucide-react";
+import { LogOut, LayoutDashboard, FolderKanban, Loader2, type LucideIcon } from "lucide-react";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Vrixora Admin Panel" },
-      { name: "description", content: "Panel administrativo interno de Vrixora — prototipo de demostración." },
+      { name: "description", content: "Panel administrativo interno de Vrixora." },
       { property: "og:title", content: "Vrixora Admin Panel" },
-      { property: "og:description", content: "Prototipo visual del área administrativa de Vrixora." },
+      { property: "og:description", content: "Panel administrativo de Vrixora." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -23,17 +25,32 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   return (
-    <DemoAuthProvider>
+    <SupabaseAuthProvider>
       <AdminChrome />
       <Toaster richColors position="top-right" />
-    </DemoAuthProvider>
+    </SupabaseAuthProvider>
   );
 }
 
 function AdminChrome() {
-  const { user } = useDemoAuth();
+  const { user, loading } = useSupabaseAuth();
+  const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isLogin = path === "/admin/login" || path === "/admin";
+
+  useEffect(() => {
+    if (!loading && !user && !isLogin) {
+      navigate({ to: "/admin/login" });
+    }
+  }, [user, loading, isLogin, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (isLogin || !user) {
     return <Outlet />;
@@ -53,10 +70,11 @@ function AdminChrome() {
 }
 
 function SideNav() {
-  const { user } = useDemoAuth();
+  const { user } = useSupabaseAuth();
+  const { data: projects = [], isLoading } = useUserProjects(user?.id ?? null);
   const path = useRouterState({ select: (s) => s.location.pathname });
+
   if (!user) return null;
-  const projects = visibleProjects(user);
 
   const NavLink = ({ to, icon: Icon, label, active }: { to: string; icon: LucideIcon; label: string; active: boolean }) => (
     <Link
@@ -95,19 +113,25 @@ function SideNav() {
         <div className="mt-6 mb-2 px-3 text-[10px] uppercase tracking-widest text-muted-foreground">
           Accesos rápidos
         </div>
-        {projects.map((p) => (
-          <NavLink
-            key={p.id}
-            to={"/admin/proyectos/$id"}
-            icon={FolderKanban}
-            label={p.name}
-            active={path.startsWith(`/admin/proyectos/${p.id}`)}
-          />
-        ))}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          projects.map((p) => (
+            <NavLink
+              key={p.id}
+              to={"/admin/proyectos/$id"}
+              icon={FolderKanban}
+              label={p.name}
+              active={path.startsWith(`/admin/proyectos/${p.id}`)}
+            />
+          ))
+        )}
       </nav>
       <div className="p-3 border-t border-sidebar-border">
         <Badge variant="outline" className="w-full justify-center text-[10px] uppercase tracking-widest">
-          Datos de demostración
+          Datos en vivo
         </Badge>
       </div>
     </aside>
@@ -115,44 +139,45 @@ function SideNav() {
 }
 
 function TopBar() {
-  const { user, users, setUserId } = useDemoAuth();
+  const { user, signOut } = useSupabaseAuth();
   const navigate = useNavigate();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await signOut();
+      navigate({ to: "/admin/login" });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      setIsSigningOut(false);
+    }
+  };
+
+  if (!user) return null;
 
   return (
     <header className="h-14 border-b bg-card/40 backdrop-blur flex items-center gap-3 px-4 md:px-6">
       <div className="text-xs text-muted-foreground hidden md:block">
-        Modo prototipo — selector temporal de usuario
+        {user.email}
       </div>
       <div className="ml-auto flex items-center gap-3">
-        <Select value={user?.id ?? ""} onValueChange={(v) => setUserId(v)}>
-          <SelectTrigger className="w-[220px] h-9">
-            <SelectValue placeholder="Selecciona usuario" />
-          </SelectTrigger>
-          <SelectContent>
-            {users.map((u) => (
-              <SelectItem key={u.id} value={u.id}>
-                <span className="flex items-center gap-2">
-                  <Badge variant={u.role === "owner" ? "default" : "secondary"} className="text-[10px]">
-                    {u.role}
-                  </Badge>
-                  {u.name}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            setUserId(null);
-            navigate({ to: "/admin/login" });
-          }}
+          onClick={handleSignOut}
+          disabled={isSigningOut}
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          Salir
+          {isSigningOut ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <LogOut className="h-4 w-4 mr-2" />
+          )}
+          Cerrar sesión
         </Button>
       </div>
     </header>
   );
 }
+
+import React from "react";
