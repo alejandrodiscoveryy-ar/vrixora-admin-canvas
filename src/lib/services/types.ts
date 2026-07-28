@@ -6,15 +6,52 @@ import type {
 
 export type DataProvider = "demo" | "supabase";
 export type Currency = "CUP" | "USD" | "EUR";
+export type LicenseStatus = "active" | "pending" | "expired" | "suspended" | "revoked";
+
+export interface LicenseType {
+  code: string;
+  name: string;
+  defaultDurationDays: number | null;
+  allowsCustomDuration: boolean;
+  neverExpires: boolean;
+  defaultMaxDevices: number;
+  defaultFeatures: Record<string, unknown>;
+}
+
+export interface LicensePlan {
+  code: string;
+  name: string;
+  maxDevices: number;
+  features: Record<string, unknown>;
+}
 
 export interface ServiceLicense {
   id: string;
   projectId: string;
   userId: string;
   key: string;
-  status: "active" | "expired" | "pending";
-  activatedAt: string;
-  expiresAt: string;
+  licenseType: string;
+  plan: string;
+  status: LicenseStatus;
+  durationDays: number | null;
+  maxDevices: number;
+  features: Record<string, unknown>;
+  notes: string | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  lastValidation: string | null;
+  revokedAt: string | null;
+}
+
+export interface LicenseValidationResult {
+  valid: boolean;
+  reason: string;
+  licenseId?: string;
+  licenseType?: string;
+  plan?: string;
+  expiresAt?: string | null;
+  maxDevices?: number;
+  features?: Record<string, unknown>;
 }
 
 export interface ServicePayment {
@@ -40,6 +77,14 @@ export interface ProjectMemberService {
 
 export interface LicenseService {
   list(projectId: string): Promise<ServiceLicense[]>;
+  listTypes(): Promise<LicenseType[]>;
+  listPlans(): Promise<LicensePlan[]>;
+  renew(licenseId: string, durationDays?: number, note?: string): Promise<ServiceLicense>;
+  validate(
+    projectId: string,
+    licenseKey: string,
+    deviceFingerprint: string,
+  ): Promise<LicenseValidationResult>;
 }
 
 export interface PaymentService {

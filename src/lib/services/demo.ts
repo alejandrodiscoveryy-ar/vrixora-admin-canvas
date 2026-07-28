@@ -30,10 +30,74 @@ export const demoServices: AdminServices = {
         projectId: license.projectId,
         userId: license.clientId,
         key: license.key,
+        licenseType: "annual",
+        plan: "standard",
         status: license.status,
+        durationDays: 365,
+        maxDevices: 1,
+        features: {},
+        notes: null,
         activatedAt: license.activatedAt,
         expiresAt: license.expiresAt,
+        lastValidation: null,
+        revokedAt: null,
       }));
+    },
+    async listTypes() {
+      return [
+        {
+          code: "annual",
+          name: "Anual",
+          defaultDurationDays: 365,
+          allowsCustomDuration: false,
+          neverExpires: false,
+          defaultMaxDevices: 1,
+          defaultFeatures: {},
+        },
+      ];
+    },
+    async listPlans() {
+      return [{ code: "standard", name: "Estándar", maxDevices: 1, features: {} }];
+    },
+    async renew(licenseId, durationDays = 365) {
+      const license = LICENSES.find((candidate) => candidate.id === licenseId);
+      if (!license) throw new Error("License not found");
+      const expiresAt = new Date(license.expiresAt);
+      expiresAt.setDate(expiresAt.getDate() + durationDays);
+      return {
+        id: license.id,
+        projectId: license.projectId,
+        userId: license.clientId,
+        key: license.key,
+        licenseType: "annual",
+        plan: "standard",
+        status: "active",
+        durationDays,
+        maxDevices: 1,
+        features: {},
+        notes: null,
+        activatedAt: license.activatedAt,
+        expiresAt: expiresAt.toISOString(),
+        lastValidation: null,
+        revokedAt: null,
+      };
+    },
+    async validate(projectId, licenseKey) {
+      const license = LICENSES.find(
+        (candidate) => candidate.projectId === projectId && candidate.key === licenseKey,
+      );
+      return license
+        ? {
+            valid: license.status === "active" && new Date(license.expiresAt) > new Date(),
+            reason: license.status,
+            licenseId: license.id,
+            licenseType: "annual",
+            plan: "standard",
+            expiresAt: license.expiresAt,
+            maxDevices: 1,
+            features: {},
+          }
+        : { valid: false, reason: "license_not_found" };
     },
   },
   payments: {

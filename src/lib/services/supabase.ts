@@ -7,12 +7,36 @@ import { getSupabaseClient } from "@/lib/supabase";
 import type {
   AdminServices,
   Currency,
+  LicensePlan,
+  LicenseStatus,
+  LicenseType,
+  LicenseValidationResult,
   ServiceLicense,
   ServicePayment,
 } from "./types";
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
+}
+
+function mapLicense(license: any): ServiceLicense {
+  return {
+    id: license.id,
+    projectId: license.project_id,
+    userId: license.user_id,
+    key: license.license_key,
+    licenseType: license.license_type,
+    plan: license.plan,
+    status: license.status as LicenseStatus,
+    durationDays: license.duration_days,
+    maxDevices: license.max_devices,
+    features: license.features ?? {},
+    notes: license.notes,
+    activatedAt: license.activated_at,
+    expiresAt: license.expires_at,
+    lastValidation: license.last_validation,
+    revokedAt: license.revoked_at,
+  };
 }
 
 export const supabaseServices: AdminServices = {
@@ -80,22 +104,69 @@ export const supabaseServices: AdminServices = {
     async list(projectId) {
       const { data, error } = await getSupabaseClient()
         .from("licenses")
-        .select("id,project_id,user_id,license_key,status,activated_at,expires_at")
+        .select(
+          "id,project_id,user_id,license_key,license_type,plan,status,duration_days,max_devices,features,notes,activated_at,expires_at,last_validation,revoked_at",
+        )
         .eq("project_id", projectId)
         .order("expires_at", { ascending: true });
       throwIfError(error);
 
+      return (data ?? []).map(mapLicense);
+    },
+    async listTypes() {
+      const { data, error } = await getSupabaseClient()
+        .from("license_types")
+        .select(
+          "code,name,default_duration_days,allows_custom_duration,never_expires,default_max_devices,default_features",
+        )
+        .order("name");
+      throwIfError(error);
+
       return (data ?? []).map(
-        (license): ServiceLicense => ({
-          id: license.id,
-          projectId: license.project_id,
-          userId: license.user_id,
-          key: license.license_key,
-          status: license.status,
-          activatedAt: license.activated_at,
-          expiresAt: license.expires_at,
+        (licenseType): LicenseType => ({
+          code: licenseType.code,
+          name: licenseType.name,
+          defaultDurationDays: licenseType.default_duration_days,
+          allowsCustomDuration: licenseType.allows_custom_duration,
+          neverExpires: licenseType.never_expires,
+          defaultMaxDevices: licenseType.default_max_devices,
+          defaultFeatures: licenseType.default_features ?? {},
         }),
       );
+    },
+    async listPlans() {
+      const { data, error } = await getSupabaseClient()
+        .from("license_plans")
+        .select("code,name,max_devices,features")
+        .order("name");
+      throwIfError(error);
+
+      return (data ?? []).map(
+        (plan): LicensePlan => ({
+          code: plan.code,
+          name: plan.name,
+          maxDevices: plan.max_devices,
+          features: plan.features ?? {},
+        }),
+      );
+    },
+    async renew(licenseId, durationDays, note) {
+      const { data, error } = await getSupabaseClient().rpc("renew_license", {
+        target_license_id: licenseId,
+        requested_duration_days: durationDays ?? null,
+        renewal_note: note ?? null,
+      });
+      throwIfError(error);
+      return mapLicense(data);
+    },
+    async validate(projectId, licenseKey, deviceFingerprint) {
+      const { data, error } = await getSupabaseClient().rpc("validate_license", {
+        target_project_id: projectId,
+        target_license_key: licenseKey,
+        target_device_fingerprint: deviceFingerprint,
+      });
+      throwIfError(error);
+      return data as LicenseValidationResult;
     },
   },
   payments: {
