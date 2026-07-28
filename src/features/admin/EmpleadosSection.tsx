@@ -1,11 +1,11 @@
-import { EMPLOYEES } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
+import { useProjectMembers } from "@/hooks/useProjects";
 
 export default function EmpleadosSection({ projectId }: { projectId: string }) {
-  const rows = EMPLOYEES.filter((e) => e.projectIds.includes(projectId));
+  const { data: rows = [], isLoading, error } = useProjectMembers(projectId);
 
   return (
     <Card className="glass-panel">
@@ -17,7 +17,15 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {rows.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="py-12 text-center text-sm text-destructive">
+            No se pudieron cargar los empleados.
+          </div>
+        ) : rows.length === 0 ? (
           <div className="py-12 text-center text-sm text-muted-foreground">Sin empleados asignados.</div>
         ) : (
           <Table>

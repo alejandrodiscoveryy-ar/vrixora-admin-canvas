@@ -40,21 +40,40 @@ export const supabaseServices: AdminServices = {
   },
   projectMembers: {
     async list(projectId) {
-      const { data, error } = await getSupabaseClient()
+      const client = getSupabaseClient();
+      const { data, error } = await client
         .from("project_members")
         .select("user_id,role")
-        .eq("project_id", projectId);
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: true });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (member): Employee => ({
+      const members = data ?? [];
+      if (members.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await client
+        .from("profiles")
+        .select("id,email,display_name")
+        .in(
+          "id",
+          members.map((member) => member.user_id),
+        );
+      throwIfError(profilesError);
+
+      const profilesById = new Map(
+        (profiles ?? []).map((profile) => [profile.id, profile]),
+      );
+
+      return members.map((member): Employee => {
+        const profile = profilesById.get(member.user_id);
+        return {
           id: member.user_id,
-          name: member.user_id,
-          email: "",
+          name: profile?.display_name || profile?.email || "Usuario",
+          email: profile?.email ?? "",
           role: member.role,
           projectIds: [projectId],
-        }),
-      );
+        };
+      });
     },
   },
   licenses: {

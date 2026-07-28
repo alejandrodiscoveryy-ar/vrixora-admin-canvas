@@ -14,38 +14,25 @@ export interface SupabaseProject {
 export async function getUserProjects(userId: string): Promise<Project[]> {
   const client = getSupabaseClient();
 
-  // Obtener proyectos donde el usuario es owner o miembro
-  const { data: userProjects, error } = await client
-    .from("user_projects")
-    .select(
-      `
-      project_id,
-      role,
-      projects(id, name, slug, description, status, created_at, color)
-    `,
-    )
-    .eq("user_id", userId)
-    .in("role", ["owner", "member"]);
+  const { data: projects, error } = await client
+    .from("projects")
+    .select("id, name, slug, description, status, created_at, color")
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching user projects:", error);
     throw error;
   }
 
-  if (!userProjects) return [];
-
-  return userProjects.map((up: any) => {
-    const project = up.projects;
-    return {
-      id: project.id,
-      name: project.name,
-      slug: project.slug,
-      description: project.description,
-      status: project.status,
-      createdAt: project.created_at,
-      color: project.color,
-    };
-  });
+  return (projects ?? []).map((project) => ({
+    id: project.id,
+    name: project.name,
+    slug: project.slug,
+    description: project.description,
+    status: project.status,
+    createdAt: project.created_at,
+    color: project.color,
+  }));
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
@@ -79,11 +66,9 @@ export async function canAccessProject(userId: string, projectId: string): Promi
   const client = getSupabaseClient();
 
   const { data, error } = await client
-    .from("user_projects")
+    .from("projects")
     .select("id")
-    .eq("user_id", userId)
-    .eq("project_id", projectId)
-    .in("role", ["owner", "member"])
+    .eq("id", projectId)
     .single();
 
   if (error && error.code !== "PGRST116") {

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUserProjects, getProjectById, canAccessProject } from "@/lib/services/projects";
+import { supabaseServices } from "@/lib/services";
 import type { Project } from "@/lib/mock-data";
 
 export function useUserProjects(userId: string | null) {
@@ -32,5 +33,16 @@ export function useProjectAccess(userId: string | null, projectId: string | null
       return canAccessProject(userId, projectId);
     },
     enabled: !!userId && !!projectId,
+  });
+}
+
+export function useProjectMembers(projectId: string | null) {
+  return useQuery({
+    queryKey: ["project-members", projectId],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return supabaseServices.projectMembers.list(projectId);
+    },
+    enabled: !!projectId,
   });
 }

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useDemoAuth } from "@/lib/demo-auth";
-import { PROJECTS } from "@/lib/mock-data";
+import { useSupabaseAuth } from "@/lib/supabase-auth";
+import { useProject, useProjectMembers } from "@/hooks/useProjects";
 import ClientesSection from "@/features/admin/ClientesSection";
 import LicenciasSection from "@/features/admin/LicenciasSection";
 import PagosSection from "@/features/admin/PagosSection";
@@ -17,18 +17,21 @@ export const Route = createFileRoute("/admin/proyectos/$id/$section")({
 
 function SectionPage() {
   const { id, section } = Route.useParams();
-  const { user } = useDemoAuth();
+  const { user, loading } = useSupabaseAuth();
   const navigate = useNavigate();
-  const project = PROJECTS.find((p) => p.id === id);
+  const { data: project, isLoading: projectLoading } = useProject(id);
+  const { data: members = [], isLoading: membersLoading } = useProjectMembers(id);
+  const currentMember = members.find((member) => member.id === user?.id);
+  const isOwner = currentMember?.role === "owner";
 
   useEffect(() => {
-    if (!user) navigate({ to: "/admin/login" });
-    else if (user.role !== "owner" && OWNER_ONLY.has(section)) {
+    if (!loading && !user) navigate({ to: "/admin/login" });
+    else if (!membersLoading && user && !isOwner && OWNER_ONLY.has(section)) {
       navigate({ to: "/admin/proyectos/$id", params: { id } });
     }
-  }, [user, section, id, navigate]);
+  }, [user, loading, section, id, isOwner, membersLoading, navigate]);
 
-  if (!user || !project) return null;
+  if (loading || projectLoading || membersLoading || !user || !project) return null;
 
   switch (section) {
     case "clientes":
