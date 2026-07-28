@@ -1,5 +1,5 @@
 import { getSupabaseClient } from "../supabase";
-import type { Project } from "./mock-data";
+import type { Project } from "../mock-data";
 
 export interface SupabaseProject {
   id: string;
