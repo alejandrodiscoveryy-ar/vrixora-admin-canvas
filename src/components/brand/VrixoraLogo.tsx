@@ -1,6 +1,3 @@
-import mark from "@/assets/vrixora-mark.asset.json";
-import lockup from "@/assets/vrixora-lockup.asset.json";
-
 type Props = {
   variant?: "mark" | "lockup";
   className?: string;
@@ -9,7 +6,10 @@ type Props = {
 };
 
 export function VrixoraLogo({ variant = "mark", className, size, alt = "Vrixora" }: Props) {
-  const src = variant === "lockup" ? lockup.url : mark.url;
+  const src =
+    variant === "lockup"
+      ? "/brand/vrixora-lockup.jpg"
+      : "/brand/vrixora-mark.jpg";
   const style = size ? { height: size, width: variant === "mark" ? size : "auto" } : undefined;
   return (
     <img
