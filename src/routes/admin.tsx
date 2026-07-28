@@ -1,8 +1,13 @@
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useUserProjects } from "@/hooks/useProjects";
-import { CLIENTS, LICENSES, PAYMENTS } from "@/lib/mock-data";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -76,7 +81,17 @@ function SideNav() {
 
   if (!user) return null;
 
-  const NavLink = ({ to, icon: Icon, label, active }: { to: string; icon: LucideIcon; label: string; active: boolean }) => (
+  const NavLink = ({
+    to,
+    icon: Icon,
+    label,
+    active,
+  }: {
+    to: string;
+    icon: LucideIcon;
+    label: string;
+    active: boolean;
+  }) => (
     <Link
       to={to}
       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
@@ -99,7 +114,9 @@ function SideNav() {
           </div>
           <div>
             <div className="text-sm font-semibold tracking-widest text-gradient">VRIXORA</div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Admin panel</div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Admin panel
+            </div>
           </div>
         </Link>
       </div>
@@ -130,7 +147,10 @@ function SideNav() {
         )}
       </nav>
       <div className="p-3 border-t border-sidebar-border">
-        <Badge variant="outline" className="w-full justify-center text-[10px] uppercase tracking-widest">
+        <Badge
+          variant="outline"
+          className="w-full justify-center text-[10px] uppercase tracking-widest"
+        >
           Datos en vivo
         </Badge>
       </div>
@@ -158,16 +178,9 @@ function TopBar() {
 
   return (
     <header className="h-14 border-b bg-card/40 backdrop-blur flex items-center gap-3 px-4 md:px-6">
-      <div className="text-xs text-muted-foreground hidden md:block">
-        {user.email}
-      </div>
+      <div className="text-xs text-muted-foreground hidden md:block">{user.email}</div>
       <div className="ml-auto flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-        >
+        <Button variant="ghost" size="sm" onClick={handleSignOut} disabled={isSigningOut}>
           {isSigningOut ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (

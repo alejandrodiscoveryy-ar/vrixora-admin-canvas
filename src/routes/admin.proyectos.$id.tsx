@@ -6,12 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
-const OWNER_ONLY = new Set(["empleados", "rendimiento", "configuracion"]);
+const OWNER_ONLY = new Set([
+  "clientes",
+  "licencias",
+  "planes",
+  "pagos",
+  "empleados",
+  "rendimiento",
+  "configuracion",
+]);
 
 const TABS = [
   { slug: "", label: "Resumen" },
   { slug: "clientes", label: "Clientes" },
   { slug: "licencias", label: "Licencias" },
+  { slug: "planes", label: "Planes y precios" },
   { slug: "pagos", label: "Pagos" },
   { slug: "empleados", label: "Empleados" },
   { slug: "rendimiento", label: "Rendimiento" },
@@ -74,7 +83,9 @@ function ProjectLayout() {
           <h1 className="text-2xl font-semibold tracking-tight mt-1">{project.name}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={project.status === "active" ? "default" : "secondary"}>{project.status}</Badge>
+          <Badge variant={project.status === "active" ? "default" : "secondary"}>
+            {project.status}
+          </Badge>
         </div>
       </div>
 

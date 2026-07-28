@@ -11,6 +11,7 @@ export type {
   LicenseDevice,
   CreateLicenseInput,
   LicensePlan,
+  LicenseBillingInput,
   LicenseService,
   LicenseStatus,
   LicenseType,
@@ -22,7 +23,7 @@ export type {
   ServicePayment,
 } from "./types";
 
-export function getAdminServices(provider: DataProvider = "demo"): AdminServices {
+export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {
   return provider === "supabase" ? supabaseServices : demoServices;
 }
 

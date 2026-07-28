@@ -20,6 +20,7 @@ import {
   type LicenseStatus,
   type LicenseType,
   type ServiceLicense,
+  type ServicePayment,
 } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,7 +165,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
         />
         <Metric icon={CalendarClock} label="Vencen en 7 días" value={expiring(7)} />
         <Metric icon={CalendarClock} label="Vencen en 30 días" value={expiring(30)} />
-        {plansQuery.data?.slice(0, 2).map((item) => (
+        {plansQuery.data?.map((item) => (
           <Metric
             key={item.code}
             icon={KeyRound}
@@ -619,9 +620,26 @@ function OperationDialog({
   const [plan, setPlan] = useState("");
   const [type, setType] = useState("");
   const [reason, setReason] = useState("");
+  const [method, setMethod] = useState<ServicePayment["method"]>("transfer");
+  const [reference, setReference] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<ServicePayment["status"]>("paid");
+  const [customPrice, setCustomPrice] = useState("");
+  const selectedPlan = plans.find((item) => item.code === plan);
   const mutation = useMutation({
     mutationFn: () => {
       if (!license || !operation) throw new Error("Selecciona una licencia y una operación.");
+      if (operation === "renew") {
+        return supabaseServices.licenses.renewWithPayment({
+          licenseId: license.id,
+          plan,
+          method,
+          reference,
+          notes: reason,
+          overrideAmount: customPrice ? Number(customPrice) : undefined,
+          adjustmentReason: customPrice ? reason : undefined,
+          paymentStatus,
+        });
+      }
       return supabaseServices.licenses.update(license.id, operation, {
         status,
         days: Number(days),
@@ -667,7 +685,7 @@ function OperationDialog({
               />
             </Field>
           )}
-          {(operation === "renew" || operation === "extend") && (
+          {operation === "extend" && (
             <Field
               label={
                 operation === "extend" ? "Días adicionales" : "Duración personalizada (opcional)"
@@ -696,6 +714,62 @@ function OperationDialog({
               </Field>
             </>
           )}
+          {operation === "renew" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Precio del plan">
+                <Input
+                  readOnly
+                  value={selectedPlan ? `${selectedPlan.price} ${selectedPlan.currency}` : ""}
+                />
+              </Field>
+              <Field label="Método de pago">
+                <Select
+                  value={method}
+                  onValueChange={(value) => setMethod(value as ServicePayment["method"])}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["card", "transfer", "cash", "paypal"].map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Referencia">
+                <Input value={reference} onChange={(event) => setReference(event.target.value)} />
+              </Field>
+              <Field label="Estado del pago">
+                <Select
+                  value={paymentStatus}
+                  onValueChange={(value) => setPaymentStatus(value as ServicePayment["status"])}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["pending", "paid", "cancelled", "refunded", "complimentary"].map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Precio personalizado (opcional)">
+                <Input
+                  type="number"
+                  min="0"
+                  max={selectedPlan?.price}
+                  value={customPrice}
+                  onChange={(event) => setCustomPrice(event.target.value)}
+                />
+              </Field>
+            </div>
+          )}
           <Field label={sensitive ? "Motivo obligatorio" : "Motivo / nota"}>
             <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
           </Field>
@@ -709,7 +783,8 @@ function OperationDialog({
             disabled={
               mutation.isPending ||
               (sensitive && !reason) ||
-              (operation === "extend" && (!days || !reason))
+              (operation === "extend" && (!days || !reason)) ||
+              (operation === "renew" && (!plan || !reference || (!!customPrice && !reason)))
             }
             onClick={() => mutation.mutate()}
           >
