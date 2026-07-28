@@ -41,6 +41,9 @@ export const demoServices: AdminServices = {
         expiresAt: license.expiresAt,
         lastValidation: null,
         revokedAt: null,
+        createdAt: license.activatedAt,
+        userEmail: "",
+        activeDevices: 0,
       }));
     },
     async listTypes() {
@@ -80,6 +83,9 @@ export const demoServices: AdminServices = {
         expiresAt: expiresAt.toISOString(),
         lastValidation: null,
         revokedAt: null,
+        createdAt: license.activatedAt,
+        userEmail: "",
+        activeDevices: 0,
       };
     },
     async validate(projectId, licenseKey) {
@@ -98,6 +104,24 @@ export const demoServices: AdminServices = {
             features: {},
           }
         : { valid: false, reason: "license_not_found" };
+    },
+    async create() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async update() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async listDevices() {
+      return [];
+    },
+    async listHistory() {
+      return [];
+    },
+    async manageDevice() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async resetDevices() {
+      return 0;
     },
   },
   payments: {

@@ -1,8 +1,4 @@
-import type {
-  Employee,
-  HistoryEntry,
-  Project,
-} from "@/lib/mock-data";
+import type { Employee, HistoryEntry, Project } from "@/lib/mock-data";
 
 export type DataProvider = "demo" | "supabase";
 export type Currency = "CUP" | "USD" | "EUR";
@@ -41,6 +37,42 @@ export interface ServiceLicense {
   expiresAt: string | null;
   lastValidation: string | null;
   revokedAt: string | null;
+  createdAt: string;
+  userEmail: string;
+  activeDevices: number;
+}
+
+export interface LicenseDevice {
+  id: string;
+  licenseId: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  revokedAt: string | null;
+}
+
+export interface LicenseAuditEntry {
+  id: string;
+  licenseId: string;
+  action: string;
+  detail: string;
+  actorId: string;
+  actorEmail?: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface CreateLicenseInput {
+  projectId: string;
+  email: string;
+  licenseType: string;
+  plan: string;
+  status: LicenseStatus;
+  durationDays?: number;
+  activatedAt?: string;
+  maxDevices?: number;
+  features?: Record<string, unknown>;
+  notes?: string;
+  licenseKey?: string;
 }
 
 export interface LicenseValidationResult {
@@ -85,6 +117,16 @@ export interface LicenseService {
     licenseKey: string,
     deviceFingerprint: string,
   ): Promise<LicenseValidationResult>;
+  create(input: CreateLicenseInput): Promise<ServiceLicense>;
+  update(
+    licenseId: string,
+    operation: "renew" | "status" | "extend" | "plan",
+    payload: Record<string, unknown>,
+  ): Promise<ServiceLicense>;
+  listDevices(licenseId: string): Promise<LicenseDevice[]>;
+  listHistory(licenseId: string): Promise<LicenseAuditEntry[]>;
+  manageDevice(deviceId: string, operation: "block" | "remove", reason?: string): Promise<void>;
+  resetDevices(licenseId: string, reason: string): Promise<number>;
 }
 
 export interface PaymentService {

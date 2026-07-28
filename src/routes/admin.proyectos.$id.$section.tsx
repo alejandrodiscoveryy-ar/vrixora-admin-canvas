@@ -9,7 +9,7 @@ import EmpleadosSection from "@/features/admin/EmpleadosSection";
 import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
 
-const OWNER_ONLY = new Set(["empleados", "rendimiento", "configuracion"]);
+const OWNER_ONLY = new Set(["licencias", "empleados", "rendimiento", "configuracion"]);
 
 export const Route = createFileRoute("/admin/proyectos/$id/$section")({
   component: SectionPage,
