@@ -116,6 +116,29 @@ export const supabaseServices: AdminServices = {
         }),
       );
     },
+    async settings(projectId) {
+      const { data, error } = await getSupabaseClient()
+        .from("projects")
+        .select("notify_license_expiry,auto_renew_verified_payments")
+        .eq("id", projectId)
+        .single();
+      throwIfError(error);
+      if (!data) throw new Error("No se encontró el proyecto.");
+      return {
+        notifyLicenseExpiry: data.notify_license_expiry,
+        autoRenewVerifiedPayments: data.auto_renew_verified_payments,
+      };
+    },
+    async update(projectId, changes) {
+      const { error } = await getSupabaseClient().rpc("admin_update_project_settings", {
+        target_project_id: projectId,
+        target_name: changes.name,
+        target_description: changes.description,
+        target_notify_license_expiry: changes.notifyLicenseExpiry,
+        target_auto_renew_verified_payments: changes.autoRenewVerifiedPayments,
+      });
+      throwIfError(error);
+    },
   },
   projectMembers: {
     async list(projectId) {
@@ -151,6 +174,23 @@ export const supabaseServices: AdminServices = {
           projectIds: [projectId],
         };
       });
+    },
+    async add(projectId, email, role) {
+      if (role !== "employee") {
+        throw new Error("Solo se pueden asignar empleados desde el panel.");
+      }
+      const { error } = await getSupabaseClient().rpc("admin_add_project_member_by_email", {
+        target_project_id: projectId,
+        target_email: email.trim(),
+      });
+      throwIfError(error);
+    },
+    async remove(projectId, userId) {
+      const { error } = await getSupabaseClient().rpc("admin_remove_project_member", {
+        target_project_id: projectId,
+        target_user_id: userId,
+      });
+      throwIfError(error);
     },
   },
   licenses: {

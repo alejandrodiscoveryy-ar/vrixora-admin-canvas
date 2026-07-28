@@ -130,10 +130,25 @@ export interface LicenseBillingInput {
 
 export interface ProjectService {
   list(userId?: string): Promise<Project[]>;
+  settings(projectId: string): Promise<{
+    notifyLicenseExpiry: boolean;
+    autoRenewVerifiedPayments: boolean;
+  }>;
+  update(
+    projectId: string,
+    changes: {
+      name: string;
+      description: string;
+      notifyLicenseExpiry: boolean;
+      autoRenewVerifiedPayments: boolean;
+    },
+  ): Promise<void>;
 }
 
 export interface ProjectMemberService {
   list(projectId: string): Promise<Employee[]>;
+  add(projectId: string, email: string, role: "owner" | "employee"): Promise<void>;
+  remove(projectId: string, userId: string): Promise<void>;
 }
 
 export interface LicenseService {

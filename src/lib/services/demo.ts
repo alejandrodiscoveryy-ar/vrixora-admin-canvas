@@ -17,10 +17,22 @@ export const demoServices: AdminServices = {
       const user = DEMO_USERS.find((candidate) => candidate.id === userId);
       return user ? visibleProjects(user) : [];
     },
+    async settings() {
+      return { notifyLicenseExpiry: true, autoRenewVerifiedPayments: false };
+    },
+    async update() {
+      throw new Error("Esta operación requiere Supabase");
+    },
   },
   projectMembers: {
     async list(projectId) {
       return EMPLOYEES.filter((employee) => employee.projectIds.includes(projectId));
+    },
+    async add() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async remove() {
+      throw new Error("Esta operación requiere Supabase");
     },
   },
   licenses: {

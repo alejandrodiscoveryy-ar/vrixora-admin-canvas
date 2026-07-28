@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 const OWNER_ONLY = new Set([
+  "clientes",
   "licencias",
   "planes",
   "pagos",

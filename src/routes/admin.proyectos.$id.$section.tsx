@@ -11,6 +11,7 @@ import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 
 const OWNER_ONLY = new Set([
+  "clientes",
   "licencias",
   "planes",
   "pagos",
