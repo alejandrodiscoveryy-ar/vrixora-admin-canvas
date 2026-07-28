@@ -1,9 +1,10 @@
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useDemoAuth } from "@/lib/demo-auth";
-import { PROJECTS, canSeeProject } from "@/lib/mock-data";
+import { useSupabaseAuth } from "@/lib/supabase-auth";
+import { useProject, useProjectAccess } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const OWNER_ONLY = new Set(["empleados", "rendimiento", "configuracion"]);
 
@@ -19,14 +20,13 @@ const TABS = [
 
 export const Route = createFileRoute("/admin/proyectos/$id")({
   head: ({ params }) => {
-    const p = PROJECTS.find((pr) => pr.id === params.id);
-    const title = p ? `${p.name} — Vrixora Admin` : "Proyecto — Vrixora Admin";
+    const title = `Proyecto — Vrixora Admin`;
     return {
       meta: [
         { title },
-        { name: "description", content: p?.description ?? "Gestión del proyecto." },
+        { name: "description", content: "Gestión del proyecto." },
         { property: "og:title", content: title },
-        { property: "og:description", content: p?.description ?? "Gestión del proyecto." },
+        { property: "og:description", content: "Gestión del proyecto." },
         { name: "robots", content: "noindex,nofollow" },
       ],
     };
@@ -36,18 +36,28 @@ export const Route = createFileRoute("/admin/proyectos/$id")({
 
 function ProjectLayout() {
   const { id } = Route.useParams();
-  const { user } = useDemoAuth();
+  const { user } = useSupabaseAuth();
+  const { data: project, isLoading: projectLoading } = useProject(id);
+  const { data: hasAccess, isLoading: accessLoading } = useProjectAccess(user?.id ?? null, id);
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const project = PROJECTS.find((p) => p.id === id);
 
   useEffect(() => {
-    if (!user) navigate({ to: "/admin/login" });
-    else if (project && !canSeeProject(user, project.id)) navigate({ to: "/admin/proyectos" });
-  }, [user, project, navigate]);
+    if (!user) {
+      navigate({ to: "/admin/login" });
+    } else if (!accessLoading && !hasAccess) {
+      navigate({ to: "/admin/proyectos" });
+    }
+  }, [user, hasAccess, accessLoading, navigate]);
 
-  if (!user || !project) return null;
-  const tabs = TABS.filter((t) => (user.role === "owner" ? true : !OWNER_ONLY.has(t.slug)));
+  if (!user || projectLoading || accessLoading || !project || !hasAccess) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   const basePath = `/admin/proyectos/${project.id}`;
 
   return (
@@ -65,12 +75,11 @@ function ProjectLayout() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={project.status === "active" ? "default" : "secondary"}>{project.status}</Badge>
-          <Badge variant="outline">Demostración</Badge>
         </div>
       </div>
 
       <Card className="glass-panel p-1 flex gap-1 overflow-x-auto">
-        {tabs.map((t) => {
+        {TABS.map((t) => {
           const to = t.slug ? `${basePath}/${t.slug}` : basePath;
           const active = t.slug
             ? path.startsWith(to)
