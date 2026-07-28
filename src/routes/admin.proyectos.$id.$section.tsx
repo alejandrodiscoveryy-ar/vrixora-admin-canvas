@@ -8,8 +8,16 @@ import PagosSection from "@/features/admin/PagosSection";
 import EmpleadosSection from "@/features/admin/EmpleadosSection";
 import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
+import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 
-const OWNER_ONLY = new Set(["licencias", "empleados", "rendimiento", "configuracion"]);
+const OWNER_ONLY = new Set([
+  "licencias",
+  "planes",
+  "pagos",
+  "empleados",
+  "rendimiento",
+  "configuracion",
+]);
 
 export const Route = createFileRoute("/admin/proyectos/$id/$section")({
   component: SectionPage,
@@ -40,6 +48,8 @@ function SectionPage() {
       return <LicenciasSection projectId={id} />;
     case "pagos":
       return <PagosSection projectId={id} />;
+    case "planes":
+      return <PlanesPreciosSection projectId={id} />;
     case "empleados":
       return <EmpleadosSection projectId={id} />;
     case "rendimiento":

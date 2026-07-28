@@ -12,6 +12,7 @@ import type {
   CreateLicenseInput,
   LicenseAuditEntry,
   LicenseDevice,
+  LicenseBillingInput,
 } from "./types";
 
 function throwIfError(error: { message: string } | null) {
@@ -37,6 +38,37 @@ type LicenseRow = {
   created_at: string;
   user_email?: string;
   active_devices?: number;
+};
+
+type PlanRow = {
+  code: string;
+  name: string;
+  license_type: string;
+  duration_days: number | null;
+  price: number | string;
+  currency: string;
+  max_devices: number;
+  features: Record<string, unknown> | null;
+  description: string | null;
+  active: boolean;
+  is_featured: boolean;
+};
+
+type PaymentRow = {
+  id: string;
+  amount: number | string;
+  list_price: number | string;
+  discount: number | string;
+  plan: string;
+  currency: string;
+  method: ServicePayment["method"];
+  reference: string;
+  recorded_by: string;
+  created_at: string;
+  paid_status: ServicePayment["status"];
+  notes: string | null;
+  user_email: string;
+  license_key: string | null;
 };
 
 function mapLicense(license: LicenseRow): ServiceLicense {
@@ -154,16 +186,25 @@ export const supabaseServices: AdminServices = {
     async listPlans() {
       const { data, error } = await getSupabaseClient()
         .from("license_plans")
-        .select("code,name,max_devices,features")
+        .select(
+          "code,name,license_type,duration_days,price,currency,max_devices,features,description,active,is_featured",
+        )
         .order("name");
       throwIfError(error);
 
       return (data ?? []).map(
-        (plan): LicensePlan => ({
+        (plan: PlanRow): LicensePlan => ({
           code: plan.code,
           name: plan.name,
+          licenseType: plan.license_type ?? "monthly",
+          durationDays: plan.duration_days ?? null,
+          price: Number(plan.price ?? 0),
+          currency: (plan.currency ?? "CUP") as Currency,
           maxDevices: plan.max_devices,
           features: plan.features ?? {},
+          description: plan.description ?? null,
+          isActive: plan.active ?? true,
+          isFeatured: plan.is_featured ?? false,
         }),
       );
     },
@@ -271,6 +312,88 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
       return Number(data);
     },
+    async listAdminPlans(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_license_plans", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      return (data ?? []).map(
+        (plan: PlanRow): LicensePlan => ({
+          code: plan.code,
+          name: plan.name,
+          licenseType: plan.license_type,
+          durationDays: plan.duration_days,
+          price: Number(plan.price),
+          currency: plan.currency as Currency,
+          maxDevices: plan.max_devices,
+          features: plan.features ?? {},
+          description: plan.description,
+          isActive: plan.active,
+          isFeatured: plan.is_featured,
+        }),
+      );
+    },
+    async savePlan(projectId, plan) {
+      const { data, error } = await getSupabaseClient().rpc("admin_save_license_plan", {
+        target_project_id: projectId,
+        target_code: plan.code,
+        target_name: plan.name,
+        target_license_type: plan.licenseType,
+        target_duration_days: plan.durationDays,
+        target_price: plan.price,
+        target_currency: plan.currency,
+        target_max_devices: plan.maxDevices,
+        target_features: plan.features,
+        target_description: plan.description,
+        target_is_active: plan.isActive,
+        target_is_featured: plan.isFeatured,
+      });
+      throwIfError(error);
+      return {
+        code: data.code,
+        name: data.name,
+        licenseType: data.license_type,
+        durationDays: data.duration_days,
+        price: Number(data.price),
+        currency: data.currency as Currency,
+        maxDevices: data.max_devices,
+        features: data.features ?? {},
+        description: data.description,
+        isActive: data.active,
+        isFeatured: data.is_featured,
+      };
+    },
+    async assignWithPayment(input: LicenseBillingInput) {
+      const { data, error } = await getSupabaseClient().rpc("admin_assign_license_with_payment", {
+        target_project_id: input.projectId,
+        target_email: input.email,
+        target_plan: input.plan,
+        target_started_at: input.startedAt,
+        target_status: input.licenseStatus,
+        target_method: input.method,
+        target_reference: input.reference,
+        target_notes: input.notes ?? null,
+        target_override_amount: input.overrideAmount ?? null,
+        target_adjustment_reason: input.adjustmentReason ?? null,
+        target_payment_status: input.paymentStatus,
+      });
+      throwIfError(error);
+      return mapLicense(data);
+    },
+    async renewWithPayment(input: LicenseBillingInput) {
+      const { data, error } = await getSupabaseClient().rpc("admin_renew_license_with_payment", {
+        target_license_id: input.licenseId,
+        target_plan: input.plan,
+        target_method: input.method,
+        target_reference: input.reference,
+        target_notes: input.notes ?? null,
+        target_override_amount: input.overrideAmount ?? null,
+        target_adjustment_reason: input.adjustmentReason ?? null,
+        target_payment_status: input.paymentStatus,
+      });
+      throwIfError(error);
+      return mapLicense(data);
+    },
   },
   payments: {
     async list(projectId) {
@@ -290,11 +413,43 @@ export const supabaseServices: AdminServices = {
           userId: payment.user_id,
           licenseId: payment.license_id ?? undefined,
           amount: Number(payment.amount),
+          listPrice: Number(payment.amount),
+          discount: 0,
+          plan: "",
           currency: payment.currency as Currency,
           method: payment.method,
           reference: payment.reference,
           employeeId: payment.recorded_by,
           createdAt: payment.created_at,
+          status: "paid",
+          notes: null,
+        }),
+      );
+    },
+    async listAdmin(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_license_payments", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      return (data ?? []).map(
+        (payment: PaymentRow): ServicePayment => ({
+          id: payment.id,
+          projectId,
+          userId: "",
+          licenseId: undefined,
+          amount: Number(payment.amount),
+          listPrice: Number(payment.list_price),
+          discount: Number(payment.discount),
+          plan: payment.plan,
+          currency: payment.currency as Currency,
+          method: payment.method,
+          reference: payment.reference,
+          employeeId: payment.recorded_by,
+          createdAt: payment.created_at,
+          status: payment.paid_status,
+          notes: payment.notes,
+          userEmail: payment.user_email,
+          licenseKey: payment.license_key ?? undefined,
         }),
       );
     },

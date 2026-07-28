@@ -11,6 +11,7 @@ export type {
   LicenseDevice,
   CreateLicenseInput,
   LicensePlan,
+  LicenseBillingInput,
   LicenseService,
   LicenseStatus,
   LicenseType,

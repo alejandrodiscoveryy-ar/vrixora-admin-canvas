@@ -17,8 +17,15 @@ export interface LicenseType {
 export interface LicensePlan {
   code: string;
   name: string;
+  licenseType: string;
+  durationDays: number | null;
+  price: number;
+  currency: Currency;
   maxDevices: number;
   features: Record<string, unknown>;
+  description: string | null;
+  isActive: boolean;
+  isFeatured: boolean;
 }
 
 export interface ServiceLicense {
@@ -92,11 +99,33 @@ export interface ServicePayment {
   userId: string;
   licenseId?: string;
   amount: number;
+  listPrice: number;
+  discount: number;
+  plan: string;
   currency: Currency;
   method: "card" | "transfer" | "cash" | "paypal";
   reference: string;
   employeeId: string;
   createdAt: string;
+  status: "pending" | "paid" | "cancelled" | "refunded" | "complimentary";
+  notes: string | null;
+  userEmail?: string;
+  licenseKey?: string;
+}
+
+export interface LicenseBillingInput {
+  projectId?: string;
+  email?: string;
+  licenseId?: string;
+  plan: string;
+  startedAt?: string;
+  licenseStatus?: LicenseStatus;
+  method: ServicePayment["method"];
+  reference: string;
+  notes?: string;
+  overrideAmount?: number;
+  adjustmentReason?: string;
+  paymentStatus: ServicePayment["status"];
 }
 
 export interface ProjectService {
@@ -127,10 +156,15 @@ export interface LicenseService {
   listHistory(licenseId: string): Promise<LicenseAuditEntry[]>;
   manageDevice(deviceId: string, operation: "block" | "remove", reason?: string): Promise<void>;
   resetDevices(licenseId: string, reason: string): Promise<number>;
+  listAdminPlans(projectId: string): Promise<LicensePlan[]>;
+  savePlan(projectId: string, plan: LicensePlan): Promise<LicensePlan>;
+  assignWithPayment(input: LicenseBillingInput): Promise<ServiceLicense>;
+  renewWithPayment(input: LicenseBillingInput): Promise<ServiceLicense>;
 }
 
 export interface PaymentService {
   list(projectId: string): Promise<ServicePayment[]>;
+  listAdmin(projectId: string): Promise<ServicePayment[]>;
 }
 
 export interface LicenseAuditLogService {

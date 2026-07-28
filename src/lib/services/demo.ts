@@ -60,7 +60,21 @@ export const demoServices: AdminServices = {
       ];
     },
     async listPlans() {
-      return [{ code: "standard", name: "Estándar", maxDevices: 1, features: {} }];
+      return [
+        {
+          code: "standard",
+          name: "Estándar",
+          licenseType: "annual",
+          durationDays: 365,
+          price: 0,
+          currency: "CUP",
+          maxDevices: 1,
+          features: {},
+          description: null,
+          isActive: true,
+          isFeatured: false,
+        },
+      ];
     },
     async renew(licenseId, durationDays = 365) {
       const license = LICENSES.find((candidate) => candidate.id === licenseId);
@@ -123,6 +137,18 @@ export const demoServices: AdminServices = {
     async resetDevices() {
       return 0;
     },
+    async listAdminPlans() {
+      return this.listPlans();
+    },
+    async savePlan(_projectId, plan) {
+      return plan;
+    },
+    async assignWithPayment() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async renewWithPayment() {
+      throw new Error("Esta operación requiere Supabase");
+    },
   },
   payments: {
     async list(projectId) {
@@ -132,12 +158,20 @@ export const demoServices: AdminServices = {
         userId: payment.clientId,
         licenseId: payment.licenseId,
         amount: payment.amount,
+        listPrice: payment.amount,
+        discount: 0,
+        plan: "standard",
         currency: payment.currency,
         method: payment.method,
         reference: payment.reference,
         employeeId: payment.employeeId,
         createdAt: payment.createdAt,
+        status: "paid",
+        notes: null,
       }));
+    },
+    async listAdmin(projectId) {
+      return this.list(projectId);
     },
   },
   licenseAuditLog: {
