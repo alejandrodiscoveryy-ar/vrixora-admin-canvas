@@ -200,6 +200,12 @@ export interface LicenseService {
 export interface PaymentService {
   list(projectId: string): Promise<ServicePayment[]>;
   listAdmin(projectId: string): Promise<ServicePayment[]>;
+  record(input: LicenseBillingInput): Promise<ServicePayment>;
+  updateStatus(
+    paymentId: string,
+    status: ServicePayment["status"],
+    notes?: string,
+  ): Promise<ServicePayment>;
 }
 
 export interface LicenseAuditLogService {

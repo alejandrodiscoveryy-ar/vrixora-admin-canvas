@@ -203,6 +203,12 @@ export const demoServices: AdminServices = {
     async listAdmin(projectId) {
       return this.list(projectId);
     },
+    async record() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async updateStatus() {
+      throw new Error("Esta operación requiere Supabase");
+    },
   },
   licenseAuditLog: {
     async list(projectId) {

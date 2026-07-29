@@ -550,6 +550,61 @@ export const supabaseServices: AdminServices = {
         }),
       );
     },
+    async record(input) {
+      const { data, error } = await getSupabaseClient().rpc("admin_record_license_payment", {
+        target_license_id: input.licenseId,
+        target_plan: input.plan,
+        target_method: input.method,
+        target_reference: input.reference,
+        target_notes: input.notes ?? null,
+        target_override_amount: input.overrideAmount ?? null,
+        target_adjustment_reason: input.adjustmentReason ?? null,
+        target_payment_status: input.paymentStatus,
+      });
+      throwIfError(error);
+      return {
+        id: data.id,
+        projectId: data.project_id,
+        userId: data.user_id,
+        licenseId: data.license_id,
+        amount: Number(data.amount),
+        listPrice: Number(data.list_price),
+        discount: Number(data.discount),
+        plan: data.plan,
+        currency: data.currency as Currency,
+        method: data.method,
+        reference: data.reference,
+        employeeId: data.recorded_by,
+        createdAt: data.created_at,
+        status: data.status,
+        notes: data.notes,
+      };
+    },
+    async updateStatus(paymentId, status, notes) {
+      const { data, error } = await getSupabaseClient().rpc("admin_update_payment_status", {
+        target_payment_id: paymentId,
+        target_status: status,
+        target_notes: notes ?? null,
+      });
+      throwIfError(error);
+      return {
+        id: data.id,
+        projectId: data.project_id,
+        userId: data.user_id,
+        licenseId: data.license_id,
+        amount: Number(data.amount),
+        listPrice: Number(data.list_price),
+        discount: Number(data.discount),
+        plan: data.plan,
+        currency: data.currency as Currency,
+        method: data.method,
+        reference: data.reference,
+        employeeId: data.recorded_by,
+        createdAt: data.created_at,
+        status: data.status,
+        notes: data.notes,
+      };
+    },
   },
   licenseAuditLog: {
     async list(projectId) {
