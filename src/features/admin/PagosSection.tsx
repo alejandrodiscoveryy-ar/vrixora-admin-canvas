@@ -66,6 +66,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin-payments", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["license-audit", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-clients", projectId] });
   };
   const markPaid = useMutation({
     mutationFn: (paymentId: string) =>
@@ -293,7 +295,8 @@ function RegisterPaymentDialog({
         <DialogHeader>
           <DialogTitle>Registrar pago</DialogTitle>
           <DialogDescription>
-            Registra el cobro en el historial sin cambiar la vigencia ni la clave de la licencia.
+            Un pago confirmado activa la licencia y extiende su vigencia según el plan seleccionado.
+            La clave se conserva.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -362,8 +365,12 @@ function RegisterPaymentDialog({
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Referencia">
-            <Input value={reference} onChange={(event) => setReference(event.target.value)} />
+          <Field label="Referencia (opcional)">
+            <Input
+              value={reference}
+              placeholder="Se genera automáticamente si queda vacía"
+              onChange={(event) => setReference(event.target.value)}
+            />
           </Field>
           {adjusted && (
             <div className="sm:col-span-2">
@@ -385,7 +392,6 @@ function RegisterPaymentDialog({
               mutation.isPending ||
               !licenseId ||
               !planCode ||
-              !reference.trim() ||
               (adjusted && !reason.trim())
             }
             onClick={() => mutation.mutate()}
