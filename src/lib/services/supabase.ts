@@ -227,6 +227,17 @@ export const supabaseServices: AdminServices = {
         }),
       );
     },
+    async setClientStatus(projectId, userId, status, reason) {
+      const { data, error } = await getSupabaseClient().rpc("admin_set_client_license_status", {
+        target_project_id: projectId,
+        target_user_id: userId,
+        target_status: status,
+        target_reason: reason?.trim() || null,
+      });
+      throwIfError(error);
+      if (!data) throw new Error("No se pudo actualizar la licencia.");
+      return mapLicense(data);
+    },
     async list(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_licenses", {
         target_project_id: projectId,

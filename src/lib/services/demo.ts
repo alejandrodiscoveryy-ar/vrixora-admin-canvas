@@ -50,6 +50,9 @@ export const demoServices: AdminServices = {
         expiresAt: license.expiresAt,
       }));
     },
+    async setClientStatus() {
+      throw new Error("Esta operación requiere Supabase");
+    },
     async list(projectId) {
       return LICENSES.filter((license) => license.projectId === projectId).map((license) => ({
         id: license.id,

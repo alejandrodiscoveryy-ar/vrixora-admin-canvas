@@ -165,6 +165,12 @@ export interface ProjectMemberService {
 
 export interface LicenseService {
   listClients(projectId: string): Promise<ServiceClient[]>;
+  setClientStatus(
+    projectId: string,
+    userId: string,
+    status: LicenseStatus,
+    reason?: string,
+  ): Promise<ServiceLicense>;
   list(projectId: string): Promise<ServiceLicense[]>;
   listTypes(): Promise<LicenseType[]>;
   listPlans(): Promise<LicensePlan[]>;
