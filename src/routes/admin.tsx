@@ -3,6 +3,7 @@ import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useUserProjects } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Activity,
   ChevronRight,
@@ -203,14 +204,19 @@ function TopBar() {
       </div>
       <div className="ml-auto flex items-center gap-3">
         <div className="hidden sm:flex items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-3 py-1.5">
-          <div className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-[11px] font-semibold uppercase text-primary">
-            {user.email?.slice(0, 2) ?? "AD"}
-          </div>
+          <Avatar className="h-8 w-8 border border-primary/20">
+            <AvatarImage
+              src={user.avatarUrl ?? undefined}
+              alt={user.name}
+              referrerPolicy="no-referrer"
+            />
+            <AvatarFallback className="bg-primary/10 text-[11px] font-semibold uppercase text-primary">
+              {user.name.slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
           <div className="leading-tight">
-            <div className="max-w-48 truncate text-xs font-medium text-foreground">
-              {user.email}
-            </div>
-            <div className="text-[10px] text-muted-foreground">Administrador</div>
+            <div className="max-w-48 truncate text-xs font-medium text-foreground">{user.name}</div>
+            <div className="max-w-48 truncate text-[10px] text-muted-foreground">{user.email}</div>
           </div>
         </div>
         <Button

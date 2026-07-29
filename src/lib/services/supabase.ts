@@ -168,7 +168,7 @@ export const supabaseServices: AdminServices = {
 
       const { data: profiles, error: profilesError } = await client
         .from("profiles")
-        .select("id,email,display_name")
+        .select("id,email,display_name,avatar_url")
         .in(
           "id",
           members.map((member) => member.user_id),
@@ -183,6 +183,7 @@ export const supabaseServices: AdminServices = {
           id: member.user_id,
           name: profile?.display_name || profile?.email || "Usuario",
           email: profile?.email ?? "",
+          avatarUrl: profile?.avatar_url ?? null,
           role: member.role,
           projectIds: [projectId],
         };
@@ -208,16 +209,28 @@ export const supabaseServices: AdminServices = {
   },
   licenses: {
     async listClients(projectId) {
-      const { data, error } = await getSupabaseClient().rpc("admin_list_registered_clients", {
+      const client = getSupabaseClient();
+      const { data, error } = await client.rpc("admin_list_registered_clients", {
         target_project_id: projectId,
       });
       throwIfError(error);
 
-      return (data ?? []).map(
+      const rows = (data ?? []) as ClientRow[];
+      const userIds = rows.map((row) => row.user_id);
+      const { data: profiles, error: profilesError } = userIds.length
+        ? await client.from("profiles").select("id,avatar_url").in("id", userIds)
+        : { data: [], error: null };
+      throwIfError(profilesError);
+      const avatarsByUserId = new Map(
+        (profiles ?? []).map((profile) => [profile.id, profile.avatar_url]),
+      );
+
+      return rows.map(
         (client: ClientRow): ServiceClient => ({
           userId: client.user_id,
           email: client.email,
           displayName: client.display_name ?? client.email,
+          avatarUrl: avatarsByUserId.get(client.user_id) ?? null,
           registeredAt: client.registered_at,
           licenseId: client.license_id,
           licenseKey: client.license_key,

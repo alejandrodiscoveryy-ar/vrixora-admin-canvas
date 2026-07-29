@@ -42,6 +42,7 @@ export const demoServices: AdminServices = {
         userId: license.clientId,
         email: CLIENTS.find((client) => client.id === license.clientId)?.email ?? "",
         displayName: CLIENTS.find((client) => client.id === license.clientId)?.name ?? "",
+        avatarUrl: null,
         registeredAt: license.activatedAt,
         licenseId: license.id,
         licenseKey: license.key,

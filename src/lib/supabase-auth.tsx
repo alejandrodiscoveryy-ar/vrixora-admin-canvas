@@ -4,7 +4,7 @@ import type { AuthSession } from "@supabase/supabase-js";
 
 type AuthCtx = {
   session: AuthSession | null;
-  user: { id: string; email: string; name: string } | null;
+  user: { id: string; email: string; name: string; avatarUrl: string | null } | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -21,12 +21,10 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         const client = getSupabaseClient();
-        
+
         // Recuperar sesión almacenada
-        const stored = typeof window !== "undefined" 
-          ? localStorage.getItem(STORAGE_KEY)
-          : null;
-        
+        const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
@@ -113,6 +111,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         id: session.user.id,
         email: session.user.email || "",
         name: session.user.user_metadata?.full_name || session.user.email || "User",
+        avatarUrl:
+          session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
       }
     : null;
 

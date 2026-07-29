@@ -53,6 +53,7 @@ export interface ServiceClient {
   userId: string;
   email: string;
   displayName: string;
+  avatarUrl: string | null;
   registeredAt: string;
   licenseId: string | null;
   licenseKey: string | null;

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search, ShieldCheck, Users } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -104,7 +105,21 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             <TableBody>
               {clients.map((client) => (
                 <TableRow key={client.userId}>
-                  <TableCell className="font-medium">{client.displayName}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-border">
+                        <AvatarImage
+                          src={client.avatarUrl ?? undefined}
+                          alt={client.displayName}
+                          referrerPolicy="no-referrer"
+                        />
+                        <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
+                          {client.displayName.slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{client.displayName}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>{client.email}</TableCell>
                   <TableCell className="font-mono text-xs">
                     {client.licenseKey ?? "Prueba inicial"}

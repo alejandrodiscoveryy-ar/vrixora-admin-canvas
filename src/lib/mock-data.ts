@@ -55,6 +55,7 @@ export type Employee = {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
   projectIds: string[];
   role: "employee" | "owner";
 };
@@ -123,9 +124,27 @@ export const PROJECTS: Project[] = [
 ];
 
 export const EMPLOYEES: Employee[] = [
-  { id: "u_owner", name: "Ada Vrix", email: "ada@vrixora.demo", role: "owner", projectIds: ["tuktuk", "copias", "future"] },
-  { id: "u_emp_a", name: "Empleado A", email: "a@vrixora.demo", role: "employee", projectIds: ["tuktuk"] },
-  { id: "u_emp_b", name: "Empleado B", email: "b@vrixora.demo", role: "employee", projectIds: ["tuktuk", "copias"] },
+  {
+    id: "u_owner",
+    name: "Ada Vrix",
+    email: "ada@vrixora.demo",
+    role: "owner",
+    projectIds: ["tuktuk", "copias", "future"],
+  },
+  {
+    id: "u_emp_a",
+    name: "Empleado A",
+    email: "a@vrixora.demo",
+    role: "employee",
+    projectIds: ["tuktuk"],
+  },
+  {
+    id: "u_emp_b",
+    name: "Empleado B",
+    email: "b@vrixora.demo",
+    role: "employee",
+    projectIds: ["tuktuk", "copias"],
+  },
 ];
 
 const mkClients = (projectId: string, base: string, n: number): Client[] =>

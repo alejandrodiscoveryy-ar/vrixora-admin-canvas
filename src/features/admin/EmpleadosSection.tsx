@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,7 +129,21 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
             <TableBody>
               {rows.map((employee) => (
                 <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-border">
+                        <AvatarImage
+                          src={employee.avatarUrl ?? undefined}
+                          alt={employee.name}
+                          referrerPolicy="no-referrer"
+                        />
+                        <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
+                          {employee.name.slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{employee.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{employee.email}</TableCell>
                   <TableCell>
                     <Badge variant={employee.role === "owner" ? "default" : "secondary"}>
