@@ -1,19 +1,20 @@
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useUserProjects } from "@/hooks/useProjects";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
-import { LogOut, LayoutDashboard, FolderKanban, Loader2, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  ChevronRight,
+  FolderKanban,
+  LayoutDashboard,
+  Loader2,
+  LogOut,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -62,12 +63,14 @@ function AdminChrome() {
   }
 
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="admin-shell min-h-screen flex w-full">
       <SideNav />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar />
-        <main className="flex-1 p-6 md:p-8">
-          <Outlet />
+        <main className="flex-1 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:px-10">
+          <div className="mx-auto w-full max-w-[1480px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
@@ -94,41 +97,54 @@ function SideNav() {
   }) => (
     <Link
       to={to}
-      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
         active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
       }`}
     >
-      <Icon className="h-4 w-4" />
+      <span
+        className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+          active ? "bg-primary/15" : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
       <span className="truncate">{label}</span>
+      <ChevronRight
+        className={`ml-auto h-3.5 w-3.5 transition-all ${
+          active
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-60"
+        }`}
+      />
     </Link>
   );
 
   return (
-    <aside className="hidden md:flex w-64 shrink-0 flex-col border-r bg-sidebar">
-      <div className="p-5 border-b border-sidebar-border">
+    <aside className="hidden md:flex w-[272px] shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl">
+      <div className="px-5 py-5 border-b border-sidebar-border/80">
         <Link to="/admin/proyectos" className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-black flex items-center justify-center ring-1 ring-primary/30">
+          <div className="h-11 w-11 rounded-xl bg-black flex items-center justify-center ring-1 ring-primary/30 shadow-[0_0_24px_-8px_var(--primary)]">
             <VrixoraLogo variant="mark" size={28} />
           </div>
           <div>
-            <div className="text-sm font-semibold tracking-widest text-gradient">VRIXORA</div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              Admin panel
+            <div className="text-sm font-semibold tracking-[0.22em] text-gradient">VRIXORA</div>
+            <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+              Centro de control
             </div>
           </div>
         </Link>
       </div>
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3.5 space-y-1">
         <NavLink
           to="/admin/proyectos"
           icon={LayoutDashboard}
           label="Proyectos"
           active={path === "/admin/proyectos"}
         />
-        <div className="mt-6 mb-2 px-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-          Accesos rápidos
+        <div className="mt-7 mb-2.5 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+          Espacios de trabajo
         </div>
         {isLoading ? (
           <div className="flex items-center justify-center py-4">
@@ -146,13 +162,16 @@ function SideNav() {
           ))
         )}
       </nav>
-      <div className="p-3 border-t border-sidebar-border">
-        <Badge
-          variant="outline"
-          className="w-full justify-center text-[10px] uppercase tracking-widest"
-        >
-          Datos en vivo
-        </Badge>
+      <div className="p-3.5 border-t border-sidebar-border/80">
+        <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-emerald-300">
+            <Activity className="h-3.5 w-3.5" />
+            Sistema operativo
+          </div>
+          <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">
+            Datos sincronizados con Supabase
+          </p>
+        </div>
       </div>
     </aside>
   );
@@ -161,7 +180,7 @@ function SideNav() {
 function TopBar() {
   const { user, signOut } = useSupabaseAuth();
   const navigate = useNavigate();
-  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -177,10 +196,30 @@ function TopBar() {
   if (!user) return null;
 
   return (
-    <header className="h-14 border-b bg-card/40 backdrop-blur flex items-center gap-3 px-4 md:px-6">
-      <div className="text-xs text-muted-foreground hidden md:block">{user.email}</div>
+    <header className="sticky top-0 z-30 h-16 border-b border-border/70 bg-background/80 backdrop-blur-xl flex items-center gap-3 px-4 md:px-6 lg:px-8">
+      <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+        <ShieldCheck className="h-4 w-4 text-primary" />
+        <span>Administración segura</span>
+      </div>
       <div className="ml-auto flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={handleSignOut} disabled={isSigningOut}>
+        <div className="hidden sm:flex items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-3 py-1.5">
+          <div className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-[11px] font-semibold uppercase text-primary">
+            {user.email?.slice(0, 2) ?? "AD"}
+          </div>
+          <div className="leading-tight">
+            <div className="max-w-48 truncate text-xs font-medium text-foreground">
+              {user.email}
+            </div>
+            <div className="text-[10px] text-muted-foreground">Administrador</div>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+        >
           {isSigningOut ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
