@@ -155,7 +155,7 @@ function SideNav() {
           projects.map((p) => (
             <NavLink
               key={p.id}
-              to={"/admin/proyectos/$id"}
+              to={`/admin/proyectos/${p.id}`}
               icon={FolderKanban}
               label={p.name}
               active={path.startsWith(`/admin/proyectos/${p.id}`)}
