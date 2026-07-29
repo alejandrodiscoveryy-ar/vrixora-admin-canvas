@@ -8,6 +8,7 @@ import type {
   LicenseType,
   LicenseValidationResult,
   ServiceLicense,
+  ServiceClient,
   ServicePayment,
   CreateLicenseInput,
   LicenseAuditEntry,
@@ -69,6 +70,18 @@ type PaymentRow = {
   notes: string | null;
   user_email: string;
   license_key: string | null;
+};
+
+type ClientRow = {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  registered_at: string;
+  license_id: string | null;
+  license_key: string | null;
+  plan: string;
+  status: string;
+  expires_at: string;
 };
 
 function mapLicense(license: LicenseRow): ServiceLicense {
@@ -194,6 +207,26 @@ export const supabaseServices: AdminServices = {
     },
   },
   licenses: {
+    async listClients(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_registered_clients", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+
+      return (data ?? []).map(
+        (client: ClientRow): ServiceClient => ({
+          userId: client.user_id,
+          email: client.email,
+          displayName: client.display_name ?? client.email,
+          registeredAt: client.registered_at,
+          licenseId: client.license_id,
+          licenseKey: client.license_key,
+          plan: client.plan,
+          status: client.status as LicenseStatus,
+          expiresAt: client.expires_at,
+        }),
+      );
+    },
     async list(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_licenses", {
         target_project_id: projectId,

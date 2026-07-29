@@ -1,4 +1,5 @@
 import {
+  CLIENTS,
   DEMO_USERS,
   EMPLOYEES,
   HISTORY,
@@ -36,6 +37,19 @@ export const demoServices: AdminServices = {
     },
   },
   licenses: {
+    async listClients(projectId) {
+      return LICENSES.filter((license) => license.projectId === projectId).map((license) => ({
+        userId: license.clientId,
+        email: CLIENTS.find((client) => client.id === license.clientId)?.email ?? "",
+        displayName: CLIENTS.find((client) => client.id === license.clientId)?.name ?? "",
+        registeredAt: license.activatedAt,
+        licenseId: license.id,
+        licenseKey: license.key,
+        plan: "standard",
+        status: license.status,
+        expiresAt: license.expiresAt,
+      }));
+    },
     async list(projectId) {
       return LICENSES.filter((license) => license.projectId === projectId).map((license) => ({
         id: license.id,

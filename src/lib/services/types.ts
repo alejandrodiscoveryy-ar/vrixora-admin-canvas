@@ -49,6 +49,18 @@ export interface ServiceLicense {
   activeDevices: number;
 }
 
+export interface ServiceClient {
+  userId: string;
+  email: string;
+  displayName: string;
+  registeredAt: string;
+  licenseId: string | null;
+  licenseKey: string | null;
+  plan: string;
+  status: LicenseStatus;
+  expiresAt: string;
+}
+
 export interface LicenseDevice {
   id: string;
   licenseId: string;
@@ -152,6 +164,7 @@ export interface ProjectMemberService {
 }
 
 export interface LicenseService {
+  listClients(projectId: string): Promise<ServiceClient[]>;
   list(projectId: string): Promise<ServiceLicense[]>;
   listTypes(): Promise<LicenseType[]>;
   listPlans(): Promise<LicensePlan[]>;

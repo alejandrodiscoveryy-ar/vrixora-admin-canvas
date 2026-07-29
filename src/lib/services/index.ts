@@ -19,6 +19,7 @@ export type {
   PaymentService,
   ProjectMemberService,
   ProjectService,
+  ServiceClient,
   ServiceLicense,
   ServicePayment,
 } from "./types";
