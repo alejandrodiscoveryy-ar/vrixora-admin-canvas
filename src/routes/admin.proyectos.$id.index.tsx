@@ -21,6 +21,9 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
+  Legend,
+  Line,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -49,6 +52,12 @@ function ResumenPage() {
   const canViewLicenses = permissions.includes("licenses.view");
   const canViewPayments = permissions.includes("payments.view");
   const canViewAudit = permissions.includes("audit.view");
+  const canViewAnalytics = permissions.includes("analytics.view");
+
+  const analyticsTo = new Date().toISOString().slice(0, 10);
+  const analyticsFromDate = new Date();
+  analyticsFromDate.setDate(analyticsFromDate.getDate() - 29);
+  const analyticsFrom = analyticsFromDate.toISOString().slice(0, 10);
 
   const clients = useQuery({
     queryKey: ["admin-clients", id],
@@ -72,6 +81,15 @@ function ResumenPage() {
     queryKey: ["admin-audit", id],
     queryFn: () => supabaseServices.audit.list(id, 8),
     enabled: !permissionsLoading && canViewAudit,
+    refetchInterval: REFRESH_INTERVAL,
+  });
+  const analytics = useQuery({
+    queryKey: ["summary-usage-analytics", id, analyticsFrom, analyticsTo],
+    queryFn: () => supabaseServices.usageAnalytics.series(id, {
+      from: analyticsFrom,
+      to: analyticsTo,
+    }),
+    enabled: !permissionsLoading && canViewAnalytics,
     refetchInterval: REFRESH_INTERVAL,
   });
 
@@ -120,6 +138,20 @@ function ResumenPage() {
     paidPayments.flatMap((payment) => payment.amount > 0 && payment.userEmail ? [payment.userEmail] : []),
   ).size;
   const conversion = clientRows.length ? Math.round((convertedUsers / clientRows.length) * 100) : 0;
+  const analyticsRows = analytics.data ?? [];
+  const todayAnalytics = analyticsRows.at(-1);
+  const yesterdayAnalytics = analyticsRows.at(-2);
+  const lastSevenAnalytics = analyticsTotals(analyticsRows.slice(-7));
+  const previousSevenAnalytics = analyticsTotals(analyticsRows.slice(-14, -7));
+  const acquisitionVariation = percentageVariation(
+    lastSevenAnalytics.newUsers,
+    previousSevenAnalytics.newUsers,
+  );
+  const dailyAcquisition = analyticsRows.slice(-14).map((row) => ({
+    ...row,
+    label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" })
+      .format(new Date(`${row.date}T12:00:00`)),
+  }));
 
   const monthlyRevenue = useMemo(() => {
     const formatter = new Intl.DateTimeFormat("es", { month: "short" });
@@ -145,7 +177,7 @@ function ResumenPage() {
     return [...totals].map(([name, value]) => ({ name, value }));
   }, [licenseRows]);
 
-  const queryError = [clients, licenses, payments, audit].find((query) => query.isError)?.error;
+  const queryError = [clients, licenses, payments, audit, analytics].find((query) => query.isError)?.error;
 
   return (
     <div className="space-y-6">
@@ -179,6 +211,61 @@ function ResumenPage() {
         {canViewPayments && <Kpi icon={TrendingUp} label="Ingresos mensuales" value={revenueSince(startOfMonth)} tone="success" />}
         {canViewPayments && <Kpi icon={Activity} label="Ingresos anuales" value={revenueSince(startOfYear)} tone="success" />}
       </div>
+
+      {canViewAnalytics && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold">CaptaciÃ³n diaria de clientes</h3>
+              <p className="text-sm text-muted-foreground">
+                Registros, pruebas y ventas reales. Las aperturas de la aplicaciÃ³n se muestran por separado.
+              </p>
+            </div>
+            <TrendBadge value={acquisitionVariation} label="Ãºltimos 7 dÃ­as" />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Kpi icon={UserPlus} label="Clientes nuevos hoy" value={todayAnalytics?.newUsers ?? 0} />
+            <Kpi icon={Sparkles} label="Pruebas iniciadas hoy" value={todayAnalytics?.trials ?? 0} />
+            <Kpi icon={BadgeDollarSign} label="Licencias pagadas hoy" value={todayAnalytics?.paidLicenses ?? 0} tone="success" />
+            <Kpi icon={Activity} label="Usuarios activos hoy" value={todayAnalytics?.activeUsers ?? 0} tone="success" />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-3">
+            <Card className="glass-panel xl:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">EvoluciÃ³n diaria Â· Ãºltimos 14 dÃ­as</CardTitle>
+              </CardHeader>
+              <CardContent className="h-80 min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={dailyAcquisition} margin={{ left: -20, right: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                    <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="newUsers" name="Clientes nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="trials" name="Pruebas" fill="#fbbf24" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="paidLicenses" name="Pagadas" fill="#34d399" radius={[3, 3, 0, 0]} />
+                    <Line type="monotone" dataKey="activeUsers" name="Activos" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            <Card className="glass-panel">
+              <CardHeader><CardTitle className="text-base">Pulso de captaciÃ³n</CardTitle></CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <HealthRow label="Nuevos hoy" value={String(todayAnalytics?.newUsers ?? 0)} />
+                <HealthRow label="Nuevos ayer" value={String(yesterdayAnalytics?.newUsers ?? 0)} />
+                <HealthRow label="Nuevos Ãºltimos 7 dÃ­as" value={String(lastSevenAnalytics.newUsers)} />
+                <HealthRow label="7 dÃ­as anteriores" value={String(previousSevenAnalytics.newUsers)} />
+                <HealthRow label="Pruebas Ãºltimos 7 dÃ­as" value={String(lastSevenAnalytics.trials)} />
+                <HealthRow label="Pagadas Ãºltimos 7 dÃ­as" value={String(lastSevenAnalytics.paidLicenses)} />
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-3">
         {canViewPayments && (
@@ -261,6 +348,39 @@ function HealthRow({ label, value }: { label: string; value: string }) {
 
 function EmptyMessage({ text }: { text: string }) {
   return <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">{text}</div>;
+}
+
+function analyticsTotals(rows: Awaited<ReturnType<typeof supabaseServices.usageAnalytics.series>>) {
+  return rows.reduce(
+    (totals, row) => ({
+      newUsers: totals.newUsers + row.newUsers,
+      trials: totals.trials + row.trials,
+      paidLicenses: totals.paidLicenses + row.paidLicenses,
+    }),
+    { newUsers: 0, trials: 0, paidLicenses: 0 },
+  );
+}
+
+function percentageVariation(current: number, previous: number) {
+  if (previous === 0) return current === 0 ? 0 : 100;
+  return ((current - previous) / previous) * 100;
+}
+
+function TrendBadge({ value, label }: { value: number; label: string }) {
+  const stable = value === 0;
+  const positive = value > 0;
+  return (
+    <Badge
+      variant="outline"
+      className={stable
+        ? "text-muted-foreground"
+        : positive
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+          : "border-destructive/30 bg-destructive/10 text-destructive"}
+    >
+      {positive ? "+" : ""}{value.toFixed(1)}% {label}
+    </Badge>
+  );
 }
 
 function humanize(value: string) {
