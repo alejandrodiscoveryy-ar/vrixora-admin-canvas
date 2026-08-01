@@ -27,6 +27,7 @@ export type {
   ServiceClient,
   ServiceLicense,
   ServicePayment,
+  UpdatePaymentInput,
   RetentionMetrics,
   UsageAnalyticsDay,
   UsageAnalyticsDimensions,

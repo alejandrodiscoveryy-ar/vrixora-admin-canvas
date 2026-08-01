@@ -681,6 +681,34 @@ export const supabaseServices: AdminServices = {
         notes: data.notes,
       };
     },
+    async update(input) {
+      const { data, error } = await getSupabaseClient().rpc("admin_update_payment_record", {
+        target_payment_id: input.paymentId,
+        target_amount: input.amount,
+        target_currency: input.currency,
+        target_method: input.method,
+        target_reference: input.reference,
+        target_status: input.status,
+        target_notes: input.notes ?? null,
+        target_adjustment_reason: input.adjustmentReason,
+      });
+      throwIfError(error);
+      return {
+        id: data.id, projectId: data.project_id, userId: data.user_id,
+        licenseId: data.license_id, amount: Number(data.amount),
+        listPrice: Number(data.list_price), discount: Number(data.discount), plan: data.plan,
+        currency: data.currency as Currency, method: data.method, reference: data.reference,
+        employeeId: data.recorded_by, createdAt: data.created_at, status: data.status,
+        notes: data.notes,
+      };
+    },
+    async remove(paymentId, reason) {
+      const { error } = await getSupabaseClient().rpc("admin_delete_payment_record", {
+        target_payment_id: paymentId,
+        target_reason: reason,
+      });
+      throwIfError(error);
+    },
   },
   licenseAuditLog: {
     async list(projectId) {

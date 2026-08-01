@@ -165,6 +165,17 @@ export interface ServicePayment {
   licenseKey?: string;
 }
 
+export interface UpdatePaymentInput {
+  paymentId: string;
+  amount: number;
+  currency: Currency;
+  method: ServicePayment["method"];
+  reference: string;
+  status: ServicePayment["status"];
+  notes?: string;
+  adjustmentReason: string;
+}
+
 export interface LicenseBillingInput {
   projectId?: string;
   email?: string;
@@ -241,6 +252,8 @@ export interface PaymentService {
     status: ServicePayment["status"],
     notes?: string,
   ): Promise<ServicePayment>;
+  update(input: UpdatePaymentInput): Promise<ServicePayment>;
+  remove(paymentId: string, reason: string): Promise<void>;
 }
 
 export interface LicenseAuditLogService {

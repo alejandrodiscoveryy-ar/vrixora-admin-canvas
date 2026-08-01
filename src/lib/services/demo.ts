@@ -239,6 +239,12 @@ export const demoServices: AdminServices = {
     async record() {
       throw new Error("Esta operación requiere Supabase");
     },
+    async update() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async remove() {
+      throw new Error("Esta operación requiere Supabase");
+    },
     async updateStatus() {
       throw new Error("Esta operación requiere Supabase");
     },

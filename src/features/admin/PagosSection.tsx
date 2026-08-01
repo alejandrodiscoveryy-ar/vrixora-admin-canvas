@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, CircleDollarSign, Plus, Search, Wallet } from "lucide-react";
+import { CalendarClock, CheckCircle2, CircleDollarSign, Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
@@ -48,6 +48,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [method, setMethod] = useState("all");
   const [date, setDate] = useState("");
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [editing, setEditing] = useState<ServicePayment | null>(null);
+  const [deleting, setDeleting] = useState<ServicePayment | null>(null);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("payments.manage");
   const query = useQuery({
@@ -216,17 +218,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     <TableCell data-label="Administrador" className="break-all font-mono text-xs">{p.employeeId}</TableCell>
                     <TableCell data-label="Notas">{p.notes || "—"}</TableCell>
                     <TableCell data-label="Acciones">
-                      {canManage && p.status === "pending" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={markPaid.isPending}
-                          onClick={() => markPaid.mutate(p.id)}
-                        >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Marcar pagado
-                        </Button>
-                      )}
+                      {canManage && <div className="flex flex-wrap gap-2">
+                        {p.status === "pending" && <Button size="sm" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate(p.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Marcar pagado</Button>}
+                        <Button size="icon" variant="ghost" title="Editar pago" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="text-destructive" title="Eliminar pago" onClick={() => setDeleting(p)}><Trash2 className="h-4 w-4" /></Button>
+                      </div>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -247,6 +243,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         plans={availablePlans.data ?? []}
         onDone={refresh}
       />
+      {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />}
+      {deleting && <DeletePaymentDialog payment={deleting} onClose={() => setDeleting(null)} onDone={refresh} />}
     </div>
   );
 }
@@ -407,6 +405,45 @@ function RegisterPaymentDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function EditPaymentDialog({ payment, onClose, onDone }: { payment: ServicePayment; onClose: () => void; onDone: () => void }) {
+  const [amount, setAmount] = useState(String(payment.amount));
+  const [currency, setCurrency] = useState(payment.currency);
+  const [method, setMethod] = useState(payment.method);
+  const [status, setStatus] = useState(payment.status);
+  const [reference, setReference] = useState(payment.reference);
+  const [notes, setNotes] = useState(payment.notes ?? "");
+  const [reason, setReason] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => supabaseServices.payments.update({ paymentId: payment.id, amount: Number(amount), currency, method, reference, status, notes, adjustmentReason: reason }),
+    onSuccess: () => { toast.success("Pago actualizado correctamente."); onDone(); onClose(); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+  return <Dialog open onOpenChange={(next) => !next && onClose()}>
+    <DialogContent className="max-w-xl"><DialogHeader><DialogTitle>Editar pago</DialogTitle><DialogDescription>Corrige los datos del cobro. La vigencia ya concedida no se reduce al editar un pago confirmado.</DialogDescription></DialogHeader>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Importe pagado"><Input type="number" min="0" max={payment.listPrice} value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+        <Field label="Moneda"><Select value={currency} onValueChange={(v) => setCurrency(v as ServicePayment["currency"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["CUP","USD","EUR"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></Field>
+        <Field label="Estado"><Select value={status} onValueChange={(v) => setStatus(v as ServicePayment["status"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="paid">Pagado</SelectItem><SelectItem value="pending">Pendiente</SelectItem><SelectItem value="cancelled">Cancelado</SelectItem><SelectItem value="refunded">Reembolsado</SelectItem><SelectItem value="complimentary">Cortesía</SelectItem></SelectContent></Select></Field>
+        <Field label="Método"><Select value={method} onValueChange={(v) => setMethod(v as ServicePayment["method"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transfer">Transferencia</SelectItem><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="card">Tarjeta</SelectItem><SelectItem value="paypal">PayPal</SelectItem></SelectContent></Select></Field>
+        <div className="sm:col-span-2"><Field label="Referencia"><Input value={reference} onChange={(e) => setReference(e.target.value)} /></Field></div>
+        <div className="sm:col-span-2"><Field label="Notas"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field></div>
+        <div className="sm:col-span-2"><Field label="Motivo de la corrección"><Input value={reason} placeholder="Obligatorio para la auditoría" onChange={(e) => setReason(e.target.value)} /></Field></div>
+      </div>
+      <DialogFooter><Button variant="ghost" onClick={onClose}>Cancelar</Button><Button disabled={mutation.isPending || !reason.trim() || !reference.trim() || Number(amount) < 0 || Number(amount) > payment.listPrice} onClick={() => mutation.mutate()}>{mutation.isPending ? "Guardando…" : "Guardar cambios"}</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
+
+function DeletePaymentDialog({ payment, onClose, onDone }: { payment: ServicePayment; onClose: () => void; onDone: () => void }) {
+  const [reason, setReason] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => supabaseServices.payments.remove(payment.id, reason),
+    onSuccess: () => { toast.success("Pago eliminado del historial."); onDone(); onClose(); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+  return <Dialog open onOpenChange={(next) => !next && onClose()}><DialogContent><DialogHeader><DialogTitle>Eliminar pago</DialogTitle><DialogDescription>Se eliminará el pago {payment.reference} y dejará de contar en las estadísticas. Por seguridad, esto no reduce la vigencia ya otorgada a la licencia.</DialogDescription></DialogHeader><Field label="Motivo de eliminación"><Textarea value={reason} placeholder="Obligatorio para conservar la trazabilidad" onChange={(e) => setReason(e.target.value)} /></Field><DialogFooter><Button variant="ghost" onClick={onClose}>Cancelar</Button><Button variant="destructive" disabled={mutation.isPending || !reason.trim()} onClick={() => mutation.mutate()}>{mutation.isPending ? "Eliminando…" : "Eliminar pago"}</Button></DialogFooter></DialogContent></Dialog>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
