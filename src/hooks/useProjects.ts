@@ -46,3 +46,14 @@ export function useProjectMembers(projectId: string | null) {
     enabled: !!projectId,
   });
 }
+
+export function useProjectPermissions(projectId: string | null) {
+  return useQuery({
+    queryKey: ["project-permissions", projectId],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return supabaseServices.projectMembers.permissions(projectId);
+    },
+    enabled: !!projectId,
+  });
+}

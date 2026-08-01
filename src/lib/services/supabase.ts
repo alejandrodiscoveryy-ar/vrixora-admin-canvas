@@ -14,6 +14,7 @@ import type {
   LicenseAuditEntry,
   LicenseDevice,
   LicenseBillingInput,
+  ProjectPermission,
 } from "./types";
 
 function throwIfError(error: { message: string } | null) {
@@ -42,6 +43,7 @@ type LicenseRow = {
 };
 
 type PlanRow = {
+  project_id?: string;
   code: string;
   name: string;
   license_type: string;
@@ -82,6 +84,19 @@ type ClientRow = {
   plan: string;
   status: string;
   expires_at: string;
+};
+
+type AuditEventRow = {
+  id: number | string;
+  actor_id: string | null;
+  actor_email: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  metadata: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
 };
 
 function mapLicense(license: LicenseRow): ServiceLicense {
@@ -189,13 +204,18 @@ export const supabaseServices: AdminServices = {
         };
       });
     },
+    async permissions(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("get_my_project_permissions", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      return (data ?? []) as ProjectPermission[];
+    },
     async add(projectId, email, role) {
-      if (role !== "employee") {
-        throw new Error("Solo se pueden asignar empleados desde el panel.");
-      }
-      const { error } = await getSupabaseClient().rpc("admin_add_project_member_by_email", {
+      const { error } = await getSupabaseClient().rpc("admin_upsert_project_member", {
         target_project_id: projectId,
         target_email: email.trim(),
+        target_role: role,
       });
       throwIfError(error);
     },
@@ -280,17 +300,19 @@ export const supabaseServices: AdminServices = {
         }),
       );
     },
-    async listPlans() {
+    async listPlans(projectId) {
       const { data, error } = await getSupabaseClient()
         .from("license_plans")
         .select(
-          "code,name,license_type,duration_days,price,currency,max_devices,features,description,active,is_featured",
+          "project_id,code,name,license_type,duration_days,price,currency,max_devices,features,description,active,is_featured",
         )
+        .eq("project_id", projectId)
         .order("name");
       throwIfError(error);
 
       return (data ?? []).map(
         (plan: PlanRow): LicensePlan => ({
+          projectId: plan.project_id,
           code: plan.code,
           name: plan.name,
           licenseType: plan.license_type ?? "monthly",
@@ -416,6 +438,7 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
       return (data ?? []).map(
         (plan: PlanRow): LicensePlan => ({
+          projectId,
           code: plan.code,
           name: plan.name,
           licenseType: plan.license_type,
@@ -447,6 +470,7 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
       return {
+        projectId,
         code: data.code,
         name: data.name,
         licenseType: data.license_type,
@@ -625,6 +649,27 @@ export const supabaseServices: AdminServices = {
           createdAt: entry.created_at,
         }),
       );
+    },
+  },
+  audit: {
+    async list(projectId, limit = 100) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_audit_events", {
+        target_project_id: projectId,
+        target_limit: limit,
+      });
+      throwIfError(error);
+      return (data ?? []).map((entry: AuditEventRow) => ({
+        id: Number(entry.id),
+        actorId: entry.actor_id,
+        actorEmail: entry.actor_email,
+        action: entry.action,
+        entityType: entry.entity_type,
+        entityId: entry.entity_id,
+        metadata: entry.metadata ?? {},
+        ipAddress: entry.ip_address,
+        userAgent: entry.user_agent,
+        createdAt: entry.created_at,
+      }));
     },
   },
 };

@@ -102,7 +102,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
   });
   const plansQuery = useQuery({
     queryKey: ["license-plans"],
-    queryFn: () => supabaseServices.licenses.listPlans(),
+    queryFn: () => supabaseServices.licenses.listPlans(projectId),
   });
   const licenses = useMemo(() => licensesQuery.data ?? [], [licensesQuery.data]);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["admin-licenses", projectId] });

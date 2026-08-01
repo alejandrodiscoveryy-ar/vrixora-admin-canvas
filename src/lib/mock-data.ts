@@ -1,5 +1,5 @@
 // DEMO DATA — clearly marked. Replace with Supabase queries later.
-export type Role = "owner" | "employee";
+export type Role = "owner" | "admin" | "support" | "accounting" | "marketing";
 
 export type DemoUser = {
   id: string;
@@ -57,7 +57,7 @@ export type Employee = {
   email: string;
   avatarUrl?: string | null;
   projectIds: string[];
-  role: "employee" | "owner";
+  role: Role;
 };
 
 export type HistoryEntry = {
@@ -80,14 +80,14 @@ export const DEMO_USERS: DemoUser[] = [
   {
     id: "u_emp_a",
     name: "Empleado A",
-    role: "employee",
+    role: "support",
     email: "a@vrixora.demo",
     projectIds: ["tuktuk"],
   },
   {
     id: "u_emp_b",
     name: "Empleado B",
-    role: "employee",
+    role: "accounting",
     email: "b@vrixora.demo",
     projectIds: ["tuktuk", "copias"],
   },
@@ -135,14 +135,14 @@ export const EMPLOYEES: Employee[] = [
     id: "u_emp_a",
     name: "Empleado A",
     email: "a@vrixora.demo",
-    role: "employee",
+    role: "support",
     projectIds: ["tuktuk"],
   },
   {
     id: "u_emp_b",
     name: "Empleado B",
     email: "b@vrixora.demo",
-    role: "employee",
+    role: "accounting",
     projectIds: ["tuktuk", "copias"],
   },
 ];

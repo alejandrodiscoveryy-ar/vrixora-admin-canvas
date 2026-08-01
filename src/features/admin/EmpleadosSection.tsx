@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -27,16 +34,25 @@ import { Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useProjectMembers } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { toast } from "sonner";
+import type { ProjectRole } from "@/lib/services";
+
+const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: string }> = [
+  { value: "admin", label: "Administrador" },
+  { value: "support", label: "Soporte" },
+  { value: "accounting", label: "Contabilidad" },
+  { value: "marketing", label: "Marketing" },
+];
 
 export default function EmpleadosSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: rows = [], isLoading, error } = useProjectMembers(projectId);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Exclude<ProjectRole, "owner">>("support");
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
   const addMember = useMutation({
-    mutationFn: () => supabaseServices.projectMembers.add(projectId, email, "employee"),
+    mutationFn: () => supabaseServices.projectMembers.add(projectId, email, role),
     onSuccess: async () => {
       await refresh();
       setEmail("");
@@ -87,6 +103,24 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="empleado@correo.com"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="employee-role">Rol</Label>
+              <Select
+                value={role}
+                onValueChange={(value) => setRole(value as Exclude<ProjectRole, "owner">)}
+              >
+                <SelectTrigger id="employee-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)}>

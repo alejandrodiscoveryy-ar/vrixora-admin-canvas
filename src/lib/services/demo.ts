@@ -29,6 +29,19 @@ export const demoServices: AdminServices = {
     async list(projectId) {
       return EMPLOYEES.filter((employee) => employee.projectIds.includes(projectId));
     },
+    async permissions() {
+      return [
+        "project.view",
+        "customers.view",
+        "licenses.view",
+        "plans.view",
+        "payments.view",
+        "members.view",
+        "analytics.view",
+        "settings.view",
+        "audit.view",
+      ];
+    },
     async add() {
       throw new Error("Esta operación requiere Supabase");
     },
@@ -89,9 +102,10 @@ export const demoServices: AdminServices = {
         },
       ];
     },
-    async listPlans() {
+    async listPlans(projectId) {
       return [
         {
+          projectId,
           code: "standard",
           name: "Estándar",
           licenseType: "annual",
@@ -167,8 +181,8 @@ export const demoServices: AdminServices = {
     async resetDevices() {
       return 0;
     },
-    async listAdminPlans() {
-      return this.listPlans();
+    async listAdminPlans(projectId) {
+      return this.listPlans(projectId);
     },
     async savePlan(_projectId, plan) {
       return plan;
@@ -213,6 +227,11 @@ export const demoServices: AdminServices = {
   licenseAuditLog: {
     async list(projectId) {
       return HISTORY.filter((entry) => entry.projectId === projectId);
+    },
+  },
+  audit: {
+    async list() {
+      return [];
     },
   },
 };

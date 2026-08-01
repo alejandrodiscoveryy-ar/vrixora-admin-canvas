@@ -3,6 +3,23 @@ import type { Employee, HistoryEntry, Project } from "@/lib/mock-data";
 export type DataProvider = "demo" | "supabase";
 export type Currency = "CUP" | "USD" | "EUR";
 export type LicenseStatus = "active" | "pending" | "expired" | "suspended" | "revoked";
+export type ProjectRole = "owner" | "admin" | "support" | "accounting" | "marketing";
+export type ProjectPermission =
+  | "project.view"
+  | "customers.view"
+  | "customers.manage"
+  | "licenses.view"
+  | "licenses.manage"
+  | "plans.view"
+  | "plans.manage"
+  | "payments.view"
+  | "payments.manage"
+  | "members.view"
+  | "members.manage"
+  | "analytics.view"
+  | "settings.view"
+  | "settings.manage"
+  | "audit.view";
 
 export interface LicenseType {
   code: string;
@@ -15,6 +32,7 @@ export interface LicenseType {
 }
 
 export interface LicensePlan {
+  projectId?: string;
   code: string;
   name: string;
   licenseType: string;
@@ -160,7 +178,8 @@ export interface ProjectService {
 
 export interface ProjectMemberService {
   list(projectId: string): Promise<Employee[]>;
-  add(projectId: string, email: string, role: "owner" | "employee"): Promise<void>;
+  permissions(projectId: string): Promise<ProjectPermission[]>;
+  add(projectId: string, email: string, role: Exclude<ProjectRole, "owner">): Promise<void>;
   remove(projectId: string, userId: string): Promise<void>;
 }
 
@@ -174,7 +193,7 @@ export interface LicenseService {
   ): Promise<ServiceLicense>;
   list(projectId: string): Promise<ServiceLicense[]>;
   listTypes(): Promise<LicenseType[]>;
-  listPlans(): Promise<LicensePlan[]>;
+  listPlans(projectId: string): Promise<LicensePlan[]>;
   renew(licenseId: string, durationDays?: number, note?: string): Promise<ServiceLicense>;
   validate(
     projectId: string,
@@ -212,6 +231,23 @@ export interface LicenseAuditLogService {
   list(projectId: string): Promise<HistoryEntry[]>;
 }
 
+export interface AuditEvent {
+  id: number;
+  actorId: string | null;
+  actorEmail: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  metadata: Record<string, unknown>;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export interface AuditService {
+  list(projectId: string, limit?: number): Promise<AuditEvent[]>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -219,4 +255,5 @@ export interface AdminServices {
   licenses: LicenseService;
   payments: PaymentService;
   licenseAuditLog: LicenseAuditLogService;
+  audit: AuditService;
 }
