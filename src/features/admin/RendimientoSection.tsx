@@ -5,16 +5,16 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, ResponsiveContai
 import { adminChartLegendProps, adminChartTooltipProps } from "@/lib/chart-theme";
 import { supabaseServices, type LicenseStatus, type UsageAnalyticsDay } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AnalyticsDateRangePicker, usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Grain = "daily" | "weekly" | "monthly";
 
 export default function RendimientoSection({ projectId }: { projectId: string }) {
-  const [fromDate, setFromDate] = useState(() => monthStartIso());
-  const [toDate, setToDate] = useState(() => isoDate(new Date()));
+  const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(`vrixora:analytics-range:${projectId}`);
+  const fromDate = dateRange.from;
+  const toDate = dateRange.to;
   const [grain, setGrain] = useState<Grain>("daily");
   const [plan, setPlan] = useState("all");
   const [status, setStatus] = useState("all");
@@ -23,8 +23,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
   const [version, setVersion] = useState("all");
   const setPeriodDays = (days: number) => {
     const end = new Date();
-    setToDate(isoDate(end));
-    setFromDate(isoDate(addDays(end, -(days - 1))));
+    setDateRange({ to: isoDate(end), from: isoDate(addDays(end, -(days - 1))) });
   };
   const periodDays = Math.max(1, Math.round((new Date(`${toDate}T12:00:00`).getTime() - new Date(`${fromDate}T12:00:00`).getTime()) / 86_400_000) + 1);
   const from = isoDate(addDays(new Date(`${fromDate}T12:00:00`), -periodDays));
@@ -78,13 +77,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
         <Badge variant="outline">Eventos agregados en Supabase</Badge>
       </div>
 
-      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border/60 bg-card/40 p-3">
-        <DateInput label="Desde" value={fromDate} max={toDate} onChange={setFromDate} />
-        <DateInput label="Hasta" value={toDate} min={fromDate} max={isoDate(new Date())} onChange={setToDate} />
-        <Button variant="outline" size="sm" onClick={() => setPeriodDays(1)}>Hoy</Button>
-        <Button variant="outline" size="sm" onClick={() => { setFromDate(monthStartIso()); setToDate(isoDate(new Date())); }}>Este mes</Button>
-        <span className="text-xs text-muted-foreground">Periodo actual: {periodDays} día{periodDays === 1 ? "" : "s"}</span>
-      </div>
+      <AnalyticsDateRangePicker range={dateRange} onChange={setDateRange} />
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <Filter value={String(periodDays)} onChange={(value) => setPeriodDays(Number(value))} label="Periodo" values={[{ value: "7", label: "Últimos 7 días" }, { value: "30", label: "Últimos 30 días" }, { value: "90", label: "Últimos 90 días" }, { value: "180", label: "Últimos 180 días" }]} />
@@ -132,7 +125,6 @@ export default function RendimientoSection({ projectId }: { projectId: string })
 
 function option(value: string) { return { value, label: value }; }
 function isoDate(date: Date) { return date.toISOString().slice(0, 10); }
-function monthStartIso() { const now = new Date(); return isoDate(new Date(now.getFullYear(), now.getMonth(), 1)); }
 function addDays(date: Date, days: number) { const next = new Date(date); next.setDate(next.getDate() + days); return next; }
 function variation(current: number, previous: number) { return previous === 0 ? (current === 0 ? 0 : 100) : ((current - previous) / previous) * 100; }
 
@@ -146,7 +138,6 @@ function aggregate(rows: UsageAnalyticsDay[], grain: Grain) {
 }
 
 function Filter({ value, onChange, label, values }: { value: string; onChange: (value: string) => void; label: string; values: { value: string; label: string }[] }) { return <Select value={value} onValueChange={onChange}><SelectTrigger aria-label={label}><SelectValue placeholder={label} /></SelectTrigger><SelectContent>{values.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select>; }
-function DateInput({ label, value, min, max, onChange }: { label: string; value: string; min?: string; max?: string; onChange: (value: string) => void }) { return <label className="space-y-1 text-xs text-muted-foreground"><span>{label}</span><Input className="h-9 w-40 text-foreground" type="date" value={value} min={min} max={max} onChange={(event) => onChange(event.target.value)} /></label>; }
 
 function Metric({ label, value, previous, comparison = "vs. periodo anterior", inverse = false }: { label: string; value: string | number; previous?: number; comparison?: string; inverse?: boolean }) { const numeric = typeof value === "number" ? value : null; const change = numeric !== null && previous !== undefined ? variation(numeric, previous) : null; const positive = change !== null && (inverse ? change < 0 : change > 0); return <Card className="glass-panel"><CardContent className="p-4"><div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div><div className="mt-1 text-2xl font-semibold">{value}</div>{change !== null && <div className={`mt-1 flex items-center gap-1 text-xs ${change === 0 ? "text-muted-foreground" : positive ? "text-emerald-500" : "text-destructive"}`}>{change > 0 ? <TrendingUp className="h-3 w-3" /> : change < 0 ? <TrendingDown className="h-3 w-3" /> : <Activity className="h-3 w-3" />}{change > 0 ? "+" : ""}{change.toFixed(1)}% {comparison}</div>}</CardContent></Card>; }
 

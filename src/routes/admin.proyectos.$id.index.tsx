@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -29,8 +29,7 @@ import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AnalyticsDateRangePicker, usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 export const Route = createFileRoute("/admin/proyectos/$id/")({
@@ -51,8 +50,9 @@ function ResumenPage() {
   const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
 
-  const [analyticsFrom, setAnalyticsFrom] = useState(() => monthStartIso());
-  const [analyticsTo, setAnalyticsTo] = useState(() => isoDate(new Date()));
+  const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(`vrixora:analytics-range:${id}`);
+  const analyticsFrom = dateRange.from;
+  const analyticsTo = dateRange.to;
 
   const clients = useQuery({
     queryKey: ["admin-clients", id],
@@ -193,13 +193,7 @@ function ResumenPage() {
         </Badge>
       </div>
 
-      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border/60 bg-card/40 p-3">
-        <DateField label="Desde" value={analyticsFrom} max={analyticsTo} onChange={setAnalyticsFrom} />
-        <DateField label="Hasta" value={analyticsTo} min={analyticsFrom} max={isoDate(new Date())} onChange={setAnalyticsTo} />
-        <Button variant="outline" size="sm" onClick={() => { const today = isoDate(new Date()); setAnalyticsFrom(today); setAnalyticsTo(today); }}>Hoy</Button>
-        <Button variant="outline" size="sm" onClick={() => { setAnalyticsFrom(monthStartIso()); setAnalyticsTo(isoDate(new Date())); }}>Este mes</Button>
-        <span className="text-xs text-muted-foreground">El mes actual se usa por defecto.</span>
-      </div>
+      <AnalyticsDateRangePicker range={dateRange} onChange={setDateRange} />
 
       {queryError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -455,12 +449,6 @@ function analyticsTotals(rows: Awaited<ReturnType<typeof supabaseServices.usageA
     }),
     { newUsers: 0, trials: 0, paidLicenses: 0 },
   );
-}
-
-function isoDate(date: Date) { return date.toISOString().slice(0, 10); }
-function monthStartIso() { const now = new Date(); return isoDate(new Date(now.getFullYear(), now.getMonth(), 1)); }
-function DateField({ label, value, min, max, onChange }: { label: string; value: string; min?: string; max?: string; onChange: (value: string) => void }) {
-  return <label className="space-y-1 text-xs text-muted-foreground"><span>{label}</span><Input className="h-9 w-40 text-foreground" type="date" value={value} min={min} max={max} onChange={(event) => onChange(event.target.value)} /></label>;
 }
 
 function percentageVariation(current: number, previous: number) {
