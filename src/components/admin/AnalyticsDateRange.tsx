@@ -25,9 +25,18 @@ export function usePersistentAnalyticsDateRange(storageKey: string) {
 }
 
 export function AnalyticsDateRangePicker({ range, onChange }: { range: AnalyticsDateRange; onChange: (range: AnalyticsDateRange) => void }) {
-  const preset = identifyPreset(range);
+  const identifiedPreset = identifyPreset(range);
+  const [customOpen, setCustomOpen] = useState(identifiedPreset === "custom");
+  useEffect(() => {
+    if (identifiedPreset === "custom") setCustomOpen(true);
+  }, [identifiedPreset]);
+  const preset = customOpen ? "custom" : identifiedPreset;
   const choose = (value: string) => {
-    if (value === "custom") return;
+    if (value === "custom") {
+      setCustomOpen(true);
+      return;
+    }
+    setCustomOpen(false);
     onChange(presetRange(value));
   };
   return <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-card/40 p-3">
@@ -45,8 +54,11 @@ export function AnalyticsDateRangePicker({ range, onChange }: { range: Analytics
         </SelectContent>
       </Select>
     </label>
-    <DateField label="Desde" value={range.from} max={range.to} onChange={(from) => onChange({ ...range, from })} />
-    <DateField label="Hasta" value={range.to} min={range.from} max={todayIso()} onChange={(to) => onChange({ ...range, to })} />
+    {customOpen && <>
+      <DateField label="Desde" value={range.from} max={range.to} onChange={(from) => onChange({ ...range, from })} />
+      <DateField label="Hasta" value={range.to} min={range.from} max={todayIso()} onChange={(to) => onChange({ ...range, to })} />
+    </>}
+    {!customOpen && <div className="flex h-9 items-center text-xs text-muted-foreground">{formatRange(range)}</div>}
     <div className="flex h-9 items-center gap-1.5 text-xs text-emerald-400"><Check className="h-3.5 w-3.5" />Selección guardada</div>
   </div>;
 }
@@ -72,3 +84,9 @@ function identifyPreset(range: AnalyticsDateRange) {
   return "custom";
 }
 function validDate(value: string) { return /^\d{4}-\d{2}-\d{2}$/.test(value); }
+function formatRange(range: AnalyticsDateRange) {
+  const formatter = new Intl.DateTimeFormat("es", { day: "2-digit", month: "short", year: "numeric" });
+  const from = formatter.format(new Date(`${range.from}T12:00:00`));
+  const to = formatter.format(new Date(`${range.to}T12:00:00`));
+  return range.from === range.to ? from : `${from} – ${to}`;
+}
