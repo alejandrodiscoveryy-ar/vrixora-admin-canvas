@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, BarChart3, CalendarDays, Loader2, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { adminChartLegendProps, adminChartTooltipProps } from "@/lib/chart-theme";
 import { supabaseServices, type LicenseStatus, type UsageAnalyticsDay } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,10 +97,10 @@ export default function RendimientoSection({ projectId }: { projectId: string })
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ChartCard title="Uso real de la aplicación" description="Aperturas válidas convertidas en usuarios únicos; una recarga no infla el DAU.">
-          <ResponsiveContainer width="100%" height="100%"><AreaChart data={chartRows}><CartesianGrid strokeDasharray="3 3" opacity={0.2} /><XAxis dataKey="date" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Legend /><Area type="monotone" dataKey="activeUsers" name="Activos" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} /><Area type="monotone" dataKey="logins" name="Inicios de sesión" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.12} /></AreaChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%"><AreaChart data={chartRows}><CartesianGrid strokeDasharray="3 3" opacity={0.2} /><XAxis dataKey="date" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip {...adminChartTooltipProps} /><Legend {...adminChartLegendProps} /><Area type="monotone" dataKey="activeUsers" name="Activos" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} /><Area type="monotone" dataKey="logins" name="Inicios de sesión" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.12} /></AreaChart></ResponsiveContainer>
         </ChartCard>
         <ChartCard title="Crecimiento y licencias" description="Registros, pruebas y licencias pagadas son métricas independientes.">
-          <ResponsiveContainer width="100%" height="100%"><BarChart data={chartRows}><CartesianGrid strokeDasharray="3 3" opacity={0.2} /><XAxis dataKey="date" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Legend /><Bar dataKey="newUsers" name="Registros" fill="#38bdf8" /><Bar dataKey="trials" name="Pruebas" fill="#fbbf24" /><Bar dataKey="paidLicenses" name="Pagadas" fill="#34d399" /></BarChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%"><BarChart data={chartRows}><CartesianGrid strokeDasharray="3 3" opacity={0.2} /><XAxis dataKey="date" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip {...adminChartTooltipProps} /><Legend {...adminChartLegendProps} /><Bar dataKey="newUsers" name="Registros" fill="#38bdf8" /><Bar dataKey="trials" name="Pruebas" fill="#fbbf24" /><Bar dataKey="paidLicenses" name="Pagadas" fill="#34d399" /></BarChart></ResponsiveContainer>
         </ChartCard>
       </div>
 
