@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -77,6 +77,8 @@ function errorMessage(error: unknown) {
   if (message.includes("ADMIN_REQUIRED"))
     return "Solo un administrador puede realizar esta operación.";
   if (message.includes("REASON_REQUIRED")) return "Debes indicar un motivo.";
+  if (message.includes("PLAN_LICENSE_TYPE_MISMATCH"))
+    return "El tipo de licencia no coincide con el plan seleccionado. Vuelve a elegir el plan.";
   return message;
 }
 
@@ -625,6 +627,14 @@ function OperationDialog({
   const [paymentStatus, setPaymentStatus] = useState<ServicePayment["status"]>("paid");
   const [customPrice, setCustomPrice] = useState("");
   const selectedPlan = plans.find((item) => item.code === plan);
+  const selectedType = types.find((item) => item.code === type);
+  useEffect(() => {
+    if (!license || !operation) return;
+    const currentPlan = plans.find((item) => item.code === license.plan);
+    setPlan(license.plan);
+    setType(currentPlan?.licenseType ?? license.licenseType);
+    setReason("");
+  }, [license, operation, plans]);
   const mutation = useMutation({
     mutationFn: () => {
       if (!license || !operation) throw new Error("Selecciona una licencia y una operación.");
@@ -699,18 +709,18 @@ function OperationDialog({
               <Field label="Plan">
                 <Filter
                   value={plan || "all"}
-                  onChange={(v) => setPlan(v === "all" ? "" : v)}
+                  onChange={(v) => {
+                    const nextPlan = v === "all" ? "" : v;
+                    setPlan(nextPlan);
+                    setType(plans.find((item) => item.code === nextPlan)?.licenseType ?? "");
+                  }}
                   placeholder="Plan"
                   items={plans}
                 />
               </Field>
               <Field label="Tipo">
-                <Filter
-                  value={type || "all"}
-                  onChange={(v) => setType(v === "all" ? "" : v)}
-                  placeholder="Tipo"
-                  items={types}
-                />
+                <Input readOnly value={selectedType?.name ?? type} />
+                <p className="text-xs text-muted-foreground">Definido automáticamente por el plan.</p>
               </Field>
             </>
           )}
@@ -784,6 +794,7 @@ function OperationDialog({
               mutation.isPending ||
               (sensitive && !reason) ||
               (operation === "extend" && (!days || !reason)) ||
+              (operation === "plan" && !plan) ||
               (operation === "renew" && (!plan || !reference || (!!customPrice && !reason)))
             }
             onClick={() => mutation.mutate()}
