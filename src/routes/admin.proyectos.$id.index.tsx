@@ -209,12 +209,12 @@ function ResumenPage() {
         <section className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold">CaptaciÃ³n diaria de clientes</h3>
+              <h3 className="text-base font-semibold">Captación diaria de clientes</h3>
               <p className="text-sm text-muted-foreground">
-                Registros, pruebas y ventas reales. Las aperturas de la aplicaciÃ³n se muestran por separado.
+                Registros, pruebas y ventas reales. Las aperturas de la aplicación se muestran por separado.
               </p>
             </div>
-            <TrendBadge value={acquisitionVariation} label="Ãºltimos 7 dÃ­as" />
+            <TrendBadge value={acquisitionVariation} label="últimos 7 días" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -227,7 +227,7 @@ function ResumenPage() {
           <div className="grid gap-6 xl:grid-cols-3">
             <Card className="glass-panel xl:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">EvoluciÃ³n diaria Â· Ãºltimos 14 dÃ­as</CardTitle>
+                <CardTitle className="text-base">Evolución diaria · últimos 14 días</CardTitle>
               </CardHeader>
               <CardContent className="h-80 min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
@@ -246,14 +246,14 @@ function ResumenPage() {
               </CardContent>
             </Card>
             <Card className="glass-panel">
-              <CardHeader><CardTitle className="text-base">Pulso de captaciÃ³n</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Pulso de captación</CardTitle></CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <HealthRow label="Nuevos hoy" value={String(todayAnalytics?.newUsers ?? 0)} />
                 <HealthRow label="Nuevos ayer" value={String(yesterdayAnalytics?.newUsers ?? 0)} />
-                <HealthRow label="Nuevos Ãºltimos 7 dÃ­as" value={String(lastSevenAnalytics.newUsers)} />
-                <HealthRow label="7 dÃ­as anteriores" value={String(previousSevenAnalytics.newUsers)} />
-                <HealthRow label="Pruebas Ãºltimos 7 dÃ­as" value={String(lastSevenAnalytics.trials)} />
-                <HealthRow label="Pagadas Ãºltimos 7 dÃ­as" value={String(lastSevenAnalytics.paidLicenses)} />
+                <HealthRow label="Nuevos últimos 7 días" value={String(lastSevenAnalytics.newUsers)} />
+                <HealthRow label="7 días anteriores" value={String(previousSevenAnalytics.newUsers)} />
+                <HealthRow label="Pruebas últimos 7 días" value={String(lastSevenAnalytics.trials)} />
+                <HealthRow label="Pagadas últimos 7 días" value={String(lastSevenAnalytics.paidLicenses)} />
               </CardContent>
             </Card>
           </div>
