@@ -264,6 +264,60 @@ export interface AuditService {
   list(projectId: string, limit?: number): Promise<AuditEvent[]>;
 }
 
+export interface UsageAnalyticsFilters {
+  from: string;
+  to: string;
+  plan?: string;
+  licenseStatus?: LicenseStatus;
+  source?: string;
+  campaign?: string;
+  appVersion?: string;
+}
+
+export interface UsageAnalyticsDay {
+  date: string;
+  newUsers: number;
+  trials: number;
+  paidLicenses: number;
+  activeUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+  logins: number;
+  renewals: number;
+  expired: number;
+  revenueCUP: number;
+  revenueUSD: number;
+  revenueEUR: number;
+}
+
+export interface UsageAnalyticsDimensions {
+  sources: string[];
+  campaigns: string[];
+  versions: string[];
+}
+
+export interface RetentionMetrics {
+  cohortCount: number;
+  eligible7: number;
+  eligible30: number;
+  retained7: number;
+  retained30: number;
+  retention7Rate: number;
+  retention30Rate: number;
+  trialUsers: number;
+  paidUsers: number;
+  trialToPaidRate: number;
+}
+
+export interface UsageAnalyticsService {
+  series(projectId: string, filters: UsageAnalyticsFilters): Promise<UsageAnalyticsDay[]>;
+  dimensions(projectId: string): Promise<UsageAnalyticsDimensions>;
+  retention(
+    projectId: string,
+    filters: Pick<UsageAnalyticsFilters, "plan" | "source" | "campaign">,
+  ): Promise<RetentionMetrics>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -272,4 +326,5 @@ export interface AdminServices {
   payments: PaymentService;
   licenseAuditLog: LicenseAuditLogService;
   audit: AuditService;
+  usageAnalytics: UsageAnalyticsService;
 }

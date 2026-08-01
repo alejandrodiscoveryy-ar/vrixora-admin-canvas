@@ -27,6 +27,11 @@ export type {
   ServiceClient,
   ServiceLicense,
   ServicePayment,
+  RetentionMetrics,
+  UsageAnalyticsDay,
+  UsageAnalyticsDimensions,
+  UsageAnalyticsFilters,
+  UsageAnalyticsService,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {
