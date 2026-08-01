@@ -76,10 +76,13 @@ function ResumenPage() {
   });
 
   const now = Date.now();
-  const licenseRows = licenses.data ?? [];
-  const clientRows = clients.data ?? [];
-  const paymentRows = payments.data ?? [];
-  const paidPayments = paymentRows.filter((payment) => payment.status === "paid");
+  const licenseRows = useMemo(() => licenses.data ?? [], [licenses.data]);
+  const clientRows = useMemo(() => clients.data ?? [], [clients.data]);
+  const paymentRows = useMemo(() => payments.data ?? [], [payments.data]);
+  const paidPayments = useMemo(
+    () => paymentRows.filter((payment) => payment.status === "paid"),
+    [paymentRows],
+  );
   const active = licenseRows.filter((license) => license.status === "active").length;
   const trial = licenseRows.filter((license) => license.licenseType === "trial" && license.status === "active").length;
   const suspended = licenseRows.filter((license) => license.status === "suspended").length;
@@ -95,7 +98,14 @@ function ResumenPage() {
   startOfDay.setHours(0, 0, 0, 0);
   const startOfWeek = new Date(startOfDay);
   startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
-  const startOfMonth = new Date(startOfDay.getFullYear(), startOfDay.getMonth(), 1);
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const startOfMonth = useMemo(
+    () => {
+      const [year, month] = currentMonthKey.split("-").map(Number);
+      return new Date(year, month - 1, 1);
+    },
+    [currentMonthKey],
+  );
   const startOfYear = new Date(startOfDay.getFullYear(), 0, 1);
   const revenueSince = (date: Date) => formatRevenue(
     paidPayments.filter((payment) => new Date(payment.createdAt) >= date),
