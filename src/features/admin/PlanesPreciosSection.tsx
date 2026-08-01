@@ -129,6 +129,7 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
         ))}
       </div>
       <PlanDialog
+        key={editing ? editing.code || "new-plan" : "closed-plan-dialog"}
         projectId={projectId}
         plan={editing}
         types={types.data ?? []}
@@ -171,8 +172,10 @@ function PlanDialog({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [draft, setDraft] = useState<LicensePlan | null>(null);
-  const value = draft?.code === plan?.code ? draft : plan;
+  const [draft, setDraft] = useState<LicensePlan | null>(
+    plan ? { ...plan, features: { ...plan.features } } : null,
+  );
+  const value = draft;
   const set = <K extends keyof LicensePlan>(key: K, next: LicensePlan[K]) =>
     setDraft({ ...(value ?? emptyPlan), [key]: next });
   const mutation = useMutation({
@@ -204,7 +207,8 @@ function PlanDialog({
               <Input
                 disabled={!!plan?.code}
                 value={value.code}
-                onChange={(e) => set("code", e.target.value.toLowerCase())}
+                onChange={(e) => set("code", normalizePlanCode(e.target.value))}
+                placeholder="ejemplo_plan"
               />
             </Field>
             <Field label="Tipo de licencia">
@@ -306,7 +310,12 @@ function PlanDialog({
             Cancelar
           </Button>
           <Button
-            disabled={mutation.isPending || !value?.name || !value?.code}
+            disabled={
+              mutation.isPending ||
+              !value?.name.trim() ||
+              !value?.code ||
+              !/^[a-z][a-z0-9_]*$/.test(value.code)
+            }
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? "Guardando…" : "Guardar plan"}
@@ -315,6 +324,15 @@ function PlanDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function normalizePlanCode(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^([^a-z])+/, "")
+    .replace(/_+/g, "_");
 }
 
 function AssignDialog({
