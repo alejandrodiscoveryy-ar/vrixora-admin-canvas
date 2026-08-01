@@ -94,7 +94,7 @@ function ProjectLayout() {
         </Badge>
       </div>
 
-      <Card className="glass-panel flex gap-1 overflow-x-auto rounded-2xl p-1.5 shadow-[0_16px_60px_-42px_rgba(0,229,255,0.55)]">
+      <Card className="glass-panel grid grid-cols-2 gap-1 rounded-2xl p-1.5 shadow-[0_16px_60px_-42px_rgba(0,229,255,0.55)] sm:grid-cols-3 md:flex md:overflow-x-auto">
         {TABS.filter((tab) => permissions.includes(tab.permission)).map((tab) => {
           const Icon = tab.icon;
           const to = tab.slug ? `${basePath}/${tab.slug}` : basePath;
@@ -104,7 +104,7 @@ function ProjectLayout() {
               key={tab.slug || "resumen"}
               to={tab.slug ? "/admin/proyectos/$id/$section" : "/admin/proyectos/$id"}
               params={tab.slug ? { id: project.id, section: tab.slug } : { id: project.id }}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+              className={`flex min-h-10 items-center justify-center gap-2 rounded-xl px-2 py-2 text-center text-xs font-medium transition-all sm:text-sm md:justify-start md:whitespace-nowrap md:px-3 ${
                 active
                   ? "bg-primary text-primary-foreground shadow-[0_8px_24px_-12px_var(--primary)]"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"

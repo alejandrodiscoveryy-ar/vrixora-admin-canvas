@@ -11,11 +11,21 @@ import {
   LayoutDashboard,
   Loader2,
   LogOut,
+  Menu,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
 import { useEffect, useState } from "react";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -68,7 +78,7 @@ function AdminChrome() {
       <SideNav />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar />
-        <main className="flex-1 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:px-10">
+        <main className="min-w-0 flex-1 px-3 py-5 sm:px-6 md:px-8 md:py-8 lg:px-10">
           <div className="mx-auto w-full max-w-[1480px]">
             <Outlet />
           </div>
@@ -178,6 +188,83 @@ function SideNav() {
   );
 }
 
+function MobileNav() {
+  const { user } = useSupabaseAuth();
+  const { data: projects = [], isLoading } = useUserProjects(user?.id ?? null);
+  const path = useRouterState({ select: (state) => state.location.pathname });
+
+  if (!user) return null;
+
+  const linkClass = (active: boolean) =>
+    `flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${
+      active ? "bg-primary/10 text-primary ring-1 ring-primary/20" : "text-muted-foreground"
+    }`;
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Abrir navegación">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="flex w-[88vw] max-w-sm flex-col p-0">
+        <SheetHeader className="border-b border-sidebar-border/80 px-5 py-5 text-left">
+          <SheetTitle className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-black ring-1 ring-primary/30">
+              <VrixoraLogo variant="mark" size={25} />
+            </span>
+            <span className="text-gradient text-sm tracking-[0.2em]">VRIXORA</span>
+          </SheetTitle>
+          <SheetDescription>Centro de control</SheetDescription>
+        </SheetHeader>
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          <SheetClose asChild>
+            <Link to="/admin/proyectos" className={linkClass(path === "/admin/proyectos")}>
+              <LayoutDashboard className="h-4 w-4" />
+              Proyectos
+            </Link>
+          </SheetClose>
+          <div className="px-3 pb-1 pt-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Espacios de trabajo
+          </div>
+          {isLoading ? (
+            <Loader2 className="mx-auto my-5 h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            projects.map((project) => (
+              <SheetClose asChild key={project.id}>
+                <Link
+                  to="/admin/proyectos/$id"
+                  params={{ id: project.id }}
+                  className={linkClass(path.startsWith(`/admin/proyectos/${project.id}`))}
+                >
+                  <FolderKanban className="h-4 w-4" />
+                  <span className="truncate">{project.name}</span>
+                </Link>
+              </SheetClose>
+            ))
+          )}
+        </nav>
+        <div className="border-t border-sidebar-border/80 p-4">
+          <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+            <Avatar className="h-9 w-9 border border-primary/20">
+              <AvatarImage
+                src={user.avatarUrl ?? undefined}
+                alt={user.name}
+                referrerPolicy="no-referrer"
+              />
+              <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 function TopBar() {
   const { user, signOut } = useSupabaseAuth();
   const navigate = useNavigate();
@@ -197,7 +284,12 @@ function TopBar() {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b border-border/70 bg-background/80 backdrop-blur-xl flex items-center gap-3 px-4 md:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border/70 bg-background/80 px-3 backdrop-blur-xl sm:gap-3 sm:px-4 md:px-6 lg:px-8">
+      <MobileNav />
+      <Link to="/admin/proyectos" className="mr-1 flex items-center gap-2 md:hidden">
+        <VrixoraLogo variant="mark" size={24} />
+        <span className="text-gradient text-xs font-semibold tracking-[0.16em]">VRIXORA</span>
+      </Link>
       <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4 text-primary" />
         <span>Administración segura</span>
@@ -222,14 +314,14 @@ function TopBar() {
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground hover:text-foreground"
+          className="px-2 text-muted-foreground hover:text-foreground sm:px-3"
           onClick={handleSignOut}
           disabled={isSigningOut}
         >
           {isSigningOut ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
           ) : (
-            <LogOut className="h-4 w-4 mr-2" />
+            <LogOut className="h-4 w-4 sm:mr-2" />
           )}
           Cerrar sesión
         </Button>

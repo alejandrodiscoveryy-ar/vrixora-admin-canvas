@@ -227,7 +227,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
             />
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="min-w-0 overflow-hidden md:overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -246,13 +246,13 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
               <TableBody>
                 {filtered.map((license) => (
                   <TableRow key={license.id}>
-                    <TableCell>{license.userEmail}</TableCell>
-                    <TableCell className="font-mono text-xs">{license.key}</TableCell>
-                    <TableCell>
+                    <TableCell data-label="Usuario" className="break-all">{license.userEmail}</TableCell>
+                    <TableCell data-label="Clave" className="break-all font-mono text-xs">{license.key}</TableCell>
+                    <TableCell data-label="Plan">
                       <div>{license.plan}</div>
                       <div className="text-xs text-muted-foreground">{license.licenseType}</div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Estado">
                       <Badge
                         variant={
                           license.status === "active"
@@ -265,22 +265,22 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                         {labels[license.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
+                    <TableCell data-label="Inicio" className="whitespace-nowrap text-xs">
                       {displayDate(license.activatedAt)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
+                    <TableCell data-label="Vencimiento" className="whitespace-nowrap text-xs">
                       {displayDate(license.expiresAt)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Dispositivos">
                       {license.activeDevices} / {license.maxDevices}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
+                    <TableCell data-label="Validación" className="whitespace-nowrap text-xs">
                       {displayDate(license.lastValidation)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
+                    <TableCell data-label="Creación" className="whitespace-nowrap text-xs">
                       {displayDate(license.createdAt)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Acciones">
                       <Button variant="ghost" size="icon" onClick={() => setSelected(license)}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>

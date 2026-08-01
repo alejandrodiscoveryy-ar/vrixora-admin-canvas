@@ -31,7 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Loader2, Plus, Trash2, Users } from "lucide-react";
-import { useProjectMembers } from "@/hooks/useProjects";
+import { useProjectMembers, useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { toast } from "sonner";
 import type { ProjectRole } from "@/lib/services";
@@ -46,6 +46,8 @@ const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: str
 export default function EmpleadosSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: rows = [], isLoading, error } = useProjectMembers(projectId);
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canManage = permissions.includes("members.manage");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Exclude<ProjectRole, "owner">>("support");
@@ -80,7 +82,7 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
             {rows.length}
           </Badge>
         </CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
+        {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="mr-2 h-4 w-4" />
@@ -135,7 +137,7 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -163,7 +165,7 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
             <TableBody>
               {rows.map((employee) => (
                 <TableRow key={employee.id}>
-                  <TableCell>
+                  <TableCell data-label="Empleado">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border border-border">
                         <AvatarImage
@@ -178,14 +180,14 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                       <span className="font-medium">{employee.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{employee.email}</TableCell>
-                  <TableCell>
+                  <TableCell data-label="Correo" className="break-all text-muted-foreground">{employee.email}</TableCell>
+                  <TableCell data-label="Rol">
                     <Badge variant={employee.role === "owner" ? "default" : "secondary"}>
                       {employee.role}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    {employee.role !== "owner" && (
+                  <TableCell data-label="Acciones" className="text-right">
+                    {canManage && employee.role !== "owner" && (
                       <Button
                         variant="ghost"
                         size="icon"

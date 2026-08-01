@@ -60,18 +60,18 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
             <TableBody>
               {events.map((event) => (
                 <TableRow key={event.id}>
-                  <TableCell>{new Date(event.createdAt).toLocaleString("es")}</TableCell>
-                  <TableCell>
+                  <TableCell data-label="Fecha">{new Date(event.createdAt).toLocaleString("es")}</TableCell>
+                  <TableCell data-label="Acción">
                     <Badge variant="secondary">{ACTION_LABELS[event.action] ?? event.action}</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell data-label="Entidad">
                     <div className="font-medium">{event.entityType}</div>
                     <div className="max-w-52 truncate font-mono text-xs text-muted-foreground">
                       {event.entityId ?? "—"}
                     </div>
                   </TableCell>
-                  <TableCell>{event.actorEmail ?? "Sistema"}</TableCell>
-                  <TableCell className="font-mono text-xs">{event.ipAddress ?? "—"}</TableCell>
+                  <TableCell data-label="Responsable">{event.actorEmail ?? "Sistema"}</TableCell>
+                  <TableCell data-label="IP" className="font-mono text-xs">{event.ipAddress ?? "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

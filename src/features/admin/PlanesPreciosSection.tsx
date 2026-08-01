@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useProjectPermissions } from "@/hooks/useProjects";
 
 const emptyPlan: LicensePlan = {
   code: "",
@@ -50,6 +51,9 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
   const client = useQueryClient();
   const [editing, setEditing] = useState<LicensePlan | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canManagePlans = permissions.includes("plans.manage");
+  const canAssign = permissions.includes("licenses.manage") && permissions.includes("payments.manage");
   const plans = useQuery({
     queryKey: ["admin-license-plans", projectId],
     queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
@@ -69,15 +73,15 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
             La configuración comercial se guarda íntegramente en Supabase.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setEditing({ ...emptyPlan })}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {canManagePlans && <Button variant="outline" onClick={() => setEditing({ ...emptyPlan })}>
             <Plus className="mr-2 h-4 w-4" />
             Crear plan
-          </Button>
-          <Button onClick={() => setAssignOpen(true)}>
+          </Button>}
+          {canAssign && <Button onClick={() => setAssignOpen(true)}>
             <BadgeCheck className="mr-2 h-4 w-4" />
             Asignar licencia
-          </Button>
+          </Button>}
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -116,10 +120,10 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
                     </Badge>
                   ))}
               </div>
-              <Button className="w-full" variant="outline" onClick={() => setEditing(plan)}>
+              {canManagePlans && <Button className="w-full" variant="outline" onClick={() => setEditing(plan)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar
-              </Button>
+              </Button>}
             </CardContent>
           </Card>
         ))}

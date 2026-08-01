@@ -37,6 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useProjectPermissions } from "@/hooks/useProjects";
 
 export default function PagosSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
@@ -47,6 +48,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [method, setMethod] = useState("all");
   const [date, setDate] = useState("");
   const [registerOpen, setRegisterOpen] = useState(false);
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canManage = permissions.includes("payments.manage");
   const query = useQuery({
     queryKey: ["admin-payments", projectId],
     queryFn: () => supabaseServices.payments.listAdmin(projectId),
@@ -119,10 +122,12 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             <Wallet className="h-4 w-4 text-primary" />
             Historial de pagos<Badge variant="outline">{filtered.length}</Badge>
           </CardTitle>
-          <Button onClick={() => setRegisterOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Registrar pago
-          </Button>
+          {canManage && (
+            <Button onClick={() => setRegisterOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Registrar pago
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
@@ -156,7 +161,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             />
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
-          <div className="overflow-x-auto">
+          <div className="min-w-0 overflow-hidden md:overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -178,22 +183,22 @@ export default function PagosSection({ projectId }: { projectId: string }) {
               <TableBody>
                 {filtered.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell className="whitespace-nowrap text-xs">
+                    <TableCell data-label="Fecha" className="whitespace-nowrap text-xs">
                       {new Date(p.createdAt).toLocaleString()}
                     </TableCell>
-                    <TableCell>{p.userEmail}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.licenseKey}</TableCell>
-                    <TableCell>{p.plan}</TableCell>
-                    <TableCell>
+                    <TableCell data-label="Usuario" className="break-all">{p.userEmail}</TableCell>
+                    <TableCell data-label="Licencia" className="break-all font-mono text-xs">{p.licenseKey}</TableCell>
+                    <TableCell data-label="Plan">{p.plan}</TableCell>
+                    <TableCell data-label="Precio">
                       {p.listPrice} {p.currency}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Descuento">
                       {p.discount} {p.currency}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell data-label="Pagado" className="font-medium">
                       {p.amount} {p.currency}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Estado">
                       <Badge
                         variant={
                           p.status === "paid"
@@ -206,12 +211,12 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                         {p.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{p.method}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.reference}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.employeeId}</TableCell>
-                    <TableCell>{p.notes || "—"}</TableCell>
-                    <TableCell>
-                      {p.status === "pending" && (
+                    <TableCell data-label="Método">{p.method}</TableCell>
+                    <TableCell data-label="Referencia" className="break-all font-mono text-xs">{p.reference}</TableCell>
+                    <TableCell data-label="Administrador" className="break-all font-mono text-xs">{p.employeeId}</TableCell>
+                    <TableCell data-label="Notas">{p.notes || "—"}</TableCell>
+                    <TableCell data-label="Acciones">
+                      {canManage && p.status === "pending" && (
                         <Button
                           size="sm"
                           variant="outline"

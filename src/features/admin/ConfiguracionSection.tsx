@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useProject } from "@/hooks/useProjects";
+import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: project } = useProject(projectId);
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canManage = permissions.includes("settings.manage");
   const { data: settings, isLoading } = useQuery({
     queryKey: ["project-settings", projectId],
     queryFn: () => supabaseServices.projects.settings(projectId),
@@ -75,6 +77,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="mt-1"
+            disabled={!canManage}
           />
         </div>
         <div>
@@ -84,6 +87,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             className="mt-1"
+            disabled={!canManage}
           />
         </div>
         <div className="flex items-center justify-between rounded-lg border p-3">
@@ -93,7 +97,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               Avisar antes del vencimiento de una licencia.
             </div>
           </div>
-          <Switch checked={notify} onCheckedChange={setNotify} />
+          <Switch checked={notify} onCheckedChange={setNotify} disabled={!canManage} />
         </div>
         <div className="flex items-center justify-between rounded-lg border p-3">
           <div>
@@ -102,14 +106,14 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               Renovar cuando exista un pago verificado.
             </div>
           </div>
-          <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
+          <Switch checked={autoRenew} onCheckedChange={setAutoRenew} disabled={!canManage} />
         </div>
-        <div className="flex justify-end">
+        {canManage && <div className="flex justify-end">
           <Button disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Guardar
           </Button>
-        </div>
+        </div>}
       </CardContent>
     </Card>
   );

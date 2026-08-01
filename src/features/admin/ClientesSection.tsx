@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useProjectPermissions } from "@/hooks/useProjects";
 
 const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -49,6 +50,8 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     queryKey: ["admin-clients", projectId],
     queryFn: () => supabaseServices.licenses.listClients(projectId),
   });
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canManage = permissions.includes("customers.manage") && permissions.includes("licenses.manage");
   const clients = useMemo(
     () =>
       (query.data ?? []).filter((client) =>
@@ -105,7 +108,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             <TableBody>
               {clients.map((client) => (
                 <TableRow key={client.userId}>
-                  <TableCell>
+                  <TableCell data-label="Cliente">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border border-border">
                         <AvatarImage
@@ -120,23 +123,25 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                       <span className="font-medium">{client.displayName}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell data-label="Correo" className="break-all">{client.email}</TableCell>
+                  <TableCell data-label="Clave" className="break-all font-mono text-xs">
                     {client.licenseKey ?? "Prueba inicial"}
                   </TableCell>
-                  <TableCell>{client.plan}</TableCell>
-                  <TableCell>
+                  <TableCell data-label="Plan">{client.plan}</TableCell>
+                  <TableCell data-label="Estado">
                     <Badge variant={client.status === "active" ? "default" : "secondary"}>
                       {client.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(client.registeredAt).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(client.expiresAt).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => setSelected(client)}>
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Gestionar
-                    </Button>
+                  <TableCell data-label="Registro">{new Date(client.registeredAt).toLocaleDateString()}</TableCell>
+                  <TableCell data-label="Vencimiento">{new Date(client.expiresAt).toLocaleDateString()}</TableCell>
+                  <TableCell data-label="Acciones" className="text-right">
+                    {canManage && (
+                      <Button variant="outline" size="sm" onClick={() => setSelected(client)}>
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Gestionar
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

@@ -159,6 +159,7 @@
       48px 48px,
       48px 48px;
     background-attachment: fixed;
+    overflow-x: hidden;
   }
 
   ::selection {
@@ -210,5 +211,22 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-shell main > div > * {
     animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-slot="card-header"] {
+    align-items: stretch;
+  }
+
+  [data-slot="card-content"] {
+    min-width: 0;
+  }
+
+  [role="dialog"] input,
+  [role="dialog"] textarea,
+  [role="dialog"] button,
+  [role="dialog"] [role="combobox"] {
+    min-height: 2.75rem;
   }
 }
