@@ -15,6 +15,8 @@ import type {
   LicenseDevice,
   LicenseBillingInput,
   ProjectPermission,
+  UsageAnalyticsDay,
+  RetentionMetrics,
 } from "./types";
 
 function throwIfError(error: { message: string } | null) {
@@ -97,6 +99,22 @@ type AuditEventRow = {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
+};
+
+type UsageAnalyticsRow = {
+  metric_date: string;
+  new_users: number | string;
+  trials: number | string;
+  paid_licenses: number | string;
+  active_users: number | string;
+  weekly_active_users: number | string;
+  monthly_active_users: number | string;
+  logins: number | string;
+  renewals: number | string;
+  expired: number | string;
+  revenue_cup: number | string;
+  revenue_usd: number | string;
+  revenue_eur: number | string;
 };
 
 function mapLicense(license: LicenseRow): ServiceLicense {
@@ -241,7 +259,9 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []) as ProjectPermission[];
+      return ((data ?? []) as Array<{ permission_code: ProjectPermission }>).map(
+        (row) => row.permission_code,
+      );
     },
     async add(projectId, email, role) {
       const { error } = await getSupabaseClient().rpc("admin_upsert_project_member", {
@@ -702,6 +722,63 @@ export const supabaseServices: AdminServices = {
         userAgent: entry.user_agent,
         createdAt: entry.created_at,
       }));
+    },
+  },
+  usageAnalytics: {
+    async series(projectId, filters) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_usage_analytics", {
+        target_project_id: projectId,
+        target_from: filters.from,
+        target_to: filters.to,
+        target_plan: filters.plan ?? null,
+        target_license_status: filters.licenseStatus ?? null,
+        target_source: filters.source ?? null,
+        target_campaign: filters.campaign ?? null,
+        target_app_version: filters.appVersion ?? null,
+      });
+      throwIfError(error);
+      return ((data ?? []) as UsageAnalyticsRow[]).map(
+        (row): UsageAnalyticsDay => ({
+          date: row.metric_date,
+          newUsers: Number(row.new_users),
+          trials: Number(row.trials),
+          paidLicenses: Number(row.paid_licenses),
+          activeUsers: Number(row.active_users),
+          weeklyActiveUsers: Number(row.weekly_active_users),
+          monthlyActiveUsers: Number(row.monthly_active_users),
+          logins: Number(row.logins),
+          renewals: Number(row.renewals),
+          expired: Number(row.expired),
+          revenueCUP: Number(row.revenue_cup),
+          revenueUSD: Number(row.revenue_usd),
+          revenueEUR: Number(row.revenue_eur),
+        }),
+      );
+    },
+    async dimensions(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_usage_dimensions", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const result = (data ?? {}) as { sources?: string[]; campaigns?: string[]; versions?: string[] };
+      return { sources: result.sources ?? [], campaigns: result.campaigns ?? [], versions: result.versions ?? [] };
+    },
+    async retention(projectId, filters) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_retention_metrics", {
+        target_project_id: projectId,
+        target_plan: filters.plan ?? null,
+        target_source: filters.source ?? null,
+        target_campaign: filters.campaign ?? null,
+      });
+      throwIfError(error);
+      const row = data as Record<string, number>;
+      return {
+        cohortCount: Number(row.cohort_count ?? 0), eligible7: Number(row.eligible_7 ?? 0),
+        eligible30: Number(row.eligible_30 ?? 0), retained7: Number(row.retained_7 ?? 0),
+        retained30: Number(row.retained_30 ?? 0), retention7Rate: Number(row.retention_7_rate ?? 0),
+        retention30Rate: Number(row.retention_30_rate ?? 0), trialUsers: Number(row.trial_users ?? 0),
+        paidUsers: Number(row.paid_users ?? 0), trialToPaidRate: Number(row.trial_to_paid_rate ?? 0),
+      } satisfies RetentionMetrics;
     },
   },
 };

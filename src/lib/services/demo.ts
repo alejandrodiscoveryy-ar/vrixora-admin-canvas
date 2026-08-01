@@ -253,4 +253,12 @@ export const demoServices: AdminServices = {
       return [];
     },
   },
+  usageAnalytics: {
+    async series() { return []; },
+    async dimensions() { return { sources: [], campaigns: [], versions: [] }; },
+    async retention() {
+      return { cohortCount: 0, eligible7: 0, eligible30: 0, retained7: 0, retained30: 0,
+        retention7Rate: 0, retention30Rate: 0, trialUsers: 0, paidUsers: 0, trialToPaidRate: 0 };
+    },
+  },
 };
