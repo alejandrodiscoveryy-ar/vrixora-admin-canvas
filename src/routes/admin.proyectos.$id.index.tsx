@@ -37,6 +37,26 @@ export const Route = createFileRoute("/admin/proyectos/$id/")({
 const REFRESH_INTERVAL = 30_000;
 const DAY = 86_400_000;
 const chartColors = ["hsl(var(--primary))", "hsl(var(--accent))", "#38bdf8", "#a78bfa", "#fb7185"];
+const darkTooltipProps = {
+  contentStyle: {
+    backgroundColor: "hsl(var(--popover))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: "12px",
+    boxShadow: "0 18px 45px rgb(0 0 0 / 0.38)",
+    color: "hsl(var(--popover-foreground))",
+    padding: "10px 12px",
+  },
+  labelStyle: {
+    color: "hsl(var(--popover-foreground))",
+    fontWeight: 600,
+    marginBottom: "6px",
+  },
+  itemStyle: {
+    padding: "3px 0",
+    fontWeight: 500,
+  },
+  cursor: { fill: "hsl(var(--muted) / 0.16)" },
+};
 
 function ResumenPage() {
   const { id } = Route.useParams();
@@ -241,7 +261,7 @@ function ResumenPage() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                       <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} minTickGap={18} />
                       <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
-                      <Tooltip />
+                      <Tooltip {...darkTooltipProps} />
                       <Bar dataKey="newUsers" name="Clientes nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
                       <Bar dataKey="trials" name="Pruebas iniciadas" fill="#fbbf24" radius={[3, 3, 0, 0]} />
                       <Bar dataKey="paidLicenses" name="Licencias pagadas" fill="#34d399" radius={[3, 3, 0, 0]} />
@@ -317,7 +337,7 @@ function ResumenPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                   <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip formatter={(value, name) => [`${Number(value).toLocaleString()} ${String(name)}`, "Ingresos"]} />
+                  <Tooltip {...darkTooltipProps} formatter={(value, name) => [`${Number(value).toLocaleString()} ${String(name)}`, "Ingresos"]} />
                   <Bar dataKey="CUP" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="USD" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="EUR" fill="#a78bfa" radius={[4, 4, 0, 0]} />
@@ -337,7 +357,7 @@ function ResumenPage() {
                     <Pie data={licensesByPlan} dataKey="value" nameKey="name" innerRadius={48} outerRadius={82} paddingAngle={3}>
                       {licensesByPlan.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip {...darkTooltipProps} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : <EmptyMessage text="Aún no hay licencias para mostrar." />}
