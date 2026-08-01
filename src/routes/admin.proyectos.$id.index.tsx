@@ -17,7 +17,6 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
-  Legend,
   Line,
   Pie,
   PieChart,
@@ -229,20 +228,27 @@ function ResumenPage() {
               <CardHeader>
                 <CardTitle className="text-base">Evolución diaria · últimos 14 días</CardTitle>
               </CardHeader>
-              <CardContent className="h-80 min-w-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={dailyAcquisition} margin={{ left: -20, right: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                    <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="newUsers" name="Clientes nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="trials" name="Pruebas" fill="#fbbf24" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="paidLicenses" name="Pagadas" fill="#34d399" radius={[3, 3, 0, 0]} />
-                    <Line type="monotone" dataKey="activeUsers" name="Activos" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
+              <CardContent className="min-w-0 space-y-5">
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  <ChartLegend color="#38bdf8" label="Clientes nuevos" description="Primer registro" />
+                  <ChartLegend color="#fbbf24" label="Pruebas iniciadas" description="Licencia trial" />
+                  <ChartLegend color="#34d399" label="Licencias pagadas" description="Nueva venta" />
+                  <ChartLegend color="hsl(var(--primary))" label="Usuarios activos" description="Uso real de la app" line />
+                </div>
+                <div className="h-64 sm:h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={dailyAcquisition} margin={{ left: -20, right: 8, top: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                      <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} minTickGap={18} />
+                      <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip />
+                      <Bar dataKey="newUsers" name="Clientes nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="trials" name="Pruebas iniciadas" fill="#fbbf24" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="paidLicenses" name="Licencias pagadas" fill="#34d399" radius={[3, 3, 0, 0]} />
+                      <Line type="monotone" dataKey="activeUsers" name="Usuarios activos" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
             <Card className="glass-panel">
@@ -397,6 +403,21 @@ function StatusTile({ label, value, tone }: { label: string; value: number; tone
     <div className={`rounded-xl border p-4 ${colors[tone]}`}>
       <div className="text-2xl font-semibold">{value}</div>
       <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ChartLegend({ color, label, description, line = false }: { color: string; label: string; description: string; line?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+      <span
+        className={line ? "h-0.5 w-5 shrink-0 rounded-full" : "h-2.5 w-2.5 shrink-0 rounded-sm"}
+        style={{ backgroundColor: color }}
+      />
+      <div className="min-w-0">
+        <div className="truncate text-xs font-medium">{label}</div>
+        <div className="truncate text-[11px] text-muted-foreground">{description}</div>
+      </div>
     </div>
   );
 }
