@@ -4,17 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   BadgeDollarSign,
-  CalendarClock,
-  CircleDollarSign,
-  Clock3,
   KeyRound,
   RefreshCw,
-  ShieldAlert,
   Sparkles,
   TrendingUp,
   UserPlus,
   Users,
-  Wallet,
 } from "lucide-react";
 import {
   Bar,
@@ -197,20 +192,18 @@ function ResumenPage() {
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {canViewClients && <Kpi icon={Users} label="Clientes registrados" value={clientRows.length} />}
-        {canViewLicenses && <Kpi icon={KeyRound} label="Licencias activas" value={active} tone="success" />}
-        {canViewLicenses && <Kpi icon={Sparkles} label="Clientes en prueba" value={trial} />}
-        {canViewLicenses && <Kpi icon={CalendarClock} label="Por vencer (30 días)" value={expiring} tone="warning" />}
-        {canViewLicenses && <Kpi icon={ShieldAlert} label="Suspendidas" value={suspended} tone="danger" />}
-        {canViewLicenses && <Kpi icon={Clock3} label="Vencidas" value={expired} tone="danger" />}
-        {canViewClients && <Kpi icon={UserPlus} label="Registros del mes" value={newRegistrations} />}
-        {canViewAudit && <Kpi icon={BadgeDollarSign} label="Renovaciones del mes" value={renewals} />}
-        {canViewPayments && <Kpi icon={CircleDollarSign} label="Ingresos de hoy" value={revenueSince(startOfDay)} tone="success" />}
-        {canViewPayments && <Kpi icon={Wallet} label="Ingresos semanales" value={revenueSince(startOfWeek)} tone="success" />}
-        {canViewPayments && <Kpi icon={TrendingUp} label="Ingresos mensuales" value={revenueSince(startOfMonth)} tone="success" />}
-        {canViewPayments && <Kpi icon={Activity} label="Ingresos anuales" value={revenueSince(startOfYear)} tone="success" />}
-      </div>
+      <section className="space-y-3">
+        <SectionHeading
+          title="Vista general"
+          description="Los cuatro indicadores principales para entender el estado del negocio."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {canViewClients && <Kpi icon={Users} label="Clientes totales" value={clientRows.length} />}
+          {canViewAnalytics && <Kpi icon={UserPlus} label="Clientes nuevos hoy" value={todayAnalytics?.newUsers ?? 0} />}
+          {canViewLicenses && <Kpi icon={KeyRound} label="Licencias activas" value={active} tone="success" />}
+          {canViewPayments && <Kpi icon={TrendingUp} label="Ingresos este mes" value={revenueSince(startOfMonth)} tone="success" />}
+        </div>
+      </section>
 
       {canViewAnalytics && (
         <section className="space-y-4">
@@ -267,7 +260,48 @@ function ResumenPage() {
         </section>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <section className="space-y-3">
+        <SectionHeading
+          title="Licencias y facturación"
+          description="Alertas operativas y resultados comerciales sin mezclar monedas."
+        />
+        <div className="grid gap-6 lg:grid-cols-2">
+          {canViewLicenses && (
+            <Card className="glass-panel">
+              <CardHeader><CardTitle className="text-base">Estado de las licencias</CardTitle></CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <StatusTile label="En prueba" value={trial} tone="primary" />
+                <StatusTile label="Vencen en 30 días" value={expiring} tone="warning" />
+                <StatusTile label="Suspendidas" value={suspended} tone="danger" />
+                <StatusTile label="Vencidas" value={expired} tone="danger" />
+                {canViewAudit && <StatusTile label="Renovaciones del mes" value={renewals} tone="success" />}
+                <StatusTile label="Registros del mes" value={newRegistrations} tone="primary" />
+              </CardContent>
+            </Card>
+          )}
+          {canViewPayments && (
+            <Card className="glass-panel">
+              <CardHeader><CardTitle className="text-base">Facturación</CardTitle></CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <HealthRow label="Ingresos de hoy" value={revenueSince(startOfDay)} />
+                <HealthRow label="Ingresos de esta semana" value={revenueSince(startOfWeek)} />
+                <HealthRow label="Ingresos de este mes" value={revenueSince(startOfMonth)} />
+                <HealthRow label="Ingresos de este año" value={revenueSince(startOfYear)} />
+                <div className="border-t pt-4">
+                  <HealthRow label="Pagos pendientes" value={String(paymentRows.filter((payment) => payment.status === "pending").length)} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <SectionHeading
+          title="Distribución comercial"
+          description="Ingresos confirmados por moneda y composición de licencias por plan."
+        />
+        <div className="grid gap-6 xl:grid-cols-3">
         {canViewPayments && (
           <Card className="glass-panel xl:col-span-2">
             <CardHeader><CardTitle className="text-base">Ingresos confirmados · últimos 6 meses</CardTitle></CardHeader>
@@ -304,7 +338,8 @@ function ResumenPage() {
             </CardContent>
           </Card>
         )}
-      </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {canViewAudit && (
@@ -340,6 +375,30 @@ function ResumenPage() {
 function Kpi({ icon: Icon, label, value, tone = "primary" }: { icon: typeof Users; label: string; value: string | number; tone?: "primary" | "success" | "warning" | "danger" }) {
   const colors = { primary: "text-primary bg-primary/10", success: "text-emerald-500 bg-emerald-500/10", warning: "text-amber-500 bg-amber-500/10", danger: "text-destructive bg-destructive/10" };
   return <Card className="glass-panel"><CardContent className="flex items-center gap-3 p-4"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${colors[tone]}`}><Icon className="h-5 w-5" /></div><div className="min-w-0"><div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div><div className="mt-0.5 break-words text-xl font-semibold">{value}</div></div></CardContent></Card>;
+}
+
+function SectionHeading({ title, description }: { title: string; description: string }) {
+  return (
+    <div>
+      <h3 className="text-base font-semibold">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function StatusTile({ label, value, tone }: { label: string; value: number; tone: "primary" | "success" | "warning" | "danger" }) {
+  const colors = {
+    primary: "border-primary/20 bg-primary/5 text-primary",
+    success: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400",
+    warning: "border-amber-500/20 bg-amber-500/5 text-amber-400",
+    danger: "border-destructive/20 bg-destructive/5 text-destructive",
+  };
+  return (
+    <div className={`rounded-xl border p-4 ${colors[tone]}`}>
+      <div className="text-2xl font-semibold">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
 }
 
 function HealthRow({ label, value }: { label: string; value: string }) {
