@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -29,6 +29,8 @@ import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 export const Route = createFileRoute("/admin/proyectos/$id/")({
@@ -49,10 +51,8 @@ function ResumenPage() {
   const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
 
-  const analyticsTo = new Date().toISOString().slice(0, 10);
-  const analyticsFromDate = new Date();
-  analyticsFromDate.setDate(analyticsFromDate.getDate() - 29);
-  const analyticsFrom = analyticsFromDate.toISOString().slice(0, 10);
+  const [analyticsFrom, setAnalyticsFrom] = useState(() => monthStartIso());
+  const [analyticsTo, setAnalyticsTo] = useState(() => isoDate(new Date()));
 
   const clients = useQuery({
     queryKey: ["admin-clients", id],
@@ -120,14 +120,21 @@ function ResumenPage() {
     [currentMonthKey],
   );
   const startOfYear = new Date(startOfDay.getFullYear(), 0, 1);
+  const selectedStart = new Date(`${analyticsFrom}T00:00:00`);
+  const selectedEnd = new Date(`${analyticsTo}T00:00:00`);
+  selectedEnd.setDate(selectedEnd.getDate() + 1);
   const revenueSince = (date: Date) => formatRevenue(
     paidPayments.filter((payment) => new Date(payment.createdAt) >= date),
   );
+  const selectedRevenue = formatRevenue(paidPayments.filter((payment) => {
+    const created = new Date(payment.createdAt);
+    return created >= selectedStart && created < selectedEnd;
+  }));
   const newRegistrations = clientRows.filter(
-    (client) => new Date(client.registeredAt) >= startOfMonth,
+    (client) => new Date(client.registeredAt) >= selectedStart && new Date(client.registeredAt) < selectedEnd,
   ).length;
   const renewals = (audit.data ?? []).filter(
-    (event) => event.action === "license_renewed" && new Date(event.createdAt) >= startOfMonth,
+    (event) => event.action === "license_renewed" && new Date(event.createdAt) >= selectedStart && new Date(event.createdAt) < selectedEnd,
   ).length;
   const convertedUsers = new Set(
     paidPayments.flatMap((payment) => payment.amount > 0 && payment.userEmail ? [payment.userEmail] : []),
@@ -142,7 +149,7 @@ function ResumenPage() {
     lastSevenAnalytics.newUsers,
     previousSevenAnalytics.newUsers,
   );
-  const dailyAcquisition = analyticsRows.slice(-14).map((row) => ({
+  const dailyAcquisition = analyticsRows.map((row) => ({
     ...row,
     label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" })
       .format(new Date(`${row.date}T12:00:00`)),
@@ -186,6 +193,14 @@ function ResumenPage() {
         </Badge>
       </div>
 
+      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border/60 bg-card/40 p-3">
+        <DateField label="Desde" value={analyticsFrom} max={analyticsTo} onChange={setAnalyticsFrom} />
+        <DateField label="Hasta" value={analyticsTo} min={analyticsFrom} max={isoDate(new Date())} onChange={setAnalyticsTo} />
+        <Button variant="outline" size="sm" onClick={() => { const today = isoDate(new Date()); setAnalyticsFrom(today); setAnalyticsTo(today); }}>Hoy</Button>
+        <Button variant="outline" size="sm" onClick={() => { setAnalyticsFrom(monthStartIso()); setAnalyticsTo(isoDate(new Date())); }}>Este mes</Button>
+        <span className="text-xs text-muted-foreground">El mes actual se usa por defecto.</span>
+      </div>
+
       {queryError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
           Algunos indicadores no pudieron actualizarse: {queryError.message}
@@ -201,7 +216,7 @@ function ResumenPage() {
           {canViewClients && <Kpi icon={Users} label="Clientes totales" value={clientRows.length} />}
           {canViewAnalytics && <Kpi icon={UserPlus} label="Clientes nuevos hoy" value={todayAnalytics?.newUsers ?? 0} />}
           {canViewLicenses && <Kpi icon={KeyRound} label="Licencias activas" value={active} tone="success" />}
-          {canViewPayments && <Kpi icon={TrendingUp} label="Ingresos este mes" value={revenueSince(startOfMonth)} tone="success" />}
+          {canViewPayments && <Kpi icon={TrendingUp} label="Ingresos del periodo" value={selectedRevenue} tone="success" />}
         </div>
       </section>
 
@@ -440,6 +455,12 @@ function analyticsTotals(rows: Awaited<ReturnType<typeof supabaseServices.usageA
     }),
     { newUsers: 0, trials: 0, paidLicenses: 0 },
   );
+}
+
+function isoDate(date: Date) { return date.toISOString().slice(0, 10); }
+function monthStartIso() { const now = new Date(); return isoDate(new Date(now.getFullYear(), now.getMonth(), 1)); }
+function DateField({ label, value, min, max, onChange }: { label: string; value: string; min?: string; max?: string; onChange: (value: string) => void }) {
+  return <label className="space-y-1 text-xs text-muted-foreground"><span>{label}</span><Input className="h-9 w-40 text-foreground" type="date" value={value} min={min} max={max} onChange={(event) => onChange(event.target.value)} /></label>;
 }
 
 function percentageVariation(current: number, previous: number) {
