@@ -52,6 +52,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("payments.manage");
+  const canCorrect = permissions.includes("payments.correct");
   const query = useQuery({
     queryKey: ["admin-payments", projectId],
     queryFn: () => supabaseServices.payments.listAdmin(projectId),
@@ -220,8 +221,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     <TableCell data-label="Acciones">
                       {canManage && <div className="flex flex-wrap gap-2">
                         {p.status === "pending" && <Button size="sm" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate(p.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Marcar pagado</Button>}
-                        <Button size="icon" variant="ghost" title="Editar pago" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" title="Eliminar pago" onClick={() => setDeleting(p)}><Trash2 className="h-4 w-4" /></Button>
+                        {canCorrect && <Button size="icon" variant="ghost" title="Editar pago" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>}
+                        {canCorrect && <Button size="icon" variant="ghost" className="text-destructive" title="Eliminar pago" onClick={() => setDeleting(p)}><Trash2 className="h-4 w-4" /></Button>}
                       </div>}
                     </TableCell>
                   </TableRow>

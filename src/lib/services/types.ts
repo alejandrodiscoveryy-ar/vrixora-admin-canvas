@@ -14,6 +14,7 @@ export type ProjectPermission =
   | "plans.manage"
   | "payments.view"
   | "payments.manage"
+  | "payments.correct"
   | "members.view"
   | "members.manage"
   | "analytics.view"
