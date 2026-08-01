@@ -147,7 +147,7 @@ export const supabaseServices: AdminServices = {
     async settings(projectId) {
       const { data, error } = await getSupabaseClient()
         .from("projects")
-        .select("notify_license_expiry,auto_renew_verified_payments")
+        .select("notify_license_expiry,auto_renew_verified_payments,logo_url,icon_url,primary_color,secondary_color,whatsapp,support_email,website_url,privacy_url,terms_url,currency,trial_days,payment_methods,minimum_version,maintenance_mode,force_update,welcome_message")
         .eq("id", projectId)
         .single();
       throwIfError(error);
@@ -155,6 +155,22 @@ export const supabaseServices: AdminServices = {
       return {
         notifyLicenseExpiry: data.notify_license_expiry,
         autoRenewVerifiedPayments: data.auto_renew_verified_payments,
+        logoUrl: data.logo_url ?? "",
+        iconUrl: data.icon_url ?? "",
+        primaryColor: data.primary_color,
+        secondaryColor: data.secondary_color,
+        whatsapp: data.whatsapp ?? "",
+        supportEmail: data.support_email ?? "",
+        websiteUrl: data.website_url ?? "",
+        privacyUrl: data.privacy_url ?? "",
+        termsUrl: data.terms_url ?? "",
+        currency: data.currency as Currency,
+        trialDays: data.trial_days,
+        paymentMethods: data.payment_methods as ServicePayment["method"][],
+        minimumVersion: data.minimum_version ?? "",
+        maintenanceMode: data.maintenance_mode,
+        forceUpdate: data.force_update,
+        welcomeMessage: data.welcome_message ?? "",
       };
     },
     async update(projectId, changes) {
@@ -164,6 +180,22 @@ export const supabaseServices: AdminServices = {
         target_description: changes.description,
         target_notify_license_expiry: changes.notifyLicenseExpiry,
         target_auto_renew_verified_payments: changes.autoRenewVerifiedPayments,
+        target_logo_url: changes.logoUrl,
+        target_icon_url: changes.iconUrl,
+        target_primary_color: changes.primaryColor,
+        target_secondary_color: changes.secondaryColor,
+        target_whatsapp: changes.whatsapp,
+        target_support_email: changes.supportEmail,
+        target_website_url: changes.websiteUrl,
+        target_privacy_url: changes.privacyUrl,
+        target_terms_url: changes.termsUrl,
+        target_currency: changes.currency,
+        target_trial_days: changes.trialDays,
+        target_payment_methods: changes.paymentMethods,
+        target_minimum_version: changes.minimumVersion,
+        target_maintenance_mode: changes.maintenanceMode,
+        target_force_update: changes.forceUpdate,
+        target_welcome_message: changes.welcomeMessage,
       });
       throwIfError(error);
     },

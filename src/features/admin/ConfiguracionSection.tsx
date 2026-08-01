@@ -1,120 +1,159 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, Building2, CreditCard, Loader2, MessageCircle, Palette, Settings, Smartphone } from "lucide-react";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
-import { supabaseServices } from "@/lib/services";
+import { supabaseServices, type ProjectSettings } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Settings } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+
+const paymentMethods = [
+  { value: "cash", label: "Efectivo" },
+  { value: "transfer", label: "Transferencia" },
+  { value: "card", label: "Tarjeta" },
+  { value: "paypal", label: "PayPal" },
+] as const;
 
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: project } = useProject(projectId);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("settings.manage");
-  const { data: settings, isLoading } = useQuery({
+  const settingsQuery = useQuery({
     queryKey: ["project-settings", projectId],
     queryFn: () => supabaseServices.projects.settings(projectId),
   });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [notify, setNotify] = useState(true);
-  const [autoRenew, setAutoRenew] = useState(false);
+  const [form, setForm] = useState<ProjectSettings | null>(null);
 
   useEffect(() => {
-    if (!project || !settings) return;
+    if (!project || !settingsQuery.data) return;
     setName(project.name);
     setDescription(project.description);
-    setNotify(settings.notifyLicenseExpiry);
-    setAutoRenew(settings.autoRenewVerifiedPayments);
-  }, [project, settings]);
+    setForm(settingsQuery.data);
+  }, [project, settingsQuery.data]);
 
   const save = useMutation({
-    mutationFn: () =>
-      supabaseServices.projects.update(projectId, {
+    mutationFn: async () => {
+      if (!form) throw new Error("La configuración todavía no está disponible.");
+      await supabaseServices.projects.update(projectId, {
+        ...form,
         name: name.trim(),
         description: description.trim(),
-        notifyLicenseExpiry: notify,
-        autoRenewVerifiedPayments: autoRenew,
-      }),
+      });
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["project-settings", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["user-projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-audit", projectId] }),
       ]);
-      toast.success("Configuración guardada");
+      toast.success("Configuración guardada y auditada.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
-  if (isLoading || !project || !settings) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-      </div>
-    );
+  if (settingsQuery.isLoading || !project || !form) {
+    return <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  }
+  if (settingsQuery.isError) {
+    return <p className="py-12 text-center text-sm text-destructive">{settingsQuery.error.message}</p>;
   }
 
+  const update = <K extends keyof ProjectSettings>(key: K, value: ProjectSettings[K]) =>
+    setForm((current) => current ? { ...current, [key]: value } : current);
+  const togglePaymentMethod = (method: ProjectSettings["paymentMethods"][number], enabled: boolean) => {
+    const next = enabled
+      ? [...new Set([...form.paymentMethods, method])]
+      : form.paymentMethods.filter((item) => item !== method);
+    update("paymentMethods", next);
+  };
+
   return (
-    <Card className="glass-panel">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Settings className="h-4 w-4 text-primary" />
-          Configuración del proyecto
-        </CardTitle>
-        <CardDescription>Los cambios se guardan directamente en Supabase.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="name">Nombre</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="mt-1"
-            disabled={!canManage}
-          />
+    <div className="space-y-6">
+      <div>
+        <h2 className="flex items-center gap-2 text-lg font-semibold"><Settings className="h-5 w-5 text-primary" />Configuración del proyecto</h2>
+        <p className="text-sm text-muted-foreground">Estos valores quedan disponibles para que cada aplicación use su propia identidad y reglas sin cambiar código.</p>
+      </div>
+
+      <Section icon={Building2} title="Identidad" description="Nombre, textos e imágenes públicas del proyecto.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Nombre" required><Input value={name} onChange={(event) => setName(event.target.value)} disabled={!canManage} /></Field>
+          <Field label="Correo de soporte"><Input type="email" value={form.supportEmail} onChange={(event) => update("supportEmail", event.target.value)} disabled={!canManage} placeholder="soporte@empresa.com" /></Field>
+          <Field label="Logo (URL HTTPS)"><Input type="url" value={form.logoUrl} onChange={(event) => update("logoUrl", event.target.value)} disabled={!canManage} placeholder="https://..." /></Field>
+          <Field label="Icono (URL HTTPS)"><Input type="url" value={form.iconUrl} onChange={(event) => update("iconUrl", event.target.value)} disabled={!canManage} placeholder="https://..." /></Field>
+          <Field label="Descripción" className="md:col-span-2"><Textarea value={description} onChange={(event) => setDescription(event.target.value)} disabled={!canManage} /></Field>
+          <Field label="Mensaje de bienvenida" className="md:col-span-2"><Textarea value={form.welcomeMessage} onChange={(event) => update("welcomeMessage", event.target.value)} disabled={!canManage} placeholder="Mensaje que verá el usuario al iniciar." /></Field>
         </div>
-        <div>
-          <Label htmlFor="desc">Descripción</Label>
-          <Textarea
-            id="desc"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            className="mt-1"
-            disabled={!canManage}
-          />
+      </Section>
+
+      <Section icon={Palette} title="Marca" description="Colores independientes para reutilizar el panel con otros proyectos.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ColorField label="Color principal" value={form.primaryColor} disabled={!canManage} onChange={(value) => update("primaryColor", value)} />
+          <ColorField label="Color secundario" value={form.secondaryColor} disabled={!canManage} onChange={(value) => update("secondaryColor", value)} />
         </div>
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <div className="text-sm font-medium">Notificaciones de vencimiento</div>
-            <div className="text-xs text-muted-foreground">
-              Avisar antes del vencimiento de una licencia.
-            </div>
-          </div>
-          <Switch checked={notify} onCheckedChange={setNotify} disabled={!canManage} />
+      </Section>
+
+      <Section icon={MessageCircle} title="Contacto y documentos" description="Canales de ayuda y enlaces legales usados por la aplicación.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="WhatsApp"><Input value={form.whatsapp} onChange={(event) => update("whatsapp", event.target.value)} disabled={!canManage} placeholder="+53..." /></Field>
+          <Field label="Sitio web"><Input type="url" value={form.websiteUrl} onChange={(event) => update("websiteUrl", event.target.value)} disabled={!canManage} placeholder="https://..." /></Field>
+          <Field label="Política de privacidad"><Input type="url" value={form.privacyUrl} onChange={(event) => update("privacyUrl", event.target.value)} disabled={!canManage} placeholder="https://..." /></Field>
+          <Field label="Términos de servicio"><Input type="url" value={form.termsUrl} onChange={(event) => update("termsUrl", event.target.value)} disabled={!canManage} placeholder="https://..." /></Field>
         </div>
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <div className="text-sm font-medium">Renovación automática</div>
-            <div className="text-xs text-muted-foreground">
-              Renovar cuando exista un pago verificado.
-            </div>
-          </div>
-          <Switch checked={autoRenew} onCheckedChange={setAutoRenew} disabled={!canManage} />
+      </Section>
+
+      <Section icon={CreditCard} title="Comercial" description="Valores predeterminados para pruebas y cobros.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Moneda predeterminada">
+            <Select value={form.currency} onValueChange={(value) => update("currency", value as ProjectSettings["currency"])} disabled={!canManage}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["CUP", "USD", "EUR"].map((currency) => <SelectItem key={currency} value={currency}>{currency}</SelectItem>)}</SelectContent></Select>
+          </Field>
+          <Field label="Días de prueba"><Input type="number" min="0" max="3650" value={form.trialDays} onChange={(event) => update("trialDays", Number(event.target.value))} disabled={!canManage} /></Field>
+          <div className="space-y-2 md:col-span-2"><Label>Métodos de pago habilitados</Label><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{paymentMethods.map((method) => <label key={method.value} className="flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm"><Checkbox checked={form.paymentMethods.includes(method.value)} onCheckedChange={(checked) => togglePaymentMethod(method.value, checked === true)} disabled={!canManage} />{method.label}</label>)}</div></div>
         </div>
-        {canManage && <div className="flex justify-end">
-          <Button disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
-            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Guardar
+      </Section>
+
+      <Section icon={Smartphone} title="Aplicación" description="Compatibilidad, mantenimiento y comportamiento del cliente.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Versión mínima"><Input value={form.minimumVersion} onChange={(event) => update("minimumVersion", event.target.value)} disabled={!canManage} placeholder="Ej. 1.4.0" /></Field>
+          <SettingToggle label="Actualización obligatoria" description="Bloquea versiones inferiores a la mínima." checked={form.forceUpdate} onChange={(checked) => update("forceUpdate", checked)} disabled={!canManage} />
+          <SettingToggle label="Modo mantenimiento" description="Permite informar que el servicio está temporalmente limitado." checked={form.maintenanceMode} onChange={(checked) => update("maintenanceMode", checked)} disabled={!canManage} />
+          <SettingToggle label="Avisos de vencimiento" description="Notificar antes de que termine una licencia." checked={form.notifyLicenseExpiry} onChange={(checked) => update("notifyLicenseExpiry", checked)} disabled={!canManage} />
+          <SettingToggle label="Renovación por pago verificado" description="Aplicar la vigencia cuando se confirme un pago." checked={form.autoRenewVerifiedPayments} onChange={(checked) => update("autoRenewVerifiedPayments", checked)} disabled={!canManage} />
+        </div>
+      </Section>
+
+      {canManage ? (
+        <div className="sticky bottom-3 flex justify-end rounded-xl border bg-background/95 p-3 shadow-lg backdrop-blur">
+          <Button disabled={save.isPending || !name.trim() || form.paymentMethods.length === 0} onClick={() => save.mutate()}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Guardar configuración
           </Button>
-        </div>}
-      </CardContent>
-    </Card>
+        </div>
+      ) : <div className="rounded-lg border p-3 text-sm text-muted-foreground">Tu rol permite consultar esta configuración, pero no modificarla.</div>}
+    </div>
   );
+}
+
+function Section({ icon: Icon, title, description, children }: { icon: typeof Bell; title: string; description: string; children: React.ReactNode }) {
+  return <Card className="glass-panel"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Icon className="h-4 w-4 text-primary" />{title}</CardTitle><CardDescription>{description}</CardDescription></CardHeader><CardContent>{children}</CardContent></Card>;
+}
+
+function Field({ label, required, className, children }: { label: string; required?: boolean; className?: string; children: React.ReactNode }) {
+  return <div className={`space-y-1.5 ${className ?? ""}`}><Label>{label}{required && " *"}</Label>{children}</div>;
+}
+
+function ColorField({ label, value, disabled, onChange }: { label: string; value: string; disabled: boolean; onChange: (value: string) => void }) {
+  return <Field label={label}><div className="flex gap-2"><Input type="color" className="h-10 w-14 p-1" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} /><Input value={value} pattern="#[0-9A-Fa-f]{6}" onChange={(event) => onChange(event.target.value)} disabled={disabled} /></div></Field>;
+}
+
+function SettingToggle({ label, description, checked, disabled, onChange }: { label: string; description: string; checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }) {
+  return <div className="flex min-h-20 items-center justify-between gap-4 rounded-lg border p-3"><div><div className="text-sm font-medium">{label}</div><div className="text-xs text-muted-foreground">{description}</div></div><Switch checked={checked} onCheckedChange={onChange} disabled={disabled} /></div>;
 }

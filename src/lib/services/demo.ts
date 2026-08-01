@@ -19,7 +19,26 @@ export const demoServices: AdminServices = {
       return user ? visibleProjects(user) : [];
     },
     async settings() {
-      return { notifyLicenseExpiry: true, autoRenewVerifiedPayments: false };
+      return {
+        notifyLicenseExpiry: true,
+        autoRenewVerifiedPayments: false,
+        logoUrl: "",
+        iconUrl: "",
+        primaryColor: "#06b6d4",
+        secondaryColor: "#0f172a",
+        whatsapp: "",
+        supportEmail: "",
+        websiteUrl: "",
+        privacyUrl: "",
+        termsUrl: "",
+        currency: "CUP" as const,
+        trialDays: 30,
+        paymentMethods: ["cash" as const],
+        minimumVersion: "",
+        maintenanceMode: false,
+        forceUpdate: false,
+        welcomeMessage: "",
+      };
     },
     async update() {
       throw new Error("Esta operación requiere Supabase");

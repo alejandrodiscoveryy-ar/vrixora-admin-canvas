@@ -19,6 +19,7 @@ export type {
   PaymentService,
   ProjectPermission,
   ProjectRole,
+  ProjectSettings,
   AuditEvent,
   AuditService,
   ProjectMemberService,

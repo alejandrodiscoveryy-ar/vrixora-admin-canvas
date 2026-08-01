@@ -21,6 +21,27 @@ export type ProjectPermission =
   | "settings.manage"
   | "audit.view";
 
+export interface ProjectSettings {
+  notifyLicenseExpiry: boolean;
+  autoRenewVerifiedPayments: boolean;
+  logoUrl: string;
+  iconUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  whatsapp: string;
+  supportEmail: string;
+  websiteUrl: string;
+  privacyUrl: string;
+  termsUrl: string;
+  currency: Currency;
+  trialDays: number;
+  paymentMethods: ServicePayment["method"][];
+  minimumVersion: string;
+  maintenanceMode: boolean;
+  forceUpdate: boolean;
+  welcomeMessage: string;
+}
+
 export interface LicenseType {
   code: string;
   name: string;
@@ -161,17 +182,12 @@ export interface LicenseBillingInput {
 
 export interface ProjectService {
   list(userId?: string): Promise<Project[]>;
-  settings(projectId: string): Promise<{
-    notifyLicenseExpiry: boolean;
-    autoRenewVerifiedPayments: boolean;
-  }>;
+  settings(projectId: string): Promise<ProjectSettings>;
   update(
     projectId: string,
-    changes: {
+    changes: ProjectSettings & {
       name: string;
       description: string;
-      notifyLicenseExpiry: boolean;
-      autoRenewVerifiedPayments: boolean;
     },
   ): Promise<void>;
 }
