@@ -44,8 +44,8 @@ function ProjectLayout() {
 
   const basePath = `/admin/proyectos/${project.id}`;
   return (
-    <div className="space-y-7">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-4 md:space-y-7">
+      <div className="hidden flex-wrap items-end justify-between gap-4 md:flex">
         <div>
           <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Link to="/admin/proyectos" className="hover:text-foreground">
@@ -100,30 +100,6 @@ function ProjectLayout() {
           );
         })}
       </Card>
-      <div className="grid gap-2 md:hidden">
-        {ADMIN_PROJECT_TABS.filter((tab) => permissions.includes(tab.permission)).map((tab) => {
-          const Icon = tab.icon;
-          const to = tab.slug ? `${basePath}/${tab.slug}` : basePath;
-          const active = tab.slug
-            ? path.startsWith(to)
-            : path === basePath || path === `${basePath}/`;
-          return (
-            <Link
-              key={tab.slug || "resumen"}
-              to={tab.slug ? "/admin/proyectos/$id/$section" : "/admin/proyectos/$id"}
-              params={tab.slug ? { id: project.id, section: tab.slug } : { id: project.id }}
-              className={`flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-medium transition-all ${
-                active
-                  ? "border-primary/20 bg-primary/10 text-primary"
-                  : "border-border/60 bg-card/70 text-muted-foreground"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span className="flex-1">{tab.label}</span>
-            </Link>
-          );
-        })}
-      </div>
       <Outlet />
     </div>
   );
