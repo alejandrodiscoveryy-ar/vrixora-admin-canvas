@@ -2,34 +2,10 @@ import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tan
 import { useEffect } from "react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectAccess, useProjectPermissions } from "@/hooks/useProjects";
-import type { ProjectPermission } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import {
-  BarChart3,
-  CreditCard,
-  FileKey2,
-  Gauge,
-  Loader2,
-  ScrollText,
-  Settings2,
-  ShieldCheck,
-  Tags,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
-
-const TABS = [
-  { slug: "", label: "Resumen", icon: Gauge, permission: "project.view" },
-  { slug: "clientes", label: "Clientes", icon: Users, permission: "customers.view" },
-  { slug: "licencias", label: "Licencias", icon: FileKey2, permission: "licenses.view" },
-  { slug: "planes", label: "Planes y precios", icon: Tags, permission: "plans.view" },
-  { slug: "pagos", label: "Pagos", icon: CreditCard, permission: "payments.view" },
-  { slug: "empleados", label: "Empleados", icon: ShieldCheck, permission: "members.view" },
-  { slug: "rendimiento", label: "Rendimiento", icon: BarChart3, permission: "analytics.view" },
-  { slug: "configuracion", label: "Configuración", icon: Settings2, permission: "settings.view" },
-  { slug: "auditoria", label: "Auditoría", icon: ScrollText, permission: "audit.view" },
-] satisfies Array<{ slug: string; label: string; icon: LucideIcon; permission: ProjectPermission }>;
+import { Loader2 } from "lucide-react";
+import { ADMIN_PROJECT_TABS } from "@/lib/admin-navigation";
 
 export const Route = createFileRoute("/admin/proyectos/$id")({
   head: () => ({
@@ -72,7 +48,9 @@ function ProjectLayout() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Link to="/admin/proyectos" className="hover:text-foreground">Proyectos</Link>
+            <Link to="/admin/proyectos" className="hover:text-foreground">
+              Proyectos
+            </Link>
             <span className="text-border">/</span>
             {project.name}
           </div>
@@ -83,22 +61,28 @@ function ProjectLayout() {
         </div>
         <Badge
           variant="outline"
-          className={project.status === "active"
-            ? "border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-300"
-            : "px-3 py-1"}
+          className={
+            project.status === "active"
+              ? "border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-300"
+              : "px-3 py-1"
+          }
         >
-          <span className={`mr-2 h-1.5 w-1.5 rounded-full ${
-            project.status === "active" ? "bg-emerald-400" : "bg-muted-foreground"
-          }`} />
+          <span
+            className={`mr-2 h-1.5 w-1.5 rounded-full ${
+              project.status === "active" ? "bg-emerald-400" : "bg-muted-foreground"
+            }`}
+          />
           {project.status === "active" ? "Proyecto activo" : project.status}
         </Badge>
       </div>
 
-      <Card className="glass-panel grid grid-cols-2 gap-1 rounded-2xl p-1.5 shadow-[0_16px_60px_-42px_rgba(0,229,255,0.55)] sm:grid-cols-3 md:flex md:overflow-x-auto">
-        {TABS.filter((tab) => permissions.includes(tab.permission)).map((tab) => {
+      <Card className="glass-panel hidden grid-cols-2 gap-1 rounded-2xl p-1.5 shadow-[0_16px_60px_-42px_rgba(0,229,255,0.55)] sm:grid-cols-3 md:flex md:overflow-x-auto">
+        {ADMIN_PROJECT_TABS.filter((tab) => permissions.includes(tab.permission)).map((tab) => {
           const Icon = tab.icon;
           const to = tab.slug ? `${basePath}/${tab.slug}` : basePath;
-          const active = tab.slug ? path.startsWith(to) : path === basePath || path === `${basePath}/`;
+          const active = tab.slug
+            ? path.startsWith(to)
+            : path === basePath || path === `${basePath}/`;
           return (
             <Link
               key={tab.slug || "resumen"}
@@ -116,6 +100,30 @@ function ProjectLayout() {
           );
         })}
       </Card>
+      <div className="grid gap-2 md:hidden">
+        {ADMIN_PROJECT_TABS.filter((tab) => permissions.includes(tab.permission)).map((tab) => {
+          const Icon = tab.icon;
+          const to = tab.slug ? `${basePath}/${tab.slug}` : basePath;
+          const active = tab.slug
+            ? path.startsWith(to)
+            : path === basePath || path === `${basePath}/`;
+          return (
+            <Link
+              key={tab.slug || "resumen"}
+              to={tab.slug ? "/admin/proyectos/$id/$section" : "/admin/proyectos/$id"}
+              params={tab.slug ? { id: project.id, section: tab.slug } : { id: project.id }}
+              className={`flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-medium transition-all ${
+                active
+                  ? "border-primary/20 bg-primary/10 text-primary"
+                  : "border-border/60 bg-card/70 text-muted-foreground"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="flex-1">{tab.label}</span>
+            </Link>
+          );
+        })}
+      </div>
       <Outlet />
     </div>
   );
