@@ -185,13 +185,15 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 shadow-sm">
+      <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/15 via-emerald-500/7 to-background p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
             <p className="text-xs text-muted-foreground">Información rápida de pagos</p>
           </div>
-          <Badge variant="secondary">{filtered.length} registros</Badge>
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" variant="secondary">
+            {filtered.length} registros
+          </Badge>
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
           <Metric
@@ -1033,7 +1035,7 @@ function Metric({
   return (
     <Card className="h-full">
       <CardContent className="flex items-center gap-2 p-3">
-        <Icon className="h-4 w-4 shrink-0 text-primary" />
+        <Icon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>
           <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">

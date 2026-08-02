@@ -111,13 +111,15 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         badge={<Badge variant="outline">{clients.length}</Badge>}
       />
 
-      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 shadow-sm">
+      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 via-violet-500/7 to-background p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
             <p className="text-xs text-muted-foreground">Información rápida de clientes</p>
           </div>
-          <Badge variant="secondary">{clients.length} clientes</Badge>
+          <Badge className="border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" variant="secondary">
+            {clients.length} clientes
+          </Badge>
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
           <Metric label="Activos" value={String(activeClients)} icon={ShieldCheck} />
@@ -381,7 +383,7 @@ function Metric({
   return (
     <Card className="h-full">
       <CardContent className="flex items-center gap-2 p-3">
-        <Icon className="h-4 w-4 shrink-0 text-primary" />
+        <Icon className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>
           <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">
