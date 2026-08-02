@@ -296,26 +296,32 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                 values={["transfer", "cash", "card", "paypal", "other"]}
                 label="Método"
               />
-              {period === "custom" && (
-                <>
-                  <Input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => {
-                      setFromDate(e.target.value);
-                      if (period !== "custom") setPeriod("custom");
-                    }}
-                  />
-                  <Input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => {
-                      setToDate(e.target.value);
-                      if (period !== "custom") setPeriod("custom");
-                    }}
-                  />
-                </>
-              )}
+              {period === "custom" ? (
+                <div className="col-span-full grid gap-2 md:grid-cols-2 xl:col-span-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Desde</Label>
+                    <Input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => {
+                        setFromDate(e.target.value);
+                        if (period !== "custom") setPeriod("custom");
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hasta</Label>
+                    <Input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => {
+                        setToDate(e.target.value);
+                        if (period !== "custom") setPeriod("custom");
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
           </MobileFiltersPanel>
           <div className="space-y-3 md:hidden">
