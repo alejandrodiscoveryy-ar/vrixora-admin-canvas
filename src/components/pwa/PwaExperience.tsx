@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Download, RefreshCw, Share2, WifiOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  markNavigatorOfflineHint,
+  markNavigatorOnlineHint,
+  probeConnectivity,
+  useConnectivitySnapshot,
+} from "@/lib/connectivity";
 import { PWA_APP_NAME, isIosDevice, isStandaloneDisplayMode } from "@/lib/pwa";
 
 type BeforeInstallPromptEvent = Event & {
@@ -11,17 +18,17 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 export function PwaExperience() {
-  const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
   const [canInstall, setCanInstall] = useState(false);
   const [isStandalone, setIsStandalone] = useState(isStandaloneDisplayMode());
   const [iosHelpVisible, setIosHelpVisible] = useState(isIosDevice());
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const refreshRequestedRef = useRef(false);
+  const queryClient = useQueryClient();
+  const connectivity = useConnectivitySnapshot();
+  const previousConnectivityStatusRef = useRef(connectivity.status);
 
   useEffect(() => {
-    const handleOnline = () => setOffline(false);
-    const handleOffline = () => setOffline(true);
     const handleDisplayModeChange = () => setIsStandalone(isStandaloneDisplayMode());
     const handleAppInstalled = () => {
       installPromptRef.current = null;
@@ -30,15 +37,48 @@ export function PwaExperience() {
       setIsStandalone(true);
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
     window.addEventListener("appinstalled", handleAppInstalled);
     const standaloneQuery = window.matchMedia("(display-mode: standalone)");
     standaloneQuery.addEventListener("change", handleDisplayModeChange);
 
+    const handleOnline = () => {
+      markNavigatorOnlineHint();
+      void probeConnectivity();
+    };
+
+    const handleOffline = () => {
+      markNavigatorOfflineHint();
+      void probeConnectivity();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void probeConnectivity();
+      }
+    };
+
+    const handleFocus = () => {
+      void probeConnectivity();
+    };
+
+    const handlePageShow = () => {
+      void probeConnectivity();
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    void probeConnectivity();
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("appinstalled", handleAppInstalled);
       standaloneQuery.removeEventListener("change", handleDisplayModeChange);
     };
@@ -128,40 +168,56 @@ export function PwaExperience() {
     navigator.serviceWorker.controller?.postMessage({ type: "SKIP_WAITING" });
   };
 
-  const panels = useMemo(() => {
-    const items: Array<{ key: string; node: ReactNode }> = [];
-
-    if (offline) {
-      items.push({
-        key: "offline",
-        node: (
-          <Card className="glass-panel border-destructive/20 bg-destructive/5">
-            <CardContent className="flex items-start gap-3 p-4 sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 rounded-full bg-destructive/15 p-2 text-destructive">
-                  <WifiOff className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="font-medium text-foreground">Sin conexión</p>
-                  <p className="text-sm text-muted-foreground">
-                    Comprueba Internet para continuar utilizando el Centro de Control de VRIXORA.
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground sm:max-w-xs sm:text-right">
-                Las acciones administrativas quedan deshabilitadas hasta que vuelva la conexión.
-              </p>
-            </CardContent>
-          </Card>
-        ),
-      });
-      return items;
+  useEffect(() => {
+    if (previousConnectivityStatusRef.current === "offline" && connectivity.status === "online") {
+      void queryClient.invalidateQueries();
     }
 
-    if (updateAvailable) {
-      items.push({
-        key: "update",
-        node: (
+    previousConnectivityStatusRef.current = connectivity.status;
+  }, [connectivity.status, queryClient]);
+
+  const handleRetryConnection = async () => {
+    markNavigatorOnlineHint();
+    const confirmed = await probeConnectivity();
+
+    if (confirmed) {
+      await queryClient.invalidateQueries();
+    }
+  };
+
+  if (connectivity.status === "offline") {
+    return (
+      <div className="mx-auto w-full max-w-[1600px] px-3 pt-3 sm:px-6">
+        <Card className="glass-panel border-destructive/20 bg-destructive/5">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 rounded-full bg-destructive/15 p-2 text-destructive">
+                <WifiOff className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="font-medium text-foreground">Sin conexión</p>
+                <p className="text-sm text-muted-foreground">
+                  Comprueba Internet para continuar utilizando el Centro de Control de VRIXORA.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Las acciones administrativas quedan deshabilitadas hasta que vuelva la conexión.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => void handleRetryConnection()} className="shrink-0">
+              Reintentar conexión
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-[1600px] px-3 pt-3 sm:px-6">
+      <div className="space-y-3">
+        {connectivity.status === "checking" ? null : null}
+        {updateAvailable ? (
           <Card className="glass-panel border-primary/20 bg-primary/5">
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
@@ -180,14 +236,8 @@ export function PwaExperience() {
               </Button>
             </CardContent>
           </Card>
-        ),
-      });
-    }
-
-    if (installVisible) {
-      items.push({
-        key: "install",
-        node: (
+        ) : null}
+        {canInstall && !isStandalone ? (
           <Card className="glass-panel border-primary/20 bg-background/75">
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
@@ -206,14 +256,8 @@ export function PwaExperience() {
               </Button>
             </CardContent>
           </Card>
-        ),
-      });
-    }
-
-    if (showIosHelp) {
-      items.push({
-        key: "ios-help",
-        node: (
+        ) : null}
+        {iosHelpVisible && !isStandalone && !canInstall ? (
           <Card className="glass-panel border-primary/20 bg-background/75">
             <CardContent className="flex items-start gap-3 p-4">
               <span className="mt-0.5 rounded-full bg-primary/15 p-2 text-primary">
@@ -227,21 +271,7 @@ export function PwaExperience() {
               </div>
             </CardContent>
           </Card>
-        ),
-      });
-    }
-
-    return items;
-  }, [handleUpdate, installVisible, iosHelpVisible, offline, showIosHelp, updateAvailable]);
-
-  if (panels.length === 0) return null;
-
-  return (
-    <div className="mx-auto w-full max-w-[1600px] px-3 pt-3 sm:px-6">
-      <div className="space-y-3">
-        {panels.map((panel) => (
-          <div key={panel.key}>{panel.node}</div>
-        ))}
+        ) : null}
       </div>
     </div>
   );

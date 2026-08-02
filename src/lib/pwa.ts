@@ -24,8 +24,8 @@ export function isIosDevice() {
   );
 }
 
-export function requireOnline(action: string) {
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    throw new Error(`${action} requiere conexión a Internet.`);
-  }
+export async function requireOnline(action: string) {
+  const { ensureConnectionAvailable } = await import("@/lib/connectivity");
+
+  await ensureConnectionAvailable(action);
 }
