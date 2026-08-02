@@ -228,13 +228,13 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             <Filter
               value={period}
               onChange={setPeriod}
-              values={["today", "7", "30", "month", "prev-month", "custom"]}
+              values={["all", "today", "7", "30", "month", "prev-month", "custom"]}
               label="Periodo"
             />
             <Filter
               value={method}
               onChange={setMethod}
-              values={["transfer", "cash", "other"]}
+              values={["transfer", "cash", "card", "paypal", "other"]}
               label="Método"
             />
             <Input
@@ -1070,6 +1070,7 @@ function periodLabel(value: string) {
   return (
     (
       {
+        all: "Todos los periodos",
         today: "Hoy",
         "7": "Últimos 7 días",
         "30": "Últimos 30 días",
