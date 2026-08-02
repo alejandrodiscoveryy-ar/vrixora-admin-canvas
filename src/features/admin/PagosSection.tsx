@@ -185,33 +185,47 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          icon={CircleDollarSign}
-          label="Ingresos cobrados (filtros)"
-          value={query.isLoading ? "Cargando..." : paid.toLocaleString()}
-        />
-        <Metric
-          icon={CalendarClock}
-          label="Pendientes (filtros)"
-          value={query.isLoading ? "Cargando..." : pending.toLocaleString()}
-        />
-        <Metric
-          icon={Wallet}
-          label="Registros visibles"
-          value={query.isLoading ? "Cargando..." : String(filtered.length)}
-        />
-        <Metric
-          icon={CalendarClock}
-          label="Renovaciones del mes"
-          value={query.isLoading ? "Cargando..." : String(renewals)}
-        />
+      <div className="rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">Resumen estadístico</p>
+            <p className="text-xs text-muted-foreground">Información rápida de pagos</p>
+          </div>
+          <Badge className="bg-muted text-muted-foreground" variant="secondary">
+            {filtered.length} registros
+          </Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
+          <Metric
+            icon={CircleDollarSign}
+            label="Ingresos cobrados (filtros)"
+            value={query.isLoading ? "Cargando..." : paid.toLocaleString()}
+          />
+          <Metric
+            icon={CalendarClock}
+            label="Pendientes (filtros)"
+            value={query.isLoading ? "Cargando..." : pending.toLocaleString()}
+          />
+          <Metric
+            icon={Wallet}
+            label="Registros visibles"
+            value={query.isLoading ? "Cargando..." : String(filtered.length)}
+          />
+          <Metric
+            icon={CalendarClock}
+            label="Renovaciones del mes"
+            value={query.isLoading ? "Cargando..." : String(renewals)}
+          />
+        </div>
       </div>
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Wallet className="h-4 w-4 text-primary" />
-            Historial de pagos<Badge variant="outline">{filtered.length}</Badge>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+            Historial de pagos
+            <Badge className="bg-muted text-muted-foreground" variant="outline">
+              {filtered.length}
+            </Badge>
           </CardTitle>
           {canManage && (
             <Button onClick={() => setRegisterOpen(true)}>
@@ -282,26 +296,32 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                 values={["transfer", "cash", "card", "paypal", "other"]}
                 label="Método"
               />
-              {period === "custom" && (
-                <>
-                  <Input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => {
-                      setFromDate(e.target.value);
-                      if (period !== "custom") setPeriod("custom");
-                    }}
-                  />
-                  <Input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => {
-                      setToDate(e.target.value);
-                      if (period !== "custom") setPeriod("custom");
-                    }}
-                  />
-                </>
-              )}
+              {period === "custom" ? (
+                <div className="col-span-full grid gap-2 md:grid-cols-2 xl:col-span-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Desde</Label>
+                    <Input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => {
+                        setFromDate(e.target.value);
+                        if (period !== "custom") setPeriod("custom");
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hasta</Label>
+                    <Input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => {
+                        setToDate(e.target.value);
+                        if (period !== "custom") setPeriod("custom");
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
           </MobileFiltersPanel>
           <div className="space-y-3 md:hidden">
@@ -1022,12 +1042,16 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <Icon className="h-5 w-5 text-primary" />
-        <div>
-          <div className="text-2xl font-semibold">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
+    <Card className="h-full border-border/40 bg-card/50 shadow-none transition-colors hover:bg-card/70">
+      <CardContent className="flex items-center gap-2 p-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Icon className="h-4 w-4 text-primary/70" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-base font-semibold leading-none">{value}</div>
+          <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">
+            {label}
+          </div>
         </div>
       </CardContent>
     </Card>

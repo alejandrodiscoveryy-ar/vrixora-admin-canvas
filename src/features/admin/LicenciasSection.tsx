@@ -254,15 +254,17 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border bg-card/80 p-3 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
             <p className="text-xs text-muted-foreground">Información rápida de licencias</p>
           </div>
-          <Badge variant="secondary">{licenses.length} total</Badge>
+          <Badge className="bg-muted text-muted-foreground" variant="secondary">
+            {licenses.length} total
+          </Badge>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
           <Metric
             icon={Activity}
             label="Activas"
@@ -327,8 +329,10 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-primary" /> Licencias
-            <Badge variant="outline">{licenses.length}</Badge>
+            <KeyRound className="h-4 w-4 text-muted-foreground" /> Licencias
+            <Badge className="bg-muted text-muted-foreground" variant="outline">
+              {licenses.length}
+            </Badge>
           </CardTitle>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -610,12 +614,16 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <Icon className="h-5 w-5 text-primary" />
-        <div>
-          <div className="text-2xl font-semibold">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
+    <Card className="h-full border-border/40 bg-card/50 shadow-none transition-colors hover:bg-card/70">
+      <CardContent className="flex items-center gap-2 p-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Icon className="h-4 w-4 text-primary/70" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-base font-semibold leading-none">{value}</div>
+          <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">
+            {label}
+          </div>
         </div>
       </CardContent>
     </Card>

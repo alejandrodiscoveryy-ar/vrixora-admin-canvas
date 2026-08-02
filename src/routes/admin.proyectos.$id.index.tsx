@@ -72,7 +72,7 @@ function ResumenPage() {
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:analytics-range:${id}`,
   );
-  const [period, setPeriod] = useState<PeriodKey>("custom");
+  const [period, setPeriod] = useState<PeriodKey>("7d");
   const [planFilter, setPlanFilter] = useState("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
   const [methodFilter, setMethodFilter] = useState("all");

@@ -90,6 +90,14 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     [query.data, search],
   );
   const visibleMobileRows = clients.slice(0, mobileVisible);
+  const activeClients = clients.filter((client) => client.status === "active").length;
+  const pendingClients = clients.filter((client) => client.status === "pending").length;
+  const trialClients = clients.filter((client) => client.licenseKey?.includes("trial") ?? false).length;
+  const expiringSoon = clients.filter((client) => {
+    const expiresAt = new Date(client.expiresAt).getTime();
+    const diffDays = Math.ceil((expiresAt - Date.now()) / 86_400_000);
+    return diffDays >= 0 && diffDays <= 7;
+  }).length;
 
   useEffect(() => {
     setMobileVisible(10);
@@ -103,12 +111,32 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         badge={<Badge variant="outline">{clients.length}</Badge>}
       />
 
+      <div className="rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">Resumen estadístico</p>
+            <p className="text-xs text-muted-foreground">Información rápida de clientes</p>
+          </div>
+          <Badge className="bg-muted text-muted-foreground" variant="secondary">
+            {clients.length} clientes
+          </Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
+          <Metric label="Activos" value={String(activeClients)} icon={ShieldCheck} />
+          <Metric label="Pendientes" value={String(pendingClients)} icon={CreditCard} />
+          <Metric label="En prueba" value={String(trialClients)} icon={Users} />
+          <Metric label="Vence en 7 días" value={String(expiringSoon)} icon={CreditCard} />
+        </div>
+      </div>
+
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-muted-foreground" />
             Todos los clientes
-            <Badge variant="outline">{clients.length}</Badge>
+            <Badge className="bg-muted text-muted-foreground" variant="outline">
+              {clients.length}
+            </Badge>
           </CardTitle>
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -342,6 +370,32 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         />
       </Card>
     </div>
+  );
+}
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof ShieldCheck;
+  label: string;
+  value: string;
+}) {
+  return (
+    <Card className="h-full border-border/40 bg-card/50 shadow-none transition-colors hover:bg-card/70">
+      <CardContent className="flex items-center gap-2 p-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Icon className="h-4 w-4 text-primary/70" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-base font-semibold leading-none">{value}</div>
+          <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">
+            {label}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
