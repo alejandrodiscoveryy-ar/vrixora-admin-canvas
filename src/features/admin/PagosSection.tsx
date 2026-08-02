@@ -153,8 +153,10 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       }),
     [rows, search, plan, status, currency, method, operator, periodRange],
   );
-  const paid = rows.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
-  const pending = rows.filter((p) => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
+  const paid = filtered.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
+  const pending = filtered
+    .filter((p) => p.status === "pending")
+    .reduce((sum, p) => sum + p.amount, 0);
   const pendingCount = rows.filter((p) => p.status === "pending").length;
   const missingReceiptCount = rows.filter(
     (p) => ["paid", "complimentary"].includes(p.status) && !p.hasReceipt,
@@ -169,12 +171,24 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           icon={CircleDollarSign}
-          label="Ingresos por licencias"
-          value={paid.toLocaleString()}
+          label="Ingresos cobrados (filtros)"
+          value={query.isLoading ? "Cargando..." : paid.toLocaleString()}
         />
-        <Metric icon={CalendarClock} label="Pagos pendientes" value={pending.toLocaleString()} />
-        <Metric icon={Wallet} label="Registros de pago" value={String(rows.length)} />
-        <Metric icon={CalendarClock} label="Renovaciones del mes" value={String(renewals)} />
+        <Metric
+          icon={CalendarClock}
+          label="Pendientes (filtros)"
+          value={query.isLoading ? "Cargando..." : pending.toLocaleString()}
+        />
+        <Metric
+          icon={Wallet}
+          label="Registros visibles"
+          value={query.isLoading ? "Cargando..." : String(filtered.length)}
+        />
+        <Metric
+          icon={CalendarClock}
+          label="Renovaciones del mes"
+          value={query.isLoading ? "Cargando..." : String(renewals)}
+        />
       </div>
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
@@ -237,22 +251,26 @@ export default function PagosSection({ projectId }: { projectId: string }) {
               values={["transfer", "cash", "card", "paypal", "other"]}
               label="Método"
             />
-            <Input
-              type="date"
-              value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value);
-                if (period !== "custom") setPeriod("custom");
-              }}
-            />
-            <Input
-              type="date"
-              value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value);
-                if (period !== "custom") setPeriod("custom");
-              }}
-            />
+            {period === "custom" && (
+              <>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => {
+                    setFromDate(e.target.value);
+                    if (period !== "custom") setPeriod("custom");
+                  }}
+                />
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => {
+                    setToDate(e.target.value);
+                    if (period !== "custom") setPeriod("custom");
+                  }}
+                />
+              </>
+            )}
           </div>
           <div className="space-y-3 md:hidden">
             {filtered.map((payment) => (

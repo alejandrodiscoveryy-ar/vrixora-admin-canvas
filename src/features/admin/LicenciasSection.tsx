@@ -179,26 +179,62 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={Activity} label="Activas" value={count("active")} />
-        <Metric icon={CalendarClock} label="Pendientes" value={count("pending")} />
+        <Metric
+          icon={Activity}
+          label="Activas"
+          value={licensesQuery.isLoading ? "Cargando..." : String(count("active"))}
+        />
+        <Metric
+          icon={CalendarClock}
+          label="Pendientes"
+          value={licensesQuery.isLoading ? "Cargando..." : String(count("pending"))}
+        />
         <Metric
           icon={ShieldAlert}
           label="Vencidas / suspendidas"
-          value={count("expired") + count("suspended")}
+          value={
+            licensesQuery.isLoading ? "Cargando..." : String(count("expired") + count("suspended"))
+          }
         />
         <Metric
           icon={Users}
           label="En prueba"
-          value={licenses.filter((item) => item.licenseType === "trial").length}
+          value={
+            licensesQuery.isLoading
+              ? "Cargando..."
+              : String(licenses.filter((item) => item.licenseType === "trial").length)
+          }
         />
-        <Metric icon={CalendarClock} label="Vencen en 7 días" value={expiring(7)} />
-        <Metric icon={CalendarClock} label="Vencen en 30 días" value={expiring(30)} />
+        <Metric
+          icon={CalendarClock}
+          label="Vencen en 7 días"
+          value={licensesQuery.isLoading ? "Cargando..." : String(expiring(7))}
+        />
+        <Metric
+          icon={CalendarClock}
+          label="Vencen en 30 días"
+          value={licensesQuery.isLoading ? "Cargando..." : String(expiring(30))}
+        />
+        <Metric
+          icon={KeyRound}
+          label="Total licencias"
+          value={licensesQuery.isLoading ? "Cargando..." : String(licenses.length)}
+        />
+        <Metric
+          icon={Search}
+          label="Visibles con filtros"
+          value={licensesQuery.isLoading ? "Cargando..." : String(filtered.length)}
+        />
         {plansQuery.data?.map((item) => (
           <Metric
             key={item.code}
             icon={KeyRound}
             label={`Plan ${item.name}`}
-            value={licenses.filter((l) => l.plan === item.code).length}
+            value={
+              licensesQuery.isLoading
+                ? "Cargando..."
+                : String(licenses.filter((l) => l.plan === item.code).length)
+            }
           />
         ))}
       </div>
@@ -456,7 +492,7 @@ function Metric({
 }: {
   icon: typeof Activity;
   label: string;
-  value: number;
+  value: string;
 }) {
   return (
     <Card>
