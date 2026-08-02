@@ -64,7 +64,10 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [status, setStatus] = useState("all");
   const [currency, setCurrency] = useState("all");
   const [method, setMethod] = useState("all");
-  const [date, setDate] = useState("");
+  const [operator, setOperator] = useState("all");
+  const [period, setPeriod] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [registerOpen, setRegisterOpen] = useState(false);
   const [editing, setEditing] = useState<ServicePayment | null>(null);
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
@@ -121,23 +124,41 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
   const rows = useMemo(() => query.data ?? [], [query.data]);
+  const operators = useMemo(
+    () => [...new Set(rows.map((p) => p.operatorLabel ?? p.employeeId).filter(Boolean))].sort(),
+    [rows],
+  );
+  const periodRange = useMemo(
+    () => resolvePeriodRange(period, fromDate, toDate),
+    [period, fromDate, toDate],
+  );
   const filtered = useMemo(
     () =>
       rows.filter((p) => {
         const text = `${p.userEmail} ${p.licenseKey} ${p.reference}`.toLowerCase();
+        const operatorLabel = p.operatorLabel ?? p.employeeId;
+        const createdAt = new Date(p.createdAt).getTime();
+        const inPeriod =
+          !periodRange ||
+          (createdAt >= periodRange.start.getTime() && createdAt <= periodRange.end.getTime());
         return (
           text.includes(search.toLowerCase()) &&
           (plan === "all" || p.plan === plan) &&
           (status === "all" || p.status === status) &&
           (currency === "all" || p.currency === currency) &&
           (method === "all" || p.method === method) &&
-          (!date || p.createdAt.slice(0, 10) === date)
+          (operator === "all" || operatorLabel === operator) &&
+          inPeriod
         );
       }),
-    [rows, search, plan, status, currency, method, date],
+    [rows, search, plan, status, currency, method, operator, periodRange],
   );
   const paid = rows.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
   const pending = rows.filter((p) => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
+  const pendingCount = rows.filter((p) => p.status === "pending").length;
+  const missingReceiptCount = rows.filter(
+    (p) => ["paid", "complimentary"].includes(p.status) && !p.hasReceipt,
+  ).length;
   const plans = [...new Set(rows.map((p) => p.plan))];
   const month = new Date().toISOString().slice(0, 7);
   const renewals = (audit.data ?? []).filter(
@@ -169,7 +190,18 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+          {(pendingCount > 0 || missingReceiptCount > 0) && (
+            <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+              <div className="font-medium">Alertas de coherencia</div>
+              <div className="mt-1">
+                {pendingCount > 0 && `${pendingCount} pagos pendientes por confirmar.`}
+                {pendingCount > 0 && missingReceiptCount > 0 ? " " : ""}
+                {missingReceiptCount > 0 && `${missingReceiptCount} pagos sin recibo disponible.`}
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-8">
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -192,13 +224,35 @@ export default function PagosSection({ projectId }: { projectId: string }) {
               values={["CUP", "USD", "EUR"]}
               label="Moneda"
             />
+            <Filter value={operator} onChange={setOperator} values={operators} label="Operador" />
+            <Filter
+              value={period}
+              onChange={setPeriod}
+              values={["today", "7", "30", "month", "prev-month", "custom"]}
+              label="Periodo"
+            />
             <Filter
               value={method}
               onChange={setMethod}
               values={["transfer", "cash", "other"]}
               label="Método"
             />
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                if (period !== "custom") setPeriod("custom");
+              }}
+            />
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                if (period !== "custom") setPeriod("custom");
+              }}
+            />
           </div>
           <div className="space-y-3 md:hidden">
             {filtered.map((payment) => (
@@ -968,7 +1022,11 @@ function Filter({
                 ? statusLabel(v)
                 : label === "Método"
                   ? methodLabel(v)
-                  : v}
+                  : label === "Periodo"
+                    ? periodLabel(v)
+                    : label === "Operador" && v === "all"
+                      ? "Operador: todos"
+                      : v}
           </SelectItem>
         ))}
       </SelectContent>
@@ -1006,4 +1064,66 @@ function methodLabel(value: string) {
       } as Record<string, string>
     )[value] ?? value
   );
+}
+
+function periodLabel(value: string) {
+  return (
+    (
+      {
+        today: "Hoy",
+        "7": "Últimos 7 días",
+        "30": "Últimos 30 días",
+        month: "Mes actual",
+        "prev-month": "Mes anterior",
+        custom: "Personalizado",
+      } as Record<string, string>
+    )[value] ?? value
+  );
+}
+
+function resolvePeriodRange(period: string, fromDate: string, toDate: string) {
+  const now = new Date();
+  if (period === "today") {
+    return {
+      start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
+      end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+    };
+  }
+  if (period === "7") {
+    const start = new Date(now);
+    start.setDate(start.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+    return {
+      start,
+      end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+    };
+  }
+  if (period === "30") {
+    const start = new Date(now);
+    start.setDate(start.getDate() - 29);
+    start.setHours(0, 0, 0, 0);
+    return {
+      start,
+      end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+    };
+  }
+  if (period === "month") {
+    return {
+      start: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0),
+      end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+    };
+  }
+  if (period === "prev-month") {
+    return {
+      start: new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0),
+      end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999),
+    };
+  }
+  if (period === "custom" && fromDate && toDate) {
+    return {
+      start: new Date(`${fromDate}T00:00:00`),
+      end: new Date(`${toDate}T23:59:59.999`),
+    };
+  }
+  return null;
 }
