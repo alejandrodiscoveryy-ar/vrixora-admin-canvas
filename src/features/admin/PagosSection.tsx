@@ -185,7 +185,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border bg-card/80 p-3 shadow-sm">
+      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
