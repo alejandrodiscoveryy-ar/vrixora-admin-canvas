@@ -20,6 +20,7 @@ import type {
   BillingPreview,
   BillingReceipt,
 } from "./types";
+import { requireOnline } from "@/lib/pwa";
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -214,6 +215,7 @@ export const supabaseServices: AdminServices = {
       };
     },
     async update(projectId, changes) {
+      await requireOnline("Actualizar la configuración del proyecto");
       const { error } = await getSupabaseClient().rpc("admin_update_project_settings", {
         target_project_id: projectId,
         target_name: changes.name,
@@ -286,6 +288,7 @@ export const supabaseServices: AdminServices = {
       );
     },
     async add(projectId, email, role) {
+      await requireOnline("Agregar un miembro al proyecto");
       const { error } = await getSupabaseClient().rpc("admin_upsert_project_member", {
         target_project_id: projectId,
         target_email: email.trim(),
@@ -294,6 +297,7 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
     },
     async remove(projectId, userId) {
+      await requireOnline("Eliminar un miembro del proyecto");
       const { error } = await getSupabaseClient().rpc("admin_remove_project_member", {
         target_project_id: projectId,
         target_user_id: userId,
@@ -334,6 +338,7 @@ export const supabaseServices: AdminServices = {
       );
     },
     async setClientStatus(projectId, userId, status, reason) {
+      await requireOnline("Cambiar el estado de una licencia");
       const { data, error } = await getSupabaseClient().rpc("admin_set_client_license_status", {
         target_project_id: projectId,
         target_user_id: userId,
@@ -401,6 +406,7 @@ export const supabaseServices: AdminServices = {
       );
     },
     async renew(licenseId, durationDays, note) {
+      await requireOnline("Renovar una licencia");
       const { data, error } = await getSupabaseClient().rpc("renew_license", {
         target_license_id: licenseId,
         requested_duration_days: durationDays ?? null,
@@ -419,6 +425,7 @@ export const supabaseServices: AdminServices = {
       return data as LicenseValidationResult;
     },
     async create(input: CreateLicenseInput) {
+      await requireOnline("Crear una licencia");
       const { data, error } = await getSupabaseClient().rpc("admin_create_license", {
         target_project_id: input.projectId,
         target_email: input.email,
@@ -436,6 +443,7 @@ export const supabaseServices: AdminServices = {
       return mapLicense(data);
     },
     async update(licenseId, operation, payload) {
+      await requireOnline("Actualizar una licencia");
       const { data, error } = await getSupabaseClient().rpc("admin_update_license", {
         target_license_id: licenseId,
         operation,
@@ -489,6 +497,7 @@ export const supabaseServices: AdminServices = {
       );
     },
     async manageDevice(deviceId, operation, reason) {
+      await requireOnline("Gestionar un dispositivo");
       const { error } = await getSupabaseClient().rpc("admin_manage_license_device", {
         target_device_id: deviceId,
         operation,
@@ -497,6 +506,7 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
     },
     async resetDevices(licenseId, reason) {
+      await requireOnline("Restablecer dispositivos de licencia");
       const { data, error } = await getSupabaseClient().rpc("admin_reset_license_devices", {
         target_license_id: licenseId,
         reason,
@@ -527,6 +537,7 @@ export const supabaseServices: AdminServices = {
       );
     },
     async savePlan(projectId, plan) {
+      await requireOnline("Guardar un plan");
       const { data, error } = await getSupabaseClient().rpc("admin_save_license_plan", {
         target_project_id: projectId,
         target_code: plan.code,
@@ -558,6 +569,7 @@ export const supabaseServices: AdminServices = {
       };
     },
     async assignWithPayment(input: LicenseBillingInput) {
+      await requireOnline("Asignar una licencia con pago");
       const { data, error } = await getSupabaseClient().rpc("admin_assign_license_with_payment", {
         target_project_id: input.projectId,
         target_email: input.email,
@@ -575,6 +587,7 @@ export const supabaseServices: AdminServices = {
       return mapLicense(data);
     },
     async renewWithPayment(input: LicenseBillingInput) {
+      await requireOnline("Renovar una licencia con pago");
       const { data, error } = await getSupabaseClient().rpc("admin_renew_license_with_payment", {
         target_license_id: input.licenseId,
         target_plan: input.plan,
@@ -650,6 +663,7 @@ export const supabaseServices: AdminServices = {
       );
     },
     async record(input) {
+      await requireOnline("Registrar un pago");
       const { data, error } = await getSupabaseClient().rpc("admin_record_license_payment", {
         target_license_id: input.licenseId,
         target_plan: input.plan,
@@ -680,6 +694,7 @@ export const supabaseServices: AdminServices = {
       };
     },
     async updateStatus(paymentId, status, notes) {
+      await requireOnline("Cambiar el estado de un pago");
       const { data, error } = await getSupabaseClient().rpc("admin_update_payment_status", {
         target_payment_id: paymentId,
         target_status: status,
@@ -705,6 +720,7 @@ export const supabaseServices: AdminServices = {
       };
     },
     async update(input) {
+      await requireOnline("Actualizar un pago");
       const { data, error } = await getSupabaseClient().rpc("admin_update_payment_record", {
         target_payment_id: input.paymentId,
         target_amount: input.amount,
@@ -726,6 +742,7 @@ export const supabaseServices: AdminServices = {
       };
     },
     async remove(paymentId, reason) {
+      await requireOnline("Eliminar un pago");
       const { error } = await getSupabaseClient().rpc("admin_delete_payment_record", {
         target_payment_id: paymentId,
         target_reason: reason,
@@ -738,6 +755,7 @@ export const supabaseServices: AdminServices = {
       return mapBillingPreview(data as Record<string, unknown>);
     },
     async chargeAndAssign(input) {
+      await requireOnline("Cobrar y asignar una licencia");
       const { data, error } = await getSupabaseClient().rpc("admin_charge_and_assign_plan", { target_license_id: input.licenseId, target_plan: input.plan, target_amount: input.amount, target_method: input.method, target_reference: input.reference ?? null, target_charged_at: input.chargedAt, target_notes: input.notes ?? null, target_application_rule: input.applicationRule, target_idempotency_key: input.idempotencyKey });
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
@@ -748,6 +766,7 @@ export const supabaseServices: AdminServices = {
       return mapBillingReceipt(data as Record<string, unknown>);
     },
     async repairReceipt(paymentId) {
+      await requireOnline("Reparar un recibo");
       const { data, error } = await getSupabaseClient().rpc("admin_repair_missing_billing_receipt", { target_payment_id: paymentId });
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
