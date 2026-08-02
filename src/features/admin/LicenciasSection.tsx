@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import {
   supabaseServices,
   type LicensePlan,
+  type ServiceClient,
   type LicenseStatus,
   type LicenseType,
   type ServiceLicense,
@@ -119,11 +120,19 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
     queryKey: ["license-types"],
     queryFn: () => supabaseServices.licenses.listTypes(),
   });
+  const clientsQuery = useQuery({
+    queryKey: ["admin-clients", projectId],
+    queryFn: () => supabaseServices.licenses.listClients(projectId),
+  });
   const plansQuery = useQuery({
     queryKey: ["license-plans"],
     queryFn: () => supabaseServices.licenses.listPlans(projectId),
   });
   const licenses = useMemo(() => licensesQuery.data ?? [], [licensesQuery.data]);
+  const clientByUserId = useMemo(
+    () => new Map((clientsQuery.data ?? []).map((client) => [client.userId, client] as const)),
+    [clientsQuery.data],
+  );
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
 
   const filtered = useMemo(() => {
@@ -299,6 +308,16 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                     <AccordionItem value={`license-${license.id}`}>
                       <AccordionTrigger className="py-2 text-sm">Ver detalles</AccordionTrigger>
                       <AccordionContent className="space-y-2 text-xs text-muted-foreground">
+                        <DetailRow
+                          label="Último pago"
+                          value={lastPaymentLabel(clientByUserId.get(license.userId))}
+                        />
+                        <DetailRow
+                          label="Última renovación"
+                          value={displayDate(
+                            clientByUserId.get(license.userId)?.lastRenewedAt ?? null,
+                          )}
+                        />
                         <DetailRow label="Activación" value={displayDate(license.activatedAt)} />
                         <DetailRow
                           label="Última validación"
@@ -363,7 +382,10 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                       {displayDate(license.activatedAt)}
                     </TableCell>
                     <TableCell data-label="Vencimiento" className="whitespace-nowrap text-xs">
-                      {displayDate(license.expiresAt)}
+                      <div>{displayDate(license.expiresAt)}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {remainingLicenseTime(license.expiresAt)}
+                      </div>
                     </TableCell>
                     <TableCell data-label="Dispositivos">
                       {license.activeDevices} / {license.maxDevices}
@@ -657,6 +679,13 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="text-right text-foreground">{value}</span>
     </div>
   );
+}
+
+function lastPaymentLabel(client: ServiceClient | undefined) {
+  if (!client?.lastPaymentAt || client.lastPaymentAmount == null || !client.lastPaymentCurrency) {
+    return "Sin pago registrado";
+  }
+  return `${client.lastPaymentAmount} ${client.lastPaymentCurrency} · ${displayDate(client.lastPaymentAt)}`;
 }
 
 function ActionsDialog({
