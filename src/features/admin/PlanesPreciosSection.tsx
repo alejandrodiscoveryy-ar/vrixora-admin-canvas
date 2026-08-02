@@ -32,6 +32,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectPermissions } from "@/hooks/useProjects";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileLoadMore, MobileSectionHeader } from "@/components/admin/MobileAdminSystem";
 
 const emptyPlan: LicensePlan = {
   code: "",
@@ -48,12 +50,15 @@ const emptyPlan: LicensePlan = {
 };
 
 export default function PlanesPreciosSection({ projectId }: { projectId: string }) {
+  const isMobile = useIsMobile();
   const client = useQueryClient();
   const [editing, setEditing] = useState<LicensePlan | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [mobileVisible, setMobileVisible] = useState(10);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManagePlans = permissions.includes("plans.manage");
-  const canAssign = permissions.includes("licenses.manage") && permissions.includes("payments.manage");
+  const canAssign =
+    permissions.includes("licenses.manage") && permissions.includes("payments.manage");
   const plans = useQuery({
     queryKey: ["admin-license-plans", projectId],
     queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
@@ -63,29 +68,37 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
     queryFn: () => supabaseServices.licenses.listTypes(),
   });
   const refresh = () => client.invalidateQueries({ queryKey: ["admin-license-plans", projectId] });
+  const visiblePlans = (plans.data ?? []).slice(0, mobileVisible);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold">Planes y precios</h2>
-          <p className="text-sm text-muted-foreground">
-            La configuración comercial se guarda íntegramente en Supabase.
-          </p>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {canManagePlans && <Button variant="outline" onClick={() => setEditing({ ...emptyPlan })}>
-            <Plus className="mr-2 h-4 w-4" />
-            Crear plan
-          </Button>}
-          {canAssign && <Button onClick={() => setAssignOpen(true)}>
-            <BadgeCheck className="mr-2 h-4 w-4" />
-            Asignar licencia
-          </Button>}
-        </div>
-      </div>
+      <MobileSectionHeader
+        title="Planes y precios"
+        subtitle="Gestion comercial de planes, precios y asignaciones."
+        badge={<Badge variant="outline">{plans.data?.length ?? 0}</Badge>}
+        action={
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            {canManagePlans && (
+              <Button
+                variant="outline"
+                className="h-10"
+                onClick={() => setEditing({ ...emptyPlan })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Crear plan
+              </Button>
+            )}
+            {canAssign && (
+              <Button className="h-10" onClick={() => setAssignOpen(true)}>
+                <BadgeCheck className="mr-2 h-4 w-4" />
+                Asignar licencia
+              </Button>
+            )}
+          </div>
+        }
+      />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {plans.data?.map((plan) => (
+        {visiblePlans.map((plan) => (
           <Card key={plan.code} className={plan.isFeatured ? "border-primary" : ""}>
             <CardHeader className="flex flex-row items-start justify-between gap-3">
               <div>
@@ -120,14 +133,26 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
                     </Badge>
                   ))}
               </div>
-              {canManagePlans && <Button className="w-full" variant="outline" onClick={() => setEditing(plan)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar
-              </Button>}
+              {canManagePlans && (
+                <Button className="w-full" variant="outline" onClick={() => setEditing(plan)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Editar
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {isMobile ? (
+        <MobileLoadMore
+          total={plans.data?.length ?? 0}
+          visible={visiblePlans.length}
+          canLoadMore={(plans.data?.length ?? 0) > visiblePlans.length}
+          onLoadMore={() => setMobileVisible((value) => value + 10)}
+        />
+      ) : null}
+
       <PlanDialog
         key={editing ? editing.code || "new-plan" : "closed-plan-dialog"}
         projectId={projectId}
@@ -191,7 +216,7 @@ function PlanDialog({
   const selectedType = types.find((type) => type.code === value?.licenseType);
   return (
     <Dialog open={!!plan} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{plan?.code ? "Editar plan" : "Crear plan"}</DialogTitle>
           <DialogDescription>
@@ -384,7 +409,7 @@ function AssignDialog({
   });
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Asignar licencia</DialogTitle>
           <DialogDescription>

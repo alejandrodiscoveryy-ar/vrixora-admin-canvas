@@ -58,6 +58,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  MobileActionsMenu,
+  MobileFiltersPanel,
+  MobileLoadMore,
+} from "@/components/admin/MobileAdminSystem";
 
 const statuses: LicenseStatus[] = ["active", "pending", "expired", "suspended", "revoked"];
 const labels: Record<string, string> = {
@@ -102,11 +108,13 @@ function errorMessage(error: unknown) {
 
 export default function LicenciasSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("all");
   const [type, setType] = useState("all");
   const [expiry, setExpiry] = useState("all");
+  const [mobileVisible, setMobileVisible] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<ServiceLicense | null>(null);
   const [action, setAction] = useState<"renew" | "status" | "extend" | "plan" | null>(null);
@@ -165,6 +173,12 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
         new Date(item.expiresAt).getTime() >= Date.now() &&
         new Date(item.expiresAt).getTime() <= Date.now() + days * 86400000,
     ).length;
+  const activeFilterCount = [status, plan, type, expiry].filter((value) => value !== "all").length;
+  const visibleMobileRows = filtered.slice(0, mobileVisible);
+
+  useEffect(() => {
+    setMobileVisible(10);
+  }, [search, status, plan, type, expiry]);
 
   if (licensesQuery.isError) {
     return (
@@ -251,48 +265,59 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-            <div className="relative xl:col-span-2">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Correo, clave, plan o tipo"
-                className="pl-9"
-              />
-            </div>
-            <Filter
-              value={status}
-              onChange={setStatus}
-              placeholder="Estado"
-              items={statuses.map((code) => ({ code, name: labels[code] }))}
-            />
-            <Filter
-              value={plan}
-              onChange={setPlan}
-              placeholder="Plan"
-              items={plansQuery.data ?? []}
-            />
-            <Filter
-              value={type}
-              onChange={setType}
-              placeholder="Tipo"
-              items={typesQuery.data ?? []}
-            />
-            <Filter
-              value={expiry}
-              onChange={setExpiry}
-              placeholder="Vencimiento"
-              items={[
-                { code: "expired", name: "Vencidas" },
-                { code: "7", name: "Próximas 7 días" },
-                { code: "30", name: "Próximas 30 días" },
-              ]}
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Correo, clave, plan o tipo"
+              className="pl-9"
             />
           </div>
 
+          <MobileFiltersPanel
+            activeFilters={activeFilterCount}
+            onClear={() => {
+              setStatus("all");
+              setPlan("all");
+              setType("all");
+              setExpiry("all");
+            }}
+          >
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+              <Filter
+                value={status}
+                onChange={setStatus}
+                placeholder="Estado"
+                items={statuses.map((code) => ({ code, name: labels[code] }))}
+              />
+              <Filter
+                value={plan}
+                onChange={setPlan}
+                placeholder="Plan"
+                items={plansQuery.data ?? []}
+              />
+              <Filter
+                value={type}
+                onChange={setType}
+                placeholder="Tipo"
+                items={typesQuery.data ?? []}
+              />
+              <Filter
+                value={expiry}
+                onChange={setExpiry}
+                placeholder="Vencimiento"
+                items={[
+                  { code: "expired", name: "Vencidas" },
+                  { code: "7", name: "Próximas 7 días" },
+                  { code: "30", name: "Próximas 30 días" },
+                ]}
+              />
+            </div>
+          </MobileFiltersPanel>
+
           <div className="space-y-3 md:hidden">
-            {filtered.map((license) => (
+            {visibleMobileRows.map((license) => (
               <Card key={license.id} className="border-border/70 bg-card/80">
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -363,14 +388,33 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
-                  <Button variant="outline" className="w-full" onClick={() => setSelected(license)}>
-                    <MoreHorizontal className="mr-2 h-4 w-4" />
-                    Gestionar
-                  </Button>
+                  <div className="flex justify-end">
+                    <MobileActionsMenu
+                      items={[
+                        {
+                          label: "Gestionar licencia",
+                          onSelect: () => setSelected(license),
+                        },
+                        {
+                          label: "Historial y dispositivos",
+                          onSelect: () => setDetails(license),
+                        },
+                      ]}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+
+          {isMobile ? (
+            <MobileLoadMore
+              total={filtered.length}
+              visible={visibleMobileRows.length}
+              canLoadMore={filtered.length > visibleMobileRows.length}
+              onLoadMore={() => setMobileVisible((value) => value + 10)}
+            />
+          ) : null}
 
           <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
             <Table>
@@ -597,7 +641,7 @@ function CreateDialog({
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Crear licencia</DialogTitle>
           <DialogDescription>
@@ -737,7 +781,7 @@ function ActionsDialog({
 }) {
   return (
     <Dialog open={!!license} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Gestionar licencia</DialogTitle>
           <DialogDescription>
@@ -835,7 +879,7 @@ function OperationDialog({
   const sensitive = operation === "status" && ["suspended", "revoked"].includes(status);
   return (
     <Dialog open={!!license && !!operation} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {operation === "renew"
