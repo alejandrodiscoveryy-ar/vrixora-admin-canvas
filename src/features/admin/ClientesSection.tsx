@@ -132,9 +132,11 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
             Todos los clientes
-            <Badge variant="outline">{clients.length}</Badge>
+            <Badge className="border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" variant="outline">
+              {clients.length}
+            </Badge>
           </CardTitle>
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

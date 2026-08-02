@@ -329,8 +329,10 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-primary" /> Licencias
-            <Badge variant="outline">{licenses.length}</Badge>
+            <KeyRound className="h-4 w-4 text-sky-600 dark:text-sky-400" /> Licencias
+            <Badge className="border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" variant="outline">
+              {licenses.length}
+            </Badge>
           </CardTitle>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />

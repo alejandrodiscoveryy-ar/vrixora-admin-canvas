@@ -221,8 +221,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Wallet className="h-4 w-4 text-primary" />
-            Historial de pagos<Badge variant="outline">{filtered.length}</Badge>
+            <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            Historial de pagos
+            <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" variant="outline">
+              {filtered.length}
+            </Badge>
           </CardTitle>
           {canManage && (
             <Button onClick={() => setRegisterOpen(true)}>
