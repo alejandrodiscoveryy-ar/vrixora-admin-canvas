@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export type AnalyticsDateRange = { from: string; to: string };
 
 export function usePersistentAnalyticsDateRange(storageKey: string) {
-  const [range, setRange] = useState<AnalyticsDateRange>(() => currentMonth());
+  const [range, setRange] = useState<AnalyticsDateRange>(() => last7Days());
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     try {
@@ -69,6 +69,9 @@ function DateField({ label, value, min, max, onChange }: { label: string; value:
 function todayIso() { return new Date().toISOString().slice(0, 10); }
 function shift(days: number) { const date = new Date(); date.setDate(date.getDate() + days); return date.toISOString().slice(0, 10); }
 function currentMonth(): AnalyticsDateRange { const now = new Date(); return { from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10), to: todayIso() }; }
+function last7Days(): AnalyticsDateRange {
+  return { from: shift(-6), to: todayIso() };
+}
 function presetRange(value: string): AnalyticsDateRange {
   if (value === "today") return { from: todayIso(), to: todayIso() };
   if (value === "yesterday") return { from: shift(-1), to: shift(-1) };
