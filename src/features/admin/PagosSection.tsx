@@ -56,9 +56,16 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectPermissions } from "@/hooks/useProjects";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  MobileActionsMenu,
+  MobileFiltersPanel,
+  MobileLoadMore,
+} from "@/components/admin/MobileAdminSystem";
 
 export default function PagosSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [plan, setPlan] = useState("all");
   const [status, setStatus] = useState("all");
@@ -68,6 +75,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [period, setPeriod] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [mobileVisible, setMobileVisible] = useState(10);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [editing, setEditing] = useState<ServicePayment | null>(null);
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
@@ -166,6 +174,15 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const renewals = (audit.data ?? []).filter(
     (entry) => entry.action === "license_renewed" && entry.createdAt.startsWith(month),
   ).length;
+  const activeFilterCount = [plan, status, currency, method, operator, period].filter(
+    (value) => value !== "all",
+  ).length;
+  const visibleMobileRows = filtered.slice(0, mobileVisible);
+
+  useEffect(() => {
+    setMobileVisible(10);
+  }, [search, plan, status, currency, method, operator, period, fromDate, toDate]);
+
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -215,65 +232,80 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             </div>
           )}
 
-          <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-8">
-            <div className="relative md:col-span-2">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Usuario, clave o referencia"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <Filter value={plan} onChange={setPlan} values={plans} label="Plan" />
-            <Filter
-              value={status}
-              onChange={setStatus}
-              values={["pending", "paid", "cancelled", "refunded", "complimentary"]}
-              label="Estado"
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Usuario, clave o referencia"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <Filter
-              value={currency}
-              onChange={setCurrency}
-              values={["CUP", "USD", "EUR"]}
-              label="Moneda"
-            />
-            <Filter value={operator} onChange={setOperator} values={operators} label="Operador" />
-            <Filter
-              value={period}
-              onChange={setPeriod}
-              values={["all", "today", "7", "30", "month", "prev-month", "custom"]}
-              label="Periodo"
-            />
-            <Filter
-              value={method}
-              onChange={setMethod}
-              values={["transfer", "cash", "card", "paypal", "other"]}
-              label="Método"
-            />
-            {period === "custom" && (
-              <>
-                <Input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => {
-                    setFromDate(e.target.value);
-                    if (period !== "custom") setPeriod("custom");
-                  }}
-                />
-                <Input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => {
-                    setToDate(e.target.value);
-                    if (period !== "custom") setPeriod("custom");
-                  }}
-                />
-              </>
-            )}
           </div>
+
+          <MobileFiltersPanel
+            activeFilters={activeFilterCount}
+            onClear={() => {
+              setPlan("all");
+              setStatus("all");
+              setCurrency("all");
+              setMethod("all");
+              setOperator("all");
+              setPeriod("all");
+              setFromDate("");
+              setToDate("");
+            }}
+          >
+            <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-8">
+              <Filter value={plan} onChange={setPlan} values={plans} label="Plan" />
+              <Filter
+                value={status}
+                onChange={setStatus}
+                values={["pending", "paid", "cancelled", "refunded", "complimentary"]}
+                label="Estado"
+              />
+              <Filter
+                value={currency}
+                onChange={setCurrency}
+                values={["CUP", "USD", "EUR"]}
+                label="Moneda"
+              />
+              <Filter value={operator} onChange={setOperator} values={operators} label="Operador" />
+              <Filter
+                value={period}
+                onChange={setPeriod}
+                values={["all", "today", "7", "30", "month", "prev-month", "custom"]}
+                label="Periodo"
+              />
+              <Filter
+                value={method}
+                onChange={setMethod}
+                values={["transfer", "cash", "card", "paypal", "other"]}
+                label="Método"
+              />
+              {period === "custom" && (
+                <>
+                  <Input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => {
+                      setFromDate(e.target.value);
+                      if (period !== "custom") setPeriod("custom");
+                    }}
+                  />
+                  <Input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => {
+                      setToDate(e.target.value);
+                      if (period !== "custom") setPeriod("custom");
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          </MobileFiltersPanel>
           <div className="space-y-3 md:hidden">
-            {filtered.map((payment) => (
+            {visibleMobileRows.map((payment) => (
               <Card key={payment.id} className="border-border/70 bg-card/80">
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -346,73 +378,60 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
-                  <div className="flex flex-wrap gap-2">
-                    {canManage && payment.status === "pending" && (
-                      <Button
-                        className="flex-1"
-                        size="sm"
-                        variant="outline"
-                        disabled={markPaid.isPending}
-                        onClick={() => markPaid.mutate(payment.id)}
-                      >
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Pagado
-                      </Button>
-                    )}
-                    {canManage &&
-                      ["paid", "complimentary"].includes(payment.status) &&
-                      payment.hasReceipt && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Ver y compartir recibo"
-                          disabled={loadReceipt.isPending}
-                          onClick={() => loadReceipt.mutate(payment.id)}
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      )}
-                    {canManage &&
-                      ["paid", "complimentary"].includes(payment.status) &&
-                      !payment.hasReceipt &&
-                      canCorrect && (
-                        <Button
-                          className="flex-1"
-                          size="sm"
-                          variant="outline"
-                          disabled={repairReceipt.isPending}
-                          onClick={() => repairReceipt.mutate(payment.id)}
-                        >
-                          <FileText className="mr-2 h-4 w-4" />
-                          Recibo
-                        </Button>
-                      )}
-                    {canCorrect && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Editar pago"
-                        onClick={() => setEditing(payment)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {canCorrect && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive"
-                        title="Eliminar pago"
-                        onClick={() => setDeleting(payment)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                  <div className="flex justify-end">
+                    <MobileActionsMenu
+                      items={[
+                        {
+                          label: "Marcar pagado",
+                          disabled:
+                            !canManage || payment.status !== "pending" || markPaid.isPending,
+                          onSelect: () => markPaid.mutate(payment.id),
+                        },
+                        {
+                          label: "Ver recibo",
+                          disabled:
+                            !canManage ||
+                            !["paid", "complimentary"].includes(payment.status) ||
+                            !payment.hasReceipt ||
+                            loadReceipt.isPending,
+                          onSelect: () => loadReceipt.mutate(payment.id),
+                        },
+                        {
+                          label: "Generar recibo faltante",
+                          disabled:
+                            !canCorrect ||
+                            !["paid", "complimentary"].includes(payment.status) ||
+                            payment.hasReceipt ||
+                            repairReceipt.isPending,
+                          onSelect: () => repairReceipt.mutate(payment.id),
+                        },
+                        {
+                          label: "Editar pago",
+                          disabled: !canCorrect,
+                          onSelect: () => setEditing(payment),
+                        },
+                        {
+                          label: "Eliminar pago",
+                          disabled: !canCorrect,
+                          destructive: true,
+                          onSelect: () => setDeleting(payment),
+                        },
+                      ]}
+                    />
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+
+          {isMobile ? (
+            <MobileLoadMore
+              total={filtered.length}
+              visible={visibleMobileRows.length}
+              canLoadMore={filtered.length > visibleMobileRows.length}
+              onLoadMore={() => setMobileVisible((value) => value + 10)}
+            />
+          ) : null}
 
           <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
             <Table>
@@ -657,7 +676,7 @@ function RegisterPaymentDialog({
   }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Registrar pago</DialogTitle>
           <DialogDescription>
@@ -819,7 +838,7 @@ function EditPaymentDialog({
   });
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-h-[92dvh] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar pago</DialogTitle>
           <DialogDescription>
@@ -944,7 +963,7 @@ function DeletePaymentDialog({
   });
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Eliminar pago</DialogTitle>
           <DialogDescription>

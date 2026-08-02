@@ -41,6 +41,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  MobileFiltersPanel,
+  MobileMetricsGrid,
+  type MobileMetric,
+} from "@/components/admin/MobileAdminSystem";
 
 export const Route = createFileRoute("/admin/proyectos/$id/")({
   component: ResumenPage,
@@ -53,6 +59,7 @@ type PeriodKey = "today" | "7d" | "30d" | "month" | "prev-month" | "custom";
 
 function ResumenPage() {
   const { id } = Route.useParams();
+  const isMobile = useIsMobile();
   const { data: project } = useProject(id);
   const { data: permissions = [], isLoading: permissionsLoading } = useProjectPermissions(id);
 
@@ -298,6 +305,53 @@ function ResumenPage() {
     },
   ].filter((item) => item.value > 0);
 
+  const activeFilterCount = [planFilter, paymentStatusFilter, methodFilter, operatorFilter].filter(
+    (value) => value !== "all",
+  ).length;
+
+  const mobileSummaryMetrics: MobileMetric[] = [
+    {
+      key: "today",
+      label: "Ingresos hoy",
+      value: allLoading ? "Cargando..." : revenueToday || "0",
+    },
+    {
+      key: "period",
+      label: "Ingresos periodo",
+      value: allLoading ? "Cargando..." : revenuePeriod || "0",
+    },
+    {
+      key: "active",
+      label: "Licencias activas",
+      value: allLoading ? "Cargando..." : String(activeLicenses),
+    },
+    {
+      key: "pending",
+      label: "Pagos pendientes",
+      value: allLoading ? "Cargando..." : String(pendingPeriod.length),
+    },
+    {
+      key: "exp7",
+      label: "Vencen en 7 dias",
+      value: allLoading ? "Cargando..." : String(expiring7),
+    },
+    {
+      key: "missingReceipts",
+      label: "Sin recibo",
+      value: allLoading ? "Cargando..." : String(missingReceiptPeriod.length),
+    },
+    {
+      key: "newClients",
+      label: "Nuevos clientes",
+      value: allLoading ? "Cargando..." : String(newClientsPeriod),
+    },
+    {
+      key: "renewals",
+      label: "Renovaciones",
+      value: allLoading ? "Cargando..." : String(renewalsPeriod),
+    },
+  ];
+
   const recentEvents = (audit.data ?? []).slice(0, 8).map((entry) => {
     const metadata = entry.metadata as Record<string, unknown>;
     return {
@@ -443,36 +497,46 @@ function ResumenPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-          <Filter
-            label="Plan"
-            value={planFilter}
-            onChange={setPlanFilter}
-            options={["all", ...planCodes]}
-            renderOption={planLabel}
-          />
-          <Filter
-            label="Estado"
-            value={paymentStatusFilter}
-            onChange={setPaymentStatusFilter}
-            options={["all", "paid", "pending", "cancelled", "refunded", "complimentary"]}
-            renderOption={statusLabel}
-          />
-          <Filter
-            label="Método"
-            value={methodFilter}
-            onChange={setMethodFilter}
-            options={["all", "transfer", "cash", "other", "card", "paypal"]}
-            renderOption={methodLabel}
-          />
-          <Filter
-            label="Operador"
-            value={operatorFilter}
-            onChange={setOperatorFilter}
-            options={["all", ...operatorValues]}
-            renderOption={(value) => (value === "all" ? "Todos" : value)}
-          />
-        </div>
+        <MobileFiltersPanel
+          activeFilters={activeFilterCount}
+          onClear={() => {
+            setPlanFilter("all");
+            setPaymentStatusFilter("all");
+            setMethodFilter("all");
+            setOperatorFilter("all");
+          }}
+        >
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+            <Filter
+              label="Plan"
+              value={planFilter}
+              onChange={setPlanFilter}
+              options={["all", ...planCodes]}
+              renderOption={planLabel}
+            />
+            <Filter
+              label="Estado"
+              value={paymentStatusFilter}
+              onChange={setPaymentStatusFilter}
+              options={["all", "paid", "pending", "cancelled", "refunded", "complimentary"]}
+              renderOption={statusLabel}
+            />
+            <Filter
+              label="Metodo"
+              value={methodFilter}
+              onChange={setMethodFilter}
+              options={["all", "transfer", "cash", "other", "card", "paypal"]}
+              renderOption={methodLabel}
+            />
+            <Filter
+              label="Operador"
+              value={operatorFilter}
+              onChange={setOperatorFilter}
+              options={["all", ...operatorValues]}
+              renderOption={(value) => (value === "all" ? "Todos" : value)}
+            />
+          </div>
+        </MobileFiltersPanel>
       </section>
 
       {queryError ? (
@@ -506,7 +570,10 @@ function ResumenPage() {
 
       <section className="space-y-2">
         <SectionTitle title="Métricas críticas" />
-        <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 xl:grid-cols-5">
+        {isMobile ? (
+          <MobileMetricsGrid metrics={mobileSummaryMetrics} moreLabel="Ver mas metricas" />
+        ) : null}
+        <div className="hidden grid-cols-1 gap-2 min-[360px]:grid-cols-2 xl:grid-cols-5 md:grid">
           <MetricCard
             label="Ingresos hoy"
             value={allLoading ? "Cargando..." : revenueToday || "0"}

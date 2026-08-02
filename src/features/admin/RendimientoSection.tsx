@@ -38,6 +38,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  MobileFiltersPanel,
+  MobileMetricsGrid,
+  MobileSectionHeader,
+  type MobileMetric,
+} from "@/components/admin/MobileAdminSystem";
 
 type Grain = "daily" | "weekly" | "monthly";
 
@@ -56,6 +63,7 @@ const STATUS_OPTIONS: FilterOption[] = [
 ];
 
 export default function RendimientoSection({ projectId }: { projectId: string }) {
+  const isMobile = useIsMobile();
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:analytics-range:${projectId}`,
   );
@@ -128,6 +136,50 @@ export default function RendimientoSection({ projectId }: { projectId: string })
 
   const isLoading = analytics.isLoading || dimensions.isLoading || plans.isLoading;
   const error = analytics.error || dimensions.error || plans.error;
+  const activeFilterCount = [plan, status, source, campaign, version].filter(
+    (value) => value !== "all",
+  ).length;
+
+  const mobileMetrics: MobileMetric[] = [
+    { key: "newUsers", icon: Users, label: "Registros", value: String(currentTotals.newUsers) },
+    { key: "trials", icon: Activity, label: "Prueba inicial", value: String(currentTotals.trials) },
+    {
+      key: "paidLicenses",
+      icon: TrendingUp,
+      label: "Licencias pagadas",
+      value: String(currentTotals.paidLicenses),
+    },
+    {
+      key: "activeToday",
+      icon: Activity,
+      label: "Activos hoy",
+      value: String(todayRow?.activeUsers ?? 0),
+    },
+    {
+      key: "renewals",
+      icon: TrendingUp,
+      label: "Renovaciones",
+      value: String(currentTotals.renewals),
+    },
+    {
+      key: "expired",
+      icon: TrendingDown,
+      label: "Vencidas",
+      value: String(currentTotals.expired),
+    },
+    {
+      key: "conversion",
+      icon: BarChart3,
+      label: "Conversion",
+      value: `${retention.data?.trialToPaidRate ?? 0}%`,
+    },
+    {
+      key: "retention30",
+      icon: BarChart3,
+      label: "Retencion 30 dias",
+      value: `${retention.data?.retention30Rate ?? 0}%`,
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -149,18 +201,11 @@ export default function RendimientoSection({ projectId }: { projectId: string })
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Rendimiento comercial y de uso
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Actividad real de la aplicación, renovaciones y conversión por periodo comparable.
-          </p>
-        </div>
-        <Badge variant="outline">Actualiza cada 30s</Badge>
-      </section>
+      <MobileSectionHeader
+        title="Rendimiento"
+        subtitle="Actividad real, conversion y renovaciones por periodo comparable."
+        badge={<Badge variant="outline">Actualiza cada 30s</Badge>}
+      />
 
       <section className="space-y-2 md:hidden">
         <div className="flex gap-2">
@@ -180,68 +225,81 @@ export default function RendimientoSection({ projectId }: { projectId: string })
         <AnalyticsDateRangePicker range={dateRange} onChange={setDateRange} />
       </section>
 
-      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
-        <Filter
-          value={String(periodDays)}
-          onChange={(value) => setPeriodDays(Number(value))}
-          label="Periodo"
-          values={[
-            { value: "7", label: "Últimos 7 días" },
-            { value: "30", label: "Últimos 30 días" },
-            { value: "90", label: "Últimos 90 días" },
-            { value: "180", label: "Últimos 180 días" },
-          ]}
-        />
-        <Filter
-          value={grain}
-          onChange={(value) => setGrain(value as Grain)}
-          label="Agrupación"
-          values={[
-            { value: "daily", label: "Diaria" },
-            { value: "weekly", label: "Semanal" },
-            { value: "monthly", label: "Mensual" },
-          ]}
-        />
-        <Filter
-          value={plan}
-          onChange={setPlan}
-          label="Plan"
-          values={[
-            { value: "all", label: "Todos los planes" },
-            ...(plans.data ?? []).map((item) => ({ value: item.code, label: item.name })),
-          ]}
-        />
-        <Filter value={status} onChange={setStatus} label="Estado" values={STATUS_OPTIONS} />
-        <Filter
-          value={source}
-          onChange={setSource}
-          label="Fuente"
-          values={[
-            { value: "all", label: "Todas las fuentes" },
-            ...(dimensions.data?.sources ?? []).map(option),
-          ]}
-        />
-        <Filter
-          value={campaign}
-          onChange={setCampaign}
-          label="Campaña"
-          values={[
-            { value: "all", label: "Todas las campañas" },
-            ...(dimensions.data?.campaigns ?? []).map(option),
-          ]}
-        />
-        <Filter
-          value={version}
-          onChange={setVersion}
-          label="Versión"
-          values={[
-            { value: "all", label: "Todas las versiones" },
-            ...(dimensions.data?.versions ?? []).map(option),
-          ]}
-        />
-      </section>
+      <MobileFiltersPanel
+        activeFilters={activeFilterCount}
+        onClear={() => {
+          setPlan("all");
+          setStatus("all");
+          setSource("all");
+          setCampaign("all");
+          setVersion("all");
+        }}
+      >
+        <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+          <Filter
+            value={String(periodDays)}
+            onChange={(value) => setPeriodDays(Number(value))}
+            label="Periodo"
+            values={[
+              { value: "7", label: "Últimos 7 días" },
+              { value: "30", label: "Últimos 30 días" },
+              { value: "90", label: "Últimos 90 días" },
+              { value: "180", label: "Últimos 180 días" },
+            ]}
+          />
+          <Filter
+            value={grain}
+            onChange={(value) => setGrain(value as Grain)}
+            label="Agrupación"
+            values={[
+              { value: "daily", label: "Diaria" },
+              { value: "weekly", label: "Semanal" },
+              { value: "monthly", label: "Mensual" },
+            ]}
+          />
+          <Filter
+            value={plan}
+            onChange={setPlan}
+            label="Plan"
+            values={[
+              { value: "all", label: "Todos los planes" },
+              ...(plans.data ?? []).map((item) => ({ value: item.code, label: item.name })),
+            ]}
+          />
+          <Filter value={status} onChange={setStatus} label="Estado" values={STATUS_OPTIONS} />
+          <Filter
+            value={source}
+            onChange={setSource}
+            label="Fuente"
+            values={[
+              { value: "all", label: "Todas las fuentes" },
+              ...(dimensions.data?.sources ?? []).map(option),
+            ]}
+          />
+          <Filter
+            value={campaign}
+            onChange={setCampaign}
+            label="Campaña"
+            values={[
+              { value: "all", label: "Todas las campañas" },
+              ...(dimensions.data?.campaigns ?? []).map(option),
+            ]}
+          />
+          <Filter
+            value={version}
+            onChange={setVersion}
+            label="Versión"
+            values={[
+              { value: "all", label: "Todas las versiones" },
+              ...(dimensions.data?.versions ?? []).map(option),
+            ]}
+          />
+        </section>
+      </MobileFiltersPanel>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {isMobile ? <MobileMetricsGrid metrics={mobileMetrics} moreLabel="Ver mas metricas" /> : null}
+
+      <section className="hidden gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:grid">
         <Metric
           label="Registros nuevos"
           value={currentTotals.newUsers}
