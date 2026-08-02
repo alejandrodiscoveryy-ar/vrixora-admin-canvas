@@ -74,13 +74,21 @@ export const demoServices: AdminServices = {
         userId: license.clientId,
         email: CLIENTS.find((client) => client.id === license.clientId)?.email ?? "",
         displayName: CLIENTS.find((client) => client.id === license.clientId)?.name ?? "",
+        phone: null,
         avatarUrl: null,
         registeredAt: license.activatedAt,
         licenseId: license.id,
         licenseKey: license.key,
         plan: "standard",
         status: license.status,
+        activatedAt: license.activatedAt,
         expiresAt: license.expiresAt,
+        maxDevices: 1,
+        activeDevices: 0,
+        lastPaymentAt: null,
+        lastPaymentAmount: null,
+        lastPaymentCurrency: null,
+        lastRenewedAt: null,
       }));
     },
     async setClientStatus() {
@@ -245,6 +253,9 @@ export const demoServices: AdminServices = {
     async remove() {
       throw new Error("Esta operación requiere Supabase");
     },
+    async previewCharge() { throw new Error("Esta operación requiere Supabase"); },
+    async chargeAndAssign() { throw new Error("Esta operación requiere Supabase"); },
+    async receipt() { throw new Error("Esta operación requiere Supabase"); },
     async updateStatus() {
       throw new Error("Esta operación requiere Supabase");
     },

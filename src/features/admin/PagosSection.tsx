@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, CircleDollarSign, Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
+import { CalendarClock, CheckCircle2, CircleDollarSign, FileText, Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
   type LicensePlan,
   type ServiceLicense,
   type ServicePayment,
+  type BillingReceipt,
 } from "@/lib/services";
+import { ReceiptDialog } from "@/features/admin/ChargePlanDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +52,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [editing, setEditing] = useState<ServicePayment | null>(null);
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<BillingReceipt | null>(null);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("payments.manage");
   const canCorrect = permissions.includes("payments.correct");
@@ -83,6 +86,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       refresh();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+  const loadReceipt = useMutation({
+    mutationFn: (paymentId: string) => supabaseServices.payments.receipt(paymentId),
+    onSuccess: setViewingReceipt,
+    onError: () => toast.error("Este pago no tiene un recibo del nuevo flujo."),
   });
   const rows = useMemo(() => query.data ?? [], [query.data]);
   const filtered = useMemo(
@@ -221,6 +229,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     <TableCell data-label="Acciones">
                       {canManage && <div className="flex flex-wrap gap-2">
                         {p.status === "pending" && <Button size="sm" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate(p.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Marcar pagado</Button>}
+                        {p.status === "paid" && <Button size="icon" variant="ghost" title="Ver recibo" disabled={loadReceipt.isPending} onClick={() => loadReceipt.mutate(p.id)}><FileText className="h-4 w-4" /></Button>}
                         {canCorrect && <Button size="icon" variant="ghost" title="Editar pago" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>}
                         {canCorrect && <Button size="icon" variant="ghost" className="text-destructive" title="Eliminar pago" onClick={() => setDeleting(p)}><Trash2 className="h-4 w-4" /></Button>}
                       </div>}
@@ -246,6 +255,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       />
       {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />}
       {deleting && <DeletePaymentDialog payment={deleting} onClose={() => setDeleting(null)} onDone={refresh} />}
+      {viewingReceipt && <ReceiptDialog receipt={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
     </div>
   );
 }

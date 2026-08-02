@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, ShieldCheck, Users } from "lucide-react";
+import { CreditCard, Loader2, Search, ShieldCheck, Users } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +34,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useProjectPermissions } from "@/hooks/useProjects";
+import { ChargePlanDialog } from "@/features/admin/ChargePlanDialog";
 
 const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -44,18 +45,23 @@ const statuses: { value: LicenseStatus; label: string }[] = [
 ];
 
 export default function ClientesSection({ projectId }: { projectId: string }) {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
+  const [chargeClient, setChargeClient] = useState<ServiceClient | null>(null);
   const query = useQuery({
     queryKey: ["admin-clients", projectId],
     queryFn: () => supabaseServices.licenses.listClients(projectId),
   });
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("customers.manage") && permissions.includes("licenses.manage");
+  const canCharge = permissions.includes("payments.manage") && permissions.includes("licenses.manage");
+  const licenses = useQuery({ queryKey: ["admin-licenses", projectId], queryFn: () => supabaseServices.licenses.list(projectId) });
+  const plans = useQuery({ queryKey: ["admin-license-plans", projectId], queryFn: () => supabaseServices.licenses.listAdminPlans(projectId) });
   const clients = useMemo(
     () =>
       (query.data ?? []).filter((client) =>
-        `${client.displayName} ${client.email} ${client.licenseKey ?? ""} ${client.plan}`
+        `${client.displayName} ${client.email} ${client.phone ?? ""} ${client.licenseKey ?? ""} ${client.plan}`
           .toLowerCase()
           .includes(search.toLowerCase()),
       ),
@@ -75,7 +81,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Nombre, correo, clave o plan"
+            placeholder="Nombre, correo, teléfono o licencia"
             className="pl-8"
           />
         </div>
@@ -123,7 +129,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                       <span className="font-medium">{client.displayName}</span>
                     </div>
                   </TableCell>
-                  <TableCell data-label="Correo" className="break-all">{client.email}</TableCell>
+                  <TableCell data-label="Correo" className="break-all"><div>{client.email}</div>{client.phone && <div className="mt-1 text-xs text-muted-foreground">{client.phone}</div>}</TableCell>
                   <TableCell data-label="Clave" className="break-all font-mono text-xs">
                     {client.licenseKey ?? "Prueba inicial"}
                   </TableCell>
@@ -134,14 +140,15 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     </Badge>
                   </TableCell>
                   <TableCell data-label="Registro">{new Date(client.registeredAt).toLocaleDateString()}</TableCell>
-                  <TableCell data-label="Vencimiento">{new Date(client.expiresAt).toLocaleDateString()}</TableCell>
+                  <TableCell data-label="Vencimiento"><div>{new Date(client.expiresAt).toLocaleDateString()}</div><div className="mt-1 text-xs text-muted-foreground">{remainingTime(client.expiresAt)}</div></TableCell>
                   <TableCell data-label="Acciones" className="text-right">
-                    {canManage && (
-                      <Button variant="outline" size="sm" onClick={() => setSelected(client)}>
+                    <div className="flex flex-wrap justify-end gap-2">
+                    {canCharge && client.licenseId && <Button size="sm" onClick={() => setChargeClient(client)}><CreditCard className="mr-2 h-4 w-4" />Cobrar y asignar plan</Button>}
+                    {canManage && <Button variant="outline" size="sm" onClick={() => setSelected(client)}>
                         <ShieldCheck className="mr-2 h-4 w-4" />
                         Gestionar
-                      </Button>
-                    )}
+                      </Button>}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -150,8 +157,33 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         )}
       </CardContent>
       <StatusDialog projectId={projectId} client={selected} onClose={() => setSelected(null)} />
+      <ChargePlanDialog
+        client={chargeClient}
+        license={(licenses.data ?? []).find((item) => item.id === chargeClient?.licenseId) ?? null}
+        plans={plans.data ?? []}
+        onClose={() => setChargeClient(null)}
+        onDone={() => {
+          void query.refetch(); void licenses.refetch();
+          void queryClient.invalidateQueries({ queryKey: ["admin-payments", projectId] });
+          void queryClient.invalidateQueries({ queryKey: ["license-audit", projectId] });
+          void queryClient.invalidateQueries({ queryKey: ["summary-usage-analytics", projectId] });
+        }}
+      />
     </Card>
   );
+}
+
+function remainingTime(value: string) {
+  const days = Math.ceil((new Date(value).getTime() - Date.now()) / 86_400_000);
+  if (days === 1) return "Vence mañana";
+  if (days === 0) return "Vence hoy";
+  if (days < 0) return `Vencida hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}`;
+  if (days < 30) return `Quedan ${days} días`;
+  const months = Math.floor(days / 30);
+  const remainder = days % 30;
+  return remainder
+    ? `Quedan ${months} ${months === 1 ? "mes" : "meses"} y ${remainder} días`
+    : `Quedan ${months} ${months === 1 ? "mes" : "meses"}`;
 }
 
 function StatusDialog({

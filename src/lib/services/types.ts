@@ -93,13 +93,21 @@ export interface ServiceClient {
   userId: string;
   email: string;
   displayName: string;
+  phone: string | null;
   avatarUrl: string | null;
   registeredAt: string;
   licenseId: string | null;
   licenseKey: string | null;
   plan: string;
   status: LicenseStatus;
+  activatedAt: string;
   expiresAt: string;
+  maxDevices: number;
+  activeDevices: number;
+  lastPaymentAt: string | null;
+  lastPaymentAmount: number | null;
+  lastPaymentCurrency: Currency | null;
+  lastRenewedAt: string | null;
 }
 
 export interface LicenseDevice {
@@ -156,7 +164,7 @@ export interface ServicePayment {
   discount: number;
   plan: string;
   currency: Currency;
-  method: "card" | "transfer" | "cash" | "paypal";
+  method: "card" | "transfer" | "cash" | "paypal" | "other";
   reference: string;
   employeeId: string;
   createdAt: string;
@@ -175,6 +183,65 @@ export interface UpdatePaymentInput {
   status: ServicePayment["status"];
   notes?: string;
   adjustmentReason: string;
+}
+
+export interface BillingPreview {
+  licenseId: string;
+  previousPlan: string;
+  newPlan: string;
+  licenseType: string;
+  previousExpiresAt: string | null;
+  newStartedAt: string;
+  newExpiresAt: string | null;
+  durationDays: number | null;
+  maxDevices: number;
+  price: number;
+  currency: Currency;
+  applicationRule: "apply_now" | "after_expiry";
+  isTrialConversion: boolean;
+}
+
+export interface BillingReceipt {
+  receiptId: string;
+  receiptNumber: string;
+  paymentId: string;
+  licenseId: string;
+  projectId: string;
+  projectName: string;
+  clientName: string;
+  clientEmail: string;
+  maskedLicenseKey: string;
+  previousPlan: string;
+  plan: string;
+  planName: string;
+  durationDays: number | null;
+  listPrice: number;
+  amount: number;
+  currency: Currency;
+  method: ServicePayment["method"];
+  reference: string;
+  chargedAt: string;
+  startedAt: string;
+  expiresAt: string | null;
+  status: LicenseStatus;
+  maxDevices: number;
+  operatorEmail: string;
+  notes: string | null;
+  whatsapp: string | null;
+  supportEmail: string | null;
+  applicationRule: "apply_now" | "after_expiry";
+}
+
+export interface ChargePlanInput {
+  licenseId: string;
+  plan: string;
+  amount: number;
+  method: "cash" | "transfer" | "other";
+  reference?: string;
+  chargedAt: string;
+  notes?: string;
+  applicationRule: "apply_now" | "after_expiry";
+  idempotencyKey: string;
 }
 
 export interface LicenseBillingInput {
@@ -255,6 +322,9 @@ export interface PaymentService {
   ): Promise<ServicePayment>;
   update(input: UpdatePaymentInput): Promise<ServicePayment>;
   remove(paymentId: string, reason: string): Promise<void>;
+  previewCharge(licenseId: string, plan: string, applicationRule: ChargePlanInput["applicationRule"]): Promise<BillingPreview>;
+  chargeAndAssign(input: ChargePlanInput): Promise<BillingReceipt>;
+  receipt(paymentId: string): Promise<BillingReceipt>;
 }
 
 export interface LicenseAuditLogService {

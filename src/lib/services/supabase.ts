@@ -17,10 +17,20 @@ import type {
   ProjectPermission,
   UsageAnalyticsDay,
   RetentionMetrics,
+  BillingPreview,
+  BillingReceipt,
 } from "./types";
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
+}
+
+function mapBillingPreview(data: Record<string, unknown>): BillingPreview {
+  return { licenseId: String(data.license_id), previousPlan: String(data.previous_plan), newPlan: String(data.new_plan), licenseType: String(data.license_type), previousExpiresAt: data.previous_expires_at ? String(data.previous_expires_at) : null, newStartedAt: String(data.new_started_at), newExpiresAt: data.new_expires_at ? String(data.new_expires_at) : null, durationDays: data.duration_days == null ? null : Number(data.duration_days), maxDevices: Number(data.max_devices), price: Number(data.price), currency: data.currency as BillingPreview["currency"], applicationRule: data.application_rule as BillingPreview["applicationRule"], isTrialConversion: Boolean(data.is_trial_conversion) };
+}
+
+function mapBillingReceipt(data: Record<string, unknown>): BillingReceipt {
+  return { receiptId: String(data.receipt_id), receiptNumber: String(data.receipt_number), paymentId: String(data.payment_id), licenseId: String(data.license_id), projectId: String(data.project_id), projectName: String(data.project_name), clientName: String(data.client_name), clientEmail: String(data.client_email), maskedLicenseKey: String(data.masked_license_key), previousPlan: String(data.previous_plan), plan: String(data.plan), planName: String(data.plan_name), durationDays: data.duration_days == null ? null : Number(data.duration_days), listPrice: Number(data.list_price), amount: Number(data.amount), currency: data.currency as BillingReceipt["currency"], method: data.method as BillingReceipt["method"], reference: String(data.reference), chargedAt: String(data.charged_at), startedAt: String(data.started_at), expiresAt: data.expires_at ? String(data.expires_at) : null, status: data.status as BillingReceipt["status"], maxDevices: Number(data.max_devices), operatorEmail: String(data.operator_email), notes: data.notes ? String(data.notes) : null, whatsapp: data.whatsapp ? String(data.whatsapp) : null, supportEmail: data.support_email ? String(data.support_email) : null, applicationRule: data.application_rule as BillingReceipt["applicationRule"] };
 }
 
 type LicenseRow = {
@@ -80,12 +90,21 @@ type ClientRow = {
   user_id: string;
   email: string;
   display_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
   registered_at: string;
   license_id: string | null;
   license_key: string | null;
   plan: string;
   status: string;
+  activated_at: string;
   expires_at: string;
+  max_devices: number;
+  active_devices: number | string;
+  last_payment_at: string | null;
+  last_payment_amount: number | string | null;
+  last_payment_currency: string | null;
+  last_renewed_at: string | null;
 };
 
 type AuditEventRow = {
@@ -288,27 +307,26 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
 
       const rows = (data ?? []) as ClientRow[];
-      const userIds = rows.map((row) => row.user_id);
-      const { data: profiles, error: profilesError } = userIds.length
-        ? await client.from("profiles").select("id,avatar_url").in("id", userIds)
-        : { data: [], error: null };
-      throwIfError(profilesError);
-      const avatarsByUserId = new Map(
-        (profiles ?? []).map((profile) => [profile.id, profile.avatar_url]),
-      );
-
       return rows.map(
         (client: ClientRow): ServiceClient => ({
           userId: client.user_id,
           email: client.email,
           displayName: client.display_name ?? client.email,
-          avatarUrl: avatarsByUserId.get(client.user_id) ?? null,
+          phone: client.phone,
+          avatarUrl: client.avatar_url,
           registeredAt: client.registered_at,
           licenseId: client.license_id,
           licenseKey: client.license_key,
           plan: client.plan,
           status: client.status as LicenseStatus,
+          activatedAt: client.activated_at,
           expiresAt: client.expires_at,
+          maxDevices: Number(client.max_devices),
+          activeDevices: Number(client.active_devices),
+          lastPaymentAt: client.last_payment_at,
+          lastPaymentAmount: client.last_payment_amount == null ? null : Number(client.last_payment_amount),
+          lastPaymentCurrency: client.last_payment_currency as Currency | null,
+          lastRenewedAt: client.last_renewed_at,
         }),
       );
     },
@@ -708,6 +726,21 @@ export const supabaseServices: AdminServices = {
         target_reason: reason,
       });
       throwIfError(error);
+    },
+    async previewCharge(licenseId, plan, applicationRule) {
+      const { data, error } = await getSupabaseClient().rpc("admin_preview_charge_plan", { target_license_id: licenseId, target_plan: plan, target_rule: applicationRule });
+      throwIfError(error);
+      return mapBillingPreview(data as Record<string, unknown>);
+    },
+    async chargeAndAssign(input) {
+      const { data, error } = await getSupabaseClient().rpc("admin_charge_and_assign_plan", { target_license_id: input.licenseId, target_plan: input.plan, target_amount: input.amount, target_method: input.method, target_reference: input.reference ?? null, target_charged_at: input.chargedAt, target_notes: input.notes ?? null, target_application_rule: input.applicationRule, target_idempotency_key: input.idempotencyKey });
+      throwIfError(error);
+      return mapBillingReceipt(data as Record<string, unknown>);
+    },
+    async receipt(paymentId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_billing_receipt", { target_payment_id: paymentId });
+      throwIfError(error);
+      return mapBillingReceipt(data as Record<string, unknown>);
     },
   },
   licenseAuditLog: {
