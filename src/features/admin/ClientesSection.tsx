@@ -7,6 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -54,10 +60,18 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     queryFn: () => supabaseServices.licenses.listClients(projectId),
   });
   const { data: permissions = [] } = useProjectPermissions(projectId);
-  const canManage = permissions.includes("customers.manage") && permissions.includes("licenses.manage");
-  const canCharge = permissions.includes("payments.manage") && permissions.includes("licenses.manage");
-  const licenses = useQuery({ queryKey: ["admin-licenses", projectId], queryFn: () => supabaseServices.licenses.list(projectId) });
-  const plans = useQuery({ queryKey: ["admin-license-plans", projectId], queryFn: () => supabaseServices.licenses.listAdminPlans(projectId) });
+  const canManage =
+    permissions.includes("customers.manage") && permissions.includes("licenses.manage");
+  const canCharge =
+    permissions.includes("payments.manage") && permissions.includes("licenses.manage");
+  const licenses = useQuery({
+    queryKey: ["admin-licenses", projectId],
+    queryFn: () => supabaseServices.licenses.list(projectId),
+  });
+  const plans = useQuery({
+    queryKey: ["admin-license-plans", projectId],
+    queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
+  });
   const clients = useMemo(
     () =>
       (query.data ?? []).filter((client) =>
@@ -98,62 +112,183 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             No hay clientes que coincidan.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Correo</TableHead>
-                <TableHead>Clave</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Primer registro</TableHead>
-                <TableHead>Vencimiento</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <div className="space-y-3">
+            <div className="space-y-3 md:hidden">
               {clients.map((client) => (
-                <TableRow key={client.userId}>
-                  <TableCell data-label="Cliente">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border border-border">
-                        <AvatarImage
-                          src={client.avatarUrl ?? undefined}
-                          alt={client.displayName}
-                          referrerPolicy="no-referrer"
-                        />
-                        <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
-                          {client.displayName.slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{client.displayName}</span>
+                <Card key={client.userId} className="border-border/70 bg-card/80">
+                  <CardContent className="space-y-3 p-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="h-9 w-9 border border-border">
+                          <AvatarImage
+                            src={client.avatarUrl ?? undefined}
+                            alt={client.displayName}
+                            referrerPolicy="no-referrer"
+                          />
+                          <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
+                            {client.displayName.slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{client.displayName}</p>
+                          <p className="truncate text-xs text-muted-foreground">{client.email}</p>
+                        </div>
+                      </div>
+                      <Badge variant={client.status === "active" ? "default" : "secondary"}>
+                        {statusLabel(client.status)}
+                      </Badge>
                     </div>
-                  </TableCell>
-                  <TableCell data-label="Correo" className="break-all"><div>{client.email}</div>{client.phone && <div className="mt-1 text-xs text-muted-foreground">{client.phone}</div>}</TableCell>
-                  <TableCell data-label="Clave" className="break-all font-mono text-xs">
-                    {client.licenseKey ?? "Prueba inicial"}
-                  </TableCell>
-                  <TableCell data-label="Plan">{client.plan}</TableCell>
-                  <TableCell data-label="Estado">
-                    <Badge variant={client.status === "active" ? "default" : "secondary"}>
-                      {client.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell data-label="Registro">{new Date(client.registeredAt).toLocaleDateString()}</TableCell>
-                  <TableCell data-label="Vencimiento"><div>{new Date(client.expiresAt).toLocaleDateString()}</div><div className="mt-1 text-xs text-muted-foreground">{remainingTime(client.expiresAt)}</div></TableCell>
-                  <TableCell data-label="Acciones" className="text-right">
-                    <div className="flex flex-wrap justify-end gap-2">
-                    {canCharge && client.licenseId && <Button size="sm" onClick={() => setChargeClient(client)}><CreditCard className="mr-2 h-4 w-4" />Cobrar y asignar plan</Button>}
-                    {canManage && <Button variant="outline" size="sm" onClick={() => setSelected(client)}>
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                        Gestionar
-                      </Button>}
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <MobileField label="Plan" value={client.plan} />
+                      <MobileField
+                        label="Licencia"
+                        value={client.licenseKey ?? "Prueba inicial"}
+                        mono
+                      />
+                      <MobileField
+                        label="Vence"
+                        value={new Date(client.expiresAt).toLocaleDateString()}
+                      />
+                      <MobileField
+                        label="Tiempo restante"
+                        value={remainingTime(client.expiresAt)}
+                      />
                     </div>
-                  </TableCell>
-                </TableRow>
+
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value={`client-${client.userId}`}>
+                        <AccordionTrigger className="py-1.5 text-sm">Ver detalles</AccordionTrigger>
+                        <AccordionContent className="space-y-2 text-xs text-muted-foreground">
+                          <MobileDetail label="Teléfono" value={client.phone ?? "No registrado"} />
+                          <MobileDetail
+                            label="Registro"
+                            value={new Date(client.registeredAt).toLocaleDateString()}
+                          />
+                          <MobileDetail
+                            label="Última actividad"
+                            value={
+                              client.lastPaymentAt
+                                ? new Date(client.lastPaymentAt).toLocaleString()
+                                : client.lastRenewedAt
+                                  ? new Date(client.lastRenewedAt).toLocaleString()
+                                  : "Sin actividad reciente"
+                            }
+                          />
+                          <MobileDetail
+                            label="Dispositivos"
+                            value={`${client.activeDevices} / ${client.maxDevices}`}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
+                    <div className="flex flex-wrap gap-2">
+                      {canCharge && client.licenseId && (
+                        <Button
+                          size="sm"
+                          className="h-10 flex-1"
+                          onClick={() => setChargeClient(client)}
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Cobrar
+                        </Button>
+                      )}
+                      {canManage && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-10 flex-1"
+                          onClick={() => setSelected(client)}
+                        >
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          Gestionar
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Correo</TableHead>
+                    <TableHead>Clave</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Primer registro</TableHead>
+                    <TableHead>Vencimiento</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.userId}>
+                      <TableCell data-label="Cliente">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 border border-border">
+                            <AvatarImage
+                              src={client.avatarUrl ?? undefined}
+                              alt={client.displayName}
+                              referrerPolicy="no-referrer"
+                            />
+                            <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
+                              {client.displayName.slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{client.displayName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell data-label="Correo" className="break-all">
+                        <div>{client.email}</div>
+                        {client.phone && (
+                          <div className="mt-1 text-xs text-muted-foreground">{client.phone}</div>
+                        )}
+                      </TableCell>
+                      <TableCell data-label="Clave" className="break-all font-mono text-xs">
+                        {client.licenseKey ?? "Prueba inicial"}
+                      </TableCell>
+                      <TableCell data-label="Plan">{client.plan}</TableCell>
+                      <TableCell data-label="Estado">
+                        <Badge variant={client.status === "active" ? "default" : "secondary"}>
+                          {client.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell data-label="Registro">
+                        {new Date(client.registeredAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell data-label="Vencimiento">
+                        <div>{new Date(client.expiresAt).toLocaleDateString()}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {remainingTime(client.expiresAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell data-label="Acciones" className="text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {canCharge && client.licenseId && (
+                            <Button size="sm" onClick={() => setChargeClient(client)}>
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Cobrar y asignar plan
+                            </Button>
+                          )}
+                          {canManage && (
+                            <Button variant="outline" size="sm" onClick={() => setSelected(client)}>
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                              Gestionar
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         )}
       </CardContent>
       <StatusDialog projectId={projectId} client={selected} onClose={() => setSelected(null)} />
@@ -163,13 +298,55 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         plans={plans.data ?? []}
         onClose={() => setChargeClient(null)}
         onDone={() => {
-          void query.refetch(); void licenses.refetch();
+          void query.refetch();
+          void licenses.refetch();
           void queryClient.invalidateQueries({ queryKey: ["admin-payments", projectId] });
           void queryClient.invalidateQueries({ queryKey: ["license-audit", projectId] });
           void queryClient.invalidateQueries({ queryKey: ["summary-usage-analytics", projectId] });
         }}
       />
     </Card>
+  );
+}
+
+function statusLabel(value: LicenseStatus) {
+  const map: Record<LicenseStatus, string> = {
+    active: "Activa",
+    pending: "Pendiente",
+    expired: "Vencida",
+    suspended: "Suspendida",
+    revoked: "Revocada",
+  };
+  return map[value];
+}
+
+function MobileField({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide">{label}</p>
+      <p
+        className={`mt-0.5 text-foreground ${mono ? "break-all font-mono text-[11px]" : "truncate"}`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MobileDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span>{label}</span>
+      <span className="text-right text-foreground">{value}</span>
+    </div>
   );
 }
 

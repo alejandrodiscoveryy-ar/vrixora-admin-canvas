@@ -1,34 +1,33 @@
 import { useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
-  BadgeDollarSign,
-  KeyRound,
+  CalendarDays,
+  CreditCard,
+  FileKey2,
   RefreshCw,
-  Sparkles,
+  Search,
   TrendingUp,
   UserPlus,
   Users,
 } from "lucide-react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
 import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AnalyticsDateRangePicker,
   usePersistentAnalyticsDateRange,
@@ -41,12 +40,18 @@ export const Route = createFileRoute("/admin/proyectos/$id/")({
 
 const REFRESH_INTERVAL = 30_000;
 const DAY = 86_400_000;
-const chartColors = ["hsl(var(--primary))", "hsl(var(--accent))", "#38bdf8", "#a78bfa", "#fb7185"];
+
+type QuickAction = {
+  label: string;
+  to: string;
+  icon: typeof CreditCard;
+};
 
 function ResumenPage() {
   const { id } = Route.useParams();
   const { data: project } = useProject(id);
   const { data: permissions = [], isLoading: permissionsLoading } = useProjectPermissions(id);
+
   const canViewClients = permissions.includes("customers.view");
   const canViewLicenses = permissions.includes("licenses.view");
   const canViewPayments = permissions.includes("payments.view");
@@ -79,7 +84,7 @@ function ResumenPage() {
   });
   const audit = useQuery({
     queryKey: ["admin-audit", id],
-    queryFn: () => supabaseServices.audit.list(id, 8),
+    queryFn: () => supabaseServices.audit.list(id, 12),
     enabled: !permissionsLoading && canViewAudit,
     refetchInterval: REFRESH_INTERVAL,
   });
@@ -94,7 +99,6 @@ function ResumenPage() {
     refetchInterval: REFRESH_INTERVAL,
   });
 
-  const now = Date.now();
   const licenseRows = useMemo(() => licenses.data ?? [], [licenses.data]);
   const clientRows = useMemo(() => clients.data ?? [], [clients.data]);
   const paymentRows = useMemo(() => payments.data ?? [], [payments.data]);
@@ -102,21 +106,16 @@ function ResumenPage() {
     () => paymentRows.filter((payment) => payment.status === "paid"),
     [paymentRows],
   );
+
+  const now = Date.now();
   const active = licenseRows.filter((license) => license.status === "active").length;
-  const trial = licenseRows.filter(
-    (license) => license.licenseType === "trial" && license.status === "active",
-  ).length;
-  const suspended = licenseRows.filter((license) => license.status === "suspended").length;
-  const expired = licenseRows.filter(
-    (license) =>
-      license.status === "expired" ||
-      (!!license.expiresAt && new Date(license.expiresAt).getTime() < now),
-  ).length;
   const expiring = licenseRows.filter((license) => {
     if (!license.expiresAt || license.status !== "active") return false;
     const remaining = new Date(license.expiresAt).getTime() - now;
     return remaining >= 0 && remaining <= 30 * DAY;
   }).length;
+  const suspended = licenseRows.filter((license) => license.status === "suspended").length;
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const startOfWeek = new Date(startOfDay);
@@ -126,34 +125,24 @@ function ResumenPage() {
     const [year, month] = currentMonthKey.split("-").map(Number);
     return new Date(year, month - 1, 1);
   }, [currentMonthKey]);
-  const startOfYear = new Date(startOfDay.getFullYear(), 0, 1);
+
   const selectedStart = new Date(`${analyticsFrom}T00:00:00`);
   const selectedEnd = new Date(`${analyticsTo}T00:00:00`);
   selectedEnd.setDate(selectedEnd.getDate() + 1);
-  const revenueSince = (date: Date) =>
-    formatRevenue(paidPayments.filter((payment) => new Date(payment.createdAt) >= date));
+
   const selectedRevenue = formatRevenue(
     paidPayments.filter((payment) => {
       const created = new Date(payment.createdAt);
       return created >= selectedStart && created < selectedEnd;
     }),
   );
-  const newRegistrations = clientRows.filter(
-    (client) =>
-      new Date(client.registeredAt) >= selectedStart && new Date(client.registeredAt) < selectedEnd,
-  ).length;
-  const renewals = (audit.data ?? []).filter(
-    (event) =>
-      event.action === "license_renewed" &&
-      new Date(event.createdAt) >= selectedStart &&
-      new Date(event.createdAt) < selectedEnd,
-  ).length;
-  const convertedUsers = new Set(
-    paidPayments.flatMap((payment) =>
-      payment.amount > 0 && payment.userEmail ? [payment.userEmail] : [],
-    ),
-  ).size;
-  const conversion = clientRows.length ? Math.round((convertedUsers / clientRows.length) * 100) : 0;
+
+  const pendingPayments = paymentRows.filter((payment) => payment.status === "pending").length;
+  const newRegistrations = clientRows.filter((client) => {
+    const registeredAt = new Date(client.registeredAt);
+    return registeredAt >= selectedStart && registeredAt < selectedEnd;
+  }).length;
+
   const analyticsRows = analytics.data ?? [];
   const todayAnalytics = analyticsRows.at(-1);
   const yesterdayAnalytics = analyticsRows.at(-2);
@@ -163,62 +152,119 @@ function ResumenPage() {
     lastSevenAnalytics.newUsers,
     previousSevenAnalytics.newUsers,
   );
-  const dailyAcquisition = analyticsRows.map((row) => ({
+
+  const chartRows = analyticsRows.map((row) => ({
     ...row,
     label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
       new Date(`${row.date}T12:00:00`),
     ),
   }));
 
-  const monthlyRevenue = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat("es", { month: "short" });
-    return Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() - 5 + index, 1);
-      const next = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-      const monthPayments = paidPayments.filter((payment) => {
-        const created = new Date(payment.createdAt);
-        return created >= date && created < next;
-      });
-      return {
-        month: formatter.format(date),
-        CUP: monthPayments
-          .filter((payment) => payment.currency === "CUP")
-          .reduce((sum, payment) => sum + payment.amount, 0),
-        USD: monthPayments
-          .filter((payment) => payment.currency === "USD")
-          .reduce((sum, payment) => sum + payment.amount, 0),
-        EUR: monthPayments
-          .filter((payment) => payment.currency === "EUR")
-          .reduce((sum, payment) => sum + payment.amount, 0),
-      };
-    });
-  }, [paidPayments, startOfMonth]);
-
-  const licensesByPlan = useMemo(() => {
-    const totals = new Map<string, number>();
-    licenseRows.forEach((license) => totals.set(license.plan, (totals.get(license.plan) ?? 0) + 1));
-    return [...totals].map(([name, value]) => ({ name, value }));
-  }, [licenseRows]);
-
   const queryError = [clients, licenses, payments, audit, analytics].find(
     (query) => query.isError,
   )?.error;
 
+  const activityItems = (audit.data ?? []).map((event) => ({
+    id: event.id,
+    title: mapAuditAction(event.action),
+    time: new Date(event.createdAt).toLocaleString(),
+    actor: event.actorEmail ?? "Sistema",
+  }));
+  const activityMobile = activityItems.slice(0, 5);
+  const activityDesktop = activityItems.slice(0, 8);
+
+  const rangeLabel = `${formatDateShort(analyticsFrom)} - ${formatDateShort(analyticsTo)}`;
+  const periodDays = rangeDays(analyticsFrom, analyticsTo);
+  const setPeriodDays = (days: number) => {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1));
+    setDateRange({
+      from: toIsoDate(start),
+      to: toIsoDate(end),
+    });
+  };
+
+  const quickActions: QuickAction[] = [];
+  if (canViewPayments) {
+    quickActions.push({
+      label: "Registrar pago",
+      to: `/admin/proyectos/${id}/pagos`,
+      icon: CreditCard,
+    });
+  }
+  if (canViewLicenses) {
+    quickActions.push({
+      label: "Crear licencia",
+      to: `/admin/proyectos/${id}/licencias`,
+      icon: FileKey2,
+    });
+    quickActions.push({
+      label: "Ver vencimientos",
+      to: `/admin/proyectos/${id}/licencias`,
+      icon: CalendarDays,
+    });
+  }
+  if (canViewClients) {
+    quickActions.push({
+      label: "Buscar cliente",
+      to: `/admin/proyectos/${id}/clientes`,
+      icon: Search,
+    });
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-4 md:space-y-6">
+      <section className="md:hidden">
+        <Card className="glass-panel border-border/70">
+          <CardContent className="space-y-3 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">Hola, equipo</p>
+                <p className="text-[11px] text-muted-foreground">{rangeLabel}</p>
+              </div>
+              <Badge variant={project?.status === "active" ? "default" : "secondary"}>
+                {project?.status === "active" ? "Activo" : (project?.status ?? "—")}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Actualización automática
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="hidden items-center justify-between gap-3 md:flex">
         <div>
           <h2 className="text-lg font-semibold">Resumen operativo</h2>
-          <p className="text-sm text-muted-foreground">
-            Datos reales actualizados cada 30 segundos.
-          </p>
+          <p className="text-sm text-muted-foreground">Periodo actual: {rangeLabel}</p>
         </div>
         <Badge variant="outline" className="gap-2">
           <RefreshCw className="h-3 w-3" /> Actualización automática
         </Badge>
-      </div>
+      </section>
 
-      <AnalyticsDateRangePicker range={dateRange} onChange={setDateRange} />
+      <section className="space-y-2 md:hidden">
+        <div className="flex gap-2">
+          <PeriodButton active={periodDays <= 7} onClick={() => setPeriodDays(7)}>
+            7 días
+          </PeriodButton>
+          <PeriodButton
+            active={periodDays > 7 && periodDays <= 30}
+            onClick={() => setPeriodDays(30)}
+          >
+            30 días
+          </PeriodButton>
+          <PeriodButton active={periodDays > 30} onClick={() => setPeriodDays(90)}>
+            90 días
+          </PeriodButton>
+        </div>
+      </section>
+
+      <section className="hidden md:block">
+        <AnalyticsDateRangePicker range={dateRange} onChange={setDateRange} />
+      </section>
 
       {queryError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -226,350 +272,256 @@ function ResumenPage() {
         </div>
       )}
 
-      <section className="space-y-3">
-        <SectionHeading
-          title="Vista general"
-          description="Los cuatro indicadores principales para entender el estado del negocio."
-        />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {quickActions.length > 0 ? (
+        <section className="space-y-2">
+          <SectionTitle title="Acciones rápidas" />
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={action.label}
+                  asChild
+                  variant="outline"
+                  className="h-11 justify-start rounded-xl px-3"
+                >
+                  <Link to={action.to}>
+                    <Icon className="h-4 w-4" />
+                    <span className="truncate text-xs">{action.label}</span>
+                  </Link>
+                </Button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="space-y-2">
+        <SectionTitle title="Métricas principales" />
+        <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 xl:grid-cols-4">
           {canViewClients && (
-            <Kpi icon={Users} label="Clientes totales" value={clientRows.length} />
-          )}
-          {canViewAnalytics && (
             <Kpi
-              icon={UserPlus}
-              label="Clientes nuevos hoy"
-              value={todayAnalytics?.newUsers ?? 0}
+              icon={Users}
+              label="Clientes"
+              value={clientRows.length}
+              sublabel={`${newRegistrations} nuevos en el periodo`}
             />
           )}
           {canViewLicenses && (
-            <Kpi icon={KeyRound} label="Licencias activas" value={active} tone="success" />
+            <Kpi
+              icon={FileKey2}
+              label="Licencias activas"
+              value={active}
+              sublabel={`${expiring} vencen pronto`}
+              tone="success"
+            />
           )}
           {canViewPayments && (
             <Kpi
               icon={TrendingUp}
               label="Ingresos del periodo"
               value={selectedRevenue}
+              sublabel={`${pendingPayments} pagos pendientes`}
               tone="success"
+            />
+          )}
+          {canViewAnalytics && (
+            <Kpi
+              icon={UserPlus}
+              label="Clientes nuevos"
+              value={todayAnalytics?.newUsers ?? 0}
+              sublabel={`${acquisitionVariation >= 0 ? "+" : ""}${acquisitionVariation.toFixed(1)}% vs 7 días previos`}
             />
           )}
         </div>
       </section>
 
       {canViewAnalytics && (
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold">Captación diaria de clientes</h3>
-              <p className="text-sm text-muted-foreground">
-                Registros, pruebas y ventas reales. Las aperturas de la aplicación se muestran por
-                separado.
-              </p>
-            </div>
-            <TrendBadge value={acquisitionVariation} label="últimos 7 días" />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Kpi
-              icon={UserPlus}
-              label="Clientes nuevos hoy"
-              value={todayAnalytics?.newUsers ?? 0}
-            />
-            <Kpi
-              icon={Sparkles}
-              label="Pruebas iniciadas hoy"
-              value={todayAnalytics?.trials ?? 0}
-            />
-            <Kpi
-              icon={BadgeDollarSign}
-              label="Licencias pagadas hoy"
-              value={todayAnalytics?.paidLicenses ?? 0}
-              tone="success"
-            />
-            <Kpi
-              icon={Activity}
-              label="Usuarios activos hoy"
-              value={todayAnalytics?.activeUsers ?? 0}
-              tone="success"
-            />
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-3">
-            <Card className="glass-panel xl:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-base">Evolución diaria · últimos 14 días</CardTitle>
-              </CardHeader>
-              <CardContent className="min-w-0 space-y-5">
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  <ChartLegend
-                    color="#38bdf8"
-                    label="Clientes nuevos"
-                    description="Primer registro"
-                  />
-                  <ChartLegend
-                    color="#fbbf24"
-                    label="Pruebas iniciadas"
-                    description="Licencia trial"
-                  />
-                  <ChartLegend
-                    color="#34d399"
-                    label="Licencias pagadas"
-                    description="Nueva venta"
-                  />
-                  <ChartLegend
-                    color="hsl(var(--primary))"
-                    label="Usuarios activos"
-                    description="Uso real de la app"
-                    line
-                  />
-                </div>
-                <div className="h-64 sm:h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={dailyAcquisition} margin={{ left: -20, right: 8, top: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                      <XAxis
-                        dataKey="label"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        minTickGap={18}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip {...adminChartTooltipProps} />
-                      <Bar
-                        dataKey="newUsers"
-                        name="Clientes nuevos"
-                        fill="#38bdf8"
-                        radius={[3, 3, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="trials"
-                        name="Pruebas iniciadas"
-                        fill="#fbbf24"
-                        radius={[3, 3, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="paidLicenses"
-                        name="Licencias pagadas"
-                        fill="#34d399"
-                        radius={[3, 3, 0, 0]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="activeUsers"
-                        name="Usuarios activos"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2.5}
-                        dot={false}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="glass-panel">
-              <CardHeader>
-                <CardTitle className="text-base">Pulso de captación</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <HealthRow label="Nuevos hoy" value={String(todayAnalytics?.newUsers ?? 0)} />
-                <HealthRow label="Nuevos ayer" value={String(yesterdayAnalytics?.newUsers ?? 0)} />
-                <HealthRow
-                  label="Nuevos últimos 7 días"
-                  value={String(lastSevenAnalytics.newUsers)}
-                />
-                <HealthRow
-                  label="7 días anteriores"
-                  value={String(previousSevenAnalytics.newUsers)}
-                />
-                <HealthRow
-                  label="Pruebas últimos 7 días"
-                  value={String(lastSevenAnalytics.trials)}
-                />
-                <HealthRow
-                  label="Pagadas últimos 7 días"
-                  value={String(lastSevenAnalytics.paidLicenses)}
-                />
-              </CardContent>
-            </Card>
-          </div>
+        <section className="space-y-2">
+          <SectionTitle title="Actividad comercial" />
+          <Card className="glass-panel">
+            <CardContent className="space-y-3 p-3 sm:p-4">
+              <div className="grid grid-cols-2 gap-2 text-xs min-[412px]:grid-cols-4">
+                <MiniStat label="Nuevos hoy" value={todayAnalytics?.newUsers ?? 0} />
+                <MiniStat label="Pruebas hoy" value={todayAnalytics?.trials ?? 0} />
+                <MiniStat label="Pagadas hoy" value={todayAnalytics?.paidLicenses ?? 0} />
+                <MiniStat label="Activos hoy" value={todayAnalytics?.activeUsers ?? 0} />
+              </div>
+              <div className="h-48 md:h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartRows} margin={{ left: -16, right: 8, top: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                    <XAxis
+                      dataKey="label"
+                      fontSize={10}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={14}
+                    />
+                    <YAxis allowDecimals={false} fontSize={10} tickLine={false} axisLine={false} />
+                    <Tooltip {...adminChartTooltipProps} />
+                    <Bar dataKey="newUsers" name="Nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                    <Bar
+                      dataKey="paidLicenses"
+                      name="Pagadas"
+                      fill="#34d399"
+                      radius={[3, 3, 0, 0]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="activeUsers"
+                      name="Activos"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </section>
       )}
 
-      <section className="space-y-3">
-        <SectionHeading
-          title="Licencias y facturación"
-          description="Alertas operativas y resultados comerciales sin mezclar monedas."
-        />
-        <div className="grid gap-6 lg:grid-cols-2">
-          {canViewLicenses && (
-            <Card className="glass-panel">
-              <CardHeader>
-                <CardTitle className="text-base">Estado de las licencias</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                <StatusTile label="En prueba" value={trial} tone="primary" />
-                <StatusTile label="Vencen en 30 días" value={expiring} tone="warning" />
-                <StatusTile label="Suspendidas" value={suspended} tone="danger" />
-                <StatusTile label="Vencidas" value={expired} tone="danger" />
-                {canViewAudit && (
-                  <StatusTile label="Renovaciones del mes" value={renewals} tone="success" />
-                )}
-                <StatusTile label="Registros del mes" value={newRegistrations} tone="primary" />
-              </CardContent>
-            </Card>
-          )}
-          {canViewPayments && (
-            <Card className="glass-panel">
-              <CardHeader>
-                <CardTitle className="text-base">Facturación</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <HealthRow label="Ingresos de hoy" value={revenueSince(startOfDay)} />
-                <HealthRow label="Ingresos de esta semana" value={revenueSince(startOfWeek)} />
-                <HealthRow label="Ingresos de este mes" value={revenueSince(startOfMonth)} />
-                <HealthRow label="Ingresos de este año" value={revenueSince(startOfYear)} />
-                <div className="border-t pt-4">
-                  <HealthRow
-                    label="Pagos pendientes"
-                    value={String(
-                      paymentRows.filter((payment) => payment.status === "pending").length,
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <SectionHeading
-          title="Distribución comercial"
-          description="Ingresos confirmados por moneda y composición de licencias por plan."
-        />
-        <div className="grid gap-6 xl:grid-cols-3">
-          {canViewPayments && (
-            <Card className="glass-panel xl:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-base">Ingresos confirmados · últimos 6 meses</CardTitle>
-              </CardHeader>
-              <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyRevenue} margin={{ left: -20, right: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                    <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      {...adminChartTooltipProps}
-                      formatter={(value, name) => [
-                        `${Number(value).toLocaleString()} ${String(name)}`,
-                        "Ingresos",
-                      ]}
-                    />
-                    <Bar dataKey="CUP" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="USD" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="EUR" fill="#a78bfa" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {canViewLicenses && (
-            <Card className="glass-panel">
-              <CardHeader>
-                <CardTitle className="text-base">Licencias por plan</CardTitle>
-              </CardHeader>
-              <CardContent className="h-72">
-                {licensesByPlan.length ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={licensesByPlan}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={48}
-                        outerRadius={82}
-                        paddingAngle={3}
-                      >
-                        {licensesByPlan.map((entry, index) => (
-                          <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip {...adminChartTooltipProps} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyMessage text="Aún no hay licencias para mostrar." />
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {canViewAudit && (
-          <Card className="glass-panel lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Activity className="h-4 w-4 text-primary" />
-                Actividad reciente
-              </CardTitle>
+      <section className="grid gap-3 lg:grid-cols-2">
+        {canViewLicenses && (
+          <Card className="glass-panel">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Licencias</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {(audit.data ?? []).length ? (
-                audit.data?.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex flex-col justify-between gap-1 border-b border-border/50 pb-3 last:border-0 sm:flex-row sm:gap-4"
-                  >
-                    <div>
-                      <div className="text-sm font-medium">{humanize(event.action)}</div>
-                      <div className="text-xs text-muted-foreground">{event.entityType}</div>
-                    </div>
-                    <div className="text-xs text-muted-foreground sm:text-right">
-                      <div>{event.actorEmail ?? "Sistema"}</div>
-                      <div>{new Date(event.createdAt).toLocaleString()}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyMessage text="Sin actividad reciente." />
-              )}
+            <CardContent className="space-y-2 pt-0 text-sm">
+              <CompactRow label="Activas" value={String(active)} />
+              <CompactRow label="Vencen en 30 días" value={String(expiring)} />
+              <CompactRow label="Suspendidas" value={String(suspended)} />
+              <CompactRow
+                label="Estado crítico"
+                value={String(licenseRows.filter((item) => item.status === "expired").length)}
+              />
+              <div className="pt-1">
+                <Button asChild variant="ghost" size="sm" className="h-9 px-2">
+                  <Link to="/admin/proyectos/$id/$section" params={{ id, section: "licencias" }}>
+                    Ver más
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
+
+        {canViewPayments && (
+          <Card className="glass-panel">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Ingresos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 pt-0 text-sm">
+              <CompactRow label="Hoy" value={formatRevenueSince(paidPayments, startOfDay)} />
+              <CompactRow label="Semana" value={formatRevenueSince(paidPayments, startOfWeek)} />
+              <CompactRow label="Mes" value={formatRevenueSince(paidPayments, startOfMonth)} />
+              <CompactRow label="Pendientes" value={String(pendingPayments)} />
+              <div className="pt-1">
+                <Button asChild variant="ghost" size="sm" className="h-9 px-2">
+                  <Link to="/admin/proyectos/$id/$section" params={{ id, section: "pagos" }}>
+                    Ver más
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {canViewAudit && (
+        <section className="space-y-2">
+          <SectionTitle title="Actividad reciente" />
+          <Card className="glass-panel">
+            <CardContent className="space-y-2 p-3 sm:p-4">
+              <div className="space-y-2 md:hidden">
+                {activityMobile.length ? (
+                  activityMobile.map((event) => (
+                    <RecentItem
+                      key={event.id}
+                      title={event.title}
+                      actor={event.actor}
+                      time={event.time}
+                    />
+                  ))
+                ) : (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    Sin actividad reciente.
+                  </p>
+                )}
+              </div>
+              <div className="hidden space-y-2 md:block">
+                {activityDesktop.length ? (
+                  activityDesktop.map((event) => (
+                    <RecentItem
+                      key={event.id}
+                      title={event.title}
+                      actor={event.actor}
+                      time={event.time}
+                    />
+                  ))
+                ) : (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    Sin actividad reciente.
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-1">
+                <Button asChild variant="ghost" size="sm" className="h-9 px-2">
+                  <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }}>
+                    Ver historial completo
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      <section className="hidden md:block">
         <Card className="glass-panel">
           <CardHeader>
-            <CardTitle className="text-base">Salud comercial</CardTitle>
+            <CardTitle className="text-sm">Salud comercial</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <HealthRow label="Conversión a pago" value={`${conversion}%`} />
-            <HealthRow
-              label="Pagos pendientes"
-              value={String(paymentRows.filter((payment) => payment.status === "pending").length)}
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <CompactRow
+              label="Conversión a pago"
+              value={`${clientRows.length ? Math.round((new Set(paidPayments.map((p) => p.userId)).size / clientRows.length) * 100) : 0}%`}
             />
-            <HealthRow label="Licencias gestionadas" value={String(licenseRows.length)} />
-            <div className="border-t pt-4">
-              <p className="text-muted-foreground">{project?.description}</p>
-              <div className="mt-3 flex items-center justify-between">
-                <span>Proyecto</span>
-                <Badge variant={project?.status === "active" ? "default" : "secondary"}>
-                  {project?.status ?? "—"}
-                </Badge>
-              </div>
-            </div>
+            <CompactRow label="Pagos pendientes" value={String(pendingPayments)} />
+            <CompactRow label="Licencias gestionadas" value={String(licenseRows.length)} />
+            <CompactRow
+              label="Estado"
+              value={project?.status === "active" ? "Activo" : (project?.status ?? "—")}
+            />
           </CardContent>
         </Card>
-      </div>
+      </section>
     </div>
+  );
+}
+
+function PeriodButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={active ? "default" : "outline"}
+      size="sm"
+      onClick={onClick}
+      className="h-9 flex-1 rounded-xl"
+    >
+      {children}
+    </Button>
   );
 }
 
@@ -577,107 +529,87 @@ function Kpi({
   icon: Icon,
   label,
   value,
+  sublabel,
   tone = "primary",
 }: {
   icon: typeof Users;
   label: string;
   value: string | number;
-  tone?: "primary" | "success" | "warning" | "danger";
+  sublabel: string;
+  tone?: "primary" | "success";
 }) {
-  const colors = {
+  const toneStyles = {
     primary: "text-primary bg-primary/10",
     success: "text-emerald-500 bg-emerald-500/10",
-    warning: "text-amber-500 bg-amber-500/10",
-    danger: "text-destructive bg-destructive/10",
   };
+
   return (
-    <Card className="glass-panel">
-      <CardContent className="flex items-center gap-3 p-4">
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${colors[tone]}`}
+    <Card className="glass-panel border-border/70">
+      <CardContent className="flex min-h-[88px] items-center gap-2.5 p-3">
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${toneStyles[tone]}`}
         >
-          <Icon className="h-5 w-5" />
-        </div>
+          <Icon className="h-4 w-4" />
+        </span>
         <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-0.5 break-words text-xl font-semibold">{value}</div>
+          <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className="truncate text-lg font-semibold text-foreground">{value}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{sublabel}</p>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function SectionHeading({ title, description }: { title: string; description: string }) {
+function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div>
-      <h3 className="text-base font-semibold">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+    <div className="rounded-xl border border-border/60 bg-muted/15 p-2">
+      <p className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
     </div>
   );
 }
 
-function StatusTile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "primary" | "success" | "warning" | "danger";
-}) {
-  const colors = {
-    primary: "border-primary/20 bg-primary/5 text-primary",
-    success: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400",
-    warning: "border-amber-500/20 bg-amber-500/5 text-amber-400",
-    danger: "border-destructive/20 bg-destructive/5 text-destructive",
-  };
+function CompactRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`rounded-xl border p-4 ${colors[tone]}`}>
-      <div className="text-2xl font-semibold">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold text-foreground">{value}</span>
     </div>
   );
 }
 
-function ChartLegend({
-  color,
-  label,
-  description,
-  line = false,
-}: {
-  color: string;
-  label: string;
-  description: string;
-  line?: boolean;
-}) {
+function RecentItem({ title, actor, time }: { title: string; actor: string; time: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-      <span
-        className={line ? "h-0.5 w-5 shrink-0 rounded-full" : "h-2.5 w-2.5 shrink-0 rounded-sm"}
-        style={{ backgroundColor: color }}
-      />
+    <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/10 p-2.5">
+      <span className="mt-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-primary" />
       <div className="min-w-0">
-        <div className="truncate text-xs font-medium">{label}</div>
-        <div className="truncate text-[11px] text-muted-foreground">{description}</div>
+        <p className="truncate text-sm font-medium text-foreground">{title}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{actor}</p>
+        <p className="text-[11px] text-muted-foreground">{time}</p>
       </div>
     </div>
   );
 }
 
-function HealthRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold">{value}</span>
-    </div>
-  );
+function SectionTitle({ title }: { title: string }) {
+  return <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>;
 }
 
-function EmptyMessage({ text }: { text: string }) {
+function mapAuditAction(action: string) {
+  const labels: Record<string, string> = {
+    license_renewed: "Licencia renovada",
+    payment_recorded: "Pago registrado",
+    customer_created: "Cliente creado",
+    receipt_repaired: "Recibo generado",
+    license_created: "Licencia creada",
+    license_status_changed: "Estado de licencia actualizado",
+    plan_changed: "Plan actualizado",
+  };
   return (
-    <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
-      {text}
-    </div>
+    labels[action] ?? action.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase())
   );
 }
 
@@ -697,36 +629,37 @@ function percentageVariation(current: number, previous: number) {
   return ((current - previous) / previous) * 100;
 }
 
-function TrendBadge({ value, label }: { value: number; label: string }) {
-  const stable = value === 0;
-  const positive = value > 0;
-  return (
-    <Badge
-      variant="outline"
-      className={
-        stable
-          ? "text-muted-foreground"
-          : positive
-            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-            : "border-destructive/30 bg-destructive/10 text-destructive"
-      }
-    >
-      {positive ? "+" : ""}
-      {value.toFixed(1)}% {label}
-    </Badge>
+function toIsoDate(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function rangeDays(from: string, to: string) {
+  const fromDate = new Date(`${from}T12:00:00`).getTime();
+  const toDate = new Date(`${to}T12:00:00`).getTime();
+  return Math.max(1, Math.round((toDate - fromDate) / DAY) + 1);
+}
+
+function formatDateShort(value: string) {
+  return new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
+    new Date(`${value}T12:00:00`),
   );
 }
 
-function humanize(value: string) {
-  return value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
+function formatRevenueSince(
+  payments: Awaited<ReturnType<typeof supabaseServices.payments.listAdmin>>,
+  fromDate: Date,
+) {
+  return formatRevenue(payments.filter((payment) => new Date(payment.createdAt) >= fromDate));
 }
 
 function formatRevenue(payments: Awaited<ReturnType<typeof supabaseServices.payments.listAdmin>>) {
   const totals = new Map<string, number>();
-  payments.forEach((payment) =>
-    totals.set(payment.currency, (totals.get(payment.currency) ?? 0) + payment.amount),
-  );
+  payments.forEach((payment) => {
+    totals.set(payment.currency, (totals.get(payment.currency) ?? 0) + payment.amount);
+  });
+
   if (!totals.size) return "0";
+
   return [...totals]
     .map(([currency, total]) => `${total.toLocaleString()} ${currency}`)
     .join(" · ");
