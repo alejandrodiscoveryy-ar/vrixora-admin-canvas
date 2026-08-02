@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
-  TrendingDown,
   TrendingUp,
   UserPlus,
   Users,
@@ -350,6 +349,7 @@ function ResumenPage() {
   ].filter((item) => item.show);
 
   const rangeLabel = `${formatDateShort(range.start)} - ${formatDateShort(range.end)}`;
+  const freshnessLabel = buildFreshnessLabel(dataUpdatedAt, allLoading);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -365,11 +365,7 @@ function ResumenPage() {
                 {project?.status === "active" ? "Activo" : (project?.status ?? "—")}
               </Badge>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              {allLoading
-                ? "Cargando datos..."
-                : `Datos actualizados hace ${minutesAgo(dataUpdatedAt)} min`}
-            </p>
+            <p className="text-[11px] text-muted-foreground">{freshnessLabel}</p>
           </CardContent>
         </Card>
       </section>
@@ -381,7 +377,7 @@ function ResumenPage() {
         </div>
         <Badge variant="outline" className="gap-2">
           <RefreshCw className="h-3 w-3" />
-          {allLoading ? "Cargando..." : `Actualizado hace ${minutesAgo(dataUpdatedAt)} min`}
+          {freshnessLabel}
         </Badge>
       </section>
 
@@ -432,6 +428,21 @@ function ResumenPage() {
           />
         </div>
 
+        {period === "custom" ? (
+          <div className="grid gap-2 md:hidden min-[360px]:grid-cols-2">
+            <DateField
+              label="Desde"
+              value={dateRange.from}
+              onChange={(value) => setDateRange({ from: value, to: dateRange.to })}
+            />
+            <DateField
+              label="Hasta"
+              value={dateRange.to}
+              onChange={(value) => setDateRange({ from: dateRange.from, to: value })}
+            />
+          </div>
+        ) : null}
+
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
           <Filter
             label="Plan"
@@ -467,7 +478,7 @@ function ResumenPage() {
       {queryError ? (
         <Card className="border-destructive/40 bg-destructive/10">
           <CardContent className="p-3 text-sm text-destructive">
-            Error al cargar datos: {queryError.message}
+            {friendlyError(queryError)}
           </CardContent>
         </Card>
       ) : null}
@@ -787,6 +798,28 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   );
 }
 
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="space-y-1">
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <input
+        type="date"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+      />
+    </label>
+  );
+}
+
 function SectionTitle({ title }: { title: string }) {
   return <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>;
 }
@@ -854,6 +887,28 @@ function minutesAgo(timestamp: number) {
   if (!timestamp) return "—";
   const delta = Date.now() - timestamp;
   return Math.max(0, Math.floor(delta / 60_000));
+}
+
+function buildFreshnessLabel(timestamp: number, loading: boolean) {
+  if (loading) return "Cargando datos...";
+  if (!timestamp) return "Sin datos recientes";
+  return `Datos actualizados hace ${minutesAgo(timestamp)} min`;
+}
+
+function friendlyError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  const lower = message.toLowerCase();
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("network") ||
+    lower.includes("connection")
+  ) {
+    return "Sin conexión: no fue posible actualizar los datos. Revisa internet e inténtalo de nuevo.";
+  }
+  if (lower.includes("not configured")) {
+    return "El entorno no está configurado para cargar datos de Supabase.";
+  }
+  return `Error al cargar datos: ${message}`;
 }
 
 function stringValue(value: unknown) {
@@ -959,9 +1014,16 @@ function toIsoDate(value: Date) {
 }
 
 function renderComparison(current: string, previous: string, suffix: string) {
-  const currentTotal = parseMoneySum(current);
-  const previousTotal = parseMoneySum(previous);
+  const currentByCurrency = parseMoneyByCurrency(current);
+  const previousByCurrency = parseMoneyByCurrency(previous);
+  const currencies = [...new Set([...currentByCurrency.keys(), ...previousByCurrency.keys()])];
 
+  if (currencies.length === 0) return `${suffix}: sin cambio`;
+  if (currencies.length > 1) return `${suffix}: comparación por moneda no disponible`;
+
+  const currency = currencies[0];
+  const currentTotal = currentByCurrency.get(currency) ?? 0;
+  const previousTotal = previousByCurrency.get(currency) ?? 0;
   if (previousTotal === 0) {
     return currentTotal === 0 ? `${suffix}: sin cambio` : `${suffix}: sin base comparativa`;
   }
@@ -978,12 +1040,16 @@ function renderComparisonCount(current: number, previous: number) {
   return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% vs periodo anterior`;
 }
 
-function parseMoneySum(value: string) {
-  if (value === "0") return 0;
-  return value
-    .split(" · ")
-    .map((part) => Number(part.split(" ")[0].replaceAll(",", "")) || 0)
-    .reduce((sum, amount) => sum + amount, 0);
+function parseMoneyByCurrency(value: string) {
+  const totals = new Map<string, number>();
+  if (!value || value === "0") return totals;
+  value.split(" · ").forEach((part) => {
+    const [amountRaw, currency] = part.trim().split(" ");
+    const amount = Number((amountRaw ?? "").replaceAll(",", ""));
+    if (!currency || Number.isNaN(amount)) return;
+    totals.set(currency, amount);
+  });
+  return totals;
 }
 
 function planLabel(value: string) {
