@@ -29,7 +29,10 @@ import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AnalyticsDateRangePicker, usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
+import {
+  AnalyticsDateRangePicker,
+  usePersistentAnalyticsDateRange,
+} from "@/components/admin/AnalyticsDateRange";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 export const Route = createFileRoute("/admin/proyectos/$id/")({
@@ -50,7 +53,9 @@ function ResumenPage() {
   const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
 
-  const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(`vrixora:analytics-range:${id}`);
+  const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
+    `vrixora:analytics-range:${id}`,
+  );
   const analyticsFrom = dateRange.from;
   const analyticsTo = dateRange.to;
 
@@ -80,10 +85,11 @@ function ResumenPage() {
   });
   const analytics = useQuery({
     queryKey: ["summary-usage-analytics", id, analyticsFrom, analyticsTo],
-    queryFn: () => supabaseServices.usageAnalytics.series(id, {
-      from: analyticsFrom,
-      to: analyticsTo,
-    }),
+    queryFn: () =>
+      supabaseServices.usageAnalytics.series(id, {
+        from: analyticsFrom,
+        to: analyticsTo,
+      }),
     enabled: !permissionsLoading && canViewAnalytics,
     refetchInterval: REFRESH_INTERVAL,
   });
@@ -97,10 +103,14 @@ function ResumenPage() {
     [paymentRows],
   );
   const active = licenseRows.filter((license) => license.status === "active").length;
-  const trial = licenseRows.filter((license) => license.licenseType === "trial" && license.status === "active").length;
+  const trial = licenseRows.filter(
+    (license) => license.licenseType === "trial" && license.status === "active",
+  ).length;
   const suspended = licenseRows.filter((license) => license.status === "suspended").length;
   const expired = licenseRows.filter(
-    (license) => license.status === "expired" || (!!license.expiresAt && new Date(license.expiresAt).getTime() < now),
+    (license) =>
+      license.status === "expired" ||
+      (!!license.expiresAt && new Date(license.expiresAt).getTime() < now),
   ).length;
   const expiring = licenseRows.filter((license) => {
     if (!license.expiresAt || license.status !== "active") return false;
@@ -112,32 +122,36 @@ function ResumenPage() {
   const startOfWeek = new Date(startOfDay);
   startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
   const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const startOfMonth = useMemo(
-    () => {
-      const [year, month] = currentMonthKey.split("-").map(Number);
-      return new Date(year, month - 1, 1);
-    },
-    [currentMonthKey],
-  );
+  const startOfMonth = useMemo(() => {
+    const [year, month] = currentMonthKey.split("-").map(Number);
+    return new Date(year, month - 1, 1);
+  }, [currentMonthKey]);
   const startOfYear = new Date(startOfDay.getFullYear(), 0, 1);
   const selectedStart = new Date(`${analyticsFrom}T00:00:00`);
   const selectedEnd = new Date(`${analyticsTo}T00:00:00`);
   selectedEnd.setDate(selectedEnd.getDate() + 1);
-  const revenueSince = (date: Date) => formatRevenue(
-    paidPayments.filter((payment) => new Date(payment.createdAt) >= date),
+  const revenueSince = (date: Date) =>
+    formatRevenue(paidPayments.filter((payment) => new Date(payment.createdAt) >= date));
+  const selectedRevenue = formatRevenue(
+    paidPayments.filter((payment) => {
+      const created = new Date(payment.createdAt);
+      return created >= selectedStart && created < selectedEnd;
+    }),
   );
-  const selectedRevenue = formatRevenue(paidPayments.filter((payment) => {
-    const created = new Date(payment.createdAt);
-    return created >= selectedStart && created < selectedEnd;
-  }));
   const newRegistrations = clientRows.filter(
-    (client) => new Date(client.registeredAt) >= selectedStart && new Date(client.registeredAt) < selectedEnd,
+    (client) =>
+      new Date(client.registeredAt) >= selectedStart && new Date(client.registeredAt) < selectedEnd,
   ).length;
   const renewals = (audit.data ?? []).filter(
-    (event) => event.action === "license_renewed" && new Date(event.createdAt) >= selectedStart && new Date(event.createdAt) < selectedEnd,
+    (event) =>
+      event.action === "license_renewed" &&
+      new Date(event.createdAt) >= selectedStart &&
+      new Date(event.createdAt) < selectedEnd,
   ).length;
   const convertedUsers = new Set(
-    paidPayments.flatMap((payment) => payment.amount > 0 && payment.userEmail ? [payment.userEmail] : []),
+    paidPayments.flatMap((payment) =>
+      payment.amount > 0 && payment.userEmail ? [payment.userEmail] : [],
+    ),
   ).size;
   const conversion = clientRows.length ? Math.round((convertedUsers / clientRows.length) * 100) : 0;
   const analyticsRows = analytics.data ?? [];
@@ -151,8 +165,9 @@ function ResumenPage() {
   );
   const dailyAcquisition = analyticsRows.map((row) => ({
     ...row,
-    label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" })
-      .format(new Date(`${row.date}T12:00:00`)),
+    label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
+      new Date(`${row.date}T12:00:00`),
+    ),
   }));
 
   const monthlyRevenue = useMemo(() => {
@@ -166,9 +181,15 @@ function ResumenPage() {
       });
       return {
         month: formatter.format(date),
-        CUP: monthPayments.filter((payment) => payment.currency === "CUP").reduce((sum, payment) => sum + payment.amount, 0),
-        USD: monthPayments.filter((payment) => payment.currency === "USD").reduce((sum, payment) => sum + payment.amount, 0),
-        EUR: monthPayments.filter((payment) => payment.currency === "EUR").reduce((sum, payment) => sum + payment.amount, 0),
+        CUP: monthPayments
+          .filter((payment) => payment.currency === "CUP")
+          .reduce((sum, payment) => sum + payment.amount, 0),
+        USD: monthPayments
+          .filter((payment) => payment.currency === "USD")
+          .reduce((sum, payment) => sum + payment.amount, 0),
+        EUR: monthPayments
+          .filter((payment) => payment.currency === "EUR")
+          .reduce((sum, payment) => sum + payment.amount, 0),
       };
     });
   }, [paidPayments, startOfMonth]);
@@ -179,14 +200,18 @@ function ResumenPage() {
     return [...totals].map(([name, value]) => ({ name, value }));
   }, [licenseRows]);
 
-  const queryError = [clients, licenses, payments, audit, analytics].find((query) => query.isError)?.error;
+  const queryError = [clients, licenses, payments, audit, analytics].find(
+    (query) => query.isError,
+  )?.error;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Resumen operativo</h2>
-          <p className="text-sm text-muted-foreground">Datos reales actualizados cada 30 segundos.</p>
+          <p className="text-sm text-muted-foreground">
+            Datos reales actualizados cada 30 segundos.
+          </p>
         </div>
         <Badge variant="outline" className="gap-2">
           <RefreshCw className="h-3 w-3" /> Actualización automática
@@ -207,10 +232,27 @@ function ResumenPage() {
           description="Los cuatro indicadores principales para entender el estado del negocio."
         />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {canViewClients && <Kpi icon={Users} label="Clientes totales" value={clientRows.length} />}
-          {canViewAnalytics && <Kpi icon={UserPlus} label="Clientes nuevos hoy" value={todayAnalytics?.newUsers ?? 0} />}
-          {canViewLicenses && <Kpi icon={KeyRound} label="Licencias activas" value={active} tone="success" />}
-          {canViewPayments && <Kpi icon={TrendingUp} label="Ingresos del periodo" value={selectedRevenue} tone="success" />}
+          {canViewClients && (
+            <Kpi icon={Users} label="Clientes totales" value={clientRows.length} />
+          )}
+          {canViewAnalytics && (
+            <Kpi
+              icon={UserPlus}
+              label="Clientes nuevos hoy"
+              value={todayAnalytics?.newUsers ?? 0}
+            />
+          )}
+          {canViewLicenses && (
+            <Kpi icon={KeyRound} label="Licencias activas" value={active} tone="success" />
+          )}
+          {canViewPayments && (
+            <Kpi
+              icon={TrendingUp}
+              label="Ingresos del periodo"
+              value={selectedRevenue}
+              tone="success"
+            />
+          )}
         </div>
       </section>
 
@@ -220,17 +262,36 @@ function ResumenPage() {
             <div>
               <h3 className="text-base font-semibold">Captación diaria de clientes</h3>
               <p className="text-sm text-muted-foreground">
-                Registros, pruebas y ventas reales. Las aperturas de la aplicación se muestran por separado.
+                Registros, pruebas y ventas reales. Las aperturas de la aplicación se muestran por
+                separado.
               </p>
             </div>
             <TrendBadge value={acquisitionVariation} label="últimos 7 días" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Kpi icon={UserPlus} label="Clientes nuevos hoy" value={todayAnalytics?.newUsers ?? 0} />
-            <Kpi icon={Sparkles} label="Pruebas iniciadas hoy" value={todayAnalytics?.trials ?? 0} />
-            <Kpi icon={BadgeDollarSign} label="Licencias pagadas hoy" value={todayAnalytics?.paidLicenses ?? 0} tone="success" />
-            <Kpi icon={Activity} label="Usuarios activos hoy" value={todayAnalytics?.activeUsers ?? 0} tone="success" />
+            <Kpi
+              icon={UserPlus}
+              label="Clientes nuevos hoy"
+              value={todayAnalytics?.newUsers ?? 0}
+            />
+            <Kpi
+              icon={Sparkles}
+              label="Pruebas iniciadas hoy"
+              value={todayAnalytics?.trials ?? 0}
+            />
+            <Kpi
+              icon={BadgeDollarSign}
+              label="Licencias pagadas hoy"
+              value={todayAnalytics?.paidLicenses ?? 0}
+              tone="success"
+            />
+            <Kpi
+              icon={Activity}
+              label="Usuarios activos hoy"
+              value={todayAnalytics?.activeUsers ?? 0}
+              tone="success"
+            />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
@@ -240,36 +301,100 @@ function ResumenPage() {
               </CardHeader>
               <CardContent className="min-w-0 space-y-5">
                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  <ChartLegend color="#38bdf8" label="Clientes nuevos" description="Primer registro" />
-                  <ChartLegend color="#fbbf24" label="Pruebas iniciadas" description="Licencia trial" />
-                  <ChartLegend color="#34d399" label="Licencias pagadas" description="Nueva venta" />
-                  <ChartLegend color="hsl(var(--primary))" label="Usuarios activos" description="Uso real de la app" line />
+                  <ChartLegend
+                    color="#38bdf8"
+                    label="Clientes nuevos"
+                    description="Primer registro"
+                  />
+                  <ChartLegend
+                    color="#fbbf24"
+                    label="Pruebas iniciadas"
+                    description="Licencia trial"
+                  />
+                  <ChartLegend
+                    color="#34d399"
+                    label="Licencias pagadas"
+                    description="Nueva venta"
+                  />
+                  <ChartLegend
+                    color="hsl(var(--primary))"
+                    label="Usuarios activos"
+                    description="Uso real de la app"
+                    line
+                  />
                 </div>
                 <div className="h-64 sm:h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={dailyAcquisition} margin={{ left: -20, right: 8, top: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                      <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} minTickGap={18} />
-                      <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
+                      <XAxis
+                        dataKey="label"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        minTickGap={18}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                      />
                       <Tooltip {...adminChartTooltipProps} />
-                      <Bar dataKey="newUsers" name="Clientes nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="trials" name="Pruebas iniciadas" fill="#fbbf24" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="paidLicenses" name="Licencias pagadas" fill="#34d399" radius={[3, 3, 0, 0]} />
-                      <Line type="monotone" dataKey="activeUsers" name="Usuarios activos" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={false} />
+                      <Bar
+                        dataKey="newUsers"
+                        name="Clientes nuevos"
+                        fill="#38bdf8"
+                        radius={[3, 3, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="trials"
+                        name="Pruebas iniciadas"
+                        fill="#fbbf24"
+                        radius={[3, 3, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="paidLicenses"
+                        name="Licencias pagadas"
+                        fill="#34d399"
+                        radius={[3, 3, 0, 0]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="activeUsers"
+                        name="Usuarios activos"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2.5}
+                        dot={false}
+                      />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
             <Card className="glass-panel">
-              <CardHeader><CardTitle className="text-base">Pulso de captación</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base">Pulso de captación</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <HealthRow label="Nuevos hoy" value={String(todayAnalytics?.newUsers ?? 0)} />
                 <HealthRow label="Nuevos ayer" value={String(yesterdayAnalytics?.newUsers ?? 0)} />
-                <HealthRow label="Nuevos últimos 7 días" value={String(lastSevenAnalytics.newUsers)} />
-                <HealthRow label="7 días anteriores" value={String(previousSevenAnalytics.newUsers)} />
-                <HealthRow label="Pruebas últimos 7 días" value={String(lastSevenAnalytics.trials)} />
-                <HealthRow label="Pagadas últimos 7 días" value={String(lastSevenAnalytics.paidLicenses)} />
+                <HealthRow
+                  label="Nuevos últimos 7 días"
+                  value={String(lastSevenAnalytics.newUsers)}
+                />
+                <HealthRow
+                  label="7 días anteriores"
+                  value={String(previousSevenAnalytics.newUsers)}
+                />
+                <HealthRow
+                  label="Pruebas últimos 7 días"
+                  value={String(lastSevenAnalytics.trials)}
+                />
+                <HealthRow
+                  label="Pagadas últimos 7 días"
+                  value={String(lastSevenAnalytics.paidLicenses)}
+                />
               </CardContent>
             </Card>
           </div>
@@ -284,27 +409,38 @@ function ResumenPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           {canViewLicenses && (
             <Card className="glass-panel">
-              <CardHeader><CardTitle className="text-base">Estado de las licencias</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base">Estado de las licencias</CardTitle>
+              </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2">
                 <StatusTile label="En prueba" value={trial} tone="primary" />
                 <StatusTile label="Vencen en 30 días" value={expiring} tone="warning" />
                 <StatusTile label="Suspendidas" value={suspended} tone="danger" />
                 <StatusTile label="Vencidas" value={expired} tone="danger" />
-                {canViewAudit && <StatusTile label="Renovaciones del mes" value={renewals} tone="success" />}
+                {canViewAudit && (
+                  <StatusTile label="Renovaciones del mes" value={renewals} tone="success" />
+                )}
                 <StatusTile label="Registros del mes" value={newRegistrations} tone="primary" />
               </CardContent>
             </Card>
           )}
           {canViewPayments && (
             <Card className="glass-panel">
-              <CardHeader><CardTitle className="text-base">Facturación</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base">Facturación</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <HealthRow label="Ingresos de hoy" value={revenueSince(startOfDay)} />
                 <HealthRow label="Ingresos de esta semana" value={revenueSince(startOfWeek)} />
                 <HealthRow label="Ingresos de este mes" value={revenueSince(startOfMonth)} />
                 <HealthRow label="Ingresos de este año" value={revenueSince(startOfYear)} />
                 <div className="border-t pt-4">
-                  <HealthRow label="Pagos pendientes" value={String(paymentRows.filter((payment) => payment.status === "pending").length)} />
+                  <HealthRow
+                    label="Pagos pendientes"
+                    value={String(
+                      paymentRows.filter((payment) => payment.status === "pending").length,
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -318,68 +454,117 @@ function ResumenPage() {
           description="Ingresos confirmados por moneda y composición de licencias por plan."
         />
         <div className="grid gap-6 xl:grid-cols-3">
-        {canViewPayments && (
-          <Card className="glass-panel xl:col-span-2">
-            <CardHeader><CardTitle className="text-base">Ingresos confirmados · últimos 6 meses</CardTitle></CardHeader>
-            <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyRevenue} margin={{ left: -20, right: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip {...adminChartTooltipProps} formatter={(value, name) => [`${Number(value).toLocaleString()} ${String(name)}`, "Ingresos"]} />
-                  <Bar dataKey="CUP" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="USD" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="EUR" fill="#a78bfa" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
-        {canViewLicenses && (
-          <Card className="glass-panel">
-            <CardHeader><CardTitle className="text-base">Licencias por plan</CardTitle></CardHeader>
-            <CardContent className="h-72">
-              {licensesByPlan.length ? (
+          {canViewPayments && (
+            <Card className="glass-panel xl:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Ingresos confirmados · últimos 6 meses</CardTitle>
+              </CardHeader>
+              <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={licensesByPlan} dataKey="value" nameKey="name" innerRadius={48} outerRadius={82} paddingAngle={3}>
-                      {licensesByPlan.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
-                    </Pie>
-                    <Tooltip {...adminChartTooltipProps} />
-                  </PieChart>
+                  <BarChart data={monthlyRevenue} margin={{ left: -20, right: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                    <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      {...adminChartTooltipProps}
+                      formatter={(value, name) => [
+                        `${Number(value).toLocaleString()} ${String(name)}`,
+                        "Ingresos",
+                      ]}
+                    />
+                    <Bar dataKey="CUP" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="USD" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="EUR" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
-              ) : <EmptyMessage text="Aún no hay licencias para mostrar." />}
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          )}
+
+          {canViewLicenses && (
+            <Card className="glass-panel">
+              <CardHeader>
+                <CardTitle className="text-base">Licencias por plan</CardTitle>
+              </CardHeader>
+              <CardContent className="h-72">
+                {licensesByPlan.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={licensesByPlan}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={48}
+                        outerRadius={82}
+                        paddingAngle={3}
+                      >
+                        {licensesByPlan.map((entry, index) => (
+                          <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip {...adminChartTooltipProps} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyMessage text="Aún no hay licencias para mostrar." />
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {canViewAudit && (
           <Card className="glass-panel lg:col-span-2">
-            <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Activity className="h-4 w-4 text-primary" />Actividad reciente</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Activity className="h-4 w-4 text-primary" />
+                Actividad reciente
+              </CardTitle>
+            </CardHeader>
             <CardContent className="space-y-3">
-              {(audit.data ?? []).length ? audit.data?.map((event) => (
-                <div key={event.id} className="flex flex-col justify-between gap-1 border-b border-border/50 pb-3 last:border-0 sm:flex-row sm:gap-4">
-                  <div><div className="text-sm font-medium">{humanize(event.action)}</div><div className="text-xs text-muted-foreground">{event.entityType}</div></div>
-                  <div className="text-xs text-muted-foreground sm:text-right"><div>{event.actorEmail ?? "Sistema"}</div><div>{new Date(event.createdAt).toLocaleString()}</div></div>
-                </div>
-              )) : <EmptyMessage text="Sin actividad reciente." />}
+              {(audit.data ?? []).length ? (
+                audit.data?.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex flex-col justify-between gap-1 border-b border-border/50 pb-3 last:border-0 sm:flex-row sm:gap-4"
+                  >
+                    <div>
+                      <div className="text-sm font-medium">{humanize(event.action)}</div>
+                      <div className="text-xs text-muted-foreground">{event.entityType}</div>
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-right">
+                      <div>{event.actorEmail ?? "Sistema"}</div>
+                      <div>{new Date(event.createdAt).toLocaleString()}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <EmptyMessage text="Sin actividad reciente." />
+              )}
             </CardContent>
           </Card>
         )}
         <Card className="glass-panel">
-          <CardHeader><CardTitle className="text-base">Salud comercial</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Salud comercial</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <HealthRow label="Conversión a pago" value={`${conversion}%`} />
-            <HealthRow label="Pagos pendientes" value={String(paymentRows.filter((payment) => payment.status === "pending").length)} />
+            <HealthRow
+              label="Pagos pendientes"
+              value={String(paymentRows.filter((payment) => payment.status === "pending").length)}
+            />
             <HealthRow label="Licencias gestionadas" value={String(licenseRows.length)} />
             <div className="border-t pt-4">
               <p className="text-muted-foreground">{project?.description}</p>
-              <div className="mt-3 flex items-center justify-between"><span>Proyecto</span><Badge variant={project?.status === "active" ? "default" : "secondary"}>{project?.status ?? "—"}</Badge></div>
+              <div className="mt-3 flex items-center justify-between">
+                <span>Proyecto</span>
+                <Badge variant={project?.status === "active" ? "default" : "secondary"}>
+                  {project?.status ?? "—"}
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -388,9 +573,38 @@ function ResumenPage() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, tone = "primary" }: { icon: typeof Users; label: string; value: string | number; tone?: "primary" | "success" | "warning" | "danger" }) {
-  const colors = { primary: "text-primary bg-primary/10", success: "text-emerald-500 bg-emerald-500/10", warning: "text-amber-500 bg-amber-500/10", danger: "text-destructive bg-destructive/10" };
-  return <Card className="glass-panel"><CardContent className="flex items-center gap-3 p-4"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${colors[tone]}`}><Icon className="h-5 w-5" /></div><div className="min-w-0"><div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div><div className="mt-0.5 break-words text-xl font-semibold">{value}</div></div></CardContent></Card>;
+function Kpi({
+  icon: Icon,
+  label,
+  value,
+  tone = "primary",
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string | number;
+  tone?: "primary" | "success" | "warning" | "danger";
+}) {
+  const colors = {
+    primary: "text-primary bg-primary/10",
+    success: "text-emerald-500 bg-emerald-500/10",
+    warning: "text-amber-500 bg-amber-500/10",
+    danger: "text-destructive bg-destructive/10",
+  };
+  return (
+    <Card className="glass-panel">
+      <CardContent className="flex items-center gap-3 p-4">
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${colors[tone]}`}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="mt-0.5 break-words text-xl font-semibold">{value}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function SectionHeading({ title, description }: { title: string; description: string }) {
@@ -402,7 +616,15 @@ function SectionHeading({ title, description }: { title: string; description: st
   );
 }
 
-function StatusTile({ label, value, tone }: { label: string; value: number; tone: "primary" | "success" | "warning" | "danger" }) {
+function StatusTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "primary" | "success" | "warning" | "danger";
+}) {
   const colors = {
     primary: "border-primary/20 bg-primary/5 text-primary",
     success: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400",
@@ -417,7 +639,17 @@ function StatusTile({ label, value, tone }: { label: string; value: number; tone
   );
 }
 
-function ChartLegend({ color, label, description, line = false }: { color: string; label: string; description: string; line?: boolean }) {
+function ChartLegend({
+  color,
+  label,
+  description,
+  line = false,
+}: {
+  color: string;
+  label: string;
+  description: string;
+  line?: boolean;
+}) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
       <span
@@ -433,11 +665,20 @@ function ChartLegend({ color, label, description, line = false }: { color: strin
 }
 
 function HealthRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{label}</span><span className="font-semibold">{value}</span></div>;
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
 }
 
 function EmptyMessage({ text }: { text: string }) {
-  return <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">{text}</div>;
+  return (
+    <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
+      {text}
+    </div>
+  );
 }
 
 function analyticsTotals(rows: Awaited<ReturnType<typeof supabaseServices.usageAnalytics.series>>) {
@@ -462,13 +703,16 @@ function TrendBadge({ value, label }: { value: number; label: string }) {
   return (
     <Badge
       variant="outline"
-      className={stable
-        ? "text-muted-foreground"
-        : positive
-          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-          : "border-destructive/30 bg-destructive/10 text-destructive"}
+      className={
+        stable
+          ? "text-muted-foreground"
+          : positive
+            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+            : "border-destructive/30 bg-destructive/10 text-destructive"
+      }
     >
-      {positive ? "+" : ""}{value.toFixed(1)}% {label}
+      {positive ? "+" : ""}
+      {value.toFixed(1)}% {label}
     </Badge>
   );
 }
@@ -479,7 +723,11 @@ function humanize(value: string) {
 
 function formatRevenue(payments: Awaited<ReturnType<typeof supabaseServices.payments.listAdmin>>) {
   const totals = new Map<string, number>();
-  payments.forEach((payment) => totals.set(payment.currency, (totals.get(payment.currency) ?? 0) + payment.amount));
+  payments.forEach((payment) =>
+    totals.set(payment.currency, (totals.get(payment.currency) ?? 0) + payment.amount),
+  );
   if (!totals.size) return "0";
-  return [...totals].map(([currency, total]) => `${total.toLocaleString()} ${currency}`).join(" · ");
+  return [...totals]
+    .map(([currency, total]) => `${total.toLocaleString()} ${currency}`)
+    .join(" · ");
 }

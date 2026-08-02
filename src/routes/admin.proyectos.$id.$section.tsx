@@ -38,10 +38,10 @@ function SectionPage() {
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/admin/login" });
     else if (
-      !permissionsLoading
-      && user
-      && requiredPermission
-      && !permissions.includes(requiredPermission)
+      !permissionsLoading &&
+      user &&
+      requiredPermission &&
+      !permissions.includes(requiredPermission)
     ) {
       navigate({ to: "/admin/proyectos/$id", params: { id } });
     }
@@ -50,14 +50,23 @@ function SectionPage() {
   if (loading || projectLoading || permissionsLoading || !user || !project) return null;
 
   switch (section) {
-    case "clientes": return <ClientesSection projectId={id} />;
-    case "licencias": return <LicenciasSection projectId={id} />;
-    case "pagos": return <PagosSection projectId={id} />;
-    case "planes": return <PlanesPreciosSection projectId={id} />;
-    case "empleados": return <EmpleadosSection projectId={id} />;
-    case "rendimiento": return <RendimientoSection projectId={id} />;
-    case "configuracion": return <ConfiguracionSection projectId={id} />;
-    case "auditoria": return <AuditoriaSection projectId={id} />;
-    default: return <div className="text-sm text-muted-foreground">Sección no encontrada.</div>;
+    case "clientes":
+      return <ClientesSection projectId={id} />;
+    case "licencias":
+      return <LicenciasSection projectId={id} />;
+    case "pagos":
+      return <PagosSection projectId={id} />;
+    case "planes":
+      return <PlanesPreciosSection projectId={id} />;
+    case "empleados":
+      return <EmpleadosSection projectId={id} />;
+    case "rendimiento":
+      return <RendimientoSection projectId={id} />;
+    case "configuracion":
+      return <ConfiguracionSection projectId={id} />;
+    case "auditoria":
+      return <AuditoriaSection projectId={id} />;
+    default:
+      return <div className="text-sm text-muted-foreground">Sección no encontrada.</div>;
   }
 }

@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, CircleDollarSign, FileText, Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  CircleDollarSign,
+  FileText,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
@@ -13,6 +23,12 @@ import { ReceiptDialog } from "@/features/admin/ChargePlanDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -92,7 +108,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const loadReceipt = useMutation({
     mutationFn: (paymentId: string) => supabaseServices.payments.receipt(paymentId),
     onSuccess: setViewingReceipt,
-    onError: () => toast.error("No se encontró el recibo. El owner puede generarlo sin renovar nuevamente."),
+    onError: () =>
+      toast.error("No se encontró el recibo. El owner puede generarlo sin renovar nuevamente."),
   });
   const repairReceipt = useMutation({
     mutationFn: (paymentId: string) => supabaseServices.payments.repairReceipt(paymentId),
@@ -183,7 +200,143 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             />
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
-          <div className="min-w-0 overflow-hidden md:overflow-x-auto">
+          <div className="space-y-3 md:hidden">
+            {filtered.map((payment) => (
+              <Card key={payment.id} className="border-border/70 bg-card/80">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-base font-semibold">
+                        {payment.amount} {payment.currency}
+                      </div>
+                      <div className="break-all text-xs text-muted-foreground">
+                        {payment.userEmail}
+                      </div>
+                      <div className="break-all font-mono text-[11px] text-muted-foreground">
+                        {payment.licenseKey}
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        payment.status === "paid"
+                          ? "default"
+                          : payment.status === "pending"
+                            ? "secondary"
+                            : "outline"
+                      }
+                    >
+                      {statusLabel(payment.status)}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Plan</div>
+                      <div className="mt-0.5 text-foreground">{planLabel(payment.plan)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Método</div>
+                      <div className="mt-0.5 text-foreground">{methodLabel(payment.method)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Referencia</div>
+                      <div className="mt-0.5 break-all text-foreground">{payment.reference}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Fecha</div>
+                      <div className="mt-0.5 text-foreground">
+                        {new Date(payment.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value={`payment-${payment.id}`}>
+                      <AccordionTrigger className="py-2 text-sm">Ver más</AccordionTrigger>
+                      <AccordionContent className="space-y-2 text-xs text-muted-foreground">
+                        <DetailRow
+                          label="Precio normal"
+                          value={`${payment.listPrice} ${payment.currency}`}
+                        />
+                        <DetailRow
+                          label="Descuento"
+                          value={`${payment.discount} ${payment.currency}`}
+                        />
+                        <DetailRow
+                          label="Administrador"
+                          value={payment.operatorLabel ?? payment.employeeId}
+                        />
+                        <DetailRow label="Notas" value={payment.notes || "—"} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                  <div className="flex flex-wrap gap-2">
+                    {canManage && payment.status === "pending" && (
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        variant="outline"
+                        disabled={markPaid.isPending}
+                        onClick={() => markPaid.mutate(payment.id)}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Pagado
+                      </Button>
+                    )}
+                    {canManage &&
+                      ["paid", "complimentary"].includes(payment.status) &&
+                      payment.hasReceipt && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Ver y compartir recibo"
+                          disabled={loadReceipt.isPending}
+                          onClick={() => loadReceipt.mutate(payment.id)}
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
+                    {canManage &&
+                      ["paid", "complimentary"].includes(payment.status) &&
+                      !payment.hasReceipt &&
+                      canCorrect && (
+                        <Button
+                          className="flex-1"
+                          size="sm"
+                          variant="outline"
+                          disabled={repairReceipt.isPending}
+                          onClick={() => repairReceipt.mutate(payment.id)}
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          Recibo
+                        </Button>
+                      )}
+                    {canCorrect && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Editar pago"
+                        onClick={() => setEditing(payment)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canCorrect && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-destructive"
+                        title="Eliminar pago"
+                        onClick={() => setDeleting(payment)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -208,8 +361,12 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     <TableCell data-label="Fecha" className="whitespace-nowrap text-xs">
                       {new Date(p.createdAt).toLocaleString()}
                     </TableCell>
-                    <TableCell data-label="Usuario" className="break-all">{p.userEmail}</TableCell>
-                    <TableCell data-label="Licencia" className="break-all font-mono text-xs">{p.licenseKey}</TableCell>
+                    <TableCell data-label="Usuario" className="break-all">
+                      {p.userEmail}
+                    </TableCell>
+                    <TableCell data-label="Licencia" className="break-all font-mono text-xs">
+                      {p.licenseKey}
+                    </TableCell>
                     <TableCell data-label="Plan">{planLabel(p.plan)}</TableCell>
                     <TableCell data-label="Precio">
                       {p.listPrice} {p.currency}
@@ -234,17 +391,74 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                       </Badge>
                     </TableCell>
                     <TableCell data-label="Método">{methodLabel(p.method)}</TableCell>
-                    <TableCell data-label="Referencia" className="break-all font-mono text-xs">{p.reference}</TableCell>
-                    <TableCell data-label="Administrador" className="break-all text-xs">{p.operatorLabel ?? p.employeeId}</TableCell>
+                    <TableCell data-label="Referencia" className="break-all font-mono text-xs">
+                      {p.reference}
+                    </TableCell>
+                    <TableCell data-label="Administrador" className="break-all text-xs">
+                      {p.operatorLabel ?? p.employeeId}
+                    </TableCell>
                     <TableCell data-label="Notas">{p.notes || "—"}</TableCell>
                     <TableCell data-label="Acciones">
-                      {canManage && <div className="flex flex-wrap gap-2">
-                        {p.status === "pending" && <Button size="sm" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate(p.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Marcar pagado</Button>}
-                        {["paid", "complimentary"].includes(p.status) && p.hasReceipt && <Button size="icon" variant="ghost" title="Ver y compartir recibo" disabled={loadReceipt.isPending} onClick={() => loadReceipt.mutate(p.id)}><FileText className="h-4 w-4" /></Button>}
-                        {["paid", "complimentary"].includes(p.status) && !p.hasReceipt && canCorrect && <Button size="sm" variant="outline" disabled={repairReceipt.isPending} onClick={() => repairReceipt.mutate(p.id)}><FileText className="mr-2 h-4 w-4" />Generar recibo faltante</Button>}
-                        {canCorrect && <Button size="icon" variant="ghost" title="Editar pago" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>}
-                        {canCorrect && <Button size="icon" variant="ghost" className="text-destructive" title="Eliminar pago" onClick={() => setDeleting(p)}><Trash2 className="h-4 w-4" /></Button>}
-                      </div>}
+                      {canManage && (
+                        <div className="flex flex-wrap gap-2">
+                          {p.status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={markPaid.isPending}
+                              onClick={() => markPaid.mutate(p.id)}
+                            >
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Marcar pagado
+                            </Button>
+                          )}
+                          {["paid", "complimentary"].includes(p.status) && p.hasReceipt && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Ver y compartir recibo"
+                              disabled={loadReceipt.isPending}
+                              onClick={() => loadReceipt.mutate(p.id)}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {["paid", "complimentary"].includes(p.status) &&
+                            !p.hasReceipt &&
+                            canCorrect && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={repairReceipt.isPending}
+                                onClick={() => repairReceipt.mutate(p.id)}
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Generar recibo faltante
+                              </Button>
+                            )}
+                          {canCorrect && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Editar pago"
+                              onClick={() => setEditing(p)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canCorrect && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive"
+                              title="Eliminar pago"
+                              onClick={() => setDeleting(p)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -265,9 +479,19 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         plans={availablePlans.data ?? []}
         onDone={refresh}
       />
-      {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />}
-      {deleting && <DeletePaymentDialog payment={deleting} onClose={() => setDeleting(null)} onDone={refresh} />}
-      {viewingReceipt && <ReceiptDialog receipt={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
+      {editing && (
+        <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />
+      )}
+      {deleting && (
+        <DeletePaymentDialog
+          payment={deleting}
+          onClose={() => setDeleting(null)}
+          onDone={refresh}
+        />
+      )}
+      {viewingReceipt && (
+        <ReceiptDialog receipt={viewingReceipt} onClose={() => setViewingReceipt(null)} />
+      )}
     </div>
   );
 }
@@ -328,9 +552,7 @@ function RegisterPaymentDialog({
         overrideAmount: effectiveAmount,
         adjustmentReason: adjusted ? reason : undefined,
       });
-      return status === "complimentary"
-        ? supabaseServices.payments.receipt(payment.id)
-        : payment;
+      return status === "complimentary" ? supabaseServices.payments.receipt(payment.id) : payment;
     },
     onSuccess: (result) => {
       onDone();
@@ -345,7 +567,15 @@ function RegisterPaymentDialog({
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
   if (receipt) {
-    return <ReceiptDialog receipt={receipt} onClose={() => { setReceipt(null); onClose(); }} />;
+    return (
+      <ReceiptDialog
+        receipt={receipt}
+        onClose={() => {
+          setReceipt(null);
+          onClose();
+        }}
+      />
+    );
   }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -367,7 +597,9 @@ function RegisterPaymentDialog({
                 if (selected) setPlanCode(selected.plan);
               }}
             >
-              <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar cliente" />
+              </SelectTrigger>
               <SelectContent>
                 {licenses.map((license) => (
                   <SelectItem key={license.id} value={license.id}>
@@ -379,13 +611,17 @@ function RegisterPaymentDialog({
           </Field>
           <Field label="Plan cobrado">
             <Select value={planCode} onValueChange={setPlanCode}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar plan" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar plan" />
+              </SelectTrigger>
               <SelectContent>
-                {plans.filter((item) => item.isActive).map((item) => (
-                  <SelectItem key={item.code} value={item.code}>
-                    {item.name} · {item.price} {item.currency}
-                  </SelectItem>
-                ))}
+                {plans
+                  .filter((item) => item.isActive)
+                  .map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      {item.name} · {item.price} {item.currency}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </Field>
@@ -401,8 +637,13 @@ function RegisterPaymentDialog({
             />
           </Field>
           <Field label="Estado">
-            <Select value={status} onValueChange={(value) => setStatus(value as ServicePayment["status"])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as ServicePayment["status"])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="paid">Pagado</SelectItem>
                 <SelectItem value="pending">Pendiente</SelectItem>
@@ -413,8 +654,13 @@ function RegisterPaymentDialog({
             </Select>
           </Field>
           <Field label="Método de pago">
-            <Select value={method} onValueChange={(value) => setMethod(value as ServicePayment["method"])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={method}
+              onValueChange={(value) => setMethod(value as ServicePayment["method"])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="transfer">Transferencia</SelectItem>
                 <SelectItem value="cash">Efectivo</SelectItem>
@@ -443,14 +689,11 @@ function RegisterPaymentDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button
-            disabled={
-              mutation.isPending ||
-              !licenseId ||
-              !planCode ||
-              (adjusted && !reason.trim())
-            }
+            disabled={mutation.isPending || !licenseId || !planCode || (adjusted && !reason.trim())}
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? "Registrando…" : "Registrar pago y generar recibo"}
@@ -461,7 +704,15 @@ function RegisterPaymentDialog({
   );
 }
 
-function EditPaymentDialog({ payment, onClose, onDone }: { payment: ServicePayment; onClose: () => void; onDone: () => void }) {
+function EditPaymentDialog({
+  payment,
+  onClose,
+  onDone,
+}: {
+  payment: ServicePayment;
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const [amount, setAmount] = useState(String(payment.amount));
   const [currency, setCurrency] = useState(payment.currency);
   const [method, setMethod] = useState(payment.method);
@@ -470,34 +721,181 @@ function EditPaymentDialog({ payment, onClose, onDone }: { payment: ServicePayme
   const [notes, setNotes] = useState(payment.notes ?? "");
   const [reason, setReason] = useState("");
   const mutation = useMutation({
-    mutationFn: () => supabaseServices.payments.update({ paymentId: payment.id, amount: Number(amount), currency, method, reference, status, notes, adjustmentReason: reason }),
-    onSuccess: () => { toast.success("Pago actualizado correctamente."); onDone(); onClose(); },
+    mutationFn: () =>
+      supabaseServices.payments.update({
+        paymentId: payment.id,
+        amount: Number(amount),
+        currency,
+        method,
+        reference,
+        status,
+        notes,
+        adjustmentReason: reason,
+      }),
+    onSuccess: () => {
+      toast.success("Pago actualizado correctamente.");
+      onDone();
+      onClose();
+    },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
-  return <Dialog open onOpenChange={(next) => !next && onClose()}>
-    <DialogContent className="max-w-xl"><DialogHeader><DialogTitle>Editar pago</DialogTitle><DialogDescription>Corrige los datos del cobro. La vigencia ya concedida no se reduce al editar un pago confirmado.</DialogDescription></DialogHeader>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Importe pagado"><Input type="number" min="0" max={payment.listPrice} value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-        <Field label="Moneda"><Select value={currency} onValueChange={(v) => setCurrency(v as ServicePayment["currency"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["CUP","USD","EUR"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></Field>
-        <Field label="Estado"><Select value={status} onValueChange={(v) => setStatus(v as ServicePayment["status"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="paid">Pagado</SelectItem><SelectItem value="pending">Pendiente</SelectItem><SelectItem value="cancelled">Cancelado</SelectItem><SelectItem value="refunded">Reembolsado</SelectItem><SelectItem value="complimentary">Cortesía</SelectItem></SelectContent></Select></Field>
-        <Field label="Método"><Select value={method} onValueChange={(v) => setMethod(v as ServicePayment["method"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transfer">Transferencia</SelectItem><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="card">Tarjeta</SelectItem><SelectItem value="paypal">PayPal</SelectItem></SelectContent></Select></Field>
-        <div className="sm:col-span-2"><Field label="Referencia"><Input value={reference} onChange={(e) => setReference(e.target.value)} /></Field></div>
-        <div className="sm:col-span-2"><Field label="Notas"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field></div>
-        <div className="sm:col-span-2"><Field label="Motivo de la corrección"><Input value={reason} placeholder="Obligatorio para la auditoría" onChange={(e) => setReason(e.target.value)} /></Field></div>
-      </div>
-      <DialogFooter><Button variant="ghost" onClick={onClose}>Cancelar</Button><Button disabled={mutation.isPending || !reason.trim() || !reference.trim() || Number(amount) < 0 || Number(amount) > payment.listPrice} onClick={() => mutation.mutate()}>{mutation.isPending ? "Guardando…" : "Guardar cambios"}</Button></DialogFooter>
-    </DialogContent>
-  </Dialog>;
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Editar pago</DialogTitle>
+          <DialogDescription>
+            Corrige los datos del cobro. La vigencia ya concedida no se reduce al editar un pago
+            confirmado.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Importe pagado">
+            <Input
+              type="number"
+              min="0"
+              max={payment.listPrice}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </Field>
+          <Field label="Moneda">
+            <Select
+              value={currency}
+              onValueChange={(v) => setCurrency(v as ServicePayment["currency"])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["CUP", "USD", "EUR"].map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Estado">
+            <Select value={status} onValueChange={(v) => setStatus(v as ServicePayment["status"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paid">Pagado</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="refunded">Reembolsado</SelectItem>
+                <SelectItem value="complimentary">Cortesía</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Método">
+            <Select value={method} onValueChange={(v) => setMethod(v as ServicePayment["method"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="transfer">Transferencia</SelectItem>
+                <SelectItem value="cash">Efectivo</SelectItem>
+                <SelectItem value="card">Tarjeta</SelectItem>
+                <SelectItem value="paypal">PayPal</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Referencia">
+              <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Notas">
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Motivo de la corrección">
+              <Input
+                value={reason}
+                placeholder="Obligatorio para la auditoría"
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={
+              mutation.isPending ||
+              !reason.trim() ||
+              !reference.trim() ||
+              Number(amount) < 0 ||
+              Number(amount) > payment.listPrice
+            }
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
-function DeletePaymentDialog({ payment, onClose, onDone }: { payment: ServicePayment; onClose: () => void; onDone: () => void }) {
+function DeletePaymentDialog({
+  payment,
+  onClose,
+  onDone,
+}: {
+  payment: ServicePayment;
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const [reason, setReason] = useState("");
   const mutation = useMutation({
     mutationFn: () => supabaseServices.payments.remove(payment.id, reason),
-    onSuccess: () => { toast.success("Pago eliminado del historial."); onDone(); onClose(); },
+    onSuccess: () => {
+      toast.success("Pago eliminado del historial.");
+      onDone();
+      onClose();
+    },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
-  return <Dialog open onOpenChange={(next) => !next && onClose()}><DialogContent><DialogHeader><DialogTitle>Eliminar pago</DialogTitle><DialogDescription>Se eliminará el pago {payment.reference} y dejará de contar en las estadísticas. Por seguridad, esto no reduce la vigencia ya otorgada a la licencia.</DialogDescription></DialogHeader><Field label="Motivo de eliminación"><Textarea value={reason} placeholder="Obligatorio para conservar la trazabilidad" onChange={(e) => setReason(e.target.value)} /></Field><DialogFooter><Button variant="ghost" onClick={onClose}>Cancelar</Button><Button variant="destructive" disabled={mutation.isPending || !reason.trim()} onClick={() => mutation.mutate()}>{mutation.isPending ? "Eliminando…" : "Eliminar pago"}</Button></DialogFooter></DialogContent></Dialog>;
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Eliminar pago</DialogTitle>
+          <DialogDescription>
+            Se eliminará el pago {payment.reference} y dejará de contar en las estadísticas. Por
+            seguridad, esto no reduce la vigencia ya otorgada a la licencia.
+          </DialogDescription>
+        </DialogHeader>
+        <Field label="Motivo de eliminación">
+          <Textarea
+            value={reason}
+            placeholder="Obligatorio para conservar la trazabilidad"
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={mutation.isPending || !reason.trim()}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Eliminando…" : "Eliminar pago"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -505,6 +903,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span>{label}</span>
+      <span className="text-right text-foreground">{value}</span>
     </div>
   );
 }
@@ -549,7 +956,13 @@ function Filter({
         <SelectItem value="all">{label}: todos</SelectItem>
         {values.map((v) => (
           <SelectItem key={v} value={v}>
-            {label === "Plan" ? planLabel(v) : label === "Estado" ? statusLabel(v) : label === "Método" ? methodLabel(v) : v}
+            {label === "Plan"
+              ? planLabel(v)
+              : label === "Estado"
+                ? statusLabel(v)
+                : label === "Método"
+                  ? methodLabel(v)
+                  : v}
           </SelectItem>
         ))}
       </SelectContent>
@@ -562,9 +975,29 @@ function planLabel(value: string) {
 }
 
 function statusLabel(value: string) {
-  return ({ paid: "Pagado", pending: "Pendiente", cancelled: "Cancelado", refunded: "Reembolsado", complimentary: "Cortesía" } as Record<string, string>)[value] ?? value;
+  return (
+    (
+      {
+        paid: "Pagado",
+        pending: "Pendiente",
+        cancelled: "Cancelado",
+        refunded: "Reembolsado",
+        complimentary: "Cortesía",
+      } as Record<string, string>
+    )[value] ?? value
+  );
 }
 
 function methodLabel(value: string) {
-  return ({ transfer: "Transferencia", cash: "Efectivo", other: "Otro", card: "Tarjeta", paypal: "PayPal" } as Record<string, string>)[value] ?? value;
+  return (
+    (
+      {
+        transfer: "Transferencia",
+        cash: "Efectivo",
+        other: "Otro",
+        card: "Tarjeta",
+        paypal: "PayPal",
+      } as Record<string, string>
+    )[value] ?? value
+  );
 }

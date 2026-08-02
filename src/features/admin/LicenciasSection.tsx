@@ -26,6 +26,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -229,7 +235,72 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
             />
           </div>
 
-          <div className="min-w-0 overflow-hidden md:overflow-x-auto">
+          <div className="space-y-3 md:hidden">
+            {filtered.map((license) => (
+              <Card key={license.id} className="border-border/70 bg-card/80">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="break-all text-sm font-medium">{license.userEmail}</div>
+                      <div className="mt-1 break-all font-mono text-[11px] text-muted-foreground">
+                        {license.key}
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        license.status === "active"
+                          ? "default"
+                          : license.status === "pending"
+                            ? "secondary"
+                            : "destructive"
+                      }
+                    >
+                      {labels[license.status]}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Plan</div>
+                      <div className="mt-0.5 text-foreground">{license.plan}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Tipo</div>
+                      <div className="mt-0.5 text-foreground">{license.licenseType}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Vence</div>
+                      <div className="mt-0.5 text-foreground">{displayDate(license.expiresAt)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Dispositivos</div>
+                      <div className="mt-0.5 text-foreground">
+                        {license.activeDevices} / {license.maxDevices}
+                      </div>
+                    </div>
+                  </div>
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value={`license-${license.id}`}>
+                      <AccordionTrigger className="py-2 text-sm">Ver detalles</AccordionTrigger>
+                      <AccordionContent className="space-y-2 text-xs text-muted-foreground">
+                        <DetailRow label="Activación" value={displayDate(license.activatedAt)} />
+                        <DetailRow
+                          label="Última validación"
+                          value={displayDate(license.lastValidation)}
+                        />
+                        <DetailRow label="Creación" value={displayDate(license.createdAt)} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                  <Button variant="outline" className="w-full" onClick={() => setSelected(license)}>
+                    <MoreHorizontal className="mr-2 h-4 w-4" />
+                    Gestionar
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -248,8 +319,12 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
               <TableBody>
                 {filtered.map((license) => (
                   <TableRow key={license.id}>
-                    <TableCell data-label="Usuario" className="break-all">{license.userEmail}</TableCell>
-                    <TableCell data-label="Clave" className="break-all font-mono text-xs">{license.key}</TableCell>
+                    <TableCell data-label="Usuario" className="break-all">
+                      {license.userEmail}
+                    </TableCell>
+                    <TableCell data-label="Clave" className="break-all font-mono text-xs">
+                      {license.key}
+                    </TableCell>
                     <TableCell data-label="Plan">
                       <div>{license.plan}</div>
                       <div className="text-xs text-muted-foreground">{license.licenseType}</div>
@@ -558,6 +633,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span>{label}</span>
+      <span className="text-right text-foreground">{value}</span>
+    </div>
+  );
+}
+
 function ActionsDialog({
   license,
   onClose,
@@ -720,7 +804,9 @@ function OperationDialog({
               </Field>
               <Field label="Tipo">
                 <Input readOnly value={selectedType?.name ?? type} />
-                <p className="text-xs text-muted-foreground">Definido automáticamente por el plan.</p>
+                <p className="text-xs text-muted-foreground">
+                  Definido automáticamente por el plan.
+                </p>
               </Field>
             </>
           )}
