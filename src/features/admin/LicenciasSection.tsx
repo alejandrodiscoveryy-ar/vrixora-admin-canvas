@@ -254,13 +254,13 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/15 via-sky-500/7 to-background p-3 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
             <p className="text-xs text-muted-foreground">Información rápida de licencias</p>
           </div>
-          <Badge className="border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" variant="secondary">
+          <Badge className="bg-muted text-muted-foreground" variant="secondary">
             {licenses.length} total
           </Badge>
         </div>
@@ -329,8 +329,8 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-sky-600 dark:text-sky-400" /> Licencias
-            <Badge className="border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" variant="outline">
+            <KeyRound className="h-4 w-4 text-muted-foreground" /> Licencias
+            <Badge className="bg-muted text-muted-foreground" variant="outline">
               {licenses.length}
             </Badge>
           </CardTitle>
@@ -614,10 +614,10 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card className="h-full border-sky-200/70 bg-sky-50/70 shadow-sm transition-colors hover:bg-sky-100/70 dark:border-sky-900/40 dark:bg-sky-950/30 dark:hover:bg-sky-900/50">
+    <Card className="h-full border-border/40 bg-card/50 shadow-none transition-colors hover:bg-card/70">
       <CardContent className="flex items-center gap-2 p-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-500/10">
-          <Icon className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Icon className="h-4 w-4 text-primary/70" />
         </div>
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>

@@ -111,13 +111,13 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         badge={<Badge variant="outline">{clients.length}</Badge>}
       />
 
-      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 via-violet-500/7 to-background p-3 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
             <p className="text-xs text-muted-foreground">Información rápida de clientes</p>
           </div>
-          <Badge className="border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" variant="secondary">
+          <Badge className="bg-muted text-muted-foreground" variant="secondary">
             {clients.length} clientes
           </Badge>
         </div>
@@ -132,9 +132,9 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+            <Users className="h-4 w-4 text-muted-foreground" />
             Todos los clientes
-            <Badge className="border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" variant="outline">
+            <Badge className="bg-muted text-muted-foreground" variant="outline">
               {clients.length}
             </Badge>
           </CardTitle>
@@ -383,10 +383,10 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card className="h-full border-violet-200/70 bg-violet-50/70 shadow-sm transition-colors hover:bg-violet-100/70 dark:border-violet-900/40 dark:bg-violet-950/30 dark:hover:bg-violet-900/50">
+    <Card className="h-full border-border/40 bg-card/50 shadow-none transition-colors hover:bg-card/70">
       <CardContent className="flex items-center gap-2 p-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-violet-500/10">
-          <Icon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Icon className="h-4 w-4 text-primary/70" />
         </div>
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>

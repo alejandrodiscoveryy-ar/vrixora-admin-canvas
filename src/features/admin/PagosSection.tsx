@@ -185,13 +185,13 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/15 via-emerald-500/7 to-background p-3 shadow-sm">
+      <div className="rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Resumen estadístico</p>
             <p className="text-xs text-muted-foreground">Información rápida de pagos</p>
           </div>
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" variant="secondary">
+          <Badge className="bg-muted text-muted-foreground" variant="secondary">
             {filtered.length} registros
           </Badge>
         </div>
@@ -221,9 +221,9 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       <Card className="glass-panel">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <Wallet className="h-4 w-4 text-muted-foreground" />
             Historial de pagos
-            <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" variant="outline">
+            <Badge className="bg-muted text-muted-foreground" variant="outline">
               {filtered.length}
             </Badge>
           </CardTitle>
@@ -1042,10 +1042,10 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card className="h-full border-emerald-200/70 bg-emerald-50/70 shadow-sm transition-colors hover:bg-emerald-100/70 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50">
+    <Card className="h-full border-border/40 bg-card/50 shadow-none transition-colors hover:bg-card/70">
       <CardContent className="flex items-center gap-2 p-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/10">
-          <Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <Icon className="h-4 w-4 text-primary/70" />
         </div>
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>
