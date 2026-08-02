@@ -168,7 +168,7 @@ export interface ServicePayment {
   reference: string;
   employeeId: string;
   createdAt: string;
-  status: "pending" | "paid" | "cancelled" | "refunded" | "complimentary";
+  status: "pending" | "paid" | "cancelled" | "refunded" | "complimentary" | "voided";
   notes: string | null;
   userEmail?: string;
   licenseKey?: string;
@@ -324,6 +324,7 @@ export interface PaymentService {
   ): Promise<ServicePayment>;
   update(input: UpdatePaymentInput): Promise<ServicePayment>;
   remove(paymentId: string, reason: string): Promise<void>;
+  void(paymentId: string, reason: string): Promise<void>;
   previewCharge(licenseId: string, plan: string, applicationRule: ChargePlanInput["applicationRule"]): Promise<BillingPreview>;
   chargeAndAssign(input: ChargePlanInput): Promise<BillingReceipt>;
   receipt(paymentId: string): Promise<BillingReceipt>;

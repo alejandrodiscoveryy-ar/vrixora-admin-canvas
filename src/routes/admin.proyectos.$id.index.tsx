@@ -518,7 +518,7 @@ function ResumenPage() {
               label="Estado"
               value={paymentStatusFilter}
               onChange={setPaymentStatusFilter}
-              options={["all", "paid", "pending", "cancelled", "refunded", "complimentary"]}
+              options={["all", "paid", "pending", "cancelled", "refunded", "complimentary", "voided"]}
               renderOption={statusLabel}
             />
             <Filter
@@ -1140,9 +1140,10 @@ function statusLabel(value: string) {
     all: "Todos los estados",
     paid: "Pagado",
     pending: "Pendiente",
-    cancelled: "Anulado",
+    cancelled: "Cancelado",
     refunded: "Reembolsado",
     complimentary: "Cortesía",
+    voided: "Anulado",
   };
   return labels[value] ?? value;
 }

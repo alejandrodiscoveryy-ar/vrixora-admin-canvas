@@ -274,7 +274,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
               <Filter
                 value={status}
                 onChange={setStatus}
-                values={["pending", "paid", "cancelled", "refunded", "complimentary"]}
+                values={["pending", "paid", "cancelled", "refunded", "complimentary", "voided"]}
                 label="Estado"
               />
               <Filter
@@ -431,7 +431,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                           onSelect: () => setEditing(payment),
                         },
                         {
-                          label: "Eliminar pago",
+                          label: payment.status === "pending" ? "Eliminar pago" : "Anular pago",
                           disabled: !canCorrect,
                           destructive: true,
                           onSelect: () => setDeleting(payment),
@@ -568,7 +568,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                               size="icon"
                               variant="ghost"
                               className="text-destructive"
-                              title="Eliminar pago"
+                              title={p.status === "pending" ? "Eliminar pago" : "Anular pago"}
                               onClick={() => setDeleting(p)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -971,27 +971,46 @@ function DeletePaymentDialog({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const isConfirmed = payment.status !== "pending";
   const [reason, setReason] = useState("");
   const mutation = useMutation({
-    mutationFn: () => supabaseServices.payments.remove(payment.id, reason),
+    mutationFn: () =>
+      isConfirmed
+        ? supabaseServices.payments.void(payment.id, reason)
+        : supabaseServices.payments.remove(payment.id, reason),
     onSuccess: () => {
-      toast.success("Pago eliminado del historial.");
+      toast.success(
+        isConfirmed ? "Pago anulado correctamente." : "Pago eliminado del historial.",
+      );
       onDone();
       onClose();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+    onError: () =>
+      toast.error(
+        isConfirmed
+          ? "No se pudo anular el pago. Inténtalo de nuevo."
+          : "No se pudo eliminar el pago. Inténtalo de nuevo.",
+      ),
   });
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Eliminar pago</DialogTitle>
+          <DialogTitle>{isConfirmed ? "Anular pago" : "Eliminar pago"}</DialogTitle>
           <DialogDescription>
-            Se eliminará el pago {payment.reference} y dejará de contar en las estadísticas. Por
-            seguridad, esto no reduce la vigencia ya otorgada a la licencia.
+            {isConfirmed ? (
+              <>
+                Este pago será anulado y dejará de contar en ingresos y estadísticas. El recibo y
+                el historial se conservarán. La vigencia otorgada a la licencia no será modificada.
+              </>
+            ) : (
+              <>
+                Se eliminará el pago pendiente {payment.reference}. Esta acción es irreversible.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
-        <Field label="Motivo de eliminación">
+        <Field label={isConfirmed ? "Motivo de anulación" : "Motivo de eliminación"}>
           <Textarea
             value={reason}
             placeholder="Obligatorio para conservar la trazabilidad"
@@ -1007,7 +1026,13 @@ function DeletePaymentDialog({
             disabled={mutation.isPending || !reason.trim()}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Eliminando…" : "Eliminar pago"}
+            {mutation.isPending
+              ? isConfirmed
+                ? "Anulando…"
+                : "Eliminando…"
+              : isConfirmed
+                ? "Confirmar anulación"
+                : "Eliminar pago"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1108,6 +1133,7 @@ function statusLabel(value: string) {
         cancelled: "Cancelado",
         refunded: "Reembolsado",
         complimentary: "Cortesía",
+        voided: "Anulado",
       } as Record<string, string>
     )[value] ?? value
   );
