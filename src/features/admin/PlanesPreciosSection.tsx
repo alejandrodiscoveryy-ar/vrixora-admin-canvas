@@ -230,7 +230,6 @@ function PlanDialog({
             </Field>
             <Field label="Código">
               <Input
-                disabled={!!plan?.code}
                 value={value.code}
                 onChange={(e) => set("code", normalizePlanCode(e.target.value))}
                 placeholder="ejemplo_plan"
