@@ -383,9 +383,11 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card className="h-full">
+    <Card className="h-full border-violet-200/70 bg-violet-50/70 shadow-sm transition-colors hover:bg-violet-100/70 dark:border-violet-900/40 dark:bg-violet-950/30 dark:hover:bg-violet-900/50">
       <CardContent className="flex items-center gap-2 p-3">
-        <Icon className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-violet-500/10">
+          <Icon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+        </div>
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>
           <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">

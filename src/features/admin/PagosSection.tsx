@@ -1042,9 +1042,11 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card className="h-full">
+    <Card className="h-full border-emerald-200/70 bg-emerald-50/70 shadow-sm transition-colors hover:bg-emerald-100/70 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50">
       <CardContent className="flex items-center gap-2 p-3">
-        <Icon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/10">
+          <Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        </div>
         <div className="min-w-0">
           <div className="text-base font-semibold leading-none">{value}</div>
           <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">
