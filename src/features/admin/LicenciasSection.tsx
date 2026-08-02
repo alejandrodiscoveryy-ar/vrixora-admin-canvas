@@ -63,6 +63,8 @@ import {
   MobileActionsMenu,
   MobileFiltersPanel,
   MobileLoadMore,
+  MobileMetricsGrid,
+  type MobileMetric,
 } from "@/components/admin/MobileAdminSystem";
 
 const statuses: LicenseStatus[] = ["active", "pending", "expired", "suspended", "revoked"];
@@ -175,6 +177,66 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
     ).length;
   const activeFilterCount = [status, plan, type, expiry].filter((value) => value !== "all").length;
   const visibleMobileRows = filtered.slice(0, mobileVisible);
+  const metrics: MobileMetric[] = [
+    {
+      key: "active",
+      label: "Activas",
+      value: licensesQuery.isLoading ? "Cargando..." : String(count("active")),
+      icon: Activity,
+    },
+    {
+      key: "pending",
+      label: "Pendientes",
+      value: licensesQuery.isLoading ? "Cargando..." : String(count("pending")),
+      icon: CalendarClock,
+    },
+    {
+      key: "at-risk",
+      label: "Vencidas / suspendidas",
+      value: licensesQuery.isLoading ? "Cargando..." : String(count("expired") + count("suspended")),
+      icon: ShieldAlert,
+    },
+    {
+      key: "trial",
+      label: "En prueba",
+      value: licensesQuery.isLoading
+        ? "Cargando..."
+        : String(licenses.filter((item) => item.licenseType === "trial").length),
+      icon: Users,
+    },
+    {
+      key: "expiring-7",
+      label: "Vencen en 7 días",
+      value: licensesQuery.isLoading ? "Cargando..." : String(expiring(7)),
+      icon: CalendarClock,
+    },
+    {
+      key: "expiring-30",
+      label: "Vencen en 30 días",
+      value: licensesQuery.isLoading ? "Cargando..." : String(expiring(30)),
+      icon: CalendarClock,
+    },
+    {
+      key: "total",
+      label: "Total licencias",
+      value: licensesQuery.isLoading ? "Cargando..." : String(licenses.length),
+      icon: KeyRound,
+    },
+    {
+      key: "visible",
+      label: "Visibles con filtros",
+      value: licensesQuery.isLoading ? "Cargando..." : String(filtered.length),
+      icon: Search,
+    },
+    ...((plansQuery.data ?? []).map((item) => ({
+      key: `plan-${item.code}`,
+      label: `Plan ${item.name}`,
+      value: licensesQuery.isLoading
+        ? "Cargando..."
+        : String(licenses.filter((l) => l.plan === item.code).length),
+      icon: KeyRound,
+    })) as MobileMetric[]),
+  ];
 
   useEffect(() => {
     setMobileVisible(10);
@@ -192,65 +254,74 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          icon={Activity}
-          label="Activas"
-          value={licensesQuery.isLoading ? "Cargando..." : String(count("active"))}
-        />
-        <Metric
-          icon={CalendarClock}
-          label="Pendientes"
-          value={licensesQuery.isLoading ? "Cargando..." : String(count("pending"))}
-        />
-        <Metric
-          icon={ShieldAlert}
-          label="Vencidas / suspendidas"
-          value={
-            licensesQuery.isLoading ? "Cargando..." : String(count("expired") + count("suspended"))
-          }
-        />
-        <Metric
-          icon={Users}
-          label="En prueba"
-          value={
-            licensesQuery.isLoading
-              ? "Cargando..."
-              : String(licenses.filter((item) => item.licenseType === "trial").length)
-          }
-        />
-        <Metric
-          icon={CalendarClock}
-          label="Vencen en 7 días"
-          value={licensesQuery.isLoading ? "Cargando..." : String(expiring(7))}
-        />
-        <Metric
-          icon={CalendarClock}
-          label="Vencen en 30 días"
-          value={licensesQuery.isLoading ? "Cargando..." : String(expiring(30))}
-        />
-        <Metric
-          icon={KeyRound}
-          label="Total licencias"
-          value={licensesQuery.isLoading ? "Cargando..." : String(licenses.length)}
-        />
-        <Metric
-          icon={Search}
-          label="Visibles con filtros"
-          value={licensesQuery.isLoading ? "Cargando..." : String(filtered.length)}
-        />
-        {plansQuery.data?.map((item) => (
+      <div className="rounded-xl border bg-card/80 p-3 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">Resumen estadístico</p>
+            <p className="text-xs text-muted-foreground">Información rápida de licencias</p>
+          </div>
+          <Badge variant="secondary">{licenses.length} total</Badge>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <Metric
-            key={item.code}
-            icon={KeyRound}
-            label={`Plan ${item.name}`}
+            icon={Activity}
+            label="Activas"
+            value={licensesQuery.isLoading ? "Cargando..." : String(count("active"))}
+          />
+          <Metric
+            icon={CalendarClock}
+            label="Pendientes"
+            value={licensesQuery.isLoading ? "Cargando..." : String(count("pending"))}
+          />
+          <Metric
+            icon={ShieldAlert}
+            label="Vencidas / suspendidas"
+            value={
+              licensesQuery.isLoading ? "Cargando..." : String(count("expired") + count("suspended"))
+            }
+          />
+          <Metric
+            icon={Users}
+            label="En prueba"
             value={
               licensesQuery.isLoading
                 ? "Cargando..."
-                : String(licenses.filter((l) => l.plan === item.code).length)
+                : String(licenses.filter((item) => item.licenseType === "trial").length)
             }
           />
-        ))}
+          <Metric
+            icon={CalendarClock}
+            label="Vencen en 7 días"
+            value={licensesQuery.isLoading ? "Cargando..." : String(expiring(7))}
+          />
+          <Metric
+            icon={CalendarClock}
+            label="Vencen en 30 días"
+            value={licensesQuery.isLoading ? "Cargando..." : String(expiring(30))}
+          />
+          <Metric
+            icon={KeyRound}
+            label="Total licencias"
+            value={licensesQuery.isLoading ? "Cargando..." : String(licenses.length)}
+          />
+          <Metric
+            icon={Search}
+            label="Visibles con filtros"
+            value={licensesQuery.isLoading ? "Cargando..." : String(filtered.length)}
+          />
+          {plansQuery.data?.map((item) => (
+            <Metric
+              key={item.code}
+              icon={KeyRound}
+              label={`Plan ${item.name}`}
+              value={
+                licensesQuery.isLoading
+                  ? "Cargando..."
+                  : String(licenses.filter((l) => l.plan === item.code).length)
+              }
+            />
+          ))}
+        </div>
       </div>
 
       <Card className="glass-panel">
