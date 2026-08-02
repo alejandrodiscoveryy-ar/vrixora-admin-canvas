@@ -262,7 +262,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
           </div>
           <Badge variant="secondary">{licenses.length} total</Badge>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
           <Metric
             icon={Activity}
             label="Activas"
@@ -610,12 +610,14 @@ function Metric({
   value: string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <Icon className="h-5 w-5 text-primary" />
-        <div>
-          <div className="text-2xl font-semibold">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
+    <Card className="h-full">
+      <CardContent className="flex items-center gap-2 p-3">
+        <Icon className="h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0">
+          <div className="text-base font-semibold leading-none">{value}</div>
+          <div className="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground">
+            {label}
+          </div>
         </div>
       </CardContent>
     </Card>
