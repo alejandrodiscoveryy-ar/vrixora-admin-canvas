@@ -10,9 +10,9 @@ import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
 export const Route = createFileRoute("/admin/login")({
   head: () => ({
     meta: [
-      { title: "Iniciar sesión — Vrixora Admin" },
+      { title: "Iniciar sesión — VRIXORA Centro de Control" },
       { name: "description", content: "Acceso al panel administrativo de Vrixora." },
-      { property: "og:title", content: "Vrixora Admin — Login" },
+      { property: "og:title", content: "VRIXORA Centro de Control — Login" },
       { property: "og:description", content: "Acceso seguro al panel administrativo." },
       { name: "robots", content: "noindex,nofollow" },
     ],

@@ -34,9 +34,9 @@ const TABS = [
 export const Route = createFileRoute("/admin/proyectos/$id")({
   head: () => ({
     meta: [
-      { title: "Proyecto — Vrixora Admin" },
+      { title: "Proyecto — VRIXORA Centro de Control" },
       { name: "description", content: "Gestión del proyecto." },
-      { property: "og:title", content: "Proyecto — Vrixora Admin" },
+      { property: "og:title", content: "Proyecto — VRIXORA Centro de Control" },
       { property: "og:description", content: "Gestión del proyecto." },
       { name: "robots", content: "noindex,nofollow" },
     ],

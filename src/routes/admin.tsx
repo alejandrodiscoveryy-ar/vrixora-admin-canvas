@@ -30,9 +30,9 @@ import {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Vrixora Admin Panel" },
-      { name: "description", content: "Panel administrativo interno de Vrixora." },
-      { property: "og:title", content: "Vrixora Admin Panel" },
+      { title: "VRIXORA Centro de Control" },
+      { name: "description", content: "Panel administrativo interno de VRIXORA." },
+      { property: "og:title", content: "VRIXORA Centro de Control" },
       { property: "og:description", content: "Panel administrativo de Vrixora." },
       { name: "robots", content: "noindex,nofollow" },
     ],

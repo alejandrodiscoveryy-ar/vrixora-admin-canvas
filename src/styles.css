@@ -127,6 +127,8 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     letter-spacing: -0.01em;
+    min-height: 100%;
+    color-scheme: dark;
   }
 
   h1,
@@ -148,6 +150,7 @@
   }
 
   body {
+    min-height: 100dvh;
     background-image:
       radial-gradient(circle at 18% -5%, oklch(0.85 0.15 195 / 0.09), transparent 42%),
       radial-gradient(circle at 100% 100%, oklch(0.7 0.11 210 / 0.06), transparent 48%),
@@ -160,6 +163,8 @@
       48px 48px;
     background-attachment: fixed;
     overflow-x: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   ::selection {

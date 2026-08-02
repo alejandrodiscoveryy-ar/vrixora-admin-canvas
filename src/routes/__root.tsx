@@ -9,6 +9,13 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { PwaExperience } from "@/components/pwa/PwaExperience";
+import {
+  PWA_APP_NAME,
+  PWA_BACKGROUND_COLOR,
+  PWA_DESCRIPTION,
+  PWA_THEME_COLOR,
+} from "@/lib/pwa";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -76,17 +83,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Vrixora Admin Panel" },
-      { name: "description", content: "Prototipo visual y navegable del área administrativa de Vrixora." },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: PWA_THEME_COLOR },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: PWA_APP_NAME },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { title: PWA_APP_NAME },
+      { name: "description", content: PWA_DESCRIPTION },
       { name: "author", content: "Vrixora" },
       { name: "robots", content: "noindex,nofollow" },
-      { property: "og:title", content: "Vrixora Admin Panel" },
-      { property: "og:description", content: "Prototipo visual y navegable del área administrativa de Vrixora." },
+      { property: "og:title", content: PWA_APP_NAME },
+      { property: "og:description", content: PWA_DESCRIPTION },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Vrixora Admin Panel" },
-      { name: "twitter:description", content: "Prototipo visual y navegable del área administrativa de Vrixora." },
+      { name: "twitter:title", content: PWA_APP_NAME },
+      { name: "twitter:description", content: PWA_DESCRIPTION },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/439bf90d-da51-47dd-ac77-675f56fab5a6/id-preview-827781ab--4bc88982-61a4-4a1b-83a2-0b7a6dfa8228.lovable.app-1784823160267.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/439bf90d-da51-47dd-ac77-675f56fab5a6/id-preview-827781ab--4bc88982-61a4-4a1b-83a2-0b7a6dfa8228.lovable.app-1784823160267.png" },
     ],
@@ -95,6 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -102,6 +115,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "icon", href: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
     ],
   }),
   shellComponent: RootShell,
@@ -112,7 +128,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es" style={{ colorScheme: "dark", backgroundColor: PWA_BACKGROUND_COLOR }}>
       <head>
         <HeadContent />
       </head>
@@ -129,7 +145,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <PwaExperience />
       <Outlet />
     </QueryClientProvider>
   );
