@@ -247,6 +247,12 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                         {new Date(payment.createdAt).toLocaleDateString()}
                       </div>
                     </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Recibo</div>
+                      <div className="mt-0.5 text-foreground">
+                        {payment.hasReceipt ? "Disponible" : "Pendiente"}
+                      </div>
+                    </div>
                   </div>
                   <Accordion type="single" collapsible>
                     <AccordionItem value={`payment-${payment.id}`}>

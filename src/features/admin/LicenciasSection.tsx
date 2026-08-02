@@ -75,6 +75,17 @@ function displayDate(value: string | null) {
     : "Sin vencimiento";
 }
 
+function remainingLicenseTime(value: string | null) {
+  if (!value) return "Sin vencimiento";
+  const days = Math.ceil((new Date(value).getTime() - Date.now()) / 86_400_000);
+  if (days < 0) return `Vencida hace ${Math.abs(days)} d`;
+  if (days === 0) return "Vence hoy";
+  if (days === 1) return "Vence mañana";
+  if (days < 30) return `${days} días restantes`;
+  const months = Math.floor(days / 30);
+  return `${months} ${months === 1 ? "mes" : "meses"} restantes`;
+}
+
 function errorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("USER_NOT_FOUND")) return "El usuario no existe en Supabase.";
@@ -270,6 +281,12 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                     <div>
                       <div className="text-[10px] uppercase tracking-wide">Vence</div>
                       <div className="mt-0.5 text-foreground">{displayDate(license.expiresAt)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide">Tiempo restante</div>
+                      <div className="mt-0.5 text-foreground">
+                        {remainingLicenseTime(license.expiresAt)}
+                      </div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wide">Dispositivos</div>
