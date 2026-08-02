@@ -84,6 +84,9 @@ type PaymentRow = {
   notes: string | null;
   user_email: string;
   license_key: string | null;
+  license_id: string | null;
+  operator_label: string | null;
+  has_receipt: boolean;
 };
 
 type ClientRow = {
@@ -627,7 +630,7 @@ export const supabaseServices: AdminServices = {
           id: payment.id,
           projectId,
           userId: "",
-          licenseId: undefined,
+          licenseId: payment.license_id ?? undefined,
           amount: Number(payment.amount),
           listPrice: Number(payment.list_price),
           discount: Number(payment.discount),
@@ -641,6 +644,8 @@ export const supabaseServices: AdminServices = {
           notes: payment.notes,
           userEmail: payment.user_email,
           licenseKey: payment.license_key ?? undefined,
+          operatorLabel: payment.operator_label ?? payment.recorded_by,
+          hasReceipt: payment.has_receipt,
         }),
       );
     },
@@ -739,6 +744,11 @@ export const supabaseServices: AdminServices = {
     },
     async receipt(paymentId) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_billing_receipt", { target_payment_id: paymentId });
+      throwIfError(error);
+      return mapBillingReceipt(data as Record<string, unknown>);
+    },
+    async repairReceipt(paymentId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_repair_missing_billing_receipt", { target_payment_id: paymentId });
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
     },

@@ -256,6 +256,7 @@ export const demoServices: AdminServices = {
     async previewCharge() { throw new Error("Esta operación requiere Supabase"); },
     async chargeAndAssign() { throw new Error("Esta operación requiere Supabase"); },
     async receipt() { throw new Error("Esta operación requiere Supabase"); },
+    async repairReceipt() { throw new Error("Esta operación requiere Supabase"); },
     async updateStatus() {
       throw new Error("Esta operación requiere Supabase");
     },

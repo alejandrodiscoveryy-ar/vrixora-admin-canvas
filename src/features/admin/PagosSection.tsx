@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, CheckCircle2, CircleDollarSign, FileText, Pencil, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -81,8 +81,10 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const markPaid = useMutation({
     mutationFn: (paymentId: string) =>
       supabaseServices.payments.updateStatus(paymentId, "paid", "Pago confirmado desde el panel"),
-    onSuccess: () => {
-      toast.success("Pago marcado como pagado.");
+    onSuccess: async (payment) => {
+      const receipt = await supabaseServices.payments.receipt(payment.id);
+      setViewingReceipt(receipt);
+      toast.success("Pago registrado y licencia actualizada");
       refresh();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
@@ -90,7 +92,16 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const loadReceipt = useMutation({
     mutationFn: (paymentId: string) => supabaseServices.payments.receipt(paymentId),
     onSuccess: setViewingReceipt,
-    onError: () => toast.error("Este pago no tiene un recibo del nuevo flujo."),
+    onError: () => toast.error("No se encontró el recibo. El owner puede generarlo sin renovar nuevamente."),
+  });
+  const repairReceipt = useMutation({
+    mutationFn: (paymentId: string) => supabaseServices.payments.repairReceipt(paymentId),
+    onSuccess: (receipt) => {
+      setViewingReceipt(receipt);
+      toast.success("Recibo generado sin modificar la vigencia.");
+      refresh();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
   const rows = useMemo(() => query.data ?? [], [query.data]);
   const filtered = useMemo(
@@ -167,7 +178,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             <Filter
               value={method}
               onChange={setMethod}
-              values={["card", "transfer", "cash", "paypal"]}
+              values={["transfer", "cash", "other"]}
               label="Método"
             />
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -199,7 +210,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     </TableCell>
                     <TableCell data-label="Usuario" className="break-all">{p.userEmail}</TableCell>
                     <TableCell data-label="Licencia" className="break-all font-mono text-xs">{p.licenseKey}</TableCell>
-                    <TableCell data-label="Plan">{p.plan}</TableCell>
+                    <TableCell data-label="Plan">{planLabel(p.plan)}</TableCell>
                     <TableCell data-label="Precio">
                       {p.listPrice} {p.currency}
                     </TableCell>
@@ -219,17 +230,18 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                               : "outline"
                         }
                       >
-                        {p.status}
+                        {statusLabel(p.status)}
                       </Badge>
                     </TableCell>
-                    <TableCell data-label="Método">{p.method}</TableCell>
+                    <TableCell data-label="Método">{methodLabel(p.method)}</TableCell>
                     <TableCell data-label="Referencia" className="break-all font-mono text-xs">{p.reference}</TableCell>
-                    <TableCell data-label="Administrador" className="break-all font-mono text-xs">{p.employeeId}</TableCell>
+                    <TableCell data-label="Administrador" className="break-all text-xs">{p.operatorLabel ?? p.employeeId}</TableCell>
                     <TableCell data-label="Notas">{p.notes || "—"}</TableCell>
                     <TableCell data-label="Acciones">
                       {canManage && <div className="flex flex-wrap gap-2">
                         {p.status === "pending" && <Button size="sm" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate(p.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Marcar pagado</Button>}
-                        {p.status === "paid" && <Button size="icon" variant="ghost" title="Ver recibo" disabled={loadReceipt.isPending} onClick={() => loadReceipt.mutate(p.id)}><FileText className="h-4 w-4" /></Button>}
+                        {["paid", "complimentary"].includes(p.status) && p.hasReceipt && <Button size="icon" variant="ghost" title="Ver y compartir recibo" disabled={loadReceipt.isPending} onClick={() => loadReceipt.mutate(p.id)}><FileText className="h-4 w-4" /></Button>}
+                        {["paid", "complimentary"].includes(p.status) && !p.hasReceipt && canCorrect && <Button size="sm" variant="outline" disabled={repairReceipt.isPending} onClick={() => repairReceipt.mutate(p.id)}><FileText className="mr-2 h-4 w-4" />Generar recibo faltante</Button>}
                         {canCorrect && <Button size="icon" variant="ghost" title="Editar pago" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>}
                         {canCorrect && <Button size="icon" variant="ghost" className="text-destructive" title="Eliminar pago" onClick={() => setDeleting(p)}><Trash2 className="h-4 w-4" /></Button>}
                       </div>}
@@ -281,12 +293,32 @@ function RegisterPaymentDialog({
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [receipt, setReceipt] = useState<BillingReceipt | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const selectedPlan = plans.find((item) => item.code === planCode);
   const effectiveAmount = status === "complimentary" ? 0 : Number(amount || selectedPlan?.price);
   const adjusted = selectedPlan ? effectiveAmount !== selectedPlan.price : false;
+  useEffect(() => {
+    if (!open) return;
+    setReceipt(null);
+    setIdempotencyKey(crypto.randomUUID());
+  }, [open]);
   const mutation = useMutation({
-    mutationFn: () =>
-      supabaseServices.payments.record({
+    mutationFn: async () => {
+      if (status === "paid") {
+        return supabaseServices.payments.chargeAndAssign({
+          licenseId,
+          plan: planCode,
+          amount: effectiveAmount,
+          method: method as "cash" | "transfer" | "other",
+          reference,
+          chargedAt: new Date().toISOString(),
+          notes: [notes, adjusted ? reason : ""].filter(Boolean).join(" · "),
+          applicationRule: "after_expiry",
+          idempotencyKey,
+        });
+      }
+      const payment = await supabaseServices.payments.record({
         licenseId,
         plan: planCode,
         method,
@@ -295,14 +327,26 @@ function RegisterPaymentDialog({
         notes,
         overrideAmount: effectiveAmount,
         adjustmentReason: adjusted ? reason : undefined,
-      }),
-    onSuccess: () => {
-      toast.success("Pago registrado correctamente.");
+      });
+      return status === "complimentary"
+        ? supabaseServices.payments.receipt(payment.id)
+        : payment;
+    },
+    onSuccess: (result) => {
       onDone();
-      onClose();
+      if ("receiptNumber" in result) {
+        setReceipt(result);
+        toast.success("Pago registrado y licencia actualizada");
+      } else {
+        toast.success("Pago pendiente registrado correctamente.");
+        onClose();
+      }
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
+  if (receipt) {
+    return <ReceiptDialog receipt={receipt} onClose={() => { setReceipt(null); onClose(); }} />;
+  }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -374,8 +418,7 @@ function RegisterPaymentDialog({
               <SelectContent>
                 <SelectItem value="transfer">Transferencia</SelectItem>
                 <SelectItem value="cash">Efectivo</SelectItem>
-                <SelectItem value="card">Tarjeta</SelectItem>
-                <SelectItem value="paypal">PayPal</SelectItem>
+                <SelectItem value="other">Otro</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -410,7 +453,7 @@ function RegisterPaymentDialog({
             }
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Registrando…" : "Registrar pago"}
+            {mutation.isPending ? "Registrando…" : "Registrar pago y generar recibo"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -506,10 +549,22 @@ function Filter({
         <SelectItem value="all">{label}: todos</SelectItem>
         {values.map((v) => (
           <SelectItem key={v} value={v}>
-            {v}
+            {label === "Plan" ? planLabel(v) : label === "Estado" ? statusLabel(v) : label === "Método" ? methodLabel(v) : v}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
   );
+}
+
+function planLabel(value: string) {
+  return value === "standard" ? "Estándar" : value;
+}
+
+function statusLabel(value: string) {
+  return ({ paid: "Pagado", pending: "Pendiente", cancelled: "Cancelado", refunded: "Reembolsado", complimentary: "Cortesía" } as Record<string, string>)[value] ?? value;
+}
+
+function methodLabel(value: string) {
+  return ({ transfer: "Transferencia", cash: "Efectivo", other: "Otro", card: "Tarjeta", paypal: "PayPal" } as Record<string, string>)[value] ?? value;
 }

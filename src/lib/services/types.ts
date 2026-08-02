@@ -172,6 +172,8 @@ export interface ServicePayment {
   notes: string | null;
   userEmail?: string;
   licenseKey?: string;
+  operatorLabel?: string;
+  hasReceipt?: boolean;
 }
 
 export interface UpdatePaymentInput {
@@ -325,6 +327,7 @@ export interface PaymentService {
   previewCharge(licenseId: string, plan: string, applicationRule: ChargePlanInput["applicationRule"]): Promise<BillingPreview>;
   chargeAndAssign(input: ChargePlanInput): Promise<BillingReceipt>;
   receipt(paymentId: string): Promise<BillingReceipt>;
+  repairReceipt(paymentId: string): Promise<BillingReceipt>;
 }
 
 export interface LicenseAuditLogService {
