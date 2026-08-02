@@ -467,17 +467,35 @@ function ResumenPage() {
           >
             Mes anterior
           </PeriodChip>
+          <PeriodChip active={period === "custom"} onClick={() => setPeriod("custom")}>
+            Personalizado
+          </PeriodChip>
         </div>
 
         <div className="hidden md:block">
           <AnalyticsDateRangePicker
             range={dateRange}
             onChange={(next) => {
+              setPeriod("custom");
               setDateRange(next);
-              setPreset("7d", setDateRange, setPeriod);
             }}
           />
         </div>
+
+        {period === "custom" ? (
+          <div className="grid gap-2 md:hidden min-[360px]:grid-cols-2">
+            <DateField
+              label="Desde"
+              value={dateRange.from}
+              onChange={(value) => setDateRange({ from: value, to: dateRange.to })}
+            />
+            <DateField
+              label="Hasta"
+              value={dateRange.to}
+              onChange={(value) => setDateRange({ from: dateRange.from, to: value })}
+            />
+          </div>
+        ) : null}
 
         <MobileFiltersPanel
           activeFilters={activeFilterCount}
