@@ -68,6 +68,8 @@ import {
 } from "@/components/admin/MobileAdminSystem";
 
 const statuses: LicenseStatus[] = ["active", "pending", "expired", "suspended", "revoked"];
+// statuses selectable when changing a license (expired is automatic, never manual)
+const changeableStatuses: LicenseStatus[] = ["active", "pending", "suspended", "revoked"];
 const labels: Record<string, string> = {
   active: "Activa",
   pending: "Pendiente",
@@ -75,6 +77,42 @@ const labels: Record<string, string> = {
   suspended: "Suspendida",
   revoked: "Revocada",
 };
+
+const methodLabels: Record<string, string> = {
+  card: "Tarjeta",
+  transfer: "Transferencia",
+  cash: "Efectivo",
+  paypal: "PayPal",
+  other: "Otro",
+};
+
+const paymentStatusLabels: Record<string, string> = {
+  pending: "Pendiente",
+  paid: "Pagado",
+  cancelled: "Cancelado",
+  refunded: "Reembolsado",
+  complimentary: "Cortesía",
+};
+
+function planLabel(code: string, plans?: { code: string; name: string }[]) {
+  const found = plans?.find((p) => p.code === code);
+  if (found) return found.name;
+  const fallback: Record<string, string> = {
+    trial: "Prueba inicial",
+    standard: "Estándar",
+    admin: "Administrador",
+  };
+  return fallback[code] ?? code;
+}
+
+function formatExpiryDate(value: string | null) {
+  if (!value) return "Sin vencimiento";
+  return new Intl.DateTimeFormat("es", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(value));
+}
 
 function displayDate(value: string | null) {
   return value
@@ -417,17 +455,17 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>
                       <div className="text-[10px] uppercase tracking-wide">Plan</div>
-                      <div className="mt-0.5 text-foreground">{license.plan}</div>
+                      <div className="mt-0.5 text-foreground">
+                        {planLabel(license.plan, plansQuery.data)}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase tracking-wide">Tipo</div>
-                      <div className="mt-0.5 text-foreground">{license.licenseType}</div>
+                      <div className="text-[10px] uppercase tracking-wide">Vencimiento</div>
+                      <div className="mt-0.5 text-foreground">
+                        {formatExpiryDate(license.expiresAt)}
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wide">Vence</div>
-                      <div className="mt-0.5 text-foreground">{displayDate(license.expiresAt)}</div>
-                    </div>
-                    <div>
+                    <div className="col-span-2">
                       <div className="text-[10px] uppercase tracking-wide">Tiempo restante</div>
                       <div className="mt-0.5 text-foreground">
                         {remainingLicenseTime(license.expiresAt)}
@@ -469,10 +507,6 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                         {
                           label: "Gestionar licencia",
                           onSelect: () => setSelected(license),
-                        },
-                        {
-                          label: "Historial y dispositivos",
-                          onSelect: () => setDetails(license),
                         },
                       ]}
                     />
@@ -517,8 +551,10 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                       {license.key}
                     </TableCell>
                     <TableCell data-label="Plan">
-                      <div>{license.plan}</div>
-                      <div className="text-xs text-muted-foreground">{license.licenseType}</div>
+                      <div>{planLabel(license.plan, plansQuery.data)}</div>
+                      {license.licenseType !== license.plan && (
+                        <div className="text-xs text-muted-foreground">{license.licenseType}</div>
+                      )}
                     </TableCell>
                     <TableCell data-label="Estado">
                       <Badge
@@ -579,6 +615,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       />
       <ActionsDialog
         license={action ? null : selected}
+        plans={plansQuery.data ?? []}
         onClose={() => setSelected(null)}
         onAction={(next: "renew" | "status" | "extend" | "plan") => {
           setAction(next);
@@ -732,12 +769,21 @@ function CreateDialog({
             <Input value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <Field label="Estado">
-            <Filter
+            <Select
               value={status}
-              onChange={(v) => setStatus(v as LicenseStatus)}
-              placeholder="Estado"
-              items={statuses.map((code) => ({ code, name: labels[code] }))}
-            />
+              onValueChange={(v) => setStatus(v as LicenseStatus)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                {changeableStatuses.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {labels[code]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Tipo">
             <Filter
@@ -849,11 +895,13 @@ function lastPaymentLabel(client: ServiceClient | undefined) {
 
 function ActionsDialog({
   license,
+  plans,
   onClose,
   onAction,
   onDetails,
 }: {
   license: ServiceLicense | null;
+  plans: LicensePlan[];
   onClose: () => void;
   onAction: (operation: "renew" | "status" | "extend" | "plan") => void;
   onDetails: () => void;
@@ -863,31 +911,73 @@ function ActionsDialog({
       <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Gestionar licencia</DialogTitle>
-          <DialogDescription>
-            {license?.userEmail} · {license?.key}
-          </DialogDescription>
+          {license && (
+            <div className="mt-1 rounded-md bg-muted/50 px-3 py-2 text-sm">
+              <p className="font-medium">
+                {planLabel(license.plan, plans)} · {labels[license.status]}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {license.expiresAt
+                  ? `Vence el ${formatExpiryDate(license.expiresAt)}`
+                  : "Sin vencimiento"}{" "}
+                · {remainingLicenseTime(license.expiresAt)}
+              </p>
+            </div>
+          )}
         </DialogHeader>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button variant="outline" onClick={() => onAction("renew")}>
+        <div className="space-y-3">
+          {/* Acción principal */}
+          <Button className="h-11 w-full" onClick={() => onAction("renew")}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Renovar
+            Registrar pago y renovar
           </Button>
-          <Button variant="outline" onClick={() => onAction("extend")}>
-            <CalendarClock className="mr-2 h-4 w-4" />
-            Extender días
-          </Button>
-          <Button variant="outline" onClick={() => onAction("plan")}>
-            <KeyRound className="mr-2 h-4 w-4" />
-            Cambiar plan
-          </Button>
-          <Button variant="outline" onClick={() => onAction("status")}>
-            <ShieldAlert className="mr-2 h-4 w-4" />
-            Cambiar estado
-          </Button>
-          <Button variant="outline" className="sm:col-span-2" onClick={onDetails}>
-            <History className="mr-2 h-4 w-4" />
-            Historial y dispositivos
-          </Button>
+
+          {/* Acciones secundarias */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="h-11" onClick={() => onAction("plan")}>
+              <KeyRound className="mr-2 h-4 w-4" />
+              Cambiar plan
+            </Button>
+            <Button variant="outline" className="h-11" onClick={() => onAction("status")}>
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              Cambiar estado
+            </Button>
+          </div>
+
+          {/* Más opciones */}
+          <Accordion type="single" collapsible>
+            <AccordionItem value="more" className="border-none">
+              <AccordionTrigger className="py-2 text-sm text-muted-foreground hover:no-underline">
+                Más opciones
+              </AccordionTrigger>
+              <AccordionContent className="space-y-1 pb-0 pt-1">
+                <Button
+                  variant="ghost"
+                  className="h-11 w-full justify-start"
+                  onClick={() => onAction("extend")}
+                >
+                  <CalendarClock className="mr-2 h-4 w-4" />
+                  Ajustar vigencia
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-11 w-full justify-start"
+                  onClick={onDetails}
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  Ver historial
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-11 w-full justify-start"
+                  onClick={onDetails}
+                >
+                  <Laptop className="mr-2 h-4 w-4" />
+                  Gestionar dispositivos
+                </Button>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </DialogContent>
     </Dialog>
@@ -956,15 +1046,16 @@ function OperationDialog({
     onError: (error) => toast.error(errorMessage(error)),
   });
   const sensitive = operation === "status" && ["suspended", "revoked"].includes(status);
+  const isRevoke = operation === "status" && status === "revoked";
   return (
     <Dialog open={!!license && !!operation} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {operation === "renew"
-              ? "Renovar licencia"
+              ? "Registrar pago y renovar"
               : operation === "extend"
-                ? "Extender días"
+                ? "Ajustar vigencia"
                 : operation === "plan"
                   ? "Cambiar plan"
                   : "Cambiar estado"}
@@ -975,23 +1066,63 @@ function OperationDialog({
         </DialogHeader>
         <div className="space-y-4">
           {operation === "status" && (
-            <Field label="Nuevo estado">
-              <Filter
-                value={status}
-                onChange={(v) => setStatus(v as LicenseStatus)}
-                placeholder="Estado"
-                items={statuses.map((code) => ({ code, name: labels[code] }))}
-              />
-            </Field>
+            <>
+              <Field label="Nuevo estado">
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as LicenseStatus)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {changeableStatuses.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {labels[code]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              {status === "revoked" && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  Revocar es una medida administrativa grave. El cliente perderá el acceso
+                  inmediatamente. El historial, pagos y recibos se conservarán.
+                </div>
+              )}
+            </>
           )}
           {operation === "extend" && (
-            <Field
-              label={
-                operation === "extend" ? "Días adicionales" : "Duración personalizada (opcional)"
-              }
-            >
-              <Input type="number" min="1" value={days} onChange={(e) => setDays(e.target.value)} />
-            </Field>
+            <>
+              <div className="rounded-md border border-amber-500/40 bg-amber-50/60 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                Este ajuste modifica manualmente la vigencia y no representa un pago.
+              </div>
+              {license?.expiresAt && (
+                <Field label="Vencimiento actual">
+                  <Input readOnly value={formatExpiryDate(license.expiresAt)} />
+                </Field>
+              )}
+              <Field label="Días a agregar (negativo para reducir)">
+                <Input
+                  type="number"
+                  value={days}
+                  onChange={(e) => setDays(e.target.value)}
+                  placeholder="Ej. 30 ó -7"
+                />
+              </Field>
+              {license?.expiresAt && days && (
+                <Field label="Nueva fecha de vencimiento (vista previa)">
+                  <Input
+                    readOnly
+                    value={formatExpiryDate(
+                      new Date(
+                        new Date(license.expiresAt).getTime() + Number(days) * 86_400_000,
+                      ).toISOString(),
+                    )}
+                  />
+                </Field>
+              )}
+            </>
           )}
           {(operation === "renew" || operation === "plan") && (
             <>
@@ -1032,9 +1163,9 @@ function OperationDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["card", "transfer", "cash", "paypal"].map((value) => (
+                    {Object.entries(methodLabels).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
-                        {value}
+                        {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1052,9 +1183,9 @@ function OperationDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["pending", "paid", "cancelled", "refunded", "complimentary"].map((value) => (
+                    {Object.entries(paymentStatusLabels).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
-                        {value}
+                        {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1090,7 +1221,17 @@ function OperationDialog({
             }
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Procesando…" : sensitive ? "Confirmar operación" : "Guardar"}
+            {mutation.isPending
+              ? "Procesando…"
+              : isRevoke
+                ? "Revocar licencia"
+                : sensitive
+                  ? "Confirmar operación"
+                  : operation === "extend"
+                    ? "Aplicar ajuste"
+                    : operation === "renew"
+                      ? "Registrar pago y renovar"
+                      : "Guardar"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1155,12 +1296,33 @@ function DetailsDialog({
             {license?.userEmail} · {license?.key}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Información */}
+          <section className="space-y-2 text-sm">
+            <h3 className="font-medium text-foreground">Información</h3>
+            <div className="space-y-1.5 text-xs text-muted-foreground">
+              <DetailRow label="Clave" value={license?.key ?? ""} />
+              <DetailRow label="Plan" value={planLabel(license?.plan ?? "", undefined)} />
+              <DetailRow label="Estado" value={labels[license?.status ?? ""] ?? ""} />
+              <DetailRow label="Activación" value={displayDate(license?.activatedAt ?? null)} />
+              <DetailRow
+                label="Vencimiento"
+                value={formatExpiryDate(license?.expiresAt ?? null)}
+              />
+              <DetailRow label="Creación" value={displayDate(license?.createdAt ?? null)} />
+              <DetailRow
+                label="Última validación"
+                value={displayDate(license?.lastValidation ?? null)}
+              />
+            </div>
+          </section>
+
+          {/* Dispositivos */}
           <section>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-medium">
                 <Laptop className="mr-2 inline h-4 w-4" />
-                Dispositivos
+                Dispositivos ({devices.data?.length ?? 0} / {license?.maxDevices})
               </h3>
               <Button
                 size="sm"
@@ -1213,6 +1375,8 @@ function DetailsDialog({
               )}
             </div>
           </section>
+
+          {/* Historial */}
           <section>
             <h3 className="mb-2 font-medium">
               <History className="mr-2 inline h-4 w-4" />
@@ -1233,6 +1397,9 @@ function DetailsDialog({
                   </p>
                 </div>
               ))}
+              {!history.isLoading && !history.data?.length && (
+                <p className="text-sm text-muted-foreground">Sin entradas en el historial.</p>
+              )}
             </div>
           </section>
         </div>
