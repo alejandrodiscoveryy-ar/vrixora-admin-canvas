@@ -4,10 +4,17 @@
 **Empresa:** VRIXORA Solutions  
 **Producto administrativo:** Centro de Control de VRIXORA  
 **Primera aplicación gestionada:** TukTuk Control  
-**Versión del documento:** 1.0  
-**Fecha:** 3 de agosto de 2026  
+**Versión del documento:** 1.1  
+**Fecha:** 4 de agosto de 2026  
 **Estado:** Producto en desarrollo y preparación para operación comercial  
 **Eslogan:** Aplicaciones inteligentes para negocios inteligentes
+
+## Historial de versiones
+
+| Versión | Fecha | Cambios principales | Aprobación |
+|---|---|---|---|
+| 1.0 | 3 de agosto de 2026 | Documento inicial del ecosistema VRIXORA Solutions y TukTuk Control | Owner |
+| 1.1 | 4 de agosto de 2026 | Configuración dinámica de WhatsApp, separación entre soporte y pagos, plantillas de mensajes, registro manual del WhatsApp del cliente y reglas de actualización del PRD | Owner |
 
 ---
 
@@ -499,14 +506,87 @@ El sistema podrá permitir:
 - Aplicar días promocionales cuando la condición se cumpla.
 - Conservar la trazabilidad del referido.
 
-## 8.13. Soporte
+## 8.13. Atención al cliente y contacto por WhatsApp
 
-El usuario debe poder:
+TukTuk Control deberá disponer de dos vías diferenciadas de contacto por WhatsApp:
 
-- Contactar a VRIXORA.
-- Consultar métodos de pago.
-- Obtener orientación para renovar.
-- Acceder a los canales oficiales.
+1. **Atención al cliente**, destinada a dudas, soporte técnico y consultas generales.
+2. **Pagar, activar o renovar**, destinada a la compra, activación o renovación de planes.
+
+Ambas vías podrán utilizar inicialmente el mismo número de WhatsApp, pero deberán generar mensajes diferentes y quedar preparadas para utilizar números distintos en el futuro.
+
+### Atención al cliente
+
+El área de Usuario deberá mostrar un botón denominado:
+
+**Atención al cliente**
+
+La aplicación deberá generar un mensaje general de soporte que pueda incluir:
+
+- nombre del cliente;
+- correo de la cuenta;
+- nombre de la aplicación;
+- descripción opcional escrita por el usuario.
+
+La vía de soporte no deberá incluir obligatoriamente los datos comerciales completos de la licencia.
+
+### Pagar, activar o renovar
+
+Cuando el usuario se encuentre en prueba, próximo a vencer, vencido o pulse una opción de compra o renovación, la aplicación deberá mostrar un botón denominado:
+
+**Contactar para pagar y activar**
+
+El mensaje deberá incluir automáticamente, como mínimo:
+
+- nombre del cliente;
+- correo de la cuenta;
+- clave o número de licencia;
+- nombre de la aplicación;
+- plan actual;
+- plan solicitado, cuando se haya seleccionado;
+- fecha de vencimiento actual;
+- tipo de solicitud: activación, compra o renovación.
+
+El cliente no deberá escribir manualmente estos datos. La aplicación deberá obtenerlos de la sesión autenticada y de la licencia vinculada.
+
+### Configuración dinámica
+
+El número, las etiquetas, las plantillas y el estado de cada vía deberán administrarse desde el Centro de Control.
+
+La aplicación deberá consultar la configuración remota cuando tenga conexión y conservar localmente la última configuración válida.
+
+Cuando no haya conexión:
+
+- utilizará la última configuración válida guardada;
+- no bloqueará el funcionamiento general de la aplicación;
+- utilizará un valor de respaldo únicamente cuando nunca haya existido una configuración remota o local válida.
+
+La aplicación deberá construir correctamente el enlace de WhatsApp utilizando formato internacional y codificación segura del mensaje.
+
+## 8.14. Plantillas y variables de WhatsApp
+
+Las plantillas administrables podrán utilizar variables como:
+
+- `{{customer_name}}`
+- `{{customer_email}}`
+- `{{license_key}}`
+- `{{current_plan}}`
+- `{{requested_plan}}`
+- `{{expires_at}}`
+- `{{application_name}}`
+- `{{contact_reason}}`
+
+TukTuk Control deberá sustituir las variables con información válida antes de abrir WhatsApp.
+
+Si falta un dato opcional, el mensaje deberá generarse sin mostrar variables sin resolver.
+
+## 8.15. Limitación de la primera versión
+
+La primera versión no utilizará la API de WhatsApp para identificar automáticamente el número del cliente.
+
+Abrir un enlace de WhatsApp no permitirá al sistema conocer desde qué número escribió finalmente el cliente.
+
+El registro o actualización del WhatsApp del cliente se realizará manualmente por un operador autorizado desde el Centro de Control.
 
 ---
 
@@ -553,7 +633,7 @@ El módulo debe permitir:
 
 - Buscar por nombre.
 - Buscar por correo.
-- Buscar por teléfono.
+- Buscar por teléfono o WhatsApp.
 - Buscar por identificador.
 - Consultar perfil.
 - Consultar licencia.
@@ -562,6 +642,19 @@ El módulo debe permitir:
 - Consultar recibos.
 - Consultar historial comercial.
 - Consultar auditoría relacionada, según permisos.
+
+El perfil del cliente podrá incluir:
+
+- WhatsApp principal;
+- fecha de actualización;
+- usuario que lo actualizó;
+- origen de la actualización;
+- estado de confirmación manual;
+- historial de cambios, cuando corresponda.
+
+El owner y los usuarios autorizados podrán registrar o actualizar el WhatsApp durante una interacción de soporte.
+
+Si se introduce un número diferente al registrado, el sistema deberá mostrar el valor anterior y el nuevo antes de confirmar.
 
 Los datos sensibles deben limitarse según el rol.
 
@@ -572,11 +665,15 @@ El módulo de Pagos será el punto principal para completar una venta o renovaci
 El formulario debe incluir:
 
 - Cliente.
+- Nombre y correo.
+- Número o clave de licencia.
 - Plan seleccionado.
 - Plan actual.
 - Estado actual.
 - Vencimiento actual.
 - Nuevo vencimiento estimado.
+- WhatsApp actualmente registrado.
+- Nuevo WhatsApp, cuando corresponda.
 - Importe.
 - Moneda.
 - Método de pago.
@@ -586,6 +683,36 @@ El formulario debe incluir:
 - Fecha y hora.
 
 Antes de confirmar debe mostrarse una vista previa.
+
+### Registro manual del WhatsApp durante el pago
+
+Si el cliente no tiene WhatsApp registrado, el operador podrá introducir el número desde el cual recibió la solicitud.
+
+Si el número ya existe, el formulario deberá mostrarlo automáticamente.
+
+Si el operador introduce uno diferente:
+
+- se mostrará el número anterior;
+- se mostrará el número nuevo;
+- se solicitará confirmación expresa;
+- no se reemplazará silenciosamente;
+- se conservará trazabilidad del cambio.
+
+Al confirmar el pago, la operación deberá:
+
+1. registrar el pago;
+2. actualizar la misma licencia;
+3. generar el recibo;
+4. guardar o actualizar el WhatsApp del cliente;
+5. registrar el operador, la fecha y el origen del cambio.
+
+El número deberá almacenarse en formato internacional.
+
+El sistema deberá identificar la actualización como:
+
+**Confirmada manualmente por el operador**
+
+y no como verificación automática.
 
 ## 9.4. Recibos
 
@@ -724,6 +851,56 @@ Las acciones sensibles incluyen:
 - Modificar permisos.
 - Cambiar precios.
 - Reiniciar dispositivos.
+- Modificar números o plantillas de WhatsApp.
+- Actualizar el WhatsApp principal de un cliente.
+
+## 9.11. Configuración de WhatsApp por proyecto
+
+Dentro de:
+
+**Configuración → Proyecto → TukTuk Control → Soporte y contacto**
+
+el owner podrá administrar:
+
+### Configuración general
+
+- número principal de WhatsApp;
+- estado general activo o inactivo;
+- nombre visible del canal.
+
+### Atención al cliente
+
+- número específico opcional;
+- texto del botón;
+- plantilla del mensaje;
+- estado activo o inactivo.
+
+### Pagos y activaciones
+
+- número específico opcional;
+- texto del botón;
+- plantilla del mensaje;
+- estado activo o inactivo;
+- variables que deben incluirse.
+
+Cuando no exista un número específico para una vía, se utilizará el número principal.
+
+Solo el owner podrá modificar esta configuración.
+
+Otros roles podrán visualizarla únicamente cuando sea necesario para su trabajo.
+
+Toda modificación deberá registrar:
+
+- valor anterior;
+- valor nuevo;
+- usuario;
+- fecha y hora;
+- proyecto afectado;
+- motivo opcional.
+
+La configuración necesaria para TukTuk Control deberá estar disponible mediante una lectura segura que no exponga datos administrativos sensibles.
+
+No se utilizará `service_role` en el frontend.
 
 ---
 
@@ -1092,6 +1269,11 @@ El producto será considerado funcional cuando:
 15. Los pagos anulados no cuenten como ingresos.
 16. Las actualizaciones no eliminen los datos del cliente.
 17. El owner pueda supervisar toda la operación.
+18. El owner pueda cambiar el número y las plantillas de WhatsApp sin publicar una nueva versión de TukTuk Control.
+19. Atención al cliente y pagos generen mensajes distintos.
+20. El mensaje de pago incluya nombre, correo, licencia, plan y vencimiento.
+21. El operador pueda registrar o actualizar manualmente el WhatsApp al confirmar un pago.
+22. Los cambios de WhatsApp queden auditados y no sustituyan silenciosamente el número anterior.
 
 ---
 
@@ -1111,6 +1293,8 @@ La primera versión no dependerá de:
 - Soporte multimoneda avanzado.
 - Venta internacional automatizada.
 - Administración de otras aplicaciones todavía no lanzadas.
+- Identificación automática del número del cliente mediante la API de WhatsApp.
+- Webhooks de WhatsApp Business Platform en la primera versión.
 
 La arquitectura sí debe permitir incorporar estas funciones posteriormente.
 
@@ -1144,6 +1328,9 @@ Un mismo cliente podrá utilizar diferentes productos de VRIXORA, pero deberá t
 - Recibos.
 - Clientes.
 - Auditoría.
+- Configuración dinámica de WhatsApp.
+- Mensajes diferenciados de soporte y renovación.
+- Registro manual y trazable del WhatsApp del cliente.
 
 ## Prioridad 2: roles y empleados
 
@@ -1186,3 +1373,90 @@ El principio operativo será:
 > El cliente controla su negocio desde TukTuk Control. Marketing atrae y acompaña. Cobros registra la venta. El sistema administra automáticamente la licencia. El owner supervisa y controla las excepciones.
 
 Este documento constituye la base funcional oficial para continuar el desarrollo, revisar el sistema existente y definir las siguientes etapas del proyecto.
+
+---
+
+# 23. Gobernanza y actualización del PRD
+
+`docs/PRD_MASTER.md` será la fuente oficial de requisitos del producto.
+
+El PRD será un documento vivo, pero no se modificará automáticamente por cada cambio de código.
+
+El proceso para incorporar una nueva funcionalidad será:
+
+1. identificar la necesidad;
+2. comparar la propuesta con el PRD vigente;
+3. analizar el impacto en los proyectos;
+4. obtener aprobación del owner;
+5. actualizar el PRD y su versión;
+6. registrar el cambio en el historial;
+7. añadir la tarea al backlog;
+8. desarrollar;
+9. probar;
+10. actualizar el estado de implementación.
+
+No será necesario cambiar la versión del PRD por:
+
+- correcciones de errores que no alteren el producto;
+- cambios visuales menores;
+- refactorizaciones;
+- actualizaciones de dependencias;
+- optimizaciones internas sin cambio funcional.
+
+Cuando durante una auditoría se encuentre una función existente que no aparezca en el PRD:
+
+- no se eliminará ni modificará automáticamente;
+- se documentará;
+- se clasificará como necesaria, técnica, posiblemente obsoleta, contradictoria o no verificable;
+- se solicitará decisión del owner;
+- solo después de su aprobación se incorporará, corregirá o retirará.
+
+El PDF se regenerará a partir de `PRD_MASTER.md` cuando se cierre una versión relevante.
+
+---
+
+# 24. Distribución entre los tres proyectos
+
+## 24.1. Centro de Control de VRIXORA
+
+Responsable de:
+
+- clientes;
+- pagos;
+- recibos;
+- licencias;
+- planes;
+- empleados;
+- roles;
+- marketing;
+- configuración dinámica;
+- auditoría;
+- administración del WhatsApp de soporte y pagos.
+
+## 24.2. TukTuk Control
+
+Responsable de:
+
+- experiencia del cliente;
+- datos operativos;
+- funcionamiento sin conexión;
+- sincronización;
+- lectura del estado de la licencia;
+- generación de mensajes de soporte y renovación;
+- uso de la configuración remota de WhatsApp;
+- caché local de la última configuración válida.
+
+## 24.3. Sitio web de VRIXORA
+
+Responsable de:
+
+- información pública;
+- captación;
+- presentación comercial;
+- páginas de privacidad;
+- soporte;
+- enlaces de instalación o acceso;
+- uso de la misma configuración de contacto cuando se decida integrarla.
+
+La lógica crítica de pagos, licencias y permisos no deberá duplicarse entre repositorios.
+
