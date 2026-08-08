@@ -20,6 +20,7 @@ export type {
   ProjectPermission,
   ProjectRole,
   ProjectSettings,
+  WhatsAppSettings,
   AuditEvent,
   AuditService,
   ProjectMemberService,

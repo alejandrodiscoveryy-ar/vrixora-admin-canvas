@@ -20,6 +20,7 @@ export type ProjectPermission =
   | "analytics.view"
   | "settings.view"
   | "settings.manage"
+  | "whatsapp_settings.manage"
   | "audit.view";
 
 export interface ProjectSettings {
@@ -41,6 +42,21 @@ export interface ProjectSettings {
   maintenanceMode: boolean;
   forceUpdate: boolean;
   welcomeMessage: string;
+}
+
+export interface WhatsAppSettings {
+  projectId: string;
+  fallbackNumber: string;
+  supportNumber: string;
+  paymentNumber: string;
+  supportButtonText: string;
+  paymentButtonText: string;
+  supportTemplate: string;
+  paymentTemplate: string;
+  supportEnabled: boolean;
+  paymentEnabled: boolean;
+  version: number;
+  updatedAt: string;
 }
 
 export interface LicenseType {
@@ -271,6 +287,8 @@ export interface ProjectService {
       description: string;
     },
   ): Promise<void>;
+  whatsappSettings(projectId: string): Promise<WhatsAppSettings>;
+  updateWhatsAppSettings(projectId: string, settings: WhatsAppSettings): Promise<WhatsAppSettings>;
 }
 
 export interface ProjectMemberService {
@@ -324,7 +342,11 @@ export interface PaymentService {
   ): Promise<ServicePayment>;
   update(input: UpdatePaymentInput): Promise<ServicePayment>;
   remove(paymentId: string, reason: string): Promise<void>;
-  previewCharge(licenseId: string, plan: string, applicationRule: ChargePlanInput["applicationRule"]): Promise<BillingPreview>;
+  previewCharge(
+    licenseId: string,
+    plan: string,
+    applicationRule: ChargePlanInput["applicationRule"],
+  ): Promise<BillingPreview>;
   chargeAndAssign(input: ChargePlanInput): Promise<BillingReceipt>;
   receipt(paymentId: string): Promise<BillingReceipt>;
   repairReceipt(paymentId: string): Promise<BillingReceipt>;

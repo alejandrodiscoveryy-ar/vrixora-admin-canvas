@@ -19,6 +19,7 @@ import type {
   RetentionMetrics,
   BillingPreview,
   BillingReceipt,
+  WhatsAppSettings,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
@@ -27,11 +28,71 @@ function throwIfError(error: { message: string } | null) {
 }
 
 function mapBillingPreview(data: Record<string, unknown>): BillingPreview {
-  return { licenseId: String(data.license_id), previousPlan: String(data.previous_plan), newPlan: String(data.new_plan), licenseType: String(data.license_type), previousExpiresAt: data.previous_expires_at ? String(data.previous_expires_at) : null, newStartedAt: String(data.new_started_at), newExpiresAt: data.new_expires_at ? String(data.new_expires_at) : null, durationDays: data.duration_days == null ? null : Number(data.duration_days), maxDevices: Number(data.max_devices), price: Number(data.price), currency: data.currency as BillingPreview["currency"], applicationRule: data.application_rule as BillingPreview["applicationRule"], isTrialConversion: Boolean(data.is_trial_conversion) };
+  return {
+    licenseId: String(data.license_id),
+    previousPlan: String(data.previous_plan),
+    newPlan: String(data.new_plan),
+    licenseType: String(data.license_type),
+    previousExpiresAt: data.previous_expires_at ? String(data.previous_expires_at) : null,
+    newStartedAt: String(data.new_started_at),
+    newExpiresAt: data.new_expires_at ? String(data.new_expires_at) : null,
+    durationDays: data.duration_days == null ? null : Number(data.duration_days),
+    maxDevices: Number(data.max_devices),
+    price: Number(data.price),
+    currency: data.currency as BillingPreview["currency"],
+    applicationRule: data.application_rule as BillingPreview["applicationRule"],
+    isTrialConversion: Boolean(data.is_trial_conversion),
+  };
 }
 
 function mapBillingReceipt(data: Record<string, unknown>): BillingReceipt {
-  return { receiptId: String(data.receipt_id), receiptNumber: String(data.receipt_number), paymentId: String(data.payment_id), licenseId: String(data.license_id), projectId: String(data.project_id), projectName: String(data.project_name), clientName: String(data.client_name), clientEmail: String(data.client_email), maskedLicenseKey: String(data.masked_license_key), previousPlan: String(data.previous_plan), plan: String(data.plan), planName: String(data.plan_name), durationDays: data.duration_days == null ? null : Number(data.duration_days), listPrice: Number(data.list_price), amount: Number(data.amount), currency: data.currency as BillingReceipt["currency"], method: data.method as BillingReceipt["method"], reference: String(data.reference), chargedAt: String(data.charged_at), startedAt: String(data.started_at), expiresAt: data.expires_at ? String(data.expires_at) : null, status: data.status as BillingReceipt["status"], maxDevices: Number(data.max_devices), operatorEmail: String(data.operator_email), notes: data.notes ? String(data.notes) : null, whatsapp: data.whatsapp ? String(data.whatsapp) : null, supportEmail: data.support_email ? String(data.support_email) : null, applicationRule: data.application_rule as BillingReceipt["applicationRule"] };
+  return {
+    receiptId: String(data.receipt_id),
+    receiptNumber: String(data.receipt_number),
+    paymentId: String(data.payment_id),
+    licenseId: String(data.license_id),
+    projectId: String(data.project_id),
+    projectName: String(data.project_name),
+    clientName: String(data.client_name),
+    clientEmail: String(data.client_email),
+    maskedLicenseKey: String(data.masked_license_key),
+    previousPlan: String(data.previous_plan),
+    plan: String(data.plan),
+    planName: String(data.plan_name),
+    durationDays: data.duration_days == null ? null : Number(data.duration_days),
+    listPrice: Number(data.list_price),
+    amount: Number(data.amount),
+    currency: data.currency as BillingReceipt["currency"],
+    method: data.method as BillingReceipt["method"],
+    reference: String(data.reference),
+    chargedAt: String(data.charged_at),
+    startedAt: String(data.started_at),
+    expiresAt: data.expires_at ? String(data.expires_at) : null,
+    status: data.status as BillingReceipt["status"],
+    maxDevices: Number(data.max_devices),
+    operatorEmail: String(data.operator_email),
+    notes: data.notes ? String(data.notes) : null,
+    whatsapp: data.whatsapp ? String(data.whatsapp) : null,
+    supportEmail: data.support_email ? String(data.support_email) : null,
+    applicationRule: data.application_rule as BillingReceipt["applicationRule"],
+  };
+}
+
+function mapWhatsAppSettings(data: Record<string, unknown>): WhatsAppSettings {
+  return {
+    projectId: String(data.project_id),
+    fallbackNumber: data.fallback_number ? String(data.fallback_number) : "",
+    supportNumber: data.support_number ? String(data.support_number) : "",
+    paymentNumber: data.payment_number ? String(data.payment_number) : "",
+    supportButtonText: String(data.support_button_text),
+    paymentButtonText: String(data.payment_button_text),
+    supportTemplate: String(data.support_template),
+    paymentTemplate: String(data.payment_template),
+    supportEnabled: Boolean(data.support_enabled),
+    paymentEnabled: Boolean(data.payment_enabled),
+    version: Number(data.version),
+    updatedAt: String(data.updated_at),
+  };
 }
 
 type LicenseRow = {
@@ -188,7 +249,9 @@ export const supabaseServices: AdminServices = {
     async settings(projectId) {
       const { data, error } = await getSupabaseClient()
         .from("projects")
-        .select("notify_license_expiry,auto_renew_verified_payments,logo_url,icon_url,primary_color,secondary_color,whatsapp,support_email,website_url,privacy_url,terms_url,currency,trial_days,payment_methods,minimum_version,maintenance_mode,force_update,welcome_message")
+        .select(
+          "notify_license_expiry,auto_renew_verified_payments,logo_url,icon_url,primary_color,secondary_color,whatsapp,support_email,website_url,privacy_url,terms_url,currency,trial_days,payment_methods,minimum_version,maintenance_mode,force_update,welcome_message",
+        )
         .eq("id", projectId)
         .single();
       throwIfError(error);
@@ -240,6 +303,31 @@ export const supabaseServices: AdminServices = {
         target_welcome_message: changes.welcomeMessage,
       });
       throwIfError(error);
+    },
+    async whatsappSettings(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_whatsapp_settings", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return mapWhatsAppSettings(row);
+    },
+    async updateWhatsAppSettings(projectId, settings) {
+      await requireOnline("Actualizar la configuración de WhatsApp");
+      const { data, error } = await getSupabaseClient().rpc("admin_update_whatsapp_settings", {
+        target_project_id: projectId,
+        target_fallback_number: settings.fallbackNumber,
+        target_support_number: settings.supportNumber,
+        target_payment_number: settings.paymentNumber,
+        target_support_button_text: settings.supportButtonText,
+        target_payment_button_text: settings.paymentButtonText,
+        target_support_template: settings.supportTemplate,
+        target_payment_template: settings.paymentTemplate,
+        target_support_enabled: settings.supportEnabled,
+        target_payment_enabled: settings.paymentEnabled,
+      });
+      throwIfError(error);
+      return mapWhatsAppSettings(data as Record<string, unknown>);
     },
   },
   projectMembers: {
@@ -331,7 +419,8 @@ export const supabaseServices: AdminServices = {
           maxDevices: Number(client.max_devices),
           activeDevices: Number(client.active_devices),
           lastPaymentAt: client.last_payment_at,
-          lastPaymentAmount: client.last_payment_amount == null ? null : Number(client.last_payment_amount),
+          lastPaymentAmount:
+            client.last_payment_amount == null ? null : Number(client.last_payment_amount),
           lastPaymentCurrency: client.last_payment_currency as Currency | null,
           lastRenewedAt: client.last_renewed_at,
         }),
@@ -733,11 +822,20 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
       return {
-        id: data.id, projectId: data.project_id, userId: data.user_id,
-        licenseId: data.license_id, amount: Number(data.amount),
-        listPrice: Number(data.list_price), discount: Number(data.discount), plan: data.plan,
-        currency: data.currency as Currency, method: data.method, reference: data.reference,
-        employeeId: data.recorded_by, createdAt: data.created_at, status: data.status,
+        id: data.id,
+        projectId: data.project_id,
+        userId: data.user_id,
+        licenseId: data.license_id,
+        amount: Number(data.amount),
+        listPrice: Number(data.list_price),
+        discount: Number(data.discount),
+        plan: data.plan,
+        currency: data.currency as Currency,
+        method: data.method,
+        reference: data.reference,
+        employeeId: data.recorded_by,
+        createdAt: data.created_at,
+        status: data.status,
         notes: data.notes,
       };
     },
@@ -750,24 +848,43 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
     },
     async previewCharge(licenseId, plan, applicationRule) {
-      const { data, error } = await getSupabaseClient().rpc("admin_preview_charge_plan", { target_license_id: licenseId, target_plan: plan, target_rule: applicationRule });
+      const { data, error } = await getSupabaseClient().rpc("admin_preview_charge_plan", {
+        target_license_id: licenseId,
+        target_plan: plan,
+        target_rule: applicationRule,
+      });
       throwIfError(error);
       return mapBillingPreview(data as Record<string, unknown>);
     },
     async chargeAndAssign(input) {
       await requireOnline("Cobrar y asignar una licencia");
-      const { data, error } = await getSupabaseClient().rpc("admin_charge_and_assign_plan", { target_license_id: input.licenseId, target_plan: input.plan, target_amount: input.amount, target_method: input.method, target_reference: input.reference ?? null, target_charged_at: input.chargedAt, target_notes: input.notes ?? null, target_application_rule: input.applicationRule, target_idempotency_key: input.idempotencyKey });
+      const { data, error } = await getSupabaseClient().rpc("admin_charge_and_assign_plan", {
+        target_license_id: input.licenseId,
+        target_plan: input.plan,
+        target_amount: input.amount,
+        target_method: input.method,
+        target_reference: input.reference ?? null,
+        target_charged_at: input.chargedAt,
+        target_notes: input.notes ?? null,
+        target_application_rule: input.applicationRule,
+        target_idempotency_key: input.idempotencyKey,
+      });
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
     },
     async receipt(paymentId) {
-      const { data, error } = await getSupabaseClient().rpc("admin_get_billing_receipt", { target_payment_id: paymentId });
+      const { data, error } = await getSupabaseClient().rpc("admin_get_billing_receipt", {
+        target_payment_id: paymentId,
+      });
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
     },
     async repairReceipt(paymentId) {
       await requireOnline("Reparar un recibo");
-      const { data, error } = await getSupabaseClient().rpc("admin_repair_missing_billing_receipt", { target_payment_id: paymentId });
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_repair_missing_billing_receipt",
+        { target_payment_id: paymentId },
+      );
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
     },
@@ -850,8 +967,16 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      const result = (data ?? {}) as { sources?: string[]; campaigns?: string[]; versions?: string[] };
-      return { sources: result.sources ?? [], campaigns: result.campaigns ?? [], versions: result.versions ?? [] };
+      const result = (data ?? {}) as {
+        sources?: string[];
+        campaigns?: string[];
+        versions?: string[];
+      };
+      return {
+        sources: result.sources ?? [],
+        campaigns: result.campaigns ?? [],
+        versions: result.versions ?? [],
+      };
     },
     async retention(projectId, filters) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_retention_metrics", {
@@ -863,11 +988,16 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
       const row = data as Record<string, number>;
       return {
-        cohortCount: Number(row.cohort_count ?? 0), eligible7: Number(row.eligible_7 ?? 0),
-        eligible30: Number(row.eligible_30 ?? 0), retained7: Number(row.retained_7 ?? 0),
-        retained30: Number(row.retained_30 ?? 0), retention7Rate: Number(row.retention_7_rate ?? 0),
-        retention30Rate: Number(row.retention_30_rate ?? 0), trialUsers: Number(row.trial_users ?? 0),
-        paidUsers: Number(row.paid_users ?? 0), trialToPaidRate: Number(row.trial_to_paid_rate ?? 0),
+        cohortCount: Number(row.cohort_count ?? 0),
+        eligible7: Number(row.eligible_7 ?? 0),
+        eligible30: Number(row.eligible_30 ?? 0),
+        retained7: Number(row.retained_7 ?? 0),
+        retained30: Number(row.retained_30 ?? 0),
+        retention7Rate: Number(row.retention_7_rate ?? 0),
+        retention30Rate: Number(row.retention_30_rate ?? 0),
+        trialUsers: Number(row.trial_users ?? 0),
+        paidUsers: Number(row.paid_users ?? 0),
+        trialToPaidRate: Number(row.trial_to_paid_rate ?? 0),
       } satisfies RetentionMetrics;
     },
   },

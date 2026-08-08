@@ -10,7 +10,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
-import { supabaseServices, type ProjectSettings } from "@/lib/services";
+import { supabaseServices, type ProjectSettings, type WhatsAppSettings } from "@/lib/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,13 +40,20 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   const { data: project } = useProject(projectId);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("settings.manage");
+  const canManageWhatsApp = permissions.includes("whatsapp_settings.manage");
   const settingsQuery = useQuery({
     queryKey: ["project-settings", projectId],
     queryFn: () => supabaseServices.projects.settings(projectId),
   });
+  const whatsappQuery = useQuery({
+    queryKey: ["project-whatsapp-settings", projectId],
+    queryFn: () => supabaseServices.projects.whatsappSettings(projectId),
+    enabled: canManageWhatsApp,
+  });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [form, setForm] = useState<ProjectSettings | null>(null);
+  const [whatsappForm, setWhatsAppForm] = useState<WhatsAppSettings | null>(null);
 
   useEffect(() => {
     if (!project || !settingsQuery.data) return;
@@ -54,6 +61,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     setDescription(project.description);
     setForm(settingsQuery.data);
   }, [project, settingsQuery.data]);
+
+  useEffect(() => {
+    if (whatsappQuery.data) setWhatsAppForm(whatsappQuery.data);
+  }, [whatsappQuery.data]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -63,11 +74,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         name: name.trim(),
         description: description.trim(),
       });
+      if (canManageWhatsApp && whatsappForm) {
+        await supabaseServices.projects.updateWhatsAppSettings(projectId, whatsappForm);
+      }
     },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["project-settings", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-whatsapp-settings", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["user-projects"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-audit", projectId] }),
       ]);
@@ -100,6 +115,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       : form.paymentMethods.filter((item) => item !== method);
     update("paymentMethods", next);
   };
+  const updateWhatsApp = <K extends keyof WhatsAppSettings>(key: K, value: WhatsAppSettings[K]) =>
+    setWhatsAppForm((current) => (current ? { ...current, [key]: value } : current));
 
   return (
     <div className="space-y-6">
@@ -193,14 +210,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         description="Canales de ayuda y enlaces legales usados por la aplicación."
       >
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="WhatsApp">
-            <Input
-              value={form.whatsapp}
-              onChange={(event) => update("whatsapp", event.target.value)}
-              disabled={!canManage}
-              placeholder="+53..."
-            />
-          </Field>
           <Field label="Sitio web">
             <Input
               type="url"
@@ -230,6 +239,61 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           </Field>
         </div>
       </Section>
+
+      {canManageWhatsApp && whatsappForm && (
+        <Section
+          icon={MessageCircle}
+          title="WhatsApp: soporte y pagos"
+          description="Canales independientes con un número principal como respaldo. Solo el owner puede modificarlos."
+        >
+          <div className="space-y-5">
+            <Field label="Número principal (fallback)">
+              <Input
+                value={whatsappForm.fallbackNumber}
+                onChange={(event) => updateWhatsApp("fallbackNumber", event.target.value)}
+                placeholder="+5355555555"
+              />
+            </Field>
+            <WhatsAppChannelEditor
+              title="Atención al cliente"
+              number={whatsappForm.supportNumber}
+              buttonText={whatsappForm.supportButtonText}
+              template={whatsappForm.supportTemplate}
+              enabled={whatsappForm.supportEnabled}
+              variables={["nombre", "correo", "aplicacion"]}
+              onNumberChange={(value) => updateWhatsApp("supportNumber", value)}
+              onButtonTextChange={(value) => updateWhatsApp("supportButtonText", value)}
+              onTemplateChange={(value) => updateWhatsApp("supportTemplate", value)}
+              onEnabledChange={(value) => updateWhatsApp("supportEnabled", value)}
+            />
+            <WhatsAppChannelEditor
+              title="Pagar, activar o renovar"
+              number={whatsappForm.paymentNumber}
+              buttonText={whatsappForm.paymentButtonText}
+              template={whatsappForm.paymentTemplate}
+              enabled={whatsappForm.paymentEnabled}
+              variables={[
+                "nombre",
+                "correo",
+                "licencia",
+                "aplicacion",
+                "plan_actual",
+                "plan_solicitado",
+                "fecha_vencimiento",
+                "tipo_solicitud",
+              ]}
+              onNumberChange={(value) => updateWhatsApp("paymentNumber", value)}
+              onButtonTextChange={(value) => updateWhatsApp("paymentButtonText", value)}
+              onTemplateChange={(value) => updateWhatsApp("paymentTemplate", value)}
+              onEnabledChange={(value) => updateWhatsApp("paymentEnabled", value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Versión {whatsappForm.version}. Los números específicos vacíos usan el número
+              principal.
+            </p>
+          </div>
+        </Section>
+      )}
 
       <Section
         icon={CreditCard}
@@ -374,6 +438,69 @@ function Section({
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
+  );
+}
+
+function WhatsAppChannelEditor({
+  title,
+  number,
+  buttonText,
+  template,
+  enabled,
+  variables,
+  onNumberChange,
+  onButtonTextChange,
+  onTemplateChange,
+  onEnabledChange,
+}: {
+  title: string;
+  number: string;
+  buttonText: string;
+  template: string;
+  enabled: boolean;
+  variables: string[];
+  onNumberChange: (value: string) => void;
+  onButtonTextChange: (value: string) => void;
+  onTemplateChange: (value: string) => void;
+  onEnabledChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="space-y-4 rounded-xl border p-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="font-medium">{title}</div>
+        <Switch checked={enabled} onCheckedChange={onEnabledChange} />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="Número específico (opcional)">
+          <Input
+            value={number}
+            onChange={(event) => onNumberChange(event.target.value)}
+            placeholder="Usa el número principal"
+          />
+        </Field>
+        <Field label="Texto visible de la acción">
+          <Input
+            value={buttonText}
+            maxLength={80}
+            onChange={(event) => onButtonTextChange(event.target.value)}
+          />
+        </Field>
+        <Field label="Plantilla del mensaje" className="md:col-span-2">
+          <Textarea
+            value={template}
+            maxLength={2000}
+            rows={5}
+            onChange={(event) => onTemplateChange(event.target.value)}
+          />
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+        <span>Variables permitidas:</span>
+        {variables.map((variable) => (
+          <code key={variable} className="rounded bg-muted px-1.5 py-0.5">{`{{${variable}}}`}</code>
+        ))}
+      </div>
+    </div>
   );
 }
 
