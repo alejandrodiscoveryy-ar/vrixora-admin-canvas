@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useProjectPermissions } from "@/hooks/useProjects";
 import {
   MobileActionsMenu,
   MobileFiltersPanel,
@@ -149,6 +150,8 @@ function errorMessage(error: unknown) {
 export default function LicenciasSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canManage = permissions.includes("licenses.manage");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("all");
@@ -231,7 +234,9 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
     {
       key: "at-risk",
       label: "Vencidas / suspendidas",
-      value: licensesQuery.isLoading ? "Cargando..." : String(count("expired") + count("suspended")),
+      value: licensesQuery.isLoading
+        ? "Cargando..."
+        : String(count("expired") + count("suspended")),
       icon: ShieldAlert,
     },
     {
@@ -317,7 +322,9 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
             icon={ShieldAlert}
             label="Vencidas / suspendidas"
             value={
-              licensesQuery.isLoading ? "Cargando..." : String(count("expired") + count("suspended"))
+              licensesQuery.isLoading
+                ? "Cargando..."
+                : String(count("expired") + count("suspended"))
             }
           />
           <Metric
@@ -372,10 +379,12 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
               {licenses.length}
             </Badge>
           </CardTitle>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Crear licencia
-          </Button>
+          {canManage && (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Crear licencia
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
@@ -505,8 +514,8 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                     <MobileActionsMenu
                       items={[
                         {
-                          label: "Gestionar licencia",
-                          onSelect: () => setSelected(license),
+                          label: canManage ? "Gestionar licencia" : "Ver historial y dispositivos",
+                          onSelect: () => (canManage ? setSelected(license) : setDetails(license)),
                         },
                       ]}
                     />
@@ -588,7 +597,14 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                       {displayDate(license.createdAt)}
                     </TableCell>
                     <TableCell data-label="Acciones">
-                      <Button variant="ghost" size="icon" onClick={() => setSelected(license)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={
+                          canManage ? "Gestionar licencia" : "Ver historial y dispositivos"
+                        }
+                        onClick={() => (canManage ? setSelected(license) : setDetails(license))}
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -605,38 +621,45 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
         </CardContent>
       </Card>
 
-      <CreateDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        projectId={projectId}
-        types={typesQuery.data ?? []}
-        plans={plansQuery.data ?? []}
+      {canManage && (
+        <>
+          <CreateDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            projectId={projectId}
+            types={typesQuery.data ?? []}
+            plans={plansQuery.data ?? []}
+            onDone={refresh}
+          />
+          <ActionsDialog
+            license={action ? null : selected}
+            plans={plansQuery.data ?? []}
+            onClose={() => setSelected(null)}
+            onAction={(next: "renew" | "status" | "extend" | "plan") => setAction(next)}
+            onDetails={() => {
+              setDetails(selected);
+              setSelected(null);
+            }}
+          />
+          <OperationDialog
+            license={selected}
+            operation={action}
+            types={typesQuery.data ?? []}
+            plans={plansQuery.data ?? []}
+            onClose={() => {
+              setAction(null);
+              setSelected(null);
+            }}
+            onDone={refresh}
+          />
+        </>
+      )}
+      <DetailsDialog
+        license={details}
+        canManage={canManage}
+        onClose={() => setDetails(null)}
         onDone={refresh}
       />
-      <ActionsDialog
-        license={action ? null : selected}
-        plans={plansQuery.data ?? []}
-        onClose={() => setSelected(null)}
-        onAction={(next: "renew" | "status" | "extend" | "plan") => {
-          setAction(next);
-        }}
-        onDetails={() => {
-          setDetails(selected);
-          setSelected(null);
-        }}
-      />
-      <OperationDialog
-        license={selected}
-        operation={action}
-        types={typesQuery.data ?? []}
-        plans={plansQuery.data ?? []}
-        onClose={() => {
-          setAction(null);
-          setSelected(null);
-        }}
-        onDone={refresh}
-      />
-      <DetailsDialog license={details} onClose={() => setDetails(null)} onDone={refresh} />
     </div>
   );
 }
@@ -769,10 +792,7 @@ function CreateDialog({
             <Input value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <Field label="Estado">
-            <Select
-              value={status}
-              onValueChange={(v) => setStatus(v as LicenseStatus)}
-            >
+            <Select value={status} onValueChange={(v) => setStatus(v as LicenseStatus)}>
               <SelectTrigger>
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
@@ -959,19 +979,11 @@ function ActionsDialog({
                   <CalendarClock className="mr-2 h-4 w-4" />
                   Ajustar vigencia
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="h-11 w-full justify-start"
-                  onClick={onDetails}
-                >
+                <Button variant="ghost" className="h-11 w-full justify-start" onClick={onDetails}>
                   <History className="mr-2 h-4 w-4" />
                   Ver historial
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="h-11 w-full justify-start"
-                  onClick={onDetails}
-                >
+                <Button variant="ghost" className="h-11 w-full justify-start" onClick={onDetails}>
                   <Laptop className="mr-2 h-4 w-4" />
                   Gestionar dispositivos
                 </Button>
@@ -1068,10 +1080,7 @@ function OperationDialog({
           {operation === "status" && (
             <>
               <Field label="Nuevo estado">
-                <Select
-                  value={status}
-                  onValueChange={(v) => setStatus(v as LicenseStatus)}
-                >
+                <Select value={status} onValueChange={(v) => setStatus(v as LicenseStatus)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar estado" />
                   </SelectTrigger>
@@ -1241,10 +1250,12 @@ function OperationDialog({
 
 function DetailsDialog({
   license,
+  canManage,
   onClose,
   onDone,
 }: {
   license: ServiceLicense | null;
+  canManage: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -1305,10 +1316,7 @@ function DetailsDialog({
               <DetailRow label="Plan" value={planLabel(license?.plan ?? "", undefined)} />
               <DetailRow label="Estado" value={labels[license?.status ?? ""] ?? ""} />
               <DetailRow label="Activación" value={displayDate(license?.activatedAt ?? null)} />
-              <DetailRow
-                label="Vencimiento"
-                value={formatExpiryDate(license?.expiresAt ?? null)}
-              />
+              <DetailRow label="Vencimiento" value={formatExpiryDate(license?.expiresAt ?? null)} />
               <DetailRow label="Creación" value={displayDate(license?.createdAt ?? null)} />
               <DetailRow
                 label="Última validación"
@@ -1324,14 +1332,16 @@ function DetailsDialog({
                 <Laptop className="mr-2 inline h-4 w-4" />
                 Dispositivos ({devices.data?.length ?? 0} / {license?.maxDevices})
               </h3>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={mutation.isPending}
-                onClick={() => mutation.mutate({ kind: "reset" })}
-              >
-                Reiniciar contador
-              </Button>
+              {canManage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={mutation.isPending}
+                  onClick={() => mutation.mutate({ kind: "reset" })}
+                >
+                  Reiniciar contador
+                </Button>
+              )}
             </div>
             <div className="space-y-2">
               {devices.data?.map((device) => (
@@ -1349,7 +1359,7 @@ function DetailsDialog({
                   <div className="flex gap-2">
                     {device.revokedAt ? (
                       <Badge variant="destructive">Bloqueado</Badge>
-                    ) : (
+                    ) : canManage ? (
                       <>
                         <Button
                           size="sm"
@@ -1366,7 +1376,7 @@ function DetailsDialog({
                           Eliminar
                         </Button>
                       </>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
