@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { authorizeReviewRequest, withReviewHeaders } from "./lib/review/access.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -48,6 +49,13 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const url = new URL(request.url);
+      const runtimeEnvironment =
+        (globalThis as typeof globalThis & { __env__?: { ADMIN_REVIEW_TOKENS?: string } })
+          .__env__ ??
+        (env as { ADMIN_REVIEW_TOKENS?: string } | undefined) ??
+        {};
+      const reviewGuard = await authorizeReviewRequest(request, runtimeEnvironment);
+      if (reviewGuard) return reviewGuard;
       if (url.pathname === "/api/ping") {
         return new Response(null, {
           status: 204,
@@ -59,7 +67,8 @@ export default {
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      return url.pathname.startsWith("/review/") ? withReviewHeaders(normalized) : normalized;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

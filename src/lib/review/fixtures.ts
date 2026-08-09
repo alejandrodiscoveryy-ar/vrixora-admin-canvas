@@ -1,0 +1,65 @@
+export const reviewSnapshot = {
+  project: { id: "demo-project", name: "VRIXORA Demo", status: "active" },
+  metrics: [
+    ["Ingresos del mes", "24 680 CUP", "+12.4%"],
+    ["Licencias activas", "128", "+8 este mes"],
+    ["Clientes", "164", "+17 este mes"],
+    ["Conversión trial", "31.8%", "+4.1 puntos"],
+  ],
+  activity: [
+    { day: "Lun", leads: 12, payments: 4 },
+    { day: "Mar", leads: 18, payments: 7 },
+    { day: "Mié", leads: 15, payments: 6 },
+    { day: "Jue", leads: 24, payments: 9 },
+    { day: "Vie", leads: 21, payments: 8 },
+    { day: "Sáb", leads: 10, payments: 3 },
+    { day: "Dom", leads: 14, payments: 5 },
+  ],
+  clients: [
+    ["Cliente Aurora", "cliente.aurora@example.test", "+5350000001", "Activo", "Pro"],
+    ["Cliente Boreal", "cliente.boreal@example.test", "+5350000002", "Trial", "Trial"],
+    ["Cliente Coral", "cliente.coral@example.test", "+5350000003", "Inactivo", "Básico"],
+    ["Cliente Delta", "cliente.delta@example.test", "+5350000004", "Activo", "Empresa"],
+  ],
+  licenses: [
+    ["LIC-DEMO-A1", "Cliente Aurora", "Pro", "Activa", "18 sep 2026"],
+    ["LIC-DEMO-B2", "Cliente Boreal", "Trial", "Prueba", "16 ago 2026"],
+    ["LIC-DEMO-C3", "Cliente Coral", "Básico", "Vencida", "02 jul 2026"],
+    ["LIC-DEMO-D4", "Cliente Delta", "Empresa", "Suspendida", "30 dic 2026"],
+  ],
+  plans: [
+    ["Trial", "0 CUP", "14 días", "Activo"],
+    ["Básico", "500 CUP", "30 días", "Activo"],
+    ["Pro", "900 CUP", "30 días", "Activo"],
+    ["Empresa", "2 400 CUP", "30 días", "Activo"],
+    ["Plan legado", "650 CUP", "30 días", "Inactivo"],
+  ],
+  payments: [
+    ["PAY-DEMO-1001", "Cliente Aurora", "900 CUP", "Transferencia", "Confirmado", "08 ago 2026"],
+    ["PAY-DEMO-1002", "Cliente Delta", "2 400 CUP", "Efectivo", "Confirmado", "07 ago 2026"],
+    ["PAY-DEMO-1003", "Cliente Coral", "500 CUP", "Transferencia", "Pendiente", "06 ago 2026"],
+    ["PAY-DEMO-1004", "Cliente Boreal", "900 CUP", "Otro", "Anulado", "04 ago 2026"],
+  ],
+  leads: [
+    ["Lead Nébula", "Campaña verano", "Contactado", "Operador Marketing"],
+    ["Lead Prisma", "Referidos", "Calificado", "Owner Demo"],
+    ["Lead Vector", "Redes sociales", "Nuevo", "Operador Marketing"],
+    ["Lead Zenit", "Campaña verano", "Convertido", "Owner Demo"],
+  ],
+  campaigns: [
+    ["Campaña verano", "Activa", "42 leads", "9 conversiones"],
+    ["Referidos", "Activa", "18 leads", "6 conversiones"],
+    ["Lanzamiento", "Finalizada", "57 leads", "14 conversiones"],
+  ],
+  members: [
+    ["Owner Demo", "owner@example.test", "Owner", "Activo"],
+    ["Operador Cobros", "cobros@example.test", "Accounting", "Activo"],
+    ["Operador Marketing", "marketing@example.test", "Marketing", "Activo"],
+  ],
+  audit: [
+    ["Pago confirmado", "Operador Cobros", "08 ago 2026 · 14:32", "PAY-DEMO-1001"],
+    ["Licencia renovada", "Operador Cobros", "08 ago 2026 · 14:32", "LIC-DEMO-A1"],
+    ["Campaña actualizada", "Operador Marketing", "08 ago 2026 · 11:05", "Campaña verano"],
+    ["Configuración consultada", "Owner Demo", "07 ago 2026 · 18:20", "Sin cambios"],
+  ],
+} as const;

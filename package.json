@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "review:token": "node scripts/generate-review-token.mjs",
+    "test:review": "node --experimental-strip-types scripts/test-review-mode.mjs",
     "format": "prettier --write ."
   },
   "dependencies": {

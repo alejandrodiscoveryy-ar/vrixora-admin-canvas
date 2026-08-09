@@ -9,23 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ReviewTokenRouteImport } from './routes/review.$token'
 import { Route as AdminProyectosIndexRouteImport } from './routes/admin.proyectos.index'
 import { Route as AdminProyectosIdRouteImport } from './routes/admin.proyectos.$id'
+import { Route as ReviewTokenIndexRouteImport } from './routes/review.$token.index'
+import { Route as ReviewTokenSectionRouteImport } from './routes/review.$token.$section'
 import { Route as AdminProyectosIdIndexRouteImport } from './routes/admin.proyectos.$id.index'
 import { Route as AdminProyectosIdSectionRouteImport } from './routes/admin.proyectos.$id.$section'
 
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -38,6 +41,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
+const ReviewTokenRoute = ReviewTokenRouteImport.update({
+  id: '/review/$token',
+  path: '/review/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProyectosIndexRoute = AdminProyectosIndexRouteImport.update({
   id: '/proyectos/',
   path: '/proyectos/',
@@ -47,6 +55,16 @@ const AdminProyectosIdRoute = AdminProyectosIdRouteImport.update({
   id: '/proyectos/$id',
   path: '/proyectos/$id',
   getParentRoute: () => AdminRoute,
+} as any)
+const ReviewTokenIndexRoute = ReviewTokenIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ReviewTokenRoute,
+} as any)
+const ReviewTokenSectionRoute = ReviewTokenSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => ReviewTokenRoute,
 } as any)
 const AdminProyectosIdIndexRoute = AdminProyectosIdIndexRouteImport.update({
   id: '/',
@@ -63,9 +81,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/review/$token': typeof ReviewTokenRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/proyectos/$id': typeof AdminProyectosIdRouteWithChildren
+  '/review/$token/$section': typeof ReviewTokenSectionRoute
   '/admin/proyectos/': typeof AdminProyectosIndexRoute
+  '/review/$token/': typeof ReviewTokenIndexRoute
   '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
   '/admin/proyectos/$id/': typeof AdminProyectosIdIndexRoute
 }
@@ -73,7 +94,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
+  '/review/$token/$section': typeof ReviewTokenSectionRoute
   '/admin/proyectos': typeof AdminProyectosIndexRoute
+  '/review/$token': typeof ReviewTokenIndexRoute
   '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
   '/admin/proyectos/$id': typeof AdminProyectosIdIndexRoute
 }
@@ -82,9 +105,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/review/$token': typeof ReviewTokenRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/proyectos/$id': typeof AdminProyectosIdRouteWithChildren
+  '/review/$token/$section': typeof ReviewTokenSectionRoute
   '/admin/proyectos/': typeof AdminProyectosIndexRoute
+  '/review/$token/': typeof ReviewTokenIndexRoute
   '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
   '/admin/proyectos/$id/': typeof AdminProyectosIdIndexRoute
 }
@@ -94,9 +120,12 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin/login'
+    | '/review/$token'
     | '/admin/'
     | '/admin/proyectos/$id'
+    | '/review/$token/$section'
     | '/admin/proyectos/'
+    | '/review/$token/'
     | '/admin/proyectos/$id/$section'
     | '/admin/proyectos/$id/'
   fileRoutesByTo: FileRoutesByTo
@@ -104,7 +133,9 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/login'
     | '/admin'
+    | '/review/$token/$section'
     | '/admin/proyectos'
+    | '/review/$token'
     | '/admin/proyectos/$id/$section'
     | '/admin/proyectos/$id'
   id:
@@ -112,9 +143,12 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin/login'
+    | '/review/$token'
     | '/admin/'
     | '/admin/proyectos/$id'
+    | '/review/$token/$section'
     | '/admin/proyectos/'
+    | '/review/$token/'
     | '/admin/proyectos/$id/$section'
     | '/admin/proyectos/$id/'
   fileRoutesById: FileRoutesById
@@ -122,22 +156,23 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ReviewTokenRoute: typeof ReviewTokenRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -154,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/review/$token': {
+      id: '/review/$token'
+      path: '/review/$token'
+      fullPath: '/review/$token'
+      preLoaderRoute: typeof ReviewTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/proyectos/': {
       id: '/admin/proyectos/'
       path: '/proyectos'
@@ -167,6 +209,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/proyectos/$id'
       preLoaderRoute: typeof AdminProyectosIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/review/$token/': {
+      id: '/review/$token/'
+      path: '/'
+      fullPath: '/review/$token/'
+      preLoaderRoute: typeof ReviewTokenIndexRouteImport
+      parentRoute: typeof ReviewTokenRoute
+    }
+    '/review/$token/$section': {
+      id: '/review/$token/$section'
+      path: '/$section'
+      fullPath: '/review/$token/$section'
+      preLoaderRoute: typeof ReviewTokenSectionRouteImport
+      parentRoute: typeof ReviewTokenRoute
     }
     '/admin/proyectos/$id/': {
       id: '/admin/proyectos/$id/'
@@ -214,9 +270,24 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ReviewTokenRouteChildren {
+  ReviewTokenSectionRoute: typeof ReviewTokenSectionRoute
+  ReviewTokenIndexRoute: typeof ReviewTokenIndexRoute
+}
+
+const ReviewTokenRouteChildren: ReviewTokenRouteChildren = {
+  ReviewTokenSectionRoute: ReviewTokenSectionRoute,
+  ReviewTokenIndexRoute: ReviewTokenIndexRoute,
+}
+
+const ReviewTokenRouteWithChildren = ReviewTokenRoute._addFileChildren(
+  ReviewTokenRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ReviewTokenRoute: ReviewTokenRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
