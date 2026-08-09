@@ -310,4 +310,33 @@ export const demoServices: AdminServices = {
       };
     },
   },
+  commercial: {
+    async listLeads() {
+      return [];
+    },
+    async saveLead() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async addNote() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async listCampaigns() {
+      return [];
+    },
+    async saveCampaign() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async metrics() {
+      return {
+        totalLeads: 0,
+        registered: 0,
+        trials: 0,
+        paid: 0,
+        notConverted: 0,
+        conversionRate: 0,
+        topSource: "",
+        topCampaign: "",
+      };
+    },
+  },
 };

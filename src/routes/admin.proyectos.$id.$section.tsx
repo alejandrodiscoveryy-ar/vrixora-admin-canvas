@@ -12,10 +12,12 @@ import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
+import ComercialSection from "@/features/admin/ComercialSection";
 import { Card, CardContent } from "@/components/ui/card";
 
 const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   clientes: "customers.view",
+  comercial: "commercial.view",
   licencias: "licenses.view",
   planes: "plans.view",
   pagos: "payments.view",
@@ -62,6 +64,8 @@ function SectionPage() {
   switch (section) {
     case "clientes":
       return <ClientesSection projectId={id} />;
+    case "comercial":
+      return <ComercialSection projectId={id} />;
     case "licencias":
       return <LicenciasSection projectId={id} />;
     case "pagos":

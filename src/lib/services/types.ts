@@ -21,6 +21,8 @@ export type ProjectPermission =
   | "settings.view"
   | "settings.manage"
   | "whatsapp_settings.manage"
+  | "commercial.view"
+  | "commercial.manage"
   | "audit.view";
 
 export interface ProjectSettings {
@@ -430,6 +432,88 @@ export interface UsageAnalyticsService {
   ): Promise<RetentionMetrics>;
 }
 
+export type CommercialLeadStatus =
+  "new" | "contacted" | "interested" | "trial" | "ready_to_charge" | "customer" | "not_interested";
+export type CommercialSource =
+  "whatsapp" | "facebook" | "instagram" | "sms" | "referral" | "direct" | "other";
+
+export interface CommercialLead {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  source: CommercialSource;
+  medium: string | null;
+  campaign: string | null;
+  referralCode: string | null;
+  referredByUserId: string | null;
+  referredByName: string | null;
+  status: CommercialLeadStatus;
+  notes: string | null;
+  responsibleId: string | null;
+  responsibleName: string | null;
+  userId: string | null;
+  createdAt: string;
+  lastInteractionAt: string | null;
+  nextActionAt: string | null;
+  registered: boolean;
+  trialStarted: boolean;
+  paid: boolean;
+  renewalCount: number;
+  revenue: Record<string, number>;
+}
+
+export interface CommercialCampaign {
+  id: string;
+  name: string;
+  source: CommercialSource;
+  medium: string | null;
+  status: "draft" | "active" | "paused" | "closed";
+  startsAt: string | null;
+  endsAt: string | null;
+}
+
+export interface CommercialMetrics {
+  totalLeads: number;
+  registered: number;
+  trials: number;
+  paid: number;
+  notConverted: number;
+  conversionRate: number;
+  topSource: string;
+  topCampaign: string;
+}
+
+export interface CommercialLeadInput {
+  id?: string;
+  name: string;
+  phone: string;
+  email?: string;
+  source: CommercialSource;
+  medium?: string;
+  campaignId?: string;
+  campaign?: string;
+  referralCode?: string;
+  referredByUserId?: string;
+  status: CommercialLeadStatus;
+  notes?: string;
+  responsibleId?: string;
+  nextActionAt?: string;
+  userId?: string;
+}
+
+export interface CommercialService {
+  listLeads(projectId: string): Promise<CommercialLead[]>;
+  saveLead(projectId: string, input: CommercialLeadInput): Promise<string>;
+  addNote(projectId: string, leadId: string, note: string): Promise<void>;
+  listCampaigns(projectId: string): Promise<CommercialCampaign[]>;
+  saveCampaign(
+    projectId: string,
+    campaign: Omit<CommercialCampaign, "id"> & { id?: string },
+  ): Promise<string>;
+  metrics(projectId: string): Promise<CommercialMetrics>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -439,4 +523,5 @@ export interface AdminServices {
   licenseAuditLog: LicenseAuditLogService;
   audit: AuditService;
   usageAnalytics: UsageAnalyticsService;
+  commercial: CommercialService;
 }
