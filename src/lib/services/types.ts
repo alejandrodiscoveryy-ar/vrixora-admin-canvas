@@ -260,6 +260,8 @@ export interface ChargePlanInput {
   notes?: string;
   applicationRule: "apply_now" | "after_expiry";
   idempotencyKey: string;
+  clientWhatsapp?: string;
+  confirmClientWhatsappChange?: boolean;
 }
 
 export interface LicenseBillingInput {
