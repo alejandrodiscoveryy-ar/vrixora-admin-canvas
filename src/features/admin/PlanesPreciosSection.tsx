@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, CreditCard, Pencil, Plus, Star } from "lucide-react";
+import { BadgeCheck, CreditCard, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
@@ -10,6 +10,16 @@ import {
   type ServicePayment,
 } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -53,6 +63,7 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
   const isMobile = useIsMobile();
   const client = useQueryClient();
   const [editing, setEditing] = useState<LicensePlan | null>(null);
+  const [deleting, setDeleting] = useState<LicensePlan | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [mobileVisible, setMobileVisible] = useState(10);
   const { data: permissions = [] } = useProjectPermissions(projectId);
@@ -68,6 +79,22 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
     queryFn: () => supabaseServices.licenses.listTypes(),
   });
   const refresh = () => client.invalidateQueries({ queryKey: ["admin-license-plans", projectId] });
+  const deletePlan = useMutation({
+    mutationFn: (plan: LicensePlan) =>
+      supabaseServices.licenses.deleteInactivePlan(projectId, plan.code),
+    onSuccess: ({ reassignedLicenses }) => {
+      toast.success(
+        reassignedLicenses > 0
+          ? `Plan eliminado. ${reassignedLicenses} licencia(s) trial reasignada(s).`
+          : "Plan eliminado.",
+      );
+      setDeleting(null);
+      refresh();
+      client.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
+      client.invalidateQueries({ queryKey: ["admin-clients", projectId] });
+    },
+    onError: (error) => toast.error(planDeleteError(error)),
+  });
   const visiblePlans = (plans.data ?? []).slice(0, mobileVisible);
 
   return (
@@ -134,10 +161,22 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
                   ))}
               </div>
               {canManagePlans && (
-                <Button className="w-full" variant="outline" onClick={() => setEditing(plan)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1" variant="outline" onClick={() => setEditing(plan)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                  {!plan.isActive && (
+                    <Button
+                      variant="destructive"
+                      aria-label={`Eliminar plan ${plan.name}`}
+                      onClick={() => setDeleting(plan)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar plan
+                    </Button>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -171,8 +210,48 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
           client.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
         }}
       />
+      <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar plan definitivamente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará el plan inactivo “{deleting?.name}”. Las licencias trial sin pagos se
+              reasignarán al plan trial predeterminado. Los pagos, recibos y licencias pagadas nunca
+              serán eliminados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePlan.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletePlan.isPending || !deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                if (deleting) deletePlan.mutate(deleting);
+              }}
+            >
+              {deletePlan.isPending ? "Eliminando…" : "Eliminar plan"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
+}
+
+function planDeleteError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("PLAN_HAS_FINANCIAL_DEPENDENCIES")) {
+    return "Este plan no puede eliminarse porque tiene pagos, recibos o licencias pagadas asociadas.";
+  }
+  if (message.includes("PLAN_MUST_BE_INACTIVE")) return "Primero debes desactivar el plan.";
+  if (message.includes("DEFAULT_TRIAL_PLAN_REQUIRED")) {
+    return "Configura otro plan trial activo como predeterminado antes de eliminar este plan.";
+  }
+  if (message.includes("PLAN_HAS_NON_TRIAL_LICENSES")) {
+    return "Este plan tiene licencias que no son de prueba y no puede eliminarse.";
+  }
+  return message;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

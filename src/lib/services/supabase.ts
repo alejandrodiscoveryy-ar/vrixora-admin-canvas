@@ -646,6 +646,15 @@ export const supabaseServices: AdminServices = {
         isFeatured: data.is_featured,
       };
     },
+    async deleteInactivePlan(projectId, planCode) {
+      await requireOnline("Eliminar un plan inactivo");
+      const { data, error } = await getSupabaseClient().rpc("admin_delete_inactive_license_plan", {
+        target_project_id: projectId,
+        target_plan_code: planCode,
+      });
+      throwIfError(error);
+      return { reassignedLicenses: Number(data?.reassigned_licenses ?? 0) };
+    },
     async assignWithPayment(input: LicenseBillingInput) {
       await requireOnline("Asignar una licencia con pago");
       const { data, error } = await getSupabaseClient().rpc("admin_assign_license_with_payment", {
