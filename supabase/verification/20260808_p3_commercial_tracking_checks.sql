@@ -74,7 +74,7 @@ begin
   perform set_config('request.jwt.claim.sub',':marketing_user_id',true);
   select count(*) into history_count
   from public.admin_list_commercial_lead_history(':project_id'::uuid,lead_id)
-  where id is not null;
+  where id is not null and event_type='created';
   if history_count < 1 then raise exception 'TEST_FAILED: commercial lead history was not returned'; end if;
 end; $$;
 rollback;

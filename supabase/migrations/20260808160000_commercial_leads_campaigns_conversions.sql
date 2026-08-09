@@ -188,7 +188,10 @@ returns table(id bigint,event_type text,previous_value text,new_value text,note 
 language plpgsql security definer set search_path='' as $$
 begin
   perform app_private.require_project_permission(target_project_id,'commercial.view');
-  if not exists(select 1 from public.commercial_leads where id=target_lead_id and project_id=target_project_id and archived_at is null)
+  if not exists(
+    select 1 from public.commercial_leads lead
+    where lead.id=target_lead_id and lead.project_id=target_project_id and lead.archived_at is null
+  )
     then raise exception 'LEAD_NOT_FOUND' using errcode='P0002';
   end if;
   return query
