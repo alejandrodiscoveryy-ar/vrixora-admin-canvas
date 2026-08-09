@@ -43,9 +43,7 @@ import {
 } from "@/components/admin/MobileAdminSystem";
 
 const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: string }> = [
-  { value: "admin", label: "Administrador" },
-  { value: "support", label: "Soporte" },
-  { value: "accounting", label: "Contabilidad" },
+  { value: "accounting", label: "Cobros / Accounting" },
   { value: "marketing", label: "Marketing" },
 ];
 
@@ -57,7 +55,7 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
   const canManage = permissions.includes("members.manage");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Exclude<ProjectRole, "owner">>("support");
+  const [role, setRole] = useState<Exclude<ProjectRole, "owner">>("accounting");
   const [mobileVisible, setMobileVisible] = useState(10);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
@@ -76,6 +74,15 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
     onSuccess: async () => {
       await refresh();
       toast.success("Empleado retirado");
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
+  const changeRole = useMutation({
+    mutationFn: ({ email, role }: { email: string; role: Exclude<ProjectRole, "owner"> }) =>
+      supabaseServices.projectMembers.add(projectId, email, role),
+    onSuccess: async () => {
+      await refresh();
+      toast.success("Rol actualizado");
     },
     onError: (mutationError: Error) => toast.error(mutationError.message),
   });
@@ -207,6 +214,29 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                           {employee.role}
                         </Badge>
                       </div>
+                      {canManage && employee.role !== "owner" && (
+                        <Select
+                          value={employee.role}
+                          disabled={changeRole.isPending}
+                          onValueChange={(value) =>
+                            changeRole.mutate({
+                              email: employee.email,
+                              role: value as Exclude<ProjectRole, "owner">,
+                            })
+                          }
+                        >
+                          <SelectTrigger aria-label={`Rol de ${employee.email}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ASSIGNABLE_ROLES.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <div className="flex justify-end">
                         <MobileActionsMenu
                           items={[
@@ -266,9 +296,31 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                           {employee.email}
                         </TableCell>
                         <TableCell data-label="Rol">
-                          <Badge variant={employee.role === "owner" ? "default" : "secondary"}>
-                            {employee.role}
-                          </Badge>
+                          {canManage && employee.role !== "owner" ? (
+                            <Select
+                              value={employee.role}
+                              disabled={changeRole.isPending}
+                              onValueChange={(value) =>
+                                changeRole.mutate({
+                                  email: employee.email,
+                                  role: value as Exclude<ProjectRole, "owner">,
+                                })
+                              }
+                            >
+                              <SelectTrigger aria-label={`Rol de ${employee.email}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ASSIGNABLE_ROLES.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="default">Owner</Badge>
+                          )}
                         </TableCell>
                         <TableCell data-label="Acciones" className="text-right">
                           {canManage && employee.role !== "owner" && (
