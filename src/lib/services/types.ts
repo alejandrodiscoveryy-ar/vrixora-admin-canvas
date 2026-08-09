@@ -331,6 +331,7 @@ export interface LicenseService {
   resetDevices(licenseId: string, reason: string): Promise<number>;
   listAdminPlans(projectId: string): Promise<LicensePlan[]>;
   savePlan(projectId: string, plan: LicensePlan): Promise<LicensePlan>;
+  deleteInactivePlan(projectId: string, planCode: string): Promise<{ reassignedLicenses: number }>;
   assignWithPayment(input: LicenseBillingInput): Promise<ServiceLicense>;
   renewWithPayment(input: LicenseBillingInput): Promise<ServiceLicense>;
 }

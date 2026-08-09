@@ -220,6 +220,9 @@ export const demoServices: AdminServices = {
     async savePlan(_projectId, plan) {
       return plan;
     },
+    async deleteInactivePlan() {
+      throw new Error("Esta operación requiere Supabase");
+    },
     async assignWithPayment() {
       throw new Error("Esta operación requiere Supabase");
     },
