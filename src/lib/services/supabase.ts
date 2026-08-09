@@ -1067,7 +1067,7 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
       return ((data ?? []) as Array<Record<string, unknown>>).map(
         (row): CommercialLeadHistoryEntry => ({
-          id: String(row.id),
+          id: row.id as string | number,
           eventType: String(row.event_type),
           previousValue: row.previous_value as string | null,
           newValue: row.new_value as string | null,

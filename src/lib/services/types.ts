@@ -474,7 +474,7 @@ export interface CommercialCampaign {
 }
 
 export interface CommercialLeadHistoryEntry {
-  id: string;
+  id: string | number;
   eventType: string;
   previousValue: string | null;
   newValue: string | null;

@@ -184,7 +184,7 @@ begin
 end; $$;
 
 create or replace function public.admin_list_commercial_lead_history(target_project_id uuid,target_lead_id uuid)
-returns table(id uuid,event_type text,previous_value text,new_value text,note text,actor_id uuid,actor_name text,actor_email text,created_at timestamptz)
+returns table(id bigint,event_type text,previous_value text,new_value text,note text,actor_id uuid,actor_name text,actor_email text,created_at timestamptz)
 language plpgsql security definer set search_path='' as $$
 begin
   perform app_private.require_project_permission(target_project_id,'commercial.view');

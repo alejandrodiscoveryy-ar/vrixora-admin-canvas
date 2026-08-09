@@ -67,12 +67,15 @@ end; $$;
 -- Marketing can read history through commercial.view.
 begin;
 do $$
-declare lead_id uuid;
+declare lead_id uuid; history_count bigint;
 begin
   perform set_config('request.jwt.claim.sub',':owner_user_id',true);
   lead_id:=public.admin_save_commercial_lead(':project_id'::uuid,null,'History lead','+5351234574',null,'direct',null,null,null,null,null,'new','Created note',':owner_user_id'::uuid,null,null);
   perform set_config('request.jwt.claim.sub',':marketing_user_id',true);
-  perform public.admin_list_commercial_lead_history(':project_id'::uuid,lead_id);
+  select count(*) into history_count
+  from public.admin_list_commercial_lead_history(':project_id'::uuid,lead_id)
+  where id is not null;
+  if history_count < 1 then raise exception 'TEST_FAILED: commercial lead history was not returned'; end if;
 end; $$;
 rollback;
 do $$
