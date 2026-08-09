@@ -22,6 +22,7 @@ import type {
   WhatsAppSettings,
   CommercialLead,
   CommercialCampaign,
+  CommercialLeadHistoryEntry,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
@@ -1057,6 +1058,26 @@ export const supabaseServices: AdminServices = {
         target_note: note,
       });
       throwIfError(error);
+    },
+    async listLeadHistory(projectId, leadId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_commercial_lead_history", {
+        target_project_id: projectId,
+        target_lead_id: leadId,
+      });
+      throwIfError(error);
+      return ((data ?? []) as Array<Record<string, unknown>>).map(
+        (row): CommercialLeadHistoryEntry => ({
+          id: String(row.id),
+          eventType: String(row.event_type),
+          previousValue: row.previous_value as string | null,
+          newValue: row.new_value as string | null,
+          note: row.note as string | null,
+          actorId: String(row.actor_id),
+          actorName: row.actor_name as string | null,
+          actorEmail: row.actor_email as string | null,
+          createdAt: String(row.created_at),
+        }),
+      );
     },
     async listCampaigns(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_commercial_campaigns", {

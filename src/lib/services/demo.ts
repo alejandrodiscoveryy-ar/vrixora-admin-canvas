@@ -320,6 +320,9 @@ export const demoServices: AdminServices = {
     async addNote() {
       throw new Error("Esta operación requiere Supabase");
     },
+    async listLeadHistory() {
+      return [];
+    },
     async listCampaigns() {
       return [];
     },

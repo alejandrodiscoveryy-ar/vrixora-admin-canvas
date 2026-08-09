@@ -473,6 +473,18 @@ export interface CommercialCampaign {
   endsAt: string | null;
 }
 
+export interface CommercialLeadHistoryEntry {
+  id: string;
+  eventType: string;
+  previousValue: string | null;
+  newValue: string | null;
+  note: string | null;
+  actorId: string;
+  actorName: string | null;
+  actorEmail: string | null;
+  createdAt: string;
+}
+
 export interface CommercialMetrics {
   totalLeads: number;
   registered: number;
@@ -506,6 +518,7 @@ export interface CommercialService {
   listLeads(projectId: string): Promise<CommercialLead[]>;
   saveLead(projectId: string, input: CommercialLeadInput): Promise<string>;
   addNote(projectId: string, leadId: string, note: string): Promise<void>;
+  listLeadHistory(projectId: string, leadId: string): Promise<CommercialLeadHistoryEntry[]>;
   listCampaigns(projectId: string): Promise<CommercialCampaign[]>;
   saveCampaign(
     projectId: string,

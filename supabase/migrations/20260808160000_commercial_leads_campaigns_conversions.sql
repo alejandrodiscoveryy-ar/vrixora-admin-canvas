@@ -104,6 +104,11 @@ begin
   end if;
   if linked_user is not null and not exists (select 1 from public.profiles where id=linked_user) then raise exception 'PROFILE_NOT_FOUND' using errcode='P0002'; end if;
   if target_campaign_id is not null and not exists (select 1 from public.commercial_campaigns where id=target_campaign_id and project_id=target_project_id and archived_at is null) then raise exception 'CAMPAIGN_NOT_FOUND' using errcode='P0002'; end if;
+  if target_responsible_id is not null and not exists (
+    select 1 from public.project_members member
+    where member.project_id=target_project_id and member.user_id=target_responsible_id
+      and member.role in ('owner','marketing')
+  ) then raise exception 'INVALID_COMMERCIAL_RESPONSIBLE' using errcode='22023'; end if;
 
   if target_lead_id is not null then
     select * into current_lead from public.commercial_leads where id=target_lead_id and project_id=target_project_id for update;
@@ -142,10 +147,21 @@ declare actor uuid; result_id uuid;
 begin
   actor:=app_private.require_project_permission(target_project_id,'commercial.manage');
   if target_source not in ('whatsapp','facebook','instagram','sms','referral','direct','other') then raise exception 'INVALID_CAMPAIGN_SOURCE' using errcode='22023'; end if;
-  insert into public.commercial_campaigns(id,project_id,name,source,medium,status,starts_at,ends_at,created_by)
-  values(coalesce(target_campaign_id,gen_random_uuid()),target_project_id,btrim(target_name),target_source,nullif(btrim(target_medium),''),target_status,target_starts_at,target_ends_at,actor)
-  on conflict(id) do update set name=excluded.name,source=excluded.source,medium=excluded.medium,status=excluded.status,starts_at=excluded.starts_at,ends_at=excluded.ends_at,updated_at=now()
-  returning id into result_id; return result_id;
+  if target_campaign_id is not null then
+    select id into result_id from public.commercial_campaigns
+    where id=target_campaign_id and project_id=target_project_id and archived_at is null for update;
+    if not found then raise exception 'CAMPAIGN_NOT_FOUND' using errcode='P0002'; end if;
+    update public.commercial_campaigns
+    set name=btrim(target_name),source=target_source,medium=nullif(btrim(target_medium),''),status=target_status,
+        starts_at=target_starts_at,ends_at=target_ends_at,updated_at=now()
+    where id=target_campaign_id and project_id=target_project_id
+    returning id into result_id;
+  else
+    insert into public.commercial_campaigns(project_id,name,source,medium,status,starts_at,ends_at,created_by)
+    values(target_project_id,btrim(target_name),target_source,nullif(btrim(target_medium),''),target_status,target_starts_at,target_ends_at,actor)
+    returning id into result_id;
+  end if;
+  return result_id;
 end; $$;
 
 create or replace function public.admin_list_commercial_campaigns(target_project_id uuid)
@@ -167,6 +183,23 @@ begin
   where lead.project_id=target_project_id and lead.archived_at is null order by lead.updated_at desc;
 end; $$;
 
+create or replace function public.admin_list_commercial_lead_history(target_project_id uuid,target_lead_id uuid)
+returns table(id uuid,event_type text,previous_value text,new_value text,note text,actor_id uuid,actor_name text,actor_email text,created_at timestamptz)
+language plpgsql security definer set search_path='' as $$
+begin
+  perform app_private.require_project_permission(target_project_id,'commercial.view');
+  if not exists(select 1 from public.commercial_leads where id=target_lead_id and project_id=target_project_id and archived_at is null)
+    then raise exception 'LEAD_NOT_FOUND' using errcode='P0002';
+  end if;
+  return query
+  select history.id,history.event_type,history.previous_value,history.new_value,history.note,history.actor_id,
+         profile.display_name,profile.email,history.created_at
+  from public.commercial_lead_history history
+  left join public.profiles profile on profile.id=history.actor_id
+  where history.project_id=target_project_id and history.lead_id=target_lead_id
+  order by history.created_at desc;
+end; $$;
+
 create or replace function public.admin_get_commercial_metrics(target_project_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare result jsonb;
@@ -184,5 +217,5 @@ begin
   return result;
 end; $$;
 
-revoke all on function public.admin_save_commercial_lead(uuid,uuid,text,text,text,text,text,uuid,text,text,uuid,text,text,uuid,timestamptz,uuid), public.admin_add_commercial_lead_note(uuid,uuid,text), public.admin_save_commercial_campaign(uuid,uuid,text,text,text,text,date,date), public.admin_list_commercial_campaigns(uuid), public.admin_list_commercial_leads(uuid), public.admin_get_commercial_metrics(uuid) from public,anon;
-grant execute on function public.admin_save_commercial_lead(uuid,uuid,text,text,text,text,text,uuid,text,text,uuid,text,text,uuid,timestamptz,uuid), public.admin_add_commercial_lead_note(uuid,uuid,text), public.admin_save_commercial_campaign(uuid,uuid,text,text,text,text,date,date), public.admin_list_commercial_campaigns(uuid), public.admin_list_commercial_leads(uuid), public.admin_get_commercial_metrics(uuid) to authenticated;
+revoke all on function public.admin_save_commercial_lead(uuid,uuid,text,text,text,text,text,uuid,text,text,uuid,text,text,uuid,timestamptz,uuid), public.admin_add_commercial_lead_note(uuid,uuid,text), public.admin_save_commercial_campaign(uuid,uuid,text,text,text,text,date,date), public.admin_list_commercial_campaigns(uuid), public.admin_list_commercial_leads(uuid), public.admin_list_commercial_lead_history(uuid,uuid), public.admin_get_commercial_metrics(uuid) from public,anon;
+grant execute on function public.admin_save_commercial_lead(uuid,uuid,text,text,text,text,text,uuid,text,text,uuid,text,text,uuid,timestamptz,uuid), public.admin_add_commercial_lead_note(uuid,uuid,text), public.admin_save_commercial_campaign(uuid,uuid,text,text,text,text,date,date), public.admin_list_commercial_campaigns(uuid), public.admin_list_commercial_leads(uuid), public.admin_list_commercial_lead_history(uuid,uuid), public.admin_get_commercial_metrics(uuid) to authenticated;

@@ -42,6 +42,7 @@ export type {
   CommercialLeadStatus,
   CommercialSource,
   CommercialCampaign,
+  CommercialLeadHistoryEntry,
   CommercialMetrics,
   CommercialService,
 } from "./types";

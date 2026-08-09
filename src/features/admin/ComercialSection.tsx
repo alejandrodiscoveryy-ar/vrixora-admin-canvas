@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Megaphone, Pencil, Plus, StickyNote } from "lucide-react";
+import { History, Megaphone, Pencil, Plus, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
@@ -84,6 +84,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const [campaign, setCampaign] = useState("all");
   const [responsible, setResponsible] = useState("all");
   const [editing, setEditing] = useState<CommercialLeadInput | null>(null);
+  const [historyLead, setHistoryLead] = useState<CommercialLead | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<CommercialCampaign | "new" | null>(null);
   const leads = useQuery({
     queryKey: ["commercial-leads", projectId],
@@ -267,6 +268,14 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                           </Button>
                         </div>
                       )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Ver historial"
+                        onClick={() => setHistoryLead(lead)}
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -314,6 +323,13 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           }}
         />
       )}
+      {historyLead && (
+        <LeadHistoryDialog
+          projectId={projectId}
+          lead={historyLead}
+          onClose={() => setHistoryLead(null)}
+        />
+      )}
       {editingCampaign && (
         <CampaignDialog
           projectId={projectId}
@@ -326,6 +342,63 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         />
       )}
     </div>
+  );
+}
+
+function LeadHistoryDialog({
+  projectId,
+  lead,
+  onClose,
+}: {
+  projectId: string;
+  lead: CommercialLead;
+  onClose: () => void;
+}) {
+  const history = useQuery({
+    queryKey: ["commercial-lead-history", projectId, lead.id],
+    queryFn: () => supabaseServices.commercial.listLeadHistory(projectId, lead.id),
+  });
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Historial de {lead.name}</DialogTitle>
+          <DialogDescription>
+            Estados, responsables y notas anteriores en orden reciente.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          {history.data?.map((entry) => (
+            <div key={entry.id} className="rounded-md border p-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <Badge variant="outline">{entry.eventType}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(entry.createdAt).toLocaleString()}
+                </span>
+              </div>
+              {entry.note && <p className="mt-2 whitespace-pre-wrap">{entry.note}</p>}
+              {(entry.previousValue || entry.newValue) && (
+                <p className="mt-2 text-muted-foreground">
+                  {entry.previousValue || "—"} → {entry.newValue || "—"}
+                </p>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {entry.actorName || entry.actorEmail || entry.actorId}
+              </p>
+            </div>
+          ))}
+          {history.isLoading && (
+            <p className="text-sm text-muted-foreground">Cargando historial…</p>
+          )}
+          {history.isError && (
+            <p className="text-sm text-destructive">No fue posible cargar el historial.</p>
+          )}
+          {!history.isLoading && !history.data?.length && (
+            <p className="text-sm text-muted-foreground">Sin historial registrado.</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
