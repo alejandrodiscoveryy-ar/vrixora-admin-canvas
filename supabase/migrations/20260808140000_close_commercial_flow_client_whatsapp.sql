@@ -24,6 +24,7 @@ declare
   resolved_project_id uuid;
   resolved_user_id uuid;
   previous_phone text;
+  normalized_previous_phone text;
   normalized_phone text;
   phone_changed boolean;
   receipt_snapshot jsonb;
@@ -66,14 +67,15 @@ begin
   for update;
 
   normalized_phone := nullif(regexp_replace(coalesce(target_client_phone, ''), '[[:space:]()-]', '', 'g'), '');
+  normalized_previous_phone := nullif(regexp_replace(coalesce(previous_phone, ''), '[[:space:]()-]', '', 'g'), '');
 
   if normalized_phone is not null
-     and normalized_phone !~ '^\+[1-9][0-9]{7,14}$' then
+     and normalized_phone !~ '^[+][1-9][0-9]{7,14}$' then
     raise exception 'INVALID_CLIENT_WHATSAPP' using errcode = '22023';
   end if;
 
   phone_changed := normalized_phone is not null
-    and normalized_phone is distinct from previous_phone;
+    and normalized_phone is distinct from normalized_previous_phone;
 
   if phone_changed and not coalesce(target_confirm_phone_change, false) then
     raise exception 'CLIENT_WHATSAPP_CHANGE_CONFIRMATION_REQUIRED'

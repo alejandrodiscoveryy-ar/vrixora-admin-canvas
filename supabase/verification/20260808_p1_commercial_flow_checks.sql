@@ -34,8 +34,25 @@ select public.admin_charge_and_assign_plan_with_client_phone(
   ':license_id'::uuid, ':active_plan_code',
   (select price from public.license_plans where project_id = ':project_id'::uuid and code = ':active_plan_code'),
   'cash', 'TEST-P1-OWNER', now(), 'Owner P1', 'after_expiry', gen_random_uuid(),
-  '+5350000001', true
+  '+5351234567', true
 );
+rollback;
+
+-- Same E.164 number with spaces, parentheses and hyphens: expect
+-- client_whatsapp_updated=false and no WhatsApp audit entry.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+update public.profiles
+set phone = '+53 (512) 345-67'
+where id = (select user_id from public.licenses where id = ':license_id'::uuid);
+select (
+  public.admin_charge_and_assign_plan_with_client_phone(
+    ':license_id'::uuid, ':active_plan_code',
+    (select price from public.license_plans where project_id = ':project_id'::uuid and code = ':active_plan_code'),
+    'cash', 'TEST-P1-SAME-PHONE', now(), 'Mismo número normalizado',
+    'after_expiry', gen_random_uuid(), '+5351234567', false
+  ) ->> 'client_whatsapp_updated'
+)::boolean = false as same_formatted_phone_is_not_changed;
 rollback;
 
 -- COBROS: expect receipt and client_whatsapp_updated=true.
@@ -83,6 +100,15 @@ select set_config('request.jwt.claim.sub', ':accounting_user_id', true);
 select public.admin_charge_and_assign_plan_with_client_phone(
   ':license_id'::uuid, ':active_plan_code', 0, 'cash', null, now(),
   'Debe ser rechazado', 'after_expiry', gen_random_uuid(), '+5350000003', false
+);
+rollback;
+
+-- Number without leading +: expect INVALID_CLIENT_WHATSAPP and no writes.
+begin;
+select set_config('request.jwt.claim.sub', ':accounting_user_id', true);
+select public.admin_charge_and_assign_plan_with_client_phone(
+  ':license_id'::uuid, ':active_plan_code', 0, 'cash', null, now(),
+  'Debe ser rechazado', 'after_expiry', gen_random_uuid(), '5351234567', true
 );
 rollback;
 
