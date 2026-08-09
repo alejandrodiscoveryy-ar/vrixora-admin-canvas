@@ -858,17 +858,22 @@ export const supabaseServices: AdminServices = {
     },
     async chargeAndAssign(input) {
       await requireOnline("Cobrar y asignar una licencia");
-      const { data, error } = await getSupabaseClient().rpc("admin_charge_and_assign_plan", {
-        target_license_id: input.licenseId,
-        target_plan: input.plan,
-        target_amount: input.amount,
-        target_method: input.method,
-        target_reference: input.reference ?? null,
-        target_charged_at: input.chargedAt,
-        target_notes: input.notes ?? null,
-        target_application_rule: input.applicationRule,
-        target_idempotency_key: input.idempotencyKey,
-      });
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_charge_and_assign_plan_with_client_phone",
+        {
+          target_license_id: input.licenseId,
+          target_plan: input.plan,
+          target_amount: input.amount,
+          target_method: input.method,
+          target_reference: input.reference ?? null,
+          target_charged_at: input.chargedAt,
+          target_notes: input.notes ?? null,
+          target_application_rule: input.applicationRule,
+          target_idempotency_key: input.idempotencyKey,
+          target_client_phone: input.clientWhatsapp ?? null,
+          target_confirm_phone_change: input.confirmClientWhatsappChange ?? false,
+        },
+      );
       throwIfError(error);
       return mapBillingReceipt(data as Record<string, unknown>);
     },
