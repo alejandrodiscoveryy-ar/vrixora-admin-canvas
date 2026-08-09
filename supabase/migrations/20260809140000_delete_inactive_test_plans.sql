@@ -97,11 +97,25 @@ begin
       raise exception 'DEFAULT_TRIAL_PLAN_REQUIRED' using errcode = '23503';
     end if;
 
+    -- The existing configuration trigger recalculates expires_at when plan
+    -- changes. This rare maintenance operation already validated every target
+    -- row as an unpaid trial, so take an exclusive lock and suspend only that
+    -- trigger for the exact reassignment statement. The audit trigger remains
+    -- active. PostgreSQL rolls this DDL back automatically if the transaction
+    -- fails before the trigger is re-enabled.
+    lock table public.licenses in access exclusive mode;
+    alter table public.licenses disable trigger licenses_apply_configuration;
+
     update public.licenses
     set plan = fallback_plan.code,
-        license_type = fallback_plan.license_type
+        license_type = fallback_plan.license_type,
+        duration_days = fallback_plan.duration_days,
+        max_devices = fallback_plan.max_devices,
+        features = fallback_plan.features
     where project_id = target_project_id and plan = target_plan.code;
     get diagnostics reassigned_count = row_count;
+
+    alter table public.licenses enable trigger licenses_apply_configuration;
   elsif exists (
     select 1 from public.projects project
     where project.id = target_project_id and project.default_trial_plan = target_plan.code
