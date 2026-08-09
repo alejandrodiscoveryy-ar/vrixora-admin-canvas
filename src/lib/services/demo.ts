@@ -43,6 +43,12 @@ export const demoServices: AdminServices = {
     async update() {
       throw new Error("Esta operación requiere Supabase");
     },
+    async whatsappSettings() {
+      throw new Error("Esta configuración requiere Supabase");
+    },
+    async updateWhatsAppSettings() {
+      throw new Error("Esta configuración requiere Supabase");
+    },
   },
   projectMembers: {
     async list(projectId) {
@@ -253,10 +259,18 @@ export const demoServices: AdminServices = {
     async remove() {
       throw new Error("Esta operación requiere Supabase");
     },
-    async previewCharge() { throw new Error("Esta operación requiere Supabase"); },
-    async chargeAndAssign() { throw new Error("Esta operación requiere Supabase"); },
-    async receipt() { throw new Error("Esta operación requiere Supabase"); },
-    async repairReceipt() { throw new Error("Esta operación requiere Supabase"); },
+    async previewCharge() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async chargeAndAssign() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async receipt() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async repairReceipt() {
+      throw new Error("Esta operación requiere Supabase");
+    },
     async updateStatus() {
       throw new Error("Esta operación requiere Supabase");
     },
@@ -272,11 +286,25 @@ export const demoServices: AdminServices = {
     },
   },
   usageAnalytics: {
-    async series() { return []; },
-    async dimensions() { return { sources: [], campaigns: [], versions: [] }; },
+    async series() {
+      return [];
+    },
+    async dimensions() {
+      return { sources: [], campaigns: [], versions: [] };
+    },
     async retention() {
-      return { cohortCount: 0, eligible7: 0, eligible30: 0, retained7: 0, retained30: 0,
-        retention7Rate: 0, retention30Rate: 0, trialUsers: 0, paidUsers: 0, trialToPaidRate: 0 };
+      return {
+        cohortCount: 0,
+        eligible7: 0,
+        eligible30: 0,
+        retained7: 0,
+        retained30: 0,
+        retention7Rate: 0,
+        retention30Rate: 0,
+        trialUsers: 0,
+        paidUsers: 0,
+        trialToPaidRate: 0,
+      };
     },
   },
 };

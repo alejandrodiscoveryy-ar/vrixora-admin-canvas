@@ -18,10 +18,12 @@ import {
   type ServiceLicense,
   type ServicePayment,
   type BillingReceipt,
+  type ServiceClient,
 } from "@/lib/services";
 import { ReceiptDialog } from "@/features/admin/ChargePlanDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
@@ -94,6 +96,10 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const licenses = useQuery({
     queryKey: ["admin-licenses", projectId],
     queryFn: () => supabaseServices.licenses.list(projectId),
+  });
+  const clients = useQuery({
+    queryKey: ["admin-clients", projectId],
+    queryFn: () => supabaseServices.licenses.listClients(projectId),
   });
   const availablePlans = useQuery({
     queryKey: ["admin-license-plans", projectId],
@@ -593,6 +599,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         open={registerOpen}
         onClose={() => setRegisterOpen(false)}
         licenses={licenses.data ?? []}
+        clients={clients.data ?? []}
         plans={availablePlans.data ?? []}
         onDone={refresh}
       />
@@ -617,12 +624,14 @@ function RegisterPaymentDialog({
   open,
   onClose,
   licenses,
+  clients,
   plans,
   onDone,
 }: {
   open: boolean;
   onClose: () => void;
   licenses: ServiceLicense[];
+  clients: ServiceClient[];
   plans: LicensePlan[];
   onDone: () => void;
 }) {
@@ -636,13 +645,21 @@ function RegisterPaymentDialog({
   const [notes, setNotes] = useState("");
   const [receipt, setReceipt] = useState<BillingReceipt | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [clientWhatsapp, setClientWhatsapp] = useState("");
+  const [confirmWhatsappChange, setConfirmWhatsappChange] = useState(false);
   const selectedPlan = plans.find((item) => item.code === planCode);
+  const selectedLicense = licenses.find((item) => item.id === licenseId);
+  const selectedClient = clients.find((item) => item.userId === selectedLicense?.userId);
+  const whatsappChanged =
+    !!clientWhatsapp.trim() && clientWhatsapp.trim() !== (selectedClient?.phone ?? "");
   const effectiveAmount = status === "complimentary" ? 0 : Number(amount || selectedPlan?.price);
   const adjusted = selectedPlan ? effectiveAmount !== selectedPlan.price : false;
   useEffect(() => {
     if (!open) return;
     setReceipt(null);
     setIdempotencyKey(crypto.randomUUID());
+    setClientWhatsapp("");
+    setConfirmWhatsappChange(false);
   }, [open]);
   const mutation = useMutation({
     mutationFn: async () => {
@@ -657,6 +674,8 @@ function RegisterPaymentDialog({
           notes: [notes, adjusted ? reason : ""].filter(Boolean).join(" · "),
           applicationRule: "after_expiry",
           idempotencyKey,
+          clientWhatsapp,
+          confirmClientWhatsappChange: confirmWhatsappChange,
         });
       }
       const payment = await supabaseServices.payments.record({
@@ -712,6 +731,9 @@ function RegisterPaymentDialog({
                 setLicenseId(value);
                 const selected = licenses.find((item) => item.id === value);
                 if (selected) setPlanCode(selected.plan);
+                const client = clients.find((item) => item.userId === selected?.userId);
+                setClientWhatsapp(client?.phone ?? "");
+                setConfirmWhatsappChange(false);
               }}
             >
               <SelectTrigger>
@@ -726,6 +748,39 @@ function RegisterPaymentDialog({
               </SelectContent>
             </Select>
           </Field>
+          {status === "paid" && licenseId && (
+            <Field label="WhatsApp del cliente">
+              <Input
+                value={clientWhatsapp}
+                onChange={(event) => {
+                  setClientWhatsapp(event.target.value);
+                  setConfirmWhatsappChange(false);
+                }}
+                placeholder="+5350000000"
+              />
+            </Field>
+          )}
+          {status === "paid" && whatsappChanged && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 sm:col-span-2">
+              <div className="grid gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <div className="text-xs text-muted-foreground">Número anterior</div>
+                  <div className="font-medium">{selectedClient?.phone ?? "Sin número"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Número nuevo</div>
+                  <div className="font-medium">{clientWhatsapp.trim()}</div>
+                </div>
+              </div>
+              <label className="mt-3 flex items-center gap-2 text-sm font-medium">
+                <Checkbox
+                  checked={confirmWhatsappChange}
+                  onCheckedChange={(checked) => setConfirmWhatsappChange(checked === true)}
+                />
+                Confirmo manualmente que el operador verificó este cambio
+              </label>
+            </div>
+          )}
           <Field label="Plan cobrado">
             <Select value={planCode} onValueChange={setPlanCode}>
               <SelectTrigger>
@@ -810,7 +865,13 @@ function RegisterPaymentDialog({
             Cancelar
           </Button>
           <Button
-            disabled={mutation.isPending || !licenseId || !planCode || (adjusted && !reason.trim())}
+            disabled={
+              mutation.isPending ||
+              !licenseId ||
+              !planCode ||
+              (adjusted && !reason.trim()) ||
+              (status === "paid" && whatsappChanged && !confirmWhatsappChange)
+            }
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? "Registrando…" : "Registrar pago y generar recibo"}

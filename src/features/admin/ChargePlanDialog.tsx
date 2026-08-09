@@ -5,6 +5,7 @@ import { supabaseServices, type BillingPreview, type BillingReceipt, type Licens
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,13 +26,18 @@ export function ChargePlanDialog({ client, license, plans, onClose, onDone }: { 
   const [receipt, setReceipt] = useState<BillingReceipt | null>(null);
   const [busy, setBusy] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState("");
+  const [clientWhatsapp, setClientWhatsapp] = useState("");
+  const [confirmWhatsappChange, setConfirmWhatsappChange] = useState(false);
   const selectedPlan = activePlans.find((item) => item.code === plan);
+  const whatsappChanged = !!clientWhatsapp.trim() && clientWhatsapp.trim() !== (client?.phone ?? "");
 
   useEffect(() => {
     if (!client) return;
     setPlan(""); setAmount(""); setMethod("cash"); setReference(""); setNotes(""); setRule("after_expiry"); setPreview(null); setReceipt(null);
     setChargedAt(localDateTime(new Date()));
     setIdempotencyKey(crypto.randomUUID());
+    setClientWhatsapp(client.phone ?? "");
+    setConfirmWhatsappChange(false);
   }, [client]);
   useEffect(() => { if (selectedPlan) setAmount(String(selectedPlan.price)); setPreview(null); }, [selectedPlan]);
   useEffect(() => setPreview(null), [rule]);
@@ -47,7 +53,7 @@ export function ChargePlanDialog({ client, license, plans, onClose, onDone }: { 
     if (!license || !selectedPlan || !preview) return;
     setBusy(true);
     try {
-      const result = await supabaseServices.payments.chargeAndAssign({ licenseId: license.id, plan, amount: Number(amount), method, reference, chargedAt: new Date(chargedAt).toISOString(), notes, applicationRule: rule, idempotencyKey });
+      const result = await supabaseServices.payments.chargeAndAssign({ licenseId: license.id, plan, amount: Number(amount), method, reference, chargedAt: new Date(chargedAt).toISOString(), notes, applicationRule: rule, idempotencyKey, clientWhatsapp, confirmClientWhatsappChange: confirmWhatsappChange });
       setReceipt(result); onDone(); toast.success("Pago registrado, plan aplicado y recibo generado.");
     } catch (error) { toast.error(message(error)); }
     finally { setBusy(false); }
@@ -64,6 +70,8 @@ export function ChargePlanDialog({ client, license, plans, onClose, onDone }: { 
       <Info label="Último pago" value={client?.lastPaymentAt ? `${formatDate(client.lastPaymentAt)} · ${client.lastPaymentAmount} ${client.lastPaymentCurrency}` : "Sin pagos registrados"} />
       <Info label="Última renovación" value={client?.lastRenewedAt ? formatDate(client.lastRenewedAt) : "Sin renovaciones"} />
       <Info label="Operador" value={user?.email ?? "—"} />
+      <Field label="WhatsApp del cliente"><Input value={clientWhatsapp} onChange={(event) => { setClientWhatsapp(event.target.value); setConfirmWhatsappChange(false); }} placeholder="+5350000000" /></Field>
+      {whatsappChanged && <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 md:col-span-2"><div className="grid gap-2 text-sm sm:grid-cols-2"><Info label="Número anterior" value={client?.phone ?? "Sin número"} /><Info label="Número nuevo" value={clientWhatsapp.trim()} /></div><label className="mt-3 flex items-center gap-2 text-sm font-medium"><Checkbox checked={confirmWhatsappChange} onCheckedChange={(checked) => setConfirmWhatsappChange(checked === true)} />Confirmo manualmente que el operador verificó este cambio</label></div>}
       <Field label="Plan comprado"><Select value={plan} onValueChange={setPlan}><SelectTrigger><SelectValue placeholder="Seleccionar plan activo" /></SelectTrigger><SelectContent>{activePlans.map((item) => <SelectItem key={item.code} value={item.code}>{item.name} · {item.price} {item.currency}</SelectItem>)}</SelectContent></Select></Field>
       <Info label="Precio establecido" value={selectedPlan ? `${selectedPlan.price} ${selectedPlan.currency}` : "—"} />
       <Info label="Moneda" value={selectedPlan?.currency ?? "—"} />
@@ -75,7 +83,7 @@ export function ChargePlanDialog({ client, license, plans, onClose, onDone }: { 
       <div className="md:col-span-2"><Field label="Observaciones"><Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={selectedPlan && Number(amount) !== selectedPlan.price ? "Obligatorio si el importe difiere del precio" : "Opcional"} /></Field></div>
     </div>
     {preview && <Preview preview={preview} amount={Number(amount)} />}
-    <DialogFooter><Button variant="ghost" onClick={onClose}>Cancelar</Button>{!preview ? <Button disabled={busy || !license || !plan || !chargedAt || Number(amount) < 0 || Number(amount) > (selectedPlan?.price ?? 0) || (!!selectedPlan && Number(amount) !== selectedPlan.price && !notes.trim())} onClick={loadPreview}><Eye className="mr-2 h-4 w-4" />Revisar operación</Button> : <Button disabled={busy} onClick={confirm}><ReceiptText className="mr-2 h-4 w-4" />{busy ? "Confirmando…" : "Confirmar y generar recibo"}</Button>}</DialogFooter>
+    <DialogFooter><Button variant="ghost" onClick={onClose}>Cancelar</Button>{!preview ? <Button disabled={busy || !license || !plan || !chargedAt || Number(amount) < 0 || Number(amount) > (selectedPlan?.price ?? 0) || (!!selectedPlan && Number(amount) !== selectedPlan.price && !notes.trim()) || (whatsappChanged && !confirmWhatsappChange)} onClick={loadPreview}><Eye className="mr-2 h-4 w-4" />Revisar operación</Button> : <Button disabled={busy || (whatsappChanged && !confirmWhatsappChange)} onClick={confirm}><ReceiptText className="mr-2 h-4 w-4" />{busy ? "Confirmando…" : "Confirmar y generar recibo"}</Button>}</DialogFooter>
   </DialogContent></Dialog>;
 }
 
@@ -99,4 +107,4 @@ function formatDate(value?: string | null) { return value ? new Intl.DateTimeFor
 function remainingTime(value?: string | null) { if (!value) return "Sin vencimiento"; const days=Math.ceil((new Date(value).getTime()-Date.now())/86400000); if(days===1)return "Vence mañana"; if(days===0)return "Vence hoy"; if(days<0)return `Vencida hace ${Math.abs(days)} ${Math.abs(days)===1?"día":"días"}`; if(days<30)return `Quedan ${days} días`; const months=Math.floor(days/30); const rest=days%30; return rest?`Quedan ${months} ${months===1?"mes":"meses"} y ${rest} días`:`Quedan ${months} ${months===1?"mes":"meses"}`; }
 function maskKey(value?: string | null) { return value ? `VRX-****-${value.slice(-4)}` : "Prueba inicial"; }
 function methodLabel(value: string) { return value === "cash" ? "Efectivo" : value === "transfer" ? "Transferencia" : "Otro"; }
-function message(error: unknown) { const value=error instanceof Error?error.message:String(error); if(value.includes("SPECIAL_LICENSE_PROTECTED")) return "Esta licencia especial no puede modificarse desde el flujo de cobro."; if(value.includes("PLAN_NOT_FOUND_OR_INACTIVE")) return "El plan ya no está activo."; if(value.includes("PRICE_ADJUSTMENT_REASON_REQUIRED")) return "Indica en observaciones el motivo del importe personalizado."; return value; }
+function message(error: unknown) { const value=error instanceof Error?error.message:String(error); if(value.includes("SPECIAL_LICENSE_PROTECTED")) return "Esta licencia especial no puede modificarse desde el flujo de cobro."; if(value.includes("PLAN_NOT_FOUND_OR_INACTIVE")) return "El plan ya no está activo."; if(value.includes("PRICE_ADJUSTMENT_REASON_REQUIRED")) return "Indica en observaciones el motivo del importe personalizado."; if(value.includes("INVALID_CLIENT_WHATSAPP")) return "Usa un WhatsApp internacional válido, por ejemplo +5350000000."; if(value.includes("CLIENT_WHATSAPP_CHANGE_CONFIRMATION_REQUIRED")) return "Confirma manualmente el cambio de WhatsApp antes de cobrar."; return value; }
