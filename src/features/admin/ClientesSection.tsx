@@ -70,8 +70,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage =
     permissions.includes("customers.manage") && permissions.includes("licenses.manage");
-  const canCharge =
-    permissions.includes("payments.manage") && permissions.includes("licenses.manage");
+  const canCharge = permissions.includes("payments.manage");
   const licenses = useQuery({
     queryKey: ["admin-licenses", projectId],
     queryFn: () => supabaseServices.licenses.list(projectId),
@@ -92,7 +91,9 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   const visibleMobileRows = clients.slice(0, mobileVisible);
   const activeClients = clients.filter((client) => client.status === "active").length;
   const pendingClients = clients.filter((client) => client.status === "pending").length;
-  const trialClients = clients.filter((client) => client.licenseKey?.includes("trial") ?? false).length;
+  const trialClients = clients.filter(
+    (client) => client.licenseKey?.includes("trial") ?? false,
+  ).length;
   const expiringSoon = clients.filter((client) => {
     const expiresAt = new Date(client.expiresAt).getTime();
     const diffDays = Math.ceil((expiresAt - Date.now()) / 86_400_000);

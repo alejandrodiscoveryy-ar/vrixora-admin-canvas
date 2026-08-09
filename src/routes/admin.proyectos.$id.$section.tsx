@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { ShieldX } from "lucide-react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -11,6 +12,7 @@ import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
+import { Card, CardContent } from "@/components/ui/card";
 
 const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   clientes: "customers.view",
@@ -37,17 +39,25 @@ function SectionPage() {
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/admin/login" });
-    else if (
-      !permissionsLoading &&
-      user &&
-      requiredPermission &&
-      !permissions.includes(requiredPermission)
-    ) {
-      navigate({ to: "/admin/proyectos/$id", params: { id } });
-    }
-  }, [user, loading, id, requiredPermission, permissions, permissionsLoading, navigate]);
+  }, [user, loading, navigate]);
 
   if (loading || projectLoading || permissionsLoading || !user || !project) return null;
+
+  if (requiredPermission && !permissions.includes(requiredPermission)) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+          <ShieldX className="h-10 w-10 text-destructive" />
+          <div>
+            <h2 className="font-semibold">Acceso denegado</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Tu rol no tiene permiso para acceder a esta sección.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   switch (section) {
     case "clientes":

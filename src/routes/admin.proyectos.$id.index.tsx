@@ -68,6 +68,8 @@ function ResumenPage() {
   const canViewPayments = permissions.includes("payments.view");
   const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
+  const canManageLicenses = permissions.includes("licenses.manage");
+  const canManagePayments = permissions.includes("payments.manage");
 
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:analytics-range:${id}`,
@@ -373,7 +375,7 @@ function ResumenPage() {
     {
       label: "Registrar pago",
       to: `/admin/proyectos/${id}/pagos`,
-      show: canViewPayments,
+      show: canManagePayments,
       icon: CreditCard,
     },
     {
@@ -385,7 +387,7 @@ function ResumenPage() {
     {
       label: "Crear licencia",
       to: `/admin/proyectos/${id}/licencias`,
-      show: canViewLicenses,
+      show: canManageLicenses,
       icon: FileKey2,
     },
     {
@@ -518,7 +520,15 @@ function ResumenPage() {
               label="Estado"
               value={paymentStatusFilter}
               onChange={setPaymentStatusFilter}
-              options={["all", "paid", "pending", "cancelled", "refunded", "complimentary", "voided"]}
+              options={[
+                "all",
+                "paid",
+                "pending",
+                "cancelled",
+                "refunded",
+                "complimentary",
+                "voided",
+              ]}
               renderOption={statusLabel}
             />
             <Filter
