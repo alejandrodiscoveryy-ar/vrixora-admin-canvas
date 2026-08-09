@@ -847,6 +847,14 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
     },
+    async void(paymentId, reason) {
+      await requireOnline("Anular un pago");
+      const { error } = await getSupabaseClient().rpc("admin_void_payment_record", {
+        target_payment_id: paymentId,
+        target_reason: reason,
+      });
+      throwIfError(error);
+    },
     async previewCharge(licenseId, plan, applicationRule) {
       const { data, error } = await getSupabaseClient().rpc("admin_preview_charge_plan", {
         target_license_id: licenseId,
