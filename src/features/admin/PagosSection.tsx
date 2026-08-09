@@ -422,26 +422,28 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                             loadReceipt.isPending,
                           onSelect: () => loadReceipt.mutate(payment.id),
                         },
-                        {
-                          label: "Generar recibo faltante",
-                          disabled:
-                            !canCorrect ||
-                            !["paid", "complimentary"].includes(payment.status) ||
-                            payment.hasReceipt ||
-                            repairReceipt.isPending,
-                          onSelect: () => repairReceipt.mutate(payment.id),
-                        },
-                        {
-                          label: "Editar pago",
-                          disabled: !canCorrect,
-                          onSelect: () => setEditing(payment),
-                        },
-                        {
-                          label: payment.status === "pending" ? "Eliminar pago" : "Anular pago",
-                          disabled: !canCorrect,
-                          destructive: true,
-                          onSelect: () => setDeleting(payment),
-                        },
+                        ...(canCorrect
+                          ? [
+                              {
+                                label: "Generar recibo faltante",
+                                disabled:
+                                  !["paid", "complimentary"].includes(payment.status) ||
+                                  payment.hasReceipt ||
+                                  repairReceipt.isPending,
+                                onSelect: () => repairReceipt.mutate(payment.id),
+                              },
+                              {
+                                label: "Editar pago",
+                                onSelect: () => setEditing(payment),
+                              },
+                              {
+                                label:
+                                  payment.status === "pending" ? "Eliminar pago" : "Anular pago",
+                                destructive: true,
+                                onSelect: () => setDeleting(payment),
+                              },
+                            ]
+                          : []),
                       ]}
                     />
                   </div>
@@ -1040,9 +1042,7 @@ function DeletePaymentDialog({
         ? supabaseServices.payments.void(payment.id, reason)
         : supabaseServices.payments.remove(payment.id, reason),
     onSuccess: () => {
-      toast.success(
-        isConfirmed ? "Pago anulado correctamente." : "Pago eliminado del historial.",
-      );
+      toast.success(isConfirmed ? "Pago anulado correctamente." : "Pago eliminado del historial.");
       onDone();
       onClose();
     },
@@ -1061,13 +1061,11 @@ function DeletePaymentDialog({
           <DialogDescription>
             {isConfirmed ? (
               <>
-                Este pago será anulado y dejará de contar en ingresos y estadísticas. El recibo y
-                el historial se conservarán. La vigencia otorgada a la licencia no será modificada.
+                Este pago será anulado y dejará de contar en ingresos y estadísticas. El recibo y el
+                historial se conservarán. La vigencia otorgada a la licencia no será modificada.
               </>
             ) : (
-              <>
-                Se eliminará el pago pendiente {payment.reference}. Esta acción es irreversible.
-              </>
+              <>Se eliminará el pago pendiente {payment.reference}. Esta acción es irreversible.</>
             )}
           </DialogDescription>
         </DialogHeader>
