@@ -37,6 +37,14 @@ export type {
   UsageAnalyticsDimensions,
   UsageAnalyticsFilters,
   UsageAnalyticsService,
+  CommercialLead,
+  CommercialLeadInput,
+  CommercialLeadStatus,
+  CommercialSource,
+  CommercialCampaign,
+  CommercialLeadHistoryEntry,
+  CommercialMetrics,
+  CommercialService,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {

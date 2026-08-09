@@ -20,6 +20,9 @@ import type {
   BillingPreview,
   BillingReceipt,
   WhatsAppSettings,
+  CommercialLead,
+  CommercialCampaign,
+  CommercialLeadHistoryEntry,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
@@ -234,17 +237,15 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (project): Project => ({
-          id: project.id,
-          name: project.name,
-          slug: project.slug,
-          description: project.description ?? "",
-          status: project.status,
-          createdAt: project.created_at,
-          color: project.color,
-        }),
-      );
+      return (data ?? []).map((project): Project => ({
+        id: project.id,
+        name: project.name,
+        slug: project.slug,
+        description: project.description ?? "",
+        status: project.status,
+        createdAt: project.created_at,
+        color: project.color,
+      }));
     },
     async settings(projectId) {
       const { data, error } = await getSupabaseClient()
@@ -402,29 +403,27 @@ export const supabaseServices: AdminServices = {
       throwIfError(error);
 
       const rows = (data ?? []) as ClientRow[];
-      return rows.map(
-        (client: ClientRow): ServiceClient => ({
-          userId: client.user_id,
-          email: client.email,
-          displayName: client.display_name ?? client.email,
-          phone: client.phone,
-          avatarUrl: client.avatar_url,
-          registeredAt: client.registered_at,
-          licenseId: client.license_id,
-          licenseKey: client.license_key,
-          plan: client.plan,
-          status: client.status as LicenseStatus,
-          activatedAt: client.activated_at,
-          expiresAt: client.expires_at,
-          maxDevices: Number(client.max_devices),
-          activeDevices: Number(client.active_devices),
-          lastPaymentAt: client.last_payment_at,
-          lastPaymentAmount:
-            client.last_payment_amount == null ? null : Number(client.last_payment_amount),
-          lastPaymentCurrency: client.last_payment_currency as Currency | null,
-          lastRenewedAt: client.last_renewed_at,
-        }),
-      );
+      return rows.map((client: ClientRow): ServiceClient => ({
+        userId: client.user_id,
+        email: client.email,
+        displayName: client.display_name ?? client.email,
+        phone: client.phone,
+        avatarUrl: client.avatar_url,
+        registeredAt: client.registered_at,
+        licenseId: client.license_id,
+        licenseKey: client.license_key,
+        plan: client.plan,
+        status: client.status as LicenseStatus,
+        activatedAt: client.activated_at,
+        expiresAt: client.expires_at,
+        maxDevices: Number(client.max_devices),
+        activeDevices: Number(client.active_devices),
+        lastPaymentAt: client.last_payment_at,
+        lastPaymentAmount:
+          client.last_payment_amount == null ? null : Number(client.last_payment_amount),
+        lastPaymentCurrency: client.last_payment_currency as Currency | null,
+        lastRenewedAt: client.last_renewed_at,
+      }));
     },
     async setClientStatus(projectId, userId, status, reason) {
       await requireOnline("Cambiar el estado de una licencia");
@@ -455,17 +454,15 @@ export const supabaseServices: AdminServices = {
         .order("name");
       throwIfError(error);
 
-      return (data ?? []).map(
-        (licenseType): LicenseType => ({
-          code: licenseType.code,
-          name: licenseType.name,
-          defaultDurationDays: licenseType.default_duration_days,
-          allowsCustomDuration: licenseType.allows_custom_duration,
-          neverExpires: licenseType.never_expires,
-          defaultMaxDevices: licenseType.default_max_devices,
-          defaultFeatures: licenseType.default_features ?? {},
-        }),
-      );
+      return (data ?? []).map((licenseType): LicenseType => ({
+        code: licenseType.code,
+        name: licenseType.name,
+        defaultDurationDays: licenseType.default_duration_days,
+        allowsCustomDuration: licenseType.allows_custom_duration,
+        neverExpires: licenseType.never_expires,
+        defaultMaxDevices: licenseType.default_max_devices,
+        defaultFeatures: licenseType.default_features ?? {},
+      }));
     },
     async listPlans(projectId) {
       const { data, error } = await getSupabaseClient()
@@ -477,22 +474,20 @@ export const supabaseServices: AdminServices = {
         .order("name");
       throwIfError(error);
 
-      return (data ?? []).map(
-        (plan: PlanRow): LicensePlan => ({
-          projectId: plan.project_id,
-          code: plan.code,
-          name: plan.name,
-          licenseType: plan.license_type ?? "monthly",
-          durationDays: plan.duration_days ?? null,
-          price: Number(plan.price ?? 0),
-          currency: (plan.currency ?? "CUP") as Currency,
-          maxDevices: plan.max_devices,
-          features: plan.features ?? {},
-          description: plan.description ?? null,
-          isActive: plan.active ?? true,
-          isFeatured: plan.is_featured ?? false,
-        }),
-      );
+      return (data ?? []).map((plan: PlanRow): LicensePlan => ({
+        projectId: plan.project_id,
+        code: plan.code,
+        name: plan.name,
+        licenseType: plan.license_type ?? "monthly",
+        durationDays: plan.duration_days ?? null,
+        price: Number(plan.price ?? 0),
+        currency: (plan.currency ?? "CUP") as Currency,
+        maxDevices: plan.max_devices,
+        features: plan.features ?? {},
+        description: plan.description ?? null,
+        isActive: plan.active ?? true,
+        isFeatured: plan.is_featured ?? false,
+      }));
     },
     async renew(licenseId, durationDays, note) {
       await requireOnline("Renovar una licencia");
@@ -548,15 +543,13 @@ export const supabaseServices: AdminServices = {
         .eq("license_id", licenseId)
         .order("last_seen_at", { ascending: false });
       throwIfError(error);
-      return (data ?? []).map(
-        (device): LicenseDevice => ({
-          id: device.id,
-          licenseId: device.license_id,
-          firstSeenAt: device.first_seen_at,
-          lastSeenAt: device.last_seen_at,
-          revokedAt: device.revoked_at,
-        }),
-      );
+      return (data ?? []).map((device): LicenseDevice => ({
+        id: device.id,
+        licenseId: device.license_id,
+        firstSeenAt: device.first_seen_at,
+        lastSeenAt: device.last_seen_at,
+        revokedAt: device.revoked_at,
+      }));
     },
     async listHistory(licenseId) {
       const client = getSupabaseClient();
@@ -572,18 +565,16 @@ export const supabaseServices: AdminServices = {
         : { data: [], error: null };
       throwIfError(actorError);
       const actorEmails = new Map((actors ?? []).map((actor) => [actor.id, actor.email]));
-      return (data ?? []).map(
-        (entry): LicenseAuditEntry => ({
-          id: entry.id,
-          licenseId: entry.license_id,
-          action: entry.action,
-          detail: entry.detail,
-          actorId: entry.actor_id,
-          actorEmail: actorEmails.get(entry.actor_id),
-          metadata: entry.metadata ?? {},
-          createdAt: entry.created_at,
-        }),
-      );
+      return (data ?? []).map((entry): LicenseAuditEntry => ({
+        id: entry.id,
+        licenseId: entry.license_id,
+        action: entry.action,
+        detail: entry.detail,
+        actorId: entry.actor_id,
+        actorEmail: actorEmails.get(entry.actor_id),
+        metadata: entry.metadata ?? {},
+        createdAt: entry.created_at,
+      }));
     },
     async manageDevice(deviceId, operation, reason) {
       await requireOnline("Gestionar un dispositivo");
@@ -608,22 +599,20 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []).map(
-        (plan: PlanRow): LicensePlan => ({
-          projectId,
-          code: plan.code,
-          name: plan.name,
-          licenseType: plan.license_type,
-          durationDays: plan.duration_days,
-          price: Number(plan.price),
-          currency: plan.currency as Currency,
-          maxDevices: plan.max_devices,
-          features: plan.features ?? {},
-          description: plan.description,
-          isActive: plan.active,
-          isFeatured: plan.is_featured,
-        }),
-      );
+      return (data ?? []).map((plan: PlanRow): LicensePlan => ({
+        projectId,
+        code: plan.code,
+        name: plan.name,
+        licenseType: plan.license_type,
+        durationDays: plan.duration_days,
+        price: Number(plan.price),
+        currency: plan.currency as Currency,
+        maxDevices: plan.max_devices,
+        features: plan.features ?? {},
+        description: plan.description,
+        isActive: plan.active,
+        isFeatured: plan.is_featured,
+      }));
     },
     async savePlan(projectId, plan) {
       await requireOnline("Guardar un plan");
@@ -702,54 +691,50 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (payment): ServicePayment => ({
-          id: payment.id,
-          projectId: payment.project_id,
-          userId: payment.user_id,
-          licenseId: payment.license_id ?? undefined,
-          amount: Number(payment.amount),
-          listPrice: Number(payment.amount),
-          discount: 0,
-          plan: "",
-          currency: payment.currency as Currency,
-          method: payment.method,
-          reference: payment.reference,
-          employeeId: payment.recorded_by,
-          createdAt: payment.created_at,
-          status: "paid",
-          notes: null,
-        }),
-      );
+      return (data ?? []).map((payment): ServicePayment => ({
+        id: payment.id,
+        projectId: payment.project_id,
+        userId: payment.user_id,
+        licenseId: payment.license_id ?? undefined,
+        amount: Number(payment.amount),
+        listPrice: Number(payment.amount),
+        discount: 0,
+        plan: "",
+        currency: payment.currency as Currency,
+        method: payment.method,
+        reference: payment.reference,
+        employeeId: payment.recorded_by,
+        createdAt: payment.created_at,
+        status: "paid",
+        notes: null,
+      }));
     },
     async listAdmin(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_license_payments", {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []).map(
-        (payment: PaymentRow): ServicePayment => ({
-          id: payment.id,
-          projectId,
-          userId: "",
-          licenseId: payment.license_id ?? undefined,
-          amount: Number(payment.amount),
-          listPrice: Number(payment.list_price),
-          discount: Number(payment.discount),
-          plan: payment.plan,
-          currency: payment.currency as Currency,
-          method: payment.method,
-          reference: payment.reference,
-          employeeId: payment.recorded_by,
-          createdAt: payment.created_at,
-          status: payment.paid_status,
-          notes: payment.notes,
-          userEmail: payment.user_email,
-          licenseKey: payment.license_key ?? undefined,
-          operatorLabel: payment.operator_label ?? payment.recorded_by,
-          hasReceipt: payment.has_receipt,
-        }),
-      );
+      return (data ?? []).map((payment: PaymentRow): ServicePayment => ({
+        id: payment.id,
+        projectId,
+        userId: "",
+        licenseId: payment.license_id ?? undefined,
+        amount: Number(payment.amount),
+        listPrice: Number(payment.list_price),
+        discount: Number(payment.discount),
+        plan: payment.plan,
+        currency: payment.currency as Currency,
+        method: payment.method,
+        reference: payment.reference,
+        employeeId: payment.recorded_by,
+        createdAt: payment.created_at,
+        status: payment.paid_status,
+        notes: payment.notes,
+        userEmail: payment.user_email,
+        licenseKey: payment.license_key ?? undefined,
+        operatorLabel: payment.operator_label ?? payment.recorded_by,
+        hasReceipt: payment.has_receipt,
+      }));
     },
     async record(input) {
       await requireOnline("Registrar un pago");
@@ -911,16 +896,14 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (entry): HistoryEntry => ({
-          id: entry.id,
-          projectId: entry.project_id,
-          action: entry.action,
-          detail: entry.detail,
-          actor: entry.actor_id,
-          createdAt: entry.created_at,
-        }),
-      );
+      return (data ?? []).map((entry): HistoryEntry => ({
+        id: entry.id,
+        projectId: entry.project_id,
+        action: entry.action,
+        detail: entry.detail,
+        actor: entry.actor_id,
+        createdAt: entry.created_at,
+      }));
     },
   },
   audit: {
@@ -957,23 +940,21 @@ export const supabaseServices: AdminServices = {
         target_app_version: filters.appVersion ?? null,
       });
       throwIfError(error);
-      return ((data ?? []) as UsageAnalyticsRow[]).map(
-        (row): UsageAnalyticsDay => ({
-          date: row.metric_date,
-          newUsers: Number(row.new_users),
-          trials: Number(row.trials),
-          paidLicenses: Number(row.paid_licenses),
-          activeUsers: Number(row.active_users),
-          weeklyActiveUsers: Number(row.weekly_active_users),
-          monthlyActiveUsers: Number(row.monthly_active_users),
-          logins: Number(row.logins),
-          renewals: Number(row.renewals),
-          expired: Number(row.expired),
-          revenueCUP: Number(row.revenue_cup),
-          revenueUSD: Number(row.revenue_usd),
-          revenueEUR: Number(row.revenue_eur),
-        }),
-      );
+      return ((data ?? []) as UsageAnalyticsRow[]).map((row): UsageAnalyticsDay => ({
+        date: row.metric_date,
+        newUsers: Number(row.new_users),
+        trials: Number(row.trials),
+        paidLicenses: Number(row.paid_licenses),
+        activeUsers: Number(row.active_users),
+        weeklyActiveUsers: Number(row.weekly_active_users),
+        monthlyActiveUsers: Number(row.monthly_active_users),
+        logins: Number(row.logins),
+        renewals: Number(row.renewals),
+        expired: Number(row.expired),
+        revenueCUP: Number(row.revenue_cup),
+        revenueUSD: Number(row.revenue_usd),
+        revenueEUR: Number(row.revenue_eur),
+      }));
     },
     async dimensions(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_usage_dimensions", {
@@ -1012,6 +993,138 @@ export const supabaseServices: AdminServices = {
         paidUsers: Number(row.paid_users ?? 0),
         trialToPaidRate: Number(row.trial_to_paid_rate ?? 0),
       } satisfies RetentionMetrics;
+    },
+  },
+  commercial: {
+    async listLeads(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_commercial_leads", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      return ((data ?? []) as Array<Record<string, unknown>>).map((row): CommercialLead => ({
+        id: String(row.id),
+        name: String(row.name),
+        phone: String(row.phone),
+        email: row.email as string | null,
+        source: row.source as CommercialLead["source"],
+        medium: row.medium as string | null,
+        campaign: row.campaign as string | null,
+        referralCode: row.referral_code as string | null,
+        referredByUserId: row.referred_by_user_id as string | null,
+        referredByName: row.referred_by_name as string | null,
+        status: row.status as CommercialLead["status"],
+        notes: row.notes as string | null,
+        responsibleId: row.responsible_id as string | null,
+        responsibleName: row.responsible_name as string | null,
+        userId: row.user_id as string | null,
+        createdAt: String(row.created_at),
+        lastInteractionAt: row.last_interaction_at as string | null,
+        nextActionAt: row.next_action_at as string | null,
+        registered: Boolean(row.registered),
+        trialStarted: Boolean(row.trial_started),
+        paid: Boolean(row.paid),
+        renewalCount: Number(row.renewal_count),
+        revenue: (row.revenue ?? {}) as Record<string, number>,
+      }));
+    },
+    async saveLead(projectId, input) {
+      await requireOnline("Guardar lead comercial");
+      const { data, error } = await getSupabaseClient().rpc("admin_save_commercial_lead", {
+        target_project_id: projectId,
+        target_lead_id: input.id ?? null,
+        target_name: input.name,
+        target_phone: input.phone,
+        target_email: input.email ?? null,
+        target_source: input.source,
+        target_medium: input.medium ?? null,
+        target_campaign_id: input.campaignId ?? null,
+        target_campaign: input.campaign ?? null,
+        target_referral_code: input.referralCode ?? null,
+        target_referred_by_user_id: input.referredByUserId ?? null,
+        target_status: input.status,
+        target_notes: input.notes ?? null,
+        target_responsible_id: input.responsibleId ?? null,
+        target_next_action_at: input.nextActionAt ?? null,
+        target_user_id: input.userId ?? null,
+      });
+      throwIfError(error);
+      return String(data);
+    },
+    async addNote(projectId, leadId, note) {
+      await requireOnline("Agregar nota comercial");
+      const { error } = await getSupabaseClient().rpc("admin_add_commercial_lead_note", {
+        target_project_id: projectId,
+        target_lead_id: leadId,
+        target_note: note,
+      });
+      throwIfError(error);
+    },
+    async listLeadHistory(projectId, leadId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_commercial_lead_history", {
+        target_project_id: projectId,
+        target_lead_id: leadId,
+      });
+      throwIfError(error);
+      return ((data ?? []) as Array<Record<string, unknown>>).map(
+        (row): CommercialLeadHistoryEntry => ({
+          id: row.id as string | number,
+          eventType: String(row.event_type),
+          previousValue: row.previous_value as string | null,
+          newValue: row.new_value as string | null,
+          note: row.note as string | null,
+          actorId: String(row.actor_id),
+          actorName: row.actor_name as string | null,
+          actorEmail: row.actor_email as string | null,
+          createdAt: String(row.created_at),
+        }),
+      );
+    },
+    async listCampaigns(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_commercial_campaigns", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      return ((data ?? []) as Array<Record<string, unknown>>).map((row): CommercialCampaign => ({
+        id: String(row.id),
+        name: String(row.name),
+        source: row.source as CommercialCampaign["source"],
+        medium: row.medium as string | null,
+        status: row.status as CommercialCampaign["status"],
+        startsAt: row.starts_at as string | null,
+        endsAt: row.ends_at as string | null,
+      }));
+    },
+    async saveCampaign(projectId, campaign) {
+      await requireOnline("Guardar campaña comercial");
+      const { data, error } = await getSupabaseClient().rpc("admin_save_commercial_campaign", {
+        target_project_id: projectId,
+        target_campaign_id: campaign.id ?? null,
+        target_name: campaign.name,
+        target_source: campaign.source,
+        target_medium: campaign.medium,
+        target_status: campaign.status,
+        target_starts_at: campaign.startsAt,
+        target_ends_at: campaign.endsAt,
+      });
+      throwIfError(error);
+      return String(data);
+    },
+    async metrics(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_commercial_metrics", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        totalLeads: Number(row.total_leads),
+        registered: Number(row.registered),
+        trials: Number(row.trials),
+        paid: Number(row.paid),
+        notConverted: Number(row.not_converted),
+        conversionRate: Number(row.conversion_rate),
+        topSource: String(row.top_source ?? ""),
+        topCampaign: String(row.top_campaign ?? ""),
+      };
     },
   },
 };

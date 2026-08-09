@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Tags,
   Users,
+  Megaphone,
 } from "lucide-react";
 
 import type { ProjectPermission } from "@/lib/services";
@@ -23,6 +24,7 @@ export type AdminProjectTab = {
 export const ADMIN_PROJECT_TABS = [
   { slug: "", label: "Resumen", icon: Gauge, permission: "project.view" },
   { slug: "clientes", label: "Clientes", icon: Users, permission: "customers.view" },
+  { slug: "comercial", label: "Comercial", icon: Megaphone, permission: "commercial.view" },
   { slug: "licencias", label: "Licencias", icon: FileKey2, permission: "licenses.view" },
   { slug: "planes", label: "Planes y precios", icon: Tags, permission: "plans.view" },
   { slug: "pagos", label: "Pagos", icon: CreditCard, permission: "payments.view" },
