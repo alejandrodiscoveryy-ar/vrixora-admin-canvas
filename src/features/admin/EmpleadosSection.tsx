@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -28,14 +27,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2, Users, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, Users } from "lucide-react";
 import { useProjectMembers, useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { toast } from "sonner";
 import type { ProjectRole } from "@/lib/services";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
@@ -48,8 +45,7 @@ const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: str
 
 export default function EmpleadosSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
-  const { data: rows = [], isLoading, error } = useProjectMembers(projectId);
+  const { data: rows = [] } = useProjectMembers(projectId);
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("members.manage");
   const [open, setOpen] = useState(false);
@@ -98,15 +94,21 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
         <div className="grid gap-3 sm:grid-cols-3 text-xs">
           <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
             <span className="font-bold text-foreground">Owner</span>
-            <p className="text-muted-foreground">Acceso total, administración completa y gestión de miembros y ajustes.</p>
+            <p className="text-muted-foreground">
+              Acceso total, administración completa y gestión de miembros y ajustes.
+            </p>
           </div>
           <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
             <span className="font-bold text-foreground">Accounting</span>
-            <p className="text-muted-foreground">Gestión de clientes, cobros/pagos, analítica y lectura de licencias y planes.</p>
+            <p className="text-muted-foreground">
+              Gestión de clientes, cobros/pagos, analítica y lectura de licencias y planes.
+            </p>
           </div>
           <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
             <span className="font-bold text-foreground">Marketing</span>
-            <p className="text-muted-foreground">Gestión de clientes, seguimiento comercial (leads/campañas) y analítica.</p>
+            <p className="text-muted-foreground">
+              Gestión de clientes, seguimiento comercial (leads/campañas) y analítica.
+            </p>
           </div>
         </div>
       </SectionCard>
@@ -129,13 +131,12 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
             <TableRow>
               <TableHead>Miembro</TableHead>
               <TableHead>Rol</TableHead>
-              <TableHead>Incorporación</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((member) => (
-              <TableRow key={member.userId} className="group hover:bg-muted/40 transition-colors">
+              <TableRow key={member.id} className="group hover:bg-muted/40 transition-colors">
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9 border border-border/70">
@@ -145,7 +146,9 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground text-sm truncate">{member.name}</p>
+                      <p className="font-semibold text-foreground text-sm truncate">
+                        {member.name}
+                      </p>
                       <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                     </div>
                   </div>
@@ -155,16 +158,13 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                     {member.role}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(member.joinedAt))}
-                </TableCell>
                 <TableCell className="text-right">
                   {canManage && member.role !== "owner" && (
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => removeMember.mutate(member.userId)}
+                      onClick={() => removeMember.mutate(member.id)}
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                       Retirar
@@ -182,7 +182,9 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Asignar empleado</DialogTitle>
-            <DialogDescription>El correo debe pertenecer a un usuario registrado en Supabase.</DialogDescription>
+            <DialogDescription>
+              El correo debe pertenecer a un usuario registrado en Supabase.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -217,7 +219,10 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => addMember.mutate()} disabled={addMember.isPending || !email.trim()}>
+            <Button
+              onClick={() => addMember.mutate()}
+              disabled={addMember.isPending || !email.trim()}
+            >
               Asignar empleado
             </Button>
           </DialogFooter>
