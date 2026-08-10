@@ -71,6 +71,15 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
     },
     onError: (mutationError: Error) => toast.error(mutationError.message),
   });
+  const changeRole = useMutation({
+    mutationFn: ({ email, role }: { email: string; role: Exclude<ProjectRole, "owner"> }) =>
+      supabaseServices.projectMembers.add(projectId, email, role),
+    onSuccess: async () => {
+      await refresh();
+      toast.success("Rol actualizado");
+    },
+    onError: (mutationError: Error) => toast.error(mutationError.message),
+  });
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -154,9 +163,36 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="text-xs uppercase font-mono font-medium">
-                    {member.role}
-                  </Badge>
+                  {canManage && member.role !== "owner" ? (
+                    <Select
+                      value={member.role}
+                      disabled={changeRole.isPending}
+                      onValueChange={(value) =>
+                        changeRole.mutate({
+                          email: member.email,
+                          role: value as Exclude<ProjectRole, "owner">,
+                        })
+                      }
+                    >
+                      <SelectTrigger
+                        className="w-full min-w-44"
+                        aria-label={`Rol de ${member.email}`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ASSIGNABLE_ROLES.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className="text-xs uppercase font-mono font-medium">
+                      {member.role}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   {canManage && member.role !== "owner" && (
