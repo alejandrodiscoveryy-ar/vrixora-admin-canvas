@@ -64,79 +64,80 @@
   --color-inactive: var(--semantic-inactive);
 }
 
-/* Vrixora SaaS Premium Design Tokens & System */
+/* Vrixora SaaS Premium Design Tokens & System (Light & Dark Support) */
 :root {
   --radius: 0.875rem; /* 14px for cards */
   --radius-sm: 0.5rem; /* 8-10px for buttons/inputs */
 
-  /* Canvas & Surfaces */
-  --background: oklch(0.08 0 0);
-  --card: oklch(0.12 0.008 240);
-  --card-elevated: oklch(0.15 0.01 240);
-  --popover: oklch(0.13 0.008 220);
-  --popover-foreground: oklch(0.98 0.002 240);
+  /* Canvas & Surfaces - Light Mode Default */
+  --background: oklch(0.97 0.005 220);
+  --card: oklch(1 0 0);
+  --card-elevated: oklch(0.99 0.002 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0.01 240);
 
   /* Typography & Contrast */
-  --foreground: oklch(0.98 0.002 240);
-  --card-foreground: oklch(0.98 0.002 240);
-  --muted: oklch(0.17 0.008 220);
-  --muted-foreground: oklch(0.74 0.015 240); /* Improved contrast */
+  --foreground: oklch(0.12 0.01 240);
+  --card-foreground: oklch(0.12 0.01 240);
+  --muted: oklch(0.94 0.008 220);
+  --muted-foreground: oklch(0.48 0.015 240);
 
   /* Brand & Actions */
-  --primary: oklch(0.85 0.15 195);
-  --primary-foreground: oklch(0.08 0 0);
-  --secondary: oklch(0.2 0.01 220);
-  --secondary-foreground: oklch(0.97 0.005 220);
-  --accent: oklch(0.78 0.14 200);
-  --accent-foreground: oklch(0.08 0 0);
+  --primary: oklch(0.65 0.18 195);
+  --primary-foreground: oklch(0.98 0.002 240);
+  --secondary: oklch(0.92 0.01 220);
+  --secondary-foreground: oklch(0.15 0.01 240);
+  --accent: oklch(0.7 0.15 200);
+  --accent-foreground: oklch(0.98 0.002 240);
 
   /* Borders, Inputs & States */
-  --border: oklch(0.22 0.01 240);
-  --input: oklch(0.2 0.01 220);
-  --ring: oklch(0.85 0.15 195);
-  --hover-surface: oklch(0.17 0.01 240);
-  --selected-surface: oklch(0.20 0.015 240);
-  --disabled-surface: oklch(0.15 0.005 240);
+  --border: oklch(0.88 0.01 220);
+  --input: oklch(0.9 0.01 220);
+  --ring: oklch(0.65 0.18 195);
+  --hover-surface: oklch(0.94 0.01 220);
+  --selected-surface: oklch(0.91 0.015 220);
+  --disabled-surface: oklch(0.95 0.005 220);
 
   /* Destructive */
-  --destructive: oklch(0.62 0.24 25);
+  --destructive: oklch(0.58 0.22 25);
   --destructive-foreground: oklch(0.98 0.01 250);
 
   /* Module Accents */
-  --module-resumen: oklch(0.85 0.15 195);     /* Cyan / Turquoise */
-  --module-clientes: oklch(0.68 0.18 250);    /* Blue */
-  --module-comercial: oklch(0.65 0.22 290);   /* Violet */
-  --module-licencias: oklch(0.75 0.15 175);   /* Teal */
-  --module-planes: oklch(0.78 0.17 85);       /* Amber / Gold */
-  --module-pagos: oklch(0.72 0.19 145);       /* Green */
-  --module-empleados: oklch(0.62 0.20 270);   /* Indigo */
-  --module-rendimiento: oklch(0.70 0.20 50);  /* Orange */
-  --module-configuracion: oklch(0.65 0.05 240); /* Grayish Blue */
-  --module-auditoria: oklch(0.62 0.24 350);   /* Magenta / Wine */
+  --module-resumen: oklch(0.65 0.18 195);
+  --module-clientes: oklch(0.55 0.2 250);
+  --module-comercial: oklch(0.55 0.24 290);
+  --module-licencias: oklch(0.6 0.18 175);
+  --module-planes: oklch(0.65 0.2 85);
+  --module-pagos: oklch(0.58 0.2 145);
+  --module-empleados: oklch(0.52 0.22 270);
+  --module-rendimiento: oklch(0.6 0.22 50);
+  --module-configuracion: oklch(0.5 0.05 240);
+  --module-auditoria: oklch(0.55 0.25 350);
 
   /* Global Semantics */
-  --semantic-success: oklch(0.72 0.19 145);
-  --semantic-warning: oklch(0.78 0.17 85);
-  --semantic-danger: oklch(0.62 0.24 25);
-  --semantic-info: oklch(0.68 0.18 250);
-  --semantic-inactive: oklch(0.55 0.02 240);
+  --semantic-success: oklch(0.58 0.2 145);
+  --semantic-warning: oklch(0.65 0.2 85);
+  --semantic-danger: oklch(0.58 0.22 25);
+  --semantic-info: oklch(0.55 0.2 250);
+  --semantic-inactive: oklch(0.6 0.02 240);
 
   /* Charts */
-  --chart-1: oklch(0.85 0.15 195);
-  --chart-2: oklch(0.72 0.13 210);
-  --chart-3: oklch(0.6 0.12 220);
-  --chart-4: oklch(0.8 0.17 85);
-  --chart-5: oklch(0.7 0.22 15);
+  --chart-1: oklch(0.65 0.18 195);
+  --chart-2: oklch(0.6 0.15 210);
+  --chart-3: oklch(0.5 0.15 220);
+  --chart-4: oklch(0.65 0.2 85);
+  --chart-5: oklch(0.58 0.22 15);
 
   /* Sidebar */
-  --sidebar: oklch(0.1 0.005 220);
-  --sidebar-foreground: oklch(0.92 0.01 220);
-  --sidebar-primary: oklch(0.85 0.15 195);
-  --sidebar-primary-foreground: oklch(0.08 0 0);
-  --sidebar-accent: oklch(0.18 0.01 220);
-  --sidebar-accent-foreground: oklch(0.97 0.005 220);
-  --sidebar-border: oklch(0.22 0.01 220);
-  --sidebar-ring: oklch(0.85 0.15 195);
+  --sidebar: oklch(0.95 0.005 220);
+  --sidebar-foreground: oklch(0.2 0.01 240);
+  --sidebar-primary: oklch(0.65 0.18 195);
+  --sidebar-primary-foreground: oklch(0.98 0.002 240);
+  --sidebar-accent: oklch(0.91 0.01 220);
+  --sidebar-accent-foreground: oklch(0.15 0.01 240);
+  --sidebar-border: oklch(0.88 0.01 220);
+  --sidebar-ring: oklch(0.65 0.18 195);
+  --body-grid: oklch(0.85 0.01 220 / 0.4);
 }
 
 .dark {
@@ -191,6 +192,7 @@
   --sidebar-accent-foreground: oklch(0.97 0.005 220);
   --sidebar-border: oklch(0.22 0.01 220);
   --sidebar-ring: oklch(0.85 0.15 195);
+  --body-grid: oklch(0.2 0.008 220 / 0.25);
 }
 
 @layer base {
@@ -209,7 +211,7 @@
     text-rendering: optimizeLegibility;
     letter-spacing: -0.01em;
     min-height: 100%;
-    color-scheme: dark;
+    color-scheme: light dark;
   }
 
   h1,
@@ -233,10 +235,10 @@
   body {
     min-height: 100dvh;
     background-image:
-      radial-gradient(circle at 18% -5%, oklch(0.85 0.15 195 / 0.09), transparent 42%),
-      radial-gradient(circle at 100% 100%, oklch(0.7 0.11 210 / 0.06), transparent 48%),
-      linear-gradient(oklch(0.11 0.008 220 / 0.14) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.11 0.008 220 / 0.14) 1px, transparent 1px);
+      radial-gradient(circle at 18% -5%, oklch(0.75 0.12 195 / 0.06), transparent 42%),
+      radial-gradient(circle at 100% 100%, oklch(0.65 0.1 210 / 0.04), transparent 48%),
+      linear-gradient(var(--body-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--body-grid) 1px, transparent 1px);
     background-size:
       auto,
       auto,

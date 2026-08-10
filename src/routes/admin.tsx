@@ -8,13 +8,22 @@ import {
   Loader2,
   LogOut,
   Menu,
+  Monitor,
+  Moon,
   ShieldCheck,
+  Sun,
   type LucideIcon,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetClose,
@@ -425,6 +434,7 @@ function TopBar({
       ) : null}
 
       <div className="ml-auto flex items-center gap-3">
+        <ThemeToggle />
         <div className="hidden items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-3 py-1.5 sm:flex">
           <Avatar className="h-8 w-8 border border-primary/20">
             <AvatarImage
@@ -527,5 +537,91 @@ function DrawerLink({
         <span className="truncate">{label}</span>
       </Link>
     </SheetClose>
+  );
+}
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    if (typeof window === "undefined") return "system";
+    return (localStorage.getItem("vrixora-admin-theme") as "light" | "dark" | "system") || "system";
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const applyTheme = (currentTheme: "light" | "dark" | "system") => {
+      let isDark = false;
+      if (currentTheme === "dark") {
+        isDark = true;
+      } else if (currentTheme === "light") {
+        isDark = false;
+      } else {
+        isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
+      root.classList.toggle("dark", isDark);
+    };
+
+    applyTheme(theme);
+    localStorage.setItem("vrixora-admin-theme", theme);
+
+    if (theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handler = () => applyTheme("system");
+      mediaQuery.addEventListener("change", handler);
+      return () => mediaQuery.removeEventListener("change", handler);
+    }
+  }, [theme]);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+          aria-label="Cambiar tema"
+          title="Cambiar tema"
+        >
+          {theme === "dark" ? (
+            <Moon className="h-4 w-4" />
+          ) : theme === "light" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Monitor className="h-4 w-4" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-36">
+        <DropdownMenuItem
+          onClick={() => setTheme("light")}
+          className="flex items-center justify-between cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            <Sun className="h-4 w-4" />
+            Claro
+          </span>
+          {theme === "light" && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setTheme("dark")}
+          className="flex items-center justify-between cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            <Moon className="h-4 w-4" />
+            Oscuro
+          </span>
+          {theme === "dark" && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setTheme("system")}
+          className="flex items-center justify-between cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            <Monitor className="h-4 w-4" />
+            Sistema
+          </span>
+          {theme === "system" && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
