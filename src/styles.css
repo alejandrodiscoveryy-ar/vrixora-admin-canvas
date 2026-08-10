@@ -7,10 +7,10 @@
 @theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -43,37 +43,94 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Module Accents */
+  --color-module-resumen: var(--module-resumen);
+  --color-module-clientes: var(--module-clientes);
+  --color-module-comercial: var(--module-comercial);
+  --color-module-licencias: var(--module-licencias);
+  --color-module-planes: var(--module-planes);
+  --color-module-pagos: var(--module-pagos);
+  --color-module-empleados: var(--module-empleados);
+  --color-module-rendimiento: var(--module-rendimiento);
+  --color-module-configuracion: var(--module-configuracion);
+  --color-module-auditoria: var(--module-auditoria);
+
+  /* Semantic Colors */
+  --color-success: var(--semantic-success);
+  --color-warning: var(--semantic-warning);
+  --color-danger: var(--semantic-danger);
+  --color-info: var(--semantic-info);
+  --color-inactive: var(--semantic-inactive);
 }
 
-/* Vrixora identity: pure black canvas with electric cyan brand accent */
+/* Vrixora SaaS Premium Design Tokens & System */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem; /* 14px for cards */
+  --radius-sm: 0.5rem; /* 8-10px for buttons/inputs */
+
+  /* Canvas & Surfaces */
   --background: oklch(0.08 0 0);
-  --foreground: oklch(0.97 0.005 220);
-  --card: oklch(0.13 0.008 220);
-  --card-foreground: oklch(0.97 0.005 220);
+  --card: oklch(0.12 0.008 240);
+  --card-elevated: oklch(0.15 0.01 240);
   --popover: oklch(0.13 0.008 220);
-  --popover-foreground: oklch(0.97 0.005 220);
+  --popover-foreground: oklch(0.98 0.002 240);
+
+  /* Typography & Contrast */
+  --foreground: oklch(0.98 0.002 240);
+  --card-foreground: oklch(0.98 0.002 240);
+  --muted: oklch(0.17 0.008 220);
+  --muted-foreground: oklch(0.74 0.015 240); /* Improved contrast */
+
+  /* Brand & Actions */
   --primary: oklch(0.85 0.15 195);
   --primary-foreground: oklch(0.08 0 0);
   --secondary: oklch(0.2 0.01 220);
   --secondary-foreground: oklch(0.97 0.005 220);
-  --muted: oklch(0.17 0.008 220);
-  --muted-foreground: oklch(0.68 0.02 215);
   --accent: oklch(0.78 0.14 200);
   --accent-foreground: oklch(0.08 0 0);
-  --destructive: oklch(0.62 0.24 25);
-  --destructive-foreground: oklch(0.98 0.01 250);
-  --border: oklch(0.24 0.01 220);
+
+  /* Borders, Inputs & States */
+  --border: oklch(0.22 0.01 240);
   --input: oklch(0.2 0.01 220);
   --ring: oklch(0.85 0.15 195);
+  --hover-surface: oklch(0.17 0.01 240);
+  --selected-surface: oklch(0.20 0.015 240);
+  --disabled-surface: oklch(0.15 0.005 240);
+
+  /* Destructive */
+  --destructive: oklch(0.62 0.24 25);
+  --destructive-foreground: oklch(0.98 0.01 250);
+
+  /* Module Accents */
+  --module-resumen: oklch(0.85 0.15 195);     /* Cyan / Turquoise */
+  --module-clientes: oklch(0.68 0.18 250);    /* Blue */
+  --module-comercial: oklch(0.65 0.22 290);   /* Violet */
+  --module-licencias: oklch(0.75 0.15 175);   /* Teal */
+  --module-planes: oklch(0.78 0.17 85);       /* Amber / Gold */
+  --module-pagos: oklch(0.72 0.19 145);       /* Green */
+  --module-empleados: oklch(0.62 0.20 270);   /* Indigo */
+  --module-rendimiento: oklch(0.70 0.20 50);  /* Orange */
+  --module-configuracion: oklch(0.65 0.05 240); /* Grayish Blue */
+  --module-auditoria: oklch(0.62 0.24 350);   /* Magenta / Wine */
+
+  /* Global Semantics */
+  --semantic-success: oklch(0.72 0.19 145);
+  --semantic-warning: oklch(0.78 0.17 85);
+  --semantic-danger: oklch(0.62 0.24 25);
+  --semantic-info: oklch(0.68 0.18 250);
+  --semantic-inactive: oklch(0.55 0.02 240);
+
+  /* Charts */
   --chart-1: oklch(0.85 0.15 195);
   --chart-2: oklch(0.72 0.13 210);
   --chart-3: oklch(0.6 0.12 220);
   --chart-4: oklch(0.8 0.17 85);
   --chart-5: oklch(0.7 0.22 15);
+
+  /* Sidebar */
   --sidebar: oklch(0.1 0.005 220);
-  --sidebar-foreground: oklch(0.9 0.01 220);
+  --sidebar-foreground: oklch(0.92 0.01 220);
   --sidebar-primary: oklch(0.85 0.15 195);
   --sidebar-primary-foreground: oklch(0.08 0 0);
   --sidebar-accent: oklch(0.18 0.01 220);
@@ -83,27 +140,51 @@
 }
 
 .dark {
+  --radius: 0.875rem;
+  --radius-sm: 0.5rem;
   --background: oklch(0.08 0 0);
-  --foreground: oklch(0.97 0.005 220);
-  --card: oklch(0.13 0.008 220);
-  --card-foreground: oklch(0.97 0.005 220);
+  --card: oklch(0.12 0.008 240);
+  --card-elevated: oklch(0.15 0.01 240);
   --popover: oklch(0.13 0.008 220);
-  --popover-foreground: oklch(0.97 0.005 220);
+  --popover-foreground: oklch(0.98 0.002 240);
+  --foreground: oklch(0.98 0.002 240);
+  --card-foreground: oklch(0.98 0.002 240);
+  --muted: oklch(0.17 0.008 220);
+  --muted-foreground: oklch(0.74 0.015 240);
   --primary: oklch(0.85 0.15 195);
   --primary-foreground: oklch(0.08 0 0);
   --secondary: oklch(0.2 0.01 220);
   --secondary-foreground: oklch(0.97 0.005 220);
-  --muted: oklch(0.17 0.008 220);
-  --muted-foreground: oklch(0.68 0.02 215);
   --accent: oklch(0.78 0.14 200);
   --accent-foreground: oklch(0.08 0 0);
-  --destructive: oklch(0.62 0.24 25);
-  --destructive-foreground: oklch(0.98 0.01 250);
-  --border: oklch(0.24 0.01 220);
+  --border: oklch(0.22 0.01 240);
   --input: oklch(0.2 0.01 220);
   --ring: oklch(0.85 0.15 195);
+  --hover-surface: oklch(0.17 0.01 240);
+  --selected-surface: oklch(0.20 0.015 240);
+  --disabled-surface: oklch(0.15 0.005 240);
+  --destructive: oklch(0.62 0.24 25);
+  --destructive-foreground: oklch(0.98 0.01 250);
+
+  --module-resumen: oklch(0.85 0.15 195);
+  --module-clientes: oklch(0.68 0.18 250);
+  --module-comercial: oklch(0.65 0.22 290);
+  --module-licencias: oklch(0.75 0.15 175);
+  --module-planes: oklch(0.78 0.17 85);
+  --module-pagos: oklch(0.72 0.19 145);
+  --module-empleados: oklch(0.62 0.20 270);
+  --module-rendimiento: oklch(0.70 0.20 50);
+  --module-configuracion: oklch(0.65 0.05 240);
+  --module-auditoria: oklch(0.62 0.24 350);
+
+  --semantic-success: oklch(0.72 0.19 145);
+  --semantic-warning: oklch(0.78 0.17 85);
+  --semantic-danger: oklch(0.62 0.24 25);
+  --semantic-info: oklch(0.68 0.18 250);
+  --semantic-inactive: oklch(0.55 0.02 240);
+
   --sidebar: oklch(0.1 0.005 220);
-  --sidebar-foreground: oklch(0.9 0.01 220);
+  --sidebar-foreground: oklch(0.92 0.01 220);
   --sidebar-primary: oklch(0.85 0.15 195);
   --sidebar-primary-foreground: oklch(0.08 0 0);
   --sidebar-accent: oklch(0.18 0.01 220);
@@ -173,10 +254,17 @@
   }
 }
 
+@utility panel-surface {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 @utility glass-panel {
-  background: color-mix(in oklab, var(--card) 76%, transparent);
-  backdrop-filter: blur(18px);
-  border: 1px solid color-mix(in oklab, var(--border) 82%, transparent);
+  background: color-mix(in oklab, var(--card) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklab, var(--border) 75%, transparent);
+  border-radius: var(--radius);
 }
 
 @utility text-gradient {
@@ -188,9 +276,28 @@
 
 @utility brand-glow {
   box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--primary) 25%, transparent),
-    0 10px 40px -10px color-mix(in oklab, var(--primary) 45%, transparent);
+    0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent),
+    0 8px 30px -10px color-mix(in oklab, var(--primary) 30%, transparent);
 }
+
+/* Module Accent Utilities */
+@utility module-resumen { color: var(--module-resumen); }
+@utility module-clientes { color: var(--module-clientes); }
+@utility module-comercial { color: var(--module-comercial); }
+@utility module-licencias { color: var(--module-licencias); }
+@utility module-planes { color: var(--module-planes); }
+@utility module-pagos { color: var(--module-pagos); }
+@utility module-empleados { color: var(--module-empleados); }
+@utility module-rendimiento { color: var(--module-rendimiento); }
+@utility module-configuracion { color: var(--module-configuracion); }
+@utility module-auditoria { color: var(--module-auditoria); }
+
+/* Semantic Utilities */
+@utility semantic-success { color: var(--semantic-success); }
+@utility semantic-warning { color: var(--semantic-warning); }
+@utility semantic-danger { color: var(--semantic-danger); }
+@utility semantic-info { color: var(--semantic-info); }
+@utility semantic-inactive { color: var(--semantic-inactive); }
 
 @layer components {
   .admin-shell main > div > * {

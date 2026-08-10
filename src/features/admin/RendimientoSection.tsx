@@ -8,6 +8,8 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
+  ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import {
   Area,
@@ -15,36 +17,33 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-import { adminChartLegendProps, adminChartTooltipProps } from "@/lib/chart-theme";
+import { adminChartTooltipProps } from "@/lib/chart-theme";
 import { supabaseServices, type LicenseStatus, type UsageAnalyticsDay } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import {
   AnalyticsDateRangePicker,
   usePersistentAnalyticsDateRange,
 } from "@/components/admin/AnalyticsDateRange";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   MobileFiltersPanel,
   MobileMetricsGrid,
-  MobileSectionHeader,
   type MobileMetric,
 } from "@/components/admin/MobileAdminSystem";
+import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { MetricCard } from "@/components/admin/MetricCard";
+import { SectionCard } from "@/components/admin/SectionCard";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { FilterToolbar } from "@/components/admin/FilterToolbar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Grain = "daily" | "weekly" | "monthly";
 
@@ -131,8 +130,6 @@ export default function RendimientoSection({ projectId }: { projectId: string })
   const currentTotals = totals(current);
   const previousTotals = totals(previous);
   const todayRow = current.at(-1);
-  const yesterdayRow = current.at(-2);
-  const weekAgoRow = current.at(-8);
 
   const isLoading = analytics.isLoading || dimensions.isLoading || plans.isLoading;
   const error = analytics.error || dimensions.error || plans.error;
@@ -183,296 +180,379 @@ export default function RendimientoSection({ projectId }: { projectId: string })
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center py-14">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="border-destructive/40 bg-destructive/10">
-        <CardContent className="p-4 text-sm text-destructive">{friendlyError(error)}</CardContent>
-      </Card>
+      <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+        {friendlyError(error)}
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <MobileSectionHeader
+    <div className="space-y-6 md:space-y-8">
+      <ModuleHeader
         title="Rendimiento"
-        subtitle="Actividad real, conversion y renovaciones por periodo comparable."
-        badge={<Badge variant="outline">Actualiza cada 30s</Badge>}
+        description="Analítica de uso, adopción, retención y evolución operativa del sistema."
+        icon={BarChart3}
+        module="rendimiento"
+        actions={
+          <div className="flex items-center gap-2">
+            <GrainSelect value={grain} onChange={setGrain} />
+          </div>
+        }
       />
 
-      <section className="space-y-2 md:hidden">
-        <div className="flex gap-2">
-          <PeriodChip active={periodDays <= 7} onClick={() => setPeriodDays(7)}>
-            7 días
-          </PeriodChip>
-          <PeriodChip active={periodDays > 7 && periodDays <= 30} onClick={() => setPeriodDays(30)}>
-            30 días
-          </PeriodChip>
-          <PeriodChip active={periodDays > 30} onClick={() => setPeriodDays(90)}>
-            90 días
-          </PeriodChip>
+      <section className="space-y-3">
+        <div className="hidden md:block">
+          <AnalyticsDateRangePicker
+            range={dateRange}
+            onChange={(next) => setDateRange(next)}
+          />
         </div>
+
+        <MobileFiltersPanel
+          activeFilters={activeFilterCount}
+          onClear={() => {
+            setPlan("all");
+            setStatus("all");
+            setSource("all");
+            setCampaign("all");
+            setVersion("all");
+          }}
+        >
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <FilterSelect
+              value={plan}
+              onChange={setPlan}
+              label="Plan"
+              options={[{ value: "all", label: "Todos los planes" }, ...(plans.data ?? []).map((p) => ({ value: p.code, label: p.name }))]}
+            />
+            <FilterSelect value={status} onChange={setStatus} label="Estado" options={STATUS_OPTIONS} />
+            <FilterSelect
+              value={source}
+              onChange={setSource}
+              label="Fuente"
+              options={[{ value: "all", label: "Todas las fuentes" }, ...(dimensions.data?.sources ?? []).map((s) => ({ value: s, label: s }))]}
+            />
+            <FilterSelect
+              value={campaign}
+              onChange={setCampaign}
+              label="Campaña"
+              options={[{ value: "all", label: "Todas las campañas" }, ...(dimensions.data?.campaigns ?? []).map((c) => ({ value: c, label: c }))]}
+            />
+            <FilterSelect
+              value={version}
+              onChange={setVersion}
+              label="Versión"
+              options={[{ value: "all", label: "Todas las versiones" }, ...(dimensions.data?.versions ?? []).map((v) => ({ value: v, label: v }))]}
+            />
+          </div>
+        </MobileFiltersPanel>
       </section>
 
-      <section className="hidden md:block">
-        <AnalyticsDateRangePicker range={dateRange} onChange={setDateRange} />
-      </section>
+      {isMobile ? (
+        <MobileMetricsGrid metrics={mobileMetrics} moreLabel="Ver metricas completas" />
+      ) : null}
 
-      <MobileFiltersPanel
-        activeFilters={activeFilterCount}
-        onClear={() => {
-          setPlan("all");
-          setStatus("all");
-          setSource("all");
-          setCampaign("all");
-          setVersion("all");
-        }}
-      >
-        <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
-          <Filter
-            value={String(periodDays)}
-            onChange={(value) => setPeriodDays(Number(value))}
-            label="Periodo"
-            values={[
-              { value: "7", label: "Últimos 7 días" },
-              { value: "30", label: "Últimos 30 días" },
-              { value: "90", label: "Últimos 90 días" },
-              { value: "180", label: "Últimos 180 días" },
-            ]}
+      {/* BLOQUE A: ADQUISICIÓN */}
+      <SectionCard title="A. Adquisición" module="rendimiento">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <MetricCard
+            label="Registros nuevos"
+            value={currentTotals.newUsers}
+            comparison={compare(currentTotals.newUsers, previousTotals.newUsers)}
+            icon={Users}
+            module="rendimiento"
           />
-          <Filter
-            value={grain}
-            onChange={(value) => setGrain(value as Grain)}
-            label="Agrupación"
-            values={[
-              { value: "daily", label: "Diaria" },
-              { value: "weekly", label: "Semanal" },
-              { value: "monthly", label: "Mensual" },
-            ]}
+          <MetricCard
+            label="Pruebas iniciadas"
+            value={currentTotals.trials}
+            comparison={compare(currentTotals.trials, previousTotals.trials)}
+            icon={Activity}
+            module="rendimiento"
           />
-          <Filter
-            value={plan}
-            onChange={setPlan}
-            label="Plan"
-            values={[
-              { value: "all", label: "Todos los planes" },
-              ...(plans.data ?? []).map((item) => ({ value: item.code, label: item.name })),
-            ]}
+          <MetricCard
+            label="Licencias pagadas"
+            value={currentTotals.paidLicenses}
+            comparison={compare(currentTotals.paidLicenses, previousTotals.paidLicenses)}
+            icon={TrendingUp}
+            semanticState="success"
           />
-          <Filter value={status} onChange={setStatus} label="Estado" values={STATUS_OPTIONS} />
-          <Filter
-            value={source}
-            onChange={setSource}
-            label="Fuente"
-            values={[
-              { value: "all", label: "Todas las fuentes" },
-              ...(dimensions.data?.sources ?? []).map(option),
-            ]}
-          />
-          <Filter
-            value={campaign}
-            onChange={setCampaign}
-            label="Campaña"
-            values={[
-              { value: "all", label: "Todas las campañas" },
-              ...(dimensions.data?.campaigns ?? []).map(option),
-            ]}
-          />
-          <Filter
-            value={version}
-            onChange={setVersion}
-            label="Versión"
-            values={[
-              { value: "all", label: "Todas las versiones" },
-              ...(dimensions.data?.versions ?? []).map(option),
-            ]}
-          />
-        </section>
-      </MobileFiltersPanel>
+        </div>
+      </SectionCard>
 
-      {isMobile ? <MobileMetricsGrid metrics={mobileMetrics} moreLabel="Ver mas metricas" /> : null}
+      {/* BLOQUE B: USO */}
+      <SectionCard title="B. Uso y Actividad" module="rendimiento">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <MetricCard
+            label="Activos hoy"
+            value={todayRow?.activeUsers ?? 0}
+            comparison="Usuarios únicos activos"
+            icon={Activity}
+            module="rendimiento"
+          />
+          <MetricCard
+            label="Activos semanales (WAU)"
+            value={averageMetric(current, "activeUsers", 7)}
+            comparison="Promedio últimos 7 días"
+            icon={Users}
+            module="rendimiento"
+          />
+          <MetricCard
+            label="Activos mensuales (MAU)"
+            value={averageMetric(current, "activeUsers", 30)}
+            comparison="Promedio últimos 30 días"
+            icon={Users}
+            module="rendimiento"
+          />
+          <MetricCard
+            label="Inicios de sesión"
+            value={currentTotals.sessions}
+            comparison={compare(currentTotals.sessions, previousTotals.sessions)}
+            icon={ShieldCheck}
+            module="rendimiento"
+          />
+        </div>
+      </SectionCard>
 
-      <section className="hidden gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:grid">
-        <Metric
-          label="Registros nuevos"
-          value={currentTotals.newUsers}
-          previous={previousTotals.newUsers}
-        />
-        <Metric
-          label="Pruebas iniciadas"
-          value={currentTotals.trials}
-          previous={previousTotals.trials}
-        />
-        <Metric
-          label="Licencias pagadas nuevas"
-          value={currentTotals.paidLicenses}
-          previous={previousTotals.paidLicenses}
-        />
-        <Metric
-          label="Activos hoy"
-          value={todayRow?.activeUsers ?? 0}
-          previous={yesterdayRow?.activeUsers ?? 0}
-          comparison="vs ayer"
-        />
-        <Metric
-          label="Activos semanales"
-          value={todayRow?.weeklyActiveUsers ?? 0}
-          previous={weekAgoRow?.weeklyActiveUsers ?? 0}
-          comparison="vs hace 7 días"
-        />
-        <Metric
-          label="Activos mensuales"
-          value={todayRow?.monthlyActiveUsers ?? 0}
-          previous={weekAgoRow?.monthlyActiveUsers ?? 0}
-          comparison="vs hace 7 días"
-        />
-        <Metric
-          label="Inicios de sesión"
-          value={currentTotals.logins}
-          previous={previousTotals.logins}
-        />
-        <Metric
-          label="Renovaciones"
-          value={currentTotals.renewals}
-          previous={previousTotals.renewals}
-        />
-        <Metric
-          label="Licencias vencidas"
-          value={currentTotals.expired}
-          previous={previousTotals.expired}
-          inverse
-        />
-        <Metric
-          label="Conversión prueba a pago"
-          value={`${retention.data?.trialToPaidRate ?? 0}%`}
-        />
-        <Metric label="Retención 7 días" value={`${retention.data?.retention7Rate ?? 0}%`} />
-        <Metric label="Retención 30 días" value={`${retention.data?.retention30Rate ?? 0}%`} />
-      </section>
+      {/* BLOQUE C: NEGOCIO */}
+      <SectionCard title="C. Negocio y Retención" module="rendimiento">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <MetricCard
+            label="Renovaciones"
+            value={currentTotals.renewals}
+            comparison={compare(currentTotals.renewals, previousTotals.renewals)}
+            icon={TrendingUp}
+            semanticState="success"
+          />
+          <MetricCard
+            label="Licencias vencidas"
+            value={currentTotals.expired}
+            comparison={compare(currentTotals.expired, previousTotals.expired)}
+            icon={TrendingDown}
+            semanticState="danger"
+          />
+          <MetricCard
+            label="Conversión prueba → pago"
+            value={`${retention.data?.trialToPaidRate ?? 0}%`}
+            comparison="Tasa global del periodo"
+            icon={BarChart3}
+            module="rendimiento"
+          />
+          <MetricCard
+            label="Retención (30 días)"
+            value={`${retention.data?.retention30Rate ?? 0}%`}
+            comparison="Usuarios recurrentes"
+            icon={Activity}
+            semanticState="info"
+          />
+        </div>
+      </SectionCard>
 
-      {chartRows.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            No hay datos de rendimiento para este filtro.
-          </CardContent>
-        </Card>
-      ) : (
-        <section className="grid gap-6 xl:grid-cols-2">
-          <ChartCard
-            title="Uso real de la aplicación"
-            description="Usuarios activos y sesiones sin inflar métricas por recargas."
-          >
+      {/* GRÁFICO 1: USO REAL DE LA APLICACIÓN */}
+      <SectionCard title="Uso real de la aplicación (Activos vs Sesiones)" module="rendimiento">
+        {chartRows.length > 0 ? (
+          <div className="h-64 md:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartRows}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="date" fontSize={11} />
-                <YAxis allowDecimals={false} fontSize={11} />
+              <AreaChart data={chartRows} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--module-comercial)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--module-comercial)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
                 <Tooltip {...adminChartTooltipProps} />
-                <Legend {...adminChartLegendProps} />
                 <Area
                   type="monotone"
                   dataKey="activeUsers"
-                  name="Activos"
-                  stroke="hsl(var(--primary))"
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.2}
+                  name="Usuarios activos"
+                  stroke="var(--primary)"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorActive)"
                 />
                 <Area
                   type="monotone"
-                  dataKey="logins"
+                  dataKey="sessions"
                   name="Sesiones"
-                  stroke="#a78bfa"
-                  fill="#a78bfa"
-                  fillOpacity={0.12}
+                  stroke="var(--module-comercial)"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorSessions)"
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </ChartCard>
+          </div>
+        ) : (
+          <EmptyState
+            icon={Activity}
+            title="Sin datos de uso"
+            description="No se registran métricas de actividad para el rango de fechas seleccionado."
+            module="rendimiento"
+          />
+        )}
+      </SectionCard>
 
-          <ChartCard
-            title="Crecimiento y licencias"
-            description="Registros, pruebas y pagadas en el mismo periodo para lectura de embudo."
-          >
+      {/* GRÁFICO 2: CRECIMIENTO Y LICENCIAS */}
+      <SectionCard title="Crecimiento y licencias (Registros, Pruebas y Pagadas)" module="rendimiento">
+        {chartRows.length > 0 ? (
+          <div className="h-64 md:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartRows}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="date" fontSize={11} />
-                <YAxis allowDecimals={false} fontSize={11} />
+              <BarChart data={chartRows} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
                 <Tooltip {...adminChartTooltipProps} />
-                <Legend {...adminChartLegendProps} />
-                <Bar dataKey="newUsers" name="Registros" fill="#38bdf8" />
-                <Bar dataKey="trials" name="Pruebas" fill="#fbbf24" />
-                <Bar dataKey="paidLicenses" name="Pagadas" fill="#34d399" />
+                <Bar dataKey="newUsers" name="Registros" fill="var(--module-clientes)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="trials" name="Pruebas" fill="var(--module-comercial)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="paidLicenses" name="Pagadas" fill="var(--semantic-success)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </ChartCard>
-        </section>
-      )}
-
-      <Card className="glass-panel">
-        <CardHeader>
-          <CardTitle className="text-base">Ingresos confirmados</CardTitle>
-          <CardDescription>
-            Se muestran separados por moneda para evitar interpretaciones incorrectas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Money currency="CUP" value={currentTotals.revenueCUP} />
-            <Money currency="USD" value={currentTotals.revenueUSD} />
-            <Money currency="EUR" value={currentTotals.revenueEUR} />
           </div>
-        </CardContent>
-      </Card>
-
-      <section className="grid gap-3 md:grid-cols-2">
-        <Comparison
-          title="Hoy frente a ayer"
-          current={todayRow?.activeUsers ?? 0}
-          previous={yesterdayRow?.activeUsers ?? 0}
-        />
-        <Comparison
-          title="Hoy frente a hace 7 días"
-          current={todayRow?.activeUsers ?? 0}
-          previous={weekAgoRow?.activeUsers ?? 0}
-          subtitle="Comparación del mismo indicador semanal"
-        />
-      </section>
+        ) : (
+          <EmptyState
+            icon={BarChart3}
+            title="Sin datos de crecimiento"
+            description="No hay registros de licencias ni pruebas para este periodo."
+            module="rendimiento"
+          />
+        )}
+      </SectionCard>
     </div>
   );
 }
 
-function PeriodChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function GrainSelect({ value, onChange }: { value: Grain; onChange: (v: Grain) => void }) {
   return (
-    <Button
-      type="button"
-      variant={active ? "default" : "outline"}
-      size="sm"
-      className="h-9 flex-1 rounded-xl"
-      onClick={onClick}
-    >
-      {children}
-    </Button>
+    <Select value={value} onValueChange={(v) => onChange(v as Grain)}>
+      <SelectTrigger className="h-9 w-32 text-xs bg-card/60">
+        <SelectValue placeholder="Granularidad" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="daily">Diaria</SelectItem>
+        <SelectItem value="weekly">Semanal</SelectItem>
+        <SelectItem value="monthly">Mensual</SelectItem>
+      </SelectContent>
+    </Select>
   );
 }
 
-function option(value: string) {
-  return { value, label: value };
+function FilterSelect({
+  value,
+  onChange,
+  label,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+  options: FilterOption[];
+}) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="h-10 text-xs bg-background/60 border-border/80">
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function aggregate(rows: UsageAnalyticsDay[], grain: Grain) {
+  if (grain === "daily") {
+    return rows.map((r) => ({
+      ...r,
+      label: formatDate(r.date),
+    }));
+  }
+
+  const map = new Map<string, UsageAnalyticsDay>();
+  rows.forEach((r) => {
+    const d = new Date(`${r.date}T12:00:00`);
+    const key =
+      grain === "weekly"
+        ? `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`
+        : `${d.getFullYear()}-${d.getMonth()}`;
+    const existing = map.get(key) ?? {
+      date: r.date,
+      newUsers: 0,
+      trials: 0,
+      paidLicenses: 0,
+      activeUsers: 0,
+      sessions: 0,
+      renewals: 0,
+      expired: 0,
+    };
+    existing.newUsers += r.newUsers;
+    existing.trials += r.trials;
+    existing.paidLicenses += r.paidLicenses;
+    existing.activeUsers = Math.max(existing.activeUsers, r.activeUsers);
+    existing.sessions += r.sessions;
+    existing.renewals += r.renewals;
+    existing.expired += r.expired;
+    map.set(key, existing);
+  });
+
+  return Array.from(map.values()).map((r) => ({
+    ...r,
+    label: formatDate(r.date),
+  }));
+}
+
+function totals(rows: UsageAnalyticsDay[]) {
+  return rows.reduce(
+    (acc, r) => ({
+      newUsers: acc.newUsers + r.newUsers,
+      trials: acc.trials + r.trials,
+      paidLicenses: acc.paidLicenses + r.paidLicenses,
+      sessions: acc.sessions + r.sessions,
+      renewals: acc.renewals + r.renewals,
+      expired: acc.expired + r.expired,
+    }),
+    { newUsers: 0, trials: 0, paidLicenses: 0, sessions: 0, renewals: 0, expired: 0 },
+  );
+}
+
+function averageMetric(rows: UsageAnalyticsDay[], key: keyof UsageAnalyticsDay, days: number) {
+  const slice = rows.slice(-days);
+  if (!slice.length) return 0;
+  const sum = slice.reduce((acc, r) => acc + Number(r[key] ?? 0), 0);
+  return Math.round(sum / slice.length);
+}
+
+function compare(current: number, previous: number) {
+  if (previous === 0) return current === 0 ? "Sin cambio" : "Sin base anterior";
+  const delta = ((current - previous) / previous) * 100;
+  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% vs periodo anterior`;
+}
+
+function formatDate(dateStr: string) {
+  try {
+    return new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
+      new Date(`${dateStr}T12:00:00`),
+    );
+  } catch {
+    return dateStr;
+  }
 }
 
 function isoDate(date: Date) {
@@ -485,198 +565,6 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
-function variation(current: number, previous: number) {
-  if (previous === 0) return current === 0 ? 0 : 100;
-  return ((current - previous) / previous) * 100;
-}
-
-function totals(rows: UsageAnalyticsDay[]) {
-  return rows.reduce(
-    (sum, row) => ({
-      newUsers: sum.newUsers + row.newUsers,
-      trials: sum.trials + row.trials,
-      paidLicenses: sum.paidLicenses + row.paidLicenses,
-      activeUsers: sum.activeUsers + row.activeUsers,
-      logins: sum.logins + row.logins,
-      renewals: sum.renewals + row.renewals,
-      expired: sum.expired + row.expired,
-      revenueCUP: sum.revenueCUP + row.revenueCUP,
-      revenueUSD: sum.revenueUSD + row.revenueUSD,
-      revenueEUR: sum.revenueEUR + row.revenueEUR,
-    }),
-    {
-      newUsers: 0,
-      trials: 0,
-      paidLicenses: 0,
-      activeUsers: 0,
-      logins: 0,
-      renewals: 0,
-      expired: 0,
-      revenueCUP: 0,
-      revenueUSD: 0,
-      revenueEUR: 0,
-    },
-  );
-}
-
-function aggregate(rows: UsageAnalyticsDay[], grain: Grain) {
-  if (grain === "daily") return rows;
-
-  const groups = new Map<string, UsageAnalyticsDay[]>();
-  rows.forEach((row) => {
-    const date = new Date(`${row.date}T12:00:00`);
-    const key =
-      grain === "monthly"
-        ? row.date.slice(0, 7)
-        : isoDate(addDays(date, -((date.getDay() + 6) % 7)));
-    groups.set(key, [...(groups.get(key) ?? []), row]);
-  });
-
-  return [...groups].map(([date, values]) => ({ date, ...totals(values) }));
-}
-
-function Filter({
-  value,
-  onChange,
-  label,
-  values,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  label: string;
-  values: FilterOption[];
-}) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger aria-label={label}>
-        <SelectValue placeholder={label} />
-      </SelectTrigger>
-      <SelectContent>
-        {values.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  previous,
-  comparison = "vs periodo anterior",
-  inverse = false,
-}: {
-  label: string;
-  value: string | number;
-  previous?: number;
-  comparison?: string;
-  inverse?: boolean;
-}) {
-  const numeric = typeof value === "number" ? value : null;
-  const change = numeric !== null && previous !== undefined ? variation(numeric, previous) : null;
-  const positive = change !== null && (inverse ? change < 0 : change > 0);
-
-  return (
-    <Card className="glass-panel">
-      <CardContent className="p-4">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-        <div className="mt-1 text-2xl font-semibold">{value}</div>
-        {change !== null ? (
-          <div
-            className={`mt-1 flex items-center gap-1 text-xs ${
-              change === 0
-                ? "text-muted-foreground"
-                : positive
-                  ? "text-emerald-500"
-                  : "text-destructive"
-            }`}
-          >
-            {change > 0 ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : change < 0 ? (
-              <TrendingDown className="h-3 w-3" />
-            ) : (
-              <Activity className="h-3 w-3" />
-            )}
-            {change > 0 ? "+" : ""}
-            {change.toFixed(1)}% {comparison}
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ChartCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="glass-panel">
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="h-80 min-w-0">{children}</CardContent>
-    </Card>
-  );
-}
-
-function Money({ currency, value }: { currency: string; value: number }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <div className="text-xs text-muted-foreground">{currency}</div>
-      <div className="text-2xl font-semibold">{value.toLocaleString()}</div>
-    </div>
-  );
-}
-
-function Comparison({
-  title,
-  current,
-  previous,
-  subtitle,
-}: {
-  title: string;
-  current: number;
-  previous: number;
-  subtitle?: string;
-}) {
-  const change = variation(current, previous);
-
-  return (
-    <Card>
-      <CardContent className="flex items-center justify-between gap-4 p-4">
-        <div>
-          <div className="flex items-center gap-2 font-medium">
-            <CalendarDays className="h-4 w-4 text-primary" />
-            {title}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {subtitle ?? `${current} activos frente a ${previous}`}
-          </div>
-        </div>
-        <Badge variant={change >= 0 ? "default" : "destructive"}>
-          {change > 0 ? "+" : ""}
-          {change.toFixed(1)}%
-        </Badge>
-      </CardContent>
-    </Card>
-  );
-}
-
 function friendlyError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/network|fetch|connection|offline/i.test(message)) {
-    return "Sin conexión. Verifica internet para actualizar los indicadores de rendimiento.";
-  }
-  return message;
+  return error instanceof Error ? error.message : String(error);
 }

@@ -30,17 +30,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2, Users } from "lucide-react";
+import { Loader2, Plus, Trash2, Users, ShieldCheck } from "lucide-react";
 import { useProjectMembers, useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { toast } from "sonner";
 import type { ProjectRole } from "@/lib/services";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  MobileActionsMenu,
-  MobileLoadMore,
-  MobileSectionHeader,
-} from "@/components/admin/MobileAdminSystem";
+import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
+import { SectionCard } from "@/components/admin/SectionCard";
 
 const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: string }> = [
   { value: "accounting", label: "Cobros / Accounting" },
@@ -56,7 +55,6 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Exclude<ProjectRole, "owner">>("accounting");
-  const [mobileVisible, setMobileVisible] = useState(10);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
   const addMember = useMutation({
@@ -77,273 +75,154 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
     },
     onError: (mutationError: Error) => toast.error(mutationError.message),
   });
-  const changeRole = useMutation({
-    mutationFn: ({ email, role }: { email: string; role: Exclude<ProjectRole, "owner"> }) =>
-      supabaseServices.projectMembers.add(projectId, email, role),
-    onSuccess: async () => {
-      await refresh();
-      toast.success("Rol actualizado");
-    },
-    onError: (mutationError: Error) => toast.error(mutationError.message),
-  });
-  const visibleMobileRows = rows.slice(0, mobileVisible);
 
   return (
-    <div className="space-y-4">
-      <MobileSectionHeader
+    <div className="space-y-6 md:space-y-8">
+      <ModuleHeader
         title="Empleados"
-        subtitle="Gestiona accesos del equipo por rol y permisos."
-        badge={<Badge variant="outline">{rows.length}</Badge>}
-        action={
+        description="Gestión de miembros del equipo, roles y permisos operativos en el proyecto."
+        icon={Users}
+        module="empleados"
+        actions={
           canManage ? (
-            <Button size="sm" className="h-10" onClick={() => setOpen(true)}>
+            <Button size="sm" onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Anadir empleado
+              Añadir empleado
             </Button>
-          ) : null
+          ) : undefined
         }
       />
 
-      <Card className="glass-panel">
-        <CardHeader className="flex-row items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-primary" />
-            Empleados asignados
-            <Badge variant="outline" className="ml-2">
-              {rows.length}
-            </Badge>
-          </CardTitle>
-          {canManage && (
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Asignar empleado
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[92dvh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Asignar empleado</DialogTitle>
-                  <DialogDescription>
-                    El correo debe pertenecer a un usuario registrado en Supabase.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2">
-                  <Label htmlFor="employee-email">Correo</Label>
-                  <Input
-                    id="employee-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="empleado@correo.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="employee-role">Rol</Label>
-                  <Select
-                    value={role}
-                    onValueChange={(value) => setRole(value as Exclude<ProjectRole, "owner">)}
-                  >
-                    <SelectTrigger id="employee-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ASSIGNABLE_ROLES.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    disabled={addMember.isPending || !email.trim()}
-                    onClick={() => addMember.mutate()}
-                  >
-                    {addMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Asignar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="py-12 text-center text-sm text-destructive">
-              No se pudieron cargar los empleados.
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              Sin empleados asignados.
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3 md:hidden">
-                {visibleMobileRows.map((employee) => (
-                  <Card key={employee.id} className="border-border/70 bg-card/80">
-                    <CardContent className="space-y-3 p-3.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <Avatar className="h-9 w-9 border border-border">
-                            <AvatarImage
-                              src={employee.avatarUrl ?? undefined}
-                              alt={employee.name}
-                              referrerPolicy="no-referrer"
-                            />
-                            <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
-                              {employee.name.slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">{employee.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {employee.email}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant={employee.role === "owner" ? "default" : "secondary"}>
-                          {employee.role}
-                        </Badge>
-                      </div>
-                      {canManage && employee.role !== "owner" && (
-                        <Select
-                          value={employee.role}
-                          disabled={changeRole.isPending}
-                          onValueChange={(value) =>
-                            changeRole.mutate({
-                              email: employee.email,
-                              role: value as Exclude<ProjectRole, "owner">,
-                            })
-                          }
-                        >
-                          <SelectTrigger aria-label={`Rol de ${employee.email}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ASSIGNABLE_ROLES.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      <div className="flex justify-end">
-                        <MobileActionsMenu
-                          items={[
-                            {
-                              label: "Retirar empleado",
-                              destructive: true,
-                              disabled:
-                                !canManage || employee.role === "owner" || removeMember.isPending,
-                              onSelect: () => removeMember.mutate(employee.id),
-                            },
-                          ]}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+      {/* Bloque Informativo: Roles del Proyecto */}
+      <SectionCard title="Roles del proyecto y permisos" module="empleados">
+        <div className="grid gap-3 sm:grid-cols-3 text-xs">
+          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+            <span className="font-bold text-foreground">Owner</span>
+            <p className="text-muted-foreground">Acceso total, administración completa y gestión de miembros y ajustes.</p>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+            <span className="font-bold text-foreground">Accounting</span>
+            <p className="text-muted-foreground">Gestión de clientes, cobros/pagos, analítica y lectura de licencias y planes.</p>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+            <span className="font-bold text-foreground">Marketing</span>
+            <p className="text-muted-foreground">Gestión de clientes, seguimiento comercial (leads/campañas) y analítica.</p>
+          </div>
+        </div>
+      </SectionCard>
 
-              {isMobile ? (
-                <MobileLoadMore
-                  total={rows.length}
-                  visible={visibleMobileRows.length}
-                  canLoadMore={rows.length > visibleMobileRows.length}
-                  onLoadMore={() => setMobileVisible((value) => value + 10)}
-                />
-              ) : null}
+      <AdminDataTableShell
+        title="Empleados asignados"
+        description="Miembros con acceso activo al centro de control"
+        isEmpty={rows.length === 0}
+        emptyState={
+          <EmptyState
+            icon={Users}
+            title="Sin empleados adicionales"
+            description="Actualmente no hay miembros adicionales asignados a este proyecto."
+            module="empleados"
+          />
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Miembro</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Incorporación</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((member) => (
+              <TableRow key={member.userId} className="group hover:bg-muted/40 transition-colors">
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 border border-border/70">
+                      <AvatarImage src={member.avatarUrl ?? undefined} />
+                      <AvatarFallback className="bg-indigo-500/10 text-indigo-400 text-xs font-semibold">
+                        {member.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground text-sm truncate">{member.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs uppercase font-mono font-medium">
+                    {member.role}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(member.joinedAt))}
+                </TableCell>
+                <TableCell className="text-right">
+                  {canManage && member.role !== "owner" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => removeMember.mutate(member.userId)}
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      Retirar
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </AdminDataTableShell>
 
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Correo</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell data-label="Empleado">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9 border border-border">
-                              <AvatarImage
-                                src={employee.avatarUrl ?? undefined}
-                                alt={employee.name}
-                                referrerPolicy="no-referrer"
-                              />
-                              <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
-                                {employee.name.slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{employee.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell data-label="Correo" className="break-all text-muted-foreground">
-                          {employee.email}
-                        </TableCell>
-                        <TableCell data-label="Rol">
-                          {canManage && employee.role !== "owner" ? (
-                            <Select
-                              value={employee.role}
-                              disabled={changeRole.isPending}
-                              onValueChange={(value) =>
-                                changeRole.mutate({
-                                  email: employee.email,
-                                  role: value as Exclude<ProjectRole, "owner">,
-                                })
-                              }
-                            >
-                              <SelectTrigger aria-label={`Rol de ${employee.email}`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ASSIGNABLE_ROLES.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Badge variant="default">Owner</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell data-label="Acciones" className="text-right">
-                          {canManage && employee.role !== "owner" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Retirar a ${employee.email}`}
-                              disabled={removeMember.isPending}
-                              onClick={() => removeMember.mutate(employee.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* Dialog for adding employee kept intact */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Asignar empleado</DialogTitle>
+            <DialogDescription>El correo debe pertenecer a un usuario registrado en Supabase.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Correo electrónico</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="empleado@correo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rol</Label>
+              <Select
+                value={role}
+                onValueChange={(value) => setRole(value as Exclude<ProjectRole, "owner">)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => addMember.mutate()} disabled={addMember.isPending || !email.trim()}>
+              Asignar empleado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

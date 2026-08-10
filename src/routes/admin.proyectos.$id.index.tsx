@@ -10,8 +10,10 @@ import {
   Search,
   ShieldAlert,
   TrendingUp,
-  UserPlus,
   Users,
+  Filter as FilterIcon,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
 import {
   Bar,
@@ -22,13 +24,13 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  BarChart,
 } from "recharts";
 
 import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AnalyticsDateRangePicker,
   usePersistentAnalyticsDateRange,
@@ -47,6 +49,10 @@ import {
   MobileMetricsGrid,
   type MobileMetric,
 } from "@/components/admin/MobileAdminSystem";
+import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { MetricCard } from "@/components/admin/MetricCard";
+import { SectionCard } from "@/components/admin/SectionCard";
+import { EmptyState } from "@/components/admin/EmptyState";
 
 export const Route = createFileRoute("/admin/proyectos/$id/")({
   component: ResumenPage,
@@ -68,6 +74,7 @@ function ResumenPage() {
   const canViewPayments = permissions.includes("payments.view");
   const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
+  const canViewCommercial = permissions.includes("commercial.view");
   const canManageLicenses = permissions.includes("licenses.manage");
   const canManagePayments = permissions.includes("payments.manage");
 
@@ -120,11 +127,18 @@ function ResumenPage() {
     enabled: !permissionsLoading && canViewAnalytics,
     refetchInterval: REFRESH_INTERVAL,
   });
+  const commercialLeads = useQuery({
+    queryKey: ["admin-commercial-leads", id],
+    queryFn: () => supabaseServices.commercial.listLeads(id),
+    enabled: !permissionsLoading && canViewCommercial,
+    refetchInterval: REFRESH_INTERVAL,
+  });
 
   const now = Date.now();
   const licensesRows = useMemo(() => licenses.data ?? [], [licenses.data]);
   const clientsRows = useMemo(() => clients.data ?? [], [clients.data]);
   const paymentRows = useMemo(() => payments.data ?? [], [payments.data]);
+  const leadsRows = useMemo(() => commercialLeads.data ?? [], [commercialLeads.data]);
 
   const planCodes = useMemo(
     () => [...new Set(paymentRows.map((row) => row.plan).filter(Boolean))],
@@ -189,6 +203,35 @@ function ResumenPage() {
   const activeLicenses = selectedLicenseRows.filter(
     (license) => license.status === "active",
   ).length;
+  const activeClientsCount = clientsRows.filter((client) => client.status === "active").length;
+
+  // Corrected "Licencias pagadas" rule: active licenses, excluding trial and admin, with confirmed payment history
+  const paidLicensesCount = useMemo(() => {
+    return licensesRows.filter((l) => {
+      if (l.status !== "active") return false;
+      if (l.plan === "trial" || l.plan === "admin") return false;
+      const hasPaidPayment = paymentRows.some(
+        (p) => p.status === "paid" && (p.licenseId === l.id || p.userId === l.userId || p.plan === l.plan),
+      );
+      return hasPaidPayment;
+    }).length;
+  }, [licensesRows, paymentRows]);
+
+  // Corrected "Renovaciones próximas" rule: paid commercial licenses expiring within 30 days
+  const upcomingRenewalsCount = useMemo(() => {
+    return licensesRows.filter((l) => {
+      if (l.status !== "active") return false;
+      if (l.plan === "trial" || l.plan === "admin") return false;
+      if (!l.expiresAt) return false;
+      const delta = new Date(l.expiresAt).getTime() - now;
+      const isExpiring30 = delta >= 0 && delta <= 30 * DAY;
+      const hasPaidPayment = paymentRows.some(
+        (p) => p.status === "paid" && (p.licenseId === l.id || p.userId === l.userId || p.plan === l.plan),
+      );
+      return isExpiring30 && hasPaidPayment;
+    }).length;
+  }, [licensesRows, paymentRows, now]);
+
   const expiring7 = selectedLicenseRows.filter((license) => {
     if (!license.expiresAt || license.status !== "active") return false;
     const delta = new Date(license.expiresAt).getTime() - now;
@@ -226,6 +269,8 @@ function ResumenPage() {
   const conversionRate =
     trialClients > 0 ? Math.round((paidUniqueUsers / trialClients) * 100) : null;
 
+  const revenuePeriod = totalByStatus(paidPeriod);
+  const revenuePrevious = totalByStatus(paidPrevious);
   const revenueToday = totalByStatus(
     byDateRange(filteredPayments, startOfToday(), endOfToday()).filter(
       (payment) => payment.status === "paid",
@@ -236,18 +281,63 @@ function ResumenPage() {
       (payment) => payment.status === "paid",
     ),
   );
-  const revenuePeriod = totalByStatus(paidPeriod);
-  const revenuePrevious = totalByStatus(paidPrevious);
-  const revenueMonthCurrent = totalByStatus(
-    byDateRange(filteredPayments, startOfCurrentMonth(), endOfCurrentMonth()).filter(
-      (payment) => payment.status === "paid",
-    ),
-  );
-  const revenueMonthPrevious = totalByStatus(
-    byDateRange(filteredPayments, startOfPreviousMonth(), endOfPreviousMonth()).filter(
-      (payment) => payment.status === "paid",
-    ),
-  );
+
+  // Revenue time series for chart
+  const revenueTimeSeries = useMemo(() => {
+    const map = new Map<string, number>();
+    paidPeriod.forEach((p) => {
+      const dateStr = p.createdAt.slice(0, 10);
+      map.set(dateStr, (map.get(dateStr) ?? 0) + p.amount);
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, amount]) => ({
+        date,
+        label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
+          new Date(`${date}T12:00:00`),
+        ),
+        amount,
+      }));
+  }, [paidPeriod]);
+
+  // Plan distribution for chart
+  const planDistribution = useMemo(() => {
+    const counts = new Map<string, number>();
+    selectedLicenseRows.forEach((l) => {
+      const p = l.plan || "general";
+      counts.set(p, (counts.get(p) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([plan, count]) => ({
+        plan: plan.toUpperCase(),
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [selectedLicenseRows]);
+
+  // Corrected Commercial Funnel Data from actual leadsRows
+  const funnelSteps = useMemo(() => {
+    const activeLeads = leadsRows.filter((l) => !l.archivedAt);
+    const totalLeads = activeLeads.length;
+    const contacted = activeLeads.filter(
+      (l) => l.status === "contacted" || l.status === "trial" || l.status === "converted" || l.lastInteractionAt,
+    ).length;
+    const inTrial = activeLeads.filter((l) => l.trialStarted || l.status === "trial").length;
+    const converted = activeLeads.filter((l) => l.paid || l.status === "converted").length;
+    const renewed = renewalsPeriod;
+
+    if (totalLeads === 0 && !canViewCommercial) {
+      return null; // indicates no commercial data available
+    }
+
+    return [
+      { label: "Leads", count: totalLeads, desc: "Leads comerciales activos" },
+      { label: "Contactados", count: contacted, desc: "Con contacto/interacción" },
+      { label: "Prueba", count: inTrial, desc: "En trial/prueba" },
+      { label: "Pago", count: converted, desc: "Convertidos a pago" },
+      { label: "Renovación", count: renewed, desc: "Renovaciones periodo" },
+    ];
+  }, [leadsRows, renewalsPeriod, canViewCommercial]);
 
   const analyticsRows = analytics.data ?? [];
   const chartRows = analyticsRows.map((row) => ({
@@ -258,7 +348,7 @@ function ResumenPage() {
   }));
   const chartCompact = chartRows.slice(-14);
 
-  const queryError = [clients, licenses, payments, plans, audit, analytics].find(
+  const queryError = [clients, licenses, payments, plans, audit, analytics, commercialLeads].find(
     (q) => q.isError,
   )?.error;
   const allLoading = [clients, licenses, payments, plans, audit, analytics].some(
@@ -323,34 +413,24 @@ function ResumenPage() {
       value: allLoading ? "Cargando..." : revenuePeriod || "0",
     },
     {
-      key: "active",
-      label: "Licencias activas",
-      value: allLoading ? "Cargando..." : String(activeLicenses),
+      key: "activeClients",
+      label: "Clientes activos",
+      value: allLoading ? "Cargando..." : String(activeClientsCount),
     },
     {
-      key: "pending",
-      label: "Pagos pendientes",
-      value: allLoading ? "Cargando..." : String(pendingPeriod.length),
+      key: "paidLicenses",
+      label: "Licencias pagadas",
+      value: allLoading ? "Cargando..." : String(paidLicensesCount),
     },
     {
-      key: "exp7",
-      label: "Vencen en 7 dias",
-      value: allLoading ? "Cargando..." : String(expiring7),
-    },
-    {
-      key: "missingReceipts",
-      label: "Sin recibo",
-      value: allLoading ? "Cargando..." : String(missingReceiptPeriod.length),
-    },
-    {
-      key: "newClients",
-      label: "Nuevos clientes",
-      value: allLoading ? "Cargando..." : String(newClientsPeriod),
+      key: "conversion",
+      label: "Conversión",
+      value: allLoading ? "Cargando..." : conversionRate === null ? "0%" : `${conversionRate}%`,
     },
     {
       key: "renewals",
-      label: "Renovaciones",
-      value: allLoading ? "Cargando..." : String(renewalsPeriod),
+      label: "Renovaciones próximas",
+      value: allLoading ? "Cargando..." : String(upcomingRenewalsCount),
     },
   ];
 
@@ -408,36 +488,21 @@ function ResumenPage() {
   const freshnessLabel = buildFreshnessLabel(dataUpdatedAt, allLoading);
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <section className="md:hidden">
-        <Card className="glass-panel border-border/70">
-          <CardContent className="space-y-2.5 p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold">{project?.name ?? "Centro de Control"}</p>
-                <p className="text-[11px] text-muted-foreground">{rangeLabel}</p>
-              </div>
-              <Badge variant={project?.status === "active" ? "default" : "secondary"}>
-                {project?.status === "active" ? "Activo" : (project?.status ?? "—")}
-              </Badge>
-            </div>
-            <p className="text-[11px] text-muted-foreground">{freshnessLabel}</p>
-          </CardContent>
-        </Card>
-      </section>
+    <div className="space-y-6 md:space-y-8">
+      <ModuleHeader
+        title="Resumen ejecutivo"
+        description={rangeLabel}
+        icon={TrendingUp}
+        module="resumen"
+        actions={
+          <Badge variant="outline" className="gap-2 bg-card/50 px-3 py-1 text-xs">
+            <RefreshCw className={`h-3 w-3 text-primary ${allLoading ? "animate-spin" : ""}`} />
+            {freshnessLabel}
+          </Badge>
+        }
+      />
 
-      <section className="hidden items-center justify-between gap-3 md:flex">
-        <div>
-          <h2 className="text-lg font-semibold">Resumen ejecutivo</h2>
-          <p className="text-sm text-muted-foreground">{rangeLabel}</p>
-        </div>
-        <Badge variant="outline" className="gap-2">
-          <RefreshCw className="h-3 w-3" />
-          {freshnessLabel}
-        </Badge>
-      </section>
-
-      <section className="space-y-2">
+      <section className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <PeriodChip
             active={period === "today"}
@@ -550,27 +615,30 @@ function ResumenPage() {
       </section>
 
       {queryError ? (
-        <Card className="border-destructive/40 bg-destructive/10">
-          <CardContent className="p-3 text-sm text-destructive">
-            {friendlyError(queryError)}
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          {friendlyError(queryError)}
+        </div>
       ) : null}
 
       {alertItems.length ? (
-        <section className="space-y-2">
-          <SectionTitle title="Alertas operativas" />
-          <div className="grid gap-2 md:grid-cols-2">
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            Alertas operativas
+          </h3>
+          <div className="grid gap-2.5 md:grid-cols-2">
             {alertItems.map((alert) => (
               <Button
                 key={alert.label}
                 asChild
                 variant="outline"
-                className="h-11 justify-between rounded-xl border-amber-400/30 bg-amber-500/5 text-left"
+                className="h-11 justify-between rounded-xl border-amber-500/30 bg-amber-500/5 text-left hover:bg-amber-500/10 transition-colors"
               >
                 <Link to={alert.to}>
-                  <span className="truncate text-xs">{alert.label}</span>
-                  <span className="ml-2 shrink-0 text-sm font-semibold">{alert.value}</span>
+                  <span className="truncate text-xs font-medium">{alert.label}</span>
+                  <Badge variant="secondary" className="ml-2 shrink-0 bg-amber-500/20 text-amber-300 font-mono">
+                    {alert.value}
+                  </Badge>
                 </Link>
               </Button>
             ))}
@@ -578,96 +646,76 @@ function ResumenPage() {
         </section>
       ) : null}
 
-      <section className="space-y-2">
-        <SectionTitle title="Métricas críticas" />
+      {/* 1. LOS 5 KPI PRINCIPALES (Semánticamente correctos) */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold tracking-tight text-foreground">KPI principales</h3>
         {isMobile ? (
           <MobileMetricsGrid metrics={mobileSummaryMetrics} moreLabel="Ver mas metricas" />
         ) : null}
-        <div className="hidden grid-cols-1 gap-2 min-[360px]:grid-cols-2 xl:grid-cols-5 md:grid">
-          <MetricCard
-            label="Ingresos hoy"
-            value={allLoading ? "Cargando..." : revenueToday || "0"}
-            comparison={renderComparison(revenueToday, revenueYesterday, "vs ayer")}
-            to={`/admin/proyectos/${id}/pagos`}
-            icon={TrendingUp}
-          />
-          <MetricCard
-            label="Ingresos del periodo"
-            value={allLoading ? "Cargando..." : revenuePeriod || "0"}
-            comparison={renderComparison(revenuePeriod, revenuePrevious, "vs periodo anterior")}
-            to={`/admin/proyectos/${id}/pagos`}
-            icon={CreditCard}
-          />
-          <MetricCard
-            label="Ingresos mes actual"
-            value={allLoading ? "Cargando..." : revenueMonthCurrent || "0"}
-            comparison={renderComparison(
-              revenueMonthCurrent,
-              revenueMonthPrevious,
-              "vs mes anterior",
-            )}
-            to={`/admin/proyectos/${id}/pagos`}
-            icon={CalendarClock}
-          />
-          <MetricCard
-            label="Pagos pendientes"
-            value={allLoading ? "Cargando..." : String(pendingPeriod.length)}
-            comparison={`${cancelledPeriod.length} anulados`}
-            to={`/admin/proyectos/${id}/pagos`}
-            icon={AlertTriangle}
-          />
-          <MetricCard
-            label="Renovaciones"
-            value={allLoading ? "Cargando..." : String(renewalsPeriod)}
-            comparison={renderComparisonCount(renewalsPeriod, renewalsPrevious)}
-            to={`/admin/proyectos/${id}/auditoria`}
-            icon={RefreshCw}
-          />
-          <MetricCard
-            label="Licencias activas"
-            value={allLoading ? "Cargando..." : String(activeLicenses)}
-            comparison={`${expiring7} vencen en 7 días`}
-            to={`/admin/proyectos/${id}/licencias`}
-            icon={FileKey2}
-          />
-          <MetricCard
-            label="Vencen en 30 días"
-            value={allLoading ? "Cargando..." : String(expiring30)}
-            comparison={`${expiring7} vencen en 7 días`}
-            to={`/admin/proyectos/${id}/licencias`}
-            icon={ShieldAlert}
-          />
-          <MetricCard
-            label="Clientes nuevos"
-            value={allLoading ? "Cargando..." : String(newClientsPeriod)}
-            comparison={`${clientsWithoutLicense} sin licencia`}
-            to={`/admin/proyectos/${id}/clientes`}
-            icon={UserPlus}
-          />
-          <MetricCard
-            label="Conversión prueba→pago"
-            value={
-              allLoading
-                ? "Cargando..."
-                : conversionRate === null
-                  ? "Sin base"
-                  : `${conversionRate}%`
-            }
-            comparison={
-              conversionRate === null
-                ? "No hay clientes en prueba"
-                : `${paidUniqueUsers} pagos confirmados en prueba`
-            }
-            to={`/admin/proyectos/${id}/clientes`}
-            icon={Users}
-          />
+        <div className="hidden grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5 md:grid">
+          <Link to={`/admin/proyectos/${id}/pagos`} className="block group">
+            <MetricCard
+              label="Ingresos del período"
+              value={allLoading ? "Cargando..." : revenuePeriod || "0"}
+              comparison={renderComparison(revenuePeriod, revenuePrevious, "vs periodo anterior")}
+              icon={CreditCard}
+              module="resumen"
+              isLoading={allLoading}
+            />
+          </Link>
+          <Link to={`/admin/proyectos/${id}/clientes`} className="block group">
+            <MetricCard
+              label="Clientes activos"
+              value={allLoading ? "Cargando..." : String(activeClientsCount)}
+              comparison={`${newClientsPeriod} nuevos en periodo`}
+              icon={Users}
+              module="clientes"
+              isLoading={allLoading}
+            />
+          </Link>
+          <Link to={`/admin/proyectos/${id}/licencias`} className="block group">
+            <MetricCard
+              label="Licencias pagadas"
+              value={allLoading ? "Cargando..." : String(paidLicensesCount)}
+              comparison={`${activeLicenses} licencias activas total`}
+              icon={FileKey2}
+              module="licencias"
+              isLoading={allLoading}
+            />
+          </Link>
+          <Link to={`/admin/proyectos/${id}/clientes`} className="block group">
+            <MetricCard
+              label="Conversión prueba → pago"
+              value={
+                allLoading
+                  ? "Cargando..."
+                  : conversionRate === null
+                    ? "0%"
+                    : `${conversionRate}%`
+              }
+              comparison={conversionRate === null ? "Sin clientes trial" : `${paidUniqueUsers} pagados`}
+              icon={TrendingUp}
+              module="pagos"
+              isLoading={allLoading}
+            />
+          </Link>
+          <Link to={`/admin/proyectos/${id}/licencias`} className="block group">
+            <MetricCard
+              label="Renovaciones próximas"
+              value={allLoading ? "Cargando..." : String(upcomingRenewalsCount)}
+              comparison={`${expiring7} vencen en 7 días`}
+              icon={CalendarClock}
+              module="planes"
+              isLoading={allLoading}
+            />
+          </Link>
         </div>
       </section>
 
       {quickActions.length ? (
-        <section className="space-y-2">
-          <SectionTitle title="Accesos rápidos" />
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold tracking-tight text-foreground">Accesos rápidos</h3>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
@@ -675,11 +723,11 @@ function ResumenPage() {
                   key={action.label}
                   asChild
                   variant="outline"
-                  className="h-11 justify-start rounded-xl px-3"
+                  className="h-11 justify-start rounded-xl px-3 border-border/70 bg-card/60 hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   <Link to={action.to}>
-                    <Icon className="h-4 w-4" />
-                    <span className="truncate text-xs">{action.label}</span>
+                    <Icon className="h-4 w-4 text-primary mr-2" />
+                    <span className="truncate text-xs font-medium">{action.label}</span>
                   </Link>
                 </Button>
               );
@@ -688,91 +736,214 @@ function ResumenPage() {
         </section>
       ) : null}
 
-      {canViewAnalytics ? (
-        <section className="space-y-2">
-          <SectionTitle title="Actividad comercial" />
-          <Card className="glass-panel">
-            <CardContent className="space-y-3 p-3 sm:p-4">
-              <div className="grid grid-cols-2 gap-2 text-xs min-[412px]:grid-cols-4">
-                <MiniStat label="Nuevos hoy" value={chartCompact.at(-1)?.newUsers ?? 0} />
-                <MiniStat label="Pruebas hoy" value={chartCompact.at(-1)?.trials ?? 0} />
-                <MiniStat label="Pagadas hoy" value={chartCompact.at(-1)?.paidLicenses ?? 0} />
-                <MiniStat label="Activos hoy" value={chartCompact.at(-1)?.activeUsers ?? 0} />
-              </div>
-              <div className="h-48 md:h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartCompact} margin={{ left: -14, right: 8, top: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                    <XAxis
-                      dataKey="label"
-                      fontSize={10}
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={10}
-                    />
-                    <YAxis allowDecimals={false} fontSize={10} tickLine={false} axisLine={false} />
-                    <Tooltip {...adminChartTooltipProps} />
-                    <Bar dataKey="newUsers" name="Nuevos" fill="#38bdf8" radius={[3, 3, 0, 0]} />
-                    <Bar
-                      dataKey="paidLicenses"
-                      name="Pagadas"
-                      fill="#34d399"
-                      radius={[3, 3, 0, 0]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="activeUsers"
-                      name="Activos"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+      {/* 2. GRÁFICO DE INGRESOS */}
+      {canViewPayments ? (
+        <SectionCard title="Evolución de ingresos del período" module="resumen">
+          {revenueTimeSeries.length > 0 ? (
+            <div className="h-64 md:h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueTimeSeries} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                  <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    {...adminChartTooltipProps}
+                    formatter={(val: unknown) => [typeof val === "number" ? val.toLocaleString() : val, "Ingresos"]}
+                  />
+                  <Bar dataKey="amount" fill="var(--semantic-success)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState
+              icon={CreditCard}
+              title="Sin ingresos registrados"
+              description="No se registran pagos confirmados para el rango de fechas actual."
+              module="pagos"
+            />
+          )}
+        </SectionCard>
       ) : null}
 
+      {/* 3. DISTRIBUCIÓN POR PLAN */}
+      {canViewLicenses ? (
+        <SectionCard title="Distribución de licencias por plan" module="resumen">
+          {planDistribution.length > 0 ? (
+            <div className="space-y-4">
+              <div className="h-48 md:h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={planDistribution} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.15} />
+                    <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                    <YAxis dataKey="plan" type="category" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" width={80} />
+                    <Tooltip {...adminChartTooltipProps} />
+                    <Bar dataKey="count" fill="var(--module-licencias)" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+                {planDistribution.map((item) => (
+                  <div key={item.plan} className="rounded-xl border border-border/70 bg-muted/20 p-3 text-center">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {item.plan}
+                    </span>
+                    <p className="mt-1 text-lg font-bold font-mono text-foreground">{item.count}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Layers}
+              title="Sin distribución de planes"
+              description="No hay licencias activas registradas con los filtros actuales."
+              module="licencias"
+            />
+          )}
+        </SectionCard>
+      ) : null}
+
+      {/* 4. EMBUDO COMERCIAL (Basado estrictamente en datos reales del módulo Comercial) */}
+      <SectionCard title="Embudo comercial" module="resumen">
+        {funnelSteps ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {funnelSteps.map((step, idx) => {
+              const firstCount = funnelSteps[0].count;
+              const pct = firstCount > 0 ? Math.round((step.count / firstCount) * 100) : 0;
+              return (
+                <div
+                  key={step.label}
+                  className="relative rounded-2xl border border-border/70 bg-card/60 p-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {step.label}
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {pct}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">{step.count}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{step.desc}</p>
+                  </div>
+                  {idx < funnelSteps.length - 1 ? (
+                    <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm">
+                      <ArrowRight className="h-3 w-3" />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            icon={FilterIcon}
+            title="Sin datos comerciales"
+            description="No se dispone de permisos o registros en el módulo comercial para construir el embudo."
+            module="comercial"
+          />
+        )}
+      </SectionCard>
+
+      {canViewAnalytics ? (
+        <SectionCard title="Actividad comercial (Registros y Pruebas)" module="resumen">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2 text-xs min-[412px]:grid-cols-4">
+              <MiniStat label="Nuevos hoy" value={chartCompact.at(-1)?.newUsers ?? 0} />
+              <MiniStat label="Pruebas hoy" value={chartCompact.at(-1)?.trials ?? 0} />
+              <MiniStat label="Pagadas hoy" value={chartCompact.at(-1)?.paidLicenses ?? 0} />
+              <MiniStat label="Activos hoy" value={chartCompact.at(-1)?.activeUsers ?? 0} />
+            </div>
+            <div className="h-48 md:h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartCompact} margin={{ left: -14, right: 8, top: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                  <XAxis
+                    dataKey="label"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={10}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <Tooltip {...adminChartTooltipProps} />
+                  <Bar dataKey="newUsers" name="Nuevos" fill="var(--module-clientes)" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="paidLicenses"
+                    name="Pagadas"
+                    fill="var(--semantic-success)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="activeUsers"
+                    name="Activos"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {/* 6. ACTIVIDAD RECIENTE COMPACTA CON EMPTY STATE */}
       {canViewAudit ? (
-        <section className="space-y-2">
-          <SectionTitle title="Actividad reciente" />
-          <Card className="glass-panel">
-            <CardContent className="space-y-2 p-3 sm:p-4">
-              {(recentEvents.length ? recentEvents.slice(0, 5) : []).map((event) => (
+        <SectionCard
+          title="Actividad reciente"
+          module="resumen"
+          actions={
+            <Button asChild variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground">
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }}>
+                Ver historial completo
+              </Link>
+            </Button>
+          }
+        >
+          {recentEvents.length > 0 ? (
+            <div className="space-y-2.5">
+              {recentEvents.slice(0, 5).map((event) => (
                 <div
                   key={event.id}
-                  className="rounded-xl border border-border/60 bg-muted/10 p-2.5"
+                  className="rounded-xl border border-border/70 bg-muted/20 p-3 transition-colors hover:border-border"
                 >
                   <p className="text-sm font-medium text-foreground">{event.title}</p>
-                  <p className="text-[11px] text-muted-foreground">{event.change}</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                    <span>{event.who}</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{event.change}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="font-medium text-foreground/80">{event.who}</span>
                     <span>•</span>
                     <span>{event.when}</span>
                     {event.reference ? (
                       <>
                         <span>•</span>
-                        <span>{event.reference}</span>
+                        <span className="font-mono text-[10px] bg-background/60 px-1.5 py-0.5 rounded border border-border/50">
+                          {event.reference}
+                        </span>
                       </>
                     ) : null}
                   </div>
                 </div>
               ))}
-              {recentEvents.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  Sin actividad reciente.
-                </p>
-              ) : null}
-              <Button asChild variant="ghost" size="sm" className="h-9 px-2">
-                <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }}>
-                  Ver historial completo
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
+            </div>
+          ) : (
+            <EmptyState
+              icon={FilterIcon}
+              title="Sin actividad reciente"
+              description="No se registran eventos de auditoría recientes en este proyecto."
+              module="auditoria"
+            />
+          )}
+        </SectionCard>
       ) : null}
     </div>
   );
@@ -829,48 +1000,11 @@ function PeriodChip({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  comparison,
-  to,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  comparison: string;
-  to: string;
-  icon: typeof TrendingUp;
-}) {
-  return (
-    <Button
-      asChild
-      variant="ghost"
-      className="h-auto rounded-xl border border-border/60 bg-card/70 p-0 text-left"
-    >
-      <Link to={to}>
-        <div className="flex w-full items-center gap-2.5 p-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Icon className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
-              {label}
-            </p>
-            <p className="truncate text-lg font-semibold text-foreground">{value}</p>
-            <p className="truncate text-[11px] text-muted-foreground">{comparison}</p>
-          </div>
-        </div>
-      </Link>
-    </Button>
-  );
-}
-
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/15 p-2">
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
       <p className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
+      <p className="mt-1 text-sm font-semibold font-mono">{value}</p>
     </div>
   );
 }
@@ -895,10 +1029,6 @@ function DateField({
       />
     </label>
   );
-}
-
-function SectionTitle({ title }: { title: string }) {
-  return <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>;
 }
 
 function toRange(from: string, to: string) {
@@ -1107,14 +1237,6 @@ function renderComparison(current: string, previous: string, suffix: string) {
 
   const delta = ((currentTotal - previousTotal) / previousTotal) * 100;
   return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% ${suffix}`;
-}
-
-function renderComparisonCount(current: number, previous: number) {
-  if (previous === 0) {
-    return current === 0 ? "Sin cambios" : "Sin base comparativa";
-  }
-  const delta = ((current - previous) / previous) * 100;
-  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% vs periodo anterior`;
 }
 
 function parseMoneyByCurrency(value: string) {
