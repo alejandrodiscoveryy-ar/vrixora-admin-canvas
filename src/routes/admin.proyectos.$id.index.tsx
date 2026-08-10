@@ -434,23 +434,6 @@ function ResumenPage() {
     },
   ];
 
-  const recentEvents = (audit.data ?? []).slice(0, 8).map((entry) => {
-    const metadata = entry.metadata as Record<string, unknown>;
-    return {
-      id: entry.id,
-      title: eventLabel(entry.action),
-      who: entry.actorEmail ?? "Sistema",
-      when: new Date(entry.createdAt).toLocaleString(),
-      change: describeChange(metadata),
-      reference:
-        stringValue(metadata.paymentId) ||
-        stringValue(metadata.payment_id) ||
-        stringValue(metadata.receiptId) ||
-        stringValue(metadata.receipt_id) ||
-        "",
-    };
-  });
-
   const quickActions = [
     {
       label: "Registrar pago",
@@ -896,55 +879,6 @@ function ResumenPage() {
           </div>
         </SectionCard>
       ) : null}
-
-      {/* 6. ACTIVIDAD RECIENTE COMPACTA CON EMPTY STATE */}
-      {canViewAudit ? (
-        <SectionCard
-          title="Actividad reciente"
-          module="resumen"
-          actions={
-            <Button asChild variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground">
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }}>
-                Ver historial completo
-              </Link>
-            </Button>
-          }
-        >
-          {recentEvents.length > 0 ? (
-            <div className="space-y-2.5">
-              {recentEvents.slice(0, 5).map((event) => (
-                <div
-                  key={event.id}
-                  className="rounded-xl border border-border/70 bg-muted/20 p-3 transition-colors hover:border-border"
-                >
-                  <p className="text-sm font-medium text-foreground">{event.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{event.change}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                    <span className="font-medium text-foreground/80">{event.who}</span>
-                    <span>•</span>
-                    <span>{event.when}</span>
-                    {event.reference ? (
-                      <>
-                        <span>•</span>
-                        <span className="font-mono text-[10px] bg-background/60 px-1.5 py-0.5 rounded border border-border/50">
-                          {event.reference}
-                        </span>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={FilterIcon}
-              title="Sin actividad reciente"
-              description="No se registran eventos de auditoría recientes en este proyecto."
-              module="auditoria"
-            />
-          )}
-        </SectionCard>
-      ) : null}
     </div>
   );
 }
@@ -1063,31 +997,6 @@ function totalByStatus(rows: Awaited<ReturnType<typeof supabaseServices.payments
   return [...totals]
     .map(([currency, value]) => `${value.toLocaleString()} ${currency}`)
     .join(" · ");
-}
-
-function eventLabel(action: string) {
-  const map: Record<string, string> = {
-    license_renewed: "Licencia renovada",
-    payment_recorded: "Pago registrado",
-    payment_voided: "Pago anulado",
-    receipt_repaired: "Recibo generado",
-    customer_created: "Cliente creado",
-    license_created: "Licencia creada",
-  };
-  return map[action] ?? action.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
-}
-
-function describeChange(metadata: Record<string, unknown>) {
-  const keys = ["status", "plan", "amount", "currency", "expiresAt", "durationDays"];
-  const pieces = keys
-    .map((key) => {
-      const value = metadata[key];
-      if (value === undefined || value === null || value === "") return null;
-      return `${key}: ${String(value)}`;
-    })
-    .filter(Boolean);
-
-  return pieces.length ? pieces.join(" · ") : "Sin detalle adicional";
 }
 
 function minutesAgo(timestamp: number) {
