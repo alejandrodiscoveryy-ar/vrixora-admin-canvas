@@ -62,6 +62,17 @@ import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
+import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
+import { type AdminPeriodKey, type AdminPeriodOption } from "@/components/admin/admin-period";
+
+const paymentPeriodOptions: AdminPeriodOption[] = [
+  { value: "all", label: "Todo" },
+  { value: "today", label: "Hoy" },
+  { value: "7d", label: "7 días" },
+  { value: "30d", label: "30 días" },
+  { value: "month", label: "Mes" },
+  { value: "custom", label: "Personalizado" },
+];
 
 export default function PagosSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
@@ -72,7 +83,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [currency, setCurrency] = useState("all");
   const [method, setMethod] = useState("all");
   const [operator, setOperator] = useState("all");
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState<AdminPeriodKey>("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [mobileVisible, setMobileVisible] = useState(10);
@@ -241,7 +252,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   // 30-day revenue chart data
   const revenue30d = useMemo(() => {
-    const end = chartEndDate(period, toDate);
+    const end = chartEndDate(toDate);
     const start = new Date(end);
     start.setDate(start.getDate() - 29);
     start.setHours(0, 0, 0, 0);
@@ -276,7 +287,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     });
 
     return { days, currencies, hasRevenue: byDay.size > 0 };
-  }, [metricRows, period, toDate]);
+  }, [metricRows, toDate]);
 
   const pendingCount = rows.filter((payment) => payment.status === "pending").length;
   const missingReceiptCount = rows.filter(
@@ -303,6 +314,17 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             </Button>
           ) : undefined
         }
+      />
+
+      <AdminPeriodSelector
+        value={period}
+        range={{ from: fromDate, to: toDate }}
+        options={paymentPeriodOptions}
+        onChange={(nextPeriod, nextRange) => {
+          setPeriod(nextPeriod);
+          setFromDate(nextRange.from);
+          setToDate(nextRange.to);
+        }}
       />
 
       {/* 4 KPI Principales */}
@@ -423,20 +445,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             }}
           >
             <FilterSelect
-              value={period}
-              onChange={setPeriod}
-              label="Período"
-              options={[
-                { value: "all", label: "Todo el período" },
-                { value: "today", label: "Hoy" },
-                { value: "7d", label: "Últimos 7 días" },
-                { value: "30d", label: "Últimos 30 días" },
-                { value: "month", label: "Mes actual" },
-                { value: "prev-month", label: "Mes anterior" },
-                { value: "custom", label: "Personalizado" },
-              ]}
-            />
-            <FilterSelect
               value={plan}
               onChange={setPlan}
               label="Plan"
@@ -495,22 +503,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                 ...operators.map((item) => ({ value: item, label: item })),
               ]}
             />
-            {period === "custom" ? (
-              <>
-                <Input
-                  type="date"
-                  aria-label="Desde"
-                  value={fromDate}
-                  onChange={(event) => setFromDate(event.target.value)}
-                />
-                <Input
-                  type="date"
-                  aria-label="Hasta"
-                  value={toDate}
-                  onChange={(event) => setToDate(event.target.value)}
-                />
-              </>
-            ) : null}
           </FilterToolbar>
         }
         isEmpty={filtered.length === 0}
@@ -1356,6 +1348,13 @@ function FilterSelect({
 function isPaymentInPeriod(createdAt: string, period: string, fromDate: string, toDate: string) {
   if (period === "all") return true;
   const paymentDate = new Date(createdAt);
+
+  if (fromDate && toDate) {
+    const from = new Date(`${fromDate}T00:00:00`);
+    const to = new Date(`${toDate}T23:59:59.999`);
+    return paymentDate >= from && paymentDate <= to;
+  }
+
   const end = new Date();
   end.setHours(23, 59, 59, 999);
 
@@ -1383,8 +1382,8 @@ function isPaymentInPeriod(createdAt: string, period: string, fromDate: string, 
   return paymentDate >= start && paymentDate <= end;
 }
 
-function chartEndDate(period: string, toDate: string) {
-  const end = period === "custom" && toDate ? new Date(`${toDate}T23:59:59.999`) : new Date();
+function chartEndDate(toDate: string) {
+  const end = toDate ? new Date(`${toDate}T23:59:59.999`) : new Date();
   end.setHours(23, 59, 59, 999);
   return end;
 }
