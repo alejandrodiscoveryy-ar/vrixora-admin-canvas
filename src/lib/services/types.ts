@@ -284,6 +284,7 @@ export interface LicenseBillingInput {
 export interface ProjectService {
   list(userId?: string): Promise<Project[]>;
   settings(projectId: string): Promise<ProjectSettings>;
+  uploadBrandAsset(projectId: string, kind: "logo" | "favicon", file: File): Promise<string>;
   update(
     projectId: string,
     changes: ProjectSettings & {

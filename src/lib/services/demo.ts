@@ -40,6 +40,9 @@ export const demoServices: AdminServices = {
         welcomeMessage: "",
       };
     },
+    async uploadBrandAsset() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
     async update() {
       throw new Error("Esta operación requiere Supabase");
     },

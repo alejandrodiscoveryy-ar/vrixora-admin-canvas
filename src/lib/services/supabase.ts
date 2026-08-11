@@ -278,6 +278,29 @@ export const supabaseServices: AdminServices = {
         welcomeMessage: data.welcome_message ?? "",
       };
     },
+    async uploadBrandAsset(projectId, kind, file) {
+      await requireOnline("Subir un recurso de marca");
+      const extensionByType: Record<string, string> = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/webp": "webp",
+        "image/x-icon": "ico",
+        "image/vnd.microsoft.icon": "ico",
+      };
+      const extension = extensionByType[file.type];
+      if (!extension) throw new Error("Formato no permitido. Usa PNG, JPG, WEBP o ICO.");
+      if (file.size > 2 * 1024 * 1024) throw new Error("El archivo no puede superar 2 MB.");
+
+      const objectPath = `${projectId}/${kind}-${crypto.randomUUID()}.${extension}`;
+      const client = getSupabaseClient();
+      const { error } = await client.storage.from("project-branding").upload(objectPath, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+      throwIfError(error);
+      return client.storage.from("project-branding").getPublicUrl(objectPath).data.publicUrl;
+    },
     async update(projectId, changes) {
       await requireOnline("Actualizar la configuración del proyecto");
       const { error } = await getSupabaseClient().rpc("admin_update_project_settings", {
