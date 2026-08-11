@@ -189,14 +189,15 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
     queryFn: () => supabaseServices.payments.listAdmin(projectId),
   });
 
-  const licenses = licensesQuery.data ?? [];
-  const plans = plansQuery.data ?? [];
-  const payments = paymentsQuery.data ?? [];
+  const licenses = useMemo(() => licensesQuery.data ?? [], [licensesQuery.data]);
+  const plans = useMemo(() => plansQuery.data ?? [], [plansQuery.data]);
+  const payments = useMemo(() => paymentsQuery.data ?? [], [paymentsQuery.data]);
 
   const filteredLicenses = useMemo(() => {
     const now = Date.now();
     return licenses.filter((license) => {
-      const text = `${license.key} ${license.userEmail} ${license.licenseType} ${license.plan}`.toLowerCase();
+      const text =
+        `${license.key} ${license.userEmail} ${license.licenseType} ${license.plan}`.toLowerCase();
       const matchSearch = text.includes(search.toLowerCase());
       const matchStatus = status === "all" || license.status === status;
       const matchPlan = plan === "all" || license.plan === plan;
@@ -207,7 +208,8 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
         const deltaDays = Math.ceil((new Date(license.expiresAt).getTime() - now) / 86_400_000);
         if (expiry === "expired" || expiry === "expiring-expired") matchExpiry = deltaDays < 0;
         else if (expiry === "7d" || expiry === "7") matchExpiry = deltaDays >= 0 && deltaDays <= 7;
-        else if (expiry === "30d" || expiry === "30") matchExpiry = deltaDays >= 0 && deltaDays <= 30;
+        else if (expiry === "30d" || expiry === "30")
+          matchExpiry = deltaDays >= 0 && deltaDays <= 30;
       } else if ((expiry === "expired" || expiry === "expiring-expired") && !license.expiresAt) {
         matchExpiry = false;
       }
@@ -217,22 +219,51 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
   }, [licenses, search, status, plan, type, expiry]);
 
   // 5 KPI Principales
-  const activeCount = licenses.filter((l) => l.status === "active").length;
-  const trialCount = licenses.filter((l) => l.plan === "trial" && l.status === "active").length;
-  const paidCount = licenses.filter((l) => {
-    if (l.status !== "active") return false;
-    if (l.plan === "trial" || l.plan === "admin") return false;
-    return payments.some((p) => p.status === "paid" && (p.licenseId === l.id || p.userId === l.userId || p.plan === l.plan));
-  }).length;
-  const expiring7Count = licenses.filter((l) => {
-    if (l.status !== "active" || !l.expiresAt) return false;
-    const diff = Math.ceil((new Date(l.expiresAt).getTime() - Date.now()) / 86_400_000);
-    return diff >= 0 && diff <= 7;
-  }).length;
-  const expiredCount = licenses.filter((l) => {
-    if (!l.expiresAt) return false;
-    return new Date(l.expiresAt).getTime() < Date.now();
-  }).length;
+  const { activeCount, trialCount, paidCount, expiring7Count, expiredCount } = useMemo(() => {
+    const now = Date.now();
+    const sevenDaysFromNow = now + 7 * 86_400_000;
+    const planByCode = new Map(plans.map((item) => [item.code.toLowerCase(), item]));
+
+    const isActive = (license: (typeof licenses)[number]) => {
+      if (license.status !== "active") return false;
+      return !license.expiresAt || new Date(license.expiresAt).getTime() >= now;
+    };
+
+    const hasLicenseType = (license: (typeof licenses)[number], type: string) => {
+      const planCode = license.plan.toLowerCase();
+      const plan = planByCode.get(planCode);
+      return (
+        license.licenseType.toLowerCase() === type ||
+        plan?.licenseType.toLowerCase() === type ||
+        planCode === type
+      );
+    };
+
+    const isTrial = (license: (typeof licenses)[number]) => hasLicenseType(license, "trial");
+    const isAdmin = (license: (typeof licenses)[number]) => hasLicenseType(license, "admin");
+
+    return {
+      activeCount: licenses.filter(isActive).length,
+      trialCount: licenses.filter((license) => isActive(license) && isTrial(license)).length,
+      paidCount: licenses.filter((license) => {
+        if (!isActive(license) || isTrial(license) || isAdmin(license)) return false;
+        return payments.some(
+          (payment) =>
+            payment.status === "paid" &&
+            (payment.licenseId === license.id || payment.userId === license.userId),
+        );
+      }).length,
+      expiring7Count: licenses.filter((license) => {
+        if (!isActive(license) || !license.expiresAt) return false;
+        const expiration = new Date(license.expiresAt).getTime();
+        return expiration >= now && expiration <= sevenDaysFromNow;
+      }).length,
+      expiredCount: licenses.filter((license) => {
+        if (!license.expiresAt || !["active", "expired"].includes(license.status)) return false;
+        return new Date(license.expiresAt).getTime() < now;
+      }).length,
+    };
+  }, [licenses, payments, plans]);
 
   // Plan distribution for chart
   const planDistribution = useMemo(() => {
@@ -287,11 +318,43 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
 
       {/* 5 KPI Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <MetricCard label="Activas" value={activeCount} description="Total vigentes" icon={KeyRound} module="licencias" semanticState="success" />
-        <MetricCard label="En prueba" value={trialCount} description="Plan trial" icon={Activity} module="licencias" />
-        <MetricCard label="Pagadas" value={paidCount} description="Con pago confirmado" icon={Users} module="licencias" semanticState="success" />
-        <MetricCard label="Vencen en 7 días" value={expiring7Count} description="Próximas a expirar" icon={CalendarClock} semanticState="warning" />
-        <MetricCard label="Vencidas" value={expiredCount} description="Requieren renovación" icon={ShieldAlert} semanticState="danger" />
+        <MetricCard
+          label="Activas"
+          value={activeCount}
+          description="Total vigentes"
+          icon={KeyRound}
+          module="licencias"
+          semanticState="success"
+        />
+        <MetricCard
+          label="En prueba"
+          value={trialCount}
+          description="Plan trial"
+          icon={Activity}
+          module="licencias"
+        />
+        <MetricCard
+          label="Pagadas"
+          value={paidCount}
+          description="Con pago confirmado"
+          icon={Users}
+          module="licencias"
+          semanticState="success"
+        />
+        <MetricCard
+          label="Vencen en 7 días"
+          value={expiring7Count}
+          description="Próximas a expirar"
+          icon={CalendarClock}
+          semanticState="warning"
+        />
+        <MetricCard
+          label="Vencidas"
+          value={expiredCount}
+          description="Requieren renovación"
+          icon={ShieldAlert}
+          semanticState="danger"
+        />
       </div>
 
       {/* Distribución por plan */}
@@ -299,17 +362,39 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
         {planDistribution.length > 0 ? (
           <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={planDistribution} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+              <BarChart
+                data={planDistribution}
+                layout="vertical"
+                margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.15} />
-                <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
-                <YAxis dataKey="plan" type="category" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" width={90} />
+                <XAxis
+                  type="number"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
+                <YAxis
+                  dataKey="plan"
+                  type="category"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                  width={90}
+                />
                 <Tooltip {...adminChartTooltipProps} />
                 <Bar dataKey="count" fill="var(--module-licencias)" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <EmptyState title="Sin distribución" description="No hay licencias registradas para mostrar distribución." module="licencias" />
+          <EmptyState
+            title="Sin distribución"
+            description="No hay licencias registradas para mostrar distribución."
+            module="licencias"
+          />
         )}
       </SectionCard>
 
@@ -331,14 +416,35 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
               setExpiry("all");
             }}
           >
-            <FilterSelect value={status} onChange={setStatus} label="Estado" options={[{ value: "all", label: "Todos los estados" }, ...statuses.map(s => ({ value: s, label: labels[s] }))]} />
-            <FilterSelect value={plan} onChange={setPlan} label="Plan" options={[{ value: "all", label: "Todos los planes" }, ...plans.map(p => ({ value: p.code, label: p.name }))]} />
-            <FilterSelect value={expiry} onChange={setExpiry} label="Vencimiento" options={[
-              { value: "all", label: "Todos los vencimientos" },
-              { value: "7d", label: "Vencen en 7 días" },
-              { value: "30d", label: "Vencen en 30 días" },
-              { value: "expired", label: "Vencidas" },
-            ]} />
+            <FilterSelect
+              value={status}
+              onChange={setStatus}
+              label="Estado"
+              options={[
+                { value: "all", label: "Todos los estados" },
+                ...statuses.map((s) => ({ value: s, label: labels[s] })),
+              ]}
+            />
+            <FilterSelect
+              value={plan}
+              onChange={setPlan}
+              label="Plan"
+              options={[
+                { value: "all", label: "Todos los planes" },
+                ...plans.map((p) => ({ value: p.code, label: p.name })),
+              ]}
+            />
+            <FilterSelect
+              value={expiry}
+              onChange={setExpiry}
+              label="Vencimiento"
+              options={[
+                { value: "all", label: "Todos los vencimientos" },
+                { value: "7d", label: "Vencen en 7 días" },
+                { value: "30d", label: "Vencen en 30 días" },
+                { value: "expired", label: "Vencidas" },
+              ]}
+            />
           </FilterToolbar>
         }
         isEmpty={filteredLicenses.length === 0}
@@ -353,7 +459,9 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       >
         <div className="space-y-3 md:hidden">
           {visibleMobileRows.map((license) => {
-            const diffDays = license.expiresAt ? Math.ceil((new Date(license.expiresAt).getTime() - Date.now()) / 86_400_000) : null;
+            const diffDays = license.expiresAt
+              ? Math.ceil((new Date(license.expiresAt).getTime() - Date.now()) / 86_400_000)
+              : null;
             const isExpired = diffDays !== null && diffDays < 0;
             const isSoon7 = diffDays !== null && diffDays >= 0 && diffDays <= 7;
 
@@ -363,7 +471,9 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-base font-semibold">{license.userEmail}</div>
-                      <div className="font-mono text-xs text-muted-foreground">{maskKey(license.key)}</div>
+                      <div className="font-mono text-xs text-muted-foreground">
+                        {maskKey(license.key)}
+                      </div>
                     </div>
                     <Badge variant={license.status === "active" ? "default" : "secondary"}>
                       {labels[license.status] ?? license.status}
@@ -380,13 +490,19 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wide">Vencimiento</div>
-                      <div className={`mt-0.5 ${isExpired ? "text-red-400 font-semibold" : isSoon7 ? "text-amber-400 font-semibold" : "text-foreground"}`}>
-                        {license.expiresAt ? new Date(license.expiresAt).toLocaleDateString() : "Sin vencimiento"}
+                      <div
+                        className={`mt-0.5 ${isExpired ? "text-red-400 font-semibold" : isSoon7 ? "text-amber-400 font-semibold" : "text-foreground"}`}
+                      >
+                        {license.expiresAt
+                          ? new Date(license.expiresAt).toLocaleDateString()
+                          : "Sin vencimiento"}
                       </div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wide">Dispositivos</div>
-                      <div className="mt-0.5 font-mono text-foreground">{license.activeDevices} / {license.maxDevices}</div>
+                      <div className="mt-0.5 font-mono text-foreground">
+                        {license.activeDevices} / {license.maxDevices}
+                      </div>
                     </div>
                   </div>
                   <div className="flex justify-end pt-2">
@@ -439,7 +555,9 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
             </TableHeader>
             <TableBody>
               {filteredLicenses.map((license) => {
-                const diffDays = license.expiresAt ? Math.ceil((new Date(license.expiresAt).getTime() - Date.now()) / 86_400_000) : null;
+                const diffDays = license.expiresAt
+                  ? Math.ceil((new Date(license.expiresAt).getTime() - Date.now()) / 86_400_000)
+                  : null;
                 const isExpired = diffDays !== null && diffDays < 0;
                 const isSoon7 = diffDays !== null && diffDays >= 0 && diffDays <= 7;
                 const isSoon30 = diffDays !== null && diffDays > 7 && diffDays <= 30;
@@ -448,7 +566,9 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                   <TableRow key={license.id} className="group hover:bg-muted/40 transition-colors">
                     <TableCell>
                       <div className="font-medium text-foreground text-sm">{license.userEmail}</div>
-                      <div className="font-mono text-[11px] text-muted-foreground">{maskKey(license.key)}</div>
+                      <div className="font-mono text-[11px] text-muted-foreground">
+                        {maskKey(license.key)}
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs">
                       <div className="font-medium">{planLabel(license.plan, plans)}</div>
@@ -478,7 +598,11 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                                 : "text-muted-foreground"
                         }
                       >
-                        {license.expiresAt ? new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(license.expiresAt)) : "Sin vencimiento"}
+                        {license.expiresAt
+                          ? new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
+                              new Date(license.expiresAt),
+                            )
+                          : "Sin vencimiento"}
                       </span>
                     </TableCell>
                     <TableCell className="text-xs font-mono">
