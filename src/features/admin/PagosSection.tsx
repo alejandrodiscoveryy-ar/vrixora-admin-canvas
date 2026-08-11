@@ -53,6 +53,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileActionsMenu, MobileLoadMore } from "@/components/admin/MobileAdminSystem";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
@@ -74,6 +75,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [period, setPeriod] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [mobileVisible, setMobileVisible] = useState(10);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [editing, setEditing] = useState<ServicePayment | null>(null);
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
@@ -128,6 +130,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     void queryClient.invalidateQueries({ queryKey: ["payment-renewal-audit", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["admin-clients", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["summary-usage-analytics", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["usage-analytics", projectId] });
   };
 
   const markPaid = useMutation({
@@ -137,6 +141,21 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       const receipt = await supabaseServices.payments.receipt(payment.id);
       setViewingReceipt(receipt);
       toast.success("Pago registrado y licencia actualizada");
+      refresh();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+  const loadReceipt = useMutation({
+    mutationFn: (paymentId: string) => supabaseServices.payments.receipt(paymentId),
+    onSuccess: setViewingReceipt,
+    onError: () =>
+      toast.error("No se encontrÃ³ el recibo. El owner puede generarlo sin renovar nuevamente."),
+  });
+  const repairReceipt = useMutation({
+    mutationFn: (paymentId: string) => supabaseServices.payments.repairReceipt(paymentId),
+    onSuccess: (receipt) => {
+      setViewingReceipt(receipt);
+      toast.success("Recibo generado sin modificar la vigencia.");
       refresh();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
@@ -172,7 +191,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     return metricRows.filter((payment) => {
       if (!normalizedSearch) return true;
       const text =
-        `${payment.userEmail ?? ""} ${payment.reference} ${payment.plan} ${payment.operatorLabel ?? ""}`.toLowerCase();
+        `${payment.userEmail ?? ""} ${payment.licenseKey ?? ""} ${payment.reference} ${payment.plan} ${payment.operatorLabel ?? ""}`.toLowerCase();
       return text.includes(normalizedSearch);
     });
   }, [metricRows, search]);
@@ -258,6 +277,16 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
     return { days, currencies, hasRevenue: byDay.size > 0 };
   }, [metricRows, period, toDate]);
+
+  const pendingCount = rows.filter((payment) => payment.status === "pending").length;
+  const missingReceiptCount = rows.filter(
+    (payment) => ["paid", "complimentary"].includes(payment.status) && !payment.hasReceipt,
+  ).length;
+  const visibleMobileRows = filtered.slice(0, mobileVisible);
+
+  useEffect(() => {
+    setMobileVisible(10);
+  }, [search, plan, status, currency, method, operator, period, fromDate, toDate]);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -360,6 +389,17 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         )}
       </SectionCard>
 
+      {(pendingCount > 0 || missingReceiptCount > 0) && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+          <p className="font-semibold">Alertas de coherencia</p>
+          <p className="mt-1 text-xs">
+            {pendingCount > 0 ? `${pendingCount} pagos pendientes por confirmar.` : ""}
+            {pendingCount > 0 && missingReceiptCount > 0 ? " " : ""}
+            {missingReceiptCount > 0 ? `${missingReceiptCount} pagos sin recibo disponible.` : ""}
+          </p>
+        </div>
+      )}
+
       {/* Tabla de Pagos con FilterToolbar & AdminDataTableShell */}
       <AdminDataTableShell
         title="Historial de transacciones"
@@ -368,7 +408,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           <FilterToolbar
             searchValue={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Buscar por correo, referencia o plan..."
+            searchPlaceholder="Buscar por correo, licencia, referencia o plan..."
             showReset={true}
             onReset={() => {
               setSearch("");
@@ -391,6 +431,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                 { value: "today", label: "Hoy" },
                 { value: "7d", label: "Últimos 7 días" },
                 { value: "30d", label: "Últimos 30 días" },
+                { value: "month", label: "Mes actual" },
+                { value: "prev-month", label: "Mes anterior" },
                 { value: "custom", label: "Personalizado" },
               ]}
             />
@@ -481,95 +523,806 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           />
         }
       >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Fecha / Ref</TableHead>
-              <TableHead>Usuario / Plan</TableHead>
-              <TableHead className="text-right">Monto</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Método</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((payment) => (
-              <TableRow key={payment.id} className="group hover:bg-muted/40 transition-colors">
-                <TableCell className="text-xs">
-                  <div className="font-medium text-foreground">
-                    {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
-                      new Date(payment.createdAt),
-                    )}
-                  </div>
-                  <div className="font-mono text-[10px] text-muted-foreground">
-                    {payment.reference || "S/Ref"}
-                  </div>
-                </TableCell>
-                <TableCell className="text-xs">
-                  <div className="font-medium text-foreground truncate max-w-[160px]">
-                    {payment.userEmail ?? "—"}
-                  </div>
-                  <div className="text-muted-foreground capitalize">{payment.plan}</div>
-                </TableCell>
-                <TableCell className="text-right font-mono font-bold text-sm">
-                  {payment.amount.toLocaleString()} {payment.currency}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={payment.status === "paid" ? "default" : "secondary"}
-                    className={`text-xs ${
-                      payment.status === "paid"
-                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                        : payment.status === "pending"
-                          ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                          : "bg-red-500/15 text-red-400 border-red-500/30"
-                    }`}
-                  >
-                    {payment.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground capitalize">
-                  {payment.method}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {payment.status === "pending" && canManage && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs bg-card/60 text-emerald-400 border-emerald-500/30"
-                        onClick={() => markPaid.mutate(payment.id)}
-                      >
-                        Confirmar
-                      </Button>
-                    )}
-                    {["paid", "complimentary"].includes(payment.status) && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          void supabaseServices.payments
-                            .receipt(payment.id)
-                            .then(setViewingReceipt);
-                        }}
-                      >
-                        Recibo
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
+        <div className="space-y-3 md:hidden">
+          {visibleMobileRows.map((payment) => (
+            <div key={payment.id} className="rounded-2xl border border-border/70 bg-card/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-base font-bold font-mono">
+                    {payment.amount.toLocaleString()} {payment.currency}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{payment.userEmail}</p>
+                  <p className="truncate font-mono text-[11px] text-muted-foreground">
+                    {payment.licenseKey ?? "Sin licencia"}
+                  </p>
+                </div>
+                <Badge variant={payment.status === "paid" ? "default" : "secondary"}>
+                  {paymentStatusLabel(payment.status)}
+                </Badge>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <PaymentDetail label="Plan" value={payment.plan} />
+                <PaymentDetail label="Método" value={paymentMethodLabel(payment.method)} />
+                <PaymentDetail label="Referencia" value={payment.reference || "Sin referencia"} />
+                <PaymentDetail
+                  label="Fecha"
+                  value={new Date(payment.createdAt).toLocaleDateString()}
+                />
+                <PaymentDetail
+                  label="Precio normal"
+                  value={`${payment.listPrice} ${payment.currency}`}
+                />
+                <PaymentDetail
+                  label="Descuento"
+                  value={`${payment.discount} ${payment.currency}`}
+                />
+                <PaymentDetail
+                  label="Operador"
+                  value={payment.operatorLabel ?? payment.employeeId}
+                />
+                <PaymentDetail label="Notas" value={payment.notes || "Sin notas"} />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <MobileActionsMenu
+                  items={paymentActions({
+                    payment,
+                    canManage,
+                    canCorrect,
+                    markPaidPending: markPaid.isPending,
+                    loadReceiptPending: loadReceipt.isPending,
+                    repairReceiptPending: repairReceipt.isPending,
+                    onMarkPaid: () => markPaid.mutate(payment.id),
+                    onLoadReceipt: () => loadReceipt.mutate(payment.id),
+                    onRepairReceipt: () => repairReceipt.mutate(payment.id),
+                    onEdit: () => setEditing(payment),
+                    onDelete: () => setDeleting(payment),
+                  })}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {isMobile ? (
+          <MobileLoadMore
+            total={filtered.length}
+            visible={visibleMobileRows.length}
+            canLoadMore={filtered.length > visibleMobileRows.length}
+            onLoadMore={() => setMobileVisible((value) => value + 10)}
+          />
+        ) : null}
+
+        <div className="hidden overflow-x-auto md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha / Ref</TableHead>
+                <TableHead>Usuario / Plan</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Método</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((payment) => (
+                <TableRow key={payment.id} className="group hover:bg-muted/40 transition-colors">
+                  <TableCell className="text-xs">
+                    <div className="font-medium text-foreground">
+                      {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
+                        new Date(payment.createdAt),
+                      )}
+                    </div>
+                    <div className="font-mono text-[10px] text-muted-foreground">
+                      {payment.reference || "S/Ref"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    <div className="font-medium text-foreground truncate max-w-[160px]">
+                      {payment.userEmail ?? "—"}
+                    </div>
+                    <div className="text-muted-foreground capitalize">{payment.plan}</div>
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-bold text-sm">
+                    {payment.amount.toLocaleString()} {payment.currency}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={payment.status === "paid" ? "default" : "secondary"}
+                      className={`text-xs ${
+                        payment.status === "paid"
+                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                          : payment.status === "pending"
+                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                            : "bg-red-500/15 text-red-400 border-red-500/30"
+                      }`}
+                    >
+                      {payment.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground capitalize">
+                    {payment.method}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {payment.status === "pending" && canManage && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs bg-card/60 text-emerald-400 border-emerald-500/30"
+                          onClick={() => markPaid.mutate(payment.id)}
+                        >
+                          Confirmar
+                        </Button>
+                      )}
+                      {canManage &&
+                        ["paid", "complimentary"].includes(payment.status) &&
+                        payment.hasReceipt && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                            disabled={loadReceipt.isPending}
+                            onClick={() => loadReceipt.mutate(payment.id)}
+                          >
+                            Recibo
+                          </Button>
+                        )}
+                      {canCorrect &&
+                        ["paid", "complimentary"].includes(payment.status) &&
+                        !payment.hasReceipt && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            disabled={repairReceipt.isPending}
+                            onClick={() => repairReceipt.mutate(payment.id)}
+                          >
+                            Reparar recibo
+                          </Button>
+                        )}
+                      {canCorrect && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          title="Editar pago"
+                          onClick={() => setEditing(payment)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canCorrect && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive"
+                          title={payment.status === "pending" ? "Eliminar pago" : "Anular pago"}
+                          onClick={() => setDeleting(payment)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </AdminDataTableShell>
 
-      {/* Existing receipt and registration dialogs kept fully intact */}
+      <RegisterPaymentDialog
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        licenses={licenses.data ?? []}
+        clients={clients.data ?? []}
+        plans={availablePlans.data ?? []}
+        onDone={refresh}
+      />
+      {editing ? (
+        <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />
+      ) : null}
+      {deleting ? (
+        <DeletePaymentDialog
+          payment={deleting}
+          onClose={() => setDeleting(null)}
+          onDone={refresh}
+        />
+      ) : null}
       {viewingReceipt && (
         <ReceiptDialog receipt={viewingReceipt} onClose={() => setViewingReceipt(null)} />
       )}
     </div>
+  );
+}
+
+function RegisterPaymentDialog({
+  open,
+  onClose,
+  licenses,
+  clients,
+  plans,
+  onDone,
+}: {
+  open: boolean;
+  onClose: () => void;
+  licenses: ServiceLicense[];
+  clients: ServiceClient[];
+  plans: LicensePlan[];
+  onDone: () => void;
+}) {
+  const [licenseId, setLicenseId] = useState("");
+  const [planCode, setPlanCode] = useState("");
+  const [method, setMethod] = useState<ServicePayment["method"]>("transfer");
+  const [status, setStatus] = useState<ServicePayment["status"]>("paid");
+  const [reference, setReference] = useState("");
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [receipt, setReceipt] = useState<BillingReceipt | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [clientWhatsapp, setClientWhatsapp] = useState("");
+  const [confirmWhatsappChange, setConfirmWhatsappChange] = useState(false);
+  const selectedPlan = plans.find((item) => item.code === planCode);
+  const selectedLicense = licenses.find((item) => item.id === licenseId);
+  const selectedClient = clients.find((item) => item.userId === selectedLicense?.userId);
+  const whatsappChanged =
+    !!clientWhatsapp.trim() && clientWhatsapp.trim() !== (selectedClient?.phone ?? "");
+  const effectiveAmount = status === "complimentary" ? 0 : Number(amount || selectedPlan?.price);
+  const adjusted = selectedPlan ? effectiveAmount !== selectedPlan.price : false;
+  useEffect(() => {
+    if (!open) return;
+    setReceipt(null);
+    setIdempotencyKey(crypto.randomUUID());
+    setClientWhatsapp("");
+    setConfirmWhatsappChange(false);
+  }, [open]);
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (status === "paid") {
+        return supabaseServices.payments.chargeAndAssign({
+          licenseId,
+          plan: planCode,
+          amount: effectiveAmount,
+          method: method as "cash" | "transfer" | "other",
+          reference,
+          chargedAt: new Date().toISOString(),
+          notes: [notes, adjusted ? reason : ""].filter(Boolean).join(" · "),
+          applicationRule: "after_expiry",
+          idempotencyKey,
+          clientWhatsapp,
+          confirmClientWhatsappChange: confirmWhatsappChange,
+        });
+      }
+      const payment = await supabaseServices.payments.record({
+        licenseId,
+        plan: planCode,
+        method,
+        reference,
+        paymentStatus: status,
+        notes,
+        overrideAmount: effectiveAmount,
+        adjustmentReason: adjusted ? reason : undefined,
+      });
+      return status === "complimentary" ? supabaseServices.payments.receipt(payment.id) : payment;
+    },
+    onSuccess: (result) => {
+      onDone();
+      if ("receiptNumber" in result) {
+        setReceipt(result);
+        toast.success("Pago registrado y licencia actualizada");
+      } else {
+        toast.success("Pago pendiente registrado correctamente.");
+        onClose();
+      }
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+  if (receipt) {
+    return (
+      <ReceiptDialog
+        receipt={receipt}
+        onClose={() => {
+          setReceipt(null);
+          onClose();
+        }}
+      />
+    );
+  }
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Registrar pago</DialogTitle>
+          <DialogDescription>
+            Un pago confirmado activa la licencia y extiende su vigencia según el plan seleccionado.
+            La clave se conserva.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Cliente y licencia">
+            <Select
+              value={licenseId}
+              onValueChange={(value) => {
+                setLicenseId(value);
+                const selected = licenses.find((item) => item.id === value);
+                if (selected) setPlanCode(selected.plan);
+                const client = clients.find((item) => item.userId === selected?.userId);
+                setClientWhatsapp(client?.phone ?? "");
+                setConfirmWhatsappChange(false);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {licenses.map((license) => (
+                  <SelectItem key={license.id} value={license.id}>
+                    {license.userEmail} · {license.key}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          {status === "paid" && licenseId && (
+            <Field label="WhatsApp del cliente">
+              <Input
+                value={clientWhatsapp}
+                onChange={(event) => {
+                  setClientWhatsapp(event.target.value);
+                  setConfirmWhatsappChange(false);
+                }}
+                placeholder="+5350000000"
+              />
+            </Field>
+          )}
+          {status === "paid" && whatsappChanged && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 sm:col-span-2">
+              <div className="grid gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <div className="text-xs text-muted-foreground">Número anterior</div>
+                  <div className="font-medium">{selectedClient?.phone ?? "Sin número"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Número nuevo</div>
+                  <div className="font-medium">{clientWhatsapp.trim()}</div>
+                </div>
+              </div>
+              <label className="mt-3 flex items-center gap-2 text-sm font-medium">
+                <Checkbox
+                  checked={confirmWhatsappChange}
+                  onCheckedChange={(checked) => setConfirmWhatsappChange(checked === true)}
+                />
+                Confirmo manualmente que el operador verificó este cambio
+              </label>
+            </div>
+          )}
+          <Field label="Plan cobrado">
+            <Select value={planCode} onValueChange={setPlanCode}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {plans
+                  .filter((item) => item.isActive)
+                  .map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      {item.name} · {item.price} {item.currency}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Importe pagado">
+            <Input
+              type="number"
+              min="0"
+              max={selectedPlan?.price}
+              value={status === "complimentary" ? "0" : amount}
+              placeholder={selectedPlan ? String(selectedPlan.price) : ""}
+              disabled={status === "complimentary"}
+              onChange={(event) => setAmount(event.target.value)}
+            />
+          </Field>
+          <Field label="Estado">
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as ServicePayment["status"])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paid">Pagado</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="refunded">Reembolsado</SelectItem>
+                <SelectItem value="complimentary">Cortesía</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Método de pago">
+            <Select
+              value={method}
+              onValueChange={(value) => setMethod(value as ServicePayment["method"])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="transfer">Transferencia</SelectItem>
+                <SelectItem value="cash">Efectivo</SelectItem>
+                <SelectItem value="other">Otro</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Referencia (opcional)">
+            <Input
+              value={reference}
+              placeholder="Se genera automáticamente si queda vacía"
+              onChange={(event) => setReference(event.target.value)}
+            />
+          </Field>
+          {adjusted && (
+            <div className="sm:col-span-2">
+              <Field label="Motivo del descuento, promoción o cortesía">
+                <Input value={reason} onChange={(event) => setReason(event.target.value)} />
+              </Field>
+            </div>
+          )}
+          <div className="sm:col-span-2">
+            <Field label="Notas">
+              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={
+              mutation.isPending ||
+              !licenseId ||
+              !planCode ||
+              (adjusted && !reason.trim()) ||
+              (status === "paid" && whatsappChanged && !confirmWhatsappChange)
+            }
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Registrando…" : "Registrar pago y generar recibo"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditPaymentDialog({
+  payment,
+  onClose,
+  onDone,
+}: {
+  payment: ServicePayment;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [amount, setAmount] = useState(String(payment.amount));
+  const [currency, setCurrency] = useState(payment.currency);
+  const [method, setMethod] = useState(payment.method);
+  const [status, setStatus] = useState(payment.status);
+  const [reference, setReference] = useState(payment.reference);
+  const [notes, setNotes] = useState(payment.notes ?? "");
+  const [reason, setReason] = useState("");
+  const mutation = useMutation({
+    mutationFn: () =>
+      supabaseServices.payments.update({
+        paymentId: payment.id,
+        amount: Number(amount),
+        currency,
+        method,
+        reference,
+        status,
+        notes,
+        adjustmentReason: reason,
+      }),
+    onSuccess: () => {
+      toast.success("Pago actualizado correctamente.");
+      onDone();
+      onClose();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-h-[92dvh] max-w-xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Editar pago</DialogTitle>
+          <DialogDescription>
+            Corrige los datos del cobro. La vigencia ya concedida no se reduce al editar un pago
+            confirmado.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Importe pagado">
+            <Input
+              type="number"
+              min="0"
+              max={payment.listPrice}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </Field>
+          <Field label="Moneda">
+            <Select
+              value={currency}
+              onValueChange={(v) => setCurrency(v as ServicePayment["currency"])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["CUP", "USD", "EUR"].map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Estado">
+            <Select value={status} onValueChange={(v) => setStatus(v as ServicePayment["status"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paid">Pagado</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="refunded">Reembolsado</SelectItem>
+                <SelectItem value="complimentary">Cortesía</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Método">
+            <Select value={method} onValueChange={(v) => setMethod(v as ServicePayment["method"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="transfer">Transferencia</SelectItem>
+                <SelectItem value="cash">Efectivo</SelectItem>
+                <SelectItem value="card">Tarjeta</SelectItem>
+                <SelectItem value="paypal">PayPal</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Referencia">
+              <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Notas">
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Motivo de la corrección">
+              <Input
+                value={reason}
+                placeholder="Obligatorio para la auditoría"
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={
+              mutation.isPending ||
+              !reason.trim() ||
+              !reference.trim() ||
+              Number(amount) < 0 ||
+              Number(amount) > payment.listPrice
+            }
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeletePaymentDialog({
+  payment,
+  onClose,
+  onDone,
+}: {
+  payment: ServicePayment;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const isConfirmed = payment.status !== "pending";
+  const [reason, setReason] = useState("");
+  const mutation = useMutation({
+    mutationFn: () =>
+      isConfirmed
+        ? supabaseServices.payments.void(payment.id, reason)
+        : supabaseServices.payments.remove(payment.id, reason),
+    onSuccess: () => {
+      toast.success(isConfirmed ? "Pago anulado correctamente." : "Pago eliminado del historial.");
+      onDone();
+      onClose();
+    },
+    onError: () =>
+      toast.error(
+        isConfirmed
+          ? "No se pudo anular el pago. Inténtalo de nuevo."
+          : "No se pudo eliminar el pago. Inténtalo de nuevo.",
+      ),
+  });
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{isConfirmed ? "Anular pago" : "Eliminar pago"}</DialogTitle>
+          <DialogDescription>
+            {isConfirmed ? (
+              <>
+                Este pago será anulado y dejará de contar en ingresos y estadísticas. El recibo y el
+                historial se conservarán. La vigencia otorgada a la licencia no será modificada.
+              </>
+            ) : (
+              <>Se eliminará el pago pendiente {payment.reference}. Esta acción es irreversible.</>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <Field label={isConfirmed ? "Motivo de anulación" : "Motivo de eliminación"}>
+          <Textarea
+            value={reason}
+            placeholder="Obligatorio para conservar la trazabilidad"
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={mutation.isPending || !reason.trim()}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending
+              ? isConfirmed
+                ? "Anulando…"
+                : "Eliminando…"
+              : isConfirmed
+                ? "Confirmar anulación"
+                : "Eliminar pago"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span>{label}</span>
+      <span className="text-right text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function PaymentDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-lg bg-muted/20 p-2">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-0.5 break-words text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function paymentActions({
+  payment,
+  canManage,
+  canCorrect,
+  markPaidPending,
+  loadReceiptPending,
+  repairReceiptPending,
+  onMarkPaid,
+  onLoadReceipt,
+  onRepairReceipt,
+  onEdit,
+  onDelete,
+}: {
+  payment: ServicePayment;
+  canManage: boolean;
+  canCorrect: boolean;
+  markPaidPending: boolean;
+  loadReceiptPending: boolean;
+  repairReceiptPending: boolean;
+  onMarkPaid: () => void;
+  onLoadReceipt: () => void;
+  onRepairReceipt: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}): Array<{ label: string; onSelect: () => void; destructive?: boolean; disabled?: boolean }> {
+  const actions: Array<{
+    label: string;
+    onSelect: () => void;
+    destructive?: boolean;
+    disabled?: boolean;
+  }> = [];
+
+  if (canManage && payment.status === "pending") {
+    actions.push({ label: "Marcar pagado", onSelect: onMarkPaid, disabled: markPaidPending });
+  }
+  if (canManage && ["paid", "complimentary"].includes(payment.status) && payment.hasReceipt) {
+    actions.push({ label: "Ver recibo", onSelect: onLoadReceipt, disabled: loadReceiptPending });
+  }
+  if (canCorrect && ["paid", "complimentary"].includes(payment.status) && !payment.hasReceipt) {
+    actions.push({
+      label: "Generar recibo faltante",
+      onSelect: onRepairReceipt,
+      disabled: repairReceiptPending,
+    });
+  }
+  if (canCorrect) {
+    actions.push({ label: "Editar pago", onSelect: onEdit });
+    actions.push({
+      label: payment.status === "pending" ? "Eliminar pago" : "Anular pago",
+      onSelect: onDelete,
+      destructive: true,
+    });
+  }
+  return actions;
+}
+
+function paymentStatusLabel(value: string) {
+  return (
+    (
+      {
+        paid: "Pagado",
+        pending: "Pendiente",
+        cancelled: "Cancelado",
+        refunded: "Reembolsado",
+        complimentary: "Cortesía",
+        voided: "Anulado",
+      } as Record<string, string>
+    )[value] ?? value
+  );
+}
+
+function paymentMethodLabel(value: string) {
+  return (
+    (
+      {
+        transfer: "Transferencia",
+        cash: "Efectivo",
+        card: "Tarjeta",
+        paypal: "PayPal",
+        other: "Otro",
+      } as Record<string, string>
+    )[value] ?? value
   );
 }
 
@@ -610,6 +1363,17 @@ function isPaymentInPeriod(createdAt: string, period: string, fromDate: string, 
     const from = fromDate ? new Date(`${fromDate}T00:00:00`) : null;
     const to = toDate ? new Date(`${toDate}T23:59:59.999`) : null;
     return (!from || paymentDate >= from) && (!to || paymentDate <= to);
+  }
+
+  if (period === "month") {
+    const start = new Date(end.getFullYear(), end.getMonth(), 1, 0, 0, 0, 0);
+    return paymentDate >= start && paymentDate <= end;
+  }
+
+  if (period === "prev-month") {
+    const start = new Date(end.getFullYear(), end.getMonth() - 1, 1, 0, 0, 0, 0);
+    const previousEnd = new Date(end.getFullYear(), end.getMonth(), 0, 23, 59, 59, 999);
+    return paymentDate >= start && paymentDate <= previousEnd;
   }
 
   const start = new Date(end);
