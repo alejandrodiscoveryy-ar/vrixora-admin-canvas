@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Loader2, Search, ShieldCheck, Users, KeyRound, MoreHorizontal, FileText } from "lucide-react";
+import {
+  CreditCard,
+  Loader2,
+  Search,
+  ShieldCheck,
+  Users,
+  KeyRound,
+  MoreHorizontal,
+  FileText,
+} from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -82,33 +91,78 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
   });
 
+  const allClients = useMemo(() => query.data ?? [], [query.data]);
+  const licenseById = useMemo(
+    () => new Map((licenses.data ?? []).map((license) => [license.id, license])),
+    [licenses.data],
+  );
+  const planByCode = useMemo(
+    () => new Map((plans.data ?? []).map((plan) => [plan.code.toLowerCase(), plan])),
+    [plans.data],
+  );
+
   const clients = useMemo(
     () =>
-      (query.data ?? []).filter((client) =>
+      allClients.filter((client) =>
         `${client.displayName} ${client.email} ${client.phone ?? ""} ${client.licenseKey ?? ""} ${client.plan}`
           .toLowerCase()
           .includes(search.toLowerCase()),
       ),
-    [query.data, search],
+    [allClients, search],
   );
 
-  const activeClients = clients.filter((client) => client.status === "active").length;
-  const trialClients = clients.filter(
-    (client) => client.licenseKey?.includes("trial") ?? false,
-  ).length;
-  const expiringSoon = clients.filter((client) => {
-    const expiresAt = new Date(client.expiresAt).getTime();
-    const diffDays = Math.ceil((expiresAt - Date.now()) / 86_400_000);
-    return diffDays >= 0 && diffDays <= 7;
-  }).length;
+  const { activeClients, trialClients, expiringSoon } = useMemo(() => {
+    const now = Date.now();
+    const sevenDaysFromNow = now + 7 * 86_400_000;
+
+    const hasActiveLicense = (client: ServiceClient) => {
+      if (!client.licenseId || client.status !== "active") return false;
+      const license = licenseById.get(client.licenseId);
+      const expiresAt = license?.expiresAt ?? client.expiresAt;
+      return !expiresAt || new Date(expiresAt).getTime() >= now;
+    };
+
+    const isTrialLicense = (client: ServiceClient) => {
+      if (!hasActiveLicense(client)) return false;
+      const license = client.licenseId ? licenseById.get(client.licenseId) : undefined;
+      const planCode = (license?.plan ?? client.plan).toLowerCase();
+      const plan = planByCode.get(planCode);
+      return (
+        planCode === "trial" ||
+        license?.licenseType.toLowerCase() === "trial" ||
+        plan?.licenseType.toLowerCase() === "trial"
+      );
+    };
+
+    return {
+      activeClients: allClients.filter(hasActiveLicense).length,
+      trialClients: allClients.filter(isTrialLicense).length,
+      expiringSoon: allClients.filter((client) => {
+        if (!hasActiveLicense(client) || !client.licenseId) return false;
+        const license = licenseById.get(client.licenseId);
+        const expiresAt = license?.expiresAt ?? client.expiresAt;
+        if (!expiresAt) return false;
+        const expiration = new Date(expiresAt).getTime();
+        return expiration >= now && expiration <= sevenDaysFromNow;
+      }).length,
+    };
+  }, [allClients, licenseById, planByCode]);
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ userId, status, reason }: { userId: string; status: LicenseStatus; reason: string }) =>
-      supabaseServices.licenses.setClientStatus(projectId, userId, status, reason),
+    mutationFn: ({
+      userId,
+      status,
+      reason,
+    }: {
+      userId: string;
+      status: LicenseStatus;
+      reason: string;
+    }) => supabaseServices.licenses.setClientStatus(projectId, userId, status, reason),
     onSuccess: () => {
       toast.success("Estado del cliente actualizado");
       setSelected(null);
       void queryClient.invalidateQueries({ queryKey: ["admin-clients", projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
@@ -134,7 +188,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           label="Total clientes"
-          value={clients.length}
+          value={allClients.length}
           description="Registrados en sistema"
           icon={Users}
           module="clientes"
@@ -213,7 +267,9 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm truncate">{client.displayName}</p>
+                        <p className="font-semibold text-foreground text-sm truncate">
+                          {client.displayName}
+                        </p>
                         <p className="text-xs text-muted-foreground truncate">{client.email}</p>
                       </div>
                     </div>
@@ -244,8 +300,14 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs">
-                    <span className={isExpiring ? "text-amber-400 font-semibold" : "text-muted-foreground"}>
-                      {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(client.expiresAt))}
+                    <span
+                      className={
+                        isExpiring ? "text-amber-400 font-semibold" : "text-muted-foreground"
+                      }
+                    >
+                      {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
+                        new Date(client.expiresAt),
+                      )}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -339,7 +401,9 @@ function ClientManageDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Gestionar cliente: {client.displayName}</DialogTitle>
-          <DialogDescription>Actualiza el estado de la licencia y cuenta asociada.</DialogDescription>
+          <DialogDescription>
+            Actualiza el estado de la licencia y cuenta asociada.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
