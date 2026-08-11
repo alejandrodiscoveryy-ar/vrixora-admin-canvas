@@ -77,6 +77,7 @@ import { DetailList } from "@/components/admin/DetailList";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminStatus } from "@/components/admin/types";
+import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
 
 const statuses: LicenseStatus[] = ["active", "pending", "expired", "suspended", "revoked"];
 const changeableStatuses: LicenseStatus[] = ["active", "pending", "suspended", "revoked"];
@@ -120,13 +121,6 @@ function planLabel(code: string, plans?: { code: string; name: string }[]) {
     admin: "Administrador",
   };
   return fallback[code] ?? code;
-}
-
-function maskKey(key: string) {
-  if (!key || key.length <= 8) return "VRX-••••-••••";
-  const prefix = key.slice(0, 3);
-  const suffix = key.slice(-4);
-  return `${prefix}-••••-${suffix}`;
 }
 
 function formatExpiryDate(value: string | null) {
@@ -509,9 +503,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                       <div className="truncate text-sm font-semibold text-text-primary">
                         {license.userEmail}
                       </div>
-                      <div className="mt-0.5 font-mono text-xs text-text-secondary">
-                        {maskKey(license.key)}
-                      </div>
+                      <LicenseKeyDisplay value={license.key} className="mt-0.5" />
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -617,8 +609,8 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
                         {license.userEmail}
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-text-secondary">
-                      {maskKey(license.key)}
+                    <TableCell>
+                      <LicenseKeyDisplay value={license.key} />
                     </TableCell>
                     <TableCell>
                       <Badge variant="info" className="rounded-full">

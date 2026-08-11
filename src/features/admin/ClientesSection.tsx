@@ -45,6 +45,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { MobileActionsMenu } from "@/components/admin/MobileAdminSystem";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AdminStatus } from "@/components/admin/types";
+import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
 
 const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -53,14 +54,6 @@ const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "suspended", label: "Suspendida" },
   { value: "revoked", label: "Revocada" },
 ];
-
-function maskKey(key: string | null) {
-  if (!key) return "Sin licencia";
-  if (key.length <= 8) return "VRX-••••-••••";
-  const prefix = key.slice(0, 3);
-  const suffix = key.slice(-4);
-  return `${prefix}-••••-${suffix}`;
-}
 
 function statusVisual(status: LicenseStatus): AdminStatus {
   if (status === "active") return "active";
@@ -292,8 +285,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     },
                     {
                       label: "Licencia",
-                      value: maskKey(client.licenseKey),
-                      mono: true,
+                      value: <LicenseKeyDisplay value={client.licenseKey} />,
                     },
                   ]}
                 />
@@ -365,9 +357,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                         >
                           {client.plan}
                         </Badge>
-                        <div className="font-mono text-[11px] text-muted-foreground">
-                          {maskKey(client.licenseKey)}
-                        </div>
+                        <LicenseKeyDisplay value={client.licenseKey} />
                       </div>
                     </TableCell>
                     <TableCell>
