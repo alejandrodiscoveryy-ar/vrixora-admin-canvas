@@ -39,6 +39,7 @@ import {
 } from "@/components/admin/MobileAdminSystem";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
+import { KpiGrid } from "@/components/admin/KpiGrid";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
@@ -196,7 +197,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <ModuleHeader
         title="Rendimiento"
         description="Analítica de uso, adopción, retención y evolución operativa del sistema."
@@ -282,7 +283,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
 
       {/* BLOQUE A: ADQUISICIÓN */}
       <SectionCard title="A. Adquisición" module="rendimiento">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <KpiGrid columns={3} density="compact">
           <MetricCard
             label="Registros nuevos"
             value={currentTotals.newUsers}
@@ -304,12 +305,12 @@ export default function RendimientoSection({ projectId }: { projectId: string })
             icon={TrendingUp}
             semanticState="success"
           />
-        </div>
+        </KpiGrid>
       </SectionCard>
 
       {/* BLOQUE B: USO */}
       <SectionCard title="B. Uso y Actividad" module="rendimiento">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <KpiGrid columns={4} density="compact">
           <MetricCard
             label="Activos hoy"
             value={todayRow?.activeUsers ?? 0}
@@ -338,12 +339,12 @@ export default function RendimientoSection({ projectId }: { projectId: string })
             icon={ShieldCheck}
             module="rendimiento"
           />
-        </div>
+        </KpiGrid>
       </SectionCard>
 
       {/* BLOQUE C: NEGOCIO */}
       <SectionCard title="C. Negocio y Retención" module="rendimiento">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <KpiGrid columns={4} density="compact">
           <MetricCard
             label="Renovaciones"
             value={currentTotals.renewals}
@@ -372,7 +373,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
             icon={Activity}
             semanticState="info"
           />
-        </div>
+        </KpiGrid>
       </SectionCard>
 
       {/* GRÁFICO 1: USO REAL DE LA APLICACIÓN */}

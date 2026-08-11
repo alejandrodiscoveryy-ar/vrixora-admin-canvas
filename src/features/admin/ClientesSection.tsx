@@ -180,7 +180,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <ModuleHeader
         title="Clientes"
         description="Directorio de clientes, usuarios registrados y estado de sus licencias."

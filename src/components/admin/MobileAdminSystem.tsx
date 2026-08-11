@@ -84,7 +84,7 @@ export function MobileMetricsGrid({
                 <span className="truncate">{metric.label}</span>
               </div>
               <div className="font-mono text-lg font-semibold leading-none text-text-primary">
-                {metric.value}
+                {safeMobileMetricValue(metric.value)}
               </div>
               {metric.hint ? (
                 <p className="line-clamp-1 text-xs text-text-tertiary">{metric.hint}</p>
@@ -116,6 +116,10 @@ export function MobileMetricsGrid({
       ) : null}
     </section>
   );
+}
+
+function safeMobileMetricValue(value: string) {
+  return /(?:NaN|(?:^|[^a-z])Infinity|undefined)/i.test(value) ? "Sin datos" : value;
 }
 
 export function MobileFiltersPanel({

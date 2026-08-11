@@ -315,7 +315,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <ModuleHeader
         title="Licencias"
         description="Emisión, control de dispositivos, vigencias y planes de licenciamiento."

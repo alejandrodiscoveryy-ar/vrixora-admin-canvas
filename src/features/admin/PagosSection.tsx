@@ -56,6 +56,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileActionsMenu, MobileLoadMore } from "@/components/admin/MobileAdminSystem";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
+import { KpiGrid } from "@/components/admin/KpiGrid";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
@@ -300,7 +301,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   }, [search, plan, status, currency, method, operator, period, fromDate, toDate]);
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <ModuleHeader
         title="Pagos"
         description="Gestión financiera, registro de cobros, verificación de recibos y auditoría."
@@ -328,7 +329,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       />
 
       {/* 4 KPI Principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <KpiGrid columns={4} density="compact">
         <MetricCard
           label="Ingresos del período"
           value={revenueDisplay}
@@ -359,7 +360,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           module="pagos"
           semanticState="info"
         />
-      </div>
+      </KpiGrid>
 
       {/* Gráfico Compacto Últimos 30 días */}
       <SectionCard title="Evolución de ingresos (últimos 30 días)" module="pagos">

@@ -453,7 +453,7 @@ function ResumenPage() {
   const freshnessLabel = buildFreshnessLabel(dataUpdatedAt, allLoading);
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <ModuleHeader
         title="Resumen ejecutivo"
         description={rangeLabel}
