@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CreditCard,
-  Loader2,
-  Search,
-  ShieldCheck,
-  Users,
-  KeyRound,
-  MoreHorizontal,
-  FileText,
-} from "lucide-react";
+import { CreditCard, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,12 +34,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { ChargePlanDialog } from "@/features/admin/ChargePlanDialog";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
-import { FilterToolbar } from "@/components/admin/FilterToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
+import { DataToolbar } from "@/components/admin/DataToolbar";
+import { DetailList } from "@/components/admin/DetailList";
+import { KpiGrid } from "@/components/admin/KpiGrid";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { MobileActionsMenu } from "@/components/admin/MobileAdminSystem";
+import { Card, CardContent } from "@/components/ui/card";
+import type { AdminStatus } from "@/components/admin/types";
 
 const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -66,9 +62,24 @@ function maskKey(key: string | null) {
   return `${prefix}-••••-${suffix}`;
 }
 
+function statusVisual(status: LicenseStatus): AdminStatus {
+  if (status === "active") return "active";
+  if (status === "pending" || status === "suspended") return "pending";
+  if (status === "expired" || status === "revoked") return "expired";
+  return "inactive";
+}
+
+function statusLabel(status: LicenseStatus) {
+  return statuses.find((item) => item.value === status)?.label ?? status;
+}
+
+function formatClientExpiry(value: string | null) {
+  if (!value) return "Sin vencimiento";
+  return new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(new Date(value));
+}
+
 export default function ClientesSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
   const [chargeClient, setChargeClient] = useState<ServiceClient | null>(null);
@@ -184,8 +195,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         module="clientes"
       />
 
-      {/* KPI Principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <KpiGrid columns={4} density="compact">
         <MetricCard
           label="Total clientes"
           value={allClients.length}
@@ -214,18 +224,19 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
           icon={CreditCard}
           semanticState="warning"
         />
-      </div>
+      </KpiGrid>
 
       {/* Tabla con FilterToolbar & AdminDataTableShell */}
       <AdminDataTableShell
         title="Todos los clientes"
         description="Gestión detallada de cuentas y accesos"
         actions={
-          <FilterToolbar
+          <DataToolbar
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo, teléfono o licencia..."
-            showReset={true}
+            resultCount={clients.length}
+            activeFilterCount={search ? 1 : 0}
             onReset={() => setSearch("")}
           />
         }
@@ -239,106 +250,169 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
           />
         }
       >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Contacto</TableHead>
-              <TableHead>Licencia / Plan</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Vencimiento</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {clients.map((client) => {
-              const expiresAt = new Date(client.expiresAt).getTime();
-              const diffDays = Math.ceil((expiresAt - Date.now()) / 86_400_000);
-              const isExpiring = diffDays >= 0 && diffDays <= 7;
+        <div className="space-y-3 md:hidden">
+          {clients.map((client) => (
+            <Card
+              key={client.userId}
+              data-admin-module="clientes"
+              className="rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]"
+            >
+              <CardContent className="space-y-3 p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="h-9 w-9 shrink-0 border border-[var(--module-border)]">
+                    <AvatarImage src={client.avatarUrl ?? undefined} />
+                    <AvatarFallback className="bg-[var(--module-surface)] text-xs font-semibold text-[var(--module-foreground)]">
+                      {client.displayName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-text-primary">
+                      {client.displayName}
+                    </p>
+                    <p className="truncate text-xs text-text-secondary">{client.email}</p>
+                  </div>
+                </div>
 
-              return (
-                <TableRow key={client.userId} className="group hover:bg-muted/40 transition-colors">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border border-border/70">
-                        <AvatarImage src={client.avatarUrl ?? undefined} />
-                        <AvatarFallback className="bg-blue-500/10 text-blue-400 text-xs font-semibold">
-                          {client.displayName.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm truncate">
-                          {client.displayName}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="info" className="rounded-full capitalize">
+                    {client.plan}
+                  </Badge>
+                  <StatusBadge
+                    status={statusVisual(client.status)}
+                    label={statusLabel(client.status)}
+                  />
+                </div>
+
+                <DetailList
+                  className="gap-y-2 [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-3 [&>div]:pb-2 [&_dd]:mt-0 [&_dd]:text-right [&_dt]:text-xs"
+                  items={[
+                    {
+                      label: "Vence",
+                      value: formatClientExpiry(client.expiresAt),
+                    },
+                    {
+                      label: "Licencia",
+                      value: maskKey(client.licenseKey),
+                      mono: true,
+                    },
+                  ]}
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  {canCharge ? (
+                    <Button size="sm" variant="subtle" onClick={() => setChargeClient(client)}>
+                      <CreditCard className="h-4 w-4" /> Cobrar
+                    </Button>
+                  ) : null}
+                  {canManage ? (
+                    <MobileActionsMenu
+                      items={[{ label: "Gestionar", onSelect: () => setSelected(client) }]}
+                    />
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Contacto</TableHead>
+                <TableHead>Licencia / Plan</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Vencimiento</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clients.map((client) => {
+                const expiresAt = new Date(client.expiresAt).getTime();
+                const diffDays = Math.ceil((expiresAt - Date.now()) / 86_400_000);
+                const isExpiring = diffDays >= 0 && diffDays <= 7;
+
+                return (
+                  <TableRow
+                    key={client.userId}
+                    className="group hover:bg-muted/40 transition-colors"
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9 border border-border/70">
+                          <AvatarImage src={client.avatarUrl ?? undefined} />
+                          <AvatarFallback className="bg-blue-500/10 text-blue-400 text-xs font-semibold">
+                            {client.displayName.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-sm truncate">
+                            {client.displayName}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    <div>{client.phone || "Sin teléfono"}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Badge variant="outline" className="text-xs capitalize font-medium">
-                        {client.plan}
-                      </Badge>
-                      <div className="font-mono text-[11px] text-muted-foreground">
-                        {maskKey(client.licenseKey)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <div>{client.phone || "Sin teléfono"}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Badge
+                          variant="info"
+                          className="rounded-full text-xs capitalize font-medium"
+                        >
+                          {client.plan}
+                        </Badge>
+                        <div className="font-mono text-[11px] text-muted-foreground">
+                          {maskKey(client.licenseKey)}
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={client.status === "active" ? "default" : "secondary"}
-                      className={`text-xs ${
-                        client.status === "active"
-                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                          : ""
-                      }`}
-                    >
-                      {client.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <span
-                      className={
-                        isExpiring ? "text-amber-400 font-semibold" : "text-muted-foreground"
-                      }
-                    >
-                      {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
-                        new Date(client.expiresAt),
-                      )}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      {canCharge && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs bg-card/60"
-                          onClick={() => setChargeClient(client)}
-                        >
-                          Cobrar
-                        </Button>
-                      )}
-                      {canManage && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                          onClick={() => setSelected(client)}
-                        >
-                          Gestionar
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        status={statusVisual(client.status)}
+                        label={statusLabel(client.status)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <span
+                        className={
+                          isExpiring ? "text-amber-400 font-semibold" : "text-muted-foreground"
+                        }
+                      >
+                        {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
+                          new Date(client.expiresAt),
+                        )}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {canCharge && (
+                          <Button
+                            variant="subtle"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => setChargeClient(client)}
+                          >
+                            <CreditCard className="h-3.5 w-3.5" />
+                            Cobrar
+                          </Button>
+                        )}
+                        {canManage && (
+                          <MobileActionsMenu
+                            items={[{ label: "Gestionar", onSelect: () => setSelected(client) }]}
+                          />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </AdminDataTableShell>
 
       {/* Modals for Client management & Charging kept fully intact */}
