@@ -25,6 +25,25 @@ export const moduleColorMap: Record<AdminModuleKey, string> = {
   auditoria: "var(--module-auditoria)",
 };
 
+export const moduleVisualMap: Record<
+  AdminModuleKey,
+  { accent: string; surface: string; border: string; foreground: string; glow: string }
+> = Object.fromEntries(
+  Object.keys(moduleColorMap).map((module) => [
+    module,
+    {
+      accent: `var(--module-${module}-accent)`,
+      surface: `var(--module-${module}-surface)`,
+      border: `var(--module-${module}-border)`,
+      foreground: `var(--module-${module}-foreground)`,
+      glow: `var(--module-${module}-glow)`,
+    },
+  ]),
+) as Record<
+  AdminModuleKey,
+  { accent: string; surface: string; border: string; foreground: string; glow: string }
+>;
+
 export const moduleBorderLeftMap: Record<AdminModuleKey, string> = {
   resumen: "border-l-4 border-l-[var(--module-resumen)]",
   clientes: "border-l-4 border-l-[var(--module-clientes)]",
@@ -39,6 +58,9 @@ export const moduleBorderLeftMap: Record<AdminModuleKey, string> = {
 };
 
 export type SemanticState = "success" | "warning" | "danger" | "info" | "inactive";
+
+export type AdminStatus =
+  "active" | "paid" | "pending" | "expired" | "cancelled" | "inactive" | "info";
 
 export const semanticColorMap: Record<SemanticState, string> = {
   success: "var(--semantic-success)",

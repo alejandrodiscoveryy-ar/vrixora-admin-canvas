@@ -7,7 +7,7 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
     <div className="relative w-full max-w-full overflow-hidden md:overflow-auto">
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm max-md:block", className)}
+        className={cn("w-full caption-bottom text-sm text-text-primary max-md:block", className)}
         {...props}
       />
     </div>
@@ -52,7 +52,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted max-md:block max-md:rounded-xl max-md:border max-md:bg-card/45 max-md:p-3",
+        "border-b border-border-subtle transition-colors duration-[var(--motion-interaction)] hover:bg-surface-2 data-[state=selected]:bg-surface-3 max-md:block max-md:rounded-[var(--radius-compact)] max-md:border max-md:bg-surface-1 max-md:p-3",
         className,
       )}
       {...props}
@@ -68,7 +68,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-11 px-3 text-left align-middle text-xs font-semibold uppercase tracking-wide text-text-tertiary [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}
@@ -83,7 +83,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] max-md:flex max-md:min-w-0 max-md:items-center max-md:justify-between max-md:gap-4 max-md:border-0 max-md:px-1 max-md:py-2 max-md:text-right max-md:before:mr-auto max-md:before:text-left max-md:before:text-[10px] max-md:before:font-semibold max-md:before:uppercase max-md:before:tracking-wider max-md:before:text-muted-foreground max-md:before:content-[attr(data-label)]",
+      "p-3 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] max-md:flex max-md:min-w-0 max-md:items-start max-md:justify-between max-md:gap-4 max-md:border-0 max-md:px-1 max-md:py-2 max-md:text-right max-md:before:mr-auto max-md:before:text-left max-md:before:text-xs max-md:before:font-semibold max-md:before:text-text-tertiary max-md:before:content-[attr(data-label)]",
       className,
     )}
     {...props}

@@ -23,9 +23,14 @@ export function AdminDataTableShell({
   className,
 }: AdminDataTableShellProps) {
   return (
-    <Card className={cn("overflow-hidden border-border/80 bg-card/90 backdrop-blur-sm shadow-sm", className)}>
+    <Card
+      className={cn(
+        "overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm",
+        className,
+      )}
+    >
       {(title || description || actions) && (
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/75 px-6 py-4">
+        <CardHeader className="flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             {title ? <CardTitle className="text-base font-semibold">{title}</CardTitle> : null}
             {description ? (
@@ -47,7 +52,7 @@ export function AdminDataTableShell({
       </CardContent>
 
       {footer ? (
-        <div className="border-t border-border/75 px-6 py-3.5 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between border-t border-border-subtle bg-surface-2 px-4 py-3.5 text-xs text-text-tertiary sm:px-6">
           {footer}
         </div>
       ) : null}

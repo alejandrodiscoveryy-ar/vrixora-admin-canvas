@@ -1,14 +1,14 @@
 export const adminChartTooltipProps = {
   contentStyle: {
-    backgroundColor: "hsl(var(--popover))",
-    border: "1px solid hsl(var(--border))",
+    backgroundColor: "var(--surface-overlay)",
+    border: "1px solid var(--border-default)",
     borderRadius: "12px",
     boxShadow: "0 18px 45px rgb(0 0 0 / 0.38)",
-    color: "hsl(var(--popover-foreground))",
+    color: "var(--text-primary)",
     padding: "10px 12px",
   },
   labelStyle: {
-    color: "hsl(var(--popover-foreground))",
+    color: "var(--text-primary)",
     fontWeight: 600,
     marginBottom: "6px",
   },
@@ -16,7 +16,7 @@ export const adminChartTooltipProps = {
     padding: "3px 0",
     fontWeight: 500,
   },
-  cursor: { fill: "hsl(var(--muted) / 0.16)" },
+  cursor: { fill: "color-mix(in oklab, var(--text-tertiary) 10%, transparent)" },
 };
 
 export const adminChartLegendProps = {
@@ -28,3 +28,12 @@ export const adminChartLegendProps = {
     paddingTop: "12px",
   },
 };
+
+export const adminChartSeries = {
+  registrations: "var(--module-clientes)",
+  trials: "var(--module-comercial)",
+  paid: "var(--semantic-success)",
+  renewals: "var(--semantic-warning)",
+  expired: "var(--semantic-danger)",
+  inactive: "var(--semantic-inactive)",
+} as const;

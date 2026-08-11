@@ -25,21 +25,19 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-border/60 bg-card/40 p-12 text-center backdrop-blur-sm",
+        "flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border-default bg-surface-2 p-8 text-center sm:p-10",
         className,
       )}
     >
       <div
-        className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border/80 bg-background/80 shadow-sm mb-4"
+        className="mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]"
         style={{ color: accentColor }}
       >
         <Icon className="h-6 w-6" style={{ color: accentColor }} />
       </div>
 
-      <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
-      <p className="mt-1.5 max-w-sm text-xs text-muted-foreground leading-relaxed">
-        {description}
-      </p>
+      <h3 className="text-base font-semibold tracking-tight text-text-primary">{title}</h3>
+      <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-text-secondary">{description}</p>
 
       {action ? <div className="mt-6">{action}</div> : null}
     </div>

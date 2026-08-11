@@ -26,14 +26,15 @@ export function SectionCard({
 
   return (
     <Card
+      data-admin-module={module}
       className={cn(
-        "overflow-hidden border-border/80 bg-card/90 backdrop-blur-sm shadow-sm",
+        "overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm",
         borderClass,
         className,
       )}
     >
       {(title || description || actions) && (
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/75 px-6 py-4">
+        <CardHeader className="flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             {title ? (
               <div className="flex items-center gap-2">
@@ -57,7 +58,7 @@ export function SectionCard({
         </CardHeader>
       )}
 
-      <CardContent className={cn("p-6", contentClassName)}>{children}</CardContent>
+      <CardContent className={cn("p-4 sm:p-6", contentClassName)}>{children}</CardContent>
     </Card>
   );
 }

@@ -21,7 +21,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/75 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -38,7 +38,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto border bg-background p-4 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:rounded-lg sm:p-6 max-md:bottom-0 max-md:left-0 max-md:top-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-t-2xl max-md:border-b-0 max-md:p-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] max-md:max-h-[calc(100dvh-0.75rem)]",
+        "fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto border border-border-default bg-surface-overlay p-4 text-text-primary shadow-[var(--shadow-overlay)] duration-[var(--motion-interaction)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:rounded-[var(--radius-dialog)] sm:p-6 max-md:bottom-0 max-md:left-0 max-md:top-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-t-[var(--radius-dialog)] max-md:border-b-0 max-md:p-4 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)] max-md:max-h-[calc(100dvh-0.75rem)]",
         className,
       )}
       {...props}
@@ -56,7 +56,7 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-background max-md:pb-1",
+      "flex flex-col space-y-1.5 text-center sm:text-left max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-surface-overlay max-md:pb-2",
       className,
     )}
     {...props}
@@ -67,7 +67,7 @@ DialogHeader.displayName = "DialogHeader";
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:bg-background max-md:pt-2 max-md:pb-[calc(env(safe-area-inset-bottom)+0.25rem)]",
+      "flex flex-col-reverse gap-2 border-border-subtle sm:flex-row sm:justify-end max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:border-t max-md:bg-surface-overlay max-md:px-4 max-md:pt-3 max-md:pb-[calc(env(safe-area-inset-bottom)+0.25rem)]",
       className,
     )}
     {...props}

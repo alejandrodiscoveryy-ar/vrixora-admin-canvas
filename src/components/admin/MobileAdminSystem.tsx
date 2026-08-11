@@ -74,15 +74,20 @@ export function MobileMetricsGrid({
       {items.map((metric) => {
         const Icon = metric.icon;
         return (
-          <Card key={metric.key} className="border-border/70 bg-card/85">
+          <Card
+            key={metric.key}
+            className="rounded-[var(--radius-compact)] border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]"
+          >
             <CardContent className="space-y-1.5 p-3">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {Icon ? <Icon className="h-3.5 w-3.5 text-primary" /> : null}
+                {Icon ? <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" /> : null}
                 <span className="truncate">{metric.label}</span>
               </div>
-              <div className="text-lg font-semibold leading-none">{metric.value}</div>
+              <div className="font-mono text-lg font-semibold leading-none text-text-primary">
+                {metric.value}
+              </div>
               {metric.hint ? (
-                <p className="line-clamp-1 text-[11px] text-muted-foreground">{metric.hint}</p>
+                <p className="line-clamp-1 text-xs text-text-tertiary">{metric.hint}</p>
               ) : null}
             </CardContent>
           </Card>
@@ -232,7 +237,7 @@ export function MobileActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="outline" className="h-10 w-10">
+        <Button size="icon" variant="outline" className="h-11 w-11" aria-label="Abrir acciones">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

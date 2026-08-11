@@ -53,8 +53,9 @@ export function MetricCard({
 
   return (
     <Card
+      data-admin-module={module}
       className={cn(
-        "relative overflow-hidden border-border/80 bg-card/90 backdrop-blur-sm transition-all hover:border-border",
+        "relative overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm transition-[border-color,box-shadow,transform] duration-[var(--motion-interaction)] hover:-translate-y-0.5 hover:border-[var(--module-border,var(--border-default))]",
         className,
       )}
     >
@@ -62,7 +63,7 @@ export function MetricCard({
         className="absolute top-0 left-0 right-0 h-[2px]"
         style={{ backgroundColor: accentColor }}
       />
-      <CardContent className="p-5">
+      <CardContent className="p-4 sm:p-5">
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-4 w-28 bg-muted/60" />
@@ -72,12 +73,12 @@ export function MetricCard({
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-xs font-semibold tracking-wide text-text-tertiary">
                 {label}
               </span>
               {Icon ? (
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--module-surface,var(--surface-2))]"
                   style={{ color: accentColor }}
                 >
                   <Icon className="h-4 w-4" />
@@ -86,7 +87,7 @@ export function MetricCard({
             </div>
 
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+              <span className="font-mono text-[1.75rem] font-bold leading-none tracking-tight text-text-primary sm:text-3xl">
                 {value}
               </span>
               {trend ? (
@@ -99,13 +100,15 @@ export function MetricCard({
                     <Minus className="h-3.5 w-3.5" />
                   )}
                   <span>{trend.value}</span>
-                   {trend.label ? <span className="text-muted-foreground">({trend.label})</span> : null}
+                  {trend.label ? (
+                    <span className="text-muted-foreground">({trend.label})</span>
+                  ) : null}
                 </div>
               ) : null}
             </div>
 
             {(description || comparison) && (
-              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="mt-2 flex items-center justify-between gap-2 text-xs text-text-tertiary">
                 {description && <span className="truncate">{description}</span>}
                 {comparison && <span className="font-medium text-foreground/80">{comparison}</span>}
               </div>
