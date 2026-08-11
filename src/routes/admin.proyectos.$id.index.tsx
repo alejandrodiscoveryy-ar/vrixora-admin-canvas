@@ -31,10 +31,9 @@ import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  AnalyticsDateRangePicker,
-  usePersistentAnalyticsDateRange,
-} from "@/components/admin/AnalyticsDateRange";
+import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
+import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
+import type { AdminPeriodKey } from "@/components/admin/admin-period";
 import { adminChartSeries, adminChartTooltipProps } from "@/lib/chart-theme";
 import {
   Select,
@@ -59,8 +58,6 @@ export const Route = createFileRoute("/admin/proyectos/$id/")({
 const REFRESH_INTERVAL = 30_000;
 const DAY = 86_400_000;
 
-type PeriodKey = "today" | "7d" | "30d" | "month" | "prev-month" | "custom";
-
 function ResumenPage() {
   const { id } = Route.useParams();
   const { data: project } = useProject(id);
@@ -78,7 +75,7 @@ function ResumenPage() {
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:analytics-range:${id}`,
   );
-  const [period, setPeriod] = useState<PeriodKey>("7d");
+  const [period, setPeriod] = useState<AdminPeriodKey>("7d");
   const [planFilter, setPlanFilter] = useState("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
   const [methodFilter, setMethodFilter] = useState("all");
@@ -471,66 +468,14 @@ function ResumenPage() {
       />
 
       <section className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <PeriodChip
-            active={period === "today"}
-            onClick={() => setPreset("today", setDateRange, setPeriod)}
-          >
-            Hoy
-          </PeriodChip>
-          <PeriodChip
-            active={period === "7d"}
-            onClick={() => setPreset("7d", setDateRange, setPeriod)}
-          >
-            7 días
-          </PeriodChip>
-          <PeriodChip
-            active={period === "30d"}
-            onClick={() => setPreset("30d", setDateRange, setPeriod)}
-          >
-            30 días
-          </PeriodChip>
-          <PeriodChip
-            active={period === "month"}
-            onClick={() => setPreset("month", setDateRange, setPeriod)}
-          >
-            Mes actual
-          </PeriodChip>
-          <PeriodChip
-            active={period === "prev-month"}
-            onClick={() => setPreset("prev-month", setDateRange, setPeriod)}
-          >
-            Mes anterior
-          </PeriodChip>
-          <PeriodChip active={period === "custom"} onClick={() => setPeriod("custom")}>
-            Personalizado
-          </PeriodChip>
-        </div>
-
-        <div className="hidden md:block">
-          <AnalyticsDateRangePicker
-            range={dateRange}
-            onChange={(next) => {
-              setPeriod("custom");
-              setDateRange(next);
-            }}
-          />
-        </div>
-
-        {period === "custom" ? (
-          <div className="grid gap-2 md:hidden min-[360px]:grid-cols-2">
-            <DateField
-              label="Desde"
-              value={dateRange.from}
-              onChange={(value) => setDateRange({ from: value, to: dateRange.to })}
-            />
-            <DateField
-              label="Hasta"
-              value={dateRange.to}
-              onChange={(value) => setDateRange({ from: dateRange.from, to: value })}
-            />
-          </div>
-        ) : null}
+        <AdminPeriodSelector
+          value={period}
+          range={dateRange}
+          onChange={(nextPeriod, nextRange) => {
+            setPeriod(nextPeriod);
+            setDateRange(nextRange);
+          }}
+        />
 
         <MobileFiltersPanel
           activeFilters={activeFilterCount}
@@ -1058,28 +1003,6 @@ function Filter({
   );
 }
 
-function PeriodChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Button
-      type="button"
-      variant={active ? "default" : "outline"}
-      size="sm"
-      className="h-9 rounded-xl px-3"
-      onClick={onClick}
-    >
-      {children}
-    </Button>
-  );
-}
-
 function CurrencyLegend() {
   return (
     <>
@@ -1147,28 +1070,6 @@ function formatActivityDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
-}
-
-function DateField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-1">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-      <input
-        type="date"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-      />
-    </label>
-  );
 }
 
 function toRange(from: string, to: string) {
@@ -1239,72 +1140,6 @@ function stringValue(value: unknown) {
 
 function formatDateShort(date: Date) {
   return new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(date);
-}
-
-function setPreset(
-  preset: PeriodKey,
-  setDateRange: (range: { from: string; to: string }) => void,
-  setPeriod: (value: PeriodKey) => void,
-) {
-  const today = new Date();
-  const todayIso = toIsoDate(today);
-
-  const applyRange = (from: Date, to: Date) => {
-    setDateRange({ from: toIsoDate(from), to: toIsoDate(to) });
-    setPeriod(preset);
-  };
-
-  if (preset === "today") {
-    setDateRange({ from: todayIso, to: todayIso });
-    setPeriod(preset);
-    return;
-  }
-
-  if (preset === "7d") {
-    const start = new Date(today);
-    start.setDate(start.getDate() - 6);
-    applyRange(start, today);
-    return;
-  }
-
-  if (preset === "30d") {
-    const start = new Date(today);
-    start.setDate(start.getDate() - 29);
-    applyRange(start, today);
-    return;
-  }
-
-  if (preset === "month") {
-    applyRange(startOfCurrentMonth(), endOfCurrentMonth());
-    return;
-  }
-
-  if (preset === "prev-month") {
-    applyRange(startOfPreviousMonth(), endOfPreviousMonth());
-    return;
-  }
-
-  setPeriod("custom");
-}
-
-function startOfCurrentMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-}
-
-function endOfCurrentMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-}
-
-function startOfPreviousMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-}
-
-function endOfPreviousMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 }
 
 function toIsoDate(value: Date) {

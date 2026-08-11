@@ -26,10 +26,9 @@ import {
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 import { supabaseServices, type LicenseStatus, type UsageAnalyticsDay } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
-import {
-  AnalyticsDateRangePicker,
-  usePersistentAnalyticsDateRange,
-} from "@/components/admin/AnalyticsDateRange";
+import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
+import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
+import { identifyAdminPeriod, type AdminPeriodKey } from "@/components/admin/admin-period";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -43,7 +42,13 @@ import { MetricCard } from "@/components/admin/MetricCard";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Grain = "daily" | "weekly" | "monthly";
 
@@ -66,6 +71,7 @@ export default function RendimientoSection({ projectId }: { projectId: string })
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:analytics-range:${projectId}`,
   );
+  const [period, setPeriod] = useState<AdminPeriodKey>(() => identifyAdminPeriod(dateRange));
   const [grain, setGrain] = useState<Grain>("daily");
   const [plan, setPlan] = useState("all");
   const [status, setStatus] = useState("all");
@@ -82,11 +88,6 @@ export default function RendimientoSection({ projectId }: { projectId: string })
         86_400_000,
     ) + 1,
   );
-
-  const setPeriodDays = (days: number) => {
-    const end = new Date();
-    setDateRange({ to: isoDate(end), from: isoDate(addDays(end, -(days - 1))) });
-  };
 
   const from = isoDate(addDays(new Date(`${fromDate}T12:00:00`), -periodDays));
   const filters = {
@@ -209,12 +210,14 @@ export default function RendimientoSection({ projectId }: { projectId: string })
       />
 
       <section className="space-y-3">
-        <div className="hidden md:block">
-          <AnalyticsDateRangePicker
-            range={dateRange}
-            onChange={(next) => setDateRange(next)}
-          />
-        </div>
+        <AdminPeriodSelector
+          value={period}
+          range={dateRange}
+          onChange={(nextPeriod, nextRange) => {
+            setPeriod(nextPeriod);
+            setDateRange(nextRange);
+          }}
+        />
 
         <MobileFiltersPanel
           activeFilters={activeFilterCount}
@@ -231,26 +234,43 @@ export default function RendimientoSection({ projectId }: { projectId: string })
               value={plan}
               onChange={setPlan}
               label="Plan"
-              options={[{ value: "all", label: "Todos los planes" }, ...(plans.data ?? []).map((p) => ({ value: p.code, label: p.name }))]}
+              options={[
+                { value: "all", label: "Todos los planes" },
+                ...(plans.data ?? []).map((p) => ({ value: p.code, label: p.name })),
+              ]}
             />
-            <FilterSelect value={status} onChange={setStatus} label="Estado" options={STATUS_OPTIONS} />
+            <FilterSelect
+              value={status}
+              onChange={setStatus}
+              label="Estado"
+              options={STATUS_OPTIONS}
+            />
             <FilterSelect
               value={source}
               onChange={setSource}
               label="Fuente"
-              options={[{ value: "all", label: "Todas las fuentes" }, ...(dimensions.data?.sources ?? []).map((s) => ({ value: s, label: s }))]}
+              options={[
+                { value: "all", label: "Todas las fuentes" },
+                ...(dimensions.data?.sources ?? []).map((s) => ({ value: s, label: s })),
+              ]}
             />
             <FilterSelect
               value={campaign}
               onChange={setCampaign}
               label="Campaña"
-              options={[{ value: "all", label: "Todas las campañas" }, ...(dimensions.data?.campaigns ?? []).map((c) => ({ value: c, label: c }))]}
+              options={[
+                { value: "all", label: "Todas las campañas" },
+                ...(dimensions.data?.campaigns ?? []).map((c) => ({ value: c, label: c })),
+              ]}
             />
             <FilterSelect
               value={version}
               onChange={setVersion}
               label="Versión"
-              options={[{ value: "all", label: "Todas las versiones" }, ...(dimensions.data?.versions ?? []).map((v) => ({ value: v, label: v }))]}
+              options={[
+                { value: "all", label: "Todas las versiones" },
+                ...(dimensions.data?.versions ?? []).map((v) => ({ value: v, label: v })),
+              ]}
             />
           </div>
         </MobileFiltersPanel>
@@ -372,8 +392,19 @@ export default function RendimientoSection({ projectId }: { projectId: string })
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
-                <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                <XAxis
+                  dataKey="label"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
+                <YAxis
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
                 <Tooltip {...adminChartTooltipProps} />
                 <Area
                   type="monotone"
@@ -407,18 +438,47 @@ export default function RendimientoSection({ projectId }: { projectId: string })
       </SectionCard>
 
       {/* GRÁFICO 2: CRECIMIENTO Y LICENCIAS */}
-      <SectionCard title="Crecimiento y licencias (Registros, Pruebas y Pagadas)" module="rendimiento">
+      <SectionCard
+        title="Crecimiento y licencias (Registros, Pruebas y Pagadas)"
+        module="rendimiento"
+      >
         {chartRows.length > 0 ? (
           <div className="h-64 md:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartRows} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
-                <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                <XAxis
+                  dataKey="label"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
+                <YAxis
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
                 <Tooltip {...adminChartTooltipProps} />
-                <Bar dataKey="newUsers" name="Registros" fill="var(--module-clientes)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="trials" name="Pruebas" fill="var(--module-comercial)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="paidLicenses" name="Pagadas" fill="var(--semantic-success)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="newUsers"
+                  name="Registros"
+                  fill="var(--module-clientes)"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="trials"
+                  name="Pruebas"
+                  fill="var(--module-comercial)"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="paidLicenses"
+                  name="Pagadas"
+                  fill="var(--semantic-success)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
