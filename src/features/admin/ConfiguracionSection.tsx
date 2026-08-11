@@ -101,6 +101,22 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const uploadBrandAsset = useMutation({
+    mutationFn: ({ kind, file }: { kind: "logo" | "favicon"; file: File }) =>
+      supabaseServices.projects.uploadBrandAsset(projectId, kind, file),
+    onSuccess: (url, variables) => {
+      const key = variables.kind === "logo" ? "logoUrl" : "iconUrl";
+      setForm((current) => (current ? { ...current, [key]: url } : current));
+      setIsDirty(true);
+      toast.success(
+        variables.kind === "logo"
+          ? "Logo subido. Guarda los cambios para aplicarlo."
+          : "Favicon subido. Guarda los cambios para aplicarlo.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   if (settingsQuery.isLoading || !project || !form) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -152,7 +168,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         actions={
           <div className="flex items-center gap-3">
             {isDirty && (
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 gap-1.5">
+              <Badge
+                variant="outline"
+                className="bg-amber-500/10 text-amber-400 border-amber-500/30 gap-1.5"
+              >
                 <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                 Cambios sin guardar
               </Badge>
@@ -164,7 +183,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 disabled={save.isPending || !isDirty}
                 className="gap-2"
               >
-                {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {save.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 Guardar cambios
               </Button>
             )}
@@ -243,10 +266,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Label>Métodos de pago aceptados</Label>
                 <div className="flex flex-wrap gap-4">
                   {paymentMethods.map((m) => (
-                    <label key={m.value} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <label
+                      key={m.value}
+                      className="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                    >
                       <Checkbox
                         checked={form.paymentMethods.includes(m.value)}
-                        onCheckedChange={(checked) => togglePaymentMethod(m.value, Boolean(checked))}
+                        onCheckedChange={(checked) =>
+                          togglePaymentMethod(m.value, Boolean(checked))
+                        }
                         disabled={!canManage}
                       />
                       {m.label}
@@ -262,20 +290,62 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           <SectionCard title="Identidad visual y marca" module="configuracion">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Logo (URL HTTPS)</Label>
+                <Label htmlFor="project-logo">Logo</Label>
                 <Input
-                  value={form.logoUrl}
-                  onChange={(event) => update("logoUrl", event.target.value)}
-                  disabled={!canManage}
+                  id="project-logo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) uploadBrandAsset.mutate({ kind: "logo", file });
+                    event.target.value = "";
+                  }}
+                  disabled={!canManage || uploadBrandAsset.isPending}
                 />
+                <p className="text-xs text-muted-foreground">PNG, JPG o WEBP. MÃ¡ximo 2 MB.</p>
+                {uploadBrandAsset.isPending && uploadBrandAsset.variables?.kind === "logo" ? (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Subiendo logo...
+                  </p>
+                ) : null}
+                {form.logoUrl ? (
+                  <div className="flex h-24 items-center justify-center rounded-xl border border-border/70 bg-muted/20 p-3">
+                    <img
+                      src={form.logoUrl}
+                      alt="Vista previa del logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                ) : null}
               </div>
               <div className="space-y-2">
-                <Label>Icono / Favicon (URL HTTPS)</Label>
+                <Label htmlFor="project-favicon">Icono / Favicon</Label>
                 <Input
-                  value={form.iconUrl}
-                  onChange={(event) => update("iconUrl", event.target.value)}
-                  disabled={!canManage}
+                  id="project-favicon"
+                  type="file"
+                  accept="image/png,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) uploadBrandAsset.mutate({ kind: "favicon", file });
+                    event.target.value = "";
+                  }}
+                  disabled={!canManage || uploadBrandAsset.isPending}
                 />
+                <p className="text-xs text-muted-foreground">PNG, WEBP o ICO. MÃ¡ximo 2 MB.</p>
+                {uploadBrandAsset.isPending && uploadBrandAsset.variables?.kind === "favicon" ? (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Subiendo favicon...
+                  </p>
+                ) : null}
+                {form.iconUrl ? (
+                  <div className="flex h-24 items-center justify-center rounded-xl border border-border/70 bg-muted/20 p-3">
+                    <img
+                      src={form.iconUrl}
+                      alt="Vista previa del favicon"
+                      className="h-14 w-14 object-contain"
+                    />
+                  </div>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label>Color primario</Label>
@@ -367,7 +437,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4">No tienes permisos para configurar WhatsApp.</p>
+              <p className="text-xs text-muted-foreground py-4">
+                No tienes permisos para configurar WhatsApp.
+              </p>
             )}
           </SectionCard>
         )}
@@ -378,7 +450,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <div className="flex items-center justify-between rounded-xl border border-border/75 bg-background/50 p-4">
                 <div>
                   <p className="text-sm font-medium">Renovación automática en pagos verificados</p>
-                  <p className="text-xs text-muted-foreground">Actualiza licencias al confirmar pagos.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Actualiza licencias al confirmar pagos.
+                  </p>
                 </div>
                 <Switch
                   checked={form.autoRenewVerifiedPayments}
@@ -389,7 +463,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <div className="flex items-center justify-between rounded-xl border border-border/75 bg-background/50 p-4">
                 <div>
                   <p className="text-sm font-medium">Notificar vencimiento de licencias</p>
-                  <p className="text-xs text-muted-foreground">Enviar alertas operativas y de soporte.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Enviar alertas operativas y de soporte.
+                  </p>
                 </div>
                 <Switch
                   checked={form.notifyLicenseExpiry}
@@ -415,7 +491,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <div className="flex items-center justify-between rounded-xl border border-border/75 bg-background/50 p-4 md:col-span-2">
                 <div>
                   <p className="text-sm font-medium">Modo mantenimiento</p>
-                  <p className="text-xs text-muted-foreground">Bloquea temporalmente el acceso general.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Bloquea temporalmente el acceso general.
+                  </p>
                 </div>
                 <Switch
                   checked={form.maintenanceMode}
