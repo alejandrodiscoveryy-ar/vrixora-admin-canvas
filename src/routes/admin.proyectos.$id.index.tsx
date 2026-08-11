@@ -139,6 +139,14 @@ function ResumenPage() {
   const clientsRows = useMemo(() => clients.data ?? [], [clients.data]);
   const paymentRows = useMemo(() => payments.data ?? [], [payments.data]);
   const leadsRows = useMemo(() => commercialLeads.data ?? [], [commercialLeads.data]);
+  const licenseById = useMemo(
+    () => new Map(licensesRows.map((license) => [license.id, license])),
+    [licensesRows],
+  );
+  const planByCode = useMemo(
+    () => new Map((plans.data ?? []).map((plan) => [plan.code.toLowerCase(), plan])),
+    [plans.data],
+  );
 
   const planCodes = useMemo(
     () => [...new Set(paymentRows.map((row) => row.plan).filter(Boolean))],
@@ -200,40 +208,56 @@ function ResumenPage() {
     [licensesRows, planFilter],
   );
 
-  const activeLicenses = selectedLicenseRows.filter(
-    (license) => license.status === "active",
-  ).length;
-  const activeClientsCount = clientsRows.filter((client) => client.status === "active").length;
+  const isActiveLicense = (license: (typeof licensesRows)[number]) =>
+    license.status === "active" &&
+    (!license.expiresAt || new Date(license.expiresAt).getTime() >= now);
+
+  const hasLicenseType = (license: (typeof licensesRows)[number], type: string) => {
+    const normalizedType = type.toLowerCase();
+    const planCode = license.plan.toLowerCase();
+    return (
+      license.licenseType.toLowerCase() === normalizedType ||
+      planCode === normalizedType ||
+      planByCode.get(planCode)?.licenseType.toLowerCase() === normalizedType
+    );
+  };
+
+  const hasConfirmedPayment = (license: (typeof licensesRows)[number]) =>
+    paymentRows.some(
+      (payment) =>
+        payment.status === "paid" &&
+        (payment.licenseId === license.id || payment.userId === license.userId),
+    );
+
+  const isPaidCommercialLicense = (license: (typeof licensesRows)[number]) =>
+    isActiveLicense(license) &&
+    !hasLicenseType(license, "trial") &&
+    !hasLicenseType(license, "admin") &&
+    hasConfirmedPayment(license);
+
+  const activeLicenses = selectedLicenseRows.filter(isActiveLicense).length;
+  const activeClientsCount = clientsRows.filter((client) => {
+    if (!client.licenseId || client.status !== "active") return false;
+    const license = licenseById.get(client.licenseId);
+    const expiresAt = license?.expiresAt ?? client.expiresAt;
+    return (
+      (!license || license.status === "active") &&
+      (!expiresAt || new Date(expiresAt).getTime() >= now)
+    );
+  }).length;
 
   // Corrected "Licencias pagadas" rule: active licenses, excluding trial and admin, with confirmed payment history
-  const paidLicensesCount = useMemo(() => {
-    return licensesRows.filter((l) => {
-      if (l.status !== "active") return false;
-      if (l.plan === "trial" || l.plan === "admin") return false;
-      const hasPaidPayment = paymentRows.some(
-        (p) => p.status === "paid" && (p.licenseId === l.id || p.userId === l.userId || p.plan === l.plan),
-      );
-      return hasPaidPayment;
-    }).length;
-  }, [licensesRows, paymentRows]);
+  const paidLicensesCount = licensesRows.filter(isPaidCommercialLicense).length;
 
   // Corrected "Renovaciones próximas" rule: paid commercial licenses expiring within 30 days
-  const upcomingRenewalsCount = useMemo(() => {
-    return licensesRows.filter((l) => {
-      if (l.status !== "active") return false;
-      if (l.plan === "trial" || l.plan === "admin") return false;
-      if (!l.expiresAt) return false;
-      const delta = new Date(l.expiresAt).getTime() - now;
-      const isExpiring30 = delta >= 0 && delta <= 30 * DAY;
-      const hasPaidPayment = paymentRows.some(
-        (p) => p.status === "paid" && (p.licenseId === l.id || p.userId === l.userId || p.plan === l.plan),
-      );
-      return isExpiring30 && hasPaidPayment;
-    }).length;
-  }, [licensesRows, paymentRows, now]);
+  const upcomingRenewalsCount = licensesRows.filter((license) => {
+    if (!isPaidCommercialLicense(license) || !license.expiresAt) return false;
+    const delta = new Date(license.expiresAt).getTime() - now;
+    return delta >= 0 && delta <= 30 * DAY;
+  }).length;
 
   const expiring7 = selectedLicenseRows.filter((license) => {
-    if (!license.expiresAt || license.status !== "active") return false;
+    if (!license.expiresAt || !isPaidCommercialLicense(license)) return false;
     const delta = new Date(license.expiresAt).getTime() - now;
     return delta >= 0 && delta <= 7 * DAY;
   }).length;
@@ -264,10 +288,18 @@ function ResumenPage() {
     );
   }).length;
 
-  const trialClients = clientsRows.filter((client) => client.plan === "trial").length;
-  const paidUniqueUsers = new Set(paidPeriod.map((payment) => payment.userId).filter(Boolean)).size;
+  const trialCohort = leadsRows.filter((lead) => {
+    const createdAt = new Date(lead.createdAt).getTime();
+    return (
+      Boolean(lead.userId) &&
+      lead.trialStarted &&
+      createdAt >= range.start.getTime() &&
+      createdAt <= range.end.getTime()
+    );
+  });
+  const convertedTrialUsers = trialCohort.filter((lead) => lead.paid).length;
   const conversionRate =
-    trialClients > 0 ? Math.round((paidUniqueUsers / trialClients) * 100) : null;
+    trialCohort.length > 0 ? Math.round((convertedTrialUsers / trialCohort.length) * 100) : null;
 
   const revenuePeriod = totalByStatus(paidPeriod);
   const revenuePrevious = totalByStatus(paidPrevious);
@@ -284,21 +316,32 @@ function ResumenPage() {
 
   // Revenue time series for chart
   const revenueTimeSeries = useMemo(() => {
-    const map = new Map<string, number>();
-    paidPeriod.forEach((p) => {
-      const dateStr = p.createdAt.slice(0, 10);
-      map.set(dateStr, (map.get(dateStr) ?? 0) + p.amount);
+    const totals = new Map<string, Record<string, number>>();
+    paidPeriod.forEach((payment) => {
+      const date = payment.createdAt.slice(0, 10);
+      const dailyTotals = totals.get(date) ?? {};
+      dailyTotals[payment.currency] = (dailyTotals[payment.currency] ?? 0) + payment.amount;
+      totals.set(date, dailyTotals);
     });
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, amount]) => ({
+
+    const rows = [];
+    const cursor = new Date(range.start);
+    cursor.setHours(12, 0, 0, 0);
+    const end = new Date(range.end);
+    end.setHours(12, 0, 0, 0);
+    while (cursor <= end) {
+      const date = toIsoDate(cursor);
+      rows.push({
         date,
-        label: new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
-          new Date(`${date}T12:00:00`),
-        ),
-        amount,
-      }));
-  }, [paidPeriod]);
+        label: formatDateShort(cursor),
+        CUP: totals.get(date)?.CUP ?? 0,
+        USD: totals.get(date)?.USD ?? 0,
+        EUR: totals.get(date)?.EUR ?? 0,
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return rows;
+  }, [paidPeriod, range.start, range.end]);
 
   // Plan distribution for chart
   const planDistribution = useMemo(() => {
@@ -319,12 +362,18 @@ function ResumenPage() {
   const funnelSteps = useMemo(() => {
     const activeLeads = leadsRows.filter((l) => !l.archivedAt);
     const totalLeads = activeLeads.length;
-    const contacted = activeLeads.filter(
-      (l) => l.status === "contacted" || l.status === "trial" || l.status === "converted" || l.lastInteractionAt,
-    ).length;
-    const inTrial = activeLeads.filter((l) => l.trialStarted || l.status === "trial").length;
-    const converted = activeLeads.filter((l) => l.paid || l.status === "converted").length;
-    const renewed = renewalsPeriod;
+    const contactedStatuses = new Set([
+      "contacted",
+      "interested",
+      "trial",
+      "ready_to_charge",
+      "customer",
+      "not_interested",
+    ]);
+    const contacted = activeLeads.filter((lead) => contactedStatuses.has(lead.status)).length;
+    const inTrial = activeLeads.filter((lead) => lead.trialStarted).length;
+    const converted = activeLeads.filter((lead) => lead.paid).length;
+    const renewed = activeLeads.filter((lead) => lead.renewalCount > 0).length;
 
     if (totalLeads === 0 && !canViewCommercial) {
       return null; // indicates no commercial data available
@@ -337,7 +386,7 @@ function ResumenPage() {
       { label: "Pago", count: converted, desc: "Convertidos a pago" },
       { label: "Renovación", count: renewed, desc: "Renovaciones periodo" },
     ];
-  }, [leadsRows, renewalsPeriod, canViewCommercial]);
+  }, [leadsRows, canViewCommercial]);
 
   const analyticsRows = analytics.data ?? [];
   const chartRows = analyticsRows.map((row) => ({
@@ -394,6 +443,7 @@ function ResumenPage() {
       label: "Planes inactivos asignados",
       value: inactivePlanAssignments,
       to: `/admin/proyectos/${id}/licencias`,
+      search: { issue: "inactive-assigned-plans" },
     },
   ].filter((item) => item.value > 0);
 
@@ -425,7 +475,11 @@ function ResumenPage() {
     {
       key: "conversion",
       label: "Conversión",
-      value: allLoading ? "Cargando..." : conversionRate === null ? "0%" : `${conversionRate}%`,
+      value: allLoading
+        ? "Cargando..."
+        : conversionRate === null
+          ? "Sin datos"
+          : `${conversionRate}%`,
     },
     {
       key: "renewals",
@@ -619,7 +673,10 @@ function ResumenPage() {
               >
                 <Link to={alert.to}>
                   <span className="truncate text-xs font-medium">{alert.label}</span>
-                  <Badge variant="secondary" className="ml-2 shrink-0 bg-amber-500/20 text-amber-300 font-mono">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 shrink-0 bg-amber-500/20 text-amber-300 font-mono"
+                  >
                     {alert.value}
                   </Badge>
                 </Link>
@@ -673,10 +730,14 @@ function ResumenPage() {
                 allLoading
                   ? "Cargando..."
                   : conversionRate === null
-                    ? "0%"
+                    ? "Sin datos"
                     : `${conversionRate}%`
               }
-              comparison={conversionRate === null ? "Sin clientes trial" : `${paidUniqueUsers} pagados`}
+              comparison={
+                conversionRate === null
+                  ? "Sin datos de cohorte Trial"
+                  : `${convertedTrialUsers} de ${trialCohort.length} convertidos`
+              }
               icon={TrendingUp}
               module="pagos"
               isLoading={allLoading}
@@ -722,18 +783,37 @@ function ResumenPage() {
       {/* 2. GRÁFICO DE INGRESOS */}
       {canViewPayments ? (
         <SectionCard title="Evolución de ingresos del período" module="resumen">
-          {revenueTimeSeries.length > 0 ? (
+          {paidPeriod.length > 0 ? (
             <div className="h-64 md:h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueTimeSeries} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                <BarChart
+                  data={revenueTimeSeries}
+                  margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                  <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                  <XAxis
+                    dataKey="label"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <YAxis
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
                   <Tooltip
                     {...adminChartTooltipProps}
-                    formatter={(val: unknown) => [typeof val === "number" ? val.toLocaleString() : val, "Ingresos"]}
+                    formatter={(val: unknown, currency: unknown) => [
+                      typeof val === "number" ? val.toLocaleString() : val,
+                      String(currency),
+                    ]}
                   />
-                  <Bar dataKey="amount" fill="var(--semantic-success)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="CUP" fill="var(--semantic-success)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="USD" fill="var(--module-pagos)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="EUR" fill="var(--module-clientes)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -755,10 +835,28 @@ function ResumenPage() {
             <div className="space-y-4">
               <div className="h-48 md:h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={planDistribution} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                  <BarChart
+                    data={planDistribution}
+                    layout="vertical"
+                    margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.15} />
-                    <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
-                    <YAxis dataKey="plan" type="category" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" width={80} />
+                    <XAxis
+                      type="number"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      stroke="var(--muted-foreground)"
+                    />
+                    <YAxis
+                      dataKey="plan"
+                      type="category"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      stroke="var(--muted-foreground)"
+                      width={80}
+                    />
                     <Tooltip {...adminChartTooltipProps} />
                     <Bar dataKey="count" fill="var(--module-licencias)" radius={[0, 6, 6, 0]} />
                   </BarChart>
@@ -766,7 +864,10 @@ function ResumenPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
                 {planDistribution.map((item) => (
-                  <div key={item.plan} className="rounded-xl border border-border/70 bg-muted/20 p-3 text-center">
+                  <div
+                    key={item.plan}
+                    className="rounded-xl border border-border/70 bg-muted/20 p-3 text-center"
+                  >
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {item.plan}
                     </span>
@@ -779,7 +880,7 @@ function ResumenPage() {
             <EmptyState
               icon={Layers}
               title="Sin distribución de planes"
-              description="No hay licencias activas registradas con los filtros actuales."
+              description="No hay licencias registradas con los filtros actuales."
               module="licencias"
             />
           )}
@@ -807,7 +908,9 @@ function ResumenPage() {
                         {pct}%
                       </span>
                     </div>
-                    <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">{step.count}</p>
+                    <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">
+                      {step.count}
+                    </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">{step.desc}</p>
                   </div>
                   {idx < funnelSteps.length - 1 ? (
@@ -858,7 +961,12 @@ function ResumenPage() {
                     stroke="var(--muted-foreground)"
                   />
                   <Tooltip {...adminChartTooltipProps} />
-                  <Bar dataKey="newUsers" name="Nuevos" fill="var(--module-clientes)" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="newUsers"
+                    name="Nuevos"
+                    fill="var(--module-clientes)"
+                    radius={[4, 4, 0, 0]}
+                  />
                   <Bar
                     dataKey="paidLicenses"
                     name="Pagadas"
