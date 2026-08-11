@@ -25,17 +25,17 @@ export function ModuleHeader({
     <div
       data-admin-module={module}
       className={cn(
-        "mb-6 flex flex-col gap-4 border-b border-border-subtle pb-6 sm:flex-row sm:items-center sm:justify-between",
+        "mb-4 flex flex-col gap-3 border-b border-border-subtle pb-4 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pb-6",
         className,
       )}
     >
-      <div className="flex items-start gap-3.5">
+      <div className="flex items-start gap-3 sm:gap-3.5">
         {Icon ? (
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-compact)] border border-[var(--module-border,var(--border-default))] bg-[var(--module-surface,var(--surface-2))] shadow-[var(--shadow-xs)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-compact)] border border-[var(--module-border,var(--border-default))] bg-[var(--module-surface,var(--surface-2))] shadow-[var(--shadow-xs)] sm:h-11 sm:w-11"
             style={{ color: accentColor }}
           >
-            <Icon className="h-5 w-5" style={{ color: accentColor }} />
+            <Icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" style={{ color: accentColor }} />
           </div>
         ) : null}
         <div>
@@ -52,7 +52,7 @@ export function ModuleHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-text-secondary">
+            <p className="mt-0.5 max-w-3xl text-sm leading-snug text-text-secondary sm:mt-1 sm:leading-relaxed">
               {description}
             </p>
           ) : null}

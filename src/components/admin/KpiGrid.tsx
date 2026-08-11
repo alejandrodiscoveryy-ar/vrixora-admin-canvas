@@ -21,9 +21,11 @@ export function KpiGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 sm:grid-cols-2",
+        "grid grid-cols-1 items-stretch min-[360px]:grid-cols-2 [&>*]:min-w-0",
         desktopColumns,
-        density === "compact" ? "gap-3" : "gap-4 xl:gap-5",
+        (columns === 3 || columns === 5) &&
+          "min-[360px]:[&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1",
+        density === "compact" ? "gap-2.5 sm:gap-3" : "gap-3 sm:gap-4 xl:gap-5",
         className,
       )}
     >

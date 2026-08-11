@@ -35,6 +35,9 @@ export function MetricCard({
   isLoading = false,
   className,
 }: MetricCardProps) {
+  const displayValue = safeMetricValue(value, "0");
+  const displayComparison = comparison ? safeMetricValue(comparison, "—") : undefined;
+  const displayTrendValue = trend ? safeMetricValue(trend.value, "—") : undefined;
   const accentColor = module
     ? moduleColorMap[module]
     : semanticState
@@ -55,7 +58,7 @@ export function MetricCard({
     <Card
       data-admin-module={module}
       className={cn(
-        "relative overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm transition-[border-color,box-shadow,transform] duration-[var(--motion-interaction)] hover:-translate-y-0.5 hover:border-[var(--module-border,var(--border-default))]",
+        "relative h-full min-h-28 overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm transition-[border-color,box-shadow,transform] duration-[var(--motion-interaction)] hover:-translate-y-0.5 hover:border-[var(--module-border,var(--border-default))] sm:min-h-0",
         className,
       )}
     >
@@ -63,7 +66,7 @@ export function MetricCard({
         className="absolute top-0 left-0 right-0 h-[2px]"
         style={{ backgroundColor: accentColor }}
       />
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="p-3 min-[390px]:p-3.5 sm:p-5">
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-4 w-28 bg-muted/60" />
@@ -72,23 +75,23 @@ export function MetricCard({
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold tracking-wide text-text-tertiary">
+            <div className="flex items-start justify-between gap-1.5">
+              <span className="text-[11px] font-semibold leading-tight tracking-wide text-text-tertiary sm:text-xs">
                 {label}
               </span>
               {Icon ? (
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--module-surface,var(--surface-2))]"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--module-surface,var(--surface-2))] sm:h-8 sm:w-8 sm:rounded-lg"
                   style={{ color: accentColor }}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
               ) : null}
             </div>
 
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="font-mono text-[1.75rem] font-bold leading-none tracking-tight text-text-primary sm:text-3xl">
-                {value}
+            <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5 sm:mt-2 sm:gap-2">
+              <span className="min-w-0 truncate font-mono text-2xl font-bold leading-none tracking-tight text-text-primary sm:text-3xl">
+                {displayValue}
               </span>
               {trend ? (
                 <div className={cn("flex items-center gap-1 text-xs font-medium", trendColor)}>
@@ -99,7 +102,7 @@ export function MetricCard({
                   ) : (
                     <Minus className="h-3.5 w-3.5" />
                   )}
-                  <span>{trend.value}</span>
+                  <span>{displayTrendValue}</span>
                   {trend.label ? (
                     <span className="text-muted-foreground">({trend.label})</span>
                   ) : null}
@@ -108,9 +111,13 @@ export function MetricCard({
             </div>
 
             {(description || comparison) && (
-              <div className="mt-2 flex items-center justify-between gap-2 text-xs text-text-tertiary">
-                {description && <span className="truncate">{description}</span>}
-                {comparison && <span className="font-medium text-foreground/80">{comparison}</span>}
+              <div className="mt-1.5 flex min-w-0 items-center justify-between gap-1.5 text-[11px] leading-tight text-text-tertiary sm:mt-2 sm:gap-2 sm:text-xs">
+                {description && <span className="min-w-0 truncate">{description}</span>}
+                {displayComparison && (
+                  <span className="min-w-0 truncate font-medium text-foreground/80">
+                    {displayComparison}
+                  </span>
+                )}
               </div>
             )}
           </>
@@ -118,4 +125,9 @@ export function MetricCard({
       </CardContent>
     </Card>
   );
+}
+
+function safeMetricValue(value: string | number, fallback: string): string | number {
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  return /(?:NaN|(?:^|[^a-z])Infinity|undefined)/i.test(value) ? fallback : value;
 }
