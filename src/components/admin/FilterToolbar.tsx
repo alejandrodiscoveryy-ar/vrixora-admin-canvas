@@ -27,19 +27,19 @@ export function FilterToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border border-border/70 bg-card/50 p-4 backdrop-blur-sm lg:flex-row lg:items-center lg:justify-between",
+        "flex flex-col gap-3 rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 p-3 shadow-[var(--shadow-xs)] sm:p-4 lg:flex-row lg:items-center lg:justify-between",
         className,
       )}
     >
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
         {onSearchChange !== undefined ? (
-          <div className="relative min-w-[240px] flex-1 sm:max-w-xs">
+          <div className="relative min-w-0 flex-1 sm:min-w-60 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               value={searchValue ?? ""}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="pl-9 bg-background/60 border-border/80 h-10 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+              className="pl-9"
             />
           </div>
         ) : null}

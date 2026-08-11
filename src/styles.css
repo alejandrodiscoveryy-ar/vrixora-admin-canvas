@@ -62,6 +62,20 @@
   --color-danger: var(--semantic-danger);
   --color-info: var(--semantic-info);
   --color-inactive: var(--semantic-inactive);
+  --color-canvas: var(--canvas);
+  --color-canvas-elevated: var(--canvas-elevated);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
 }
 
 /* Vrixora SaaS Premium Design Tokens & System (Light & Dark Support) */
@@ -138,6 +152,31 @@
   --sidebar-border: oklch(0.88 0.01 220);
   --sidebar-ring: oklch(0.65 0.18 195);
   --body-grid: oklch(0.85 0.01 220 / 0.4);
+
+  /* SaaS surface and content hierarchy */
+  --canvas: oklch(0.97 0.005 220);
+  --canvas-elevated: oklch(0.985 0.004 220);
+  --surface-1: oklch(1 0 0);
+  --surface-2: oklch(0.975 0.006 220);
+  --surface-3: oklch(0.95 0.009 220);
+  --surface-overlay: oklch(0.995 0.003 220 / 0.96);
+  --text-primary: oklch(0.12 0.01 240);
+  --text-secondary: oklch(0.38 0.015 240);
+  --text-tertiary: oklch(0.53 0.015 240);
+  --text-disabled: oklch(0.68 0.01 240);
+  --border-subtle: oklch(0.91 0.008 220);
+  --border-default: oklch(0.86 0.012 220);
+  --border-strong: oklch(0.74 0.018 220);
+  --border-focus: oklch(0.65 0.18 195);
+  --radius-control: 0.5rem;
+  --radius-compact: 0.75rem;
+  --radius-card: 1rem;
+  --radius-dialog: 1.25rem;
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 0.05);
+  --shadow-card: 0 14px 38px -26px rgb(15 23 42 / 0.28);
+  --shadow-overlay: 0 28px 80px -24px rgb(15 23 42 / 0.38);
+  --motion-interaction: 180ms;
+  --motion-enter: 280ms;
 }
 
 .dark {
@@ -162,7 +201,7 @@
   --input: oklch(0.2 0.01 220);
   --ring: oklch(0.85 0.15 195);
   --hover-surface: oklch(0.17 0.01 240);
-  --selected-surface: oklch(0.20 0.015 240);
+  --selected-surface: oklch(0.2 0.015 240);
   --disabled-surface: oklch(0.15 0.005 240);
   --destructive: oklch(0.62 0.24 25);
   --destructive-foreground: oklch(0.98 0.01 250);
@@ -173,8 +212,8 @@
   --module-licencias: oklch(0.75 0.15 175);
   --module-planes: oklch(0.78 0.17 85);
   --module-pagos: oklch(0.72 0.19 145);
-  --module-empleados: oklch(0.62 0.20 270);
-  --module-rendimiento: oklch(0.70 0.20 50);
+  --module-empleados: oklch(0.62 0.2 270);
+  --module-rendimiento: oklch(0.7 0.2 50);
   --module-configuracion: oklch(0.65 0.05 240);
   --module-auditoria: oklch(0.62 0.24 350);
 
@@ -193,6 +232,119 @@
   --sidebar-border: oklch(0.22 0.01 220);
   --sidebar-ring: oklch(0.85 0.15 195);
   --body-grid: oklch(0.2 0.008 220 / 0.25);
+
+  --canvas: oklch(0.075 0.004 225);
+  --canvas-elevated: oklch(0.095 0.006 225);
+  --surface-1: oklch(0.115 0.008 235);
+  --surface-2: oklch(0.14 0.01 235);
+  --surface-3: oklch(0.17 0.012 235);
+  --surface-overlay: oklch(0.125 0.009 230 / 0.97);
+  --text-primary: oklch(0.97 0.004 220);
+  --text-secondary: oklch(0.79 0.014 225);
+  --text-tertiary: oklch(0.66 0.014 230);
+  --text-disabled: oklch(0.48 0.012 230);
+  --border-subtle: oklch(0.18 0.01 230);
+  --border-default: oklch(0.23 0.012 230);
+  --border-strong: oklch(0.34 0.018 225);
+  --border-focus: oklch(0.85 0.15 195);
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.22);
+  --shadow-card: 0 18px 48px -28px rgb(0 0 0 / 0.72);
+  --shadow-overlay: 0 32px 96px -24px rgb(0 0 0 / 0.82);
+}
+
+/* Module families. Accents orient navigation; semantic colors continue to describe state. */
+:root {
+  --module-resumen-accent: var(--module-resumen);
+  --module-clientes-accent: var(--module-clientes);
+  --module-comercial-accent: var(--module-comercial);
+  --module-licencias-accent: var(--module-licencias);
+  --module-planes-accent: var(--module-planes);
+  --module-pagos-accent: var(--module-pagos);
+  --module-empleados-accent: var(--module-empleados);
+  --module-rendimiento-accent: var(--module-rendimiento);
+  --module-configuracion-accent: var(--module-configuracion);
+  --module-auditoria-accent: var(--module-auditoria);
+
+  --module-resumen-surface: color-mix(in oklab, var(--module-resumen) 9%, var(--surface-1));
+  --module-clientes-surface: color-mix(in oklab, var(--module-clientes) 9%, var(--surface-1));
+  --module-comercial-surface: color-mix(in oklab, var(--module-comercial) 9%, var(--surface-1));
+  --module-licencias-surface: color-mix(in oklab, var(--module-licencias) 9%, var(--surface-1));
+  --module-planes-surface: color-mix(in oklab, var(--module-planes) 9%, var(--surface-1));
+  --module-pagos-surface: color-mix(in oklab, var(--module-pagos) 9%, var(--surface-1));
+  --module-empleados-surface: color-mix(in oklab, var(--module-empleados) 9%, var(--surface-1));
+  --module-rendimiento-surface: color-mix(in oklab, var(--module-rendimiento) 9%, var(--surface-1));
+  --module-configuracion-surface: color-mix(
+    in oklab,
+    var(--module-configuracion) 9%,
+    var(--surface-1)
+  );
+  --module-auditoria-surface: color-mix(in oklab, var(--module-auditoria) 9%, var(--surface-1));
+
+  --module-resumen-border: color-mix(in oklab, var(--module-resumen) 32%, var(--border-subtle));
+  --module-clientes-border: color-mix(in oklab, var(--module-clientes) 32%, var(--border-subtle));
+  --module-comercial-border: color-mix(in oklab, var(--module-comercial) 32%, var(--border-subtle));
+  --module-licencias-border: color-mix(in oklab, var(--module-licencias) 32%, var(--border-subtle));
+  --module-planes-border: color-mix(in oklab, var(--module-planes) 32%, var(--border-subtle));
+  --module-pagos-border: color-mix(in oklab, var(--module-pagos) 32%, var(--border-subtle));
+  --module-empleados-border: color-mix(in oklab, var(--module-empleados) 32%, var(--border-subtle));
+  --module-rendimiento-border: color-mix(
+    in oklab,
+    var(--module-rendimiento) 32%,
+    var(--border-subtle)
+  );
+  --module-configuracion-border: color-mix(
+    in oklab,
+    var(--module-configuracion) 32%,
+    var(--border-subtle)
+  );
+  --module-auditoria-border: color-mix(in oklab, var(--module-auditoria) 32%, var(--border-subtle));
+
+  --module-resumen-foreground: var(--module-resumen);
+  --module-clientes-foreground: var(--module-clientes);
+  --module-comercial-foreground: var(--module-comercial);
+  --module-licencias-foreground: var(--module-licencias);
+  --module-planes-foreground: var(--module-planes);
+  --module-pagos-foreground: var(--module-pagos);
+  --module-empleados-foreground: var(--module-empleados);
+  --module-rendimiento-foreground: var(--module-rendimiento);
+  --module-configuracion-foreground: var(--module-configuracion);
+  --module-auditoria-foreground: var(--module-auditoria);
+
+  --module-resumen-glow: color-mix(in oklab, var(--module-resumen) 30%, transparent);
+  --module-clientes-glow: color-mix(in oklab, var(--module-clientes) 30%, transparent);
+  --module-comercial-glow: color-mix(in oklab, var(--module-comercial) 30%, transparent);
+  --module-licencias-glow: color-mix(in oklab, var(--module-licencias) 30%, transparent);
+  --module-planes-glow: color-mix(in oklab, var(--module-planes) 30%, transparent);
+  --module-pagos-glow: color-mix(in oklab, var(--module-pagos) 30%, transparent);
+  --module-empleados-glow: color-mix(in oklab, var(--module-empleados) 30%, transparent);
+  --module-rendimiento-glow: color-mix(in oklab, var(--module-rendimiento) 30%, transparent);
+  --module-configuracion-glow: color-mix(in oklab, var(--module-configuracion) 30%, transparent);
+  --module-auditoria-glow: color-mix(in oklab, var(--module-auditoria) 30%, transparent);
+
+  --semantic-success-foreground: var(--semantic-success);
+  --semantic-success-surface: color-mix(in oklab, var(--semantic-success) 11%, var(--surface-1));
+  --semantic-success-border: color-mix(in oklab, var(--semantic-success) 34%, var(--border-subtle));
+  --semantic-success-subtle: color-mix(in oklab, var(--semantic-success) 7%, transparent);
+  --semantic-warning-foreground: var(--semantic-warning);
+  --semantic-warning-surface: color-mix(in oklab, var(--semantic-warning) 11%, var(--surface-1));
+  --semantic-warning-border: color-mix(in oklab, var(--semantic-warning) 34%, var(--border-subtle));
+  --semantic-warning-subtle: color-mix(in oklab, var(--semantic-warning) 7%, transparent);
+  --semantic-danger-foreground: var(--semantic-danger);
+  --semantic-danger-surface: color-mix(in oklab, var(--semantic-danger) 11%, var(--surface-1));
+  --semantic-danger-border: color-mix(in oklab, var(--semantic-danger) 34%, var(--border-subtle));
+  --semantic-danger-subtle: color-mix(in oklab, var(--semantic-danger) 7%, transparent);
+  --semantic-info-foreground: var(--semantic-info);
+  --semantic-info-surface: color-mix(in oklab, var(--semantic-info) 11%, var(--surface-1));
+  --semantic-info-border: color-mix(in oklab, var(--semantic-info) 34%, var(--border-subtle));
+  --semantic-info-subtle: color-mix(in oklab, var(--semantic-info) 7%, transparent);
+  --semantic-inactive-foreground: var(--semantic-inactive);
+  --semantic-inactive-surface: color-mix(in oklab, var(--semantic-inactive) 11%, var(--surface-1));
+  --semantic-inactive-border: color-mix(
+    in oklab,
+    var(--semantic-inactive) 34%,
+    var(--border-subtle)
+  );
+  --semantic-inactive-subtle: color-mix(in oklab, var(--semantic-inactive) 7%, transparent);
 }
 
 @layer base {
@@ -283,23 +435,126 @@
 }
 
 /* Module Accent Utilities */
-@utility module-resumen { color: var(--module-resumen); }
-@utility module-clientes { color: var(--module-clientes); }
-@utility module-comercial { color: var(--module-comercial); }
-@utility module-licencias { color: var(--module-licencias); }
-@utility module-planes { color: var(--module-planes); }
-@utility module-pagos { color: var(--module-pagos); }
-@utility module-empleados { color: var(--module-empleados); }
-@utility module-rendimiento { color: var(--module-rendimiento); }
-@utility module-configuracion { color: var(--module-configuracion); }
-@utility module-auditoria { color: var(--module-auditoria); }
+@utility module-resumen {
+  color: var(--module-resumen);
+}
+@utility module-clientes {
+  color: var(--module-clientes);
+}
+@utility module-comercial {
+  color: var(--module-comercial);
+}
+@utility module-licencias {
+  color: var(--module-licencias);
+}
+@utility module-planes {
+  color: var(--module-planes);
+}
+@utility module-pagos {
+  color: var(--module-pagos);
+}
+@utility module-empleados {
+  color: var(--module-empleados);
+}
+@utility module-rendimiento {
+  color: var(--module-rendimiento);
+}
+@utility module-configuracion {
+  color: var(--module-configuracion);
+}
+@utility module-auditoria {
+  color: var(--module-auditoria);
+}
 
 /* Semantic Utilities */
-@utility semantic-success { color: var(--semantic-success); }
-@utility semantic-warning { color: var(--semantic-warning); }
-@utility semantic-danger { color: var(--semantic-danger); }
-@utility semantic-info { color: var(--semantic-info); }
-@utility semantic-inactive { color: var(--semantic-inactive); }
+@utility semantic-success {
+  color: var(--semantic-success);
+}
+@utility semantic-warning {
+  color: var(--semantic-warning);
+}
+@utility semantic-danger {
+  color: var(--semantic-danger);
+}
+@utility semantic-info {
+  color: var(--semantic-info);
+}
+@utility semantic-inactive {
+  color: var(--semantic-inactive);
+}
+
+@layer components {
+  [data-admin-module="resumen"] {
+    --module-accent: var(--module-resumen-accent);
+    --module-surface: var(--module-resumen-surface);
+    --module-border: var(--module-resumen-border);
+    --module-foreground: var(--module-resumen-foreground);
+    --module-glow: var(--module-resumen-glow);
+  }
+  [data-admin-module="clientes"] {
+    --module-accent: var(--module-clientes-accent);
+    --module-surface: var(--module-clientes-surface);
+    --module-border: var(--module-clientes-border);
+    --module-foreground: var(--module-clientes-foreground);
+    --module-glow: var(--module-clientes-glow);
+  }
+  [data-admin-module="comercial"] {
+    --module-accent: var(--module-comercial-accent);
+    --module-surface: var(--module-comercial-surface);
+    --module-border: var(--module-comercial-border);
+    --module-foreground: var(--module-comercial-foreground);
+    --module-glow: var(--module-comercial-glow);
+  }
+  [data-admin-module="licencias"] {
+    --module-accent: var(--module-licencias-accent);
+    --module-surface: var(--module-licencias-surface);
+    --module-border: var(--module-licencias-border);
+    --module-foreground: var(--module-licencias-foreground);
+    --module-glow: var(--module-licencias-glow);
+  }
+  [data-admin-module="planes"] {
+    --module-accent: var(--module-planes-accent);
+    --module-surface: var(--module-planes-surface);
+    --module-border: var(--module-planes-border);
+    --module-foreground: var(--module-planes-foreground);
+    --module-glow: var(--module-planes-glow);
+  }
+  [data-admin-module="pagos"] {
+    --module-accent: var(--module-pagos-accent);
+    --module-surface: var(--module-pagos-surface);
+    --module-border: var(--module-pagos-border);
+    --module-foreground: var(--module-pagos-foreground);
+    --module-glow: var(--module-pagos-glow);
+  }
+  [data-admin-module="empleados"] {
+    --module-accent: var(--module-empleados-accent);
+    --module-surface: var(--module-empleados-surface);
+    --module-border: var(--module-empleados-border);
+    --module-foreground: var(--module-empleados-foreground);
+    --module-glow: var(--module-empleados-glow);
+  }
+  [data-admin-module="rendimiento"] {
+    --module-accent: var(--module-rendimiento-accent);
+    --module-surface: var(--module-rendimiento-surface);
+    --module-border: var(--module-rendimiento-border);
+    --module-foreground: var(--module-rendimiento-foreground);
+    --module-glow: var(--module-rendimiento-glow);
+  }
+  [data-admin-module="configuracion"] {
+    --module-accent: var(--module-configuracion-accent);
+    --module-surface: var(--module-configuracion-surface);
+    --module-border: var(--module-configuracion-border);
+    --module-foreground: var(--module-configuracion-foreground);
+    --module-glow: var(--module-configuracion-glow);
+  }
+  [data-admin-module="auditoria"] {
+    --module-accent: var(--module-auditoria-accent);
+    --module-surface: var(--module-auditoria-surface);
+    --module-border: var(--module-auditoria-border);
+    --module-foreground: var(--module-auditoria-foreground);
+    --module-glow: var(--module-auditoria-glow);
+  }
+}
 
 @layer components {
   .admin-shell main > div > * {
