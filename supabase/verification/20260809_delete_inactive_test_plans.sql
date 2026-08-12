@@ -9,6 +9,62 @@ select set_config('request.jwt.claim.sub', ':owner_user_id', true);
 select public.admin_delete_inactive_license_plan(':project_id'::uuid, ':inactive_empty_plan');
 rollback;
 
+-- An inactive plan with no licenses can also be deleted when a stale project
+-- default still references it; the project is moved to an active trial plan.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+do $$
+declare
+  fallback_code text;
+  result jsonb;
+begin
+  select plan.code into fallback_code
+  from public.license_plans plan
+  where plan.project_id = ':project_id'::uuid
+    and plan.code <> ':inactive_empty_plan'
+    and plan.active
+    and plan.license_type = 'trial'
+  order by plan.is_featured desc, plan.code
+  limit 1;
+  if fallback_code is null then
+    raise exception 'TEST_SETUP_FAILED: active trial fallback missing';
+  end if;
+
+  if exists (
+    select 1 from public.licenses license
+    where license.project_id = ':project_id'::uuid
+      and license.plan = ':inactive_empty_plan'
+  ) then
+    raise exception 'TEST_SETUP_FAILED: inactive empty plan has licenses';
+  end if;
+
+  update public.projects
+  set default_trial_plan = ':inactive_empty_plan'
+  where id = ':project_id'::uuid;
+
+  result := public.admin_delete_inactive_license_plan(
+    ':project_id'::uuid,
+    ':inactive_empty_plan'
+  );
+
+  if exists (
+    select 1 from public.license_plans plan
+    where plan.project_id = ':project_id'::uuid
+      and plan.code = ':inactive_empty_plan'
+  ) then
+    raise exception 'TEST_FAILED: unassigned default plan still exists';
+  end if;
+  if (select default_trial_plan from public.projects where id = ':project_id'::uuid)
+       is distinct from fallback_code then
+    raise exception 'TEST_FAILED: project default was not reassigned';
+  end if;
+  if coalesce((result->>'default_trial_plan_reassigned')::boolean, false) is not true then
+    raise exception 'TEST_FAILED: result did not report default reassignment';
+  end if;
+end;
+$$;
+rollback;
+
 -- Trial licenses without payments are retained and reassigned to the active default trial plan.
 begin;
 select set_config('request.jwt.claim.sub', ':owner_user_id', true);
