@@ -1,4 +1,4 @@
-﻿-- P0-E verification. Run after the migration in an isolated database.
+-- P0-E verification. Run after the migration in an isolated database.
 begin;
 
 do $$

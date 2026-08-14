@@ -1,4 +1,4 @@
-﻿-- P0-E: safe payment cancellation, consequence preview and trust cleanup.
+-- P0-E: safe payment cancellation, consequence preview and trust cleanup.
 
 do $$
 declare constraint_name text;
