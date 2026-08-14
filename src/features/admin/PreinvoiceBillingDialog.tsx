@@ -168,7 +168,12 @@ export function PreparePreinvoiceDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {plans
-                    .filter((item) => item.isActive)
+                    .filter(
+                      (item) =>
+                        item.isActive &&
+                        !["trial", "admin"].includes(item.licenseType) &&
+                        item.price > 0,
+                    )
                     .map((item) => (
                       <SelectItem key={item.code} value={item.code}>
                         {item.name}

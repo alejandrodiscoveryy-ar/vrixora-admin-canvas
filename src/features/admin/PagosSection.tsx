@@ -6,7 +6,6 @@ import {
   CircleDollarSign,
   FileText,
   Pencil,
-  Plus,
   Search,
   Trash2,
   Wallet,
@@ -90,7 +89,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [mobileVisible, setMobileVisible] = useState(10);
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [editing, setEditing] = useState<ServicePayment | null>(null);
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
   const [viewingReceipt, setViewingReceipt] = useState<BillingReceipt | null>(null);
@@ -318,14 +316,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         description="Gestión financiera, registro de cobros, verificación de recibos y auditoría."
         icon={CreditCard}
         module="pagos"
-        actions={
-          canManage ? (
-            <Button size="sm" onClick={() => setRegisterOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Registrar pago
-            </Button>
-          ) : undefined
-        }
       />
 
       <AdminPeriodSelector
@@ -777,14 +767,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         </div>
       </AdminDataTableShell>
 
-      <RegisterPaymentDialog
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        licenses={licenses.data ?? []}
-        clients={clients.data ?? []}
-        plans={availablePlans.data ?? []}
-        onDone={refresh}
-      />
       {editing ? (
         <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />
       ) : null}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CreditCard, Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
+import { Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,7 +34,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useProjectPermissions } from "@/hooks/useProjects";
-import { ChargePlanDialog } from "@/features/admin/ChargePlanDialog";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -79,7 +78,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
-  const [chargeClient, setChargeClient] = useState<ServiceClient | null>(null);
 
   const query = useQuery({
     queryKey: ["admin-clients", projectId],
@@ -88,7 +86,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage =
     permissions.includes("customers.manage") && permissions.includes("licenses.manage");
-  const canCharge = permissions.includes("payments.manage");
 
   const licenses = useQuery({
     queryKey: ["admin-licenses", projectId],
@@ -307,11 +304,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                   >
                     <Eye className="h-4 w-4" /> Ver ficha
                   </Button>
-                  {canCharge ? (
-                    <Button size="sm" variant="subtle" onClick={() => setChargeClient(client)}>
-                      <CreditCard className="h-4 w-4" /> Cobrar
-                    </Button>
-                  ) : null}
                   {canManage && client.licenseId ? (
                     <MobileActionsMenu
                       items={[{ label: "Gestionar", onSelect: () => setSelected(client) }]}
@@ -409,17 +401,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                           <Eye className="h-3.5 w-3.5" />
                           Ver ficha
                         </Button>
-                        {canCharge && (
-                          <Button
-                            variant="subtle"
-                            size="sm"
-                            className="h-8 text-xs"
-                            onClick={() => setChargeClient(client)}
-                          >
-                            <CreditCard className="h-3.5 w-3.5" />
-                            Cobrar
-                          </Button>
-                        )}
                         {canManage && client.licenseId && (
                           <MobileActionsMenu
                             items={[{ label: "Gestionar", onSelect: () => setSelected(client) }]}
@@ -435,7 +416,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         </div>
       </AdminDataTableShell>
 
-      {/* Modals for Client management & Charging kept fully intact */}
+      {/* Client management remains available; billing starts in Cliente 360. */}
       <ClientManageDialog
         client={selected}
         onClose={() => setSelected(null)}
@@ -445,22 +426,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         }}
         isPending={updateStatusMutation.isPending}
       />
-
-      {chargeClient && (
-        <ChargePlanDialog
-          isOpen={Boolean(chargeClient)}
-          onClose={() => setChargeClient(null)}
-          projectId={projectId}
-          client={chargeClient}
-          licenses={licenses.data ?? []}
-          plans={plans.data ?? []}
-          onSuccess={() => {
-            setChargeClient(null);
-            void queryClient.invalidateQueries({ queryKey: ["admin-clients", projectId] });
-            void queryClient.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
-          }}
-        />
-      )}
     </div>
   );
 }

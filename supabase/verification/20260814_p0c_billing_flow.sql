@@ -65,6 +65,37 @@ select public.admin_confirm_preinvoice_payment(
 );
 rollback;
 
+-- Reconciliation removes payment_confirmed when a payment is refunded/cancelled/deleted.
+begin;
+update public.payments set status='refunded' where id=':paid_payment_id'::uuid;
+do $$ begin
+  if exists(select 1 from public.analytics_events where event_name='payment_confirmed'
+      and dedupe_key='payment:'||':paid_payment_id') then
+    raise exception 'TEST_FAILED: refunded payment kept analytics event';
+  end if;
+end $$;
+rollback;
+
+begin;
+update public.payments set status='cancelled' where id=':paid_payment_id'::uuid;
+do $$ begin
+  if exists(select 1 from public.analytics_events where event_name='payment_confirmed'
+      and dedupe_key='payment:'||':paid_payment_id') then
+    raise exception 'TEST_FAILED: cancelled payment kept analytics event';
+  end if;
+end $$;
+rollback;
+
+begin;
+delete from public.payments where id=':deletable_paid_payment_id'::uuid;
+do $$ begin
+  if exists(select 1 from public.analytics_events where event_name='payment_confirmed'
+      and dedupe_key='payment:'||':deletable_paid_payment_id') then
+    raise exception 'TEST_FAILED: deleted payment kept analytics event';
+  end if;
+end $$;
+rollback;
+
 -- Exact amount, currency and 48-hour payment occurrence are enforced.
 begin;
 select set_config('request.jwt.claim.sub', ':owner_user_id', true);
@@ -83,6 +114,50 @@ select pg_temp.assert_raises(format(
   (select charge_currency from public.preinvoices where id=:'invoice_error_id'::uuid),'cash',
   (select expires_at+interval '1 second' from public.preinvoices where id=:'invoice_error_id'::uuid)
 ),'PAYMENT_OUTSIDE_PREINVOICE_VALIDITY');
+rollback;
+
+-- The issued snapshot remains contractual after the live plan is deactivated.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+select public.admin_create_preinvoice(':project_id'::uuid,':client_id'::uuid,':active_plan_code',null,null,null,false) as frozen_invoice_id \gset
+update public.license_plans set active=false
+where project_id=':project_id'::uuid and code=':active_plan_code';
+select public.admin_confirm_preinvoice_payment(
+  ':project_id'::uuid,:'frozen_invoice_id'::uuid,
+  (select charge_amount from public.preinvoices where id=:'frozen_invoice_id'::uuid),
+  (select charge_currency from public.preinvoices where id=:'frozen_invoice_id'::uuid),
+  'cash','FROZEN-PLAN',now(),null,gen_random_uuid()
+);
+do $$ begin
+  if (select status from public.preinvoices where id=:'frozen_invoice_id'::uuid)<>'paid' then
+    raise exception 'TEST_FAILED: deactivated live plan blocked frozen preinvoice';
+  end if;
+end $$;
+rollback;
+
+-- A live open preinvoice prevents physical plan deletion.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+select public.admin_create_preinvoice(':project_id'::uuid,':client_id'::uuid,':deletable_plan_code',null,null,null,false) as blocking_invoice_id \gset
+update public.license_plans set active=false
+where project_id=':project_id'::uuid and code=':deletable_plan_code';
+select pg_temp.assert_raises(
+  $$select public.admin_delete_inactive_license_plan(':project_id'::uuid,':deletable_plan_code')$$,
+  'PLAN_HAS_ACTIVE_PREINVOICES'
+);
+rollback;
+
+-- Trial/admin/free plans cannot enter billing.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+select pg_temp.assert_raises(
+  $$select public.admin_create_preinvoice(':project_id'::uuid,':client_id'::uuid,':trial_plan_code',null,null,null,false)$$,
+  'PLAN_NOT_BILLABLE'
+);
+select pg_temp.assert_raises(
+  $$select public.admin_create_preinvoice(':project_id'::uuid,':client_id'::uuid,':admin_plan_code',null,null,null,false)$$,
+  'PLAN_NOT_BILLABLE'
+);
 rollback;
 
 -- Test operations require enabled test mode, never mutate the real license and

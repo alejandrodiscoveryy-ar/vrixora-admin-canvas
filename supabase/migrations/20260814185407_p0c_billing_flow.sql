@@ -77,8 +77,12 @@ begin
        union all select 1 from public.commercial_leads lead where lead.project_id=target_project_id
          and lead.user_id=target_client_id and lead.archived_at is null
      ) then raise exception 'CLIENT_NOT_FOUND' using errcode='P0002'; end if;
-  select * into plan from public.license_plans where project_id=target_project_id and code=target_plan_code and active;
-  if not found then raise exception 'PLAN_NOT_FOUND_OR_INACTIVE' using errcode='P0002'; end if;
+  select * into plan from public.license_plans where project_id=target_project_id and code=target_plan_code;
+  if not found then raise exception 'PLAN_NOT_FOUND' using errcode='P0002'; end if;
+  if plan.license_type in ('trial','admin') or plan.price<=0 then
+    raise exception 'PLAN_NOT_BILLABLE' using errcode='22023';
+  end if;
+  if not plan.active then raise exception 'PLAN_NOT_FOUND_OR_INACTIVE' using errcode='P0002'; end if;
   select * into exchange from public.project_exchange_settings where project_id=target_project_id;
   if not found then raise exception 'EXCHANGE_SETTINGS_NOT_FOUND' using errcode='P0002'; end if;
   select enabled into test_mode from public.project_test_settings where project_id=target_project_id;
@@ -115,13 +119,23 @@ create or replace function public.admin_preview_preinvoice_confirmation(
 ) returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare invoice public.preinvoices%rowtype; current_license public.licenses%rowtype;
   preview jsonb; effective_at timestamptz:=coalesce(target_charged_at,now());
+  duration integer; new_start timestamptz; new_expiry timestamptz;
 begin
   perform app_private.require_project_permission(target_project_id,'payments.manage');
   select * into invoice from public.preinvoices where id=target_preinvoice_id and project_id=target_project_id;
   if not found then raise exception 'PREINVOICE_NOT_FOUND' using errcode='P0002'; end if;
   select * into current_license from public.licenses where project_id=target_project_id and user_id=invoice.client_id;
+  duration:=nullif(invoice.plan_snapshot->>'duration_days','')::integer;
   if found then
-    preview:=app_private.billing_plan_preview(current_license.id,invoice.plan_code,'after_expiry',effective_at);
+    new_start:=case when current_license.license_type<>'trial' and current_license.status='active'
+      and current_license.expires_at>effective_at then current_license.expires_at else effective_at end;
+    new_expiry:=case when duration is null then null else new_start+make_interval(days=>duration) end;
+    preview:=jsonb_build_object('license_id',current_license.id,'previous_plan',current_license.plan,
+      'new_plan',invoice.plan_code,'license_type',invoice.plan_snapshot->>'license_type',
+      'previous_expires_at',current_license.expires_at,'new_started_at',new_start,
+      'new_expires_at',new_expiry,'duration_days',duration,
+      'max_devices',(invoice.plan_snapshot->>'max_devices')::integer,'application_rule','after_expiry',
+      'is_trial_conversion',current_license.license_type='trial');
   else
     preview:=jsonb_build_object(
       'license_id',null,'previous_plan',null,'new_plan',invoice.plan_code,
@@ -150,10 +164,12 @@ create or replace function public.admin_confirm_preinvoice_payment(
   target_idempotency_key uuid
 ) returns jsonb language plpgsql security definer set search_path='' as $$
 declare actor uuid; invoice public.preinvoices%rowtype; current_license public.licenses%rowtype;
-  updated_license public.licenses%rowtype; plan public.license_plans%rowtype; preview jsonb;
+  updated_license public.licenses%rowtype; preview jsonb;
   payment public.payments%rowtype; receipt public.billing_receipts%rowtype;
   client public.profiles%rowtype; operator_email text; identity jsonb; snapshot jsonb;
   resolved_reference text; receipt_id uuid:=gen_random_uuid(); license_exists boolean; previous_license_type text;
+  snapshot_license_type text; snapshot_duration integer; snapshot_max_devices integer;
+  snapshot_features jsonb; new_start timestamptz; new_expiry timestamptz;
 begin
   if target_idempotency_key is null then raise exception 'IDEMPOTENCY_KEY_REQUIRED' using errcode='22023'; end if;
   select * into receipt from public.billing_receipts where idempotency_key=target_idempotency_key;
@@ -180,29 +196,39 @@ begin
     raise exception 'PREINVOICE_PAYMENT_MISMATCH' using errcode='22023';
   end if;
   if target_method not in ('cash','transfer','other') then raise exception 'INVALID_PAYMENT_METHOD' using errcode='22023'; end if;
-  select * into plan from public.license_plans
-    where project_id=target_project_id and code=invoice.plan_code and active for share;
-  if not found then raise exception 'PLAN_NOT_FOUND_OR_INACTIVE' using errcode='P0002'; end if;
+  snapshot_license_type:=invoice.plan_snapshot->>'license_type';
+  snapshot_duration:=nullif(invoice.plan_snapshot->>'duration_days','')::integer;
+  snapshot_max_devices:=(invoice.plan_snapshot->>'max_devices')::integer;
+  snapshot_features:=coalesce(invoice.plan_snapshot->'features','{}'::jsonb);
+  if snapshot_license_type is null or snapshot_license_type in ('trial','admin')
+     or snapshot_max_devices is null or invoice.base_price<=0 then
+    raise exception 'PLAN_NOT_BILLABLE' using errcode='22023';
+  end if;
   select * into client from public.profiles where id=invoice.client_id;
   if not found then raise exception 'CLIENT_NOT_FOUND' using errcode='P0002'; end if;
   select * into current_license from public.licenses
     where project_id=target_project_id and user_id=invoice.client_id for update;
   license_exists:=found;
   previous_license_type:=current_license.license_type;
+  new_start:=case when license_exists and current_license.license_type<>'trial'
+    and current_license.status='active' and current_license.expires_at>target_charged_at
+    then current_license.expires_at else target_charged_at end;
+  new_expiry:=case when snapshot_duration is null then null
+    else new_start+make_interval(days=>snapshot_duration) end;
   if invoice.is_test then
-    preview:=case when license_exists then app_private.billing_plan_preview(current_license.id,invoice.plan_code,'after_expiry',target_charged_at)
-      else jsonb_build_object('previous_plan',null,'previous_expires_at',null,'new_started_at',target_charged_at,
-        'new_expires_at',case when plan.duration_days is null then null else target_charged_at+make_interval(days=>plan.duration_days) end,
-        'application_rule','apply_now') end;
+    preview:=jsonb_build_object('previous_plan',case when license_exists then current_license.plan else null end,
+      'previous_expires_at',case when license_exists then current_license.expires_at else null end,
+      'new_started_at',new_start,'new_expires_at',new_expiry,
+      'application_rule',case when license_exists then 'after_expiry' else 'apply_now' end);
   elsif license_exists then
-    preview:=app_private.billing_plan_preview(current_license.id,invoice.plan_code,'after_expiry',target_charged_at);
+    preview:=jsonb_build_object('previous_plan',current_license.plan,'previous_expires_at',current_license.expires_at,
+      'new_started_at',new_start,'new_expires_at',new_expiry,'application_rule','after_expiry');
   else
     insert into public.licenses(project_id,user_id,license_key,license_type,plan,status,activated_at,expires_at,
       duration_days,max_devices,features,created_by,notes)
-    values(target_project_id,invoice.client_id,app_private.generate_license_key(),plan.license_type,plan.code,
-      'active',target_charged_at,
-      case when plan.duration_days is null then null else target_charged_at+make_interval(days=>plan.duration_days) end,
-      plan.duration_days,plan.max_devices,plan.features,actor,'Licencia creada al confirmar prefactura') returning * into current_license;
+    values(target_project_id,invoice.client_id,app_private.generate_license_key(),snapshot_license_type,invoice.plan_code,
+      'active',new_start,new_expiry,snapshot_duration,snapshot_max_devices,snapshot_features,
+      actor,'Licencia creada al confirmar prefactura') returning * into current_license;
     preview:=jsonb_build_object('previous_plan',null,'previous_expires_at',null,
       'new_started_at',current_license.activated_at,'new_expires_at',current_license.expires_at,
       'application_rule','apply_now');
@@ -222,10 +248,10 @@ begin
       'charge_currency',invoice.charge_currency,'plan_snapshot',invoice.plan_snapshot))
   returning * into payment;
   if not invoice.is_test then
-    update public.licenses set plan=plan.code,license_type=plan.license_type,status='active',
+    update public.licenses set plan=invoice.plan_code,license_type=snapshot_license_type,status='active',
       activated_at=(preview->>'new_started_at')::timestamptz,
-      expires_at=nullif(preview->>'new_expires_at','')::timestamptz,duration_days=plan.duration_days,
-      max_devices=plan.max_devices,features=plan.features,revoked_at=null,last_renewed_at=now(),
+      expires_at=nullif(preview->>'new_expires_at','')::timestamptz,duration_days=snapshot_duration,
+      max_devices=snapshot_max_devices,features=snapshot_features,revoked_at=null,last_renewed_at=now(),
       last_payment_id=payment.id,updated_at=now() where id=current_license.id returning * into updated_license;
   else updated_license:=current_license; end if;
   select email into operator_email from public.profiles where id=actor;
@@ -295,15 +321,36 @@ for each row execute function app_private.p0c_guard_real_referral_reward();
 
 create or replace function app_private.track_payment_analytics()
 returns trigger language plpgsql security definer set search_path='' as $$
+declare payment_row public.payments%rowtype;
 begin
-  if not new.is_test and new.status='paid' and (tg_op='INSERT' or old.status is distinct from new.status) then
+  payment_row:=case when tg_op='DELETE' then old else new end;
+  delete from public.analytics_events
+  where project_id=payment_row.project_id and event_name='payment_confirmed'
+    and dedupe_key='payment:'||payment_row.id::text;
+  if tg_op<>'DELETE' and not new.is_test and new.status='paid' and new.voided_at is null then
     perform app_private.insert_analytics_event(new.project_id,new.user_id,new.license_id,'payment_confirmed',
-      coalesce(new.charged_at,new.created_at,now()),null,null,null,null,null,null,null,null,new.plan,null,
+      coalesce(new.created_at,now()),null,null,null,null,null,null,null,null,new.plan,null,
       'payment:'||new.id::text,jsonb_build_object('amount',new.amount,'currency',new.currency,'payment_id',new.id));
   end if;
-  return new;
+  return case when tg_op='DELETE' then old else new end;
 end;
 $$;
+
+create or replace function app_private.p0c_guard_plan_with_open_preinvoice()
+returns trigger language plpgsql security definer set search_path='' as $$
+begin
+  if exists(select 1 from public.preinvoices invoice where invoice.project_id=old.project_id
+      and invoice.plan_code=old.code and invoice.status in ('prepared','sent','pending')
+      and invoice.expires_at>now()) then
+    raise exception 'PLAN_HAS_ACTIVE_PREINVOICES' using errcode='23503';
+  end if;
+  return old;
+end;
+$$;
+
+drop trigger if exists p0c_guard_plan_with_open_preinvoice on public.license_plans;
+create trigger p0c_guard_plan_with_open_preinvoice before delete on public.license_plans
+for each row execute function app_private.p0c_guard_plan_with_open_preinvoice();
 
 drop function if exists public.admin_list_license_payments(uuid);
 create function public.admin_list_license_payments(target_project_id uuid)
@@ -329,7 +376,8 @@ begin
 end;
 $$;
 
-revoke all on function app_private.p0c_guard_payment_provenance(),app_private.p0c_guard_real_referral_reward(),app_private.track_payment_analytics()
+revoke all on function app_private.p0c_guard_payment_provenance(),app_private.p0c_guard_real_referral_reward(),
+  app_private.track_payment_analytics(),app_private.p0c_guard_plan_with_open_preinvoice()
   from public,anon,authenticated;
 revoke all on function public.admin_preview_preinvoice_confirmation(uuid,uuid,timestamptz),
   public.admin_confirm_preinvoice_payment(uuid,uuid,numeric,text,text,text,timestamptz,text,uuid),

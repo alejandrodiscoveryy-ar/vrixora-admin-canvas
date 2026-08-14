@@ -328,15 +328,15 @@ export function ReceiptDialog({
   onClose: () => void;
 }) {
   const image = () => receiptImage(receipt);
-  const downloadImage = () => {
+  const downloadImage = async () => {
     const link = document.createElement("a");
     link.download = `${receipt.receiptNumber}.png`;
-    link.href = image();
+    link.href = await image();
     link.click();
   };
   const share = async () => {
     try {
-      const blob = await (await fetch(image())).blob();
+      const blob = await (await fetch(await image())).blob();
       const file = new File([blob], `${receipt.receiptNumber}.png`, { type: "image/png" });
       if (navigator.share)
         await navigator.share({
@@ -366,7 +366,7 @@ export function ReceiptDialog({
             <Printer className="mr-2 h-4 w-4" />
             Guardar PDF / imprimir
           </Button>
-          <Button variant="outline" onClick={downloadImage}>
+          <Button variant="outline" onClick={() => void downloadImage()}>
             <Download className="mr-2 h-4 w-4" />
             Descargar imagen
           </Button>
@@ -386,6 +386,11 @@ function ReceiptCard({ receipt }: { receipt: BillingReceipt }) {
   const brandName = identity?.name || receipt.projectName;
   return (
     <div id="billing-receipt" className="rounded-xl border bg-white p-5 text-slate-900 shadow-sm">
+      {receipt.isTest ? (
+        <div className="mb-4 rounded-md border-2 border-amber-600 bg-amber-50 p-3 text-center font-bold text-amber-900">
+          PAGO DE PRUEBA — NO CONTABILIZAR
+        </div>
+      ) : null}
       <div className="flex items-start justify-between gap-4 border-b pb-4">
         <div className="flex items-center gap-3">
           {identity?.logo_url ? (
@@ -416,7 +421,7 @@ function ReceiptCard({ receipt }: { receipt: BillingReceipt }) {
         <ReceiptRow label="Referencia" value={receipt.reference} />
         <ReceiptRow label="Inicio" value={formatDate(receipt.startedAt)} />
         <ReceiptRow label="Vencimiento" value={formatDate(receipt.expiresAt)} />
-        <ReceiptRow label="Estado" value="Activa" />
+        <ReceiptRow label="Estado" value={receipt.isTest ? "Prueba — no contabilizar" : "Activa"} />
         <ReceiptRow label="Dispositivos" value={String(receipt.maxDevices)} />
         <ReceiptRow label="Operador" value={receipt.operatorEmail} />
         <ReceiptRow label="Observaciones" value={receipt.notes || "—"} />
@@ -435,18 +440,21 @@ function ReceiptCard({ receipt }: { receipt: BillingReceipt }) {
   );
 }
 
-function receiptImage(receipt: BillingReceipt) {
+async function receiptImage(receipt: BillingReceipt) {
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
   canvas.height = 1500;
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, 1200, 1500);
+  const logo = await loadReceiptLogo(receipt.identitySnapshot?.logo_url);
+  if (logo) ctx.drawImage(logo, 70, 40, 100, 100);
+  const headingX = logo ? 200 : 70;
   ctx.fillStyle = "#071018";
   ctx.font = "bold 42px Arial";
-  ctx.fillText(receipt.identitySnapshot?.name || receipt.projectName, 70, 90);
+  ctx.fillText(receipt.identitySnapshot?.name || receipt.projectName, headingX, 90);
   ctx.font = "24px Arial";
-  ctx.fillText("Documento de cobro", 70, 130);
+  ctx.fillText("Documento de cobro", headingX, 130);
   ctx.textAlign = "right";
   ctx.font = "bold 24px monospace";
   ctx.fillText(receipt.receiptNumber, 1130, 90);
@@ -456,6 +464,15 @@ function receiptImage(receipt: BillingReceipt) {
   ctx.moveTo(70, 170);
   ctx.lineTo(1130, 170);
   ctx.stroke();
+  if (receipt.isTest) {
+    ctx.fillStyle = "#fef3c7";
+    ctx.fillRect(70, 185, 1060, 64);
+    ctx.fillStyle = "#92400e";
+    ctx.font = "bold 26px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("PAGO DE PRUEBA — NO CONTABILIZAR", 600, 226);
+    ctx.textAlign = "left";
+  }
   const rows = [
     ["Cliente", receipt.clientName],
     ["Correo", receipt.clientEmail],
@@ -472,7 +489,7 @@ function receiptImage(receipt: BillingReceipt) {
     ["Operador", receipt.operatorEmail],
     ["Observaciones", receipt.notes || "—"],
   ];
-  let y = 230;
+  let y = receipt.isTest ? 290 : 230;
   rows.forEach(([label, value]) => {
     ctx.fillStyle = "#64748b";
     ctx.font = "20px Arial";
@@ -498,6 +515,21 @@ function receiptImage(receipt: BillingReceipt) {
     ctx.fillText(receipt.identitySnapshot.description.slice(0, 80), 600, 1380);
   }
   return canvas.toDataURL("image/png");
+}
+async function loadReceiptLogo(url?: string | null) {
+  if (!url) return null;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const objectUrl = URL.createObjectURL(await response.blob());
+    const image = new Image();
+    image.src = objectUrl;
+    await image.decode();
+    URL.revokeObjectURL(objectUrl);
+    return image;
+  } catch {
+    return null;
+  }
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
