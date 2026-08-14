@@ -680,6 +680,47 @@ export interface P0AFoundationService {
   ): Promise<{ preinvoices: number; referralRewards: number; referralRelationships: number }>;
 }
 
+export interface ClientReferralSummary {
+  code: string;
+  link: string | null;
+  referredBy: {
+    relationshipId: string;
+    userId: string;
+    name: string;
+    code: string | null;
+    createdAt: string;
+  } | null;
+  referredCount: number;
+  earnedRewards: number;
+  appliedRewards: number;
+  pendingDays: number;
+  appliedDays: number;
+}
+
+export interface ReferralOverviewRow {
+  relationshipId: string;
+  referrerName: string;
+  referredName: string;
+  code: string | null;
+  status: ReferralRewardStatus;
+  days: number | null;
+  createdAt: string;
+}
+
+export interface ReferralOverview {
+  relationships: number;
+  converted: number;
+  appliedRewards: number;
+  deliveredDays: number;
+  rows: ReferralOverviewRow[];
+}
+
+export interface ReferralService {
+  clientSummary(projectId: string, clientId: string): Promise<ClientReferralSummary>;
+  linkReferrer(projectId: string, clientId: string, code: string): Promise<string>;
+  overview(projectId: string): Promise<ReferralOverview>;
+}
+
 export interface Client360Device {
   id: string;
   label: string | null;
@@ -819,4 +860,5 @@ export interface AdminServices {
   commercial: CommercialService;
   foundations: P0AFoundationService;
   client360: Client360Service;
+  referrals: ReferralService;
 }

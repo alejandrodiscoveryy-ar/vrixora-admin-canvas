@@ -1554,4 +1554,65 @@ export const supabaseServices: AdminServices = {
       return mapClient360(data as Record<string, unknown>);
     },
   },
+  referrals: {
+    async clientSummary(projectId, clientId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_client_referral_summary", {
+        target_project_id: projectId,
+        target_client_id: clientId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      const referredBy = row.referred_by as Record<string, unknown> | null;
+      return {
+        code: String(row.code),
+        link: row.link ? String(row.link) : null,
+        referredBy: referredBy
+          ? {
+              relationshipId: String(referredBy.relationship_id),
+              userId: String(referredBy.user_id),
+              name: String(referredBy.name),
+              code: referredBy.code ? String(referredBy.code) : null,
+              createdAt: String(referredBy.created_at),
+            }
+          : null,
+        referredCount: Number(row.referred_count),
+        earnedRewards: Number(row.earned_rewards),
+        appliedRewards: Number(row.applied_rewards),
+        pendingDays: Number(row.pending_days),
+        appliedDays: Number(row.applied_days),
+      };
+    },
+    async linkReferrer(projectId, clientId, code) {
+      await requireOnline("Vincular referidor");
+      const { data, error } = await getSupabaseClient().rpc("admin_link_client_referrer_code", {
+        target_project_id: projectId,
+        target_client_id: clientId,
+        target_code: code,
+      });
+      throwIfError(error);
+      return String(data);
+    },
+    async overview(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_referral_overview", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        relationships: Number(row.relationships),
+        converted: Number(row.converted),
+        appliedRewards: Number(row.applied_rewards),
+        deliveredDays: Number(row.delivered_days),
+        rows: ((row.rows ?? []) as Array<Record<string, unknown>>).map((item) => ({
+          relationshipId: String(item.relationship_id),
+          referrerName: String(item.referrer_name),
+          referredName: String(item.referred_name),
+          code: item.code ? String(item.code) : null,
+          status: item.status as "pending" | "earned" | "applied" | "reverted",
+          days: item.days == null ? null : Number(item.days),
+          createdAt: String(item.created_at),
+        })),
+      };
+    },
+  },
 };

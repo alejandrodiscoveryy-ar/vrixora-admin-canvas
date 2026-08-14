@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CalendarClock,
   CircleDollarSign,
   Clock3,
+  Copy,
   FileText,
   History,
   KeyRound,
+  Link2,
   Loader2,
   Mail,
   MessageCircle,
@@ -17,10 +19,21 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { toast } from "sonner";
 import { supabaseServices, type Client360Activity, type LicenseStatus } from "@/lib/services";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { DetailList } from "@/components/admin/DetailList";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
@@ -119,8 +132,11 @@ export default function Cliente360Section({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [prepareOpen, setPrepareOpen] = useState(false);
+  const [referrerOpen, setReferrerOpen] = useState(false);
+  const [referrerCode, setReferrerCode] = useState("");
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canPrepareCharge = permissions.includes("payments.manage");
+  const canManageCommercial = permissions.includes("commercial.manage");
   const plans = useQuery({
     queryKey: ["admin-license-plans", projectId],
     queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
@@ -130,8 +146,31 @@ export default function Cliente360Section({
     queryKey: ["admin-client-360", projectId, clientId],
     queryFn: () => supabaseServices.client360.get(projectId, clientId),
   });
+  const referralSummary = useQuery({
+    queryKey: ["admin-client-referrals", projectId, clientId],
+    queryFn: () => supabaseServices.referrals.clientSummary(projectId, clientId),
+    enabled: Boolean(query.data?.permissions.commercial),
+  });
+  const linkReferrer = useMutation({
+    mutationFn: () => supabaseServices.referrals.linkReferrer(projectId, clientId, referrerCode),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-client-referrals", projectId, clientId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["admin-client-360", projectId, clientId] }),
+        queryClient.invalidateQueries({ queryKey: ["commercial-referrals", projectId] }),
+      ]);
+      setReferrerOpen(false);
+      setReferrerCode("");
+      toast.success("Referidor vinculado correctamente");
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "No se pudo vincular el referidor"),
+  });
 
   const data = query.data;
+  const currentReferralSummary = referralSummary.data;
   const remaining = daysRemaining(data?.license?.expiresAt ?? null);
   const validWhatsapp = Boolean(
     data?.client.phone && /^\+[1-9][0-9]{7,14}$/.test(data.client.phone),
@@ -472,42 +511,102 @@ export default function Cliente360Section({
       {data.permissions.commercial ? (
         <SectionCard
           title="Referidos"
-          description={`Recompensa configurada: ${data.referrals?.rewardDays ?? 15} días`}
+          description={
+            data.referrals
+              ? `Recompensa configurada: ${data.referrals.rewardDays} días`
+              : "Programa de referidos"
+          }
           module="comercial"
         >
-          {data.referrals &&
-          (data.referrals.referredBy || data.referrals.referredClients.length) ? (
-            <div className="grid gap-5 lg:grid-cols-2">
-              <div>
-                <h3 className="mb-3 text-sm font-semibold">Quién lo refirió</h3>
-                {data.referrals.referredBy ? (
-                  <ReferralCard
-                    name={data.referrals.referredBy.name}
-                    code={data.referrals.referredBy.referralCode}
-                    status={data.referrals.referredBy.rewardStatus}
-                    days={data.referrals.referredBy.rewardDays}
-                  />
-                ) : (
-                  <p className="text-sm text-text-secondary">Registro directo, sin referidor.</p>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-3 text-sm font-semibold">Clientes referidos</h3>
-                {data.referrals.referredClients.length ? (
-                  <div className="space-y-2">
-                    {data.referrals.referredClients.map((person) => (
-                      <ReferralCard
-                        key={person.relationshipId}
-                        name={person.name}
-                        code={person.referralCode}
-                        status={person.rewardStatus}
-                        days={person.rewardDays}
-                      />
-                    ))}
+          {currentReferralSummary ? (
+            <div className="space-y-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border-subtle bg-surface-2 p-4">
+                  <p className="text-xs text-text-tertiary">Código personal</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="font-mono text-base font-semibold">
+                      {currentReferralSummary.code}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Copiar código"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(currentReferralSummary.code);
+                        toast.success("Código copiado");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
-                ) : (
-                  <p className="text-sm text-text-secondary">Aún no ha referido clientes.</p>
-                )}
+                  {currentReferralSummary.link ? (
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 text-xs"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(currentReferralSummary.link!);
+                        toast.success("Enlace copiado");
+                      }}
+                    >
+                      <Link2 className="mr-1 h-3.5 w-3.5" /> Copiar enlace de referido
+                    </Button>
+                  ) : null}
+                </div>
+                <DetailList
+                  columns={2}
+                  items={[
+                    { label: "Clientes referidos", value: currentReferralSummary.referredCount },
+                    { label: "Recompensas ganadas", value: currentReferralSummary.earnedRewards },
+                    {
+                      label: "Recompensas aplicadas",
+                      value: currentReferralSummary.appliedRewards,
+                    },
+                    { label: "Días aplicados", value: currentReferralSummary.appliedDays },
+                    { label: "Días pendientes", value: currentReferralSummary.pendingDays },
+                  ]}
+                />
+              </div>
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold">Quién lo refirió</h3>
+                  {currentReferralSummary.referredBy ? (
+                    <ReferralCard
+                      name={currentReferralSummary.referredBy.name}
+                      code={currentReferralSummary.referredBy.code}
+                      status={null}
+                      days={null}
+                    />
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm text-text-secondary">
+                        Registro directo, sin referidor.
+                      </p>
+                      {canManageCommercial ? (
+                        <Button size="sm" variant="outline" onClick={() => setReferrerOpen(true)}>
+                          Vincular referidor
+                        </Button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold">Clientes referidos</h3>
+                  {data.referrals?.referredClients.length ? (
+                    <div className="space-y-2">
+                      {data.referrals.referredClients.map((person) => (
+                        <ReferralCard
+                          key={person.relationshipId}
+                          name={person.name}
+                          code={person.referralCode}
+                          status={person.rewardStatus}
+                          days={person.rewardDays}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-text-secondary">Aún no ha referido clientes.</p>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
@@ -557,6 +656,35 @@ export default function Cliente360Section({
           void queryClient.invalidateQueries({ queryKey: ["admin-preinvoices", projectId] });
         }}
       />
+      <Dialog open={referrerOpen} onOpenChange={setReferrerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Vincular referidor</DialogTitle>
+            <DialogDescription>
+              Introduce el código del cliente que realizó la referencia.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="referrer-code">Código de referido</Label>
+            <Input
+              id="referrer-code"
+              value={referrerCode}
+              onChange={(event) => setReferrerCode(event.target.value.toUpperCase())}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReferrerOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!referrerCode.trim() || linkReferrer.isPending}
+              onClick={() => linkReferrer.mutate()}
+            >
+              Vincular
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

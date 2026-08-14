@@ -63,6 +63,10 @@ export type {
   Client360Preinvoice,
   Client360ReferralPerson,
   Client360Service,
+  ClientReferralSummary,
+  ReferralOverviewRow,
+  ReferralOverview,
+  ReferralService,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {

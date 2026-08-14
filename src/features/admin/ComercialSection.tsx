@@ -1,6 +1,15 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { History, Megaphone, Pencil, Plus, StickyNote, ArrowRight, Layers } from "lucide-react";
+import {
+  History,
+  Megaphone,
+  Pencil,
+  Plus,
+  StickyNote,
+  ArrowRight,
+  Layers,
+  UsersRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
@@ -106,12 +115,17 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     queryKey: ["commercial-metrics", projectId],
     queryFn: () => supabaseServices.commercial.metrics(projectId),
   });
+  const referrals = useQuery({
+    queryKey: ["commercial-referrals", projectId],
+    queryFn: () => supabaseServices.referrals.overview(projectId),
+  });
 
   const refresh = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: ["commercial-leads", projectId] }),
       client.invalidateQueries({ queryKey: ["commercial-campaigns", projectId] }),
       client.invalidateQueries({ queryKey: ["commercial-metrics", projectId] }),
+      client.invalidateQueries({ queryKey: ["commercial-referrals", projectId] }),
     ]);
 
   const rows = useMemo(
@@ -146,7 +160,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     {
       label: "Contactados",
       count: activeLeads.filter(
-        (l) => l.status === "contacted" || l.status === "trial" || l.status === "converted" || l.lastInteractionAt,
+        (l) =>
+          l.status === "contacted" ||
+          l.status === "trial" ||
+          l.status === "converted" ||
+          l.lastInteractionAt,
       ).length,
       desc: "Con interacción",
     },
@@ -157,7 +175,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     },
     {
       label: "Pago",
-      count: activeLeads.filter((l) => l.paid || l.status === "converted" || l.status === "customer").length,
+      count: activeLeads.filter(
+        (l) => l.paid || l.status === "converted" || l.status === "customer",
+      ).length,
       desc: "Clientes pagados",
     },
     {
@@ -272,7 +292,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                       {pct}%
                     </span>
                   </div>
-                  <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">{step.count}</p>
+                  <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">
+                    {step.count}
+                  </p>
                   <p className="mt-1 text-[11px] text-muted-foreground">{step.desc}</p>
                 </div>
                 {idx < funnelSteps.length - 1 ? (
@@ -292,10 +314,24 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           {sourceDistribution.length > 0 ? (
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sourceDistribution} margin={{ left: -15, right: 10, top: 10, bottom: 0 }}>
+                <BarChart
+                  data={sourceDistribution}
+                  margin={{ left: -15, right: 10, top: 10, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                  <XAxis dataKey="source" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                  <XAxis
+                    dataKey="source"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <YAxis
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
                   <Tooltip {...adminChartTooltipProps} />
                   <Bar dataKey="count" fill="var(--module-comercial)" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -327,11 +363,15 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 <TableBody>
                   {campaignSummary.map((c) => (
                     <TableRow key={c.campaign}>
-                      <TableCell className="font-medium truncate max-w-[140px]">{c.campaign}</TableCell>
+                      <TableCell className="font-medium truncate max-w-[140px]">
+                        {c.campaign}
+                      </TableCell>
                       <TableCell className="text-right font-mono">{c.leads}</TableCell>
                       <TableCell className="text-right font-mono">{c.trials}</TableCell>
                       <TableCell className="text-right font-mono">{c.paid}</TableCell>
-                      <TableCell className="text-right font-mono text-emerald-400">{c.conversion}%</TableCell>
+                      <TableCell className="text-right font-mono text-emerald-400">
+                        {c.conversion}%
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -347,6 +387,90 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           )}
         </SectionCard>
       </div>
+
+      <SectionCard
+        title="Referidos"
+        description="Relaciones y recompensas reales del proyecto"
+        module="comercial"
+      >
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            label="Relaciones"
+            value={referrals.data?.relationships ?? 0}
+            description="Clientes vinculados"
+            icon={UsersRound}
+            module="comercial"
+          />
+          <MetricCard
+            label="Convertidos"
+            value={referrals.data?.converted ?? 0}
+            description="Con recompensa ganada"
+            icon={History}
+            semanticState="success"
+          />
+          <MetricCard
+            label="Aplicadas"
+            value={referrals.data?.appliedRewards ?? 0}
+            description="Recompensas entregadas"
+            icon={Layers}
+            module="comercial"
+          />
+          <MetricCard
+            label="Días entregados"
+            value={referrals.data?.deliveredDays ?? 0}
+            description="Extensión acumulada"
+            icon={Megaphone}
+            module="comercial"
+          />
+        </div>
+        {(referrals.data?.rows.length ?? 0) > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Referidor</TableHead>
+                  <TableHead>Referido</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Días</TableHead>
+                  <TableHead>Fecha</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {referrals.data?.rows.map((row) => (
+                  <TableRow key={row.relationshipId}>
+                    <TableCell className="font-medium">{row.referrerName}</TableCell>
+                    <TableCell>{row.referredName}</TableCell>
+                    <TableCell className="font-mono text-xs">{row.code ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {row.status === "pending"
+                          ? "Pendiente"
+                          : row.status === "earned"
+                            ? "Ganada"
+                            : row.status === "applied"
+                              ? "Aplicada"
+                              : "Revertida"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{row.days ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(row.createdAt).toLocaleDateString("es")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <EmptyState
+            icon={UsersRound}
+            title="Sin referidos"
+            description="Aún no hay relaciones reales de referidos."
+            module="comercial"
+          />
+        )}
+      </SectionCard>
 
       {/* Tabla de Leads con FilterToolbar & AdminDataTableShell */}
       <AdminDataTableShell
@@ -368,8 +492,18 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           >
             <Filter value={status} onChange={setStatus} values={STATUSES} label="Estado" />
             <Filter value={source} onChange={setSource} values={SOURCES} label="Fuente" />
-            <Filter value={campaign} onChange={setCampaign} values={campaignNames} label="Campaña" />
-            <Filter value={responsible} onChange={setResponsible} values={responsibleNames} label="Responsable" />
+            <Filter
+              value={campaign}
+              onChange={setCampaign}
+              values={campaignNames}
+              label="Campaña"
+            />
+            <Filter
+              value={responsible}
+              onChange={setResponsible}
+              values={responsibleNames}
+              label="Responsable"
+            />
           </FilterToolbar>
         }
         isEmpty={rows.length === 0}
@@ -407,7 +541,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 <TableCell className="font-medium text-foreground">
                   <div>{lead.name}</div>
                   {lead.referralCode ? (
-                    <span className="text-[10px] text-muted-foreground font-mono">Ref: {lead.referralCode}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      Ref: {lead.referralCode}
+                    </span>
                   ) : null}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
@@ -421,7 +557,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   <span className="capitalize">{lead.source}</span>
-                  {lead.campaign ? <span className="block text-[10px]">Campaña: {lead.campaign}</span> : null}
+                  {lead.campaign ? (
+                    <span className="block text-[10px]">Campaña: {lead.campaign}</span>
+                  ) : null}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {lead.responsibleName ?? "Sin asignar"}
@@ -564,8 +702,7 @@ function LeadDialog({
   onSave: () => void;
 }) {
   if (!lead) return null;
-  const set = (key: keyof CommercialLeadInput, val: unknown) =>
-    onChange({ ...lead, [key]: val });
+  const set = (key: keyof CommercialLeadInput, val: unknown) => onChange({ ...lead, [key]: val });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -592,7 +729,10 @@ function LeadDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Fuente</Label>
-              <Select value={lead.source} onValueChange={(v) => set("source", v as CommercialSource)}>
+              <Select
+                value={lead.source}
+                onValueChange={(v) => set("source", v as CommercialSource)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -607,7 +747,10 @@ function LeadDialog({
             </div>
             <div className="grid gap-2">
               <Label>Estado</Label>
-              <Select value={lead.status} onValueChange={(v) => set("status", v as CommercialLeadStatus)}>
+              <Select
+                value={lead.status}
+                onValueChange={(v) => set("status", v as CommercialLeadStatus)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -624,11 +767,17 @@ function LeadDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Campaña</Label>
-              <Input value={lead.campaign ?? ""} onChange={(e) => set("campaign", e.target.value)} />
+              <Input
+                value={lead.campaign ?? ""}
+                onChange={(e) => set("campaign", e.target.value)}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Código de referido</Label>
-              <Input value={lead.referralCode ?? ""} onChange={(e) => set("referralCode", e.target.value)} />
+              <Input
+                value={lead.referralCode ?? ""}
+                onChange={(e) => set("referralCode", e.target.value)}
+              />
             </div>
           </div>
           <div className="grid gap-2">
@@ -663,7 +812,8 @@ function HistoryDialog({
   const [note, setNote] = useState("");
   const history = useQuery({
     queryKey: ["commercial-lead-history", projectId, lead?.id],
-    queryFn: () => (lead ? supabaseServices.commercial.listLeadHistory(projectId, lead.id) : Promise.resolve([])),
+    queryFn: () =>
+      lead ? supabaseServices.commercial.listLeadHistory(projectId, lead.id) : Promise.resolve([]),
     enabled: Boolean(lead),
   });
   const addNote = useMutation({
@@ -699,7 +849,11 @@ function HistoryDialog({
                 className="text-xs"
               />
               <div className="flex justify-end">
-                <Button size="sm" onClick={() => addNote.mutate()} disabled={addNote.isPending || !note.trim()}>
+                <Button
+                  size="sm"
+                  onClick={() => addNote.mutate()}
+                  disabled={addNote.isPending || !note.trim()}
+                >
                   <StickyNote className="mr-1.5 h-3.5 w-3.5" />
                   Registrar nota
                 </Button>
@@ -708,7 +862,10 @@ function HistoryDialog({
           )}
           <div className="space-y-2">
             {(history.data ?? []).map((h) => (
-              <div key={h.id} className="rounded-xl border border-border/60 bg-muted/20 p-3 text-xs">
+              <div
+                key={h.id}
+                className="rounded-xl border border-border/60 bg-muted/20 p-3 text-xs"
+              >
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="font-medium text-foreground">{h.actorEmail ?? "Sistema"}</span>
                   <span>{new Date(h.createdAt).toLocaleString()}</span>
@@ -718,7 +875,9 @@ function HistoryDialog({
               </div>
             ))}
             {history.data?.length === 0 && (
-              <p className="text-center text-xs text-muted-foreground py-6">Sin historial registrado.</p>
+              <p className="text-center text-xs text-muted-foreground py-6">
+                Sin historial registrado.
+              </p>
             )}
           </div>
         </div>
@@ -744,7 +903,9 @@ function CampaignDialog({
   onRefresh: () => void;
 }) {
   const [name, setName] = useState(typeof campaign === "object" && campaign ? campaign.name : "");
-  const [source, setSource] = useState(typeof campaign === "object" && campaign ? campaign.source : "whatsapp");
+  const [source, setSource] = useState(
+    typeof campaign === "object" && campaign ? campaign.source : "whatsapp",
+  );
   const save = useMutation({
     mutationFn: () =>
       supabaseServices.commercial.saveCampaign(projectId, {
@@ -774,7 +935,11 @@ function CampaignDialog({
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
             <Label>Nombre de campaña</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Lanzamiento Verano" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ej. Lanzamiento Verano"
+            />
           </div>
           <div className="grid gap-2">
             <Label>Fuente principal</Label>
