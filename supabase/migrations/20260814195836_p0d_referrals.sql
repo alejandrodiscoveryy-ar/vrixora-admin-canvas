@@ -210,7 +210,6 @@ begin
         perform app_private.p0d_apply_earned_rewards(new.project_id,relationship.referrer_user_id);
       end if;
     end if;
-    perform app_private.p0d_apply_earned_rewards(new.project_id,new.user_id);
   elsif (tg_op='DELETE' and old.status='paid' and not old.is_test)
      or (tg_op='UPDATE' and old.status='paid' and not old.is_test and new.status<>'paid') then
     perform app_private.p0d_revert_reward_for_payment(payment_record);
@@ -225,6 +224,10 @@ for each row execute function app_private.p0d_reconcile_payment_reward();
 create or replace function app_private.p0d_apply_rewards_after_license_change()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin
+  if tg_op='INSERT'
+     and current_setting('app.p0c_frozen_plan_snapshot',true)='on' then
+    return new;
+  end if;
   if pg_catalog.pg_trigger_depth()>1 then return new; end if;
   if new.status='active' and new.license_type not in ('trial','admin')
      and new.expires_at is not null and new.expires_at>now() then
@@ -258,6 +261,11 @@ begin
   select * into existing from public.referral_relationships
   where project_id=target_project_id and referred_user_id=target_client_id and not is_test for update;
   if found and existing.referrer_user_id=referrer_id then return existing.id; end if;
+  if not found and exists(select 1 from public.payments payment
+    where payment.project_id=target_project_id and payment.user_id=target_client_id
+      and payment.status='paid' and not payment.is_test) then
+    raise exception 'REFERRAL_RELATIONSHIP_LOCKED' using errcode='22023';
+  end if;
   if found then
     if exists(select 1 from public.referral_reward_ledger reward where reward.relationship_id=existing.id)
        or exists(select 1 from public.payments payment where payment.project_id=target_project_id
@@ -274,6 +282,49 @@ begin
       'administrative',false,actor,actor) returning id into relationship_id;
   end if;
   return relationship_id;
+end;
+$$;
+
+create or replace function public.admin_register_referral_relationship(
+  target_project_id uuid,target_referrer_user_id uuid,target_referred_user_id uuid,
+  target_referral_code text default null,target_is_test boolean default false
+) returns uuid language plpgsql security definer set search_path='' as $$
+declare actor uuid; relation_id uuid; test_mode boolean; stable_referrer_id uuid;
+begin
+  actor:=app_private.require_project_permission(target_project_id,'commercial.manage');
+  if target_referrer_user_id=target_referred_user_id then
+    raise exception 'SELF_REFERRAL_NOT_ALLOWED' using errcode='22023';
+  end if;
+  if not coalesce(target_is_test,false) then
+    select code.user_id into stable_referrer_id from public.project_referral_codes code
+    where code.project_id=target_project_id and code.code=upper(btrim(target_referral_code));
+    if not found then raise exception 'REFERRAL_CODE_NOT_FOUND' using errcode='P0002'; end if;
+    if stable_referrer_id<>target_referrer_user_id then
+      raise exception 'REFERRAL_CODE_OWNER_MISMATCH' using errcode='22023';
+    end if;
+    return public.admin_link_client_referrer_code(
+      target_project_id,target_referred_user_id,upper(btrim(target_referral_code))
+    );
+  end if;
+  if not exists(select 1 from public.licenses license
+      where license.project_id=target_project_id and license.user_id=target_referrer_user_id)
+     or not exists(select 1 from public.licenses license
+      where license.project_id=target_project_id and license.user_id=target_referred_user_id) then
+    raise exception 'REFERRAL_USER_NOT_FOUND' using errcode='P0002';
+  end if;
+  select settings.enabled into test_mode from public.project_test_settings settings
+  where settings.project_id=target_project_id;
+  if not coalesce(test_mode,false) then
+    raise exception 'TEST_MODE_DISABLED' using errcode='42501';
+  end if;
+  insert into public.referral_relationships(project_id,referrer_user_id,referred_user_id,
+    referral_code,is_test,created_by,updated_by)
+  values(target_project_id,target_referrer_user_id,target_referred_user_id,
+    nullif(btrim(target_referral_code),''),true,actor,actor)
+  returning id into relation_id;
+  return relation_id;
+exception when unique_violation then
+  raise exception 'REFERRED_USER_ALREADY_REGISTERED' using errcode='23505';
 end;
 $$;
 
@@ -302,6 +353,10 @@ begin
       from public.referral_relationships relationship join public.profiles profile on profile.id=relationship.referrer_user_id
       left join public.project_referral_codes code on code.project_id=relationship.project_id and code.user_id=relationship.referrer_user_id
       where relationship.project_id=target_project_id and relationship.referred_user_id=target_client_id and not relationship.is_test),
+    'can_link_referrer',not exists(select 1 from public.referral_relationships relationship
+      where relationship.project_id=target_project_id and relationship.referred_user_id=target_client_id and not relationship.is_test)
+      and not exists(select 1 from public.payments payment where payment.project_id=target_project_id
+        and payment.user_id=target_client_id and payment.status='paid' and not payment.is_test),
     'referred_count',(select count(*) from public.referral_relationships relationship
       where relationship.project_id=target_project_id and relationship.referrer_user_id=target_client_id and not relationship.is_test),
     'earned_rewards',(select count(*) from public.referral_reward_ledger reward
@@ -396,8 +451,10 @@ revoke all on function app_private.p0d_ensure_referral_code(uuid,uuid),
   app_private.p0d_reconcile_payment_reward(),app_private.p0d_apply_rewards_after_license_change()
 from public,anon,authenticated;
 revoke all on function public.admin_link_client_referrer_code(uuid,uuid,text),
+  public.admin_register_referral_relationship(uuid,uuid,uuid,text,boolean),
   public.admin_get_client_referral_summary(uuid,uuid),public.admin_get_referral_overview(uuid),
   public.admin_create_referral_reward(uuid,uuid,uuid,boolean) from public,anon;
 grant execute on function public.admin_link_client_referrer_code(uuid,uuid,text),
+  public.admin_register_referral_relationship(uuid,uuid,uuid,text,boolean),
   public.admin_get_client_referral_summary(uuid,uuid),public.admin_get_referral_overview(uuid),
   public.admin_create_referral_reward(uuid,uuid,uuid,boolean) to authenticated;

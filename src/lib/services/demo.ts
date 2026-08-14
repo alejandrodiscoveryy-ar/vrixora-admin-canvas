@@ -451,6 +451,7 @@ export const demoServices: AdminServices = {
       return {
         code: "DEMO-0000000",
         link: null,
+        canLinkReferrer: true,
         referredBy: null,
         referredCount: 0,
         earnedRewards: 0,

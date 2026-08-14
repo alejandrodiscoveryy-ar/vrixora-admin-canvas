@@ -62,6 +62,85 @@ select pg_temp.assert_raises(
 );
 rollback;
 
+-- P0-C finishes the commercial expiry before P0-D applies all earned days.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+select now() as referral_conversion_charged_at \gset
+select public.admin_create_preinvoice(
+  ':project_id'::uuid,':earned_without_license_user_id'::uuid,
+  ':active_plan_code',null,null,null,false
+) as referral_conversion_invoice_id \gset
+select public.admin_confirm_preinvoice_payment(
+  ':project_id'::uuid,:'referral_conversion_invoice_id'::uuid,
+  (select charge_amount from public.preinvoices where id=:'referral_conversion_invoice_id'::uuid),
+  (select charge_currency from public.preinvoices where id=:'referral_conversion_invoice_id'::uuid),
+  'cash','P0D-CONVERSION',:'referral_conversion_charged_at'::timestamptz,null,gen_random_uuid()
+);
+do $$
+declare license public.licenses%rowtype; invoice public.preinvoices%rowtype;
+  earned_days integer; applied_rewards integer; commercial_expiry timestamptz;
+begin
+  select * into invoice from public.preinvoices where id=:'referral_conversion_invoice_id'::uuid;
+  select * into license from public.licenses where project_id=':project_id'::uuid
+    and user_id=':earned_without_license_user_id'::uuid;
+  select coalesce(sum(reward_days),0) into earned_days from public.referral_reward_ledger
+  where project_id=':project_id'::uuid and referrer_user_id=':earned_without_license_user_id'::uuid
+    and status='applied' and not is_test;
+  select count(*) into applied_rewards from public.referral_reward_ledger
+  where project_id=':project_id'::uuid and referrer_user_id=':earned_without_license_user_id'::uuid
+    and status='applied' and not is_test;
+  commercial_expiry:=:'referral_conversion_charged_at'::timestamptz
+    +make_interval(days=>(invoice.plan_snapshot->>'duration_days')::integer);
+  if earned_days<=0 or applied_rewards<2
+     or exists(select 1 from public.referral_reward_ledger where project_id=':project_id'::uuid
+       and referrer_user_id=':earned_without_license_user_id'::uuid and status='earned' and not is_test)
+     or license.expires_at<>commercial_expiry+make_interval(days=>earned_days) then
+    raise exception 'TEST_FAILED: P0-C overwrote accumulated earned referral days';
+  end if;
+end $$;
+rollback;
+
+-- Legacy real RPC accepts only the stable code owned by the declared referrer.
+begin;
+select set_config('request.jwt.claim.sub', ':marketing_user_id', true);
+select pg_temp.assert_raises(
+  $$select public.admin_register_referral_relationship(
+    ':project_id'::uuid,':referrer_user_id'::uuid,':unconverted_user_id'::uuid,
+    'ARBITRARY-CODE',false)$$,
+  'REFERRAL_CODE_NOT_FOUND'
+);
+select pg_temp.assert_raises(
+  $$select public.admin_register_referral_relationship(
+    ':project_id'::uuid,':referrer_user_id'::uuid,':unconverted_user_id'::uuid,
+    ':alternate_referrer_code',false)$$,
+  'REFERRAL_CODE_OWNER_MISMATCH'
+);
+rollback;
+
+-- A first real relationship cannot be attributed after conversion.
+begin;
+select set_config('request.jwt.claim.sub', ':marketing_user_id', true);
+select pg_temp.assert_raises(
+  $$select public.admin_link_client_referrer_code(
+    ':project_id'::uuid,':paid_without_referral_user_id'::uuid,':referrer_code')$$,
+  'REFERRAL_RELATIONSHIP_LOCKED'
+);
+rollback;
+
+-- A test payment does not block a later real referral relationship.
+begin;
+select set_config('request.jwt.claim.sub', ':marketing_user_id', true);
+select public.admin_link_client_referrer_code(
+  ':project_id'::uuid,':test_paid_without_referral_user_id'::uuid,':referrer_code'
+) as test_payment_link_id \gset
+do $$ begin
+  if not exists(select 1 from public.referral_relationships relationship
+    where relationship.id=:'test_payment_link_id'::uuid and not relationship.is_test) then
+    raise exception 'TEST_FAILED: test payment blocked real referral link';
+  end if;
+end $$;
+rollback;
+
 -- First real paid payment creates one configured reward; renewal creates none.
 begin;
 update public.project_referral_settings set reward_days=23 where project_id=':project_id'::uuid;

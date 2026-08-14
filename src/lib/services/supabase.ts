@@ -1566,6 +1566,7 @@ export const supabaseServices: AdminServices = {
       return {
         code: String(row.code),
         link: row.link ? String(row.link) : null,
+        canLinkReferrer: Boolean(row.can_link_referrer),
         referredBy: referredBy
           ? {
               relationshipId: String(referredBy.relationship_id),

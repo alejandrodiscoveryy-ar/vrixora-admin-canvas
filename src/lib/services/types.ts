@@ -683,6 +683,7 @@ export interface P0AFoundationService {
 export interface ClientReferralSummary {
   code: string;
   link: string | null;
+  canLinkReferrer: boolean;
   referredBy: {
     relationshipId: string;
     userId: string;

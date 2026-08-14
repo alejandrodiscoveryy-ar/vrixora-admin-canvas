@@ -581,7 +581,7 @@ export default function Cliente360Section({
                       <p className="text-sm text-text-secondary">
                         Registro directo, sin referidor.
                       </p>
-                      {canManageCommercial ? (
+                      {canManageCommercial && currentReferralSummary.canLinkReferrer ? (
                         <Button size="sm" variant="outline" onClick={() => setReferrerOpen(true)}>
                           Vincular referidor
                         </Button>
