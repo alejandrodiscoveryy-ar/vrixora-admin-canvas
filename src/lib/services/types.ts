@@ -192,6 +192,9 @@ export interface ServicePayment {
   licenseKey?: string;
   operatorLabel?: string;
   hasReceipt?: boolean;
+  planName?: string;
+  preinvoiceId?: string | null;
+  isTest?: boolean;
 }
 
 export interface UpdatePaymentInput {
@@ -206,7 +209,7 @@ export interface UpdatePaymentInput {
 }
 
 export interface BillingPreview {
-  licenseId: string;
+  licenseId: string | null;
   previousPlan: string;
   newPlan: string;
   licenseType: string;
@@ -243,13 +246,15 @@ export interface BillingReceipt {
   chargedAt: string;
   startedAt: string;
   expiresAt: string | null;
-  status: LicenseStatus;
+  status: LicenseStatus | "test";
   maxDevices: number;
   operatorEmail: string;
   notes: string | null;
   whatsapp: string | null;
   supportEmail: string | null;
   applicationRule: "apply_now" | "after_expiry";
+  identitySnapshot?: DocumentIdentitySnapshot;
+  isTest?: boolean;
 }
 
 export interface ChargePlanInput {
@@ -604,6 +609,33 @@ export interface CreatePreinvoiceInput {
   isTest?: boolean;
 }
 
+export interface PreinvoiceConfirmationPreview {
+  preinvoiceId: string;
+  clientId: string;
+  planName: string;
+  previousExpiresAt: string | null;
+  newStartedAt: string;
+  newExpiresAt: string | null;
+  expectedAmount: number;
+  currency: Currency;
+  exchangeRate: number;
+  exchangeRateSource: string;
+  expiresAt: string;
+  isTest: boolean;
+}
+
+export interface ConfirmPreinvoicePaymentInput {
+  projectId: string;
+  preinvoiceId: string;
+  receivedAmount: number;
+  currency: Currency;
+  method: "cash" | "transfer" | "other";
+  reference?: string;
+  chargedAt: string;
+  notes?: string;
+  idempotencyKey: string;
+}
+
 export interface P0AFoundationService {
   settings(projectId: string): Promise<P0ASettings>;
   updateExchangeSettings(
@@ -618,6 +650,12 @@ export interface P0AFoundationService {
   exchangeRateHistory(projectId: string, limit?: number): Promise<ExchangeRateHistoryEntry[]>;
   createPreinvoice(input: CreatePreinvoiceInput): Promise<string>;
   listPreinvoices(projectId: string, includeTest?: boolean): Promise<Preinvoice[]>;
+  previewPreinvoiceConfirmation(
+    projectId: string,
+    preinvoiceId: string,
+    chargedAt: string,
+  ): Promise<PreinvoiceConfirmationPreview>;
+  confirmPreinvoicePayment(input: ConfirmPreinvoicePaymentInput): Promise<BillingReceipt>;
   setPreinvoiceStatus(
     projectId: string,
     preinvoiceId: string,

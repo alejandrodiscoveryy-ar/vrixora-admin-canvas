@@ -6,7 +6,6 @@ import {
   CircleDollarSign,
   FileText,
   Pencil,
-  Plus,
   Search,
   Trash2,
   Wallet,
@@ -20,8 +19,10 @@ import {
   type ServicePayment,
   type BillingReceipt,
   type ServiceClient,
+  type Preinvoice,
 } from "@/lib/services";
 import { ReceiptDialog } from "@/features/admin/ChargePlanDialog";
+import { ConfirmPreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -88,10 +89,10 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [mobileVisible, setMobileVisible] = useState(10);
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [editing, setEditing] = useState<ServicePayment | null>(null);
   const [deleting, setDeleting] = useState<ServicePayment | null>(null);
   const [viewingReceipt, setViewingReceipt] = useState<BillingReceipt | null>(null);
+  const [confirmingPreinvoice, setConfirmingPreinvoice] = useState<Preinvoice | null>(null);
 
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("payments.manage");
@@ -136,6 +137,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     queryKey: ["admin-license-plans", projectId],
     queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
   });
+  const preinvoices = useQuery({
+    queryKey: ["admin-preinvoices", projectId],
+    queryFn: () => supabaseServices.foundations.listPreinvoices(projectId, true),
+    refetchInterval: 30_000,
+  });
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin-payments", projectId] });
@@ -144,6 +150,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     void queryClient.invalidateQueries({ queryKey: ["admin-clients", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["summary-usage-analytics", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["usage-analytics", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-preinvoices", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-client-360", projectId] });
   };
 
   const markPaid = useMutation({
@@ -181,6 +189,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   const metricBaseRows = useMemo(() => {
     return rows.filter((p) => {
+      if (p.isTest) return false;
       const matchPlan = plan === "all" || p.plan === plan;
       const matchStatus = status === "all" || p.status === status;
       const matchCurrency = currency === "all" || p.currency === currency;
@@ -307,14 +316,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         description="Gestión financiera, registro de cobros, verificación de recibos y auditoría."
         icon={CreditCard}
         module="pagos"
-        actions={
-          canManage ? (
-            <Button size="sm" onClick={() => setRegisterOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Registrar pago
-            </Button>
-          ) : undefined
-        }
       />
 
       <AdminPeriodSelector
@@ -410,6 +411,67 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             module="pagos"
           />
         )}
+      </SectionCard>
+
+      <SectionCard
+        title="Prefacturas"
+        description="Cobros preparados con importe y tasa congelados durante 48 horas"
+        module="pagos"
+      >
+        <div className="space-y-2">
+          {(preinvoices.data ?? []).length ? (
+            (preinvoices.data ?? []).map((invoice) => {
+              const client = clients.data?.find((item) => item.userId === invoice.clientId);
+              const open = ["prepared", "sent", "pending"].includes(invoice.status);
+              const labels: Record<string, string> = {
+                prepared: "Preparada",
+                sent: "Enviada",
+                pending: "Pendiente",
+                paid: "Pagada",
+                expired: "Vencida",
+                cancelled: "Cancelada",
+              };
+              return (
+                <div
+                  key={invoice.id}
+                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <strong>
+                        #{invoice.number} · {String(invoice.planSnapshot.name ?? invoice.planCode)}
+                      </strong>
+                      <Badge variant={invoice.status === "paid" ? "default" : "secondary"}>
+                        {labels[invoice.status]}
+                      </Badge>
+                      {invoice.isTest ? <Badge variant="warning">Prueba</Badge> : null}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {client?.displayName ?? client?.email ?? invoice.clientId} ·{" "}
+                      {invoice.chargeAmount} {invoice.chargeCurrency} · vence{" "}
+                      {new Intl.DateTimeFormat("es", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(invoice.expiresAt))}
+                    </p>
+                  </div>
+                  {canManage && open ? (
+                    <Button size="sm" onClick={() => setConfirmingPreinvoice(invoice)}>
+                      Confirmar pago
+                    </Button>
+                  ) : null}
+                </div>
+              );
+            })
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="Sin prefacturas"
+              description="Las prefacturas preparadas desde Cliente 360 aparecerán aquí."
+              module="pagos"
+            />
+          )}
+        </div>
       </SectionCard>
 
       {(pendingCount > 0 || missingReceiptCount > 0) && (
@@ -534,7 +596,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                 </Badge>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <PaymentDetail label="Plan" value={payment.plan} />
+                <PaymentDetail label="Plan" value={payment.planName ?? payment.plan} />
                 <PaymentDetail label="Método" value={paymentMethodLabel(payment.method)} />
                 <PaymentDetail label="Referencia" value={payment.reference || "Sin referencia"} />
                 <PaymentDetail
@@ -614,7 +676,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     <div className="font-medium text-foreground truncate max-w-[160px]">
                       {payment.userEmail ?? "—"}
                     </div>
-                    <div className="text-muted-foreground capitalize">{payment.plan}</div>
+                    <div className="text-muted-foreground">{payment.planName ?? payment.plan}</div>
                   </TableCell>
                   <TableCell className="text-right font-mono font-bold text-sm">
                     {payment.amount.toLocaleString()} {payment.currency}
@@ -705,14 +767,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         </div>
       </AdminDataTableShell>
 
-      <RegisterPaymentDialog
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        licenses={licenses.data ?? []}
-        clients={clients.data ?? []}
-        plans={availablePlans.data ?? []}
-        onDone={refresh}
-      />
       {editing ? (
         <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={refresh} />
       ) : null}
@@ -726,6 +780,22 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       {viewingReceipt && (
         <ReceiptDialog receipt={viewingReceipt} onClose={() => setViewingReceipt(null)} />
       )}
+      <ConfirmPreinvoiceDialog
+        invoice={confirmingPreinvoice}
+        projectId={projectId}
+        clientName={
+          clients.data?.find((item) => item.userId === confirmingPreinvoice?.clientId)
+            ?.displayName ??
+          clients.data?.find((item) => item.userId === confirmingPreinvoice?.clientId)?.email ??
+          "Cliente"
+        }
+        onClose={() => setConfirmingPreinvoice(null)}
+        onConfirmed={(receipt) => {
+          setConfirmingPreinvoice(null);
+          setViewingReceipt(receipt);
+          refresh();
+        }}
+      />
     </div>
   );
 }

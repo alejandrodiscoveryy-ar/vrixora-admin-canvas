@@ -188,7 +188,7 @@ function mapClient360(data: Record<string, unknown>): Client360 {
 
 function mapBillingPreview(data: Record<string, unknown>): BillingPreview {
   return {
-    licenseId: String(data.license_id),
+    licenseId: data.license_id ? String(data.license_id) : null,
     previousPlan: String(data.previous_plan),
     newPlan: String(data.new_plan),
     licenseType: String(data.license_type),
@@ -234,6 +234,8 @@ function mapBillingReceipt(data: Record<string, unknown>): BillingReceipt {
     whatsapp: data.whatsapp ? String(data.whatsapp) : null,
     supportEmail: data.support_email ? String(data.support_email) : null,
     applicationRule: data.application_rule as BillingReceipt["applicationRule"],
+    identitySnapshot: data.identity_snapshot as BillingReceipt["identitySnapshot"],
+    isTest: Boolean(data.is_test),
   };
 }
 
@@ -308,6 +310,9 @@ type PaymentRow = {
   license_id: string | null;
   operator_label: string | null;
   has_receipt: boolean;
+  plan_name: string | null;
+  preinvoice_id: string | null;
+  is_test: boolean;
 };
 
 type ClientRow = {
@@ -922,6 +927,9 @@ export const supabaseServices: AdminServices = {
         licenseKey: payment.license_key ?? undefined,
         operatorLabel: payment.operator_label ?? payment.recorded_by,
         hasReceipt: payment.has_receipt,
+        planName: payment.plan_name ?? payment.plan,
+        preinvoiceId: payment.preinvoice_id,
+        isTest: payment.is_test,
       }));
     },
     async record(input) {
@@ -1436,6 +1444,48 @@ export const supabaseServices: AdminServices = {
         createdBy: String(row.created_by),
         createdAt: String(row.created_at),
       }));
+    },
+    async previewPreinvoiceConfirmation(projectId, preinvoiceId, chargedAt) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_preview_preinvoice_confirmation",
+        {
+          target_project_id: projectId,
+          target_preinvoice_id: preinvoiceId,
+          target_charged_at: chargedAt,
+        },
+      );
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        preinvoiceId: String(row.preinvoice_id),
+        clientId: String(row.client_id),
+        planName: String(row.plan_name),
+        previousExpiresAt: row.previous_expires_at ? String(row.previous_expires_at) : null,
+        newStartedAt: String(row.new_started_at),
+        newExpiresAt: row.new_expires_at ? String(row.new_expires_at) : null,
+        expectedAmount: Number(row.expected_amount),
+        currency: row.currency as Currency,
+        exchangeRate: Number(row.exchange_rate),
+        exchangeRateSource: String(row.exchange_rate_source),
+        expiresAt: String(row.expires_at),
+        isTest: Boolean(row.is_test),
+      };
+    },
+    async confirmPreinvoicePayment(input) {
+      await requireOnline("Confirmar prefactura");
+      const { data, error } = await getSupabaseClient().rpc("admin_confirm_preinvoice_payment", {
+        target_project_id: input.projectId,
+        target_preinvoice_id: input.preinvoiceId,
+        target_received_amount: input.receivedAmount,
+        target_currency: input.currency,
+        target_method: input.method,
+        target_reference: input.reference ?? null,
+        target_charged_at: input.chargedAt,
+        target_notes: input.notes ?? null,
+        target_idempotency_key: input.idempotencyKey,
+      });
+      throwIfError(error);
+      return mapBillingReceipt(data as Record<string, unknown>);
     },
     async setPreinvoiceStatus(projectId, preinvoiceId, status, paymentId) {
       await requireOnline("Actualizar prefactura");

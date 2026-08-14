@@ -380,6 +380,12 @@ export const demoServices: AdminServices = {
     async createPreinvoice() {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },
+    async previewPreinvoiceConfirmation() {
+      throw new Error("Esta operaciÃƒÂ³n requiere Supabase");
+    },
+    async confirmPreinvoicePayment() {
+      throw new Error("Esta operaciÃƒÂ³n requiere Supabase");
+    },
     async setPreinvoiceStatus() {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },
