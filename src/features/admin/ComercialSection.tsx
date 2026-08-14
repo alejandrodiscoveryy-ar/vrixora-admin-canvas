@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   History,
@@ -975,7 +975,7 @@ function CampaignDialog({
               <SelectContent>
                 {SOURCES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {sourceLabel(s)}
                   </SelectItem>
                 ))}
               </SelectContent>

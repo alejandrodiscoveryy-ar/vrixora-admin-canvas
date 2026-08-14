@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
@@ -170,7 +170,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     mutationFn: (paymentId: string) => supabaseServices.payments.receipt(paymentId),
     onSuccess: setViewingReceipt,
     onError: () =>
-      toast.error("No se encontrÃ³ el recibo. El owner puede generarlo sin renovar nuevamente."),
+      toast.error("No se encontró el recibo. El owner puede generarlo sin renovar nuevamente."),
   });
   const repairReceipt = useMutation({
     mutationFn: (paymentId: string) => supabaseServices.payments.repairReceipt(paymentId),
@@ -748,17 +748,18 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         )}
-                      {canCorrect && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
-                          title={payment.status === "pending" ? "Eliminar pago" : "Anular pago"}
-                          onClick={() => setDeleting(payment)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      {canCorrect &&
+                        ["pending", "paid", "complimentary"].includes(payment.status) && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                            title={payment.status === "pending" ? "Eliminar pago" : "Anular pago"}
+                            onClick={() => setDeleting(payment)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1236,8 +1237,8 @@ function DeletePaymentDialog({
       toast.success(
         isConfirmed
           ? result?.licenseRequiresReview
-            ? "Pago cancelado. La licencia requiere revisión manual."
-            : "Pago cancelado y consecuencias reconciliadas."
+            ? "Pago anulado. La licencia requiere revisión manual."
+            : "Pago anulado y consecuencias reconciliadas."
           : "Pago eliminado del historial.",
       );
       onDone();
@@ -1249,7 +1250,7 @@ function DeletePaymentDialog({
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isConfirmed ? "Cancelar pago confirmado" : "Eliminar pago"}</DialogTitle>
+          <DialogTitle>{isConfirmed ? "Anular pago" : "Eliminar pago"}</DialogTitle>
           <DialogDescription>
             {isConfirmed ? (
               <>
@@ -1262,7 +1263,7 @@ function DeletePaymentDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-        <Field label={isConfirmed ? "Motivo de cancelación" : "Motivo de eliminación"}>
+        <Field label={isConfirmed ? "Motivo de anulación" : "Motivo de eliminación"}>
           <Textarea
             value={reason}
             placeholder="Obligatorio para conservar la trazabilidad"
@@ -1274,7 +1275,7 @@ function DeletePaymentDialog({
             <p className="text-sm text-muted-foreground">Calculando consecuencias…</p>
           ) : preview.isError ? (
             <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              No se encontró una vista previa segura para este pago.
+              No se pudo calcular la vista previa de consecuencias para este pago.
             </p>
           ) : preview.data ? (
             <CancellationPreview preview={preview.data} />
@@ -1291,10 +1292,10 @@ function DeletePaymentDialog({
           >
             {mutation.isPending
               ? isConfirmed
-                ? "Cancelando…"
+                ? "Anulando…"
                 : "Eliminando…"
               : isConfirmed
-                ? "Confirmar cancelación segura"
+                ? "Confirmar anulación"
                 : "Eliminar pago"}
           </Button>
         </DialogFooter>
@@ -1346,16 +1347,16 @@ function CancellationPreview({ preview }: { preview: PaymentCancellationPreview 
 function paymentCancellationError(error: unknown, confirmed: boolean) {
   const message = error instanceof Error ? error.message : String(error);
   const labels: Record<string, string> = {
-    CANCELLATION_REASON_REQUIRED: "Debes indicar el motivo de la cancelación.",
-    PAYMENT_CANCELLATION_NOT_ALLOWED: "Este pago no admite cancelación segura.",
-    PENDING_PAYMENT_MUST_BE_DELETED: "Los pagos pendientes deben eliminarse, no cancelarse.",
+    CANCELLATION_REASON_REQUIRED: "Debes indicar el motivo de la anulación.",
+    PAYMENT_CANCELLATION_NOT_ALLOWED: "Este pago no admite anulación.",
+    PENDING_PAYMENT_MUST_BE_DELETED: "Los pagos pendientes deben eliminarse, no anularse.",
     PAYMENT_NOT_FOUND: "No se encontró el pago solicitado.",
   };
   const code = Object.keys(labels).find((item) => message.includes(item));
   return code
     ? labels[code]
     : confirmed
-      ? "No se pudo cancelar el pago. Inténtalo de nuevo."
+      ? "No se pudo anular el pago. Inténtalo de nuevo."
       : "No se pudo eliminar el pago. Inténtalo de nuevo.";
 }
 
@@ -1422,12 +1423,12 @@ function paymentActions({
       disabled: repairReceiptPending,
     });
   }
-  if (canCorrect) {
+  if (canCorrect && ["pending", "paid", "complimentary"].includes(payment.status)) {
     actions.push({ label: "Editar pago", onSelect: onEdit });
   }
   if (canCorrect && ["pending", "paid", "complimentary"].includes(payment.status)) {
     actions.push({
-      label: payment.status === "pending" ? "Eliminar pago" : "Cancelar pago",
+      label: payment.status === "pending" ? "Eliminar pago" : "Anular pago",
       onSelect: onDelete,
       destructive: true,
     });

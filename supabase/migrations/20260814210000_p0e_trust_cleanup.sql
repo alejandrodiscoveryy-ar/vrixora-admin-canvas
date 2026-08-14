@@ -1,4 +1,4 @@
--- P0-E: safe payment cancellation, consequence preview and trust cleanup.
+﻿-- P0-E: safe payment cancellation, consequence preview and trust cleanup.
 
 do $$
 declare constraint_name text;
@@ -20,6 +20,28 @@ alter table public.preinvoices
     or status='cancelled'
     or (status not in ('paid','cancelled') and paid_payment_id is null)
   );
+-- P0-E guard: avoid reapplying earned referral rewards during cancellation reconciliation.
+create or replace function app_private.p0d_apply_rewards_after_license_change()
+returns trigger language plpgsql security definer set search_path='' as $$
+begin
+  if current_setting('app.p0e_cancellation_reconcile',true)='on' then
+    return new;
+  end if;
+  if tg_op='INSERT'
+     and current_setting('app.p0c_frozen_plan_snapshot',true)='on' then
+    return new;
+  end if;
+  if pg_catalog.pg_trigger_depth()>1 then return new; end if;
+  if new.status='active' and new.license_type not in ('trial','admin')
+     and new.expires_at is not null and new.expires_at>now() then
+    perform app_private.p0d_apply_earned_rewards(new.project_id,new.user_id);
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function app_private.p0d_apply_rewards_after_license_change()
+  from public,anon,authenticated;
 
 create or replace function app_private.p0e_payment_cancellation_preview(target_payment_id uuid)
 returns jsonb
@@ -61,7 +83,7 @@ begin
 
   select count(*) into other_paid_count from public.payments payment
   where payment.project_id=payment_record.project_id and payment.user_id=payment_record.user_id
-    and payment.id<>payment_record.id and payment.status in ('paid','complimentary') and not payment.is_test;
+    and payment.id<>payment_record.id and payment.status='paid' and not payment.is_test;
 
   if effect_record.action='license_renewed'
      and nullif(effect_record.metadata->>'previous_expires_at','') is not null
@@ -148,7 +170,7 @@ begin
     raise exception 'PAYMENT_CANCELLATION_NOT_ALLOWED' using errcode='22023';
   end if;
   preview:=app_private.p0e_payment_cancellation_preview(payment_record.id);
-  perform app_private.void_billing_receipt_for_payment(payment_record,actor,reason,'cancelled');
+  perform app_private.void_billing_receipt_for_payment(payment_record.id,actor,reason,'cancelled');
   update public.payments set status='cancelled',notes=concat_ws(E'\n',notes,'Cancelado: '||reason)
   where id=payment_record.id;
   if payment_record.preinvoice_id is not null then
@@ -159,12 +181,13 @@ begin
   if not payment_record.is_test then
     select count(*) into other_paid_count from public.payments payment
     where payment.project_id=payment_record.project_id and payment.user_id=payment_record.user_id
-      and payment.id<>payment_record.id and payment.status in ('paid','complimentary') and not payment.is_test;
+      and payment.id<>payment_record.id and payment.status='paid' and not payment.is_test;
     select * into effect_record from public.license_audit_log audit
     where audit.project_id=payment_record.project_id and audit.metadata->>'payment_id'=payment_record.id::text
       and audit.action in ('license_created_from_preinvoice','trial_converted','license_renewed')
     order by audit.created_at desc,audit.id desc limit 1;
     select * into license_record from public.licenses where id=payment_record.license_id for update;
+    perform set_config('app.p0e_cancellation_reconcile','on',true);
     perform set_config('app.p0c_frozen_plan_snapshot','on',true);
 
     if other_paid_count=0 and license_record.id is not null then
@@ -213,6 +236,7 @@ begin
     elsif effect_record.action in ('license_created_from_preinvoice','trial_converted') and other_paid_count>0 then
       review_required:=true;
     end if;
+    perform set_config('app.p0e_cancellation_reconcile','off',true);
     perform set_config('app.p0c_frozen_plan_snapshot','off',true);
   end if;
 
