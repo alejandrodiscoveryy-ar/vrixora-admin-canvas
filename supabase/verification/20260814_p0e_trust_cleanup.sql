@@ -17,6 +17,7 @@ begin
   if cancel_definition not like '%CANCELLATION_REASON_REQUIRED%' then raise exception 'reason guard missing'; end if;
   if cancel_definition not like '%PENDING_PAYMENT_MUST_BE_DELETED%' then raise exception 'pending guard missing'; end if;
   if cancel_definition not like '%void_billing_receipt_for_payment%' then raise exception 'receipt preservation missing'; end if;
+  if cancel_definition like '%paid_payment_id=null%' then raise exception 'preinvoice payment trace is erased'; end if;
   if cancel_definition not like '%status=''cancelled''%' then raise exception 'cancelled status missing'; end if;
   if cancel_definition like '%voided%' then raise exception 'obsolete voided status reintroduced'; end if;
   if cancel_definition not like '%payment_cancelled_safe%' then raise exception 'semantic audit missing'; end if;

@@ -1,5 +1,26 @@
 -- P0-E: safe payment cancellation, consequence preview and trust cleanup.
 
+do $$
+declare constraint_name text;
+begin
+  select constraint.conname into constraint_name
+  from pg_catalog.pg_constraint constraint
+  where constraint.conrelid='public.preinvoices'::regclass
+    and constraint.contype='c'
+    and pg_catalog.pg_get_constraintdef(constraint.oid) like '%paid_payment_id%'
+    and pg_catalog.pg_get_constraintdef(constraint.oid) like '%status%';
+  if constraint_name is not null then
+    execute format('alter table public.preinvoices drop constraint %I',constraint_name);
+  end if;
+end $$;
+
+alter table public.preinvoices
+  add constraint preinvoices_payment_status_trace_check check (
+    (status='paid' and paid_payment_id is not null)
+    or status='cancelled'
+    or (status not in ('paid','cancelled') and paid_payment_id is null)
+  );
+
 create or replace function app_private.p0e_payment_cancellation_preview(target_payment_id uuid)
 returns jsonb
 language plpgsql
@@ -131,7 +152,7 @@ begin
   update public.payments set status='cancelled',notes=concat_ws(E'\n',notes,'Cancelado: '||reason)
   where id=payment_record.id;
   if payment_record.preinvoice_id is not null then
-    update public.preinvoices set status='cancelled',paid_payment_id=null,updated_at=now()
+    update public.preinvoices set status='cancelled',updated_at=now()
     where id=payment_record.preinvoice_id and status='paid';
   end if;
 
