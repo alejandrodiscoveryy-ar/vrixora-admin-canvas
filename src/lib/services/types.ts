@@ -116,10 +116,10 @@ export interface ServiceClient {
   registeredAt: string;
   licenseId: string | null;
   licenseKey: string | null;
-  plan: string;
-  status: LicenseStatus;
-  activatedAt: string;
-  expiresAt: string;
+  plan: string | null;
+  status: LicenseStatus | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
   maxDevices: number;
   activeDevices: number;
   lastPaymentAt: string | null;
@@ -654,6 +654,7 @@ export interface Client360Payment {
   id: string;
   licenseId: string | null;
   plan: string;
+  planName: string;
   amount: number;
   currency: Currency;
   method: ServicePayment["method"];
@@ -734,7 +735,7 @@ export interface Client360 {
   };
   lastPayment: null | Pick<
     Client360Payment,
-    "id" | "amount" | "currency" | "status" | "chargedAt" | "plan"
+    "id" | "amount" | "currency" | "status" | "chargedAt" | "plan" | "planName"
   >;
   commercial: null | {
     id: string;

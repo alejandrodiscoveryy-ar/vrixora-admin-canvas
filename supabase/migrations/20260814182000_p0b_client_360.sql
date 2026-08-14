@@ -13,11 +13,11 @@ begin
   return query
   select profile.id,profile.email,profile.display_name,profile.phone,profile.avatar_url,profile.created_at,
     current_license.id,current_license.license_key,
-    coalesce(current_license.plan,project.default_trial_plan,'trial'),
-    coalesce(current_license.status,case when now()<profile.created_at+interval '30 days' then 'active' else 'expired' end),
-    coalesce(current_license.activated_at,profile.created_at),
-    coalesce(current_license.expires_at,profile.created_at+interval '30 days'),
-    coalesce(current_license.max_devices,1),coalesce(device_totals.active_devices,0),
+    coalesce(current_plan.name,current_license.plan),
+    current_license.status,
+    current_license.activated_at,
+    current_license.expires_at,
+    current_license.max_devices,coalesce(device_totals.active_devices,0),
     last_payment.charged_at,last_payment.amount,last_payment.currency,current_license.last_renewed_at
   from public.projects project
   join public.profiles profile on exists(
@@ -35,6 +35,8 @@ begin
     where license.project_id=target_project_id and license.user_id=profile.id
     order by license.created_at desc limit 1
   ) current_license on true
+  left join public.license_plans current_plan
+    on current_plan.project_id=current_license.project_id and current_plan.code=current_license.plan
   left join lateral(
     select count(*)::bigint active_devices from public.license_devices device
     where device.license_id=current_license.id and device.revoked_at is null
@@ -118,8 +120,12 @@ begin
     ) else null end,
     'last_payment',case when can_view_payments then (
       select jsonb_build_object('id',payment.id,'amount',payment.amount,'currency',payment.currency,
-        'status',payment.status,'charged_at',payment.charged_at,'plan',payment.plan)
-      from public.payments payment where payment.project_id=target_project_id
+        'status',payment.status,'charged_at',payment.charged_at,'plan',payment.plan,
+        'plan_name',coalesce(plan.name,receipt.snapshot->>'plan_name',payment.plan))
+      from public.payments payment
+      left join public.license_plans plan on plan.project_id=payment.project_id and plan.code=payment.plan
+      left join public.billing_receipts receipt on receipt.payment_id=payment.id
+      where payment.project_id=target_project_id
         and payment.user_id=target_client_id and payment.status='paid'
       order by payment.charged_at desc,payment.created_at desc,payment.id desc limit 1
     ) else null end,
@@ -151,15 +157,18 @@ begin
         'is_test',invoice.is_test,'issued_at',invoice.issued_at,'expires_at',invoice.expires_at,
         'paid_payment_id',invoice.paid_payment_id
       ) order by invoice.issued_at desc) from public.preinvoices invoice
-        where invoice.project_id=target_project_id and invoice.client_id=target_client_id),'[]'::jsonb),
+        where invoice.project_id=target_project_id and invoice.client_id=target_client_id
+          and not invoice.is_test),'[]'::jsonb),
       'payments',coalesce((select jsonb_agg(jsonb_build_object(
         'id',payment.id,'license_id',payment.license_id,'plan',payment.plan,
+        'plan_name',coalesce(plan.name,receipt.snapshot->>'plan_name',payment.plan),
         'amount',payment.amount,'currency',payment.currency,'method',payment.method,
         'reference',payment.reference,'status',payment.status,'notes',payment.notes,
         'charged_at',payment.charged_at,'created_at',payment.created_at,
         'receipt_id',receipt.id,'receipt_number',receipt.receipt_number
       ) order by payment.charged_at desc,payment.created_at desc) from public.payments payment
         left join public.billing_receipts receipt on receipt.payment_id=payment.id
+        left join public.license_plans plan on plan.project_id=payment.project_id and plan.code=payment.plan
         where payment.project_id=target_project_id and payment.user_id=target_client_id),'[]'::jsonb),
       'receipts',coalesce((select jsonb_agg(jsonb_build_object(
         'id',receipt.id,'payment_id',receipt.payment_id,'receipt_number',receipt.receipt_number,
@@ -176,8 +185,9 @@ begin
         'reward_status',reward.status,'reward_days',reward.reward_days
       ) from public.referral_relationships relationship
         join public.profiles profile on profile.id=relationship.referrer_user_id
-        left join public.referral_reward_ledger reward on reward.relationship_id=relationship.id
-        where relationship.project_id=target_project_id and relationship.referred_user_id=target_client_id),
+        left join public.referral_reward_ledger reward on reward.relationship_id=relationship.id and not reward.is_test
+        where relationship.project_id=target_project_id and relationship.referred_user_id=target_client_id
+          and not relationship.is_test),
       'referred_clients',coalesce((select jsonb_agg(jsonb_build_object(
         'relationship_id',relationship.id,'user_id',relationship.referred_user_id,
         'name',coalesce(profile.display_name,profile.email),'email',profile.email,
@@ -185,8 +195,9 @@ begin
         'is_test',relationship.is_test,'reward_status',reward.status,'reward_days',reward.reward_days
       ) order by relationship.created_at desc) from public.referral_relationships relationship
         join public.profiles profile on profile.id=relationship.referred_user_id
-        left join public.referral_reward_ledger reward on reward.relationship_id=relationship.id
-        where relationship.project_id=target_project_id and relationship.referrer_user_id=target_client_id),'[]'::jsonb)
+        left join public.referral_reward_ledger reward on reward.relationship_id=relationship.id and not reward.is_test
+        where relationship.project_id=target_project_id and relationship.referrer_user_id=target_client_id
+          and not relationship.is_test),'[]'::jsonb)
     ) else null end,
     'activity',coalesce((
       select jsonb_agg(activity.item order by activity.occurred_at desc)
@@ -199,28 +210,36 @@ begin
         select license.created_at,jsonb_build_object(
           'id','license:'||license.id::text,'type','license','title',
           case when license.license_type='trial' then 'Prueba iniciada' else 'Licencia creada' end,
-          'description','Plan '||license.plan,'occurred_at',license.created_at
-        ) from public.licenses license where can_view_licenses and license.project_id=target_project_id and license.user_id=target_client_id
+          'description','Plan '||coalesce(plan.name,license.plan),'occurred_at',license.created_at
+        ) from public.licenses license
+          left join public.license_plans plan on plan.project_id=license.project_id and plan.code=license.plan
+          where can_view_licenses and license.project_id=target_project_id and license.user_id=target_client_id
         union all
         select history.created_at,jsonb_build_object(
           'id','license-history:'||history.id::text,'type','license','title',
           case history.action when 'renewed' then 'Licencia renovada' when 'status_changed' then 'Estado de licencia actualizado' else 'Cambio de licencia' end,
-          'description',history.detail,'occurred_at',history.created_at
+          'description',case when history.action='renewed' then 'Plan '||coalesce(plan.name,license.plan)
+            else history.detail end,'occurred_at',history.created_at
         ) from public.license_audit_log history join public.licenses license on license.id=history.license_id
+          left join public.license_plans plan on plan.project_id=license.project_id and plan.code=license.plan
           where can_view_licenses and license.project_id=target_project_id and license.user_id=target_client_id
         union all
         select invoice.issued_at,jsonb_build_object(
           'id','preinvoice:'||invoice.id::text,'type','preinvoice','title','Prefactura emitida',
           'description','Prefactura #'||invoice.number::text||' · '||invoice.charge_amount::text||' '||invoice.charge_currency,
           'occurred_at',invoice.issued_at
-        ) from public.preinvoices invoice where can_view_payments and invoice.project_id=target_project_id and invoice.client_id=target_client_id
+        ) from public.preinvoices invoice where can_view_payments and invoice.project_id=target_project_id
+          and invoice.client_id=target_client_id and not invoice.is_test
         union all
         select payment.charged_at,jsonb_build_object(
           'id','payment:'||payment.id::text,'type','payment','title',
           case when payment.status='paid' then 'Pago confirmado' else 'Pago '||payment.status end,
-          'description',payment.amount::text||' '||payment.currency||' · Plan '||payment.plan,
+          'description',payment.amount::text||' '||payment.currency||' · Plan '||coalesce(plan.name,receipt.snapshot->>'plan_name',payment.plan),
           'occurred_at',payment.charged_at
-        ) from public.payments payment where can_view_payments and payment.project_id=target_project_id and payment.user_id=target_client_id
+        ) from public.payments payment
+          left join public.license_plans plan on plan.project_id=payment.project_id and plan.code=payment.plan
+          left join public.billing_receipts receipt on receipt.payment_id=payment.id
+          where can_view_payments and payment.project_id=target_project_id and payment.user_id=target_client_id
         union all
         select receipt.created_at,jsonb_build_object(
           'id','receipt:'||receipt.id::text,'type','document','title','Recibo generado',
@@ -242,7 +261,8 @@ begin
           'id','referral:'||relationship.id::text,'type','referral','title','Relación de referido registrada',
           'description',case when relationship.referred_user_id=target_client_id then 'Cliente referido' else 'Nuevo cliente referido' end,
           'occurred_at',relationship.created_at
-        ) from public.referral_relationships relationship where can_view_commercial and relationship.project_id=target_project_id
+        ) from public.referral_relationships relationship where can_view_commercial
+          and relationship.project_id=target_project_id and not relationship.is_test
           and (relationship.referrer_user_id=target_client_id or relationship.referred_user_id=target_client_id)
         union all
         select event.created_at,jsonb_build_object(
@@ -252,10 +272,11 @@ begin
             else 'Información relacionada actualizada' end,
           'occurred_at',event.created_at
         ) from public.audit_events event where can_view_audit and event.project_id=target_project_id
+          and coalesce(event.metadata#>>'{new,is_test}',event.metadata#>>'{old,is_test}','false')='false'
           and (event.entity_id=target_client_id::text
             or event.entity_id in (select license.id::text from public.licenses license where license.project_id=target_project_id and license.user_id=target_client_id)
             or event.entity_id in (select payment.id::text from public.payments payment where payment.project_id=target_project_id and payment.user_id=target_client_id)
-            or event.entity_id in (select invoice.id::text from public.preinvoices invoice where invoice.project_id=target_project_id and invoice.client_id=target_client_id))
+            or event.entity_id in (select invoice.id::text from public.preinvoices invoice where invoice.project_id=target_project_id and invoice.client_id=target_client_id and not invoice.is_test))
       ) activity
     ),'[]'::jsonb)
   ) into result;

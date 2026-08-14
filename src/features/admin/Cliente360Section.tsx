@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CalendarClock,
-  ChevronDown,
   CircleDollarSign,
   Clock3,
   FileText,
@@ -22,12 +21,6 @@ import { supabaseServices, type Client360Activity, type LicenseStatus } from "@/
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { DetailList } from "@/components/admin/DetailList";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
@@ -148,7 +141,7 @@ export default function Cliente360Section({
         id: `payment:${item.id}`,
         kind: "Pago",
         title: item.receiptNumber ? `Pago · ${item.receiptNumber}` : "Pago registrado",
-        subtitle: item.plan,
+        subtitle: item.planName,
         amount: `${item.amount.toLocaleString("es")} ${item.currency}`,
         status: item.status,
         date: item.chargedAt,
@@ -197,12 +190,6 @@ export default function Cliente360Section({
         }
       />
     );
-
-  const actionSections = [
-    data.permissions.licenses ? { label: "Abrir Licencias", section: "licencias" } : null,
-    data.permissions.payments ? { label: "Abrir Pagos", section: "pagos" } : null,
-    data.permissions.commercial ? { label: "Abrir Comercial", section: "comercial" } : null,
-  ].filter(Boolean) as Array<{ label: string; section: string }>;
 
   return (
     <div className="space-y-4 md:space-y-6" data-admin-module="clientes">
@@ -276,30 +263,6 @@ export default function Cliente360Section({
                   <MessageCircle className="h-4 w-4" /> WhatsApp
                 </a>
               </Button>
-            ) : null}
-            {actionSections.length ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex-1 sm:flex-none">
-                    Más acciones <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {actionSections.map((action) => (
-                    <DropdownMenuItem
-                      key={action.section}
-                      onSelect={() =>
-                        navigate({
-                          to: "/admin/proyectos/$id/$section",
-                          params: { id: projectId, section: action.section },
-                        })
-                      }
-                    >
-                      {action.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
             ) : null}
           </div>
         </div>

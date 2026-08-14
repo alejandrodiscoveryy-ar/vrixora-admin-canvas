@@ -1,5 +1,10 @@
 -- P0-B Client 360 integration verification.
 -- Run in an isolated database after the matching migration and replace placeholders.
+-- :test_preinvoice_id and :test_referral_relationship_id must be test fixtures
+-- related to :client_with_payment_id. :test_reward_relationship_id must identify
+-- a real relationship whose only reward ledger row is a test operation.
+-- :commercial_only_client_id
+-- must belong to project A through an active commercial lead and have no license.
 
 create or replace function pg_temp.assert_raises(statement text, expected_message text)
 returns void language plpgsql as $$
@@ -51,6 +56,59 @@ begin
   end if;
   if jsonb_array_length(result->'billing'->'payments')=0 then
     raise exception 'TEST_FAILED: paid client has no billing history';
+  end if;
+  if not exists (
+    select 1 from jsonb_array_elements(result->'billing'->'payments') item
+    where item->>'id'=':human_plan_payment_id' and item->>'plan_name'=':human_plan_name'
+  ) then
+    raise exception 'TEST_FAILED: payment does not expose the human plan name';
+  end if;
+  if exists (
+    select 1 from jsonb_array_elements(result->'billing'->'preinvoices') item
+    where item->>'id'=':test_preinvoice_id' or (item->>'is_test')::boolean
+  ) then
+    raise exception 'TEST_FAILED: test preinvoice leaked into Client 360';
+  end if;
+  if result->'referrals'->'referred_by'->>'relationship_id'=':test_referral_relationship_id'
+      or exists (
+        select 1 from jsonb_array_elements(result->'referrals'->'referred_clients') item
+        where item->>'relationship_id'=':test_referral_relationship_id'
+          or item->>'is_test'='true'
+          or (item->>'relationship_id'=':test_reward_relationship_id'
+            and item->>'reward_status' is not null)
+      ) then
+    raise exception 'TEST_FAILED: test referral data leaked into Client 360';
+  end if;
+  if exists (
+    select 1 from jsonb_array_elements(result->'activity') item
+    where item->>'id' in (
+      'preinvoice:'||':test_preinvoice_id',
+      'referral:'||':test_referral_relationship_id',
+      'audit:'||':test_preinvoice_audit_id'
+    )
+  ) then
+    raise exception 'TEST_FAILED: test activity leaked into Client 360';
+  end if;
+end;
+$$;
+rollback;
+
+-- A project-scoped commercial client without a license remains license-less.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+do $$
+declare result jsonb; listed record;
+begin
+  result := public.admin_get_client_360(':project_a_id'::uuid,':commercial_only_client_id'::uuid);
+  if result->'license' is not null then
+    raise exception 'TEST_FAILED: Client 360 fabricated a license';
+  end if;
+  select * into listed from public.admin_list_registered_clients(':project_a_id'::uuid)
+    where user_id=':commercial_only_client_id'::uuid;
+  if not found then raise exception 'TEST_FAILED: commercial-only client is missing'; end if;
+  if listed.license_id is not null or listed.license_key is not null or listed.plan is not null
+      or listed.status is not null or listed.activated_at is not null or listed.expires_at is not null then
+    raise exception 'TEST_FAILED: client list fabricated a trial license';
   end if;
 end;
 $$;

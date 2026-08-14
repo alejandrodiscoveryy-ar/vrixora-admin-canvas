@@ -49,6 +49,7 @@ function mapClient360(data: Record<string, unknown>): Client360 {
     id: String(row.id),
     licenseId: row.license_id ? String(row.license_id) : null,
     plan: String(row.plan),
+    planName: String(row.plan_name ?? row.plan),
     amount: Number(row.amount),
     currency: row.currency as Client360Payment["currency"],
     method: row.method as Client360Payment["method"],
@@ -116,6 +117,7 @@ function mapClient360(data: Record<string, unknown>): Client360 {
           status: lastPayment.status as Client360Payment["status"],
           chargedAt: String(lastPayment.charged_at),
           plan: String(lastPayment.plan),
+          planName: String(lastPayment.plan_name ?? lastPayment.plan),
         }
       : null,
     commercial: commercial
@@ -317,11 +319,11 @@ type ClientRow = {
   registered_at: string;
   license_id: string | null;
   license_key: string | null;
-  plan: string;
-  status: string;
-  activated_at: string;
-  expires_at: string;
-  max_devices: number;
+  plan: string | null;
+  status: string | null;
+  activated_at: string | null;
+  expires_at: string | null;
+  max_devices: number | null;
   active_devices: number | string;
   last_payment_at: string | null;
   last_payment_amount: number | string | null;
@@ -590,10 +592,10 @@ export const supabaseServices: AdminServices = {
         licenseId: client.license_id,
         licenseKey: client.license_key,
         plan: client.plan,
-        status: client.status as LicenseStatus,
+        status: client.status as LicenseStatus | null,
         activatedAt: client.activated_at,
         expiresAt: client.expires_at,
-        maxDevices: Number(client.max_devices),
+        maxDevices: Number(client.max_devices ?? 0),
         activeDevices: Number(client.active_devices),
         lastPaymentAt: client.last_payment_at,
         lastPaymentAmount:
