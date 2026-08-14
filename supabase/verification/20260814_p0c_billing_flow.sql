@@ -128,9 +128,20 @@ select public.admin_confirm_preinvoice_payment(
   (select charge_currency from public.preinvoices where id=:'frozen_invoice_id'::uuid),
   'cash','FROZEN-PLAN',now(),null,gen_random_uuid()
 );
-do $$ begin
+do $$
+declare invoice public.preinvoices%rowtype; license public.licenses%rowtype;
+begin
+  select * into invoice from public.preinvoices where id=:'frozen_invoice_id'::uuid;
+  select * into license from public.licenses
+    where project_id=invoice.project_id and user_id=invoice.client_id;
   if (select status from public.preinvoices where id=:'frozen_invoice_id'::uuid)<>'paid' then
     raise exception 'TEST_FAILED: deactivated live plan blocked frozen preinvoice';
+  end if;
+  if license.license_type<>invoice.plan_snapshot->>'license_type'
+     or license.duration_days is distinct from nullif(invoice.plan_snapshot->>'duration_days','')::integer
+     or license.max_devices<>(invoice.plan_snapshot->>'max_devices')::integer
+     or license.features is distinct from invoice.plan_snapshot->'features' then
+    raise exception 'TEST_FAILED: live trigger overwrote frozen plan snapshot';
   end if;
 end $$;
 rollback;
@@ -139,12 +150,25 @@ rollback;
 begin;
 select set_config('request.jwt.claim.sub', ':owner_user_id', true);
 select public.admin_create_preinvoice(':project_id'::uuid,':client_id'::uuid,':deletable_plan_code',null,null,null,false) as blocking_invoice_id \gset
+update public.preinvoices set status='expired' where id=:'blocking_invoice_id'::uuid;
 update public.license_plans set active=false
 where project_id=':project_id'::uuid and code=':deletable_plan_code';
 select pg_temp.assert_raises(
   $$select public.admin_delete_inactive_license_plan(':project_id'::uuid,':deletable_plan_code')$$,
   'PLAN_HAS_ACTIVE_PREINVOICES'
 );
+rollback;
+
+-- Admin licenses remain protected from the transactional confirmation flow.
+begin;
+select set_config('request.jwt.claim.sub', ':owner_user_id', true);
+select public.admin_create_preinvoice(':project_id'::uuid,':admin_license_client_id'::uuid,':active_plan_code',null,null,null,false) as admin_invoice_id \gset
+select pg_temp.assert_raises(format(
+  'select public.admin_confirm_preinvoice_payment(%L,%L,%L,%L,%L,null,now(),null,gen_random_uuid())',
+  ':project_id',:'admin_invoice_id',
+  (select charge_amount from public.preinvoices where id=:'admin_invoice_id'::uuid),
+  (select charge_currency from public.preinvoices where id=:'admin_invoice_id'::uuid),'cash'
+),'SPECIAL_LICENSE_PROTECTED');
 rollback;
 
 -- Trial/admin/free plans cannot enter billing.

@@ -61,6 +61,33 @@ drop trigger if exists p0c_guard_payment_provenance on public.payments;
 create trigger p0c_guard_payment_provenance before update on public.payments
 for each row execute function app_private.p0c_guard_payment_provenance();
 
+create or replace function app_private.apply_license_configuration()
+returns trigger language plpgsql security invoker set search_path='' as $$
+declare type_config public.license_types%rowtype; plan_config public.license_plans%rowtype;
+  effective_days integer;
+begin
+  if current_setting('app.p0c_frozen_plan_snapshot',true)='on' then return new; end if;
+  select * into type_config from public.license_types where code=new.license_type and active;
+  if not found then raise exception 'LICENSE_TYPE_MISSING_OR_INACTIVE'; end if;
+  select * into plan_config from public.license_plans
+    where project_id=new.project_id and code=new.plan and active;
+  if not found then raise exception 'PLAN_NOT_FOUND_OR_INACTIVE'; end if;
+  if plan_config.license_type<>new.license_type then raise exception 'PLAN_LICENSE_TYPE_MISMATCH'; end if;
+  new.max_devices:=coalesce(new.max_devices,plan_config.max_devices,type_config.default_max_devices);
+  new.features:=type_config.default_features||plan_config.features||coalesce(new.features,'{}'::jsonb);
+  if type_config.never_expires then new.duration_days:=null; new.expires_at:=null;
+  elsif tg_op='INSERT' or new.plan is distinct from old.plan or new.license_type is distinct from old.license_type then
+    effective_days:=plan_config.duration_days;
+    if effective_days is null or effective_days<=0 then raise exception 'PLAN_DURATION_REQUIRED'; end if;
+    new.duration_days:=effective_days;
+    new.expires_at:=case when new.activated_at is null then null
+      else new.activated_at+make_interval(days=>effective_days) end;
+  end if;
+  if new.status='revoked' then new.revoked_at:=coalesce(new.revoked_at,now()); else new.revoked_at:=null; end if;
+  return new;
+end;
+$$;
+
 create or replace function public.admin_create_preinvoice(
   target_project_id uuid, target_client_id uuid, target_plan_code text,
   target_charge_currency text default null, target_exchange_rate numeric default null,
@@ -210,6 +237,9 @@ begin
     where project_id=target_project_id and user_id=invoice.client_id for update;
   license_exists:=found;
   previous_license_type:=current_license.license_type;
+  if license_exists and current_license.license_type='admin' then
+    raise exception 'SPECIAL_LICENSE_PROTECTED' using errcode='42501';
+  end if;
   new_start:=case when license_exists and current_license.license_type<>'trial'
     and current_license.status='active' and current_license.expires_at>target_charged_at
     then current_license.expires_at else target_charged_at end;
@@ -224,6 +254,7 @@ begin
     preview:=jsonb_build_object('previous_plan',current_license.plan,'previous_expires_at',current_license.expires_at,
       'new_started_at',new_start,'new_expires_at',new_expiry,'application_rule','after_expiry');
   else
+    perform set_config('app.p0c_frozen_plan_snapshot','on',true);
     insert into public.licenses(project_id,user_id,license_key,license_type,plan,status,activated_at,expires_at,
       duration_days,max_devices,features,created_by,notes)
     values(target_project_id,invoice.client_id,app_private.generate_license_key(),snapshot_license_type,invoice.plan_code,
@@ -248,11 +279,13 @@ begin
       'charge_currency',invoice.charge_currency,'plan_snapshot',invoice.plan_snapshot))
   returning * into payment;
   if not invoice.is_test then
+    perform set_config('app.p0c_frozen_plan_snapshot','on',true);
     update public.licenses set plan=invoice.plan_code,license_type=snapshot_license_type,status='active',
       activated_at=(preview->>'new_started_at')::timestamptz,
       expires_at=nullif(preview->>'new_expires_at','')::timestamptz,duration_days=snapshot_duration,
       max_devices=snapshot_max_devices,features=snapshot_features,revoked_at=null,last_renewed_at=now(),
       last_payment_id=payment.id,updated_at=now() where id=current_license.id returning * into updated_license;
+    perform set_config('app.p0c_frozen_plan_snapshot','off',true);
   else updated_license:=current_license; end if;
   select email into operator_email from public.profiles where id=actor;
   identity:=app_private.p0a_document_identity_snapshot(target_project_id);
@@ -327,7 +360,7 @@ begin
   delete from public.analytics_events
   where project_id=payment_row.project_id and event_name='payment_confirmed'
     and dedupe_key='payment:'||payment_row.id::text;
-  if tg_op<>'DELETE' and not new.is_test and new.status='paid' and new.voided_at is null then
+  if tg_op<>'DELETE' and not new.is_test and new.status='paid' then
     perform app_private.insert_analytics_event(new.project_id,new.user_id,new.license_id,'payment_confirmed',
       coalesce(new.created_at,now()),null,null,null,null,null,null,null,null,new.plan,null,
       'payment:'||new.id::text,jsonb_build_object('amount',new.amount,'currency',new.currency,'payment_id',new.id));
@@ -340,8 +373,7 @@ create or replace function app_private.p0c_guard_plan_with_open_preinvoice()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin
   if exists(select 1 from public.preinvoices invoice where invoice.project_id=old.project_id
-      and invoice.plan_code=old.code and invoice.status in ('prepared','sent','pending')
-      and invoice.expires_at>now()) then
+      and invoice.plan_code=old.code and invoice.status not in ('cancelled','paid')) then
     raise exception 'PLAN_HAS_ACTIVE_PREINVOICES' using errcode='23503';
   end if;
   return old;
@@ -376,7 +408,7 @@ begin
 end;
 $$;
 
-revoke all on function app_private.p0c_guard_payment_provenance(),app_private.p0c_guard_real_referral_reward(),
+revoke all on function app_private.p0c_guard_payment_provenance(),app_private.apply_license_configuration(),app_private.p0c_guard_real_referral_reward(),
   app_private.track_payment_analytics(),app_private.p0c_guard_plan_with_open_preinvoice()
   from public,anon,authenticated;
 revoke all on function public.admin_preview_preinvoice_confirmation(uuid,uuid,timestamptz),
