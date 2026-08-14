@@ -446,4 +446,25 @@ export const demoServices: AdminServices = {
       };
     },
   },
+  referrals: {
+    async clientSummary() {
+      return {
+        code: "DEMO-0000000",
+        link: null,
+        canLinkReferrer: true,
+        referredBy: null,
+        referredCount: 0,
+        earnedRewards: 0,
+        appliedRewards: 0,
+        pendingDays: 0,
+        appliedDays: 0,
+      };
+    },
+    async linkReferrer() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async overview() {
+      return { relationships: 0, converted: 0, appliedRewards: 0, deliveredDays: 0, rows: [] };
+    },
+  },
 };
