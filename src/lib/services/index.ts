@@ -45,6 +45,15 @@ export type {
   CommercialLeadHistoryEntry,
   CommercialMetrics,
   CommercialService,
+  PreinvoiceStatus,
+  ExchangeRateMode,
+  ReferralRewardStatus,
+  P0ASettings,
+  ExchangeRateHistoryEntry,
+  DocumentIdentitySnapshot,
+  Preinvoice,
+  CreatePreinvoiceInput,
+  P0AFoundationService,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {

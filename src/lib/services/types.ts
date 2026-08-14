@@ -529,6 +529,119 @@ export interface CommercialService {
   metrics(projectId: string): Promise<CommercialMetrics>;
 }
 
+export type PreinvoiceStatus = "prepared" | "sent" | "pending" | "paid" | "expired" | "cancelled";
+export type ExchangeRateMode = "manual" | "automatic";
+export type ReferralRewardStatus = "pending" | "earned" | "applied" | "reverted";
+
+export interface P0ASettings {
+  projectId: string;
+  baseCurrency: Currency;
+  chargeCurrency: Currency;
+  rateMode: ExchangeRateMode;
+  currentRate: number;
+  rateSource: string;
+  rateUpdatedAt: string;
+  testModeEnabled: boolean;
+  referralRewardDays: number;
+}
+
+export interface ExchangeRateHistoryEntry {
+  id: string | number;
+  baseCurrency: Currency;
+  chargeCurrency: Currency;
+  rate: number;
+  rateMode: ExchangeRateMode;
+  rateSource: string;
+  changedBy: string | null;
+  createdAt: string;
+}
+
+export interface DocumentIdentitySnapshot {
+  project_id: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  icon_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  whatsapp: string | null;
+  support_email: string | null;
+  website_url: string | null;
+  privacy_url: string | null;
+  terms_url: string | null;
+  captured_at: string;
+}
+
+export interface Preinvoice {
+  id: string;
+  number: number;
+  clientId: string;
+  planCode: string;
+  basePrice: number;
+  baseCurrency: Currency;
+  exchangeRate: number;
+  exchangeRateSource: string;
+  chargeCurrency: Currency;
+  chargeAmount: number;
+  status: PreinvoiceStatus;
+  isTest: boolean;
+  identitySnapshot: DocumentIdentitySnapshot;
+  planSnapshot: Record<string, unknown>;
+  issuedAt: string;
+  expiresAt: string;
+  paidPaymentId: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface CreatePreinvoiceInput {
+  projectId: string;
+  clientId: string;
+  planCode: string;
+  chargeCurrency?: Currency;
+  exchangeRate?: number;
+  rateSource?: string;
+  isTest?: boolean;
+}
+
+export interface P0AFoundationService {
+  settings(projectId: string): Promise<P0ASettings>;
+  updateExchangeSettings(
+    projectId: string,
+    input: Pick<
+      P0ASettings,
+      "baseCurrency" | "chargeCurrency" | "rateMode" | "currentRate" | "rateSource"
+    >,
+  ): Promise<P0ASettings>;
+  setTestMode(projectId: string, enabled: boolean): Promise<boolean>;
+  setReferralRewardDays(projectId: string, rewardDays: number): Promise<number>;
+  exchangeRateHistory(projectId: string, limit?: number): Promise<ExchangeRateHistoryEntry[]>;
+  createPreinvoice(input: CreatePreinvoiceInput): Promise<string>;
+  listPreinvoices(projectId: string, includeTest?: boolean): Promise<Preinvoice[]>;
+  setPreinvoiceStatus(
+    projectId: string,
+    preinvoiceId: string,
+    status: Exclude<PreinvoiceStatus, "prepared" | "expired">,
+    paymentId?: string,
+  ): Promise<void>;
+  registerReferral(
+    projectId: string,
+    referrerUserId: string,
+    referredUserId: string,
+    referralCode?: string,
+    isTest?: boolean,
+  ): Promise<string>;
+  createReferralReward(
+    projectId: string,
+    relationshipId: string,
+    paymentId: string,
+    isTest?: boolean,
+  ): Promise<string>;
+  deleteTestData(
+    projectId: string,
+  ): Promise<{ preinvoices: number; referralRewards: number; referralRelationships: number }>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -539,4 +652,5 @@ export interface AdminServices {
   audit: AuditService;
   usageAnalytics: UsageAnalyticsService;
   commercial: CommercialService;
+  foundations: P0AFoundationService;
 }

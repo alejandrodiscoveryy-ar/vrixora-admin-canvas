@@ -348,4 +348,49 @@ export const demoServices: AdminServices = {
       };
     },
   },
+  foundations: {
+    async settings(projectId) {
+      return {
+        projectId,
+        baseCurrency: "CUP",
+        chargeCurrency: "CUP",
+        rateMode: "manual",
+        currentRate: 1,
+        rateSource: "manual",
+        rateUpdatedAt: new Date(0).toISOString(),
+        testModeEnabled: false,
+        referralRewardDays: 15,
+      };
+    },
+    async exchangeRateHistory() {
+      return [];
+    },
+    async listPreinvoices() {
+      return [];
+    },
+    async updateExchangeSettings() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async setTestMode() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async setReferralRewardDays() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async createPreinvoice() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async setPreinvoiceStatus() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async registerReferral() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async createReferralReward() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+    async deleteTestData() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
+  },
 };
