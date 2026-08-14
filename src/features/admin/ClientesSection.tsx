@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { CreditCard, Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -72,6 +73,7 @@ function formatClientExpiry(value: string | null) {
 }
 
 export default function ClientesSection({ projectId }: { projectId: string }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
@@ -291,6 +293,18 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 />
 
                 <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      void navigate({
+                        to: "/admin/proyectos/$id/clientes/$clientId",
+                        params: { id: projectId, clientId: client.userId },
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4" /> Ver ficha
+                  </Button>
                   {canCharge ? (
                     <Button size="sm" variant="subtle" onClick={() => setChargeClient(client)}>
                       <CreditCard className="h-4 w-4" /> Cobrar
@@ -379,6 +393,20 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() =>
+                            void navigate({
+                              to: "/admin/proyectos/$id/clientes/$clientId",
+                              params: { id: projectId, clientId: client.userId },
+                            })
+                          }
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Ver ficha
+                        </Button>
                         {canCharge && (
                           <Button
                             variant="subtle"

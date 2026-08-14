@@ -393,4 +393,51 @@ export const demoServices: AdminServices = {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },
   },
+  client360: {
+    async get(projectId, clientId) {
+      const client = CLIENTS.find((candidate) => candidate.id === clientId);
+      const license = LICENSES.find(
+        (candidate) => candidate.projectId === projectId && candidate.clientId === clientId,
+      );
+      if (!client || !license) throw new Error("No se encontró el cliente en este proyecto.");
+      return {
+        permissions: { licenses: true, payments: true, commercial: true, audit: true },
+        client: {
+          id: client.id,
+          email: client.email,
+          displayName: client.name,
+          phone: null,
+          avatarUrl: null,
+          registeredAt: license.activatedAt,
+        },
+        license: {
+          id: license.id,
+          licenseKey: license.key,
+          licenseType: "trial",
+          planCode: "trial",
+          planName: "Trial",
+          status: license.status,
+          activatedAt: license.activatedAt,
+          expiresAt: license.expiresAt,
+          lastRenewedAt: null,
+          maxDevices: 1,
+          activeDevices: 0,
+          devices: [],
+        },
+        lastPayment: null,
+        commercial: null,
+        billing: { preinvoices: [], payments: [], receipts: [] },
+        referrals: { rewardDays: 15, referredBy: null, referredClients: [] },
+        activity: [
+          {
+            id: `registration:${client.id}`,
+            type: "registration" as const,
+            title: "Cliente registrado",
+            description: "Se creó la cuenta del cliente",
+            occurredAt: license.activatedAt,
+          },
+        ],
+      };
+    },
+  },
 };

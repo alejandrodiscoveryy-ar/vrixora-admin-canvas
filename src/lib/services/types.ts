@@ -642,6 +642,132 @@ export interface P0AFoundationService {
   ): Promise<{ preinvoices: number; referralRewards: number; referralRelationships: number }>;
 }
 
+export interface Client360Device {
+  id: string;
+  label: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  revokedAt: string | null;
+}
+
+export interface Client360Payment {
+  id: string;
+  licenseId: string | null;
+  plan: string;
+  amount: number;
+  currency: Currency;
+  method: ServicePayment["method"];
+  reference: string;
+  status: ServicePayment["status"];
+  notes: string | null;
+  chargedAt: string;
+  createdAt: string;
+  receiptId: string | null;
+  receiptNumber: string | null;
+}
+
+export interface Client360Preinvoice {
+  id: string;
+  number: number;
+  planCode: string;
+  planName: string;
+  chargeAmount: number;
+  chargeCurrency: Currency;
+  status: PreinvoiceStatus;
+  isTest: boolean;
+  issuedAt: string;
+  expiresAt: string;
+  paidPaymentId: string | null;
+}
+
+export interface Client360ReferralPerson {
+  relationshipId: string;
+  userId: string;
+  name: string;
+  email?: string;
+  referralCode: string | null;
+  createdAt: string;
+  isTest: boolean;
+  rewardStatus: ReferralRewardStatus | null;
+  rewardDays: number | null;
+}
+
+export interface Client360Activity {
+  id: string;
+  type:
+    | "registration"
+    | "license"
+    | "preinvoice"
+    | "payment"
+    | "document"
+    | "commercial"
+    | "referral"
+    | "audit";
+  title: string;
+  description: string | null;
+  occurredAt: string;
+}
+
+export interface Client360 {
+  permissions: { licenses: boolean; payments: boolean; commercial: boolean; audit: boolean };
+  client: {
+    id: string;
+    email: string;
+    displayName: string;
+    phone: string | null;
+    avatarUrl: string | null;
+    registeredAt: string;
+  };
+  license: null | {
+    id: string;
+    licenseKey: string;
+    licenseType: string;
+    planCode: string;
+    planName: string;
+    status: LicenseStatus;
+    activatedAt: string | null;
+    expiresAt: string | null;
+    lastRenewedAt: string | null;
+    maxDevices: number;
+    activeDevices: number;
+    devices: Client360Device[];
+  };
+  lastPayment: null | Pick<
+    Client360Payment,
+    "id" | "amount" | "currency" | "status" | "chargedAt" | "plan"
+  >;
+  commercial: null | {
+    id: string;
+    source: CommercialSource;
+    medium: string | null;
+    campaign: string | null;
+    referralCode: string | null;
+    referredById: string | null;
+    referredByName: string | null;
+    status: CommercialLeadStatus;
+    responsibleId: string | null;
+    responsibleName: string | null;
+    notes: string | null;
+    lastInteractionAt: string | null;
+    nextActionAt: string | null;
+  };
+  billing: null | {
+    preinvoices: Client360Preinvoice[];
+    payments: Client360Payment[];
+    receipts: Array<{ id: string; paymentId: string; receiptNumber: string; createdAt: string }>;
+  };
+  referrals: null | {
+    rewardDays: number;
+    referredBy: Client360ReferralPerson | null;
+    referredClients: Client360ReferralPerson[];
+  };
+  activity: Client360Activity[];
+}
+
+export interface Client360Service {
+  get(projectId: string, clientId: string): Promise<Client360>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -653,4 +779,5 @@ export interface AdminServices {
   usageAnalytics: UsageAnalyticsService;
   commercial: CommercialService;
   foundations: P0AFoundationService;
+  client360: Client360Service;
 }

@@ -54,6 +54,13 @@ export type {
   Preinvoice,
   CreatePreinvoiceInput,
   P0AFoundationService,
+  Client360,
+  Client360Activity,
+  Client360Device,
+  Client360Payment,
+  Client360Preinvoice,
+  Client360ReferralPerson,
+  Client360Service,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {
