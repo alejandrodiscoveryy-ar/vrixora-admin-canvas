@@ -23,6 +23,9 @@ import type {
   CommercialLead,
   CommercialCampaign,
   CommercialLeadHistoryEntry,
+  P0ASettings,
+  ExchangeRateHistoryEntry,
+  Preinvoice,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
@@ -1156,6 +1159,184 @@ export const supabaseServices: AdminServices = {
         conversionRate: Number(row.conversion_rate),
         topSource: String(row.top_source ?? ""),
         topCampaign: String(row.top_campaign ?? ""),
+      };
+    },
+  },
+  foundations: {
+    async settings(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_p0a_settings", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        projectId: String(row.project_id),
+        baseCurrency: row.base_currency as P0ASettings["baseCurrency"],
+        chargeCurrency: row.charge_currency as P0ASettings["chargeCurrency"],
+        rateMode: row.rate_mode as P0ASettings["rateMode"],
+        currentRate: Number(row.current_rate),
+        rateSource: String(row.rate_source),
+        rateUpdatedAt: String(row.rate_updated_at),
+        testModeEnabled: Boolean(row.test_mode_enabled),
+        referralRewardDays: Number(row.referral_reward_days),
+      };
+    },
+    async updateExchangeSettings(projectId, input) {
+      await requireOnline("Actualizar el tipo de cambio");
+      const { data, error } = await getSupabaseClient().rpc("admin_set_exchange_settings", {
+        target_project_id: projectId,
+        target_base_currency: input.baseCurrency,
+        target_charge_currency: input.chargeCurrency,
+        target_rate_mode: input.rateMode,
+        target_rate: input.currentRate,
+        target_rate_source: input.rateSource,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        projectId: String(row.project_id),
+        baseCurrency: row.base_currency as P0ASettings["baseCurrency"],
+        chargeCurrency: row.charge_currency as P0ASettings["chargeCurrency"],
+        rateMode: row.rate_mode as P0ASettings["rateMode"],
+        currentRate: Number(row.current_rate),
+        rateSource: String(row.rate_source),
+        rateUpdatedAt: String(row.rate_updated_at),
+        testModeEnabled: Boolean(row.test_mode_enabled),
+        referralRewardDays: Number(row.referral_reward_days),
+      };
+    },
+    async setTestMode(projectId, enabled) {
+      await requireOnline("Actualizar el modo de pruebas");
+      const { data, error } = await getSupabaseClient().rpc("admin_set_test_mode", {
+        target_project_id: projectId,
+        target_enabled: enabled,
+      });
+      throwIfError(error);
+      return Boolean(data);
+    },
+    async setReferralRewardDays(projectId, rewardDays) {
+      await requireOnline("Actualizar la recompensa por referidos");
+      const { data, error } = await getSupabaseClient().rpc("admin_set_referral_reward_days", {
+        target_project_id: projectId,
+        target_reward_days: rewardDays,
+      });
+      throwIfError(error);
+      return Number(data);
+    },
+    async exchangeRateHistory(projectId, limit = 100) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_exchange_rate_history", {
+        target_project_id: projectId,
+        target_limit: limit,
+      });
+      throwIfError(error);
+      return ((data ?? []) as Array<Record<string, unknown>>).map(
+        (row): ExchangeRateHistoryEntry => ({
+          id: row.id as string | number,
+          baseCurrency: row.base_currency as ExchangeRateHistoryEntry["baseCurrency"],
+          chargeCurrency: row.charge_currency as ExchangeRateHistoryEntry["chargeCurrency"],
+          rate: Number(row.rate),
+          rateMode: row.rate_mode as ExchangeRateHistoryEntry["rateMode"],
+          rateSource: String(row.rate_source),
+          changedBy: row.changed_by ? String(row.changed_by) : null,
+          createdAt: String(row.created_at),
+        }),
+      );
+    },
+    async createPreinvoice(input) {
+      await requireOnline("Crear prefactura");
+      const { data, error } = await getSupabaseClient().rpc("admin_create_preinvoice", {
+        target_project_id: input.projectId,
+        target_client_id: input.clientId,
+        target_plan_code: input.planCode,
+        target_charge_currency: input.chargeCurrency ?? null,
+        target_exchange_rate: input.exchangeRate ?? null,
+        target_rate_source: input.rateSource ?? null,
+        target_is_test: input.isTest ?? false,
+      });
+      throwIfError(error);
+      return String(data);
+    },
+    async listPreinvoices(projectId, includeTest = false) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_preinvoices", {
+        target_project_id: projectId,
+        target_include_test: includeTest,
+      });
+      throwIfError(error);
+      return ((data ?? []) as Array<Record<string, unknown>>).map((row): Preinvoice => ({
+        id: String(row.id),
+        number: Number(row.number),
+        clientId: String(row.client_id),
+        planCode: String(row.plan_code),
+        basePrice: Number(row.base_price),
+        baseCurrency: row.base_currency as Preinvoice["baseCurrency"],
+        exchangeRate: Number(row.exchange_rate),
+        exchangeRateSource: String(row.exchange_rate_source),
+        chargeCurrency: row.charge_currency as Preinvoice["chargeCurrency"],
+        chargeAmount: Number(row.charge_amount),
+        status: row.status as Preinvoice["status"],
+        isTest: Boolean(row.is_test),
+        identitySnapshot: row.identity_snapshot as Preinvoice["identitySnapshot"],
+        planSnapshot: row.plan_snapshot as Record<string, unknown>,
+        issuedAt: String(row.issued_at),
+        expiresAt: String(row.expires_at),
+        paidPaymentId: row.paid_payment_id ? String(row.paid_payment_id) : null,
+        createdBy: String(row.created_by),
+        createdAt: String(row.created_at),
+      }));
+    },
+    async setPreinvoiceStatus(projectId, preinvoiceId, status, paymentId) {
+      await requireOnline("Actualizar prefactura");
+      const { error } = await getSupabaseClient().rpc("admin_set_preinvoice_status", {
+        target_project_id: projectId,
+        target_preinvoice_id: preinvoiceId,
+        target_status: status,
+        target_payment_id: paymentId ?? null,
+      });
+      throwIfError(error);
+    },
+    async registerReferral(
+      projectId,
+      referrerUserId,
+      referredUserId,
+      referralCode,
+      isTest = false,
+    ) {
+      await requireOnline("Registrar referido");
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_register_referral_relationship",
+        {
+          target_project_id: projectId,
+          target_referrer_user_id: referrerUserId,
+          target_referred_user_id: referredUserId,
+          target_referral_code: referralCode ?? null,
+          target_is_test: isTest,
+        },
+      );
+      throwIfError(error);
+      return String(data);
+    },
+    async createReferralReward(projectId, relationshipId, paymentId, isTest = false) {
+      await requireOnline("Registrar recompensa por referido");
+      const { data, error } = await getSupabaseClient().rpc("admin_create_referral_reward", {
+        target_project_id: projectId,
+        target_relationship_id: relationshipId,
+        target_payment_id: paymentId,
+        target_is_test: isTest,
+      });
+      throwIfError(error);
+      return String(data);
+    },
+    async deleteTestData(projectId) {
+      await requireOnline("Eliminar datos de prueba");
+      const { data, error } = await getSupabaseClient().rpc("admin_delete_p0a_test_data", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        preinvoices: Number(row.preinvoices),
+        referralRewards: Number(row.referral_rewards),
+        referralRelationships: Number(row.referral_relationships),
       };
     },
   },
