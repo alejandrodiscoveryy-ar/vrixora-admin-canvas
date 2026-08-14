@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { CreditCard, Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -55,14 +56,16 @@ const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "revoked", label: "Revocada" },
 ];
 
-function statusVisual(status: LicenseStatus): AdminStatus {
+function statusVisual(status: LicenseStatus | null): AdminStatus {
+  if (!status) return "inactive";
   if (status === "active") return "active";
   if (status === "pending" || status === "suspended") return "pending";
   if (status === "expired" || status === "revoked") return "expired";
   return "inactive";
 }
 
-function statusLabel(status: LicenseStatus) {
+function statusLabel(status: LicenseStatus | null) {
+  if (!status) return "Sin licencia";
   return statuses.find((item) => item.value === status)?.label ?? status;
 }
 
@@ -72,6 +75,7 @@ function formatClientExpiry(value: string | null) {
 }
 
 export default function ClientesSection({ projectId }: { projectId: string }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
@@ -129,7 +133,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     const isTrialLicense = (client: ServiceClient) => {
       if (!hasActiveLicense(client)) return false;
       const license = client.licenseId ? licenseById.get(client.licenseId) : undefined;
-      const planCode = (license?.plan ?? client.plan).toLowerCase();
+      const planCode = (license?.plan ?? client.plan ?? "").toLowerCase();
       const plan = planByCode.get(planCode);
       return (
         planCode === "trial" ||
@@ -268,7 +272,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="info" className="rounded-full capitalize">
-                    {client.plan}
+                    {client.plan ?? "Sin licencia"}
                   </Badge>
                   <StatusBadge
                     status={statusVisual(client.status)}
@@ -291,12 +295,24 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 />
 
                 <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      void navigate({
+                        to: "/admin/proyectos/$id/clientes/$clientId",
+                        params: { id: projectId, clientId: client.userId },
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4" /> Ver ficha
+                  </Button>
                   {canCharge ? (
                     <Button size="sm" variant="subtle" onClick={() => setChargeClient(client)}>
                       <CreditCard className="h-4 w-4" /> Cobrar
                     </Button>
                   ) : null}
-                  {canManage ? (
+                  {canManage && client.licenseId ? (
                     <MobileActionsMenu
                       items={[{ label: "Gestionar", onSelect: () => setSelected(client) }]}
                     />
@@ -321,7 +337,9 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             </TableHeader>
             <TableBody>
               {clients.map((client) => {
-                const expiresAt = new Date(client.expiresAt).getTime();
+                const expiresAt = client.expiresAt
+                  ? new Date(client.expiresAt).getTime()
+                  : Number.NaN;
                 const diffDays = Math.ceil((expiresAt - Date.now()) / 86_400_000);
                 const isExpiring = diffDays >= 0 && diffDays <= 7;
 
@@ -355,7 +373,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                           variant="info"
                           className="rounded-full text-xs capitalize font-medium"
                         >
-                          {client.plan}
+                          {client.plan ?? "Sin licencia"}
                         </Badge>
                         <LicenseKeyDisplay value={client.licenseKey} />
                       </div>
@@ -372,13 +390,25 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                           isExpiring ? "text-amber-400 font-semibold" : "text-muted-foreground"
                         }
                       >
-                        {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
-                          new Date(client.expiresAt),
-                        )}
+                        {formatClientExpiry(client.expiresAt)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() =>
+                            void navigate({
+                              to: "/admin/proyectos/$id/clientes/$clientId",
+                              params: { id: projectId, clientId: client.userId },
+                            })
+                          }
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Ver ficha
+                        </Button>
                         {canCharge && (
                           <Button
                             variant="subtle"
@@ -390,7 +420,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                             Cobrar
                           </Button>
                         )}
-                        {canManage && (
+                        {canManage && client.licenseId && (
                           <MobileActionsMenu
                             items={[{ label: "Gestionar", onSelect: () => setSelected(client) }]}
                           />
@@ -451,7 +481,7 @@ function ClientManageDialog({
 
   useEffect(() => {
     if (client) {
-      setStatus(client.status);
+      if (client.status) setStatus(client.status);
       setReason("");
     }
   }, [client]);

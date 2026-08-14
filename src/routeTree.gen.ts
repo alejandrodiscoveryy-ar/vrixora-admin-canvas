@@ -9,23 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminProyectosIndexRouteImport } from './routes/admin.proyectos.index'
 import { Route as AdminProyectosIdRouteImport } from './routes/admin.proyectos.$id'
 import { Route as AdminProyectosIdIndexRouteImport } from './routes/admin.proyectos.$id.index'
 import { Route as AdminProyectosIdSectionRouteImport } from './routes/admin.proyectos.$id.$section'
+import { Route as AdminProyectosIdClientesClientIdRouteImport } from './routes/admin.proyectos.$id.clientes.$clientId'
 
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -58,6 +59,12 @@ const AdminProyectosIdSectionRoute = AdminProyectosIdSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => AdminProyectosIdRoute,
 } as any)
+const AdminProyectosIdClientesClientIdRoute =
+  AdminProyectosIdClientesClientIdRouteImport.update({
+    id: '/clientes/$clientId',
+    path: '/clientes/$clientId',
+    getParentRoute: () => AdminProyectosIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/admin/proyectos/': typeof AdminProyectosIndexRoute
   '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
   '/admin/proyectos/$id/': typeof AdminProyectosIdIndexRoute
+  '/admin/proyectos/$id/clientes/$clientId': typeof AdminProyectosIdClientesClientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesByTo {
   '/admin/proyectos': typeof AdminProyectosIndexRoute
   '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
   '/admin/proyectos/$id': typeof AdminProyectosIdIndexRoute
+  '/admin/proyectos/$id/clientes/$clientId': typeof AdminProyectosIdClientesClientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +96,7 @@ export interface FileRoutesById {
   '/admin/proyectos/': typeof AdminProyectosIndexRoute
   '/admin/proyectos/$id/$section': typeof AdminProyectosIdSectionRoute
   '/admin/proyectos/$id/': typeof AdminProyectosIdIndexRoute
+  '/admin/proyectos/$id/clientes/$clientId': typeof AdminProyectosIdClientesClientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/admin/proyectos/'
     | '/admin/proyectos/$id/$section'
     | '/admin/proyectos/$id/'
+    | '/admin/proyectos/$id/clientes/$clientId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/admin/proyectos'
     | '/admin/proyectos/$id/$section'
     | '/admin/proyectos/$id'
+    | '/admin/proyectos/$id/clientes/$clientId'
   id:
     | '__root__'
     | '/'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/admin/proyectos/'
     | '/admin/proyectos/$id/$section'
     | '/admin/proyectos/$id/'
+    | '/admin/proyectos/$id/clientes/$clientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -126,18 +139,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -182,17 +195,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProyectosIdSectionRouteImport
       parentRoute: typeof AdminProyectosIdRoute
     }
+    '/admin/proyectos/$id/clientes/$clientId': {
+      id: '/admin/proyectos/$id/clientes/$clientId'
+      path: '/clientes/$clientId'
+      fullPath: '/admin/proyectos/$id/clientes/$clientId'
+      preLoaderRoute: typeof AdminProyectosIdClientesClientIdRouteImport
+      parentRoute: typeof AdminProyectosIdRoute
+    }
   }
 }
 
 interface AdminProyectosIdRouteChildren {
   AdminProyectosIdSectionRoute: typeof AdminProyectosIdSectionRoute
   AdminProyectosIdIndexRoute: typeof AdminProyectosIdIndexRoute
+  AdminProyectosIdClientesClientIdRoute: typeof AdminProyectosIdClientesClientIdRoute
 }
 
 const AdminProyectosIdRouteChildren: AdminProyectosIdRouteChildren = {
   AdminProyectosIdSectionRoute: AdminProyectosIdSectionRoute,
   AdminProyectosIdIndexRoute: AdminProyectosIdIndexRoute,
+  AdminProyectosIdClientesClientIdRoute: AdminProyectosIdClientesClientIdRoute,
 }
 
 const AdminProyectosIdRouteWithChildren =

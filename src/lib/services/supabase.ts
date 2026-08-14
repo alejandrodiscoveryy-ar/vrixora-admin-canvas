@@ -26,11 +26,164 @@ import type {
   P0ASettings,
   ExchangeRateHistoryEntry,
   Preinvoice,
+  Client360,
+  Client360Payment,
+  Client360Preinvoice,
+  Client360ReferralPerson,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
+}
+
+function mapClient360(data: Record<string, unknown>): Client360 {
+  const client = data.client as Record<string, unknown>;
+  const permissions = data.permissions as Record<string, unknown>;
+  const license = data.license as Record<string, unknown> | null;
+  const lastPayment = data.last_payment as Record<string, unknown> | null;
+  const commercial = data.commercial as Record<string, unknown> | null;
+  const billing = data.billing as Record<string, unknown> | null;
+  const referrals = data.referrals as Record<string, unknown> | null;
+  const mapPayment = (row: Record<string, unknown>): Client360Payment => ({
+    id: String(row.id),
+    licenseId: row.license_id ? String(row.license_id) : null,
+    plan: String(row.plan),
+    planName: String(row.plan_name ?? row.plan),
+    amount: Number(row.amount),
+    currency: row.currency as Client360Payment["currency"],
+    method: row.method as Client360Payment["method"],
+    reference: String(row.reference),
+    status: row.status as Client360Payment["status"],
+    notes: row.notes ? String(row.notes) : null,
+    chargedAt: String(row.charged_at),
+    createdAt: String(row.created_at),
+    receiptId: row.receipt_id ? String(row.receipt_id) : null,
+    receiptNumber: row.receipt_number ? String(row.receipt_number) : null,
+  });
+  const mapReferral = (row: Record<string, unknown>): Client360ReferralPerson => ({
+    relationshipId: String(row.relationship_id),
+    userId: String(row.user_id),
+    name: String(row.name),
+    email: row.email ? String(row.email) : undefined,
+    referralCode: row.referral_code ? String(row.referral_code) : null,
+    createdAt: String(row.created_at),
+    isTest: Boolean(row.is_test),
+    rewardStatus: row.reward_status as Client360ReferralPerson["rewardStatus"],
+    rewardDays: row.reward_days == null ? null : Number(row.reward_days),
+  });
+  return {
+    permissions: {
+      licenses: Boolean(permissions.licenses),
+      payments: Boolean(permissions.payments),
+      commercial: Boolean(permissions.commercial),
+      audit: Boolean(permissions.audit),
+    },
+    client: {
+      id: String(client.id),
+      email: String(client.email),
+      displayName: String(client.display_name ?? client.email),
+      phone: client.phone ? String(client.phone) : null,
+      avatarUrl: client.avatar_url ? String(client.avatar_url) : null,
+      registeredAt: String(client.registered_at),
+    },
+    license: license
+      ? {
+          id: String(license.id),
+          licenseKey: String(license.license_key),
+          licenseType: String(license.license_type),
+          planCode: String(license.plan_code),
+          planName: String(license.plan_name),
+          status: license.status as LicenseStatus,
+          activatedAt: license.activated_at ? String(license.activated_at) : null,
+          expiresAt: license.expires_at ? String(license.expires_at) : null,
+          lastRenewedAt: license.last_renewed_at ? String(license.last_renewed_at) : null,
+          maxDevices: Number(license.max_devices),
+          activeDevices: Number(license.active_devices),
+          devices: ((license.devices ?? []) as Array<Record<string, unknown>>).map((device) => ({
+            id: String(device.id),
+            label: device.label ? String(device.label) : null,
+            firstSeenAt: String(device.first_seen_at),
+            lastSeenAt: String(device.last_seen_at),
+            revokedAt: device.revoked_at ? String(device.revoked_at) : null,
+          })),
+        }
+      : null,
+    lastPayment: lastPayment
+      ? {
+          id: String(lastPayment.id),
+          amount: Number(lastPayment.amount),
+          currency: lastPayment.currency as Client360Payment["currency"],
+          status: lastPayment.status as Client360Payment["status"],
+          chargedAt: String(lastPayment.charged_at),
+          plan: String(lastPayment.plan),
+          planName: String(lastPayment.plan_name ?? lastPayment.plan),
+        }
+      : null,
+    commercial: commercial
+      ? {
+          id: String(commercial.id),
+          source: commercial.source as NonNullable<Client360["commercial"]>["source"],
+          medium: commercial.medium ? String(commercial.medium) : null,
+          campaign: commercial.campaign ? String(commercial.campaign) : null,
+          referralCode: commercial.referral_code ? String(commercial.referral_code) : null,
+          referredById: commercial.referred_by_id ? String(commercial.referred_by_id) : null,
+          referredByName: commercial.referred_by_name ? String(commercial.referred_by_name) : null,
+          status: commercial.status as NonNullable<Client360["commercial"]>["status"],
+          responsibleId: commercial.responsible_id ? String(commercial.responsible_id) : null,
+          responsibleName: commercial.responsible_name ? String(commercial.responsible_name) : null,
+          notes: commercial.notes ? String(commercial.notes) : null,
+          lastInteractionAt: commercial.last_interaction_at
+            ? String(commercial.last_interaction_at)
+            : null,
+          nextActionAt: commercial.next_action_at ? String(commercial.next_action_at) : null,
+        }
+      : null,
+    billing: billing
+      ? {
+          preinvoices: ((billing.preinvoices ?? []) as Array<Record<string, unknown>>).map(
+            (row): Client360Preinvoice => ({
+              id: String(row.id),
+              number: Number(row.number),
+              planCode: String(row.plan_code),
+              planName: String(row.plan_name),
+              chargeAmount: Number(row.charge_amount),
+              chargeCurrency: row.charge_currency as Client360Preinvoice["chargeCurrency"],
+              status: row.status as Client360Preinvoice["status"],
+              isTest: Boolean(row.is_test),
+              issuedAt: String(row.issued_at),
+              expiresAt: String(row.expires_at),
+              paidPaymentId: row.paid_payment_id ? String(row.paid_payment_id) : null,
+            }),
+          ),
+          payments: ((billing.payments ?? []) as Array<Record<string, unknown>>).map(mapPayment),
+          receipts: ((billing.receipts ?? []) as Array<Record<string, unknown>>).map((row) => ({
+            id: String(row.id),
+            paymentId: String(row.payment_id),
+            receiptNumber: String(row.receipt_number),
+            createdAt: String(row.created_at),
+          })),
+        }
+      : null,
+    referrals: referrals
+      ? {
+          rewardDays: Number(referrals.reward_days ?? 15),
+          referredBy: referrals.referred_by
+            ? mapReferral(referrals.referred_by as Record<string, unknown>)
+            : null,
+          referredClients: (
+            (referrals.referred_clients ?? []) as Array<Record<string, unknown>>
+          ).map(mapReferral),
+        }
+      : null,
+    activity: ((data.activity ?? []) as Array<Record<string, unknown>>).map((row) => ({
+      id: String(row.id),
+      type: row.type as Client360["activity"][number]["type"],
+      title: String(row.title),
+      description: row.description ? String(row.description) : null,
+      occurredAt: String(row.occurred_at),
+    })),
+  };
 }
 
 function mapBillingPreview(data: Record<string, unknown>): BillingPreview {
@@ -166,11 +319,11 @@ type ClientRow = {
   registered_at: string;
   license_id: string | null;
   license_key: string | null;
-  plan: string;
-  status: string;
-  activated_at: string;
-  expires_at: string;
-  max_devices: number;
+  plan: string | null;
+  status: string | null;
+  activated_at: string | null;
+  expires_at: string | null;
+  max_devices: number | null;
   active_devices: number | string;
   last_payment_at: string | null;
   last_payment_amount: number | string | null;
@@ -439,10 +592,10 @@ export const supabaseServices: AdminServices = {
         licenseId: client.license_id,
         licenseKey: client.license_key,
         plan: client.plan,
-        status: client.status as LicenseStatus,
+        status: client.status as LicenseStatus | null,
         activatedAt: client.activated_at,
         expiresAt: client.expires_at,
-        maxDevices: Number(client.max_devices),
+        maxDevices: Number(client.max_devices ?? 0),
         activeDevices: Number(client.active_devices),
         lastPaymentAt: client.last_payment_at,
         lastPaymentAmount:
@@ -1338,6 +1491,17 @@ export const supabaseServices: AdminServices = {
         referralRewards: Number(row.referral_rewards),
         referralRelationships: Number(row.referral_relationships),
       };
+    },
+  },
+  client360: {
+    async get(projectId, clientId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_client_360", {
+        target_project_id: projectId,
+        target_client_id: clientId,
+      });
+      throwIfError(error);
+      if (!data) throw new Error("No se encontró el cliente en este proyecto.");
+      return mapClient360(data as Record<string, unknown>);
     },
   },
 };
