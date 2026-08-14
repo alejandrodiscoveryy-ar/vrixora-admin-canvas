@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -27,6 +27,8 @@ import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminStatus } from "@/components/admin/types";
+import { useProjectPermissions } from "@/hooks/useProjects";
+import { PreparePreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
 
 const dateFormatter = new Intl.DateTimeFormat("es", { dateStyle: "medium" });
 const dateTimeFormatter = new Intl.DateTimeFormat("es", {
@@ -115,6 +117,15 @@ export default function Cliente360Section({
   clientId: string;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [prepareOpen, setPrepareOpen] = useState(false);
+  const { data: permissions = [] } = useProjectPermissions(projectId);
+  const canPrepareCharge = permissions.includes("payments.manage");
+  const plans = useQuery({
+    queryKey: ["admin-license-plans", projectId],
+    queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
+    enabled: canPrepareCharge,
+  });
   const query = useQuery({
     queryKey: ["admin-client-360", projectId, clientId],
     queryFn: () => supabaseServices.client360.get(projectId, clientId),
@@ -253,6 +264,11 @@ export default function Cliente360Section({
             </div>
           </div>
           <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
+            {canPrepareCharge ? (
+              <Button className="flex-1 sm:flex-none" onClick={() => setPrepareOpen(true)}>
+                <CircleDollarSign className="h-4 w-4" /> Preparar cobro
+              </Button>
+            ) : null}
             {validWhatsapp ? (
               <Button asChild className="flex-1 sm:flex-none">
                 <a
@@ -527,6 +543,20 @@ export default function Cliente360Section({
           />
         )}
       </SectionCard>
+      <PreparePreinvoiceDialog
+        open={prepareOpen}
+        projectId={projectId}
+        clientId={clientId}
+        clientName={data.client.displayName}
+        plans={plans.data ?? []}
+        onClose={() => setPrepareOpen(false)}
+        onCreated={() => {
+          void queryClient.invalidateQueries({
+            queryKey: ["admin-client-360", projectId, clientId],
+          });
+          void queryClient.invalidateQueries({ queryKey: ["admin-preinvoices", projectId] });
+        }}
+      />
     </div>
   );
 }

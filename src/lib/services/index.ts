@@ -53,6 +53,8 @@ export type {
   DocumentIdentitySnapshot,
   Preinvoice,
   CreatePreinvoiceInput,
+  PreinvoiceConfirmationPreview,
+  ConfirmPreinvoicePaymentInput,
   P0AFoundationService,
   Client360,
   Client360Activity,
