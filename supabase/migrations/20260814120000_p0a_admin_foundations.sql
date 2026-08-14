@@ -132,8 +132,6 @@ create table public.preinvoices (
   created_by uuid not null references auth.users(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  foreign key(project_id, plan_code) references public.license_plans(project_id, code)
-    on update cascade on delete restrict,
   check (expires_at = issued_at + interval '48 hours'),
   check ((status = 'paid') = (paid_payment_id is not null))
 );
@@ -165,6 +163,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     'icon_url', project.icon_url,
     'primary_color', project.primary_color,
     'secondary_color', project.secondary_color,
+    'whatsapp', project.whatsapp,
     'support_email', project.support_email,
     'website_url', project.website_url,
     'privacy_url', project.privacy_url,
@@ -384,25 +383,45 @@ $$;
 create or replace function public.admin_set_preinvoice_status(
   target_project_id uuid, target_preinvoice_id uuid, target_status text, target_payment_id uuid default null
 ) returns void language plpgsql security definer set search_path = '' as $$
-declare current_invoice public.preinvoices%rowtype;
+declare current_invoice public.preinvoices%rowtype; matched_payment public.payments%rowtype;
 begin
   perform app_private.require_project_permission(target_project_id, 'payments.manage');
   select * into current_invoice from public.preinvoices invoice
   where invoice.id=target_preinvoice_id and invoice.project_id=target_project_id for update;
   if not found then raise exception 'PREINVOICE_NOT_FOUND' using errcode='P0002'; end if;
+  if target_status not in ('sent','pending','paid','cancelled') then raise exception 'INVALID_PREINVOICE_STATUS' using errcode='22023'; end if;
+  if target_status='paid' then
+    if current_invoice.status in ('paid','cancelled') then raise exception 'PREINVOICE_FINAL' using errcode='22023'; end if;
+    select * into matched_payment from public.payments payment where payment.id=target_payment_id
+      and payment.project_id=target_project_id and payment.user_id=current_invoice.client_id
+      and payment.plan=current_invoice.plan_code and payment.status='paid';
+    if not found then
+      if current_invoice.expires_at<=now() then
+        update public.preinvoices set status='expired',paid_payment_id=null,updated_at=now() where id=target_preinvoice_id;
+        return;
+      end if;
+      raise exception 'CONFIRMED_PAYMENT_REQUIRED' using errcode='22023';
+    end if;
+    if matched_payment.currency<>current_invoice.charge_currency
+       or matched_payment.amount<>current_invoice.charge_amount then
+      raise exception 'PREINVOICE_PAYMENT_MISMATCH' using errcode='22023';
+    end if;
+    if matched_payment.charged_at<current_invoice.issued_at
+       or matched_payment.charged_at>current_invoice.expires_at then
+      update public.preinvoices set status='expired',paid_payment_id=null,updated_at=now() where id=target_preinvoice_id;
+      return;
+    end if;
+    update public.preinvoices set status='paid',paid_payment_id=target_payment_id,updated_at=now()
+    where id=target_preinvoice_id;
+    return;
+  end if;
   if current_invoice.status in ('paid','expired','cancelled') then raise exception 'PREINVOICE_FINAL' using errcode='22023'; end if;
   if current_invoice.expires_at<=now() then
     update public.preinvoices set status='expired',updated_at=now() where id=target_preinvoice_id;
     return;
   end if;
-  if target_status not in ('sent','pending','paid','cancelled') then raise exception 'INVALID_PREINVOICE_STATUS' using errcode='22023'; end if;
-  if target_status='paid' and not exists(select 1 from public.payments payment where payment.id=target_payment_id
-      and payment.project_id=target_project_id and payment.user_id=current_invoice.client_id
-      and payment.plan=current_invoice.plan_code and payment.status='paid') then
-    raise exception 'CONFIRMED_PAYMENT_REQUIRED' using errcode='22023';
-  end if;
   update public.preinvoices set status=target_status,
-    paid_payment_id=case when target_status='paid' then target_payment_id else null end,updated_at=now()
+    paid_payment_id=null,updated_at=now()
   where id=target_preinvoice_id;
 end;
 $$;
@@ -441,6 +460,12 @@ begin
   if not exists(select 1 from public.payments payment where payment.id=target_payment_id
       and payment.project_id=target_project_id and payment.user_id=relation.referred_user_id and payment.status='paid') then
     raise exception 'QUALIFYING_PAYMENT_REQUIRED' using errcode='22023';
+  end if;
+  if target_payment_id<>(select payment.id from public.payments payment
+      where payment.project_id=target_project_id and payment.user_id=relation.referred_user_id
+        and payment.status='paid'
+      order by payment.charged_at,payment.created_at,payment.id limit 1) then
+    raise exception 'FIRST_CONFIRMED_PAYMENT_REQUIRED' using errcode='22023';
   end if;
   select enabled into test_mode from public.project_test_settings where project_id=target_project_id;
   if coalesce(target_is_test,false) and not coalesce(test_mode,false) then raise exception 'TEST_MODE_DISABLED' using errcode='42501'; end if;

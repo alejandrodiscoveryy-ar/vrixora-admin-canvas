@@ -564,6 +564,7 @@ export interface DocumentIdentitySnapshot {
   icon_url: string | null;
   primary_color: string;
   secondary_color: string;
+  whatsapp: string | null;
   support_email: string | null;
   website_url: string | null;
   privacy_url: string | null;
