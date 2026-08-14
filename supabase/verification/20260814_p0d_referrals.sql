@@ -62,6 +62,69 @@ select pg_temp.assert_raises(
 );
 rollback;
 
+-- Applied rewards on the same license reverse additively in either order.
+begin;
+do $$ begin
+  if (select count(*) from public.referral_reward_ledger reward
+    where reward.qualifying_payment_id in (
+      ':older_applied_reward_payment_id'::uuid,':newer_applied_reward_payment_id'::uuid
+    ) and reward.status='applied' and reward.applied_license_id=':shared_reward_license_id'::uuid)<>2 then
+    raise exception 'TEST_SETUP_FAILED: two applied rewards on shared license required';
+  end if;
+end $$;
+update public.payments set status='refunded' where id=':older_applied_reward_payment_id'::uuid;
+update public.payments set status='refunded' where id=':newer_applied_reward_payment_id'::uuid;
+do $$
+declare base_expiry timestamptz; final_expiry timestamptz;
+begin
+  select min(reward.previous_expires_at) into base_expiry
+  from public.referral_reward_ledger reward
+  where reward.qualifying_payment_id in (
+    ':older_applied_reward_payment_id'::uuid,':newer_applied_reward_payment_id'::uuid
+  );
+  select license.expires_at into final_expiry from public.licenses license
+  where license.id=':shared_reward_license_id'::uuid;
+  if final_expiry is distinct from base_expiry
+     or (select count(*) from public.referral_reward_ledger reward
+       where reward.qualifying_payment_id in (
+         ':older_applied_reward_payment_id'::uuid,':newer_applied_reward_payment_id'::uuid
+       ) and reward.status='reverted')<>2 then
+    raise exception 'TEST_FAILED: additive reversal failed in oldest-first order';
+  end if;
+end $$;
+rollback;
+
+begin;
+do $$ begin
+  if (select count(*) from public.referral_reward_ledger reward
+    where reward.qualifying_payment_id in (
+      ':older_applied_reward_payment_id'::uuid,':newer_applied_reward_payment_id'::uuid
+    ) and reward.status='applied' and reward.applied_license_id=':shared_reward_license_id'::uuid)<>2 then
+    raise exception 'TEST_SETUP_FAILED: two applied rewards on shared license required';
+  end if;
+end $$;
+update public.payments set status='refunded' where id=':newer_applied_reward_payment_id'::uuid;
+update public.payments set status='refunded' where id=':older_applied_reward_payment_id'::uuid;
+do $$
+declare base_expiry timestamptz; final_expiry timestamptz;
+begin
+  select min(reward.previous_expires_at) into base_expiry
+  from public.referral_reward_ledger reward
+  where reward.qualifying_payment_id in (
+    ':older_applied_reward_payment_id'::uuid,':newer_applied_reward_payment_id'::uuid
+  );
+  select license.expires_at into final_expiry from public.licenses license
+  where license.id=':shared_reward_license_id'::uuid;
+  if final_expiry is distinct from base_expiry
+     or (select count(*) from public.referral_reward_ledger reward
+       where reward.qualifying_payment_id in (
+         ':older_applied_reward_payment_id'::uuid,':newer_applied_reward_payment_id'::uuid
+       ) and reward.status='reverted')<>2 then
+    raise exception 'TEST_FAILED: additive reversal failed in newest-first order';
+  end if;
+end $$;
+rollback;
+
 -- P0-C finishes the commercial expiry before P0-D applies all earned days.
 begin;
 select set_config('request.jwt.claim.sub', ':owner_user_id', true);

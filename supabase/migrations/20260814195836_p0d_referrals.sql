@@ -162,10 +162,11 @@ begin
     license_found:=found;
     update public.referral_reward_ledger set status='reverted',reverted_at=now(),updated_at=now()
     where id=reward.id;
-    if license_found and target_license.expires_at=reward.new_expires_at then
-      restored_expiry:=reward.previous_expires_at; safe_reversal:=true;
-    elsif license_found and target_license.expires_at>reward.new_expires_at then
-      restored_expiry:=target_license.expires_at-make_interval(days=>reward.reward_days); safe_reversal:=true;
+    if license_found and target_license.expires_at is not null
+       and reward.previous_expires_at is not null
+       and target_license.expires_at>=reward.previous_expires_at then
+      restored_expiry:=target_license.expires_at-make_interval(days=>reward.reward_days);
+      safe_reversal:=true;
     end if;
     if safe_reversal then
       update public.licenses set expires_at=restored_expiry,updated_at=now() where id=target_license.id;
