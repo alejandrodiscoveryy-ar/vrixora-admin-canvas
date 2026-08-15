@@ -366,6 +366,8 @@ export const demoServices: AdminServices = {
         rateUpdatedAt: new Date(0).toISOString(),
         testModeEnabled: false,
         referralRewardDays: 15,
+        canManageSettings: false,
+        canManageWhatsapp: false,
       };
     },
     async exchangeRateHistory() {

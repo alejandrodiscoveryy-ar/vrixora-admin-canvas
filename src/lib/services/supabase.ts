@@ -1423,6 +1423,8 @@ export const supabaseServices: AdminServices = {
         rateUpdatedAt: String(row.rate_updated_at),
         testModeEnabled: Boolean(row.test_mode_enabled),
         referralRewardDays: Number(row.referral_reward_days),
+        canManageSettings: Boolean(row.can_manage_settings),
+        canManageWhatsapp: Boolean(row.can_manage_whatsapp),
       };
     },
     async updateExchangeSettings(projectId, input) {
@@ -1447,6 +1449,8 @@ export const supabaseServices: AdminServices = {
         rateUpdatedAt: String(row.rate_updated_at),
         testModeEnabled: Boolean(row.test_mode_enabled),
         referralRewardDays: Number(row.referral_reward_days),
+        canManageSettings: Boolean(row.can_manage_settings),
+        canManageWhatsapp: Boolean(row.can_manage_whatsapp),
       };
     },
     async setTestMode(projectId, enabled) {
