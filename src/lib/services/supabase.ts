@@ -50,6 +50,7 @@ function mapClient360(data: Record<string, unknown>): Client360 {
   const mapPayment = (row: Record<string, unknown>): Client360Payment => ({
     id: String(row.id),
     licenseId: row.license_id ? String(row.license_id) : null,
+    preinvoiceId: row.preinvoice_id ? String(row.preinvoice_id) : null,
     plan: String(row.plan),
     planName: String(row.plan_name ?? row.plan),
     amount: Number(row.amount),
@@ -62,6 +63,7 @@ function mapClient360(data: Record<string, unknown>): Client360 {
     createdAt: String(row.created_at),
     receiptId: row.receipt_id ? String(row.receipt_id) : null,
     receiptNumber: row.receipt_number ? String(row.receipt_number) : null,
+    isTest: Boolean(row.is_test),
   });
   const mapReferral = (row: Record<string, unknown>): Client360ReferralPerson => ({
     relationshipId: String(row.relationship_id),
@@ -164,6 +166,7 @@ function mapClient360(data: Record<string, unknown>): Client360 {
             paymentId: String(row.payment_id),
             receiptNumber: String(row.receipt_number),
             createdAt: String(row.created_at),
+            isTest: Boolean(row.is_test),
           })),
         }
       : null,
@@ -1618,6 +1621,8 @@ export const supabaseServices: AdminServices = {
       const row = data as Record<string, unknown>;
       return {
         preinvoices: Number(row.preinvoices),
+        payments: Number(row.payments),
+        receipts: Number(row.receipts),
         referralRewards: Number(row.referral_rewards),
         referralRelationships: Number(row.referral_relationships),
       };
@@ -1625,13 +1630,43 @@ export const supabaseServices: AdminServices = {
   },
   client360: {
     async get(projectId, clientId) {
-      const { data, error } = await getSupabaseClient().rpc("admin_get_client_360", {
-        target_project_id: projectId,
-        target_client_id: clientId,
-      });
-      throwIfError(error);
-      if (!data) throw new Error("No se encontró el cliente en este proyecto.");
-      return mapClient360(data as Record<string, unknown>);
+      const [baseResponse, billingResponse] = await Promise.all([
+        getSupabaseClient().rpc("admin_get_client_360", {
+          target_project_id: projectId,
+          target_client_id: clientId,
+        }),
+        getSupabaseClient().rpc("admin_get_client_360_billing_context", {
+          target_project_id: projectId,
+          target_client_id: clientId,
+        }),
+      ]);
+
+      throwIfError(baseResponse.error);
+      throwIfError(billingResponse.error);
+      if (!baseResponse.data) throw new Error("No se encontró el cliente en este proyecto.");
+
+      const merged = {
+        ...(baseResponse.data as Record<string, unknown>),
+      };
+      const billingContext = billingResponse.data as Record<string, unknown> | null;
+
+      if (billingContext) {
+        merged.last_payment = billingContext.last_payment ?? null;
+        merged.billing = billingContext.billing ?? null;
+
+        const existingActivity = ((merged.activity ?? []) as Array<Record<string, unknown>>).filter(
+          (row) => !["preinvoice", "payment", "document"].includes(String(row.type)),
+        );
+        const billingActivity = (billingContext.activity ?? []) as Array<Record<string, unknown>>;
+
+        merged.activity = [...existingActivity, ...billingActivity].sort(
+          (left, right) =>
+            new Date(String(right.occurred_at)).getTime() -
+            new Date(String(left.occurred_at)).getTime(),
+        );
+      }
+
+      return mapClient360(merged);
     },
   },
   referrals: {

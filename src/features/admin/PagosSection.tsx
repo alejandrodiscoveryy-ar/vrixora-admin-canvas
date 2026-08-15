@@ -114,7 +114,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     () => [
       ...new Set(
         (query.data ?? [])
-          .filter((payment) => payment.status === "paid" && payment.licenseId)
+          .filter((payment) => payment.status === "paid" && !payment.isTest && payment.licenseId)
           .map((payment) => payment.licenseId as string),
       ),
     ],
@@ -189,9 +189,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     [rows],
   );
 
-  const metricBaseRows = useMemo(() => {
+  const displayBaseRows = useMemo(() => {
     return rows.filter((p) => {
-      if (p.isTest) return false;
       const matchPlan = plan === "all" || p.plan === plan;
       const matchStatus = status === "all" || p.status === status;
       const matchCurrency = currency === "all" || p.currency === currency;
@@ -201,6 +200,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     });
   }, [rows, plan, status, currency, method, operator]);
 
+  const metricBaseRows = useMemo(
+    () => displayBaseRows.filter((payment) => !payment.isTest),
+    [displayBaseRows],
+  );
+
   const metricRows = useMemo(
     () =>
       metricBaseRows.filter((payment) =>
@@ -209,15 +213,23 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     [metricBaseRows, period, fromDate, toDate],
   );
 
+  const displayRows = useMemo(
+    () =>
+      displayBaseRows.filter((payment) =>
+        isPaymentInPeriod(payment.createdAt, period, fromDate, toDate),
+      ),
+    [displayBaseRows, period, fromDate, toDate],
+  );
+
   const filtered = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return metricRows.filter((payment) => {
+    return displayRows.filter((payment) => {
       if (!normalizedSearch) return true;
       const text =
         `${payment.userEmail ?? ""} ${payment.licenseKey ?? ""} ${payment.reference} ${payment.plan} ${payment.operatorLabel ?? ""}`.toLowerCase();
       return text.includes(normalizedSearch);
     });
-  }, [metricRows, search]);
+  }, [displayRows, search]);
 
   // 4 KPI Principales Financieros
   const paidRows = useMemo(
@@ -301,9 +313,12 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     return { days, currencies, hasRevenue: byDay.size > 0 };
   }, [metricRows, toDate]);
 
-  const pendingCount = rows.filter((payment) => payment.status === "pending").length;
+  const pendingCount = rows.filter(
+    (payment) => !payment.isTest && payment.status === "pending",
+  ).length;
   const missingReceiptCount = rows.filter(
-    (payment) => ["paid", "complimentary"].includes(payment.status) && !payment.hasReceipt,
+    (payment) =>
+      !payment.isTest && ["paid", "complimentary"].includes(payment.status) && !payment.hasReceipt,
   ).length;
   const visibleMobileRows = filtered.slice(0, mobileVisible);
 
@@ -495,7 +510,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       {/* Tabla de Pagos con FilterToolbar & AdminDataTableShell */}
       <AdminDataTableShell
         title="Historial de transacciones"
-        description="Filtros y control de cobros"
+        description="Las operaciones de prueba se muestran con su marca, pero no entran en los indicadores financieros."
         actions={
           <FilterToolbar
             searchValue={search}
@@ -597,9 +612,12 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     {payment.licenseKey ?? "Sin licencia"}
                   </p>
                 </div>
-                <Badge variant={payment.status === "paid" ? "default" : "secondary"}>
-                  {paymentStatusLabel(payment.status)}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant={payment.status === "paid" ? "default" : "secondary"}>
+                    {paymentStatusLabel(payment.status)}
+                  </Badge>
+                  {payment.isTest ? <Badge variant="warning">Prueba</Badge> : null}
+                </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <PaymentDetail label="Plan" value={payment.planName ?? payment.plan} />
@@ -700,6 +718,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                     >
                       {paymentStatusLabel(payment.status)}
                     </Badge>
+                    {payment.isTest ? (
+                      <Badge variant="warning" className="ml-1.5 text-xs">
+                        Prueba
+                      </Badge>
+                    ) : null}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground capitalize">
                     {paymentMethodLabel(payment.method)}
