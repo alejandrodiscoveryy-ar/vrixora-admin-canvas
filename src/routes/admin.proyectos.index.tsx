@@ -78,7 +78,18 @@ function ProjectsList() {
               />
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg">{p.name}</CardTitle>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {p.iconUrl ? (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/30 p-1.5">
+                        <img
+                          src={p.iconUrl}
+                          alt=""
+                          className="h-full w-full rounded-lg object-contain"
+                        />
+                      </div>
+                    ) : null}
+                    <CardTitle className="truncate text-lg">{p.name}</CardTitle>
+                  </div>
                   <Badge variant={p.status === "active" ? "default" : "secondary"}>
                     {p.status}
                   </Badge>

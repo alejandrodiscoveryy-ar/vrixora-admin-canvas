@@ -17,6 +17,7 @@ export type Project = {
   status: "active" | "planning" | "paused";
   createdAt: string;
   color: string;
+  iconUrl?: string | null;
 };
 
 export type Client = {
