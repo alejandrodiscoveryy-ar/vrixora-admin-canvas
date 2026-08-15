@@ -8,6 +8,7 @@ import {
   type LicensePlan,
   type Preinvoice,
 } from "@/lib/services";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -88,7 +89,11 @@ export function PreparePreinvoiceDialog({
     onSuccess: (row) => {
       setCreated(row);
       onCreated();
-      toast.success("Prefactura creada sin registrar ingreso ni modificar la licencia");
+      toast.success(
+        row.isTest
+          ? "Prefactura de prueba creada — no contabilizar"
+          : "Prefactura creada sin registrar ingreso ni modificar la licencia",
+      );
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
   });
@@ -103,7 +108,7 @@ export function PreparePreinvoiceDialog({
     ? formatPreinvoiceNumber(created.number, created.issuedAt, created.identitySnapshot?.name)
     : "";
   const message = created
-    ? `Prefactura ${createdNumber}\n${clientName}\n${String(created.planSnapshot.name ?? created.planCode)}\nImporte: ${created.chargeAmount} ${created.chargeCurrency}\nVálida hasta: ${dt(created.expiresAt)}`
+    ? `${created.isTest ? "OPERACIÓN DE PRUEBA — NO CONTABILIZAR\n" : ""}Prefactura ${createdNumber}\n${clientName}\n${String(created.planSnapshot.name ?? created.planCode)}\nImporte: ${created.chargeAmount} ${created.chargeCurrency}\nVálida hasta: ${dt(created.expiresAt)}`
     : "";
   const share = async () => {
     if (!created) return;
@@ -139,7 +144,13 @@ export function PreparePreinvoiceDialog({
                 {created.chargeAmount} {created.chargeCurrency}
               </p>
               <p>Vence: {dt(created.expiresAt)}</p>
-              {created.isTest ? <p className="text-amber-500">Operación de prueba</p> : null}
+              {created.isTest ? (
+                <p className="mt-2 font-semibold text-amber-500">
+                  OPERACIÓN DE PRUEBA — NO CONTABILIZAR
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">Operación real</p>
+              )}
             </div>
             <div className="flex gap-2">
               <Button
@@ -192,10 +203,15 @@ export function PreparePreinvoiceDialog({
                 <strong>
                   {plan.price} {settings.data.baseCurrency}
                 </strong>
-                <span>Tasa aplicada</span>
+                <span>Tasa global vigente</span>
                 <strong>
-                  {settings.data.currentRate} · {settings.data.rateSource}
+                  {settings.data.currentRate} {settings.data.chargeCurrency}/
+                  {settings.data.baseCurrency} · {settings.data.rateSource}
                 </strong>
+                <p className="col-span-2 text-xs text-muted-foreground">
+                  Esta tasa se congela al crear la prefactura. Si la tasa global cambia después,
+                  esta prefactura conservará la tasa con la que fue creada.
+                </p>
                 <span>Importe a pagar</span>
                 <strong>
                   {amount} {settings.data.chargeCurrency}
@@ -204,11 +220,41 @@ export function PreparePreinvoiceDialog({
                 <strong>48 horas</strong>
               </div>
             ) : null}
-            {settings.data?.testModeEnabled ? (
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox checked={isTest} onCheckedChange={(value) => setIsTest(value === true)} />
-                Operación de prueba
-              </label>
+            {settings.data ? (
+              <div
+                className={
+                  isTest
+                    ? "rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm"
+                    : "rounded-lg border p-3 text-sm"
+                }
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">Tipo de operación</span>
+                  <Badge variant={isTest ? "warning" : "secondary"}>
+                    {isTest ? "PRUEBA" : "REAL"}
+                  </Badge>
+                </div>
+                {settings.data.testModeEnabled ? (
+                  <label className="mt-3 flex items-start gap-2">
+                    <Checkbox
+                      checked={isTest}
+                      onCheckedChange={(value) => setIsTest(value === true)}
+                    />
+                    <span>
+                      <strong>Marcar como prueba — no contabilizar.</strong>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        Debe seleccionarse antes de crear la prefactura y no puede convertirse
+                        después desde una operación real.
+                      </span>
+                    </span>
+                  </label>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    El modo de pruebas está desactivado. Esta prefactura se creará como operación
+                    REAL. Para hacer una prueba, activa primero Configuración → Entorno y pruebas.
+                  </p>
+                )}
+              </div>
             ) : null}
           </div>
         )}
@@ -217,7 +263,7 @@ export function PreparePreinvoiceDialog({
             <Button onClick={onClose}>Cerrar</Button>
           ) : (
             <Button disabled={!plan || create.isPending} onClick={() => create.mutate()}>
-              Generar prefactura
+              {isTest ? "Generar prefactura de prueba" : "Generar prefactura real"}
             </Button>
           )}
         </DialogFooter>
@@ -264,7 +310,11 @@ export function ConfirmPreinvoiceDialog({
         idempotencyKey: crypto.randomUUID(),
       }),
     onSuccess: (receipt) => {
-      toast.success("Pago, licencia y recibo confirmados");
+      toast.success(
+        receipt.isTest
+          ? "Operación de prueba confirmada; no se contabilizó ni modificó la licencia"
+          : "Pago, licencia y recibo confirmados",
+      );
       onConfirmed(receipt);
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
@@ -274,11 +324,20 @@ export function ConfirmPreinvoiceDialog({
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Confirmar pago y activar/renovar</DialogTitle>
+          <DialogTitle>
+            {invoice.isTest ? "Confirmar operación de prueba" : "Confirmar pago y activar/renovar"}
+          </DialogTitle>
           <DialogDescription>
-            La confirmación se ejecutará como una sola operación transaccional.
+            {invoice.isTest
+              ? "Esta operación quedará identificada como prueba y no modificará la licencia ni los indicadores reales."
+              : "La confirmación se ejecutará como una sola operación transaccional."}
           </DialogDescription>
         </DialogHeader>
+        {invoice.isTest ? (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm font-semibold text-amber-500">
+            OPERACIÓN DE PRUEBA — NO CONTABILIZAR
+          </div>
+        ) : null}
         <div className="grid gap-3 text-sm sm:grid-cols-2">
           <Info label="Cliente" value={clientName} />
           <Info
@@ -302,18 +361,26 @@ export function ConfirmPreinvoiceDialog({
             label="Tasa aplicada"
             value={`${invoice.exchangeRate} · ${invoice.exchangeRateSource}`}
           />
-          <Info
-            label="Vencimiento actual"
-            value={
-              preview.data?.previousExpiresAt
-                ? dt(preview.data.previousExpiresAt)
-                : "Sin licencia/vencimiento"
-            }
-          />
-          <Info
-            label="Nuevo vencimiento"
-            value={preview.data?.newExpiresAt ? dt(preview.data.newExpiresAt) : "Sin vencimiento"}
-          />
+          {invoice.isTest ? (
+            <Info label="Efecto en licencia" value="Ninguno — la prueba no activa ni renueva" />
+          ) : (
+            <>
+              <Info
+                label="Vencimiento actual"
+                value={
+                  preview.data?.previousExpiresAt
+                    ? dt(preview.data.previousExpiresAt)
+                    : "Sin licencia/vencimiento"
+                }
+              />
+              <Info
+                label="Nuevo vencimiento"
+                value={
+                  preview.data?.newExpiresAt ? dt(preview.data.newExpiresAt) : "Sin vencimiento"
+                }
+              />
+            </>
+          )}
           <Info label="Prefactura vence" value={dt(invoice.expiresAt)} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -352,7 +419,9 @@ export function ConfirmPreinvoiceDialog({
             Cancelar
           </Button>
           <Button disabled={!preview.data || confirm.isPending} onClick={() => confirm.mutate()}>
-            Confirmar pago y activar/renovar
+            {invoice.isTest
+              ? "Confirmar prueba — no contabilizar"
+              : "Confirmar pago y activar/renovar"}
           </Button>
         </DialogFooter>
       </DialogContent>

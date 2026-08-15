@@ -275,7 +275,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
     onSuccess: (result) => {
       toast.success(
-        `Datos de prueba eliminados: ${result.preinvoices} prefacturas, ${result.referralRewards} recompensas y ${result.referralRelationships} relaciones de referidos.`,
+        `Datos de prueba eliminados: ${result.preinvoices} prefacturas, ${result.payments} pagos, ${result.receipts} recibos, ${result.referralRewards} recompensas y ${result.referralRelationships} relaciones de referidos.`,
       );
     },
 
@@ -1062,7 +1062,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             <div className="space-y-3">
               <SettingToggle
                 title="Permitir operaciones de prueba"
-                description="Cuando está activo, las funciones compatibles pueden crear operaciones identificadas como prueba."
+                description="Cuando está activo, al preparar un cobro puedes marcar la operación como prueba antes de crear la prefactura."
                 checked={foundationForm.testModeEnabled}
                 onCheckedChange={(checked) => updateFoundation("testModeEnabled", checked)}
                 disabled={!canManage}
@@ -1093,8 +1093,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           >
             <div className="space-y-3">
               <PageAlert tone="warning" title="Esta acción es irreversible">
-                Actualmente la limpieza elimina prefacturas, recompensas y relaciones de referidos
-                marcadas como prueba. No elimina operaciones reales.
+                La limpieza elimina prefacturas, pagos, recibos, recompensas y relaciones de
+                referidos marcados como prueba. No elimina operaciones reales.
               </PageAlert>
 
               <AlertDialog>
@@ -1113,8 +1113,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Eliminar los datos de prueba?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Se eliminarán únicamente prefacturas y datos de referidos que fueron marcados
-                      como prueba. Las operaciones reales permanecerán intactas.
+                      Se eliminarán únicamente prefacturas, pagos, recibos y datos de referidos que
+                      fueron marcados como prueba. Las operaciones reales permanecerán intactas.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
 

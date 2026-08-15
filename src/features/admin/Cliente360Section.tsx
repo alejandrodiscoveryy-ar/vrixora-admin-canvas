@@ -216,6 +216,7 @@ export default function Cliente360Section({
         subtitle: item.planName,
         amount: `${item.chargeAmount.toLocaleString("es")} ${item.chargeCurrency}`,
         status: item.status,
+        isTest: item.isTest,
         date: item.issuedAt,
       })),
       ...data.billing.payments.map((item) => ({
@@ -225,6 +226,7 @@ export default function Cliente360Section({
         subtitle: item.planName,
         amount: `${item.amount.toLocaleString("es")} ${item.currency}`,
         status: item.status,
+        isTest: item.isTest,
         date: item.chargedAt,
       })),
       ...data.billing.receipts.map((item) => ({
@@ -234,6 +236,7 @@ export default function Cliente360Section({
         subtitle: "Documento emitido",
         amount: "",
         status: "paid",
+        isTest: item.isTest,
         date: item.createdAt,
       })),
     ].sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime());
@@ -432,7 +435,7 @@ export default function Cliente360Section({
       {data.permissions.payments ? (
         <SectionCard
           title="Cobros y documentos"
-          description="Prefacturas, pagos y recibos en orden cronológico"
+          description="Prefacturas, pagos y recibos en orden cronológico. Las pruebas se muestran, pero no se contabilizan."
           module="pagos"
         >
           {documents.length ? (
@@ -459,10 +462,15 @@ export default function Cliente360Section({
                       <p className="text-sm font-semibold">{document.amount}</p>
                       <p className="text-xs text-text-tertiary">{formatDateTime(document.date)}</p>
                     </div>
-                    <StatusBadge
-                      status={billingStatus(document.status)}
-                      label={statusLabel(document.status)}
-                    />
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <StatusBadge
+                        status={billingStatus(document.status)}
+                        label={statusLabel(document.status)}
+                      />
+                      {document.isTest ? (
+                        <Badge variant="warning">Prueba · no contabilizar</Badge>
+                      ) : null}
+                    </div>
                   </div>
                 </article>
               ))}

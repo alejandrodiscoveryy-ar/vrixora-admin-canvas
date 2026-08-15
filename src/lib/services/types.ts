@@ -722,9 +722,13 @@ export interface P0AFoundationService {
     paymentId: string,
     isTest?: boolean,
   ): Promise<string>;
-  deleteTestData(
-    projectId: string,
-  ): Promise<{ preinvoices: number; referralRewards: number; referralRelationships: number }>;
+  deleteTestData(projectId: string): Promise<{
+    preinvoices: number;
+    payments: number;
+    receipts: number;
+    referralRewards: number;
+    referralRelationships: number;
+  }>;
 }
 
 export interface ClientReferralSummary {
@@ -780,6 +784,7 @@ export interface Client360Device {
 export interface Client360Payment {
   id: string;
   licenseId: string | null;
+  preinvoiceId: string | null;
   plan: string;
   planName: string;
   amount: number;
@@ -792,6 +797,7 @@ export interface Client360Payment {
   createdAt: string;
   receiptId: string | null;
   receiptNumber: string | null;
+  isTest: boolean;
 }
 
 export interface Client360Preinvoice {
@@ -882,7 +888,13 @@ export interface Client360 {
   billing: null | {
     preinvoices: Client360Preinvoice[];
     payments: Client360Payment[];
-    receipts: Array<{ id: string; paymentId: string; receiptNumber: string; createdAt: string }>;
+    receipts: Array<{
+      id: string;
+      paymentId: string;
+      receiptNumber: string;
+      createdAt: string;
+      isTest: boolean;
+    }>;
   };
   referrals: null | {
     rewardDays: number;
