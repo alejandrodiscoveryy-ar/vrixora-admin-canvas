@@ -9,6 +9,7 @@ export interface SectionCardProps {
   module?: AdminModuleKey;
   children: React.ReactNode;
   className?: string;
+  headerClassName?: string;
   contentClassName?: string;
 }
 
@@ -19,6 +20,7 @@ export function SectionCard({
   module,
   children,
   className,
+  headerClassName,
   contentClassName,
 }: SectionCardProps) {
   const borderClass = module ? moduleBorderLeftMap[module] : "";
@@ -34,7 +36,12 @@ export function SectionCard({
       )}
     >
       {(title || description || actions) && (
-        <CardHeader className="flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <CardHeader
+          className={cn(
+            "flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6",
+            headerClassName,
+          )}
+        >
           <div>
             {title ? (
               <div className="flex items-center gap-2">

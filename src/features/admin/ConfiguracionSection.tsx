@@ -59,6 +59,21 @@ const sections: Array<{ key: SectionKey; label: string }> = [
   { key: "testing", label: "Entorno y pruebas" },
 ];
 
+const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
+
+const CONFIG_HEADER_CLASS = "px-4 py-3 sm:px-4 sm:py-3";
+
+const CONFIG_CONTENT_CLASS = "p-3 sm:p-4";
+
+const CONFIG_CONTROL_CLASS =
+  "h-9 border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+
+const CONFIG_SELECT_CLASS =
+  "h-9 border-border-strong bg-surface-2 hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+const CONFIG_TEXTAREA_CLASS =
+  "min-h-[72px] border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: project } = useProject(projectId);
@@ -347,12 +362,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="space-y-3">
       <ModuleHeader
         title="Configuración"
         description="Administra la identidad, reglas comerciales, cobros, comunicación y comportamiento del proyecto."
         icon={Building2}
         module="configuracion"
+        className={CONFIG_CARD_CLASS}
+        headerClassName={CONFIG_HEADER_CLASS}
+        contentClassName={CONFIG_CONTENT_CLASS}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {isDirty ? (
@@ -385,7 +403,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             type="button"
             variant={activeSection === section.key ? "default" : "outline"}
             onClick={() => setActiveSection(section.key)}
-            className="h-auto min-h-11 whitespace-normal px-3 py-2 text-xs leading-tight"
+            className="h-auto min-h-10 whitespace-normal px-3 py-1.5 text-xs leading-tight"
           >
             {section.label}
           </Button>
@@ -393,16 +411,20 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       </div>
 
       {activeSection === "general" ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <SectionCard
             title="Identidad del proyecto"
             description="Información principal utilizada en la administración y en los documentos."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1.5 md:col-span-2 md:max-w-2xl">
                 <Label>Nombre del proyecto</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   value={name}
                   onChange={(event) => {
                     setName(event.target.value);
@@ -412,9 +434,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-1.5 md:col-span-2">
                 <Label>Descripción</Label>
                 <Textarea
+                  className={CONFIG_TEXTAREA_CLASS}
                   value={description}
                   onChange={(event) => {
                     setDescription(event.target.value);
@@ -424,9 +447,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Correo de soporte</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   type="email"
                   value={form.supportEmail}
                   onChange={(event) => update("supportEmail", event.target.value)}
@@ -434,27 +458,30 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Sitio web oficial</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   value={form.websiteUrl}
                   onChange={(event) => update("websiteUrl", event.target.value)}
                   disabled={!canManage}
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Política de privacidad</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   value={form.privacyUrl}
                   onChange={(event) => update("privacyUrl", event.target.value)}
                   disabled={!canManage}
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Términos y condiciones</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   value={form.termsUrl}
                   onChange={(event) => update("termsUrl", event.target.value)}
                   disabled={!canManage}
@@ -467,77 +494,88 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Marca e identidad visual"
             description="Recursos visuales utilizados por el proyecto."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="project-logo">Logo</Label>
-                <Input
-                  id="project-logo"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_88px] sm:items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="project-logo">Logo</Label>
+                  <Input
+                    className={CONFIG_CONTROL_CLASS}
+                    id="project-logo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
 
-                    if (file) {
-                      uploadBrandAsset.mutate({
-                        kind: "logo",
-                        file,
-                      });
-                    }
+                      if (file) {
+                        uploadBrandAsset.mutate({
+                          kind: "logo",
+                          file,
+                        });
+                      }
 
-                    event.target.value = "";
-                  }}
-                  disabled={!canManage || uploadBrandAsset.isPending}
-                />
+                      event.target.value = "";
+                    }}
+                    disabled={!canManage || uploadBrandAsset.isPending}
+                  />
+                  <p className="text-xs text-text-tertiary">PNG, JPG o WEBP. Máximo 2 MB.</p>
+                </div>
 
-                <p className="text-xs text-text-tertiary">PNG, JPG o WEBP. Máximo 2 MB.</p>
-
-                {form.logoUrl ? (
-                  <div className="flex h-24 items-center justify-center rounded-[var(--radius-compact)] border border-border-subtle bg-surface-2 p-3">
+                <div className="flex h-[68px] w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[88px]">
+                  {form.logoUrl ? (
                     <img
                       src={form.logoUrl}
                       alt="Vista previa del logo"
-                      className="max-h-full max-w-full object-contain"
+                      className="max-h-12 max-w-full object-contain"
                     />
-                  </div>
-                ) : null}
+                  ) : (
+                    <span className="text-[10px] text-text-tertiary">Sin logo</span>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="project-favicon">Icono / Favicon</Label>
-                <Input
-                  id="project-favicon"
-                  type="file"
-                  accept="image/png,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_88px] sm:items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="project-favicon">Icono / Favicon</Label>
+                  <Input
+                    className={CONFIG_CONTROL_CLASS}
+                    id="project-favicon"
+                    type="file"
+                    accept="image/png,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
 
-                    if (file) {
-                      uploadBrandAsset.mutate({
-                        kind: "favicon",
-                        file,
-                      });
-                    }
+                      if (file) {
+                        uploadBrandAsset.mutate({
+                          kind: "favicon",
+                          file,
+                        });
+                      }
 
-                    event.target.value = "";
-                  }}
-                  disabled={!canManage || uploadBrandAsset.isPending}
-                />
+                      event.target.value = "";
+                    }}
+                    disabled={!canManage || uploadBrandAsset.isPending}
+                  />
+                  <p className="text-xs text-text-tertiary">PNG, WEBP o ICO. Máximo 2 MB.</p>
+                </div>
 
-                <p className="text-xs text-text-tertiary">PNG, WEBP o ICO. Máximo 2 MB.</p>
-
-                {form.iconUrl ? (
-                  <div className="flex h-24 items-center justify-center rounded-[var(--radius-compact)] border border-border-subtle bg-surface-2 p-3">
+                <div className="flex h-[68px] w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[88px]">
+                  {form.iconUrl ? (
                     <img
                       src={form.iconUrl}
                       alt="Vista previa del icono"
-                      className="h-14 w-14 object-contain"
+                      className="h-10 w-10 object-contain"
                     />
-                  </div>
-                ) : null}
+                  ) : (
+                    <span className="text-[10px] text-text-tertiary">Sin icono</span>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Color primario</Label>
                 <div className="flex items-center gap-2">
                   <div
@@ -547,6 +585,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     }}
                   />
                   <Input
+                    className={CONFIG_CONTROL_CLASS}
                     value={form.primaryColor}
                     onChange={(event) => update("primaryColor", event.target.value)}
                     disabled={!canManage}
@@ -554,7 +593,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Color secundario</Label>
                 <div className="flex items-center gap-2">
                   <div
@@ -564,6 +603,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     }}
                   />
                   <Input
+                    className={CONFIG_CONTROL_CLASS}
                     value={form.secondaryColor}
                     onChange={(event) => update("secondaryColor", event.target.value)}
                     disabled={!canManage}
@@ -580,11 +620,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           title="Reglas comerciales"
           description="Parámetros generales que afectan la relación con clientes y licencias."
           module="configuracion"
+          className={CONFIG_CARD_CLASS}
+          headerClassName={CONFIG_HEADER_CLASS}
+          contentClassName={CONFIG_CONTENT_CLASS}
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
               <Label>Días de prueba gratuita</Label>
               <Input
+                className={CONFIG_CONTROL_CLASS}
                 type="number"
                 min={0}
                 value={form.trialDays}
@@ -616,7 +660,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       ) : null}
 
       {activeSection === "billing" ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <PageAlert tone="info" title="Configuración monetaria">
             La moneda base debe coincidir con la moneda en que están definidos los planes. La tasa
             se conserva en cada documento emitido.
@@ -626,9 +670,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Monedas y tipo de cambio"
             description="Define cómo se calculan los importes de cobro."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
                 <Label>Moneda base</Label>
                 <Select
                   value={foundationForm.baseCurrency}
@@ -637,7 +684,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   }
                   disabled={!canManage}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={CONFIG_SELECT_CLASS}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -648,7 +695,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Moneda de cobro</Label>
                 <Select
                   value={foundationForm.chargeCurrency}
@@ -657,7 +704,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   }
                   disabled={!canManage}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={CONFIG_SELECT_CLASS}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -668,7 +715,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Modo de tasa</Label>
                 <Select
                   value={foundationForm.rateMode}
@@ -677,7 +724,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   }
                   disabled={!canManage}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={CONFIG_SELECT_CLASS}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -692,9 +739,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Tasa actual</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   type="number"
                   min={0.000001}
                   step="any"
@@ -704,9 +752,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-1.5 md:col-span-2">
                 <Label>Fuente de la tasa</Label>
                 <Input
+                  className={CONFIG_CONTROL_CLASS}
                   value={foundationForm.rateSource}
                   onChange={(event) => updateFoundation("rateSource", event.target.value)}
                   placeholder="Ej. Tasa manual administrativa"
@@ -724,12 +773,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Métodos de pago"
             description="Opciones permitidas al registrar operaciones."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {paymentMethods.map((method) => (
                 <label
                   key={method.value}
-                  className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-compact)] border border-border-subtle bg-surface-2 p-3 text-sm font-medium"
+                  className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2.5 text-sm font-medium"
                 >
                   <Checkbox
                     checked={form.paymentMethods.includes(method.value)}
@@ -751,11 +803,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           title="Programa de referidos"
           description="Reglas generales para recompensar clientes que generan nuevas conversiones."
           module="configuracion"
+          className={CONFIG_CARD_CLASS}
+          headerClassName={CONFIG_HEADER_CLASS}
+          contentClassName={CONFIG_CONTENT_CLASS}
         >
-          <div className="max-w-xl space-y-4">
-            <div className="space-y-2">
+          <div className="max-w-xl space-y-3">
+            <div className="space-y-1.5">
               <Label>Días de recompensa por referido convertido</Label>
               <Input
+                className={CONFIG_CONTROL_CLASS}
                 type="number"
                 min={1}
                 max={365}
@@ -776,15 +832,19 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       ) : null}
 
       {activeSection === "communication" ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <SectionCard
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="max-w-xl space-y-2">
+            <div className="max-w-xl space-y-1.5">
               <Label>WhatsApp institucional</Label>
               <Input
+                className={CONFIG_CONTROL_CLASS}
                 value={form.whatsapp}
                 onChange={(event) => update("whatsapp", event.target.value)}
                 placeholder="+53..."
@@ -797,6 +857,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Canales operativos de WhatsApp"
             description="Configura soporte y cobros de forma independiente."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
             {!canManageWhatsApp ? (
               <PageAlert tone="info" title="Acceso restringido">
@@ -807,34 +870,37 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
+              <div className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="space-y-1.5">
                     <Label>Número general</Label>
                     <Input
+                      className={CONFIG_CONTROL_CLASS}
                       value={whatsappForm.fallbackNumber}
                       onChange={(event) => updateWhatsApp("fallbackNumber", event.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label>Número de soporte</Label>
                     <Input
+                      className={CONFIG_CONTROL_CLASS}
                       value={whatsappForm.supportNumber}
                       onChange={(event) => updateWhatsApp("supportNumber", event.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label>Número para pagos</Label>
                     <Input
+                      className={CONFIG_CONTROL_CLASS}
                       value={whatsappForm.paymentNumber}
                       onChange={(event) => updateWhatsApp("paymentNumber", event.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   <SettingToggle
                     title="Soporte por WhatsApp"
                     description="Muestra el canal de soporte cuando corresponda."
@@ -850,34 +916,38 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1.5">
                     <Label>Texto del botón de soporte</Label>
                     <Input
+                      className={CONFIG_CONTROL_CLASS}
                       value={whatsappForm.supportButtonText}
                       onChange={(event) => updateWhatsApp("supportButtonText", event.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label>Texto del botón de pagos</Label>
                     <Input
+                      className={CONFIG_CONTROL_CLASS}
                       value={whatsappForm.paymentButtonText}
                       onChange={(event) => updateWhatsApp("paymentButtonText", event.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label>Plantilla de soporte</Label>
                     <Textarea
+                      className={CONFIG_TEXTAREA_CLASS}
                       value={whatsappForm.supportTemplate}
                       onChange={(event) => updateWhatsApp("supportTemplate", event.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label>Plantilla de pago</Label>
                     <Textarea
+                      className={CONFIG_TEXTAREA_CLASS}
                       value={whatsappForm.paymentTemplate}
                       onChange={(event) => updateWhatsApp("paymentTemplate", event.target.value)}
                     />
@@ -894,11 +964,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           title="Comportamiento de TukTuk Control"
           description="Parámetros administrativos que afectan el acceso y la experiencia de la aplicación."
           module="configuracion"
+          className={CONFIG_CARD_CLASS}
+          headerClassName={CONFIG_HEADER_CLASS}
+          contentClassName={CONFIG_CONTENT_CLASS}
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
               <Label>Versión mínima requerida</Label>
               <Input
+                className={CONFIG_CONTROL_CLASS}
                 value={form.minimumVersion}
                 onChange={(event) => update("minimumVersion", event.target.value)}
                 disabled={!canManage}
@@ -921,9 +995,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               disabled={!canManage}
             />
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-1.5 md:col-span-2">
               <Label>Mensaje de bienvenida</Label>
               <Textarea
+                className={CONFIG_TEXTAREA_CLASS}
                 value={form.welcomeMessage}
                 onChange={(event) => update("welcomeMessage", event.target.value)}
                 disabled={!canManage}
@@ -934,13 +1009,16 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       ) : null}
 
       {activeSection === "testing" ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <SectionCard
             title="Modo de pruebas"
             description="Permite identificar operaciones creadas exclusivamente para validación."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               <SettingToggle
                 title="Permitir operaciones de prueba"
                 description="Cuando está activo, las funciones compatibles pueden crear operaciones identificadas como prueba."
@@ -968,8 +1046,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Limpieza de datos de prueba"
             description="Herramienta administrativa para retirar datos creados expresamente como prueba."
             module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               <PageAlert tone="warning" title="Esta acción es irreversible">
                 Actualmente la limpieza elimina prefacturas, recompensas y relaciones de referidos
                 marcadas como prueba. No elimina operaciones reales.
@@ -1031,7 +1112,7 @@ function SettingToggle({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[var(--radius-compact)] border border-border-subtle bg-surface-2 p-4">
+    <div className="flex items-start justify-between gap-3 rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-3">
       <div className="min-w-0">
         <p className="text-sm font-medium text-text-primary">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-text-secondary">{description}</p>
