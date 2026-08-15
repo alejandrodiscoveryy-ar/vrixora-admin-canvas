@@ -3,12 +3,12 @@
 do $$
 declare constraint_name text;
 begin
-  select constraint.conname into constraint_name
-  from pg_catalog.pg_constraint constraint
-  where constraint.conrelid='public.preinvoices'::regclass
-    and constraint.contype='c'
-    and pg_catalog.pg_get_constraintdef(constraint.oid) like '%paid_payment_id%'
-    and pg_catalog.pg_get_constraintdef(constraint.oid) like '%status%';
+  select candidate_constraint.conname into constraint_name
+  from pg_catalog.pg_constraint candidate_constraint
+  where candidate_constraint.conrelid='public.preinvoices'::regclass
+    and candidate_constraint.contype='c'
+    and pg_catalog.pg_get_constraintdef(candidate_constraint.oid) like '%paid_payment_id%'
+    and pg_catalog.pg_get_constraintdef(candidate_constraint.oid) like '%status%';
   if constraint_name is not null then
     execute format('alter table public.preinvoices drop constraint %I',constraint_name);
   end if;
