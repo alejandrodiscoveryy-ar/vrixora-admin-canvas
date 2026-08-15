@@ -599,3 +599,14 @@
     min-height: 2.75rem;
   }
 }
+/* Mobile scroll performance hotfix */
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  .admin-shell [data-slot="card"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}

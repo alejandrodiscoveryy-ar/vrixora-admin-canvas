@@ -450,7 +450,7 @@ function TopBar({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-border/70 bg-background/86 px-3 py-2 backdrop-blur-xl sm:px-4 md:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-border/70 bg-background px-3 py-2 backdrop-blur-none sm:px-4 md:bg-background/86 md:px-6 md:backdrop-blur-xl lg:px-8">
       <Button
         variant="ghost"
         size="icon"
