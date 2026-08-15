@@ -15,6 +15,7 @@ import {
   Mail,
   MessageCircle,
   MonitorSmartphone,
+  Pencil,
   Route,
   UserRound,
   UsersRound,
@@ -43,6 +44,7 @@ import type { AdminStatus } from "@/components/admin/types";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { PreparePreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
 import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
+import { isValidClientPhone, updateClientContact } from "@/lib/client-contact";
 
 const dateFormatter = new Intl.DateTimeFormat("es", { dateStyle: "medium" });
 const dateTimeFormatter = new Intl.DateTimeFormat("es", {
@@ -133,10 +135,13 @@ export default function Cliente360Section({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [prepareOpen, setPrepareOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [clientPhone, setClientPhone] = useState("");
   const [referrerOpen, setReferrerOpen] = useState(false);
   const [referrerCode, setReferrerCode] = useState("");
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canPrepareCharge = permissions.includes("payments.manage");
+  const canManageClient = permissions.includes("customers.manage");
   const canManageCommercial = permissions.includes("commercial.manage");
   const plans = useQuery({
     queryKey: ["admin-license-plans", projectId],
@@ -168,6 +173,31 @@ export default function Cliente360Section({
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "No se pudo vincular el referidor"),
+  });
+
+  const updateContact = useMutation({
+    mutationFn: () => updateClientContact(projectId, clientId, clientPhone),
+    onSuccess: async (phone) => {
+      setClientPhone(phone ?? "");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-client-360", projectId, clientId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-clients", projectId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-audit", projectId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["business-audit-events", projectId],
+        }),
+      ]);
+      setContactOpen(false);
+      toast.success(phone ? "Contacto actualizado correctamente" : "Contacto eliminado");
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el contacto"),
   });
 
   const data = query.data;
@@ -285,12 +315,10 @@ export default function Cliente360Section({
                 <Mail className="h-3.5 w-3.5 shrink-0" />
                 {data.client.email}
               </p>
-              {data.client.phone ? (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  {data.client.phone}
-                </p>
-              ) : null}
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
+                <MessageCircle className="h-3.5 w-3.5" />
+                {data.client.phone ?? "Sin móvil registrado"}
+              </p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 {data.license ? <Badge variant="info">{data.license.planName}</Badge> : null}
                 {data.license?.expiresAt ? (
@@ -307,6 +335,19 @@ export default function Cliente360Section({
             {canPrepareCharge ? (
               <Button className="flex-1 sm:flex-none" onClick={() => setPrepareOpen(true)}>
                 <CircleDollarSign className="h-4 w-4" /> Preparar cobro
+              </Button>
+            ) : null}
+            {canManageClient ? (
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => {
+                  setClientPhone(data.client.phone ?? "");
+                  setContactOpen(true);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                {data.client.phone ? "Editar móvil" : "Agregar móvil"}
               </Button>
             ) : null}
             {validWhatsapp ? (
@@ -643,6 +684,48 @@ export default function Cliente360Section({
           />
         )}
       </SectionCard>
+      <Dialog
+        open={contactOpen}
+        onOpenChange={(open) => {
+          setContactOpen(open);
+          if (open) setClientPhone(data.client.phone ?? "");
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{data.client.phone ? "Editar móvil" : "Agregar móvil"}</DialogTitle>
+            <DialogDescription>
+              Este número se utilizará para contactar al cliente por WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="client-phone">Número móvil</Label>
+            <Input
+              id="client-phone"
+              value={clientPhone}
+              onChange={(event) => setClientPhone(event.target.value)}
+              placeholder="+5351234567"
+              inputMode="tel"
+              autoComplete="tel"
+            />
+            <p className="text-xs text-text-tertiary">
+              Usa formato internacional con +. Puedes dejarlo vacío para eliminar el número.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={updateContact.isPending || !isValidClientPhone(clientPhone)}
+              onClick={() => updateContact.mutate()}
+            >
+              {updateContact.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Guardar contacto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <PreparePreinvoiceDialog
         open={prepareOpen}
         projectId={projectId}
