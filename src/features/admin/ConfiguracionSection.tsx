@@ -61,9 +61,9 @@ const sections: Array<{ key: SectionKey; label: string }> = [
 
 const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
 
-const CONFIG_HEADER_CLASS = "px-4 py-3 sm:px-4 sm:py-3";
+const CONFIG_HEADER_CLASS = "px-4 py-2.5 sm:px-4 sm:py-2.5";
 
-const CONFIG_CONTENT_CLASS = "p-3 sm:p-4";
+const CONFIG_CONTENT_CLASS = "p-3";
 
 const CONFIG_CONTROL_CLASS =
   "h-9 border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
@@ -72,7 +72,7 @@ const CONFIG_SELECT_CLASS =
   "h-9 border-border-strong bg-surface-2 hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 const CONFIG_TEXTAREA_CLASS =
-  "min-h-[72px] border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+  "min-h-[60px] border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
 
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
@@ -368,9 +368,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         description="Administra la identidad, reglas comerciales, cobros, comunicación y comportamiento del proyecto."
         icon={Building2}
         module="configuracion"
-        className={CONFIG_CARD_CLASS}
-        headerClassName={CONFIG_HEADER_CLASS}
-        contentClassName={CONFIG_CONTENT_CLASS}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {isDirty ? (
@@ -420,8 +417,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-1.5 md:col-span-2 md:max-w-2xl">
+            <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-6">
+              <div className="space-y-1.5 md:col-span-2 xl:order-1 xl:col-span-2">
                 <Label>Nombre del proyecto</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -434,7 +431,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 md:col-span-2">
+              <div className="space-y-1.5 md:col-span-2 xl:order-4 xl:col-span-6">
                 <Label>Descripción</Label>
                 <Textarea
                   className={CONFIG_TEXTAREA_CLASS}
@@ -447,7 +444,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 xl:order-2 xl:col-span-2">
                 <Label>Correo de soporte</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -458,7 +455,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 xl:order-3 xl:col-span-2">
                 <Label>Sitio web oficial</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -468,7 +465,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 xl:order-5 xl:col-span-3">
                 <Label>Política de privacidad</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -478,7 +475,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 xl:order-6 xl:col-span-3">
                 <Label>Términos y condiciones</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -498,8 +495,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_88px] sm:items-end">
+            <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-end">
                 <div className="space-y-1.5">
                   <Label htmlFor="project-logo">Logo</Label>
                   <Input
@@ -524,12 +521,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   <p className="text-xs text-text-tertiary">PNG, JPG o WEBP. Máximo 2 MB.</p>
                 </div>
 
-                <div className="flex h-[68px] w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[88px]">
+                <div className="flex h-14 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[76px]">
                   {form.logoUrl ? (
                     <img
                       src={form.logoUrl}
                       alt="Vista previa del logo"
-                      className="max-h-12 max-w-full object-contain"
+                      className="max-h-9 max-w-full object-contain"
                     />
                   ) : (
                     <span className="text-[10px] text-text-tertiary">Sin logo</span>
@@ -537,7 +534,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_88px] sm:items-end">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-end">
                 <div className="space-y-1.5">
                   <Label htmlFor="project-favicon">Icono / Favicon</Label>
                   <Input
@@ -562,12 +559,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   <p className="text-xs text-text-tertiary">PNG, WEBP o ICO. Máximo 2 MB.</p>
                 </div>
 
-                <div className="flex h-[68px] w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[88px]">
+                <div className="flex h-14 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[76px]">
                   {form.iconUrl ? (
                     <img
                       src={form.iconUrl}
                       alt="Vista previa del icono"
-                      className="h-10 w-10 object-contain"
+                      className="h-8 w-8 object-contain"
                     />
                   ) : (
                     <span className="text-[10px] text-text-tertiary">Sin icono</span>
