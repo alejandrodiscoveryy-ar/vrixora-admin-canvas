@@ -24,6 +24,7 @@ import {
 } from "@/lib/services";
 import { ReceiptDialog } from "@/features/admin/ChargePlanDialog";
 import { ConfirmPreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
+import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -423,6 +424,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           {(preinvoices.data ?? []).length ? (
             (preinvoices.data ?? []).map((invoice) => {
               const client = clients.data?.find((item) => item.userId === invoice.clientId);
+              const preinvoiceNumber = formatPreinvoiceNumber(
+                invoice.number,
+                invoice.issuedAt,
+                invoice.identitySnapshot?.name,
+              );
               const open = ["prepared", "sent", "pending"].includes(invoice.status);
               const labels: Record<string, string> = {
                 prepared: "Preparada",
@@ -440,7 +446,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <strong>
-                        #{invoice.number} · {String(invoice.planSnapshot.name ?? invoice.planCode)}
+                        {preinvoiceNumber} · {String(invoice.planSnapshot.name ?? invoice.planCode)}
                       </strong>
                       <Badge variant={invoice.status === "paid" ? "default" : "secondary"}>
                         {labels[invoice.status]}

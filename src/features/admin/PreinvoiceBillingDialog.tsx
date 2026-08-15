@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
 
 const dt = (value: string) =>
   new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" }).format(
@@ -98,8 +99,11 @@ export function PreparePreinvoiceDialog({
       setCreated(null);
     }
   }, [open]);
+  const createdNumber = created
+    ? formatPreinvoiceNumber(created.number, created.issuedAt, created.identitySnapshot?.name)
+    : "";
   const message = created
-    ? `Prefactura #${created.number}\n${clientName}\n${String(created.planSnapshot.name ?? created.planCode)}\nImporte: ${created.chargeAmount} ${created.chargeCurrency}\nVálida hasta: ${dt(created.expiresAt)}`
+    ? `Prefactura ${createdNumber}\n${clientName}\n${String(created.planSnapshot.name ?? created.planCode)}\nImporte: ${created.chargeAmount} ${created.chargeCurrency}\nVálida hasta: ${dt(created.expiresAt)}`
     : "";
   const share = async () => {
     if (!created) return;
@@ -127,7 +131,7 @@ export function PreparePreinvoiceDialog({
         {created ? (
           <div className="space-y-4">
             <div className="rounded-lg border p-4 text-sm">
-              <p className="font-semibold">Prefactura #{created.number}</p>
+              <p className="font-semibold">Prefactura {createdNumber}</p>
               <p>
                 {clientName} · {String(created.planSnapshot.name ?? created.planCode)}
               </p>
@@ -277,6 +281,14 @@ export function ConfirmPreinvoiceDialog({
         </DialogHeader>
         <div className="grid gap-3 text-sm sm:grid-cols-2">
           <Info label="Cliente" value={clientName} />
+          <Info
+            label="Prefactura"
+            value={formatPreinvoiceNumber(
+              invoice.number,
+              invoice.issuedAt,
+              invoice.identitySnapshot?.name,
+            )}
+          />
           <Info label="Plan" value={String(invoice.planSnapshot.name ?? invoice.planCode)} />
           <Info
             label="Importe esperado"
