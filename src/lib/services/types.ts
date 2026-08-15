@@ -595,6 +595,8 @@ export interface P0ASettings {
   rateUpdatedAt: string;
   testModeEnabled: boolean;
   referralRewardDays: number;
+  canManageSettings: boolean;
+  canManageWhatsapp: boolean;
 }
 
 export interface ExchangeRateHistoryEntry {

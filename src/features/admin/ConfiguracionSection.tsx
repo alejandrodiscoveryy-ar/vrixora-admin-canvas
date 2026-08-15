@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Loader2, Save, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-import { useProject, useProjectPermissions } from "@/hooks/useProjects";
+import { useProject } from "@/hooks/useProjects";
 import {
   supabaseServices,
   type P0ASettings,
@@ -77,11 +77,6 @@ const CONFIG_TEXTAREA_CLASS =
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: project } = useProject(projectId);
-  const { data: permissions = [] } = useProjectPermissions(projectId);
-
-  const canManage = permissions.includes("settings.manage");
-  const canManageWhatsApp = permissions.includes("whatsapp_settings.manage");
-  const canSave = canManage || canManageWhatsApp;
 
   const settingsQuery = useQuery({
     queryKey: ["project-settings", projectId],
@@ -92,6 +87,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     queryKey: ["project-foundation-settings", projectId],
     queryFn: () => supabaseServices.foundations.settings(projectId),
   });
+
+  const canManage = foundationQuery.data?.canManageSettings ?? false;
+  const canManageWhatsApp = foundationQuery.data?.canManageWhatsapp ?? false;
+  const canSave = canManage || canManageWhatsApp;
 
   const whatsappQuery = useQuery({
     queryKey: ["project-whatsapp-settings", projectId],
