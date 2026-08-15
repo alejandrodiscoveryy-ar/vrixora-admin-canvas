@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
+import { CreditCard, Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
