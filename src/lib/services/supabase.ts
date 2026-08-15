@@ -24,6 +24,7 @@ import type {
   CommercialLead,
   CommercialCampaign,
   CommercialLeadHistoryEntry,
+  BusinessAuditEvent,
   P0ASettings,
   ExchangeRateHistoryEntry,
   Preinvoice,
@@ -374,6 +375,16 @@ type AuditEventRow = {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
+};
+type BusinessAuditEventRow = AuditEventRow & {
+  actor_name: string;
+  actor_role: string;
+  action_label: string;
+  area: BusinessAuditEvent["area"];
+  importance: BusinessAuditEvent["importance"];
+  entity_label: string;
+  reason: string | null;
+  total_count: number | string;
 };
 
 type UsageAnalyticsRow = {
@@ -1144,6 +1155,7 @@ export const supabaseServices: AdminServices = {
         target_limit: limit,
       });
       throwIfError(error);
+
       return (data ?? []).map((entry: AuditEventRow) => ({
         id: Number(entry.id),
         actorId: entry.actor_id,
@@ -1155,6 +1167,38 @@ export const supabaseServices: AdminServices = {
         ipAddress: entry.ip_address,
         userAgent: entry.user_agent,
         createdAt: entry.created_at,
+      }));
+    },
+
+    async listBusiness(projectId, from, to, limit = 2000) {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_business_audit_events", {
+        target_project_id: projectId,
+        target_from: from,
+        target_to: to,
+        target_limit: limit,
+      });
+
+      throwIfError(error);
+
+      return ((data ?? []) as BusinessAuditEventRow[]).map((entry): BusinessAuditEvent => ({
+        id: Number(entry.id),
+        actorId: entry.actor_id,
+        actorEmail: entry.actor_email,
+        actorName: entry.actor_name,
+        actorRole: entry.actor_role,
+        action: entry.action,
+        actionLabel: entry.action_label,
+        area: entry.area,
+        importance: entry.importance,
+        entityType: entry.entity_type,
+        entityLabel: entry.entity_label,
+        entityId: entry.entity_id,
+        reason: entry.reason,
+        metadata: entry.metadata ?? {},
+        ipAddress: entry.ip_address,
+        userAgent: entry.user_agent,
+        createdAt: entry.created_at,
+        totalCount: Number(entry.total_count),
       }));
     },
   },
