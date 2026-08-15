@@ -432,7 +432,7 @@ export const supabaseServices: AdminServices = {
     async list() {
       const { data, error } = await getSupabaseClient()
         .from("projects")
-        .select("id,name,slug,description,status,created_at,color")
+        .select("id,name,slug,description,status,created_at,color,icon_url")
         .order("created_at", { ascending: false });
       throwIfError(error);
 
@@ -444,6 +444,7 @@ export const supabaseServices: AdminServices = {
         status: project.status,
         createdAt: project.created_at,
         color: project.color,
+        iconUrl: project.icon_url ?? null,
       }));
     },
     async settings(projectId) {

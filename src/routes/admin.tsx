@@ -142,7 +142,13 @@ function ProjectNavItem({
   path,
   closeDrawer,
 }: {
-  project: { id: string; name: string; description: string; status: string };
+  project: {
+    id: string;
+    name: string;
+    description: string;
+    status: string;
+    iconUrl?: string | null;
+  };
   currentProjectId: string | null;
   currentSection: string;
   path: string;
@@ -179,10 +185,16 @@ function ProjectNavItem({
         >
           <span
             className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors ${
-              isActiveProject ? "bg-primary/15 text-primary" : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+              isActiveProject
+                ? "bg-primary/15 text-primary"
+                : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
             }`}
           >
-            <FolderKanban className="h-4 w-4" />
+            {project.iconUrl ? (
+              <img src={project.iconUrl} alt="" className="h-6 w-6 rounded-md object-contain" />
+            ) : (
+              <FolderKanban className="h-4 w-4" />
+            )}
           </span>
           <span className="truncate">{project.name}</span>
         </Link>
@@ -197,9 +209,7 @@ function ProjectNavItem({
           aria-label="Expandir proyecto"
         >
           <ChevronRight
-            className={`h-4 w-4 transition-transform duration-200 ${
-              expanded ? "rotate-90" : ""
-            }`}
+            className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
           />
         </button>
       </div>
@@ -462,7 +472,11 @@ function TopBar({
       </Button>
 
       <Link to="/admin/proyectos" className="flex min-w-0 items-center gap-2 lg:hidden">
-        <VrixoraLogo variant="mark" size={24} />
+        {project?.iconUrl ? (
+          <img src={project.iconUrl} alt="" className="h-7 w-7 rounded-lg object-contain" />
+        ) : (
+          <VrixoraLogo variant="mark" size={24} />
+        )}
         <div className="min-w-0">
           <span className="block truncate text-xs font-semibold tracking-[0.16em] text-gradient">
             VRIXORA
@@ -477,7 +491,14 @@ function TopBar({
         <ShieldCheck className="h-4 w-4 text-primary" />
         <span>Administración segura</span>
         {project ? <span className="text-border">/</span> : null}
-        {project ? <span className="truncate text-foreground">{project.name}</span> : null}
+        {project ? (
+          <>
+            {project.iconUrl ? (
+              <img src={project.iconUrl} alt="" className="h-5 w-5 rounded-md object-contain" />
+            ) : null}
+            <span className="truncate text-foreground">{project.name}</span>
+          </>
+        ) : null}
         {project ? (
           <Badge variant={project.status === "active" ? "default" : "secondary"} className="ml-1">
             {project.status === "active" ? "Proyecto activo" : project.status}

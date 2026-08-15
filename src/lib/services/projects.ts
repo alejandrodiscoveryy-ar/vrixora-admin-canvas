@@ -9,6 +9,7 @@ export interface SupabaseProject {
   status: "active" | "planning" | "paused";
   created_at: string;
   color: string;
+  icon_url: string | null;
 }
 
 export async function getUserProjects(userId: string): Promise<Project[]> {
@@ -16,7 +17,7 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
 
   const { data: projects, error } = await client
     .from("projects")
-    .select("id, name, slug, description, status, created_at, color")
+    .select("id, name, slug, description, status, created_at, color, icon_url")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -32,6 +33,7 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
     status: project.status,
     createdAt: project.created_at,
     color: project.color,
+    iconUrl: project.icon_url ?? null,
   }));
 }
 
@@ -40,7 +42,7 @@ export async function getProjectById(projectId: string): Promise<Project | null>
 
   const { data, error } = await client
     .from("projects")
-    .select("id, name, slug, description, status, created_at, color")
+    .select("id, name, slug, description, status, created_at, color, icon_url")
     .eq("id", projectId)
     .single();
 
@@ -59,17 +61,14 @@ export async function getProjectById(projectId: string): Promise<Project | null>
     status: data.status,
     createdAt: data.created_at,
     color: data.color,
+    iconUrl: data.icon_url ?? null,
   };
 }
 
 export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
   const client = getSupabaseClient();
 
-  const { data, error } = await client
-    .from("projects")
-    .select("id")
-    .eq("id", projectId)
-    .single();
+  const { data, error } = await client.from("projects").select("id").eq("id", projectId).single();
 
   if (error && error.code !== "PGRST116") {
     console.error("Error checking project access:", error);
