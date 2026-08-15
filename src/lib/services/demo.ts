@@ -265,7 +265,10 @@ export const demoServices: AdminServices = {
     async remove() {
       throw new Error("Esta operación requiere Supabase");
     },
-    async void() {
+    async previewCancellation() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+    async cancelSafe() {
       throw new Error("Esta operación requiere Supabase");
     },
     async previewCharge() {

@@ -19,6 +19,7 @@ import type {
   RetentionMetrics,
   BillingPreview,
   BillingReceipt,
+  PaymentCancellationPreview,
   WhatsAppSettings,
   CommercialLead,
   CommercialCampaign,
@@ -201,6 +202,32 @@ function mapBillingPreview(data: Record<string, unknown>): BillingPreview {
     currency: data.currency as BillingPreview["currency"],
     applicationRule: data.application_rule as BillingPreview["applicationRule"],
     isTrialConversion: Boolean(data.is_trial_conversion),
+  };
+}
+
+function mapPaymentCancellationPreview(data: Record<string, unknown>): PaymentCancellationPreview {
+  return {
+    paymentId: String(data.payment_id),
+    status: data.status as PaymentCancellationPreview["status"],
+    clientName: String(data.client_name ?? "Cliente"),
+    clientEmail: String(data.client_email ?? ""),
+    amount: Number(data.amount),
+    currency: data.currency as PaymentCancellationPreview["currency"],
+    planName: String(data.plan_name ?? "Plan"),
+    preinvoiceNumber: data.preinvoice_number == null ? null : Number(data.preinvoice_number),
+    receiptNumber: data.receipt_number ? String(data.receipt_number) : null,
+    licenseKey: data.license_key ? String(data.license_key) : null,
+    currentExpiresAt: data.current_expires_at ? String(data.current_expires_at) : null,
+    licenseEffect: data.license_effect ? String(data.license_effect) : null,
+    effectDays: data.effect_days == null ? null : Number(data.effect_days),
+    generatedReward: data.generated_reward as PaymentCancellationPreview["generatedReward"],
+    appliedReferralRewards: Number(data.applied_referral_rewards ?? 0),
+    appliedReferralDays: Number(data.applied_referral_days ?? 0),
+    licenseCanRevertAutomatically: Boolean(data.license_can_revert_automatically),
+    licenseRequiresReview: Boolean(data.license_requires_review),
+    alreadyCancelled: Boolean(data.already_cancelled),
+    result: data.result as PaymentCancellationPreview["result"],
+    licenseAction: data.license_action ? String(data.license_action) : undefined,
   };
 }
 
@@ -1028,13 +1055,21 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
     },
-    async void(paymentId, reason) {
-      await requireOnline("Anular un pago");
-      const { error } = await getSupabaseClient().rpc("admin_void_payment_record", {
+    async previewCancellation(paymentId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_preview_payment_cancellation", {
+        target_payment_id: paymentId,
+      });
+      throwIfError(error);
+      return mapPaymentCancellationPreview(data as Record<string, unknown>);
+    },
+    async cancelSafe(paymentId, reason) {
+      await requireOnline("Cancelar un pago");
+      const { data, error } = await getSupabaseClient().rpc("admin_cancel_payment_safe", {
         target_payment_id: paymentId,
         target_reason: reason,
       });
       throwIfError(error);
+      return mapPaymentCancellationPreview(data as Record<string, unknown>);
     },
     async previewCharge(licenseId, plan, applicationRule) {
       const { data, error } = await getSupabaseClient().rpc("admin_preview_charge_plan", {

@@ -208,6 +208,30 @@ export interface UpdatePaymentInput {
   adjustmentReason: string;
 }
 
+export interface PaymentCancellationPreview {
+  paymentId: string;
+  status: ServicePayment["status"];
+  clientName: string;
+  clientEmail: string;
+  amount: number;
+  currency: Currency;
+  planName: string;
+  preinvoiceNumber: number | null;
+  receiptNumber: string | null;
+  licenseKey: string | null;
+  currentExpiresAt: string | null;
+  licenseEffect: string | null;
+  effectDays: number | null;
+  generatedReward: { id: string; status: string; days: number } | null;
+  appliedReferralRewards: number;
+  appliedReferralDays: number;
+  licenseCanRevertAutomatically: boolean;
+  licenseRequiresReview: boolean;
+  alreadyCancelled: boolean;
+  result?: "cancelled" | "already_cancelled";
+  licenseAction?: string;
+}
+
 export interface BillingPreview {
   licenseId: string | null;
   previousPlan: string;
@@ -353,7 +377,8 @@ export interface PaymentService {
   ): Promise<ServicePayment>;
   update(input: UpdatePaymentInput): Promise<ServicePayment>;
   remove(paymentId: string, reason: string): Promise<void>;
-  void(paymentId: string, reason: string): Promise<void>;
+  previewCancellation(paymentId: string): Promise<PaymentCancellationPreview>;
+  cancelSafe(paymentId: string, reason: string): Promise<PaymentCancellationPreview>;
   previewCharge(
     licenseId: string,
     plan: string,

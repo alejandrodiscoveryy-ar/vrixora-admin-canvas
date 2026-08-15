@@ -20,6 +20,7 @@ import {
   type BillingReceipt,
   type ServiceClient,
   type Preinvoice,
+  type PaymentCancellationPreview,
 } from "@/lib/services";
 import { ReceiptDialog } from "@/features/admin/ChargePlanDialog";
 import { ConfirmPreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
@@ -169,7 +170,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
     mutationFn: (paymentId: string) => supabaseServices.payments.receipt(paymentId),
     onSuccess: setViewingReceipt,
     onError: () =>
-      toast.error("No se encontrÃ³ el recibo. El owner puede generarlo sin renovar nuevamente."),
+      toast.error("No se encontró el recibo. El owner puede generarlo sin renovar nuevamente."),
   });
   const repairReceipt = useMutation({
     mutationFn: (paymentId: string) => supabaseServices.payments.repairReceipt(paymentId),
@@ -530,7 +531,6 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                 { value: "cancelled", label: "Cancelado" },
                 { value: "refunded", label: "Reembolsado" },
                 { value: "complimentary", label: "Cortesía" },
-                { value: "voided", label: "Anulado" },
               ]}
             />
             <FilterSelect
@@ -692,11 +692,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                             : "bg-red-500/15 text-red-400 border-red-500/30"
                       }`}
                     >
-                      {payment.status}
+                      {paymentStatusLabel(payment.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground capitalize">
-                    {payment.method}
+                    {paymentMethodLabel(payment.method)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
@@ -736,28 +736,30 @@ export default function PagosSection({ projectId }: { projectId: string }) {
                             Reparar recibo
                           </Button>
                         )}
-                      {canCorrect && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          title="Editar pago"
-                          onClick={() => setEditing(payment)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {canCorrect && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
-                          title={payment.status === "pending" ? "Eliminar pago" : "Anular pago"}
-                          onClick={() => setDeleting(payment)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      {canCorrect &&
+                        ["pending", "paid", "complimentary"].includes(payment.status) && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            title="Editar pago"
+                            onClick={() => setEditing(payment)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      {canCorrect &&
+                        ["pending", "paid", "complimentary"].includes(payment.status) && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                            title={payment.status === "pending" ? "Eliminar pago" : "Anular pago"}
+                            onClick={() => setDeleting(payment)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1071,6 +1073,7 @@ function EditPaymentDialog({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const frozenP0CPayment = Boolean(payment.preinvoiceId && payment.status !== "pending");
   const [amount, setAmount] = useState(String(payment.amount));
   const [currency, setCurrency] = useState(payment.currency);
   const [method, setMethod] = useState(payment.method);
@@ -1114,12 +1117,14 @@ function EditPaymentDialog({
               min="0"
               max={payment.listPrice}
               value={amount}
+              disabled={frozenP0CPayment}
               onChange={(e) => setAmount(e.target.value)}
             />
           </Field>
           <Field label="Moneda">
             <Select
               value={currency}
+              disabled={frozenP0CPayment}
               onValueChange={(v) => setCurrency(v as ServicePayment["currency"])}
             >
               <SelectTrigger>
@@ -1135,7 +1140,11 @@ function EditPaymentDialog({
             </Select>
           </Field>
           <Field label="Estado">
-            <Select value={status} onValueChange={(v) => setStatus(v as ServicePayment["status"])}>
+            <Select
+              value={status}
+              disabled={frozenP0CPayment}
+              onValueChange={(v) => setStatus(v as ServicePayment["status"])}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -1214,22 +1223,28 @@ function DeletePaymentDialog({
 }) {
   const isConfirmed = payment.status !== "pending";
   const [reason, setReason] = useState("");
+  const preview = useQuery({
+    queryKey: ["payment-cancellation-preview", payment.id],
+    queryFn: () => supabaseServices.payments.previewCancellation(payment.id),
+    enabled: isConfirmed,
+  });
   const mutation = useMutation({
     mutationFn: () =>
       isConfirmed
-        ? supabaseServices.payments.void(payment.id, reason)
+        ? supabaseServices.payments.cancelSafe(payment.id, reason)
         : supabaseServices.payments.remove(payment.id, reason),
-    onSuccess: () => {
-      toast.success(isConfirmed ? "Pago anulado correctamente." : "Pago eliminado del historial.");
+    onSuccess: (result?: PaymentCancellationPreview) => {
+      toast.success(
+        isConfirmed
+          ? result?.licenseRequiresReview
+            ? "Pago anulado. La licencia requiere revisión manual."
+            : "Pago anulado y consecuencias reconciliadas."
+          : "Pago eliminado del historial.",
+      );
       onDone();
       onClose();
     },
-    onError: () =>
-      toast.error(
-        isConfirmed
-          ? "No se pudo anular el pago. Inténtalo de nuevo."
-          : "No se pudo eliminar el pago. Inténtalo de nuevo.",
-      ),
+    onError: (error) => toast.error(paymentCancellationError(error, isConfirmed)),
   });
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -1239,8 +1254,9 @@ function DeletePaymentDialog({
           <DialogDescription>
             {isConfirmed ? (
               <>
-                Este pago será anulado y dejará de contar en ingresos y estadísticas. El recibo y el
-                historial se conservarán. La vigencia otorgada a la licencia no será modificada.
+                El pago dejará de contar como ingreso. El recibo y la auditoría se conservarán, y la
+                licencia solo cambiará cuando exista evidencia suficiente para hacerlo con
+                seguridad.
               </>
             ) : (
               <>Se eliminará el pago pendiente {payment.reference}. Esta acción es irreversible.</>
@@ -1254,13 +1270,24 @@ function DeletePaymentDialog({
             onChange={(e) => setReason(e.target.value)}
           />
         </Field>
+        {isConfirmed ? (
+          preview.isPending ? (
+            <p className="text-sm text-muted-foreground">Calculando consecuencias…</p>
+          ) : preview.isError ? (
+            <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              No se pudo calcular la vista previa de consecuencias para este pago.
+            </p>
+          ) : preview.data ? (
+            <CancellationPreview preview={preview.data} />
+          ) : null
+        ) : null}
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
           <Button
             variant="destructive"
-            disabled={mutation.isPending || !reason.trim()}
+            disabled={mutation.isPending || !reason.trim() || (isConfirmed && !preview.data)}
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending
@@ -1284,6 +1311,53 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function CancellationPreview({ preview }: { preview: PaymentCancellationPreview }) {
+  return (
+    <div className="space-y-2 rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
+      <DetailRow label="Cliente" value={preview.clientName} />
+      <DetailRow label="Plan" value={preview.planName} />
+      <DetailRow label="Importe" value={`${preview.amount} ${preview.currency}`} />
+      <DetailRow label="Recibo" value={preview.receiptNumber ?? "Sin recibo"} />
+      <DetailRow
+        label="Vigencia actual"
+        value={
+          preview.currentExpiresAt
+            ? new Date(preview.currentExpiresAt).toLocaleDateString()
+            : "Sin fecha"
+        }
+      />
+      <DetailRow
+        label="Días a revertir"
+        value={preview.effectDays == null ? "Sin evidencia" : String(preview.effectDays)}
+      />
+      {preview.appliedReferralDays > 0 ? (
+        <DetailRow label="Días de referido" value={`${preview.appliedReferralDays} días`} />
+      ) : null}
+      <p className={preview.licenseRequiresReview ? "text-amber-400" : "text-emerald-400"}>
+        {preview.licenseRequiresReview
+          ? "La licencia requiere revisión manual; no se modificará sin evidencia segura."
+          : "La licencia puede reconciliarse automáticamente con la evidencia disponible."}
+      </p>
+    </div>
+  );
+}
+
+function paymentCancellationError(error: unknown, confirmed: boolean) {
+  const message = error instanceof Error ? error.message : String(error);
+  const labels: Record<string, string> = {
+    CANCELLATION_REASON_REQUIRED: "Debes indicar el motivo de la anulación.",
+    PAYMENT_CANCELLATION_NOT_ALLOWED: "Este pago no admite anulación.",
+    PENDING_PAYMENT_MUST_BE_DELETED: "Los pagos pendientes deben eliminarse, no anularse.",
+    PAYMENT_NOT_FOUND: "No se encontró el pago solicitado.",
+  };
+  const code = Object.keys(labels).find((item) => message.includes(item));
+  return code
+    ? labels[code]
+    : confirmed
+      ? "No se pudo anular el pago. Inténtalo de nuevo."
+      : "No se pudo eliminar el pago. Inténtalo de nuevo.";
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -1349,8 +1423,10 @@ function paymentActions({
       disabled: repairReceiptPending,
     });
   }
-  if (canCorrect) {
+  if (canCorrect && ["pending", "paid", "complimentary"].includes(payment.status)) {
     actions.push({ label: "Editar pago", onSelect: onEdit });
+  }
+  if (canCorrect && ["pending", "paid", "complimentary"].includes(payment.status)) {
     actions.push({
       label: payment.status === "pending" ? "Eliminar pago" : "Anular pago",
       onSelect: onDelete,
@@ -1369,7 +1445,6 @@ function paymentStatusLabel(value: string) {
         cancelled: "Cancelado",
         refunded: "Reembolsado",
         complimentary: "Cortesía",
-        voided: "Anulado",
       } as Record<string, string>
     )[value] ?? value
   );

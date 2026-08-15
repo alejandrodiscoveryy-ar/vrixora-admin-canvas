@@ -163,7 +163,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         (l) =>
           l.status === "contacted" ||
           l.status === "trial" ||
-          l.status === "converted" ||
+          l.status === "customer" ||
           l.lastInteractionAt,
       ).length,
       desc: "Con interacción",
@@ -175,14 +175,12 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     },
     {
       label: "Pago",
-      count: activeLeads.filter(
-        (l) => l.paid || l.status === "converted" || l.status === "customer",
-      ).length,
+      count: activeLeads.filter((l) => l.paid || l.status === "customer").length,
       desc: "Clientes pagados",
     },
     {
       label: "Renovación",
-      count: 0, // real renewal tracking if any
+      count: activeLeads.reduce((total, lead) => total + lead.renewalCount, 0),
       desc: "Renovaciones",
     },
   ];
@@ -195,7 +193,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       counts.set(src, (counts.get(src) ?? 0) + 1);
     });
     return Array.from(counts.entries()).map(([source, count]) => ({
-      source: source.toUpperCase(),
+      source: sourceLabel(source as CommercialSource),
       count,
     }));
   }, [activeLeads]);
@@ -208,7 +206,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       const entry = map.get(camp) ?? { leads: 0, trials: 0, paid: 0 };
       entry.leads += 1;
       if (l.trialStarted || l.status === "trial") entry.trials += 1;
-      if (l.paid || l.status === "converted" || l.status === "customer") entry.paid += 1;
+      if (l.paid || l.status === "customer") entry.paid += 1;
       map.set(camp, entry);
     });
     return Array.from(map.entries()).map(([campaign, data]) => ({
@@ -490,8 +488,20 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               setResponsible("all");
             }}
           >
-            <Filter value={status} onChange={setStatus} values={STATUSES} label="Estado" />
-            <Filter value={source} onChange={setSource} values={SOURCES} label="Fuente" />
+            <Filter
+              value={status}
+              onChange={setStatus}
+              values={STATUSES}
+              label="Estado"
+              format={(value) => labelStatus(value as CommercialLeadStatus)}
+            />
+            <Filter
+              value={source}
+              onChange={setSource}
+              values={SOURCES}
+              label="Fuente"
+              format={(value) => sourceLabel(value as CommercialSource)}
+            />
             <Filter
               value={campaign}
               onChange={setCampaign}
@@ -556,7 +566,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
-                  <span className="capitalize">{lead.source}</span>
+                  <span>{sourceLabel(lead.source)}</span>
                   {lead.campaign ? (
                     <span className="block text-[10px]">Campaña: {lead.campaign}</span>
                   ) : null}
@@ -651,11 +661,13 @@ function Filter({
   onChange,
   values,
   label,
+  format = (item) => item,
 }: {
   value: string;
   onChange: (v: string) => void;
   values: string[];
   label: string;
+  format?: (value: string) => string;
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
@@ -666,7 +678,7 @@ function Filter({
         <SelectItem value="all">{label}: Todos</SelectItem>
         {values.map((v) => (
           <SelectItem key={v} value={v}>
-            {v}
+            {format(v)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -685,6 +697,19 @@ function labelStatus(status: CommercialLeadStatus) {
     not_interested: "No interesado",
   };
   return map[status] ?? status;
+}
+
+function sourceLabel(source: CommercialSource) {
+  const map: Record<CommercialSource, string> = {
+    whatsapp: "WhatsApp",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    sms: "SMS",
+    referral: "Referido",
+    direct: "Directo",
+    other: "Otro",
+  };
+  return map[source] ?? source;
 }
 
 // Subcomponents for Modals (LeadDialog, HistoryDialog, CampaignDialog) kept intact
@@ -739,7 +764,7 @@ function LeadDialog({
                 <SelectContent>
                   {SOURCES.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {s}
+                      {sourceLabel(s)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -950,7 +975,7 @@ function CampaignDialog({
               <SelectContent>
                 {SOURCES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {sourceLabel(s)}
                   </SelectItem>
                 ))}
               </SelectContent>
