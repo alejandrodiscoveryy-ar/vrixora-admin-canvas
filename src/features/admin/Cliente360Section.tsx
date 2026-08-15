@@ -42,6 +42,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminStatus } from "@/components/admin/types";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { PreparePreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
+import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
 
 const dateFormatter = new Intl.DateTimeFormat("es", { dateStyle: "medium" });
 const dateTimeFormatter = new Intl.DateTimeFormat("es", {
@@ -181,7 +182,7 @@ export default function Cliente360Section({
       ...data.billing.preinvoices.map((item) => ({
         id: `preinvoice:${item.id}`,
         kind: "Prefactura",
-        title: `Prefactura #${item.number}`,
+        title: `Prefactura ${formatPreinvoiceNumber(item.number, item.issuedAt)}`,
         subtitle: item.planName,
         amount: `${item.chargeAmount.toLocaleString("es")} ${item.chargeCurrency}`,
         status: item.status,
