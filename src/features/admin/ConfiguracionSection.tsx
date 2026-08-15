@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Loader2, Save, Trash2, TriangleAlert } from "lucide-react";
+import { Building2, Loader2, Save, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
@@ -498,12 +498,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-4">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-end">
                 <div className="space-y-1.5">
-                  <Label htmlFor="project-logo">Logo</Label>
+                  <Label>Logo</Label>
                   <Input
-                    className={CONFIG_CONTROL_CLASS}
                     id="project-logo"
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
 
@@ -518,7 +518,29 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     }}
                     disabled={!canManage || uploadBrandAsset.isPending}
                   />
-                  <p className="text-xs text-text-tertiary">PNG, JPG o WEBP. Máximo 2 MB.</p>
+
+                  <Button
+                    asChild
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={
+                      !canManage || uploadBrandAsset.isPending
+                        ? "pointer-events-none w-full opacity-50"
+                        : "w-full"
+                    }
+                  >
+                    <label htmlFor="project-logo">
+                      {uploadBrandAsset.isPending ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <Upload />
+                      )}
+                      {form.logoUrl ? "Reemplazar logo" : "Subir logo"}
+                    </label>
+                  </Button>
+
+                  <p className="text-xs text-text-tertiary">PNG, JPG o WEBP · Máximo 2 MB.</p>
                 </div>
 
                 <div className="flex h-14 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[76px]">
@@ -536,12 +558,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-end">
                 <div className="space-y-1.5">
-                  <Label htmlFor="project-favicon">Icono / Favicon</Label>
+                  <Label>Icono / Favicon</Label>
                   <Input
-                    className={CONFIG_CONTROL_CLASS}
                     id="project-favicon"
                     type="file"
                     accept="image/png,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico"
+                    className="sr-only"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
 
@@ -556,7 +578,29 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     }}
                     disabled={!canManage || uploadBrandAsset.isPending}
                   />
-                  <p className="text-xs text-text-tertiary">PNG, WEBP o ICO. Máximo 2 MB.</p>
+
+                  <Button
+                    asChild
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={
+                      !canManage || uploadBrandAsset.isPending
+                        ? "pointer-events-none w-full opacity-50"
+                        : "w-full"
+                    }
+                  >
+                    <label htmlFor="project-favicon">
+                      {uploadBrandAsset.isPending ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <Upload />
+                      )}
+                      {form.iconUrl ? "Reemplazar icono" : "Subir icono"}
+                    </label>
+                  </Button>
+
+                  <p className="text-xs text-text-tertiary">PNG, WEBP o ICO · Máximo 2 MB.</p>
                 </div>
 
                 <div className="flex h-14 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[76px]">
