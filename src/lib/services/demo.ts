@@ -296,6 +296,9 @@ export const demoServices: AdminServices = {
     async list() {
       return [];
     },
+    async listBusiness() {
+      return [];
+    },
   },
   usageAnalytics: {
     async series() {

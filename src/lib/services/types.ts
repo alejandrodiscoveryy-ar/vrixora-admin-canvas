@@ -406,8 +406,30 @@ export interface AuditEvent {
   createdAt: string;
 }
 
+export type AuditArea =
+  "clientes" | "comercial" | "cobros" | "licencias" | "administracion" | "otros";
+
+export type AuditImportance = "normal" | "important" | "critical";
+
+export interface BusinessAuditEvent extends AuditEvent {
+  actorName: string;
+  actorRole: string;
+  actionLabel: string;
+  area: AuditArea;
+  importance: AuditImportance;
+  entityLabel: string;
+  reason: string | null;
+  totalCount: number;
+}
+
 export interface AuditService {
   list(projectId: string, limit?: number): Promise<AuditEvent[]>;
+  listBusiness(
+    projectId: string,
+    from: string,
+    to: string,
+    limit?: number,
+  ): Promise<BusinessAuditEvent[]>;
 }
 
 export interface UsageAnalyticsFilters {
