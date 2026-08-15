@@ -143,6 +143,11 @@ type ChangedField = {
   after: unknown;
 };
 
+type OperationFact = {
+  label: string;
+  value: string;
+};
+
 export default function AuditoriaSection({ projectId }: { projectId: string }) {
   const [period, setPeriod] = useState<AdminPeriodKey>("today");
   const [range, setRange] = useState<AdminDateRange>(() => periodRange("today"));
@@ -505,12 +510,30 @@ function UserAuditGroup({ group }: { group: AuditGroup }) {
 function AreaAuditGroup({ group }: { group: AuditGroup }) {
   const operationGroups = groupByOperationType(group.events);
 
+  const users = new Set(
+    group.events
+      .filter((event) => event.actorRole !== "system")
+      .map((event) => event.actorId ?? event.actorEmail ?? event.actorName),
+  ).size;
+
+  const cancellations = group.events.filter(
+    (event) => event.action === "payment_cancelled_safe" || event.action.includes("cancel"),
+  ).length;
+
+  const areaSummary = [
+    `${group.events.length} ${group.events.length === 1 ? "operación" : "operaciones"}`,
+    `${users} ${users === 1 ? "usuario" : "usuarios"}`,
+    cancellations > 0
+      ? `${cancellations} ${cancellations === 1 ? "anulación" : "anulaciones"}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <SectionCard
       title={group.label}
-      description={`${group.events.length} ${
-        group.events.length === 1 ? "operación" : "operaciones"
-      }`}
+      description={areaSummary}
       module="auditoria"
       contentClassName="space-y-2"
     >
@@ -558,6 +581,7 @@ function AuditEventCard({
   event: BusinessAuditEvent;
   emphasize?: boolean;
 }) {
+  const operationFacts = getOperationFacts(event);
   const changedFields = getChangedFields(event);
   const consequences = getConsequences(event);
 
@@ -596,6 +620,26 @@ function AuditEventCard({
           <DetailItem label="Responsable">{event.actorName}</DetailItem>
           <DetailItem label="Rol">{roleLabel(event.actorRole)}</DetailItem>
         </div>
+
+        {operationFacts.length > 0 ? (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+              Datos de la operación
+            </p>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {operationFacts.map((fact) => (
+                <div
+                  key={fact.label}
+                  className="rounded-[var(--radius-compact)] border border-border-subtle bg-surface-2 p-3"
+                >
+                  <p className="text-xs text-text-tertiary">{fact.label}</p>
+                  <p className="mt-0.5 text-sm font-medium text-text-primary">{fact.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {event.reason ? (
           <div className="rounded-[var(--radius-compact)] border border-border-subtle bg-surface-2 p-3">
@@ -882,6 +926,70 @@ function entityWithArticle(entityLabel: string) {
   return `${feminine.has(entityLabel) ? "una" : "un"} ${entityLabel.toLocaleLowerCase("es")}`;
 }
 
+function getOperationFacts(event: BusinessAuditEvent): OperationFact[] {
+  const preview = asRecord(event.metadata.preview);
+  const payment = asRecord(event.metadata.payment);
+  const current = asRecord(event.metadata.new);
+
+  const facts: OperationFact[] = [];
+
+  const clientName = preview?.client_name ?? preview?.client_email;
+
+  if (typeof clientName === "string" && clientName.trim()) {
+    facts.push({
+      label: "Cliente",
+      value: clientName,
+    });
+  }
+
+  const amount = preview?.amount ?? payment?.amount ?? current?.amount;
+
+  const currency = preview?.currency ?? payment?.currency ?? current?.currency;
+
+  if ((typeof amount === "number" || typeof amount === "string") && amount !== "") {
+    const numericAmount = Number(amount);
+
+    facts.push({
+      label: "Importe",
+      value: Number.isFinite(numericAmount)
+        ? `${new Intl.NumberFormat("es", {
+            maximumFractionDigits: 2,
+          }).format(numericAmount)}${typeof currency === "string" ? ` ${currency}` : ""}`
+        : String(amount),
+    });
+  }
+
+  const plan = preview?.plan_name ?? payment?.plan ?? current?.plan;
+
+  if (typeof plan === "string" && plan.trim()) {
+    facts.push({
+      label: "Plan",
+      value: plan,
+    });
+  }
+
+  const preinvoiceNumber = preview?.preinvoice_number;
+  if (
+    typeof preinvoiceNumber === "number" ||
+    (typeof preinvoiceNumber === "string" && preinvoiceNumber.trim())
+  ) {
+    facts.push({
+      label: "Prefactura",
+      value: `#${preinvoiceNumber}`,
+    });
+  }
+
+  const receiptNumber = preview?.receipt_number;
+  if (typeof receiptNumber === "string" && receiptNumber.trim()) {
+    facts.push({
+      label: "Documento",
+      value: receiptNumber,
+    });
+  }
+
+  return facts;
+}
+
 function getChangedFields(event: BusinessAuditEvent): ChangedField[] {
   const oldValue = asRecord(event.metadata.old);
   const newValue = asRecord(event.metadata.new);
@@ -913,6 +1021,20 @@ function getChangedFields(event: BusinessAuditEvent): ChangedField[] {
 
 function getConsequences(event: BusinessAuditEvent) {
   const consequences: string[] = [];
+
+  if (event.action === "payment_cancelled_safe") {
+    consequences.push("El pago quedó anulado.");
+
+    const preview = asRecord(event.metadata.preview);
+
+    if (preview?.preinvoice_number) {
+      consequences.push("La prefactura asociada quedó anulada.");
+    }
+
+    if (preview?.receipt_number) {
+      consequences.push("El documento de cobro asociado quedó anulado.");
+    }
+  }
 
   const licenseAction = event.metadata.license_action;
   if (typeof licenseAction === "string" && licenseAction.trim()) {
