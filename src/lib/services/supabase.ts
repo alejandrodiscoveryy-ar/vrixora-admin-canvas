@@ -181,6 +181,26 @@ function mapClient360(data: Record<string, unknown>): Client360 {
           ).map(mapReferral),
         }
       : null,
+    adoption: {
+      score: Number(adoption.score ?? 0),
+      level: String(adoption.level ?? "Sin actividad") as Client360["adoption"]["level"],
+      usageProfile: String(
+        adoption.usage_profile ?? "Sin actividad",
+      ) as Client360["adoption"]["usageProfile"],
+      lastActivityAt: adoption.last_activity_at ? String(adoption.last_activity_at) : null,
+      daysSinceActivity:
+        adoption.days_since_activity == null ? null : Number(adoption.days_since_activity),
+      activeDays30: Number(adoption.active_days_30 ?? 0),
+      records30: Number(adoption.records_30 ?? 0),
+      activeWeeks30: Number(adoption.active_weeks_30 ?? 0),
+      entityTypes30: Number(adoption.entity_types_30 ?? 0),
+      breakdown: {
+        frequency: Number(adoptionBreakdown.frequency ?? 0),
+        recency: Number(adoptionBreakdown.recency ?? 0),
+        consistency: Number(adoptionBreakdown.consistency ?? 0),
+        depth: Number(adoptionBreakdown.depth ?? 0),
+      },
+    },
     activity: ((data.activity ?? []) as Array<Record<string, unknown>>).map((row) => ({
       id: String(row.id),
       type: row.type as Client360["activity"][number]["type"],
@@ -459,7 +479,7 @@ export const supabaseServices: AdminServices = {
         .eq("id", projectId)
         .single();
       throwIfError(error);
-      if (!data) throw new Error("No se encontró el proyecto.");
+      if (!data) throw new Error("No se encontrÃ³ el proyecto.");
       return {
         notifyLicenseExpiry: data.notify_license_expiry,
         autoRenewVerifiedPayments: data.auto_renew_verified_payments,
@@ -505,7 +525,7 @@ export const supabaseServices: AdminServices = {
       return client.storage.from("project-branding").getPublicUrl(objectPath).data.publicUrl;
     },
     async update(projectId, changes) {
-      await requireOnline("Actualizar la configuración del proyecto");
+      await requireOnline("Actualizar la configuraciÃ³n del proyecto");
       const { error } = await getSupabaseClient().rpc("admin_update_project_settings", {
         target_project_id: projectId,
         target_name: changes.name,
@@ -540,7 +560,7 @@ export const supabaseServices: AdminServices = {
       return mapWhatsAppSettings(row);
     },
     async updateWhatsAppSettings(projectId, settings) {
-      await requireOnline("Actualizar la configuración de WhatsApp");
+      await requireOnline("Actualizar la configuraciÃ³n de WhatsApp");
       const { data, error } = await getSupabaseClient().rpc("admin_update_whatsapp_settings", {
         target_project_id: projectId,
         target_fallback_number: settings.fallbackNumber,
@@ -1374,7 +1394,7 @@ export const supabaseServices: AdminServices = {
       }));
     },
     async saveCampaign(projectId, campaign) {
-      await requireOnline("Guardar campaña comercial");
+      await requireOnline("Guardar campaÃ±a comercial");
       const { data, error } = await getSupabaseClient().rpc("admin_save_commercial_campaign", {
         target_project_id: projectId,
         target_campaign_id: campaign.id ?? null,
@@ -1647,7 +1667,7 @@ export const supabaseServices: AdminServices = {
 
       throwIfError(baseResponse.error);
       throwIfError(billingResponse.error);
-      if (!baseResponse.data) throw new Error("No se encontró el cliente en este proyecto.");
+      if (!baseResponse.data) throw new Error("No se encontrÃ³ el cliente en este proyecto.");
 
       const merged = {
         ...(baseResponse.data as Record<string, unknown>),

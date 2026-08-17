@@ -1,0 +1,4 @@
+-- Initial client adoption score migration.
+-- This version was applied directly to Supabase and was immediately
+-- superseded by 20260817124326_client_adoption_score_record_dates.sql.
+-- The following migration contains the complete current implementation.

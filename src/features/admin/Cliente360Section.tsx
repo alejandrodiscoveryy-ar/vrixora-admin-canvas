@@ -86,7 +86,7 @@ function statusLabel(status: string) {
         sent: "Enviada",
         cancelled: "Cancelada",
         refunded: "Reembolsada",
-        complimentary: "Cortesía",
+        complimentary: "CortesÃ­a",
         new: "Nuevo",
         contacted: "Contactado",
         interested: "Interesado",
@@ -222,7 +222,7 @@ export default function Cliente360Section({
       ...data.billing.payments.map((item) => ({
         id: `payment:${item.id}`,
         kind: "Pago",
-        title: item.receiptNumber ? `Pago · ${item.receiptNumber}` : "Pago registrado",
+        title: item.receiptNumber ? `Pago Â· ${item.receiptNumber}` : "Pago registrado",
         subtitle: item.planName,
         amount: `${item.amount.toLocaleString("es")} ${item.currency}`,
         status: item.status,
@@ -256,7 +256,7 @@ export default function Cliente360Section({
         description={
           query.error instanceof Error
             ? query.error.message
-            : "El cliente no está disponible en este proyecto."
+            : "El cliente no estÃ¡ disponible en este proyecto."
         }
         module="clientes"
         action={
@@ -320,13 +320,13 @@ export default function Cliente360Section({
               </p>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
                 <MessageCircle className="h-3.5 w-3.5" />
-                {data.client.phone ?? "Sin móvil registrado"}
+                {data.client.phone ?? "Sin mÃ³vil registrado"}
               </p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 {data.license ? <Badge variant="info">{data.license.planName}</Badge> : null}
                 {data.license?.expiresAt ? (
                   <Badge variant={remaining !== null && remaining <= 7 ? "warning" : "secondary"}>
-                    Vence {formatDate(data.license.expiresAt)} · {remaining} días
+                    Vence {formatDate(data.license.expiresAt)} Â· {remaining} dÃ­as
                   </Badge>
                 ) : data.license ? (
                   <Badge variant="secondary">Sin vencimiento</Badge>
@@ -350,7 +350,7 @@ export default function Cliente360Section({
                 }}
               >
                 <Pencil className="h-4 w-4" />
-                {data.client.phone ? "Editar móvil" : "Agregar móvil"}
+                {data.client.phone ? "Editar mÃ³vil" : "Agregar mÃ³vil"}
               </Button>
             ) : null}
             {validWhatsapp ? (
@@ -369,20 +369,20 @@ export default function Cliente360Section({
       </section>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Resumen" description="Situación actual del cliente" module="clientes">
+        <SectionCard title="Resumen" description="SituaciÃ³n actual del cliente" module="clientes">
           <DetailList
             columns={2}
             items={[
               { label: "Nombre", value: data.client.displayName },
               { label: "Correo", value: data.client.email },
-              { label: "Contacto", value: data.client.phone ?? "Sin teléfono" },
+              { label: "Contacto", value: data.client.phone ?? "Sin telÃ©fono" },
               { label: "Registro", value: formatDate(data.client.registeredAt) },
               { label: "Plan actual", value: data.license?.planName ?? "Sin plan" },
               { label: "Vencimiento", value: formatDate(data.license?.expiresAt ?? null) },
               {
-                label: "Último pago",
+                label: "Ãšltimo pago",
                 value: data.lastPayment
-                  ? `${data.lastPayment.amount.toLocaleString("es")} ${data.lastPayment.currency} · ${formatDate(data.lastPayment.chargedAt)}`
+                  ? `${data.lastPayment.amount.toLocaleString("es")} ${data.lastPayment.currency} Â· ${formatDate(data.lastPayment.chargedAt)}`
                   : "Sin pagos",
               },
               {
@@ -391,6 +391,76 @@ export default function Cliente360Section({
               },
             ]}
           />
+        </SectionCard>
+
+        <SectionCard
+          title="Adopción"
+          description="Uso observable de TukTuk Control durante los últimos 30 días"
+          module="clientes"
+        >
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-2 p-4">
+              <div>
+                <p className="text-xs font-medium text-text-tertiary">
+                  Nivel de adopción
+                </p>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-text-primary">
+                    {data.adoption.score}
+                  </span>
+                  <span className="text-sm text-text-tertiary">/100</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="info">{data.adoption.level}</Badge>
+                <Badge variant="secondary">
+                  Perfil: {data.adoption.usageProfile}
+                </Badge>
+              </div>
+            </div>
+
+            <DetailList
+              columns={2}
+              items={[
+                {
+                  label: "Última actividad",
+                  value: data.adoption.lastActivityAt
+                    ? formatDateTime(data.adoption.lastActivityAt)
+                    : "Sin actividad",
+                },
+                {
+                  label: "Días desde última actividad",
+                  value:
+                    data.adoption.daysSinceActivity === null
+                      ? "Sin actividad"
+                      : `${data.adoption.daysSinceActivity} días`,
+                },
+                {
+                  label: "Días con registros · 30 días",
+                  value: data.adoption.activeDays30,
+                },
+                {
+                  label: "Registros · 30 días",
+                  value: data.adoption.records30,
+                },
+                {
+                  label: "Semanas activas · 30 días",
+                  value: data.adoption.activeWeeks30,
+                },
+                {
+                  label: "Tipos de datos utilizados",
+                  value: data.adoption.entityTypes30,
+                },
+              ]}
+            />
+
+            <p className="text-xs leading-relaxed text-text-tertiary">
+              Este indicador mide adopción observable mediante los datos
+              sincronizados. No representa aperturas de la aplicación,
+              sesiones ni tiempo en pantalla.
+            </p>
+          </div>
         </SectionCard>
 
         {data.permissions.commercial ? (
@@ -404,7 +474,7 @@ export default function Cliente360Section({
                 columns={2}
                 items={[
                   { label: "Fuente", value: sourceLabel(data.commercial.source) },
-                  { label: "Campaña", value: data.commercial.campaign ?? "Sin campaña" },
+                  { label: "CampaÃ±a", value: data.commercial.campaign ?? "Sin campaÃ±a" },
                   {
                     label: "Referido por",
                     value: data.commercial.referredByName ?? "Sin referencia",
@@ -412,10 +482,10 @@ export default function Cliente360Section({
                   { label: "Estado comercial", value: statusLabel(data.commercial.status) },
                   { label: "Responsable", value: data.commercial.responsibleName ?? "Sin asignar" },
                   {
-                    label: "Última interacción",
+                    label: "Ãšltima interacciÃ³n",
                     value: formatDateTime(data.commercial.lastInteractionAt),
                   },
-                  { label: "Próxima acción", value: formatDateTime(data.commercial.nextActionAt) },
+                  { label: "PrÃ³xima acciÃ³n", value: formatDateTime(data.commercial.nextActionAt) },
                   { label: "Notas", value: data.commercial.notes ?? "Sin notas" },
                 ]}
               />
@@ -423,7 +493,7 @@ export default function Cliente360Section({
               <EmptyState
                 icon={Route}
                 title="Sin seguimiento comercial"
-                description="Este cliente todavía no tiene información comercial asociada."
+                description="Este cliente todavÃ­a no tiene informaciÃ³n comercial asociada."
                 module="comercial"
                 className="border-0 bg-transparent p-4"
               />
@@ -435,7 +505,7 @@ export default function Cliente360Section({
       {data.permissions.payments ? (
         <SectionCard
           title="Cobros y documentos"
-          description="Prefacturas, pagos y recibos en orden cronológico. Las pruebas se muestran, pero no se contabilizan."
+          description="Prefacturas, pagos y recibos en orden cronolÃ³gico. Las pruebas se muestran, pero no se contabilizan."
           module="pagos"
         >
           {documents.length ? (
@@ -468,7 +538,7 @@ export default function Cliente360Section({
                         label={statusLabel(document.status)}
                       />
                       {document.isTest ? (
-                        <Badge variant="warning">Prueba · no contabilizar</Badge>
+                        <Badge variant="warning">Prueba Â· no contabilizar</Badge>
                       ) : null}
                     </div>
                   </div>
@@ -479,7 +549,7 @@ export default function Cliente360Section({
             <EmptyState
               icon={CircleDollarSign}
               title="Sin cobros ni documentos"
-              description="Todavía no hay prefacturas, pagos o recibos para este cliente."
+              description="TodavÃ­a no hay prefacturas, pagos o recibos para este cliente."
               module="pagos"
               className="border-0 bg-transparent p-4"
             />
@@ -504,10 +574,10 @@ export default function Cliente360Section({
                   },
                   { label: "Plan", value: data.license.planName },
                   { label: "Estado", value: statusLabel(data.license.status) },
-                  { label: "Activación", value: formatDate(data.license.activatedAt) },
+                  { label: "ActivaciÃ³n", value: formatDate(data.license.activatedAt) },
                   { label: "Vencimiento", value: formatDate(data.license.expiresAt) },
-                  { label: "Días restantes", value: remaining === null ? "Sin límite" : remaining },
-                  { label: "Última renovación", value: formatDate(data.license.lastRenewedAt) },
+                  { label: "DÃ­as restantes", value: remaining === null ? "Sin lÃ­mite" : remaining },
+                  { label: "Ãšltima renovaciÃ³n", value: formatDate(data.license.lastRenewedAt) },
                   {
                     label: "Dispositivos",
                     value: `${data.license.activeDevices} de ${data.license.maxDevices}`,
@@ -529,7 +599,7 @@ export default function Cliente360Section({
                             {device.label ?? "Dispositivo sin nombre"}
                           </p>
                           <p className="text-xs text-text-tertiary">
-                            Último uso {formatDateTime(device.lastSeenAt)}
+                            Ãšltimo uso {formatDateTime(device.lastSeenAt)}
                           </p>
                         </div>
                         <StatusBadge
@@ -563,7 +633,7 @@ export default function Cliente360Section({
           title="Referidos"
           description={
             data.referrals
-              ? `Recompensa configurada: ${data.referrals.rewardDays} días`
+              ? `Recompensa configurada: ${data.referrals.rewardDays} dÃ­as`
               : "Programa de referidos"
           }
           module="comercial"
@@ -572,7 +642,7 @@ export default function Cliente360Section({
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-border-subtle bg-surface-2 p-4">
-                  <p className="text-xs text-text-tertiary">Código personal</p>
+                  <p className="text-xs text-text-tertiary">CÃ³digo personal</p>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="font-mono text-base font-semibold">
                       {currentReferralSummary.code}
@@ -580,10 +650,10 @@ export default function Cliente360Section({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Copiar código"
+                      aria-label="Copiar cÃ³digo"
                       onClick={() => {
                         void navigator.clipboard.writeText(currentReferralSummary.code);
-                        toast.success("Código copiado");
+                        toast.success("CÃ³digo copiado");
                       }}
                     >
                       <Copy className="h-4 w-4" />
@@ -611,14 +681,14 @@ export default function Cliente360Section({
                       label: "Recompensas aplicadas",
                       value: currentReferralSummary.appliedRewards,
                     },
-                    { label: "Días aplicados", value: currentReferralSummary.appliedDays },
-                    { label: "Días pendientes", value: currentReferralSummary.pendingDays },
+                    { label: "DÃ­as aplicados", value: currentReferralSummary.appliedDays },
+                    { label: "DÃ­as pendientes", value: currentReferralSummary.pendingDays },
                   ]}
                 />
               </div>
               <div className="grid gap-5 lg:grid-cols-2">
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold">Quién lo refirió</h3>
+                  <h3 className="mb-3 text-sm font-semibold">QuiÃ©n lo refiriÃ³</h3>
                   {currentReferralSummary.referredBy ? (
                     <ReferralCard
                       name={currentReferralSummary.referredBy.name}
@@ -654,7 +724,7 @@ export default function Cliente360Section({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-text-secondary">Aún no ha referido clientes.</p>
+                    <p className="text-sm text-text-secondary">AÃºn no ha referido clientes.</p>
                   )}
                 </div>
               </div>
@@ -701,13 +771,13 @@ export default function Cliente360Section({
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{data.client.phone ? "Editar móvil" : "Agregar móvil"}</DialogTitle>
+            <DialogTitle>{data.client.phone ? "Editar mÃ³vil" : "Agregar mÃ³vil"}</DialogTitle>
             <DialogDescription>
-              Este número se utilizará para contactar al cliente por WhatsApp.
+              Este nÃºmero se utilizarÃ¡ para contactar al cliente por WhatsApp.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="client-phone">Número móvil</Label>
+            <Label htmlFor="client-phone">NÃºmero mÃ³vil</Label>
             <Input
               id="client-phone"
               value={clientPhone}
@@ -717,7 +787,7 @@ export default function Cliente360Section({
               autoComplete="tel"
             />
             <p className="text-xs text-text-tertiary">
-              Usa formato internacional con +. Puedes dejarlo vacío para eliminar el número.
+              Usa formato internacional con +. Puedes dejarlo vacÃ­o para eliminar el nÃºmero.
             </p>
           </div>
           <DialogFooter>
@@ -753,11 +823,11 @@ export default function Cliente360Section({
           <DialogHeader>
             <DialogTitle>Vincular referidor</DialogTitle>
             <DialogDescription>
-              Introduce el código del cliente que realizó la referencia.
+              Introduce el cÃ³digo del cliente que realizÃ³ la referencia.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="referrer-code">Código de referido</Label>
+            <Label htmlFor="referrer-code">CÃ³digo de referido</Label>
             <Input
               id="referrer-code"
               value={referrerCode}
@@ -798,8 +868,8 @@ function ReferralCard({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{name}</p>
         <p className="text-xs text-text-tertiary">
-          {code ? `Código ${code}` : "Sin código"}
-          {days ? ` · ${days} días` : ""}
+          {code ? `CÃ³digo ${code}` : "Sin cÃ³digo"}
+          {days ? ` Â· ${days} dÃ­as` : ""}
         </p>
       </div>
       <StatusBadge

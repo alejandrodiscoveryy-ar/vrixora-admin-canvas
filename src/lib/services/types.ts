@@ -844,6 +844,30 @@ export interface Client360Activity {
   occurredAt: string;
 }
 
+export interface Client360Adoption {
+  score: number;
+  level: "Alta" | "Media" | "Baja" | "Sin actividad";
+  usageProfile:
+    | "Completo"
+    | "Finanzas"
+    | "Operación"
+    | "Básico"
+    | "Solo configuración"
+    | "Sin actividad";
+  lastActivityAt: string | null;
+  daysSinceActivity: number | null;
+  activeDays30: number;
+  records30: number;
+  activeWeeks30: number;
+  entityTypes30: number;
+  breakdown: {
+    frequency: number;
+    recency: number;
+    consistency: number;
+    depth: number;
+  };
+}
+
 export interface Client360 {
   permissions: { licenses: boolean; payments: boolean; commercial: boolean; audit: boolean };
   client: {
