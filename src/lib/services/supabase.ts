@@ -47,6 +47,8 @@ function mapClient360(data: Record<string, unknown>): Client360 {
   const commercial = data.commercial as Record<string, unknown> | null;
   const billing = data.billing as Record<string, unknown> | null;
   const referrals = data.referrals as Record<string, unknown> | null;
+  const adoption = (data.adoption ?? {}) as Record<string, unknown>;
+  const adoptionBreakdown = (adoption.breakdown ?? {}) as Record<string, unknown>;
   const mapPayment = (row: Record<string, unknown>): Client360Payment => ({
     id: String(row.id),
     licenseId: row.license_id ? String(row.license_id) : null,
