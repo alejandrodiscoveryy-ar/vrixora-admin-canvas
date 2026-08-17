@@ -78,6 +78,8 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [adoptionFilter, setAdoptionFilter] = useState("all");
+  const [adoptionSort, setAdoptionSort] = useState("none");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
 
   const query = useQuery({
@@ -107,15 +109,34 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     [plans.data],
   );
 
-  const clients = useMemo(
-    () =>
-      allClients.filter((client) =>
+  const clients = useMemo(() => {
+    const filtered = allClients.filter((client) => {
+      const matchesSearch =
         `${client.displayName} ${client.email} ${client.phone ?? ""} ${client.licenseKey ?? ""} ${client.plan}`
           .toLowerCase()
-          .includes(search.toLowerCase()),
-      ),
-    [allClients, search],
-  );
+          .includes(search.toLowerCase());
+
+      const matchesAdoption =
+        adoptionFilter === "all" ||
+        (client.adoptionLevel ?? "Sin actividad") === adoptionFilter;
+
+      return matchesSearch && matchesAdoption;
+    });
+
+    if (adoptionSort === "high") {
+      return [...filtered].sort(
+        (left, right) => (right.adoptionScore ?? 0) - (left.adoptionScore ?? 0),
+      );
+    }
+
+    if (adoptionSort === "low") {
+      return [...filtered].sort(
+        (left, right) => (left.adoptionScore ?? 0) - (right.adoptionScore ?? 0),
+      );
+    }
+
+    return filtered;
+  }, [allClients, search, adoptionFilter, adoptionSort]);
 
   const { activeClients, trialClients, expiringSoon } = useMemo(() => {
     const now = Date.now();
@@ -231,8 +252,43 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo, teléfono o licencia..."
             resultCount={clients.length}
-            activeFilterCount={search ? 1 : 0}
-            onReset={() => setSearch("")}
+            activeFilterCount={
+              (search ? 1 : 0) +
+              (adoptionFilter !== "all" ? 1 : 0) +
+              (adoptionSort !== "none" ? 1 : 0)
+            }
+            filters={
+              <>
+                <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
+                  <SelectTrigger className="w-[155px]">
+                    <SelectValue placeholder="Adopción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toda adopción</SelectItem>
+                    <SelectItem value="Alta">Alta</SelectItem>
+                    <SelectItem value="Media">Media</SelectItem>
+                    <SelectItem value="Baja">Baja</SelectItem>
+                    <SelectItem value="Sin actividad">Sin actividad</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={adoptionSort} onValueChange={setAdoptionSort}>
+                  <SelectTrigger className="w-[175px]">
+                    <SelectValue placeholder="Ordenar adopción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Orden original</SelectItem>
+                    <SelectItem value="high">Mayor adopción primero</SelectItem>
+                    <SelectItem value="low">Menor adopción primero</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            }
+            onReset={() => {
+              setSearch("");
+              setAdoptionFilter("all");
+              setAdoptionSort("none");
+            }}
           />
         }
         isEmpty={clients.length === 0}
