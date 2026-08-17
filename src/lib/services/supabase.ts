@@ -481,7 +481,7 @@ export const supabaseServices: AdminServices = {
         .eq("id", projectId)
         .single();
       throwIfError(error);
-      if (!data) throw new Error("No se encontrÃ³ el proyecto.");
+      if (!data) throw new Error("No se encontró el proyecto.");
       return {
         notifyLicenseExpiry: data.notify_license_expiry,
         autoRenewVerifiedPayments: data.auto_renew_verified_payments,
@@ -527,7 +527,7 @@ export const supabaseServices: AdminServices = {
       return client.storage.from("project-branding").getPublicUrl(objectPath).data.publicUrl;
     },
     async update(projectId, changes) {
-      await requireOnline("Actualizar la configuraciÃ³n del proyecto");
+      await requireOnline("Actualizar la configuración del proyecto");
       const { error } = await getSupabaseClient().rpc("admin_update_project_settings", {
         target_project_id: projectId,
         target_name: changes.name,
@@ -562,7 +562,7 @@ export const supabaseServices: AdminServices = {
       return mapWhatsAppSettings(row);
     },
     async updateWhatsAppSettings(projectId, settings) {
-      await requireOnline("Actualizar la configuraciÃ³n de WhatsApp");
+      await requireOnline("Actualizar la configuración de WhatsApp");
       const { data, error } = await getSupabaseClient().rpc("admin_update_whatsapp_settings", {
         target_project_id: projectId,
         target_fallback_number: settings.fallbackNumber,
@@ -1396,7 +1396,7 @@ export const supabaseServices: AdminServices = {
       }));
     },
     async saveCampaign(projectId, campaign) {
-      await requireOnline("Guardar campaÃ±a comercial");
+      await requireOnline("Guardar campaña comercial");
       const { data, error } = await getSupabaseClient().rpc("admin_save_commercial_campaign", {
         target_project_id: projectId,
         target_campaign_id: campaign.id ?? null,
@@ -1656,7 +1656,7 @@ export const supabaseServices: AdminServices = {
   },
   client360: {
     async get(projectId, clientId) {
-      const [baseResponse, billingResponse] = await Promise.all([
+      const [baseResponse, billingResponse, adoptionResponse] = await Promise.all([
         getSupabaseClient().rpc("admin_get_client_360", {
           target_project_id: projectId,
           target_client_id: clientId,
@@ -1665,25 +1665,40 @@ export const supabaseServices: AdminServices = {
           target_project_id: projectId,
           target_client_id: clientId,
         }),
+        getSupabaseClient().rpc("admin_get_client_adoption", {
+          target_project_id: projectId,
+          target_client_id: clientId,
+        }),
       ]);
 
       throwIfError(baseResponse.error);
       throwIfError(billingResponse.error);
-      if (!baseResponse.data) throw new Error("No se encontrÃ³ el cliente en este proyecto.");
+      throwIfError(adoptionResponse.error);
+
+      if (!baseResponse.data) {
+        throw new Error("No se encontró el cliente en este proyecto.");
+      }
 
       const merged = {
         ...(baseResponse.data as Record<string, unknown>),
       };
-      const billingContext = billingResponse.data as Record<string, unknown> | null;
+
+      const billingContext =
+        billingResponse.data as Record<string, unknown> | null;
 
       if (billingContext) {
         merged.last_payment = billingContext.last_payment ?? null;
         merged.billing = billingContext.billing ?? null;
 
-        const existingActivity = ((merged.activity ?? []) as Array<Record<string, unknown>>).filter(
-          (row) => !["preinvoice", "payment", "document"].includes(String(row.type)),
+        const existingActivity = (
+          (merged.activity ?? []) as Array<Record<string, unknown>>
+        ).filter(
+          (row) =>
+            !["preinvoice", "payment", "document"].includes(String(row.type)),
         );
-        const billingActivity = (billingContext.activity ?? []) as Array<Record<string, unknown>>;
+
+        const billingActivity =
+          (billingContext.activity ?? []) as Array<Record<string, unknown>>;
 
         merged.activity = [...existingActivity, ...billingActivity].sort(
           (left, right) =>
@@ -1691,6 +1706,8 @@ export const supabaseServices: AdminServices = {
             new Date(String(left.occurred_at)).getTime(),
         );
       }
+
+      merged.adoption = adoptionResponse.data ?? null;
 
       return mapClient360(merged);
     },
