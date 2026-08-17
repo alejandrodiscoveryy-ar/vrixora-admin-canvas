@@ -46,6 +46,7 @@ import { MobileActionsMenu } from "@/components/admin/MobileAdminSystem";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AdminStatus } from "@/components/admin/types";
 import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
+import { adoptionBadgeVariant, adoptionDotClass } from "@/lib/adoption-visual";
 
 const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -275,6 +276,17 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     status={statusVisual(client.status)}
                     label={statusLabel(client.status)}
                   />
+                  <Badge
+                    variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
+                    className="gap-1.5 rounded-full"
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                        client.adoptionLevel ?? "Sin actividad",
+                      )}`}
+                    />
+                    {client.adoptionLevel ?? "Sin actividad"} · {client.adoptionScore ?? 0}
+                  </Badge>
                 </div>
 
                 <DetailList
@@ -323,6 +335,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 <TableHead>Contacto</TableHead>
                 <TableHead>Licencia / Plan</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Adopción</TableHead>
                 <TableHead>Vencimiento</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -375,6 +388,26 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                         status={statusVisual(client.status)}
                         label={statusLabel(client.status)}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <div className="min-w-[110px]">
+                        <Badge
+                          variant={adoptionBadgeVariant(
+                            client.adoptionLevel ?? "Sin actividad",
+                          )}
+                          className="gap-1.5 rounded-full"
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                              client.adoptionLevel ?? "Sin actividad",
+                            )}`}
+                          />
+                          {client.adoptionLevel ?? "Sin actividad"} · {client.adoptionScore ?? 0}
+                        </Badge>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {client.usageProfile ?? "Sin actividad"}
+                        </p>
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs">
                       <span

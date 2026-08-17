@@ -45,6 +45,12 @@ import { useProjectPermissions } from "@/hooks/useProjects";
 import { PreparePreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
 import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
 import { isValidClientPhone, updateClientContact } from "@/lib/client-contact";
+import {
+  adoptionBadgeVariant,
+  adoptionDotClass,
+  adoptionSurfaceClass,
+  adoptionTextClass,
+} from "@/lib/adoption-visual";
 
 const dateFormatter = new Intl.DateTimeFormat("es", { dateStyle: "medium" });
 const dateTimeFormatter = new Intl.DateTimeFormat("es", {
@@ -313,6 +319,15 @@ export default function Cliente360Section({
                 ) : (
                   <StatusBadge status="inactive" label="Sin licencia" />
                 )}
+                <Badge
+                  variant={adoptionBadgeVariant(data.adoption.level)}
+                  className="gap-1.5"
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${adoptionDotClass(data.adoption.level)}`}
+                  />
+                  {data.adoption.level} · {data.adoption.score}
+                </Badge>
               </div>
               <p className="mt-1 flex items-center gap-1.5 truncate text-sm text-text-secondary">
                 <Mail className="h-3.5 w-3.5 shrink-0" />
@@ -399,13 +414,17 @@ export default function Cliente360Section({
           module="clientes"
         >
           <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-2 p-4">
+            <div
+              className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${adoptionSurfaceClass(data.adoption.level)}`}
+            >
               <div>
                 <p className="text-xs font-medium text-text-tertiary">
                   Nivel de adopción
                 </p>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-text-primary">
+                  <span
+                    className={`text-3xl font-bold ${adoptionTextClass(data.adoption.level)}`}
+                  >
                     {data.adoption.score}
                   </span>
                   <span className="text-sm text-text-tertiary">/100</span>
@@ -413,7 +432,15 @@ export default function Cliente360Section({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="info">{data.adoption.level}</Badge>
+                <Badge
+                  variant={adoptionBadgeVariant(data.adoption.level)}
+                  className="gap-1.5"
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${adoptionDotClass(data.adoption.level)}`}
+                  />
+                  {data.adoption.level}
+                </Badge>
                 <Badge variant="secondary">
                   Perfil: {data.adoption.usageProfile}
                 </Badge>
