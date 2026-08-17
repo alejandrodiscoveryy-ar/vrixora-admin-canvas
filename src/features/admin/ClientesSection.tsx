@@ -46,6 +46,7 @@ import { MobileActionsMenu } from "@/components/admin/MobileAdminSystem";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AdminStatus } from "@/components/admin/types";
 import { LicenseKeyDisplay } from "@/components/admin/LicenseKeyDisplay";
+import { adoptionBadgeVariant, adoptionDotClass } from "@/lib/adoption-visual";
 
 const statuses: { value: LicenseStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -77,6 +78,8 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [adoptionFilter, setAdoptionFilter] = useState("all");
+  const [adoptionSort, setAdoptionSort] = useState("none");
   const [selected, setSelected] = useState<ServiceClient | null>(null);
 
   const query = useQuery({
@@ -106,15 +109,34 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
     [plans.data],
   );
 
-  const clients = useMemo(
-    () =>
-      allClients.filter((client) =>
+  const clients = useMemo(() => {
+    const filtered = allClients.filter((client) => {
+      const matchesSearch =
         `${client.displayName} ${client.email} ${client.phone ?? ""} ${client.licenseKey ?? ""} ${client.plan}`
           .toLowerCase()
-          .includes(search.toLowerCase()),
-      ),
-    [allClients, search],
-  );
+          .includes(search.toLowerCase());
+
+      const matchesAdoption =
+        adoptionFilter === "all" ||
+        (client.adoptionLevel ?? "Sin actividad") === adoptionFilter;
+
+      return matchesSearch && matchesAdoption;
+    });
+
+    if (adoptionSort === "high") {
+      return [...filtered].sort(
+        (left, right) => (right.adoptionScore ?? 0) - (left.adoptionScore ?? 0),
+      );
+    }
+
+    if (adoptionSort === "low") {
+      return [...filtered].sort(
+        (left, right) => (left.adoptionScore ?? 0) - (right.adoptionScore ?? 0),
+      );
+    }
+
+    return filtered;
+  }, [allClients, search, adoptionFilter, adoptionSort]);
 
   const { activeClients, trialClients, expiringSoon } = useMemo(() => {
     const now = Date.now();
@@ -230,8 +252,43 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo, teléfono o licencia..."
             resultCount={clients.length}
-            activeFilterCount={search ? 1 : 0}
-            onReset={() => setSearch("")}
+            activeFilterCount={
+              (search ? 1 : 0) +
+              (adoptionFilter !== "all" ? 1 : 0) +
+              (adoptionSort !== "none" ? 1 : 0)
+            }
+            filters={
+              <>
+                <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
+                  <SelectTrigger className="w-[155px]">
+                    <SelectValue placeholder="Adopción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toda adopción</SelectItem>
+                    <SelectItem value="Alta">Alta</SelectItem>
+                    <SelectItem value="Media">Media</SelectItem>
+                    <SelectItem value="Baja">Baja</SelectItem>
+                    <SelectItem value="Sin actividad">Sin actividad</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={adoptionSort} onValueChange={setAdoptionSort}>
+                  <SelectTrigger className="w-[175px]">
+                    <SelectValue placeholder="Ordenar adopción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Orden original</SelectItem>
+                    <SelectItem value="high">Mayor adopción primero</SelectItem>
+                    <SelectItem value="low">Menor adopción primero</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            }
+            onReset={() => {
+              setSearch("");
+              setAdoptionFilter("all");
+              setAdoptionSort("none");
+            }}
           />
         }
         isEmpty={clients.length === 0}
@@ -275,6 +332,17 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     status={statusVisual(client.status)}
                     label={statusLabel(client.status)}
                   />
+                  <Badge
+                    variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
+                    className="gap-1.5 rounded-full"
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                        client.adoptionLevel ?? "Sin actividad",
+                      )}`}
+                    />
+                    {client.adoptionLevel ?? "Sin actividad"} · {client.adoptionScore ?? 0}
+                  </Badge>
                 </div>
 
                 <DetailList
@@ -323,6 +391,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 <TableHead>Contacto</TableHead>
                 <TableHead>Licencia / Plan</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Adopción</TableHead>
                 <TableHead>Vencimiento</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -375,6 +444,26 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                         status={statusVisual(client.status)}
                         label={statusLabel(client.status)}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <div className="min-w-[110px]">
+                        <Badge
+                          variant={adoptionBadgeVariant(
+                            client.adoptionLevel ?? "Sin actividad",
+                          )}
+                          className="gap-1.5 rounded-full"
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                              client.adoptionLevel ?? "Sin actividad",
+                            )}`}
+                          />
+                          {client.adoptionLevel ?? "Sin actividad"} · {client.adoptionScore ?? 0}
+                        </Badge>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {client.usageProfile ?? "Sin actividad"}
+                        </p>
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs">
                       <span

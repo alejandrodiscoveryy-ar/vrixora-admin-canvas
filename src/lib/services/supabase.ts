@@ -645,33 +645,73 @@ export const supabaseServices: AdminServices = {
   licenses: {
     async listClients(projectId) {
       const client = getSupabaseClient();
-      const { data, error } = await client.rpc("admin_list_registered_clients", {
-        target_project_id: projectId,
-      });
-      throwIfError(error);
 
-      const rows = (data ?? []) as ClientRow[];
-      return rows.map((client: ClientRow): ServiceClient => ({
-        userId: client.user_id,
-        email: client.email,
-        displayName: client.display_name ?? client.email,
-        phone: client.phone,
-        avatarUrl: client.avatar_url,
-        registeredAt: client.registered_at,
-        licenseId: client.license_id,
-        licenseKey: client.license_key,
-        plan: client.plan,
-        status: client.status as LicenseStatus | null,
-        activatedAt: client.activated_at,
-        expiresAt: client.expires_at,
-        maxDevices: Number(client.max_devices ?? 0),
-        activeDevices: Number(client.active_devices),
-        lastPaymentAt: client.last_payment_at,
-        lastPaymentAmount:
-          client.last_payment_amount == null ? null : Number(client.last_payment_amount),
-        lastPaymentCurrency: client.last_payment_currency as Currency | null,
-        lastRenewedAt: client.last_renewed_at,
-      }));
+      const [clientsResponse, adoptionResponse] = await Promise.all([
+        client.rpc("admin_list_registered_clients", {
+          target_project_id: projectId,
+        }),
+        client.rpc("admin_list_client_adoption", {
+          target_project_id: projectId,
+        }),
+      ]);
+
+      throwIfError(clientsResponse.error);
+      throwIfError(adoptionResponse.error);
+
+      const adoptionByUserId = new Map<
+        string,
+        { score: number; level: string; usageProfile: string }
+      >(
+        (
+          (adoptionResponse.data ?? []) as Array<{
+            user_id: string;
+            score: number | string;
+            level: string;
+            usage_profile: string;
+          }>
+        ).map(
+          (row) =>
+            [
+              String(row.user_id),
+              {
+                score: Number(row.score ?? 0),
+                level: String(row.level ?? "Sin actividad"),
+                usageProfile: String(row.usage_profile ?? "Sin actividad"),
+              },
+            ] as const,
+        ),
+      );
+
+      const rows = (clientsResponse.data ?? []) as ClientRow[];
+
+      return rows.map((client: ClientRow): ServiceClient => {
+        const adoption = adoptionByUserId.get(client.user_id);
+
+        return {
+          userId: client.user_id,
+          email: client.email,
+          displayName: client.display_name ?? client.email,
+          phone: client.phone,
+          avatarUrl: client.avatar_url,
+          registeredAt: client.registered_at,
+          licenseId: client.license_id,
+          licenseKey: client.license_key,
+          plan: client.plan,
+          status: client.status as LicenseStatus | null,
+          activatedAt: client.activated_at,
+          expiresAt: client.expires_at,
+          maxDevices: Number(client.max_devices ?? 0),
+          activeDevices: Number(client.active_devices),
+          lastPaymentAt: client.last_payment_at,
+          lastPaymentAmount:
+            client.last_payment_amount == null ? null : Number(client.last_payment_amount),
+          lastPaymentCurrency: client.last_payment_currency as Currency | null,
+          lastRenewedAt: client.last_renewed_at,
+          adoptionScore: adoption?.score ?? 0,
+          adoptionLevel: adoption?.level ?? "Sin actividad",
+          usageProfile: adoption?.usageProfile ?? "Sin actividad",
+        };
+      });
     },
     async setClientStatus(projectId, userId, status, reason) {
       await requireOnline("Cambiar el estado de una licencia");

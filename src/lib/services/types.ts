@@ -126,6 +126,9 @@ export interface ServiceClient {
   lastPaymentAmount: number | null;
   lastPaymentCurrency: Currency | null;
   lastRenewedAt: string | null;
+  adoptionScore?: number;
+  adoptionLevel?: string;
+  usageProfile?: string;
 }
 
 export interface LicenseDevice {
