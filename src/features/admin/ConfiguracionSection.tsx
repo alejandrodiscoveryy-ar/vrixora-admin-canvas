@@ -773,7 +773,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                       value="automatic"
                       disabled={foundationForm.rateMode !== "automatic"}
                     >
-                      Automática — sin proveedor configurado
+                      Automática — elTOQUE
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -788,7 +788,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   step="any"
                   value={foundationForm.currentRate}
                   onChange={(event) => updateFoundation("currentRate", Number(event.target.value))}
-                  disabled={!canManage}
+                  disabled={!canManage || foundationForm.rateMode === "automatic"}
                 />
               </div>
 
@@ -799,13 +799,24 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   value={foundationForm.rateSource}
                   onChange={(event) => updateFoundation("rateSource", event.target.value)}
                   placeholder="Ej. Tasa manual administrativa"
-                  disabled={!canManage}
+                  disabled={!canManage || foundationForm.rateMode === "automatic"}
                 />
               </div>
 
               <p className="text-xs text-text-tertiary md:col-span-2">
                 Última actualización: {formatDateTime(foundationForm.rateUpdatedAt)}
               </p>
+
+              {foundationForm.rateMode === "automatic" ? (
+                <PageAlert
+                  tone="success"
+                  title="Tasa administrada automáticamente"
+                  className="md:col-span-2"
+                >
+                  La tasa y su fuente se actualizan desde Integraciones → elTOQUE. Para modificarlas
+                  manualmente, cambia primero el modo de tasa a Manual.
+                </PageAlert>
+              ) : null}
             </div>
           </SectionCard>
 
