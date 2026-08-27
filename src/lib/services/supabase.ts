@@ -32,6 +32,7 @@ import type {
   Client360Payment,
   Client360Preinvoice,
   Client360ReferralPerson,
+  ReferralCampaign,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
@@ -1812,6 +1813,36 @@ export const supabaseServices: AdminServices = {
           createdAt: String(item.created_at),
         })),
       };
+    },
+    async listCampaigns(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_referral_campaigns", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      return (Array.isArray(data) ? data : []).map((row): ReferralCampaign => {
+        const campaign = row as Record<string, unknown>;
+        return {
+          id: String(campaign.id),
+          name: String(campaign.name),
+          status: campaign.status as ReferralCampaign["status"],
+          qualificationMode: campaign.qualification_mode as ReferralCampaign["qualificationMode"],
+          rewardDays: Number(campaign.reward_days),
+          startsAt: String(campaign.starts_at),
+          endsAt: campaign.ends_at ? String(campaign.ends_at) : null,
+          createdAt: String(campaign.created_at),
+        };
+      });
+    },
+    async startCampaign(projectId, input) {
+      await requireOnline("Iniciar campaña de referidos");
+      const { data, error } = await getSupabaseClient().rpc("admin_start_referral_campaign", {
+        target_project_id: projectId,
+        target_name: input.name,
+        target_qualification_mode: input.qualificationMode,
+        target_reward_days: input.rewardDays,
+      });
+      throwIfError(error);
+      return String(data);
     },
   },
 };

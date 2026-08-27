@@ -66,6 +66,10 @@ export type {
   ClientReferralSummary,
   ReferralOverviewRow,
   ReferralOverview,
+  ReferralQualificationMode,
+  ReferralCampaignStatus,
+  ReferralCampaign,
+  StartReferralCampaignInput,
   ReferralService,
 } from "./types";
 

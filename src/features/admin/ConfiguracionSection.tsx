@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Loader2, Save, Trash2, TriangleAlert, Upload } from "lucide-react";
+import { Building2, Loader2, Plus, Save, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -8,6 +8,7 @@ import {
   supabaseServices,
   type P0ASettings,
   type ProjectSettings,
+  type ReferralQualificationMode,
   type WhatsAppSettings,
 } from "@/lib/services";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
@@ -74,6 +75,12 @@ const CONFIG_SELECT_CLASS =
 const CONFIG_TEXTAREA_CLASS =
   "min-h-[60px] border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
 
+const ACTIVE_CAMPAIGN_BADGE_CLASS =
+  "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]";
+
+const CLOSED_CAMPAIGN_BADGE_CLASS =
+  "border-border-default bg-surface-2 text-text-secondary";
+
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { data: project } = useProject(projectId);
@@ -100,11 +107,21 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   const [activeSection, setActiveSection] = useState<SectionKey>("general");
 
+  const referralCampaignsQuery = useQuery({
+    queryKey: ["referral-campaigns", projectId],
+    queryFn: () => supabaseServices.referrals.listCampaigns(projectId),
+    enabled: activeSection === "referrals",
+  });
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [form, setForm] = useState<ProjectSettings | null>(null);
   const [foundationForm, setFoundationForm] = useState<P0ASettings | null>(null);
   const [whatsappForm, setWhatsAppForm] = useState<WhatsAppSettings | null>(null);
+  const [campaignName, setCampaignName] = useState("");
+  const [campaignQualificationMode, setCampaignQualificationMode] =
+    useState<ReferralQualificationMode>("registration");
+  const [campaignRewardDays, setCampaignRewardDays] = useState(15);
 
   const [projectDirty, setProjectDirty] = useState(false);
   const [foundationDirty, setFoundationDirty] = useState(false);
@@ -278,6 +295,39 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       );
     },
 
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const startReferralCampaign = useMutation({
+    mutationFn: async () => {
+      if (!canManage) {
+        throw new Error("No tienes permisos para administrar campañas de referidos.");
+      }
+
+      if (!campaignName.trim()) {
+        throw new Error("Indica el nombre de la campaña.");
+      }
+
+      if (!Number.isInteger(campaignRewardDays) || campaignRewardDays < 1 || campaignRewardDays > 365) {
+        throw new Error("La recompensa debe estar entre 1 y 365 días.");
+      }
+
+      return supabaseServices.referrals.startCampaign(projectId, {
+        name: campaignName.trim(),
+        qualificationMode: campaignQualificationMode,
+        rewardDays: campaignRewardDays,
+      });
+    },
+    onSuccess: async () => {
+      setCampaignName("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["referral-campaigns", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-foundation-settings", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-audit", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["business-audit-events", projectId] }),
+      ]);
+      toast.success("Nueva campaña de referidos iniciada correctamente.");
+    },
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -850,36 +900,190 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       ) : null}
 
       {activeSection === "referrals" ? (
-        <SectionCard
-          title="Programa de referidos"
-          description="Reglas generales para recompensar clientes que generan nuevas conversiones."
-          module="configuracion"
-          className={CONFIG_CARD_CLASS}
-          headerClassName={CONFIG_HEADER_CLASS}
-          contentClassName={CONFIG_CONTENT_CLASS}
-        >
-          <div className="max-w-xl space-y-3">
-            <div className="space-y-1.5">
-              <Label>Días de recompensa por referido convertido</Label>
-              <Input
-                className={CONFIG_CONTROL_CLASS}
-                type="number"
-                min={1}
-                max={365}
-                value={foundationForm.referralRewardDays}
-                onChange={(event) =>
-                  updateFoundation("referralRewardDays", Number(event.target.value))
-                }
-                disabled={!canManage}
-              />
-            </div>
+        <div className="space-y-3">
+          <SectionCard
+            title="Programa de referidos"
+            description="Cada campaña conserva su condición y recompensa para no alterar relaciones ni beneficios históricos."
+            module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
+          >
+            {referralCampaignsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            ) : referralCampaignsQuery.isError ? (
+              <PageAlert tone="error" title="No se pudieron cargar las campañas">
+                {referralCampaignsQuery.error.message}
+              </PageAlert>
+            ) : (() => {
+              const campaigns = referralCampaignsQuery.data ?? [];
+              const activeCampaign = campaigns.find((campaign) => campaign.status === "active");
 
-            <PageAlert tone="info">
-              La recompensa se genera cuando el referido cumple las condiciones comerciales
-              definidas. El valor inicial recomendado es 15 días.
+              return activeCampaign ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-text-primary">Campaña activa</p>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    <ReferralCampaignDetail label="Nombre" value={activeCampaign.name} />
+                    <ReferralCampaignDetail
+                      label="Condición"
+                      value={formatReferralQualificationMode(activeCampaign.qualificationMode)}
+                    />
+                    <ReferralCampaignDetail
+                      label="Recompensa"
+                      value={`${activeCampaign.rewardDays} días`}
+                    />
+                    <ReferralCampaignDetail label="Inicio" value={formatDateTime(activeCampaign.startsAt)} />
+                    <ReferralCampaignDetail label="Estado" value="Activa" tone="success" />
+                  </div>
+                </div>
+              ) : (
+                <PageAlert tone="info" title="Sin campaña activa">
+                  Inicia una campaña para definir cuándo se califican las nuevas recompensas.
+                </PageAlert>
+              );
+            })()}
+          </SectionCard>
+
+          {canManage ? (
+            <SectionCard
+              title="Iniciar nueva campaña"
+              description="La campaña activa se cerrará al crear la nueva. Las reglas históricas no se modificarán."
+              module="configuracion"
+              className={CONFIG_CARD_CLASS}
+              headerClassName={CONFIG_HEADER_CLASS}
+              contentClassName={CONFIG_CONTENT_CLASS}
+            >
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_160px_auto] xl:items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="referral-campaign-name">Nombre de campaña</Label>
+                  <Input
+                    id="referral-campaign-name"
+                    className={CONFIG_CONTROL_CLASS}
+                    value={campaignName}
+                    onChange={(event) => setCampaignName(event.target.value)}
+                    placeholder="Ej. Lanzamiento TukTuk Control"
+                    disabled={startReferralCampaign.isPending}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Condición</Label>
+                  <Select
+                    value={campaignQualificationMode}
+                    onValueChange={(value) =>
+                      setCampaignQualificationMode(value as ReferralQualificationMode)
+                    }
+                    disabled={startReferralCampaign.isPending}
+                  >
+                    <SelectTrigger className={CONFIG_SELECT_CLASS}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="registration">Al registrarse en la aplicación</SelectItem>
+                      <SelectItem value="first_payment">Al realizar su primer pago</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="referral-campaign-days">Días de recompensa</Label>
+                  <Input
+                    id="referral-campaign-days"
+                    className={CONFIG_CONTROL_CLASS}
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={campaignRewardDays}
+                    onChange={(event) => setCampaignRewardDays(Number(event.target.value))}
+                    disabled={startReferralCampaign.isPending}
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => startReferralCampaign.mutate()}
+                  disabled={startReferralCampaign.isPending}
+                >
+                  {startReferralCampaign.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
+                  Iniciar campaña
+                </Button>
+              </div>
+            </SectionCard>
+          ) : (
+            <PageAlert tone="info" title="Acceso restringido">
+              Puedes consultar las campañas, pero no tienes permiso para iniciar o cerrar campañas.
             </PageAlert>
-          </div>
-        </SectionCard>
+          )}
+
+          <SectionCard
+            title="Historial de campañas"
+            description="Las campañas cerradas conservan las condiciones con las que se emitieron las recompensas."
+            module="configuracion"
+            className={CONFIG_CARD_CLASS}
+            headerClassName={CONFIG_HEADER_CLASS}
+            contentClassName={CONFIG_CONTENT_CLASS}
+          >
+            {referralCampaignsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            ) : referralCampaignsQuery.isError ? (
+              <PageAlert tone="error">No se pudo cargar el historial de campañas.</PageAlert>
+            ) : referralCampaignsQuery.data?.length ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead className="border-b border-border-default text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                    <tr>
+                      <th className="px-3 py-2">Campaña</th>
+                      <th className="px-3 py-2">Condición</th>
+                      <th className="px-3 py-2">Días</th>
+                      <th className="px-3 py-2">Estado</th>
+                      <th className="px-3 py-2">Inicio</th>
+                      <th className="px-3 py-2">Cierre</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {referralCampaignsQuery.data.map((campaign) => (
+                      <tr key={campaign.id} className="border-b border-border-default/70 last:border-0">
+                        <td className="px-3 py-3 font-medium text-text-primary">{campaign.name}</td>
+                        <td className="px-3 py-3 text-text-secondary">
+                          {formatReferralQualificationMode(campaign.qualificationMode)}
+                        </td>
+                        <td className="px-3 py-3 text-text-secondary">{campaign.rewardDays} días</td>
+                        <td className="px-3 py-3">
+                          <Badge
+                            variant="outline"
+                            className={
+                              campaign.status === "active"
+                                ? ACTIVE_CAMPAIGN_BADGE_CLASS
+                                : CLOSED_CAMPAIGN_BADGE_CLASS
+                            }
+                          >
+                            {campaign.status === "active" ? "Activa" : "Cerrada"}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-3 text-text-secondary">{formatDateTime(campaign.startsAt)}</td>
+                        <td className="px-3 py-3 text-text-secondary">
+                          {campaign.endsAt ? formatDateTime(campaign.endsAt) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <PageAlert tone="info" title="Sin campañas registradas">
+                Cuando inicies una campaña aparecerá aquí su historial completo.
+              </PageAlert>
+            )}
+          </SectionCard>
+        </div>
       ) : null}
 
       {activeSection === "communication" ? (
@@ -1190,4 +1394,33 @@ function formatDateTime(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function formatReferralQualificationMode(mode: ReferralQualificationMode) {
+  return mode === "first_payment"
+    ? "Al realizar su primer pago"
+    : "Al registrarse en la aplicación";
+}
+
+function ReferralCampaignDetail({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "success";
+}) {
+  return (
+    <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
+      {tone === "success" ? (
+        <Badge variant="outline" className={`mt-1.5 ${ACTIVE_CAMPAIGN_BADGE_CLASS}`}>
+          {value}
+        </Badge>
+      ) : (
+        <p className="mt-1.5 text-sm font-medium text-text-primary">{value}</p>
+      )}
+    </div>
+  );
 }

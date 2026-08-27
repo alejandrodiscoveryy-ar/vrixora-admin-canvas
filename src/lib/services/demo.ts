@@ -474,5 +474,11 @@ export const demoServices: AdminServices = {
     async overview() {
       return { relationships: 0, converted: 0, appliedRewards: 0, deliveredDays: 0, rows: [] };
     },
+    async listCampaigns() {
+      return [];
+    },
+    async startCampaign() {
+      throw new Error("Esta operación requiere Supabase");
+    },
   },
 };
