@@ -772,10 +772,32 @@ export interface ReferralOverview {
   rows: ReferralOverviewRow[];
 }
 
+export type ReferralQualificationMode = "registration" | "first_payment";
+export type ReferralCampaignStatus = "active" | "closed";
+
+export interface ReferralCampaign {
+  id: string;
+  name: string;
+  status: ReferralCampaignStatus;
+  qualificationMode: ReferralQualificationMode;
+  rewardDays: number;
+  startsAt: string;
+  endsAt: string | null;
+  createdAt: string;
+}
+
+export interface StartReferralCampaignInput {
+  name: string;
+  qualificationMode: ReferralQualificationMode;
+  rewardDays: number;
+}
+
 export interface ReferralService {
   clientSummary(projectId: string, clientId: string): Promise<ClientReferralSummary>;
   linkReferrer(projectId: string, clientId: string, code: string): Promise<string>;
   overview(projectId: string): Promise<ReferralOverview>;
+  listCampaigns(projectId: string): Promise<ReferralCampaign[]>;
+  startCampaign(projectId: string, input: StartReferralCampaignInput): Promise<string>;
 }
 
 export interface Client360Device {
