@@ -719,8 +719,8 @@ export default function Cliente360Section({
                     <ReferralCard
                       name={currentReferralSummary.referredBy.name}
                       code={currentReferralSummary.referredBy.code}
-                      status={null}
-                      days={null}
+                      status={data.referrals?.referredBy?.rewardStatus ?? null}
+                      days={data.referrals?.referredBy?.rewardDays ?? null}
                     />
                   ) : (
                     <div className="flex flex-wrap items-center gap-2">
