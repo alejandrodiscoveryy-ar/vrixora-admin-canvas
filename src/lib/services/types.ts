@@ -800,6 +800,35 @@ export interface ReferralService {
   startCampaign(projectId: string, input: StartReferralCampaignInput): Promise<string>;
 }
 
+export type MobileAnnouncementCategory = "general" | "app_update";
+
+export interface MobilePushAudience {
+  projectId: string;
+  eligibleAndroidUsers: number;
+  enabledAndroidTokens: number;
+}
+
+export interface SendMobileAnnouncementInput {
+  category: MobileAnnouncementCategory;
+  title: string;
+  body: string;
+  releaseVersion?: string;
+  actionUrl?: string;
+}
+
+export interface MobileAnnouncementResult {
+  ok: boolean;
+  broadcastId: string;
+  kind: string;
+  targetPlatform: "android";
+  queuedUsers: number;
+}
+
+export interface MobileCommunicationService {
+  audience(projectId: string): Promise<MobilePushAudience>;
+  send(projectId: string, input: SendMobileAnnouncementInput): Promise<MobileAnnouncementResult>;
+}
+
 export interface Client360Device {
   id: string;
   label: string | null;
@@ -972,4 +1001,5 @@ export interface AdminServices {
   foundations: P0AFoundationService;
   client360: Client360Service;
   referrals: ReferralService;
+  communications: MobileCommunicationService;
 }

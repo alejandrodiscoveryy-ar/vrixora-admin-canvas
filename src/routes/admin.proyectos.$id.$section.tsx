@@ -12,6 +12,7 @@ import PagosSection from "@/features/admin/PagosSection";
 import EmpleadosSection from "@/features/admin/EmpleadosSection";
 import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
+import ComunicadosSection from "@/features/admin/ComunicadosSection";
 import IntegracionesSection from "@/features/admin/IntegracionesSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
@@ -28,6 +29,7 @@ const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   empleados: "members.view",
   rendimiento: "analytics.view",
   configuracion: "settings.view",
+  comunicados: "settings.view",
   integraciones: "settings.view",
   auditoria: "audit.view",
 };
@@ -112,6 +114,9 @@ function SectionPage() {
 
     case "configuracion":
       return <ConfiguracionSection projectId={id} />;
+
+    case "comunicados":
+      return <ComunicadosSection projectId={id} />;
 
     case "integraciones":
       return <IntegracionesSection projectId={id} />;

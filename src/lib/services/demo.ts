@@ -481,4 +481,16 @@ export const demoServices: AdminServices = {
       throw new Error("Esta operación requiere Supabase");
     },
   },
+  communications: {
+    async audience(projectId) {
+      return {
+        projectId,
+        eligibleAndroidUsers: 0,
+        enabledAndroidTokens: 0,
+      };
+    },
+    async send() {
+      throw new Error("Esta operación requiere Supabase");
+    },
+  },
 };

@@ -71,6 +71,11 @@ export type {
   ReferralCampaign,
   StartReferralCampaignInput,
   ReferralService,
+  MobileAnnouncementCategory,
+  MobilePushAudience,
+  SendMobileAnnouncementInput,
+  MobileAnnouncementResult,
+  MobileCommunicationService,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {
