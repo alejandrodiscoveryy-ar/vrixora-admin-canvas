@@ -508,15 +508,21 @@ export const supabaseServices: AdminServices = {
     },
     async uploadBrandAsset(projectId, kind, file) {
       await requireOnline("Subir un recurso de marca");
-      const extensionByType: Record<string, string> = {
-        "image/png": "png",
-        "image/jpeg": "jpg",
-        "image/webp": "webp",
-        "image/x-icon": "ico",
-        "image/vnd.microsoft.icon": "ico",
-      };
-      const extension = extensionByType[file.type];
-      if (!extension) throw new Error("Formato no permitido. Usa PNG, JPG, WEBP o ICO.");
+      const extension =
+        kind === "logo" && file.type === "image/png"
+          ? "png"
+          : kind === "logo" && file.type === "image/webp"
+            ? "webp"
+            : kind === "favicon" && file.type === "image/png"
+              ? "png"
+              : null;
+      if (!extension) {
+        throw new Error(
+          kind === "logo"
+            ? "El logo completo debe ser un archivo PNG o WEBP."
+            : "El icono maestro debe ser un archivo PNG.",
+        );
+      }
       if (file.size > 2 * 1024 * 1024) throw new Error("El archivo no puede superar 2 MB.");
 
       const objectPath = `${projectId}/${kind}-${crypto.randomUUID()}.${extension}`;

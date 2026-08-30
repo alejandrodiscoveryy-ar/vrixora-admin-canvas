@@ -4,6 +4,7 @@ import { Building2, Loader2, Plus, Save, Trash2, TriangleAlert, Upload } from "l
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
+import { readImageDimensions } from "@/lib/image-file";
 import {
   supabaseServices,
   type P0ASettings,
@@ -286,6 +287,41 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const selectBrandAsset = async (kind: "logo" | "favicon", file: File) => {
+    try {
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error("El archivo no puede superar 2 MB.");
+      }
+
+      if (kind === "logo") {
+        if (file.type !== "image/png" && file.type !== "image/webp") {
+          throw new Error("El logo completo debe ser un archivo PNG o WEBP.");
+        }
+
+        const { width, height } = await readImageDimensions(file);
+        const ratio = width / height;
+
+        if (ratio < 2 || ratio > 3) {
+          throw new Error("El logo completo debe tener una proporción horizontal entre 2:1 y 3:1.");
+        }
+      } else {
+        if (file.type !== "image/png") {
+          throw new Error("El icono maestro debe ser un archivo PNG de 1024 × 1024 px.");
+        }
+
+        const { width, height } = await readImageDimensions(file);
+
+        if (width !== 1024 || height !== 1024) {
+          throw new Error("El icono maestro debe medir exactamente 1024 × 1024 px.");
+        }
+      }
+
+      uploadBrandAsset.mutate({ kind, file });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo validar la imagen.");
+    }
+  };
+
   const deleteTestData = useMutation({
     mutationFn: () => supabaseServices.foundations.deleteTestData(projectId),
 
@@ -544,23 +580,20 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
-            <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-4">
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-end">
+            <div className="grid gap-x-3 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-2 md:col-span-2 sm:grid-cols-[minmax(0,1fr)_120px] sm:items-end xl:col-span-2">
                 <div className="space-y-1.5">
-                  <Label>Logo</Label>
+                  <Label>Logo completo</Label>
                   <Input
                     id="project-logo"
                     type="file"
-                    accept="image/png,image/jpeg,image/webp"
+                    accept="image/png,image/webp"
                     className="sr-only"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
 
                       if (file) {
-                        uploadBrandAsset.mutate({
-                          kind: "logo",
-                          file,
-                        });
+                        void selectBrandAsset("logo", file);
                       }
 
                       event.target.value = "";
@@ -585,19 +618,22 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                       ) : (
                         <Upload />
                       )}
-                      {form.logoUrl ? "Reemplazar logo" : "Subir logo"}
+                      {form.logoUrl ? "Reemplazar logo completo" : "Subir logo completo"}
                     </label>
                   </Button>
 
-                  <p className="text-xs text-text-tertiary">PNG, JPG o WEBP · Máximo 2 MB.</p>
+                  <p className="text-xs leading-relaxed text-text-tertiary">
+                    Se utiliza en pantallas, documentos y comunicaciones. PNG o WEBP · máximo 2 MB
+                    · proporción horizontal entre 2:1 y 3:1 · lienzo recomendado 1600 × 600.
+                  </p>
                 </div>
 
-                <div className="flex h-14 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[76px]">
+                <div className="flex h-20 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[120px]">
                   {form.logoUrl ? (
                     <img
                       src={form.logoUrl}
                       alt="Vista previa del logo"
-                      className="max-h-9 max-w-full object-contain"
+                      className="max-h-full max-w-full object-contain"
                     />
                   ) : (
                     <span className="text-[10px] text-text-tertiary">Sin logo</span>
@@ -605,22 +641,19 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-end">
+              <div className="md:col-span-2 xl:col-span-2">
                 <div className="space-y-1.5">
-                  <Label>Icono / Favicon</Label>
+                  <Label>Icono maestro</Label>
                   <Input
                     id="project-favicon"
                     type="file"
-                    accept="image/png,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico"
+                    accept="image/png"
                     className="sr-only"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
 
                       if (file) {
-                        uploadBrandAsset.mutate({
-                          kind: "favicon",
-                          file,
-                        });
+                        void selectBrandAsset("favicon", file);
                       }
 
                       event.target.value = "";
@@ -645,23 +678,20 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                       ) : (
                         <Upload />
                       )}
-                      {form.iconUrl ? "Reemplazar icono" : "Subir icono"}
+                      {form.iconUrl ? "Reemplazar icono maestro" : "Subir icono maestro"}
                     </label>
                   </Button>
 
-                  <p className="text-xs text-text-tertiary">PNG, WEBP o ICO · Máximo 2 MB.</p>
+                  <p className="text-xs leading-relaxed text-text-tertiary">
+                    PNG 1024 × 1024 · fondo transparente recomendado · mantén el símbolo dentro
+                    de la zona segura · máximo 2 MB.
+                  </p>
                 </div>
 
-                <div className="flex h-14 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[76px]">
-                  {form.iconUrl ? (
-                    <img
-                      src={form.iconUrl}
-                      alt="Vista previa del icono"
-                      className="h-8 w-8 object-contain"
-                    />
-                  ) : (
-                    <span className="text-[10px] text-text-tertiary">Sin icono</span>
-                  )}
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <IconMasterPreview label="Cuadrado" shape="square" url={form.iconUrl} />
+                  <IconMasterPreview label="Círculo" shape="circle" url={form.iconUrl} />
+                  <IconMasterPreview label="Redondeado" shape="rounded" url={form.iconUrl} />
                 </div>
               </div>
 
@@ -1421,6 +1451,38 @@ function ReferralCampaignDetail({
       ) : (
         <p className="mt-1.5 text-sm font-medium text-text-primary">{value}</p>
       )}
+    </div>
+  );
+}
+
+function IconMasterPreview({
+  label,
+  shape,
+  url,
+}: {
+  label: string;
+  shape: "square" | "circle" | "rounded";
+  url: string;
+}) {
+  const shapeClass =
+    shape === "circle" ? "rounded-full" : shape === "rounded" ? "rounded-xl" : "rounded-none";
+
+  return (
+    <div className="space-y-1.5 text-center">
+      <div
+        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 p-1.5 ${shapeClass}`}
+      >
+        {url ? (
+          <img
+            src={url}
+            alt={`Vista previa ${label.toLowerCase()} del icono maestro`}
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <span className="text-[10px] text-text-tertiary">Sin icono</span>
+        )}
+      </div>
+      <p className="text-xs text-text-tertiary">{label}</p>
     </div>
   );
 }
