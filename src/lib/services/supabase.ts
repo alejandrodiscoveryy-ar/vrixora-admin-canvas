@@ -33,6 +33,8 @@ import type {
   Client360Preinvoice,
   Client360ReferralPerson,
   ReferralCampaign,
+  MobileAnnouncementResult,
+  MobilePushAudience,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
 
@@ -1843,6 +1845,40 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
       return String(data);
+    },
+  },
+  communications: {
+    async audience(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_mobile_push_audience", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        projectId: String(row.project_id),
+        eligibleAndroidUsers: Number(row.eligible_android_users),
+        enabledAndroidTokens: Number(row.enabled_android_tokens),
+      } satisfies MobilePushAudience;
+    },
+    async send(projectId, input) {
+      await requireOnline("Enviar comunicado móvil");
+      const { data, error } = await getSupabaseClient().rpc("admin_send_mobile_announcement", {
+        target_project_id: projectId,
+        target_category: input.category,
+        target_title: input.title,
+        target_body: input.body,
+        target_release_version: input.releaseVersion ?? null,
+        target_action_url: input.actionUrl ?? null,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        ok: Boolean(row.ok),
+        broadcastId: String(row.broadcast_id),
+        kind: String(row.kind),
+        targetPlatform: "android",
+        queuedUsers: Number(row.queued_users),
+      } satisfies MobileAnnouncementResult;
     },
   },
 };

@@ -78,6 +78,12 @@ export const ADMIN_PROJECT_TABS = [
     permission: "settings.view",
   },
   {
+    slug: "comunicados",
+    label: "Comunicados",
+    icon: Megaphone,
+    permission: "settings.view",
+  },
+  {
     slug: "integraciones",
     label: "Integraciones",
     icon: PlugZap,
