@@ -1506,7 +1506,7 @@ function IconMasterPreview({
   return (
     <div className="space-y-1.5 text-center">
       <div
-        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 p-1.5 ${shapeClass}`}
+        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 ${shapeClass}`}
       >
         {variantUrl ? (
           <img
