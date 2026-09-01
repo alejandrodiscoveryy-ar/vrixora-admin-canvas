@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
 const ESSENTIAL_ASSETS = [
   "/offline.html",
@@ -22,9 +22,11 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== APP_CACHE).map((key) => caches.delete(key))),
-    ),
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== APP_CACHE).map((key) => caches.delete(key))),
+      ),
   );
   self.clients.claim();
 });
@@ -33,6 +35,29 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+self.addEventListener("push", (event) => {
+  const payload = event.data?.json?.() ?? {};
+  const masterIconUrl = typeof payload.iconUrl === "string" ? payload.iconUrl : "";
+  const icon = iconVariantUrl(masterIconUrl, "pwa-192.png") || "/icon-192.png";
+  const badge = iconVariantUrl(masterIconUrl, "notification-96.png") || "/favicon.png";
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || "VRIXORA Admin", {
+      body: payload.body || "",
+      icon,
+      badge,
+      data: { url: payload.url || "/admin/proyectos" },
+      tag: payload.tag,
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/admin/proyectos";
+  event.waitUntil(self.clients.openWindow(targetUrl));
 });
 
 self.addEventListener("fetch", (event) => {
@@ -94,4 +119,9 @@ function isStaticShellAsset(pathname) {
     "/brand/vrixora-mark.jpg",
     "/brand/vrixora-lockup.jpg",
   ].includes(pathname);
+}
+
+function iconVariantUrl(masterUrl, name) {
+  const match = masterUrl.match(/^(.*\/favicon-([0-9a-f-]{36}))\.png(?:\?.*)?$/i);
+  return match ? `${match[1]}/${name}` : "";
 }

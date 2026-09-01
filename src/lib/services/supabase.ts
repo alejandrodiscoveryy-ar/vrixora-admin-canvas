@@ -37,6 +37,7 @@ import type {
   MobilePushAudience,
 } from "./types";
 import { requireOnline } from "@/lib/pwa";
+import { generateProjectIconVariants } from "@/lib/project-icon-variants";
 
 function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -464,16 +465,18 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map((project): Project => ({
-        id: project.id,
-        name: project.name,
-        slug: project.slug,
-        description: project.description ?? "",
-        status: project.status,
-        createdAt: project.created_at,
-        color: project.color,
-        iconUrl: project.icon_url ?? null,
-      }));
+      return (data ?? []).map(
+        (project): Project => ({
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+          description: project.description ?? "",
+          status: project.status,
+          createdAt: project.created_at,
+          color: project.color,
+          iconUrl: project.icon_url ?? null,
+        }),
+      );
     },
     async settings(projectId) {
       const { data, error } = await getSupabaseClient()
@@ -506,7 +509,7 @@ export const supabaseServices: AdminServices = {
         welcomeMessage: data.welcome_message ?? "",
       };
     },
-    async uploadBrandAsset(projectId, kind, file) {
+    async uploadBrandAsset(projectId, kind, file, options) {
       await requireOnline("Subir un recurso de marca");
       const extension =
         kind === "logo" && file.type === "image/png"
@@ -525,14 +528,36 @@ export const supabaseServices: AdminServices = {
       }
       if (file.size > 2 * 1024 * 1024) throw new Error("El archivo no puede superar 2 MB.");
 
-      const objectPath = `${projectId}/${kind}-${crypto.randomUUID()}.${extension}`;
+      const variants =
+        kind === "favicon"
+          ? await generateProjectIconVariants(file, options?.iconBackgroundColor ?? "#111111")
+          : [];
+      const assetId = crypto.randomUUID();
+      const objectPath = `${projectId}/${kind}-${assetId}.${extension}`;
       const client = getSupabaseClient();
       const { error } = await client.storage.from("project-branding").upload(objectPath, file, {
-        cacheControl: "3600",
+        cacheControl: "31536000",
         contentType: file.type,
         upsert: false,
       });
       throwIfError(error);
+
+      if (kind === "favicon") {
+        const uploads = await Promise.all(
+          variants.map((variant) =>
+            client.storage
+              .from("project-branding")
+              .upload(`${projectId}/favicon-${assetId}/${variant.name}`, variant.blob, {
+                cacheControl: "31536000",
+                contentType: "image/png",
+                upsert: false,
+              }),
+          ),
+        );
+        const failedUpload = uploads.find(({ error: uploadError }) => uploadError);
+        if (failedUpload?.error) throwIfError(failedUpload.error);
+      }
+
       return client.storage.from("project-branding").getPublicUrl(objectPath).data.publicUrl;
     },
     async update(projectId, changes) {
@@ -751,15 +776,17 @@ export const supabaseServices: AdminServices = {
         .order("name");
       throwIfError(error);
 
-      return (data ?? []).map((licenseType): LicenseType => ({
-        code: licenseType.code,
-        name: licenseType.name,
-        defaultDurationDays: licenseType.default_duration_days,
-        allowsCustomDuration: licenseType.allows_custom_duration,
-        neverExpires: licenseType.never_expires,
-        defaultMaxDevices: licenseType.default_max_devices,
-        defaultFeatures: licenseType.default_features ?? {},
-      }));
+      return (data ?? []).map(
+        (licenseType): LicenseType => ({
+          code: licenseType.code,
+          name: licenseType.name,
+          defaultDurationDays: licenseType.default_duration_days,
+          allowsCustomDuration: licenseType.allows_custom_duration,
+          neverExpires: licenseType.never_expires,
+          defaultMaxDevices: licenseType.default_max_devices,
+          defaultFeatures: licenseType.default_features ?? {},
+        }),
+      );
     },
     async listPlans(projectId) {
       const { data, error } = await getSupabaseClient()
@@ -771,20 +798,22 @@ export const supabaseServices: AdminServices = {
         .order("name");
       throwIfError(error);
 
-      return (data ?? []).map((plan: PlanRow): LicensePlan => ({
-        projectId: plan.project_id,
-        code: plan.code,
-        name: plan.name,
-        licenseType: plan.license_type ?? "monthly",
-        durationDays: plan.duration_days ?? null,
-        price: Number(plan.price ?? 0),
-        currency: (plan.currency ?? "CUP") as Currency,
-        maxDevices: plan.max_devices,
-        features: plan.features ?? {},
-        description: plan.description ?? null,
-        isActive: plan.active ?? true,
-        isFeatured: plan.is_featured ?? false,
-      }));
+      return (data ?? []).map(
+        (plan: PlanRow): LicensePlan => ({
+          projectId: plan.project_id,
+          code: plan.code,
+          name: plan.name,
+          licenseType: plan.license_type ?? "monthly",
+          durationDays: plan.duration_days ?? null,
+          price: Number(plan.price ?? 0),
+          currency: (plan.currency ?? "CUP") as Currency,
+          maxDevices: plan.max_devices,
+          features: plan.features ?? {},
+          description: plan.description ?? null,
+          isActive: plan.active ?? true,
+          isFeatured: plan.is_featured ?? false,
+        }),
+      );
     },
     async renew(licenseId, durationDays, note) {
       await requireOnline("Renovar una licencia");
@@ -840,13 +869,15 @@ export const supabaseServices: AdminServices = {
         .eq("license_id", licenseId)
         .order("last_seen_at", { ascending: false });
       throwIfError(error);
-      return (data ?? []).map((device): LicenseDevice => ({
-        id: device.id,
-        licenseId: device.license_id,
-        firstSeenAt: device.first_seen_at,
-        lastSeenAt: device.last_seen_at,
-        revokedAt: device.revoked_at,
-      }));
+      return (data ?? []).map(
+        (device): LicenseDevice => ({
+          id: device.id,
+          licenseId: device.license_id,
+          firstSeenAt: device.first_seen_at,
+          lastSeenAt: device.last_seen_at,
+          revokedAt: device.revoked_at,
+        }),
+      );
     },
     async listHistory(licenseId) {
       const client = getSupabaseClient();
@@ -862,16 +893,18 @@ export const supabaseServices: AdminServices = {
         : { data: [], error: null };
       throwIfError(actorError);
       const actorEmails = new Map((actors ?? []).map((actor) => [actor.id, actor.email]));
-      return (data ?? []).map((entry): LicenseAuditEntry => ({
-        id: entry.id,
-        licenseId: entry.license_id,
-        action: entry.action,
-        detail: entry.detail,
-        actorId: entry.actor_id,
-        actorEmail: actorEmails.get(entry.actor_id),
-        metadata: entry.metadata ?? {},
-        createdAt: entry.created_at,
-      }));
+      return (data ?? []).map(
+        (entry): LicenseAuditEntry => ({
+          id: entry.id,
+          licenseId: entry.license_id,
+          action: entry.action,
+          detail: entry.detail,
+          actorId: entry.actor_id,
+          actorEmail: actorEmails.get(entry.actor_id),
+          metadata: entry.metadata ?? {},
+          createdAt: entry.created_at,
+        }),
+      );
     },
     async manageDevice(deviceId, operation, reason) {
       await requireOnline("Gestionar un dispositivo");
@@ -896,20 +929,22 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []).map((plan: PlanRow): LicensePlan => ({
-        projectId,
-        code: plan.code,
-        name: plan.name,
-        licenseType: plan.license_type,
-        durationDays: plan.duration_days,
-        price: Number(plan.price),
-        currency: plan.currency as Currency,
-        maxDevices: plan.max_devices,
-        features: plan.features ?? {},
-        description: plan.description,
-        isActive: plan.active,
-        isFeatured: plan.is_featured,
-      }));
+      return (data ?? []).map(
+        (plan: PlanRow): LicensePlan => ({
+          projectId,
+          code: plan.code,
+          name: plan.name,
+          licenseType: plan.license_type,
+          durationDays: plan.duration_days,
+          price: Number(plan.price),
+          currency: plan.currency as Currency,
+          maxDevices: plan.max_devices,
+          features: plan.features ?? {},
+          description: plan.description,
+          isActive: plan.active,
+          isFeatured: plan.is_featured,
+        }),
+      );
     },
     async savePlan(projectId, plan) {
       await requireOnline("Guardar un plan");
@@ -997,53 +1032,57 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map((payment): ServicePayment => ({
-        id: payment.id,
-        projectId: payment.project_id,
-        userId: payment.user_id,
-        licenseId: payment.license_id ?? undefined,
-        amount: Number(payment.amount),
-        listPrice: Number(payment.amount),
-        discount: 0,
-        plan: "",
-        currency: payment.currency as Currency,
-        method: payment.method,
-        reference: payment.reference,
-        employeeId: payment.recorded_by,
-        createdAt: payment.created_at,
-        status: "paid",
-        notes: null,
-      }));
+      return (data ?? []).map(
+        (payment): ServicePayment => ({
+          id: payment.id,
+          projectId: payment.project_id,
+          userId: payment.user_id,
+          licenseId: payment.license_id ?? undefined,
+          amount: Number(payment.amount),
+          listPrice: Number(payment.amount),
+          discount: 0,
+          plan: "",
+          currency: payment.currency as Currency,
+          method: payment.method,
+          reference: payment.reference,
+          employeeId: payment.recorded_by,
+          createdAt: payment.created_at,
+          status: "paid",
+          notes: null,
+        }),
+      );
     },
     async listAdmin(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_license_payments", {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []).map((payment: PaymentRow): ServicePayment => ({
-        id: payment.id,
-        projectId,
-        userId: "",
-        licenseId: payment.license_id ?? undefined,
-        amount: Number(payment.amount),
-        listPrice: Number(payment.list_price),
-        discount: Number(payment.discount),
-        plan: payment.plan,
-        currency: payment.currency as Currency,
-        method: payment.method,
-        reference: payment.reference,
-        employeeId: payment.recorded_by,
-        createdAt: payment.created_at,
-        status: payment.paid_status,
-        notes: payment.notes,
-        userEmail: payment.user_email,
-        licenseKey: payment.license_key ?? undefined,
-        operatorLabel: payment.operator_label ?? payment.recorded_by,
-        hasReceipt: payment.has_receipt,
-        planName: payment.plan_name ?? payment.plan,
-        preinvoiceId: payment.preinvoice_id,
-        isTest: payment.is_test,
-      }));
+      return (data ?? []).map(
+        (payment: PaymentRow): ServicePayment => ({
+          id: payment.id,
+          projectId,
+          userId: "",
+          licenseId: payment.license_id ?? undefined,
+          amount: Number(payment.amount),
+          listPrice: Number(payment.list_price),
+          discount: Number(payment.discount),
+          plan: payment.plan,
+          currency: payment.currency as Currency,
+          method: payment.method,
+          reference: payment.reference,
+          employeeId: payment.recorded_by,
+          createdAt: payment.created_at,
+          status: payment.paid_status,
+          notes: payment.notes,
+          userEmail: payment.user_email,
+          licenseKey: payment.license_key ?? undefined,
+          operatorLabel: payment.operator_label ?? payment.recorded_by,
+          hasReceipt: payment.has_receipt,
+          planName: payment.plan_name ?? payment.plan,
+          preinvoiceId: payment.preinvoice_id,
+          isTest: payment.is_test,
+        }),
+      );
     },
     async record(input) {
       await requireOnline("Registrar un pago");
@@ -1213,14 +1252,16 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map((entry): HistoryEntry => ({
-        id: entry.id,
-        projectId: entry.project_id,
-        action: entry.action,
-        detail: entry.detail,
-        actor: entry.actor_id,
-        createdAt: entry.created_at,
-      }));
+      return (data ?? []).map(
+        (entry): HistoryEntry => ({
+          id: entry.id,
+          projectId: entry.project_id,
+          action: entry.action,
+          detail: entry.detail,
+          actor: entry.actor_id,
+          createdAt: entry.created_at,
+        }),
+      );
     },
   },
   audit: {
@@ -1255,26 +1296,28 @@ export const supabaseServices: AdminServices = {
 
       throwIfError(error);
 
-      return ((data ?? []) as BusinessAuditEventRow[]).map((entry): BusinessAuditEvent => ({
-        id: Number(entry.id),
-        actorId: entry.actor_id,
-        actorEmail: entry.actor_email,
-        actorName: entry.actor_name,
-        actorRole: entry.actor_role,
-        action: entry.action,
-        actionLabel: entry.action_label,
-        area: entry.area,
-        importance: entry.importance,
-        entityType: entry.entity_type,
-        entityLabel: entry.entity_label,
-        entityId: entry.entity_id,
-        reason: entry.reason,
-        metadata: entry.metadata ?? {},
-        ipAddress: entry.ip_address,
-        userAgent: entry.user_agent,
-        createdAt: entry.created_at,
-        totalCount: Number(entry.total_count),
-      }));
+      return ((data ?? []) as BusinessAuditEventRow[]).map(
+        (entry): BusinessAuditEvent => ({
+          id: Number(entry.id),
+          actorId: entry.actor_id,
+          actorEmail: entry.actor_email,
+          actorName: entry.actor_name,
+          actorRole: entry.actor_role,
+          action: entry.action,
+          actionLabel: entry.action_label,
+          area: entry.area,
+          importance: entry.importance,
+          entityType: entry.entity_type,
+          entityLabel: entry.entity_label,
+          entityId: entry.entity_id,
+          reason: entry.reason,
+          metadata: entry.metadata ?? {},
+          ipAddress: entry.ip_address,
+          userAgent: entry.user_agent,
+          createdAt: entry.created_at,
+          totalCount: Number(entry.total_count),
+        }),
+      );
     },
   },
   usageAnalytics: {
@@ -1290,21 +1333,23 @@ export const supabaseServices: AdminServices = {
         target_app_version: filters.appVersion ?? null,
       });
       throwIfError(error);
-      return ((data ?? []) as UsageAnalyticsRow[]).map((row): UsageAnalyticsDay => ({
-        date: row.metric_date,
-        newUsers: Number(row.new_users),
-        trials: Number(row.trials),
-        paidLicenses: Number(row.paid_licenses),
-        activeUsers: Number(row.active_users),
-        weeklyActiveUsers: Number(row.weekly_active_users),
-        monthlyActiveUsers: Number(row.monthly_active_users),
-        logins: Number(row.logins),
-        renewals: Number(row.renewals),
-        expired: Number(row.expired),
-        revenueCUP: Number(row.revenue_cup),
-        revenueUSD: Number(row.revenue_usd),
-        revenueEUR: Number(row.revenue_eur),
-      }));
+      return ((data ?? []) as UsageAnalyticsRow[]).map(
+        (row): UsageAnalyticsDay => ({
+          date: row.metric_date,
+          newUsers: Number(row.new_users),
+          trials: Number(row.trials),
+          paidLicenses: Number(row.paid_licenses),
+          activeUsers: Number(row.active_users),
+          weeklyActiveUsers: Number(row.weekly_active_users),
+          monthlyActiveUsers: Number(row.monthly_active_users),
+          logins: Number(row.logins),
+          renewals: Number(row.renewals),
+          expired: Number(row.expired),
+          revenueCUP: Number(row.revenue_cup),
+          revenueUSD: Number(row.revenue_usd),
+          revenueEUR: Number(row.revenue_eur),
+        }),
+      );
     },
     async dimensions(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_usage_dimensions", {
@@ -1351,31 +1396,33 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return ((data ?? []) as Array<Record<string, unknown>>).map((row): CommercialLead => ({
-        id: String(row.id),
-        name: String(row.name),
-        phone: String(row.phone),
-        email: row.email as string | null,
-        source: row.source as CommercialLead["source"],
-        medium: row.medium as string | null,
-        campaign: row.campaign as string | null,
-        referralCode: row.referral_code as string | null,
-        referredByUserId: row.referred_by_user_id as string | null,
-        referredByName: row.referred_by_name as string | null,
-        status: row.status as CommercialLead["status"],
-        notes: row.notes as string | null,
-        responsibleId: row.responsible_id as string | null,
-        responsibleName: row.responsible_name as string | null,
-        userId: row.user_id as string | null,
-        createdAt: String(row.created_at),
-        lastInteractionAt: row.last_interaction_at as string | null,
-        nextActionAt: row.next_action_at as string | null,
-        registered: Boolean(row.registered),
-        trialStarted: Boolean(row.trial_started),
-        paid: Boolean(row.paid),
-        renewalCount: Number(row.renewal_count),
-        revenue: (row.revenue ?? {}) as Record<string, number>,
-      }));
+      return ((data ?? []) as Array<Record<string, unknown>>).map(
+        (row): CommercialLead => ({
+          id: String(row.id),
+          name: String(row.name),
+          phone: String(row.phone),
+          email: row.email as string | null,
+          source: row.source as CommercialLead["source"],
+          medium: row.medium as string | null,
+          campaign: row.campaign as string | null,
+          referralCode: row.referral_code as string | null,
+          referredByUserId: row.referred_by_user_id as string | null,
+          referredByName: row.referred_by_name as string | null,
+          status: row.status as CommercialLead["status"],
+          notes: row.notes as string | null,
+          responsibleId: row.responsible_id as string | null,
+          responsibleName: row.responsible_name as string | null,
+          userId: row.user_id as string | null,
+          createdAt: String(row.created_at),
+          lastInteractionAt: row.last_interaction_at as string | null,
+          nextActionAt: row.next_action_at as string | null,
+          registered: Boolean(row.registered),
+          trialStarted: Boolean(row.trial_started),
+          paid: Boolean(row.paid),
+          renewalCount: Number(row.renewal_count),
+          revenue: (row.revenue ?? {}) as Record<string, number>,
+        }),
+      );
     },
     async saveLead(projectId, input) {
       await requireOnline("Guardar lead comercial");
@@ -1434,15 +1481,17 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return ((data ?? []) as Array<Record<string, unknown>>).map((row): CommercialCampaign => ({
-        id: String(row.id),
-        name: String(row.name),
-        source: row.source as CommercialCampaign["source"],
-        medium: row.medium as string | null,
-        status: row.status as CommercialCampaign["status"],
-        startsAt: row.starts_at as string | null,
-        endsAt: row.ends_at as string | null,
-      }));
+      return ((data ?? []) as Array<Record<string, unknown>>).map(
+        (row): CommercialCampaign => ({
+          id: String(row.id),
+          name: String(row.name),
+          source: row.source as CommercialCampaign["source"],
+          medium: row.medium as string | null,
+          status: row.status as CommercialCampaign["status"],
+          startsAt: row.starts_at as string | null,
+          endsAt: row.ends_at as string | null,
+        }),
+      );
     },
     async saveCampaign(projectId, campaign) {
       await requireOnline("Guardar campaña comercial");
@@ -1581,27 +1630,29 @@ export const supabaseServices: AdminServices = {
         target_include_test: includeTest,
       });
       throwIfError(error);
-      return ((data ?? []) as Array<Record<string, unknown>>).map((row): Preinvoice => ({
-        id: String(row.id),
-        number: Number(row.number),
-        clientId: String(row.client_id),
-        planCode: String(row.plan_code),
-        basePrice: Number(row.base_price),
-        baseCurrency: row.base_currency as Preinvoice["baseCurrency"],
-        exchangeRate: Number(row.exchange_rate),
-        exchangeRateSource: String(row.exchange_rate_source),
-        chargeCurrency: row.charge_currency as Preinvoice["chargeCurrency"],
-        chargeAmount: Number(row.charge_amount),
-        status: row.status as Preinvoice["status"],
-        isTest: Boolean(row.is_test),
-        identitySnapshot: row.identity_snapshot as Preinvoice["identitySnapshot"],
-        planSnapshot: row.plan_snapshot as Record<string, unknown>,
-        issuedAt: String(row.issued_at),
-        expiresAt: String(row.expires_at),
-        paidPaymentId: row.paid_payment_id ? String(row.paid_payment_id) : null,
-        createdBy: String(row.created_by),
-        createdAt: String(row.created_at),
-      }));
+      return ((data ?? []) as Array<Record<string, unknown>>).map(
+        (row): Preinvoice => ({
+          id: String(row.id),
+          number: Number(row.number),
+          clientId: String(row.client_id),
+          planCode: String(row.plan_code),
+          basePrice: Number(row.base_price),
+          baseCurrency: row.base_currency as Preinvoice["baseCurrency"],
+          exchangeRate: Number(row.exchange_rate),
+          exchangeRateSource: String(row.exchange_rate_source),
+          chargeCurrency: row.charge_currency as Preinvoice["chargeCurrency"],
+          chargeAmount: Number(row.charge_amount),
+          status: row.status as Preinvoice["status"],
+          isTest: Boolean(row.is_test),
+          identitySnapshot: row.identity_snapshot as Preinvoice["identitySnapshot"],
+          planSnapshot: row.plan_snapshot as Record<string, unknown>,
+          issuedAt: String(row.issued_at),
+          expiresAt: String(row.expires_at),
+          paidPaymentId: row.paid_payment_id ? String(row.paid_payment_id) : null,
+          createdBy: String(row.created_by),
+          createdAt: String(row.created_at),
+        }),
+      );
     },
     async previewPreinvoiceConfirmation(projectId, preinvoiceId, chargedAt) {
       const { data, error } = await getSupabaseClient().rpc(
@@ -1732,22 +1783,17 @@ export const supabaseServices: AdminServices = {
         ...(baseResponse.data as Record<string, unknown>),
       };
 
-      const billingContext =
-        billingResponse.data as Record<string, unknown> | null;
+      const billingContext = billingResponse.data as Record<string, unknown> | null;
 
       if (billingContext) {
         merged.last_payment = billingContext.last_payment ?? null;
         merged.billing = billingContext.billing ?? null;
 
-        const existingActivity = (
-          (merged.activity ?? []) as Array<Record<string, unknown>>
-        ).filter(
-          (row) =>
-            !["preinvoice", "payment", "document"].includes(String(row.type)),
+        const existingActivity = ((merged.activity ?? []) as Array<Record<string, unknown>>).filter(
+          (row) => !["preinvoice", "payment", "document"].includes(String(row.type)),
         );
 
-        const billingActivity =
-          (billingContext.activity ?? []) as Array<Record<string, unknown>>;
+        const billingActivity = (billingContext.activity ?? []) as Array<Record<string, unknown>>;
 
         merged.activity = [...existingActivity, ...billingActivity].sort(
           (left, right) =>

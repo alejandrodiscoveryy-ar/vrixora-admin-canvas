@@ -38,6 +38,14 @@ import { ADMIN_PROJECT_TABS } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
+import { projectIconVariantUrl } from "@/lib/project-icon-variants";
+import {
+  PWA_APP_NAME,
+  PWA_BACKGROUND_COLOR,
+  PWA_DESCRIPTION,
+  PWA_SHORT_NAME,
+  PWA_THEME_COLOR,
+} from "@/lib/pwa";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -77,6 +85,8 @@ function AdminChrome() {
   const { data: currentProject } = useProject(currentProjectId);
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  useProjectIconHead(currentProject ?? null);
 
   useEffect(() => {
     if (!loading && !user && !isLogin) {
@@ -135,6 +145,70 @@ function AdminChrome() {
   );
 }
 
+function useProjectIconHead(project: { id: string; name: string; iconUrl?: string | null } | null) {
+  useEffect(() => {
+    if (!project?.iconUrl) return;
+
+    const links = Array.from(
+      document.head.querySelectorAll<HTMLLinkElement>(
+        'link[rel="icon"], link[rel="apple-touch-icon"], link[rel="manifest"]',
+      ),
+    );
+    const originalHrefs = links.map((link) => [link, link.href] as const);
+    const favicon32 = projectIconVariantUrl(project.iconUrl, "favicon-32.png");
+    const pwa192 = projectIconVariantUrl(project.iconUrl, "pwa-192.png");
+    const pwa512 = projectIconVariantUrl(project.iconUrl, "pwa-512.png");
+    const maskable192 = projectIconVariantUrl(project.iconUrl, "maskable-192.png");
+    const maskable512 = projectIconVariantUrl(project.iconUrl, "maskable-512.png");
+    const appleTouch = projectIconVariantUrl(project.iconUrl, "apple-touch-180.png");
+    const shortcut96 = projectIconVariantUrl(project.iconUrl, "shortcut-96.png");
+
+    const iconLinks = links.filter((link) => link.rel === "icon");
+    iconLinks.forEach((link, index) => {
+      link.href = index === 0 ? favicon32 : index === 1 ? pwa192 : pwa512;
+    });
+    links
+      .filter((link) => link.rel === "apple-touch-icon")
+      .forEach((link) => (link.href = appleTouch));
+
+    const manifest = {
+      name: PWA_APP_NAME,
+      short_name: PWA_SHORT_NAME,
+      description: PWA_DESCRIPTION,
+      start_url: `/admin/proyectos/${project.id}`,
+      scope: "/admin/",
+      display: "standalone",
+      orientation: "any",
+      lang: "es",
+      theme_color: PWA_THEME_COLOR,
+      background_color: PWA_BACKGROUND_COLOR,
+      icons: [
+        { src: pwa192, sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: pwa512, sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: maskable192, sizes: "192x192", type: "image/png", purpose: "maskable" },
+        { src: maskable512, sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ],
+      shortcuts: [
+        {
+          name: project.name,
+          short_name: project.name,
+          url: `/admin/proyectos/${project.id}`,
+          icons: [{ src: shortcut96, sizes: "96x96", type: "image/png" }],
+        },
+      ],
+    };
+    const manifestUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }),
+    );
+    links.filter((link) => link.rel === "manifest").forEach((link) => (link.href = manifestUrl));
+
+    return () => {
+      originalHrefs.forEach(([link, href]) => (link.href = href));
+      URL.revokeObjectURL(manifestUrl);
+    };
+  }, [project?.iconUrl, project?.id, project?.name]);
+}
+
 function ProjectNavItem({
   project,
   currentProjectId,
@@ -191,7 +265,11 @@ function ProjectNavItem({
             }`}
           >
             {project.iconUrl ? (
-              <img src={project.iconUrl} alt="" className="h-6 w-6 rounded-md object-contain" />
+              <img
+                src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
+                alt=""
+                className="h-6 w-6 rounded-md object-contain"
+              />
             ) : (
               <FolderKanban className="h-4 w-4" />
             )}
@@ -473,7 +551,11 @@ function TopBar({
 
       <Link to="/admin/proyectos" className="flex min-w-0 items-center gap-2 lg:hidden">
         {project?.iconUrl ? (
-          <img src={project.iconUrl} alt="" className="h-7 w-7 rounded-lg object-contain" />
+          <img
+            src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
+            alt=""
+            className="h-7 w-7 rounded-lg object-contain"
+          />
         ) : (
           <VrixoraLogo variant="mark" size={24} />
         )}
@@ -494,7 +576,11 @@ function TopBar({
         {project ? (
           <>
             {project.iconUrl ? (
-              <img src={project.iconUrl} alt="" className="h-5 w-5 rounded-md object-contain" />
+              <img
+                src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
+                alt=""
+                className="h-5 w-5 rounded-md object-contain"
+              />
             ) : null}
             <span className="truncate text-foreground">{project.name}</span>
           </>
