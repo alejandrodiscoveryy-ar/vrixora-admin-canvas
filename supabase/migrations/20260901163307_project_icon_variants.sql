@@ -2,8 +2,9 @@
 -- The existing permission check remains authoritative; authenticated by itself is not enough.
 
 drop policy if exists "Project brand assets can be uploaded by authorized managers" on storage.objects;
+drop policy if exists project_branding_insert_managers on storage.objects;
 
-create policy "Project brand assets can be uploaded by authorized managers"
+create policy project_branding_insert_managers
 on storage.objects
 for insert
 to authenticated
