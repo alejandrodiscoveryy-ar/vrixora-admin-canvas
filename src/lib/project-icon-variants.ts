@@ -173,11 +173,11 @@ export async function generateProjectIconVariants(file: File, backgroundColor: s
     { name: "maskable-192.png", size: 192, contentScale: 0.72, background: backgroundColor },
     { name: "maskable-512.png", size: 512, contentScale: 0.72, background: backgroundColor },
     { name: "apple-touch-180.png", size: 180, contentScale: 0.7, background: backgroundColor },
-    { name: "adaptive-foreground-432.png", size: 432, contentScale: 78 / 108 },
+    { name: "adaptive-foreground-432.png", size: 432, contentScale: 66 / 108 },
     {
       name: "adaptive-monochrome-432.png",
       size: 432,
-      contentScale: 78 / 108,
+      contentScale: 66 / 108,
       monochrome: true,
     },
     {
