@@ -38,6 +38,7 @@ import { ADMIN_PROJECT_TABS } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
+import { projectIconVariantUrl } from "@/lib/project-icon-variants";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -191,7 +192,11 @@ function ProjectNavItem({
             }`}
           >
             {project.iconUrl ? (
-              <img src={project.iconUrl} alt="" className="h-6 w-6 rounded-md object-contain" />
+              <img
+                src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
+                alt=""
+                className="h-6 w-6 rounded-md object-contain"
+              />
             ) : (
               <FolderKanban className="h-4 w-4" />
             )}
@@ -473,7 +478,11 @@ function TopBar({
 
       <Link to="/admin/proyectos" className="flex min-w-0 items-center gap-2 lg:hidden">
         {project?.iconUrl ? (
-          <img src={project.iconUrl} alt="" className="h-7 w-7 rounded-lg object-contain" />
+          <img
+            src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
+            alt=""
+            className="h-7 w-7 rounded-lg object-contain"
+          />
         ) : (
           <VrixoraLogo variant="mark" size={24} />
         )}
@@ -494,7 +503,11 @@ function TopBar({
         {project ? (
           <>
             {project.iconUrl ? (
-              <img src={project.iconUrl} alt="" className="h-5 w-5 rounded-md object-contain" />
+              <img
+                src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
+                alt=""
+                className="h-5 w-5 rounded-md object-contain"
+              />
             ) : null}
             <span className="truncate text-foreground">{project.name}</span>
           </>

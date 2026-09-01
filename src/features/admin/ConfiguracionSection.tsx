@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
 import { readImageDimensions } from "@/lib/image-file";
+import { projectIconVariantUrl } from "@/lib/project-icon-variants";
 import {
   supabaseServices,
   type P0ASettings,
@@ -49,7 +50,13 @@ const paymentMethods = [
 ] as const;
 
 type SectionKey =
-  "general" | "commercial" | "billing" | "referrals" | "communication" | "application" | "testing";
+  | "general"
+  | "commercial"
+  | "billing"
+  | "referrals"
+  | "communication"
+  | "application"
+  | "testing";
 
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: "general", label: "General e identidad" },
@@ -79,8 +86,7 @@ const CONFIG_TEXTAREA_CLASS =
 const ACTIVE_CAMPAIGN_BADGE_CLASS =
   "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]";
 
-const CLOSED_CAMPAIGN_BADGE_CLASS =
-  "border-border-default bg-surface-2 text-text-secondary";
+const CLOSED_CAMPAIGN_BADGE_CLASS = "border-border-default bg-surface-2 text-text-secondary";
 
 export default function ConfiguracionSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
@@ -261,7 +267,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   const uploadBrandAsset = useMutation({
     mutationFn: ({ kind, file }: { kind: "logo" | "favicon"; file: File }) =>
-      supabaseServices.projects.uploadBrandAsset(projectId, kind, file),
+      supabaseServices.projects.uploadBrandAsset(projectId, kind, file, {
+        iconBackgroundColor: form?.secondaryColor,
+      }),
 
     onSuccess: (url, variables) => {
       const key = variables.kind === "logo" ? "logoUrl" : "iconUrl";
@@ -280,7 +288,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       toast.success(
         variables.kind === "logo"
           ? "Logo subido. Guarda los cambios para aplicarlo."
-          : "Icono subido. Guarda los cambios para aplicarlo.",
+          : "Icono maestro y variantes generados. Guarda los cambios para aplicarlos.",
       );
     },
 
@@ -344,7 +352,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         throw new Error("Indica el nombre de la campaña.");
       }
 
-      if (!Number.isInteger(campaignRewardDays) || campaignRewardDays < 1 || campaignRewardDays > 365) {
+      if (
+        !Number.isInteger(campaignRewardDays) ||
+        campaignRewardDays < 1 ||
+        campaignRewardDays > 365
+      ) {
         throw new Error("La recompensa debe estar entre 1 y 365 días.");
       }
 
@@ -623,8 +635,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   </Button>
 
                   <p className="text-xs leading-relaxed text-text-tertiary">
-                    Se utiliza en pantallas, documentos y comunicaciones. PNG o WEBP · máximo 2 MB
-                    · proporción horizontal entre 2:1 y 3:1 · lienzo recomendado 1600 × 600.
+                    Se utiliza en pantallas, documentos y comunicaciones. PNG o WEBP · máximo 2 MB ·
+                    proporción horizontal entre 2:1 y 3:1 · lienzo recomendado 1600 × 600.
                   </p>
                 </div>
 
@@ -683,8 +695,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   </Button>
 
                   <p className="text-xs leading-relaxed text-text-tertiary">
-                    PNG 1024 × 1024 · fondo transparente recomendado · mantén el símbolo dentro
-                    de la zona segura · máximo 2 MB.
+                    PNG 1024 × 1024 · fondo transparente obligatorio · mantén el símbolo dentro de
+                    la zona segura · máximo 2 MB. Al subirlo se generan automáticamente las
+                    variantes de favicon, PWA, Windows, Android, shortcuts y notificaciones sin
+                    alterar la identidad.
                   </p>
                 </div>
 
@@ -947,33 +961,38 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <PageAlert tone="error" title="No se pudieron cargar las campañas">
                 {referralCampaignsQuery.error.message}
               </PageAlert>
-            ) : (() => {
-              const campaigns = referralCampaignsQuery.data ?? [];
-              const activeCampaign = campaigns.find((campaign) => campaign.status === "active");
+            ) : (
+              (() => {
+                const campaigns = referralCampaignsQuery.data ?? [];
+                const activeCampaign = campaigns.find((campaign) => campaign.status === "active");
 
-              return activeCampaign ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-text-primary">Campaña activa</p>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                    <ReferralCampaignDetail label="Nombre" value={activeCampaign.name} />
-                    <ReferralCampaignDetail
-                      label="Condición"
-                      value={formatReferralQualificationMode(activeCampaign.qualificationMode)}
-                    />
-                    <ReferralCampaignDetail
-                      label="Recompensa"
-                      value={`${activeCampaign.rewardDays} días`}
-                    />
-                    <ReferralCampaignDetail label="Inicio" value={formatDateTime(activeCampaign.startsAt)} />
-                    <ReferralCampaignDetail label="Estado" value="Activa" tone="success" />
+                return activeCampaign ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-text-primary">Campaña activa</p>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                      <ReferralCampaignDetail label="Nombre" value={activeCampaign.name} />
+                      <ReferralCampaignDetail
+                        label="Condición"
+                        value={formatReferralQualificationMode(activeCampaign.qualificationMode)}
+                      />
+                      <ReferralCampaignDetail
+                        label="Recompensa"
+                        value={`${activeCampaign.rewardDays} días`}
+                      />
+                      <ReferralCampaignDetail
+                        label="Inicio"
+                        value={formatDateTime(activeCampaign.startsAt)}
+                      />
+                      <ReferralCampaignDetail label="Estado" value="Activa" tone="success" />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <PageAlert tone="info" title="Sin campaña activa">
-                  Inicia una campaña para definir cuándo se califican las nuevas recompensas.
-                </PageAlert>
-              );
-            })()}
+                ) : (
+                  <PageAlert tone="info" title="Sin campaña activa">
+                    Inicia una campaña para definir cuándo se califican las nuevas recompensas.
+                  </PageAlert>
+                );
+              })()
+            )}
           </SectionCard>
 
           {canManage ? (
@@ -1080,12 +1099,17 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   </thead>
                   <tbody>
                     {referralCampaignsQuery.data.map((campaign) => (
-                      <tr key={campaign.id} className="border-b border-border-default/70 last:border-0">
+                      <tr
+                        key={campaign.id}
+                        className="border-b border-border-default/70 last:border-0"
+                      >
                         <td className="px-3 py-3 font-medium text-text-primary">{campaign.name}</td>
                         <td className="px-3 py-3 text-text-secondary">
                           {formatReferralQualificationMode(campaign.qualificationMode)}
                         </td>
-                        <td className="px-3 py-3 text-text-secondary">{campaign.rewardDays} días</td>
+                        <td className="px-3 py-3 text-text-secondary">
+                          {campaign.rewardDays} días
+                        </td>
                         <td className="px-3 py-3">
                           <Badge
                             variant="outline"
@@ -1098,7 +1122,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                             {campaign.status === "active" ? "Activa" : "Cerrada"}
                           </Badge>
                         </td>
-                        <td className="px-3 py-3 text-text-secondary">{formatDateTime(campaign.startsAt)}</td>
+                        <td className="px-3 py-3 text-text-secondary">
+                          {formatDateTime(campaign.startsAt)}
+                        </td>
                         <td className="px-3 py-3 text-text-secondary">
                           {campaign.endsAt ? formatDateTime(campaign.endsAt) : "—"}
                         </td>
@@ -1466,15 +1492,25 @@ function IconMasterPreview({
 }) {
   const shapeClass =
     shape === "circle" ? "rounded-full" : shape === "rounded" ? "rounded-xl" : "rounded-none";
+  const variantUrl = url
+    ? projectIconVariantUrl(
+        url,
+        shape === "circle"
+          ? "round-192.png"
+          : shape === "rounded"
+            ? "maskable-192.png"
+            : "pwa-192.png",
+      )
+    : "";
 
   return (
     <div className="space-y-1.5 text-center">
       <div
         className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 p-1.5 ${shapeClass}`}
       >
-        {url ? (
+        {variantUrl ? (
           <img
-            src={url}
+            src={variantUrl}
             alt={`Vista previa ${label.toLowerCase()} del icono maestro`}
             className="h-full w-full object-contain"
           />
