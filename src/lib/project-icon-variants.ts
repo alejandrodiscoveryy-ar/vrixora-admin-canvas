@@ -13,19 +13,19 @@ type VariantSpec = {
 
 const VARIANT_SPECS: VariantSpec[] = [
   { name: "favicon-16.png", size: 16, contentScale: 0.84 },
-  { name: "favicon-32.png", size: 32, contentScale: 0.84 },
+  { name: "favicon-32.png", size: 32, contentScale: 0.92 },
   { name: "favicon-48.png", size: 48, contentScale: 0.84 },
-  { name: "pwa-192.png", size: 192, contentScale: 0.8 },
-  { name: "pwa-512.png", size: 512, contentScale: 0.8 },
+  { name: "pwa-192.png", size: 192, contentScale: 0.92 },
+  { name: "pwa-512.png", size: 512, contentScale: 0.92 },
   { name: "shortcut-96.png", size: 96, contentScale: 0.8 },
-  { name: "shortcut-192.png", size: 192, contentScale: 0.8 },
+  { name: "shortcut-192.png", size: 192, contentScale: 0.7 },
   { name: "windows-44.png", size: 44, contentScale: 0.76 },
   { name: "windows-150.png", size: 150, contentScale: 0.76 },
   { name: "windows-310.png", size: 310, contentScale: 0.76 },
-  { name: "notification-24.png", size: 24, contentScale: 0.72, monochrome: true },
-  { name: "notification-48.png", size: 48, contentScale: 0.72, monochrome: true },
-  { name: "notification-72.png", size: 72, contentScale: 0.72, monochrome: true },
-  { name: "notification-96.png", size: 96, contentScale: 0.72, monochrome: true },
+  { name: "notification-24.png", size: 24, contentScale: 0.76, monochrome: true },
+  { name: "notification-48.png", size: 48, contentScale: 0.76, monochrome: true },
+  { name: "notification-72.png", size: 72, contentScale: 0.76, monochrome: true },
+  { name: "notification-96.png", size: 96, contentScale: 0.76, monochrome: true },
 ];
 
 export const PROJECT_ICON_VARIANT_NAMES = [
@@ -80,17 +80,21 @@ function createCanvas(size: number) {
 
 function drawIdentity(
   context: CanvasRenderingContext2D,
-  source: CanvasImageSource,
+  source: HTMLCanvasElement,
   size: number,
   contentScale: number,
 ) {
   const extent = Math.round(size * contentScale);
-  const offset = Math.round((size - extent) / 2);
-  context.drawImage(source, offset, offset, extent, extent);
+  const scale = extent / Math.max(source.width, source.height);
+  const width = Math.max(1, Math.min(size, Math.round(source.width * scale)));
+  const height = Math.max(1, Math.min(size, Math.round(source.height * scale)));
+  const offsetX = Math.floor((size - width) / 2);
+  const offsetY = Math.floor((size - height) / 2);
+  context.drawImage(source, offsetX, offsetY, width, height);
 }
 
 async function renderVariant(
-  source: CanvasImageSource,
+  source: HTMLCanvasElement,
   spec: VariantSpec,
 ): Promise<ProjectIconVariant> {
   const { canvas, context } = createCanvas(spec.size);
@@ -117,25 +121,47 @@ async function renderVariant(
   return { name: spec.name, blob: await canvasToPng(canvas) };
 }
 
-async function assertTransparentMaster(source: CanvasImageSource) {
-  const { canvas, context } = createCanvas(128);
-  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+function cropTransparentPadding(source: HTMLImageElement) {
+  const { canvas, context } = createCanvas(source.naturalWidth);
+  canvas.width = source.naturalWidth;
+  canvas.height = source.naturalHeight;
+  context.drawImage(source, 0, 0);
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  let left = canvas.width;
+  let top = canvas.height;
+  let right = -1;
+  let bottom = -1;
   let hasTransparency = false;
-  for (let index = 3; index < pixels.length; index += 4) {
-    if (pixels[index] < 255) {
-      hasTransparency = true;
-      break;
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const alpha = pixels[(y * canvas.width + x) * 4 + 3];
+      if (alpha < 255) hasTransparency = true;
+      if (alpha === 0) continue;
+      if (x < left) left = x;
+      if (y < top) top = y;
+      if (x > right) right = x;
+      if (y > bottom) bottom = y;
     }
   }
   if (!hasTransparency) {
     throw new Error("El icono maestro debe conservar un fondo transparente.");
   }
+  if (right < left || bottom < top) {
+    throw new Error("El PNG maestro no contiene arte visible.");
+  }
+
+  const width = right - left + 1;
+  const height = bottom - top + 1;
+  const { canvas: cropped, context: croppedContext } = createCanvas(Math.max(width, height));
+  cropped.width = width;
+  cropped.height = height;
+  croppedContext.drawImage(canvas, left, top, width, height, 0, 0, width, height);
+  return cropped;
 }
 
 export async function generateProjectIconVariants(file: File, backgroundColor: string) {
   const source = await loadImage(file);
-  await assertTransparentMaster(source);
+  const croppedSource = cropTransparentPadding(source);
 
   const platformSpecs: VariantSpec[] = [
     {
@@ -144,14 +170,14 @@ export async function generateProjectIconVariants(file: File, backgroundColor: s
       contentScale: 0.74,
       background: backgroundColor,
     },
-    { name: "maskable-192.png", size: 192, contentScale: 0.64, background: backgroundColor },
-    { name: "maskable-512.png", size: 512, contentScale: 0.64, background: backgroundColor },
+    { name: "maskable-192.png", size: 192, contentScale: 0.72, background: backgroundColor },
+    { name: "maskable-512.png", size: 512, contentScale: 0.72, background: backgroundColor },
     { name: "apple-touch-180.png", size: 180, contentScale: 0.7, background: backgroundColor },
-    { name: "adaptive-foreground-432.png", size: 432, contentScale: 0.64 },
+    { name: "adaptive-foreground-432.png", size: 432, contentScale: 66 / 108 },
     {
       name: "adaptive-monochrome-432.png",
       size: 432,
-      contentScale: 0.64,
+      contentScale: 66 / 108,
       monochrome: true,
     },
     {
@@ -165,7 +191,7 @@ export async function generateProjectIconVariants(file: File, backgroundColor: s
   ];
 
   return Promise.all(
-    [...VARIANT_SPECS, ...platformSpecs].map((spec) => renderVariant(source, spec)),
+    [...VARIANT_SPECS, ...platformSpecs].map((spec) => renderVariant(croppedSource, spec)),
   );
 }
 
