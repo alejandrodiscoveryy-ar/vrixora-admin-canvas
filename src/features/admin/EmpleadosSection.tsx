@@ -39,7 +39,9 @@ import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
 import { SectionCard } from "@/components/admin/SectionCard";
 
 const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: string }> = [
-  { value: "accounting", label: "Cobros / Accounting" },
+  { value: "admin", label: "Administrador" },
+  { value: "support", label: "Soporte" },
+  { value: "accounting", label: "Contabilidad" },
   { value: "marketing", label: "Marketing" },
 ];
 
