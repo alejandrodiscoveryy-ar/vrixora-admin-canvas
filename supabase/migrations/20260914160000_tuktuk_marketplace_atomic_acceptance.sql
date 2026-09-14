@@ -122,7 +122,8 @@ begin
   select * into event_record from public.job_events where project_id=tuktuk_project_id and operation_idempotency_key=target_idempotency_key;
   if found then
     if event_record.job_id=job_record.id and event_record.actor_user_id=actor and event_record.action='accept'
-      and exists (select 1 from public.job_assignments a where a.project_id=tuktuk_project_id and a.job_id=job_record.id and a.driver_user_id=actor and a.vehicle_id=target_vehicle_id) then return job_record; end if;
+      and exists (select 1 from public.job_assignments a where a.project_id=tuktuk_project_id and a.job_id=job_record.id and a.driver_user_id=actor and a.vehicle_id=target_vehicle_id and a.acceptance_idempotency_key=target_idempotency_key)
+      and exists (select 1 from public.commission_reservations r where r.project_id=tuktuk_project_id and r.job_id=job_record.id and r.user_id=actor) then return job_record; end if;
     raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION' using errcode='22023';
   end if;
   if job_record.status <> 'published' or not app_private.marketplace_job_transition_allowed('published','accepted','driver') or (job_record.expires_at is not null and job_record.expires_at <= now())
@@ -155,7 +156,7 @@ declare actor uuid:=auth.uid(); tuktuk_project_id uuid; job_record public.jobs%r
 begin
   if actor is null then raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501'; end if;
   if target_idempotency_key is null then raise exception 'IDEMPOTENCY_KEY_REQUIRED' using errcode='22023'; end if;
-  if target_action not in ('start_en_route','mark_pickup','start_service','complete_service') then raise exception 'INVALID_JOB_ACTION' using errcode='22023'; end if;
+  if target_action is null or target_action not in ('start_en_route','mark_pickup','start_service','complete_service') then raise exception 'INVALID_JOB_ACTION' using errcode='22023'; end if;
   select id into tuktuk_project_id from public.projects where slug='tuktuk-control'; if tuktuk_project_id is null then raise exception 'TUKTUK_PROJECT_NOT_FOUND' using errcode='P0002'; end if;
   select * into job_record from public.jobs where project_id=tuktuk_project_id and id=target_job_id for update; if not found then raise exception 'JOB_NOT_FOUND' using errcode='P0002'; end if;
   select * into event_record from public.job_events where project_id=tuktuk_project_id and operation_idempotency_key=target_idempotency_key;
@@ -172,9 +173,12 @@ begin
     return job_record;
   end if;
   select * into assignment_record from public.job_assignments where project_id=tuktuk_project_id and job_id=job_record.id for update;
+  if not found then raise exception 'JOB_ASSIGNMENT_NOT_FOUND' using errcode='P0002'; end if;
   select * into wallet_record from public.wallets where project_id=tuktuk_project_id and user_id=actor for update;
+  if not found then raise exception 'MARKETPLACE_WALLET_NOT_FOUND' using errcode='P0002'; end if;
   select * into reservation_record from public.commission_reservations where project_id=tuktuk_project_id and job_id=job_record.id for update;
-  if job_record.status<>'in_progress' or not app_private.marketplace_job_transition_allowed('in_progress','completed','driver') or not found then raise exception 'INVALID_JOB_TRANSITION' using errcode='22023'; end if;
+  if not found then raise exception 'COMMISSION_RESERVATION_NOT_FOUND' using errcode='P0002'; end if;
+  if job_record.status<>'in_progress' or not app_private.marketplace_job_transition_allowed('in_progress','completed','driver') then raise exception 'INVALID_JOB_TRANSITION' using errcode='22023'; end if;
   if assignment_record.driver_user_id<>actor or assignment_record.vehicle_id<>job_record.assigned_vehicle_id or reservation_record.status<>'open' or reservation_record.user_id<>actor or reservation_record.currency<>job_record.currency or reservation_record.amount<=0 or reservation_record.final_price_snapshot<>job_record.final_price or reservation_record.commission_rate_snapshot<>job_record.commission_rate_snapshot then raise exception 'SETTLEMENT_PRECONDITION_FAILED' using errcode='22023'; end if;
   prior_total:=app_private.marketplace_wallet_total_balance(tuktuk_project_id,actor); if prior_total-reservation_record.amount<0 then raise exception 'INSUFFICIENT_MARKETPLACE_WALLET_BALANCE' using errcode='22023'; end if;
   update public.jobs set status='completed',state_version=state_version+1 where project_id=tuktuk_project_id and id=job_record.id;
@@ -192,7 +196,7 @@ $$;
 
 create or replace function public.cancel_my_marketplace_job(target_job_id uuid, target_reason text, target_idempotency_key uuid)
 returns public.jobs language plpgsql security definer set search_path = '' as $$
-declare actor uuid:=auth.uid(); tuktuk_project_id uuid; job_record public.jobs%rowtype; event_record public.job_events%rowtype; assignment_record public.job_assignments%rowtype; wallet_record public.wallets%rowtype; reservation_record public.commission_reservations%rowtype; reason text;
+declare actor uuid:=auth.uid(); tuktuk_project_id uuid; job_record public.jobs%rowtype; event_record public.job_events%rowtype; assignment_record public.job_assignments%rowtype; wallet_record public.wallets%rowtype; reservation_record public.commission_reservations%rowtype; reason text; previous_status text;
 begin
   if actor is null then raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501'; end if;
   if target_idempotency_key is null then raise exception 'IDEMPOTENCY_KEY_REQUIRED' using errcode='22023'; end if;
@@ -200,11 +204,15 @@ begin
   select id into tuktuk_project_id from public.projects where slug='tuktuk-control'; if tuktuk_project_id is null then raise exception 'TUKTUK_PROJECT_NOT_FOUND' using errcode='P0002'; end if;
   select * into job_record from public.jobs where project_id=tuktuk_project_id and id=target_job_id for update; if not found then raise exception 'JOB_NOT_FOUND' using errcode='P0002'; end if;
   select * into event_record from public.job_events where project_id=tuktuk_project_id and operation_idempotency_key=target_idempotency_key;
-  if found then if event_record.job_id=job_record.id and event_record.actor_user_id=actor and event_record.action in ('cancel_by_driver','open_incident') then return job_record; else raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION' using errcode='22023'; end if; end if;
+  if found then if event_record.job_id=job_record.id and event_record.actor_user_id=actor and event_record.action in ('cancel_by_driver','open_incident') and event_record.reason is not distinct from reason then return job_record; else raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION' using errcode='22023'; end if; end if;
   if job_record.assigned_driver_user_id is distinct from actor then raise exception 'JOB_NOT_ASSIGNED_TO_ACTOR' using errcode='42501'; end if;
+  previous_status:=job_record.status;
   select * into assignment_record from public.job_assignments where project_id=tuktuk_project_id and job_id=job_record.id for update;
+  if not found then raise exception 'JOB_ASSIGNMENT_NOT_FOUND' using errcode='P0002'; end if;
   select * into wallet_record from public.wallets where project_id=tuktuk_project_id and user_id=actor for update;
+  if not found then raise exception 'MARKETPLACE_WALLET_NOT_FOUND' using errcode='P0002'; end if;
   select * into reservation_record from public.commission_reservations where project_id=tuktuk_project_id and job_id=job_record.id for update;
+  if not found then raise exception 'COMMISSION_RESERVATION_NOT_FOUND' using errcode='P0002'; end if;
   if assignment_record.driver_user_id<>actor or reservation_record.user_id<>actor or reservation_record.status<>'open' then raise exception 'CANCELLATION_PRECONDITION_FAILED' using errcode='22023'; end if;
   if job_record.status in ('accepted','en_route','pickup') then
     if reservation_record.status<>'open' or not app_private.marketplace_job_transition_allowed(job_record.status,'cancelled_by_driver','driver') then raise exception 'INVALID_JOB_TRANSITION' using errcode='22023'; end if;
@@ -212,9 +220,10 @@ begin
     update public.job_assignments set cancelled_at=now() where project_id=tuktuk_project_id and id=assignment_record.id;
     update public.jobs set status='cancelled_by_driver',state_version=state_version+1 where project_id=tuktuk_project_id and id=job_record.id returning * into job_record;
     update public.driver_vehicle_assignments set is_available=is_active where project_id=tuktuk_project_id and driver_user_id=actor and vehicle_id=assignment_record.vehicle_id;
-    insert into public.job_events(project_id,job_id,from_status,to_status,action,actor_kind,actor_user_id,operation_idempotency_key,reason) values(tuktuk_project_id,job_record.id,job_record.status,'cancelled_by_driver','cancel_by_driver','driver',actor,target_idempotency_key,reason);
+    insert into public.job_events(project_id,job_id,from_status,to_status,action,actor_kind,actor_user_id,operation_idempotency_key,reason) values(tuktuk_project_id,job_record.id,previous_status,'cancelled_by_driver','cancel_by_driver','driver',actor,target_idempotency_key,reason);
     return job_record;
   elsif job_record.status='in_progress' then
+    if not app_private.marketplace_job_transition_allowed('in_progress','incident','driver') then raise exception 'INVALID_JOB_TRANSITION' using errcode='22023'; end if;
     update public.jobs set status='incident',incident_from_status='in_progress',incident_opened_at=now(),incident_reason=reason,state_version=state_version+1 where project_id=tuktuk_project_id and id=job_record.id returning * into job_record;
     insert into public.job_events(project_id,job_id,from_status,to_status,action,actor_kind,actor_user_id,operation_idempotency_key,reason) values(tuktuk_project_id,job_record.id,'in_progress','incident','open_incident','driver',actor,target_idempotency_key,reason);
     return job_record;
