@@ -36,7 +36,7 @@ returns boolean language sql stable security definer set search_path='' as $$
    join public.vehicles v on v.project_id=d.project_id and v.id=a.vehicle_id and v.deleted_at is null and v.marketplace_status <> 'suspended'
    join public.media_assets vp on vp.project_id=v.project_id and vp.id=v.main_photo_asset_id and vp.owner_user_id=v.owner_user_id and vp.status='available'
    where d.user_id=target_user_id and d.status <> 'suspended' and d.suspended_at is null
-     and nullif(btrim(p.display_name),'') is not null and p.phone ~ '^\\+[1-9][0-9]{7,14}$'
+     and nullif(btrim(p.display_name),'') is not null and p.phone ~ '^\+[1-9][0-9]{7,14}$'
      and nullif(btrim(v.category_code),'') is not null and nullif(btrim(v.propulsion_code),'') is not null
      and nullif(btrim(v.brand),'') is not null and nullif(btrim(v.model),'') is not null
      and exists (select 1 from public.vehicle_services vs join public.service_types st on st.project_id=vs.project_id and st.code=vs.service_code and st.active where vs.project_id=v.project_id and vs.vehicle_id=v.id and vs.enabled)
