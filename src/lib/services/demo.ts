@@ -493,4 +493,9 @@ export const demoServices: AdminServices = {
       throw new Error("Esta operación requiere Supabase");
     },
   },
+  marketplace: {
+    async overview() { return { driversTotal: 0, driversActive: 0, driversSuspended: 0, driversTrialActive: 0, driversPostTrialActive: 0, jobsPublished: 0, jobsActive: 0, jobsIncidentOpen: 0, jobsIncidentResolved: 0, pendingTopups: null }; },
+    async listDrivers() { return []; }, async listJobs() { return []; }, async getJobDetail() { throw new Error("Esta operación requiere Supabase"); }, async listCustomers() { return []; }, async listTopups() { return []; }, async listWallets() { return []; }, async financialSettings() { return { walletCurrency: "CUP", initialMinimumDeposit: 0, commissionRate: 0, updatedAt: "" }; }, async listIncidents() { return []; },
+    async resolveIncident() { throw new Error("Esta operación requiere Supabase"); }, async setDriverSuspension() { throw new Error("Esta operación requiere Supabase"); }, async createTopup() { throw new Error("Esta operación requiere Supabase"); }, async confirmTopup() { throw new Error("Esta operación requiere Supabase"); }, async rejectTopup() { throw new Error("Esta operación requiere Supabase"); }, async updateFinancialSettings() { throw new Error("Esta operación requiere Supabase"); },
+  },
 };

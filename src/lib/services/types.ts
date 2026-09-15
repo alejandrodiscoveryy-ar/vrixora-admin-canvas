@@ -23,7 +23,9 @@ export type ProjectPermission =
   | "whatsapp_settings.manage"
   | "commercial.view"
   | "commercial.manage"
-  | "audit.view";
+  | "audit.view"
+  | "marketplace.view"
+  | "marketplace.manage";
 
 export interface ProjectSettings {
   notifyLicenseExpiry: boolean;
@@ -988,6 +990,24 @@ export interface Client360Service {
   get(projectId: string, clientId: string): Promise<Client360>;
 }
 
+export interface MarketplaceOverview { driversTotal: number; driversActive: number; driversSuspended: number; driversTrialActive: number; driversPostTrialActive: number; jobsPublished: number; jobsActive: number; jobsIncidentOpen: number; jobsIncidentResolved: number; pendingTopups: number | null; }
+export interface MarketplaceDriver { userId: string; displayName: string; phone: string | null; status: string; trialActive: boolean; vehicleName: string | null; isAvailable: boolean | null; walletAvailableBalance: number | null; }
+export interface MarketplaceJob { jobId: string; status: string; serviceCode: string; originText: string; destinationText: string; finalPrice: number; currency: string; customerDisplayName: string | null; driverDisplayName: string | null; vehicleName: string | null; billingMode: string | null; incidentReason: string | null; createdAt: string; }
+export interface MarketplaceJobDetail { job: Record<string, unknown>; serviceRequest: Record<string, unknown>; assignment: Record<string, unknown> | null; timeline: Record<string, unknown>[]; customer: Record<string, unknown> | null; financial: Record<string, unknown> | null; incidentResolution: Record<string, unknown> | null; }
+export interface MarketplaceCustomer { customerId: string; displayName: string; whatsappPhone: string; jobsTotal: number; jobsActive: number; jobsSettled: number; lastJobAt: string | null; }
+export interface MarketplaceTopup { topupId: string; userId: string; driverDisplayName: string; amount: number; currency: string; status: string; method: string; reference: string | null; requestedAt: string; }
+export interface MarketplaceWallet { userId: string; driverDisplayName: string; currency: string; totalBalance: number; reservedBalance: number; availableBalance: number; initialDepositConfirmed: boolean; updatedAt: string; }
+export interface MarketplaceFinancialSettings { walletCurrency: string; initialMinimumDeposit: number; commissionRate: number; updatedAt: string; }
+export interface MarketplaceIncident { jobId: string; serviceCode: string; incidentReason: string; incidentOpenedAt: string; driverDisplayName: string | null; resolved: boolean; resolution: string | null; }
+export interface MarketplaceIncidentResolution { resolutionId: string; resolution: string; resolvedAt: string; }
+export interface MarketplaceAdminService {
+  overview(projectId: string): Promise<MarketplaceOverview>;
+  listDrivers(projectId: string): Promise<MarketplaceDriver[]>; listJobs(projectId: string, filters?: { status?: string; serviceCode?: string }): Promise<MarketplaceJob[]>; getJobDetail(projectId: string, jobId: string): Promise<MarketplaceJobDetail>;
+  listCustomers(projectId: string): Promise<MarketplaceCustomer[]>; listTopups(projectId: string, status?: string): Promise<MarketplaceTopup[]>; listWallets(projectId: string): Promise<MarketplaceWallet[]>; financialSettings(projectId: string): Promise<MarketplaceFinancialSettings>; listIncidents(projectId: string, resolved?: boolean): Promise<MarketplaceIncident[]>;
+  resolveIncident(projectId: string, input: { jobId: string; resolution: "completed" | "cancelled"; note: string; idempotencyKey: string }): Promise<MarketplaceIncidentResolution>; setDriverSuspension(projectId: string, input: { userId: string; suspended: boolean; reason?: string }): Promise<void>;
+  createTopup(projectId: string, input: { userId: string; amount: number; method: string; reference?: string; notes?: string; idempotencyKey: string }): Promise<void>; confirmTopup(projectId: string, topupId: string, idempotencyKey: string): Promise<void>; rejectTopup(projectId: string, topupId: string, reason: string): Promise<void>; updateFinancialSettings(projectId: string, input: { initialMinimumDeposit: number; commissionRate: number }): Promise<void>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -1002,4 +1022,5 @@ export interface AdminServices {
   client360: Client360Service;
   referrals: ReferralService;
   communications: MobileCommunicationService;
+  marketplace: MarketplaceAdminService;
 }

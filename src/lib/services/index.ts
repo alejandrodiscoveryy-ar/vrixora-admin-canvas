@@ -76,6 +76,17 @@ export type {
   SendMobileAnnouncementInput,
   MobileAnnouncementResult,
   MobileCommunicationService,
+  MarketplaceAdminService,
+  MarketplaceOverview,
+  MarketplaceDriver,
+  MarketplaceJob,
+  MarketplaceJobDetail,
+  MarketplaceCustomer,
+  MarketplaceTopup,
+  MarketplaceWallet,
+  MarketplaceFinancialSettings,
+  MarketplaceIncident,
+  MarketplaceIncidentResolution,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {
