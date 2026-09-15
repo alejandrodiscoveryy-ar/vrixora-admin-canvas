@@ -13,6 +13,9 @@ begin
   select lower(pg_get_functiondef('public.admin_resolve_marketplace_incident(uuid,uuid,text,text,uuid)'::regprocedure)) into f;
   if f not like '%pg_advisory_xact_lock%' or f not like '%tuktuk:incident-resolution:%' or position('from public.jobs' in f)>position('from public.job_assignments' in f) or position('from public.job_assignments' in f)>position('from public.wallets' in f) or position('from public.wallets' in f)>position('from public.commission_reservations' in f) or f not like '%trial_free%' or f not like '%job_commission_reversal%' or f not like '%incident_resolved%' or f not like '%status<>''incident''%' or f like '%update public.wallet_transactions%' or f like '%delete from public.wallet_transactions%' then raise exception 'TEST_FAILED: incident resolution contract incomplete'; end if;
   if position('elsif a.completed_at is null' in f)=0 then raise exception 'TEST_FAILED: cancellation must preserve historical completion'; end if;
+  if f not like '%from public.driver_profiles dp%' or f not like '%dp.status=''active''%' or f not like '%dp.suspended_at is null%' or f not like '%x.status=''incident'' and ir.id is null%' then raise exception 'TEST_FAILED: incident resolution availability invariant incomplete'; end if;
+  select lower(pg_get_functiondef('public.admin_set_marketplace_driver_suspension(uuid,uuid,boolean,text)'::regprocedure)) into f;
+  if f not like '%j.status=''incident'' and ir.id is null%' or f not like '%marketplace_incident_resolutions ir%' then raise exception 'TEST_FAILED: driver reactivation must preserve unresolved incident availability invariant'; end if;
   select lower(pg_get_functiondef('public.admin_get_marketplace_overview(uuid)'::regprocedure)) into f;
   if f not like '%has_confirmed_marketplace_initial_deposit%' then raise exception 'TEST_FAILED: post-trial overview is not deposit-gated'; end if;
   select lower(pg_get_functiondef('public.admin_get_marketplace_job_detail(uuid,uuid)'::regprocedure)) into f;
@@ -32,4 +35,6 @@ end $$;
 -- concurrent same-key and same-job/different-key resolutions; overview trial-expired/no-deposit and
 -- confirmed-deposit/no-trial cases; availability restoration; and permission-gated PII/financial
 -- disclosure must be exercised against an isolated fixture database.
+-- Resolving while driver remains suspended; reactivation with an unresolved incident; reactivation
+-- after a resolved incident without another job; and incident resolution for an active, idle driver.
 rollback;
