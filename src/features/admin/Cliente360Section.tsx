@@ -707,8 +707,8 @@ export default function Cliente360Section({
                       label: "Recompensas aplicadas",
                       value: currentReferralSummary.appliedRewards,
                     },
-                    { label: "Días aplicados", value: currentReferralSummary.appliedDays },
-                    { label: "Días pendientes", value: currentReferralSummary.pendingDays },
+                    { label: "Días históricos aplicados", value: currentReferralSummary.appliedDays },
+                    { label: "Días históricos pendientes", value: currentReferralSummary.pendingDays },
                   ]}
                 />
               </div>
@@ -895,7 +895,7 @@ function ReferralCard({
         <p className="truncate text-sm font-medium">{name}</p>
         <p className="text-xs text-text-tertiary">
           {code ? `Código ${code}` : "Sin código"}
-          {days ? ` · ${days} días` : ""}
+          {days ? ` · Beneficio histórico: ${days} días` : ""}
         </p>
       </div>
       <StatusBadge

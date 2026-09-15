@@ -118,7 +118,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   const referralCampaignsQuery = useQuery({
     queryKey: ["referral-campaigns", projectId],
     queryFn: () => supabaseServices.referrals.listCampaigns(projectId),
-    enabled: activeSection === "referrals",
+    enabled: activeSection === "referrals" && !isMarketplaceReferralProgram,
   });
 
   const [name, setName] = useState("");
@@ -972,10 +972,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         <div className="space-y-3">
           {isMarketplaceReferralProgram ? (
             <SectionCard title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
+              {marketplaceReferralSettingsQuery.isError ? <PageAlert tone="error">No se pudo cargar la configuración vigente de recompensas Marketplace.</PageAlert> : null}
               <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
                 <SettingToggle title="Programa de referidos" description="Activa o desactiva la recompensa vigente." checked={marketplaceRewardEnabled} onCheckedChange={setMarketplaceRewardEnabled} disabled={!canManage} />
                 <div className="space-y-1.5"><Label>Recompensa por referido (CUP)</Label><Input className={CONFIG_CONTROL_CLASS} type="number" min={0.01} step="0.01" value={marketplaceRewardAmount} onChange={(event) => setMarketplaceRewardAmount(Number(event.target.value))} disabled={!canManage} /></div>
-                <Button disabled={!canManage || marketplaceRewardAmount <= 0 || saveMarketplaceReferralReward.isPending} onClick={() => saveMarketplaceReferralReward.mutate()}>Guardar recompensa</Button>
+                <Button disabled={!canManage || marketplaceReferralSettingsQuery.isLoading || marketplaceReferralSettingsQuery.isError || marketplaceRewardAmount <= 0 || saveMarketplaceReferralReward.isPending} onClick={() => saveMarketplaceReferralReward.mutate()}>Guardar recompensa</Button>
               </div>
               <p className="mt-3 text-xs text-text-tertiary">Los días y campañas anteriores se conservan solo como histórico y no pueden iniciar nuevas recompensas para TukTuk.</p>
             </SectionCard>
@@ -1030,7 +1031,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             )}
           </SectionCard>
 
-          {canManage ? (
+          {canManage && !isMarketplaceReferralProgram ? (
             <SectionCard
               title="Iniciar nueva campaña"
               description="La campaña activa se cerrará al crear la nueva. Las reglas históricas no se modificarán."
@@ -1099,11 +1100,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 </Button>
               </div>
             </SectionCard>
-          ) : (
+          ) : !isMarketplaceReferralProgram ? (
             <PageAlert tone="info" title="Acceso restringido">
               Puedes consultar las campañas, pero no tienes permiso para iniciar o cerrar campañas.
             </PageAlert>
-          )}
+          ) : null}
 
           <SectionCard
             title="Historial de campañas"
