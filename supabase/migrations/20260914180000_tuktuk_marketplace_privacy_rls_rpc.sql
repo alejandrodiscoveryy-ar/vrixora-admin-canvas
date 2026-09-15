@@ -43,7 +43,7 @@ declare
   session_row public.marketplace_customer_sessions%rowtype;
   supplied_hash text;
 begin
-  if target_session_token is null or length(target_session_token) < 32 then
+  if target_session_token is null or char_length(target_session_token) < 32 or char_length(target_session_token) > 512 then
     raise exception 'CUSTOMER_SESSION_INVALID' using errcode = '22023';
   end if;
   select project.id into target_project_id from public.projects project where project.slug = 'tuktuk-control';
@@ -83,12 +83,16 @@ declare
   expires_value timestamptz := now() + interval '30 days';
 begin
   if normalized_name is null then raise exception 'CUSTOMER_DISPLAY_NAME_REQUIRED' using errcode = '22023'; end if;
-  if normalized_phone is null or normalized_phone !~ '^\\+[1-9][0-9]{7,14}$' then raise exception 'CUSTOMER_WHATSAPP_INVALID' using errcode = '22023'; end if;
-  if target_session_token is null or length(target_session_token) < 32 then raise exception 'CUSTOMER_SESSION_INVALID' using errcode = '22023'; end if;
+  if normalized_phone is null or normalized_phone !~ '^[+][1-9][0-9]{7,14}$' then raise exception 'CUSTOMER_WHATSAPP_INVALID' using errcode = '22023'; end if;
+  if target_session_token is null or char_length(target_session_token) < 32 or char_length(target_session_token) > 512 then raise exception 'CUSTOMER_SESSION_INVALID' using errcode = '22023'; end if;
   if target_idempotency_key is null then raise exception 'IDEMPOTENCY_KEY_REQUIRED' using errcode = '22023'; end if;
   select project.id into target_project_id from public.projects project where project.slug = 'tuktuk-control';
   if target_project_id is null then raise exception 'MARKETPLACE_PROJECT_NOT_FOUND'; end if;
   token_digest := encode(extensions.digest(convert_to(target_session_token, 'UTF8'), 'sha256'), 'hex');
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+    'tuktuk:customer-session:idempotency:' || target_project_id::text || ':' || target_idempotency_key::text, 0));
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+    'tuktuk:customer-session:token:' || target_project_id::text || ':' || token_digest, 0));
 
   select * into existing_session from public.marketplace_customer_sessions session
   where session.project_id = target_project_id and session.start_idempotency_key = target_idempotency_key for update;
@@ -103,8 +107,11 @@ begin
   where session.project_id = target_project_id and session.token_hash = token_digest for update;
   if found then
     select * into existing_customer from public.customers customer where customer.project_id = target_project_id and customer.id = existing_session.customer_id;
-    if btrim(existing_customer.display_name) = normalized_name and existing_customer.whatsapp_phone = normalized_phone then
+    if existing_session.status = 'active' and now() < existing_session.expires_at and btrim(existing_customer.display_name) = normalized_name and existing_customer.whatsapp_phone = normalized_phone then
       return query select existing_session.id, existing_session.customer_id, existing_session.expires_at, now(); return;
+    end if;
+    if existing_session.status <> 'active' or now() >= existing_session.expires_at then
+      raise exception 'CUSTOMER_SESSION_TOKEN_REQUIRES_ROTATION' using errcode = '22023';
     end if;
     raise exception 'CUSTOMER_SESSION_TOKEN_ALREADY_IN_USE' using errcode = '22023';
   end if;
@@ -153,6 +160,7 @@ language plpgsql security definer set search_path = '' as $$
 declare actor uuid:=auth.uid(); pid uuid; safe_limit integer:=least(greatest(coalesce(target_limit,50),1),100);
 begin
   if actor is null then raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501'; end if;
+  if (target_before_created_at is null) <> (target_before_job_id is null) then raise exception 'INVALID_PAGINATION_CURSOR' using errcode='22023'; end if;
   select id into pid from public.projects where slug='tuktuk-control';
   if not exists(select 1 from public.driver_profiles d where d.project_id=pid and d.user_id=actor and d.status='active' and d.activated_at is not null and d.suspended_at is null)
     or not app_private.marketplace_onboarding_requirements_complete(actor,target_vehicle_id)
@@ -164,7 +172,7 @@ begin
   where j.project_id=pid and j.status='published' and (j.expires_at is null or j.expires_at>now())
     and exists(select 1 from public.vehicle_services s where s.project_id=pid and s.vehicle_id=target_vehicle_id and s.service_code=j.service_code and s.enabled)
     and exists(select 1 from public.vehicles v where v.project_id=pid and v.id=target_vehicle_id and (r.passenger_count is null or v.passenger_capacity>=r.passenger_count) and (r.cargo_weight_kg is null or v.cargo_capacity_kg>=r.cargo_weight_kg) and (r.cargo_volume_m3 is null or v.cargo_volume_m3>=r.cargo_volume_m3) and (r.cargo_length_cm is null or v.cargo_length_cm>=r.cargo_length_cm) and (r.cargo_width_cm is null or v.cargo_width_cm>=r.cargo_width_cm) and (r.cargo_height_cm is null or v.cargo_height_cm>=r.cargo_height_cm) and (r.required_body_type is null or lower(btrim(v.body_type))=lower(btrim(r.required_body_type))))
-    and (target_before_created_at is null or target_before_job_id is null or (j.created_at,j.id)<(target_before_created_at,target_before_job_id))
+    and (target_before_created_at is null or (j.created_at,j.id)<(target_before_created_at,target_before_job_id))
   order by j.created_at desc,j.id desc limit safe_limit;
 end;
 $$;
@@ -196,14 +204,14 @@ end;
 $$;
 
 create or replace function public.cancel_marketplace_customer_job(target_session_id uuid,target_session_token text,target_job_id uuid,target_reason text,target_idempotency_key uuid)
-returns public.jobs language plpgsql security definer set search_path='' as $$
+returns table(job_id uuid,status text,server_time timestamptz) language plpgsql security definer set search_path='' as $$
 declare pid uuid; cid uuid; j public.jobs%rowtype; a public.job_assignments%rowtype; w public.wallets%rowtype; r public.commission_reservations%rowtype; e public.job_events%rowtype; reason text:=nullif(btrim(target_reason),''); previous_status text;
 begin
  if target_idempotency_key is null then raise exception 'IDEMPOTENCY_KEY_REQUIRED' using errcode='22023'; end if; if reason is null then raise exception 'CANCELLATION_REASON_REQUIRED' using errcode='22023'; end if;
  cid:=app_private.resolve_marketplace_customer_session(target_session_id,target_session_token); select id into pid from public.projects where slug='tuktuk-control';
  select * into j from public.jobs where project_id=pid and id=target_job_id for update; if not found then raise exception 'JOB_NOT_FOUND'; end if;
  select * into e from public.job_events where project_id=pid and operation_idempotency_key=target_idempotency_key;
- if found then if e.job_id=j.id and e.customer_id=cid and e.action='cancel_by_customer' and e.reason is not distinct from reason then return j; end if; raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION' using errcode='22023'; end if;
+ if found then if e.job_id=j.id and e.customer_id=cid and e.action='cancel_by_customer' and e.reason is not distinct from reason then return query select j.id,j.status,now(); return; end if; raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION' using errcode='22023'; end if;
  if not exists(select 1 from public.service_requests sr where sr.project_id=pid and sr.id=j.service_request_id and sr.customer_id=cid) then raise exception 'ACCESS_DENIED' using errcode='42501'; end if;
  if j.status in ('in_progress','completed','settled','incident') then raise exception 'CUSTOMER_CANCELLATION_REQUIRES_SUPPORT' using errcode='42501'; end if;
  if j.status not in ('requested','published','accepted','en_route','pickup') or not app_private.marketplace_job_transition_allowed(j.status,'cancelled_by_customer','customer') then raise exception 'INVALID_JOB_TRANSITION' using errcode='22023'; end if;
@@ -216,7 +224,7 @@ begin
  end if;
  update public.jobs set status='cancelled_by_customer',state_version=state_version+1 where project_id=pid and id=j.id returning * into j;
  insert into public.job_events(project_id,job_id,from_status,to_status,action,actor_kind,customer_id,operation_idempotency_key,reason,metadata) values(pid,j.id,previous_status,'cancelled_by_customer','cancel_by_customer','customer',cid,target_idempotency_key,reason,'{}'::jsonb);
- return j;
+ return query select j.id,j.status,now();
 end;
 $$;
 
