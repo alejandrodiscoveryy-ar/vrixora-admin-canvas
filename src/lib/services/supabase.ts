@@ -26,6 +26,7 @@ import type {
   CommercialLeadHistoryEntry,
   BusinessAuditEvent,
   P0ASettings,
+  MarketplaceReferralRewardSettings,
   ExchangeRateHistoryEntry,
   Preinvoice,
   Client360,
@@ -1600,6 +1601,40 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
       return Number(data);
+    },
+    async marketplaceReferralRewardSettings(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_referral_reward_settings", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const row = Array.isArray(data) ? data[0] : data as Record<string, unknown>;
+      return {
+        rewardMode: row.reward_mode as MarketplaceReferralRewardSettings["rewardMode"],
+        rewardEnabled: Boolean(row.reward_enabled),
+        rewardAmount: Number(row.reward_amount),
+        rewardCurrency: row.reward_currency as MarketplaceReferralRewardSettings["rewardCurrency"],
+        rewardRuleVersion: Number(row.reward_rule_version),
+        rewardEffectiveAt: String(row.reward_effective_at),
+      };
+    },
+    async setMarketplaceReferralRewardSettings(projectId, input) {
+      await requireOnline("Actualizar la recompensa Marketplace por referidos");
+      const { data, error } = await getSupabaseClient().rpc("admin_set_marketplace_referral_reward_settings", {
+        target_project_id: projectId,
+        target_enabled: input.rewardEnabled,
+        target_amount: input.rewardAmount,
+        target_currency: input.rewardCurrency,
+      });
+      throwIfError(error);
+      const row = data as Record<string, unknown>;
+      return {
+        rewardMode: row.reward_mode as MarketplaceReferralRewardSettings["rewardMode"],
+        rewardEnabled: Boolean(row.reward_enabled),
+        rewardAmount: Number(row.reward_amount),
+        rewardCurrency: row.reward_currency as MarketplaceReferralRewardSettings["rewardCurrency"],
+        rewardRuleVersion: Number(row.reward_rule_version),
+        rewardEffectiveAt: String(row.reward_effective_at),
+      };
     },
     async exchangeRateHistory(projectId, limit = 100) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_exchange_rate_history", {

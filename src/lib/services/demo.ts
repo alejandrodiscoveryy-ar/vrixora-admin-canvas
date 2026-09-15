@@ -385,6 +385,12 @@ export const demoServices: AdminServices = {
     async setReferralRewardDays() {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },
+    async marketplaceReferralRewardSettings() {
+      return { rewardMode: "marketplace_wallet_credit" as const, rewardEnabled: true, rewardAmount: 100, rewardCurrency: "CUP" as const, rewardRuleVersion: 1, rewardEffectiveAt: new Date(0).toISOString() };
+    },
+    async setMarketplaceReferralRewardSettings() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
     async createPreinvoice() {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },

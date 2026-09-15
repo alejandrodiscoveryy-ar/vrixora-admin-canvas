@@ -604,6 +604,15 @@ export interface P0ASettings {
   canManageWhatsapp: boolean;
 }
 
+export interface MarketplaceReferralRewardSettings {
+  rewardMode: "legacy_days" | "marketplace_wallet_credit";
+  rewardEnabled: boolean;
+  rewardAmount: number;
+  rewardCurrency: Currency;
+  rewardRuleVersion: number;
+  rewardEffectiveAt: string;
+}
+
 export interface ExchangeRateHistoryEntry {
   id: string | number;
   baseCurrency: Currency;
@@ -701,6 +710,8 @@ export interface P0AFoundationService {
   ): Promise<P0ASettings>;
   setTestMode(projectId: string, enabled: boolean): Promise<boolean>;
   setReferralRewardDays(projectId: string, rewardDays: number): Promise<number>;
+  marketplaceReferralRewardSettings(projectId: string): Promise<MarketplaceReferralRewardSettings>;
+  setMarketplaceReferralRewardSettings(projectId: string, input: Pick<MarketplaceReferralRewardSettings, "rewardEnabled" | "rewardAmount" | "rewardCurrency">): Promise<MarketplaceReferralRewardSettings>;
   exchangeRateHistory(projectId: string, limit?: number): Promise<ExchangeRateHistoryEntry[]>;
   createPreinvoice(input: CreatePreinvoiceInput): Promise<string>;
   listPreinvoices(projectId: string, includeTest?: boolean): Promise<Preinvoice[]>;

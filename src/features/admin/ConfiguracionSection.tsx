@@ -113,6 +113,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   });
 
   const [activeSection, setActiveSection] = useState<SectionKey>("general");
+  const isMarketplaceReferralProgram = project?.slug === "tuktuk-control";
 
   const referralCampaignsQuery = useQuery({
     queryKey: ["referral-campaigns", projectId],
@@ -129,10 +130,34 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   const [campaignQualificationMode, setCampaignQualificationMode] =
     useState<ReferralQualificationMode>("registration");
   const [campaignRewardDays, setCampaignRewardDays] = useState(15);
+  const [marketplaceRewardAmount, setMarketplaceRewardAmount] = useState(100);
+  const [marketplaceRewardEnabled, setMarketplaceRewardEnabled] = useState(true);
 
   const [projectDirty, setProjectDirty] = useState(false);
   const [foundationDirty, setFoundationDirty] = useState(false);
   const [whatsappDirty, setWhatsAppDirty] = useState(false);
+
+  const marketplaceReferralSettingsQuery = useQuery({
+    queryKey: ["marketplace-referral-settings", projectId],
+    queryFn: () => supabaseServices.foundations.marketplaceReferralRewardSettings(projectId),
+    enabled: activeSection === "referrals" && isMarketplaceReferralProgram,
+  });
+
+  useEffect(() => {
+    if (marketplaceReferralSettingsQuery.data) {
+      setMarketplaceRewardAmount(marketplaceReferralSettingsQuery.data.rewardAmount);
+      setMarketplaceRewardEnabled(marketplaceReferralSettingsQuery.data.rewardEnabled);
+    }
+  }, [marketplaceReferralSettingsQuery.data]);
+
+  const saveMarketplaceReferralReward = useMutation({
+    mutationFn: () => supabaseServices.foundations.setMarketplaceReferralRewardSettings(projectId, {
+      rewardEnabled: marketplaceRewardEnabled,
+      rewardAmount: marketplaceRewardAmount,
+      rewardCurrency: "CUP",
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["marketplace-referral-settings", projectId] }),
+  });
 
   const isDirty = projectDirty || foundationDirty || whatsappDirty;
 
@@ -186,7 +211,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           throw new Error("La tasa debe ser mayor que cero y tener una fuente.");
         }
 
-        if (foundationForm.referralRewardDays < 1 || foundationForm.referralRewardDays > 365) {
+        if (!isMarketplaceReferralProgram && (foundationForm.referralRewardDays < 1 || foundationForm.referralRewardDays > 365)) {
           throw new Error("La recompensa por referido debe estar entre 1 y 365 días.");
         }
 
@@ -209,7 +234,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           });
         }
 
-        if (original.referralRewardDays !== foundationForm.referralRewardDays) {
+        if (!isMarketplaceReferralProgram && original.referralRewardDays !== foundationForm.referralRewardDays) {
           await supabaseServices.foundations.setReferralRewardDays(
             projectId,
             foundationForm.referralRewardDays,
@@ -945,6 +970,16 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {activeSection === "referrals" ? (
         <div className="space-y-3">
+          {isMarketplaceReferralProgram ? (
+            <SectionCard title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
+              <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
+                <SettingToggle title="Programa de referidos" description="Activa o desactiva la recompensa vigente." checked={marketplaceRewardEnabled} onCheckedChange={setMarketplaceRewardEnabled} disabled={!canManage} />
+                <div className="space-y-1.5"><Label>Recompensa por referido (CUP)</Label><Input className={CONFIG_CONTROL_CLASS} type="number" min={0.01} step="0.01" value={marketplaceRewardAmount} onChange={(event) => setMarketplaceRewardAmount(Number(event.target.value))} disabled={!canManage} /></div>
+                <Button disabled={!canManage || marketplaceRewardAmount <= 0 || saveMarketplaceReferralReward.isPending} onClick={() => saveMarketplaceReferralReward.mutate()}>Guardar recompensa</Button>
+              </div>
+              <p className="mt-3 text-xs text-text-tertiary">Los días y campañas anteriores se conservan solo como histórico y no pueden iniciar nuevas recompensas para TukTuk.</p>
+            </SectionCard>
+          ) : null}
           <SectionCard
             title="Programa de referidos"
             description="Cada campaña conserva su condición y recompensa para no alterar relaciones ni beneficios históricos."
@@ -1013,7 +1048,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     value={campaignName}
                     onChange={(event) => setCampaignName(event.target.value)}
                     placeholder="Ej. Lanzamiento TukTuk Control"
-                    disabled={startReferralCampaign.isPending}
+                    disabled={isMarketplaceReferralProgram || startReferralCampaign.isPending}
                   />
                 </div>
 
@@ -1024,7 +1059,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     onValueChange={(value) =>
                       setCampaignQualificationMode(value as ReferralQualificationMode)
                     }
-                    disabled={startReferralCampaign.isPending}
+                    disabled={isMarketplaceReferralProgram || startReferralCampaign.isPending}
                   >
                     <SelectTrigger className={CONFIG_SELECT_CLASS}>
                       <SelectValue />
@@ -1046,14 +1081,14 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     max={365}
                     value={campaignRewardDays}
                     onChange={(event) => setCampaignRewardDays(Number(event.target.value))}
-                    disabled={startReferralCampaign.isPending}
+                    disabled={isMarketplaceReferralProgram || startReferralCampaign.isPending}
                   />
                 </div>
 
                 <Button
                   type="button"
                   onClick={() => startReferralCampaign.mutate()}
-                  disabled={startReferralCampaign.isPending}
+                  disabled={isMarketplaceReferralProgram || startReferralCampaign.isPending}
                 >
                   {startReferralCampaign.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
