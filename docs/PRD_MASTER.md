@@ -4,8 +4,8 @@
 **Empresa:** VRIXORA Solutions  
 **Producto administrativo:** Centro de Control de VRIXORA  
 **Primera aplicación gestionada:** TukTuk Control  
-**Versión del documento:** 1.1  
-**Fecha:** 4 de agosto de 2026  
+**Versión del documento:** 1.2
+**Fecha:** 15 de septiembre de 2026
 **Estado:** Producto en desarrollo y preparación para operación comercial  
 **Eslogan:** Aplicaciones inteligentes para negocios inteligentes
 
@@ -15,6 +15,7 @@
 |---|---|---|---|
 | 1.0 | 3 de agosto de 2026 | Documento inicial del ecosistema VRIXORA Solutions y TukTuk Control | Owner |
 | 1.1 | 4 de agosto de 2026 | Configuración dinámica de WhatsApp, separación entre soporte y pagos, plantillas de mensajes, registro manual del WhatsApp del cliente y reglas de actualización del PRD | Owner |
+| 1.2 | 15 de septiembre de 2026 | Regla oficial de referidos de TukTuk Marketplace: crédito de 100 CUP en billetera por referido válido, sin días promocionales ni impacto en TukTuk Control | Owner |
 
 ---
 
@@ -498,13 +499,49 @@ La aplicación debe actualizar el estado cuando recupere conexión.
 
 ## 8.12. Referidos
 
-El sistema podrá permitir:
+### Alcance
 
-- Compartir un código o enlace.
-- Identificar quién refirió a un nuevo usuario.
-- Registrar el beneficio.
-- Aplicar días promocionales cuando la condición se cumpla.
-- Conservar la trazabilidad del referido.
+Esta regla aplica exclusivamente a **TukTuk Marketplace**. No modifica licencias, pruebas ni entitlements de **TukTuk Control**.
+
+El mensaje comercial principal será: **"Invita a un amigo y gana dinero"**.
+
+El texto explicativo será: **"Recibe 100 CUP en tu billetera TUKTUK por cada referido válido."**
+
+### Recompensa y elegibilidad
+
+Por cada referido válido, el referente recibirá **100 CUP de saldo promocional** en su billetera de TukTuk Marketplace. El importe, la moneda y la activación deberán ser configurables mediante:
+
+- `referral_reward_amount = 100`;
+- `referral_reward_currency = CUP`;
+- `referral_reward_enabled = true`.
+
+Un referido será válido únicamente cuando el nuevo conductor:
+
+1. esté correctamente vinculado al referente;
+2. complete los datos obligatorios para Trabajos;
+3. tenga conductor y vehículo válidos;
+4. inicie sus 30 días gratis de Marketplace; y
+5. complete su primer trabajo válido.
+
+Un **primer trabajo válido** es el primer trabajo del referido considerado completado satisfactoriamente por Marketplace. Califica cuando alcanza `settled` o, si pasó por una incidencia, cuando esta se resuelve administrativamente con `resolution = completed`. No califican `cancelled_by_customer`, `cancelled_by_driver`, `expired` ni una incidencia resuelta como `cancelled`.
+
+La recompensa se genera exactamente una vez al completar ese primer trabajo válido. No se genera por abrir un enlace, instalar la aplicación, registrarse, introducir un código, crear un perfil, reiniciar o extender una prueba, cambiar de vehículo o recrear un perfil.
+
+### Naturaleza y límites del saldo
+
+El crédito se acredita en la billetera Marketplace, aumenta el saldo disponible para cubrir comisiones de trabajos y no es retirable, transferible ni efectivo entregado al conductor. No genera deuda ni ingreso para TukTuk.
+
+El crédito de referido no equivale a un depósito inicial verificado y no puede confirmar, simular ni sustituir el depósito inicial mínimo configurable requerido después de los 30 días iniciales. Una vez que la billetera esté habilitada mediante ese depósito, el crédito sí podrá utilizarse para pagar comisiones.
+
+Los referidos no modifican `started_at` ni `ends_at` de `marketplace_work_trials`, no crean ni reinician pruebas y no extienden el trial. Tampoco extienden, renuevan ni alteran la licencia de TukTuk Control.
+
+### Trazabilidad y diseño futuro
+
+El vínculo de referido debe ser inmutable una vez cualificado, impedir el autorreferido y conservar quién refirió a quién. Debe garantizarse una recompensa por usuario referido, sin duplicación por reintentos, reinstalaciones, cambios de vehículo o recreación de perfil.
+
+Cuando se implemente, el crédito se registrará por ledger y nunca mediante una modificación directa del balance, un `topup`, un pago ni un depósito. La transacción positiva usará `transaction_type = referral_credit`, `source_type = referral_reward`, moneda CUP e `amount_delta` positivo. Su procedencia tendrá una clave de idempotencia y, como mínimo, `referrer_user_id`, `referred_user_id`, `qualification_job_id`, `reward_amount` y `reward_rule_version`.
+
+En ayuda y términos se aclarará: **"El saldo obtenido por referidos se utiliza dentro de TUKTUK Marketplace para cubrir comisiones y no puede retirarse en efectivo."**
 
 ## 8.13. Atención al cliente y contacto por WhatsApp
 
