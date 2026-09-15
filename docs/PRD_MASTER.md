@@ -501,7 +501,11 @@ La aplicación debe actualizar el estado cuando recupere conexión.
 
 ### Alcance
 
-Esta regla aplica exclusivamente a **TukTuk Marketplace**. No modifica licencias, pruebas ni entitlements de **TukTuk Control**.
+El nuevo programa de referidos de **TukTuk Marketplace** sustituye al programa anterior de TukTuk basado en días y licencias. La recompensa vigente se acredita exclusivamente en la billetera Marketplace y ya no genera ni extiende días de licencia de TukTuk Control.
+
+No coexistirán dos programas activos: a partir de la implantación del nuevo modelo no se generan nuevos días por referidos, nuevas extensiones de licencia Control ni `reward_days` para nuevos referidos. Tampoco existen recompensas simultáneas en días y CUP.
+
+Los beneficios obtenidos antes de la migración mediante el programa anterior se conservan exclusivamente como histórico: no se eliminan de forma retroactiva, no se convierten automáticamente a CUP y no generan una segunda recompensa Marketplace.
 
 El mensaje comercial principal será: **"Invita a un amigo y gana dinero"**.
 
@@ -514,6 +518,8 @@ Por cada referido válido, el referente recibirá **100 CUP de saldo promocional
 - `referral_reward_amount = 100`;
 - `referral_reward_currency = CUP`;
 - `referral_reward_enabled = true`.
+
+La recompensa será configurable desde Vrixora. El valor inicial será 100 CUP, pero podrá aumentarse o reducirse según la estrategia comercial sin modificar código. El importe aplicable se congelará en el momento en que el referido cualifique para la recompensa y no se recalculará retroactivamente.
 
 Un referido será válido únicamente cuando el nuevo conductor:
 
