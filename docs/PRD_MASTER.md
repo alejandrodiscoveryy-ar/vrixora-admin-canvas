@@ -505,7 +505,15 @@ El nuevo programa de referidos de **TukTuk Marketplace** sustituye al programa a
 
 No coexistirán dos programas activos: a partir de la implantación del nuevo modelo no se generan nuevos días por referidos, nuevas extensiones de licencia Control ni `reward_days` para nuevos referidos. Tampoco existen recompensas simultáneas en días y CUP.
 
-Los beneficios obtenidos antes de la migración mediante el programa anterior se conservan exclusivamente como histórico: no se eliminan de forma retroactiva, no se convierten automáticamente a CUP y no generan una segunda recompensa Marketplace.
+### Corte y transición histórica
+
+Cada recompensa **REAL** existente del programa anterior para TukTuk que tenga estado `earned` o `applied` recibirá una única acreditación de transición en la billetera Marketplace del referente. El valor inicial del corte será **100 CUP por referido válido**, aplicado por recompensa histórica elegible, no por una conversión matemática de días a CUP.
+
+No califican los registros de prueba, las recompensas `reverted` ni las relaciones de referido que nunca generaron una recompensa válida. El importe, la moneda y la versión aplicables a cada acreditación histórica quedan congelados en el corte; un cambio posterior de Vrixora a 150 CUP, 200 CUP u otro importe no recalcula estas transiciones.
+
+Los días ya aplicados a una licencia se conservan exclusivamente como beneficio histórico: no se retiran ni se restan y no se convierten mediante equivalencia días→CUP. La recompensa histórica que los originó sí recibe la acreditación única de transición en la billetera Marketplace conforme a la regla de corte. Los días `earned` pendientes tampoco volverán a aplicarse después del corte. La trazabilidad debe vincular `legacy_reward_id` con `wallet_transaction_id` para que cada recompensa histórica elegible se migre una sola vez y jamás genere otra acreditación.
+
+Desde el corte no se crean ni aplican nuevos `reward_days`, no se extienden licencias por referidos y no existe doble recompensa futura en días y CUP. Los referidos nuevos conservan la regla vigente: primer trabajo válido, seguido de crédito Marketplace configurable con snapshot del importe, moneda y versión vigentes.
 
 El mensaje comercial principal será: **"Invita a un amigo y gana dinero"**.
 
