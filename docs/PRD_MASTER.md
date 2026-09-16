@@ -4,8 +4,8 @@
 **Empresa:** VRIXORA Solutions  
 **Producto administrativo:** Centro de Control de VRIXORA  
 **Primera aplicación gestionada:** TukTuk Control  
-**Versión del documento:** 1.2
-**Fecha:** 15 de septiembre de 2026
+**Versión del documento:** 1.3
+**Fecha:** 16 de septiembre de 2026
 **Estado:** Producto en desarrollo y preparación para operación comercial  
 **Eslogan:** Aplicaciones inteligentes para negocios inteligentes
 
@@ -16,6 +16,7 @@
 | 1.0 | 3 de agosto de 2026 | Documento inicial del ecosistema VRIXORA Solutions y TukTuk Control | Owner |
 | 1.1 | 4 de agosto de 2026 | Configuración dinámica de WhatsApp, separación entre soporte y pagos, plantillas de mensajes, registro manual del WhatsApp del cliente y reglas de actualización del PRD | Owner |
 | 1.2 | 15 de septiembre de 2026 | Regla oficial de referidos de TukTuk Marketplace: crédito de 100 CUP en billetera por referido válido, sin días promocionales ni impacto en TukTuk Control | Owner |
+| 1.3 | 16 de septiembre de 2026 | Regla oficial de calificación Customer → Driver de TukTuk Marketplace | Owner |
 
 ---
 
@@ -557,7 +558,16 @@ Cuando se implemente, el crédito se registrará por ledger y nunca mediante una
 
 En ayuda y términos se aclarará: **"El saldo obtenido por referidos se utiliza dentro de TUKTUK Marketplace para cubrir comisiones y no puede retirarse en efectivo."**
 
-## 8.13. Atención al cliente y contacto por WhatsApp
+## 8.13. Calificación Customer → Driver en Marketplace
+
+Después de que un trabajo alcance `settled`, el cliente Marketplace podrá
+calificar al transportista asignado con **1 a 5 estrellas** y un comentario
+opcional. Solo podrá existir una valoración por trabajo; deberá quedar ligada a
+`project_id`, `job_id`, `customer_id` y `driver_user_id`, ser idempotente y no
+podrá ser creada, modificada ni eliminada por el conductor. El cliente solo
+podrá valorar su propio trabajo y no habrá calificaciones antes de `settled`.
+
+## 8.14. Atención al cliente y contacto por WhatsApp
 
 TukTuk Control deberá disponer de dos vías diferenciadas de contacto por WhatsApp:
 

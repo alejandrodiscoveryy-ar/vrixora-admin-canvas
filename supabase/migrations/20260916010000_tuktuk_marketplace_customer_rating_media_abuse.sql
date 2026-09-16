@@ -64,13 +64,9 @@ begin
   if target_subject is null or char_length(target_subject) < 16 then
     raise exception 'CUSTOMER_ABUSE_SUBJECT_INVALID' using errcode='22023';
   end if;
-  select * into settings from public.marketplace_customer_abuse_settings where project_id=target_project_id;
-  if coalesce(settings.captcha_required,false) then
-    -- Verification belongs in an optional Edge gateway using its provider secret.
-    -- Direct RPC traffic is denied rather than trusting an arbitrary client
-    -- string; the raw proof deliberately never reaches persistent storage.
-    raise exception 'CAPTCHA_GATEWAY_REQUIRED' using errcode='42501';
-  end if;
+  -- CAPTCHA verification is performed before this function by the Edge
+  -- gateway. This SQL helper is also used by service_role-only internal RPCs
+  -- and never receives or persists a CAPTCHA proof.
   digest_value:=encode(extensions.digest(convert_to(target_subject,'UTF8'),'sha256'),'hex');
   insert into public.marketplace_customer_operation_limits(project_id,operation_name,subject_hash)
   values(target_project_id,target_operation,digest_value)
@@ -185,21 +181,8 @@ begin
   return query select r.job_id,r.stars,r.comment,r.created_at from public.marketplace_customer_ratings r where r.project_id=pid and r.job_id=target_job_id and r.customer_id=cid;
 end; $$;
 
-create or replace function public.get_marketplace_customer_job_media(target_session_id uuid,target_session_token text,target_job_id uuid)
-returns table(driver_photo_signed_url text,vehicle_photo_signed_url text,expires_at timestamptz)
-language plpgsql security definer set search_path='' as $$
-declare pid uuid; cid uuid; driver_asset public.media_assets%rowtype; vehicle_asset public.media_assets%rowtype; ttl integer:=300;
-begin
-  perform app_private.marketplace_customer_abuse_check('media',target_session_id::text,20,interval '10 minutes');
-  cid:=app_private.resolve_marketplace_customer_session(target_session_id,target_session_token); pid:=app_private.marketplace_customer_project_id();
-  if not exists(select 1 from public.jobs j join public.service_requests r on r.project_id=j.project_id and r.id=j.service_request_id where j.project_id=pid and j.id=target_job_id and r.customer_id=cid and j.assigned_driver_user_id is not null) then raise exception 'ASSIGNED_MEDIA_NOT_AVAILABLE' using errcode='42501'; end if;
-  select a.* into driver_asset from public.jobs j join public.driver_profiles d on d.project_id=j.project_id and d.user_id=j.assigned_driver_user_id join public.media_assets a on a.project_id=d.project_id and a.id=d.photo_asset_id where j.project_id=pid and j.id=target_job_id and a.status='available';
-  select a.* into vehicle_asset from public.jobs j join public.vehicles v on v.project_id=j.project_id and v.id=j.assigned_vehicle_id join public.media_assets a on a.project_id=v.project_id and a.id=v.main_photo_asset_id where j.project_id=pid and j.id=target_job_id and a.status='available';
-  return query select case when driver_asset.id is null then null else storage.create_signed_url(driver_asset.storage_bucket,driver_asset.storage_path,ttl) end,case when vehicle_asset.id is null then null else storage.create_signed_url(vehicle_asset.storage_bucket,vehicle_asset.storage_path,ttl) end,now()+make_interval(secs=>ttl);
-end; $$;
-
 revoke all on function app_private.enforce_marketplace_customer_limit(uuid,text,text,integer,interval,text),app_private.marketplace_customer_project_id(),app_private.marketplace_customer_abuse_check(text,text,integer,interval,text) from public,anon,authenticated;
 revoke all on function public.start_marketplace_customer_session(text,text,text,uuid),public.get_marketplace_customer_job(uuid,text,uuid),public.cancel_marketplace_customer_job(uuid,text,uuid,text,uuid) from anon,authenticated;
 revoke all on function public.create_marketplace_customer_request(uuid,text,text,text,text,timestamptz,integer,numeric,numeric,numeric,numeric,numeric,text,text,jsonb,uuid),public.publish_marketplace_customer_job(uuid,text,uuid,numeric,boolean,uuid) from anon,authenticated;
-grant execute on function public.start_marketplace_customer_session_protected(text,text,text,uuid,text),public.get_marketplace_customer_job_protected(uuid,text,uuid),public.cancel_marketplace_customer_job_protected(uuid,text,uuid,text,uuid),public.create_marketplace_customer_rating(uuid,text,uuid,smallint,text,uuid),public.get_marketplace_customer_rating(uuid,text,uuid),public.get_marketplace_customer_job_media(uuid,text,uuid) to anon,authenticated;
+grant execute on function public.start_marketplace_customer_session_protected(text,text,text,uuid,text),public.get_marketplace_customer_job_protected(uuid,text,uuid),public.cancel_marketplace_customer_job_protected(uuid,text,uuid,text,uuid),public.create_marketplace_customer_rating(uuid,text,uuid,smallint,text,uuid),public.get_marketplace_customer_rating(uuid,text,uuid) to anon,authenticated;
 grant execute on function public.create_marketplace_customer_request_protected(uuid,text,text,text,text,timestamptz,integer,numeric,numeric,numeric,numeric,numeric,text,text,jsonb,uuid),public.publish_marketplace_customer_job_protected(uuid,text,uuid,numeric,boolean,uuid) to anon,authenticated;
