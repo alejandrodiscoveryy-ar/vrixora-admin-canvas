@@ -19,3 +19,8 @@ conductores. Faltaban: la valoración Customer→Driver, la resolución autoriza
 de las fotos para el cliente asignado y una capa común de límite de operaciones
 anónimas. No se encontraron accesos Flutter directos a tablas transaccionales
 ni uso de `service_role`.
+
+El interruptor `captcha_required` se mantiene apagado para desarrollo local.
+Cuando se active, las RPC directas quedan bloqueadas y un gateway Edge deberá
+validar el proveedor configurado con su secreto antes de reenviar la operación.
+No se acepta un token de CAPTCHA sin verificar ni se persiste su valor.

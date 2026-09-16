@@ -65,10 +65,11 @@ begin
     raise exception 'CUSTOMER_ABUSE_SUBJECT_INVALID' using errcode='22023';
   end if;
   select * into settings from public.marketplace_customer_abuse_settings where project_id=target_project_id;
-  if coalesce(settings.captcha_required,false) and nullif(btrim(target_captcha_token),'') is null then
-    -- Verification belongs in an optional Edge gateway using its provider secret;
-    -- the raw proof deliberately never reaches persistent storage.
-    raise exception 'CAPTCHA_VERIFICATION_REQUIRED' using errcode='42501';
+  if coalesce(settings.captcha_required,false) then
+    -- Verification belongs in an optional Edge gateway using its provider secret.
+    -- Direct RPC traffic is denied rather than trusting an arbitrary client
+    -- string; the raw proof deliberately never reaches persistent storage.
+    raise exception 'CAPTCHA_GATEWAY_REQUIRED' using errcode='42501';
   end if;
   digest_value:=encode(extensions.digest(convert_to(target_subject,'UTF8'),'sha256'),'hex');
   insert into public.marketplace_customer_operation_limits(project_id,operation_name,subject_hash)
