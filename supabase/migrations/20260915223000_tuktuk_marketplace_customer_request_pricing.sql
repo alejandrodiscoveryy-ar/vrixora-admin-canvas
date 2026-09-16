@@ -126,7 +126,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 begin
   if (
     to_jsonb(new) - 'active' - 'updated_at'
@@ -139,7 +139,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function
   app_private.protect_marketplace_pricing_rule()
