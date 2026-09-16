@@ -2,6 +2,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-forwarded-for" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+const rateLimitCategory: Record<string, string> = {
+  start_session: "session",
+  services: "read",
+  create_request: "request",
+  publish: "publish",
+  get_job: "read",
+  cancel: "cancel",
+  get_rating: "read",
+  create_rating: "rating",
+  media: "media",
+};
 
 async function hmac(value: string, secret: string) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -26,6 +37,8 @@ Deno.serve(async (request) => {
     if (!url || !key || !rateSecret) throw new Error("GATEWAY_CONFIGURATION_MISSING");
     const body = await request.json(); const operation = body?.operation;
     if (typeof operation !== "string") throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
+    const category = rateLimitCategory[operation];
+    if (!category) throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
     const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: project, error: projectError } = await supabase.from("projects").select("id").eq("slug", "tuktuk-control").single();
     if (projectError || !project) throw new Error("MARKETPLACE_PROJECT_NOT_FOUND");
@@ -33,8 +46,8 @@ Deno.serve(async (request) => {
     if (settingsError) throw settingsError;
     if (settings?.captcha_required) await verifyCaptcha(body.captcha_token, settings.captcha_provider);
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-network";
-    const identity = await hmac(`${operation}:${forwarded}`, rateSecret);
-    const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: operation, target_derived_identity: identity });
+    const identity = await hmac(`${category}:${forwarded}`, rateSecret);
+    const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
     const params = body.params ?? {};
     if (operation === "media") {
@@ -45,7 +58,7 @@ Deno.serve(async (request) => {
       if (assetsError) throw assetsError;
       const byId = new Map((assets ?? []).map((asset) => [asset.id, asset]));
       const sign = async (id: string | null) => { const asset = id ? byId.get(id) : null; if (!asset || asset.storage_bucket !== "marketplace-media") return null; const { data, error } = await supabase.storage.from(asset.storage_bucket).createSignedUrl(asset.storage_path, 900); if (error) throw error; return data.signedUrl; };
-      return json({ driver_photo_signed_url: await sign(job.driver_photo_asset_id), vehicle_photo_signed_url: await sign(job.vehicle_main_photo_asset_id), expires_at: new Date(Date.now() + 900000).toISOString() });
+      return json({ data: { driver_photo_signed_url: await sign(job.driver_photo_asset_id), vehicle_photo_signed_url: await sign(job.vehicle_main_photo_asset_id), expires_at: new Date(Date.now() + 900000).toISOString() } });
     }
     const rpc = ({ start_session: "start_marketplace_customer_session", services: "list_marketplace_customer_services", create_request: "create_marketplace_customer_request", publish: "publish_marketplace_customer_job", get_job: "get_marketplace_customer_job", cancel: "cancel_marketplace_customer_job", get_rating: "get_marketplace_customer_rating", create_rating: "create_marketplace_customer_rating" } as Record<string, string>)[operation];
     if (!rpc) throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
