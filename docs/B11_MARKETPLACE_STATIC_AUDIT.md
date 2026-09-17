@@ -27,6 +27,12 @@ vigente. Inserta un único evento por conductor y trabajo dentro de la misma
 transacción de publicación. El payload contiene exclusivamente el tipo de
 evento y `job_id`.
 
+La migración incremental `20260916110000_notification_outbox_legacy_compatibility.sql`
+restaura el productor de tasa diaria sobre el nuevo contrato: usa
+`daily-rate:<fecha-local>` como `dedupe_key` y el conflicto por
+`(project_id, user_id, kind, dedupe_key)`. Conserva la deduplicación diaria sin
+competir con `marketplace-job:<job-id>`.
+
 El worker existente admite `marketplace_job_available` y entrega a todos los
 tokens habilitados del conductor sin duplicar el evento de negocio. Antes de
 entregar, el worker no altera el trabajo; un envío fallido no puede revertir la
