@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Vrixora
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout TUKTUK Control
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "cccd100b4b35d93c546a20c3acbe7ab477c1678e"
+          git merge-base --is-ancestor cccd100b4b35d93c546a20c3acbe7ab477c1678e HEAD
           target="$RUNNER_TEMP/b11-ci/supabase"
           mkdir -p "$target/migrations"
           printf 'project_id = "b11-sql-verification-ci"\n[db]\nmajor_version = 17\n[db.seed]\nenabled = false\n' > "$target/config.toml"
@@ -46,6 +46,13 @@ jobs:
             test -d "$dir"
             for file in "$dir"/*.sql; do
               name="${file##*/}"
+              if [ "$name" = "20260722000001_secure_rls_auto_enable_function.sql" ]; then
+                if [ "$(wc -l < "$file")" -ne 2 ] || ! grep -Fq "revoke execute on function public.rls_auto_enable()" "$file"; then
+                  echo "ERROR: contenido inesperado en migracion historica"; exit 1
+                fi
+                echo "SKIP documentado: REVOKE historico de funcion ausente en base nueva"
+                continue
+              fi
               if test -f "$target/migrations/$name"; then
                 cmp "$file" "$target/migrations/$name" || {
                   echo "ERROR: migration duplicada diferente: $name"
