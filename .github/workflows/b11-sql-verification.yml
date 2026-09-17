@@ -1,0 +1,112 @@
+name: B11 SQL verification isolated
+
+on:
+  push:
+    branches:
+      - test/b11-sql-verification
+
+permissions:
+  contents: read
+
+jobs:
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout Vrixora
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Checkout TUKTUK Control
+        uses: actions/checkout@v4
+        with:
+          repository: alejandrodiscoveryy-ar/tuktuk-control
+          ref: 1ad4b59401fedf18d4b5609ab75637a0f791f232
+          path: tuktuk-source
+          persist-credentials: false
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Prepare real migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "cccd100b4b35d93c546a20c3acbe7ab477c1678e"
+          target="$RUNNER_TEMP/b11-ci/supabase"
+          mkdir -p "$target/migrations"
+          printf 'project_id = "b11-sql-verification-ci"\n[db]\nmajor_version = 17\n[db.seed]\nenabled = false\n' > "$target/config.toml"
+
+          for dir in supabase/migrations tuktuk-source/flutter_app/supabase/migrations; do
+            test -d "$dir"
+            for file in "$dir"/*.sql; do
+              name="${file##*/}"
+              if test -f "$target/migrations/$name"; then
+                cmp "$file" "$target/migrations/$name" || {
+                  echo "ERROR: migration duplicada diferente: $name"
+                  exit 1
+                }
+              else
+                cp "$file" "$target/migrations/$name"
+              fi
+            done
+          done
+
+          test -f "$target/migrations/20260916100000_tuktuk_marketplace_notifications.sql"
+          test -f "$target/migrations/20260916110000_notification_outbox_legacy_compatibility.sql"
+          test -f "$target/migrations/20260722000002_create_profiles.sql"
+          echo "Migraciones preparadas:"
+          find "$target/migrations" -name '*.sql' | wc -l
+
+      - name: Start disposable PostgreSQL and apply migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/b11-ci"
+          supabase --version
+          supabase db start
+
+      - name: Execute B11 SQL verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          db="supabase_db_b11-sql-verification-ci"
+          docker inspect "$db" >/dev/null
+          docker exec -i "$db" psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d postgres \
+            < supabase/verification/20260916_tuktuk_marketplace_notifications.sql
+
+          docker exec -i "$db" psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d postgres <<'SQL'
+          do $$
+          begin
+            if not exists (
+              select 1 from pg_constraint
+              where conrelid = 'public.notification_outbox'::regclass
+                and conname = 'notification_outbox_project_user_kind_dedupe_key'
+                and contype = 'u'
+                and pg_get_constraintdef(oid) =
+                  'UNIQUE (project_id, user_id, kind, dedupe_key)'
+            ) then
+              raise exception 'B11: restriccion unica incorrecta';
+            end if;
+
+            if not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'notification_outbox'
+                and column_name = 'dedupe_key'
+                and is_nullable = 'NO'
+            ) then
+              raise exception 'B11: dedupe_key ausente o nullable';
+            end if;
+          end;
+          $$;
+          SQL
+
+          echo "PASS: migraciones y contratos SQL B11 verificados."
