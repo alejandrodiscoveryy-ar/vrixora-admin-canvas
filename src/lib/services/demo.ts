@@ -385,6 +385,12 @@ export const demoServices: AdminServices = {
     async setReferralRewardDays() {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },
+    async marketplaceReferralRewardSettings() {
+      return { rewardMode: "marketplace_wallet_credit" as const, rewardEnabled: true, rewardAmount: 100, rewardCurrency: "CUP" as const, rewardRuleVersion: 1, rewardEffectiveAt: new Date(0).toISOString() };
+    },
+    async setMarketplaceReferralRewardSettings() {
+      throw new Error("Esta operaciÃ³n requiere Supabase");
+    },
     async createPreinvoice() {
       throw new Error("Esta operaciÃ³n requiere Supabase");
     },
@@ -492,5 +498,10 @@ export const demoServices: AdminServices = {
     async send() {
       throw new Error("Esta operación requiere Supabase");
     },
+  },
+  marketplace: {
+    async overview() { return { driversTotal: 0, driversActive: 0, driversSuspended: 0, driversTrialActive: 0, driversPostTrialActive: 0, jobsPublished: 0, jobsActive: 0, jobsIncidentOpen: 0, jobsIncidentResolved: 0, pendingTopups: null }; },
+    async listDrivers() { return { items: [], nextCursor: null }; }, async listJobs() { return { items: [], nextCursor: null }; }, async getJobDetail() { throw new Error("Esta operación requiere Supabase"); }, async listCustomers() { return { items: [], nextCursor: null }; }, async listTopups() { return { items: [], nextCursor: null }; }, async listWallets() { return { items: [], nextCursor: null }; }, async financialSettings() { return { walletCurrency: "CUP", initialMinimumDeposit: 0, commissionRate: 0, updatedAt: "", updatedBy: null }; }, async listIncidents() { return { items: [], nextCursor: null }; },
+    async resolveIncident() { throw new Error("Esta operación requiere Supabase"); }, async setDriverSuspension() { throw new Error("Esta operación requiere Supabase"); }, async createTopup() { throw new Error("Esta operación requiere Supabase"); }, async confirmTopup() { throw new Error("Esta operación requiere Supabase"); }, async rejectTopup() { throw new Error("Esta operación requiere Supabase"); }, async updateFinancialSettings() { throw new Error("Esta operación requiere Supabase"); },
   },
 };
