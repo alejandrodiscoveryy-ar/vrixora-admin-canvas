@@ -4,8 +4,8 @@
 **Empresa:** VRIXORA Solutions  
 **Producto administrativo:** Centro de Control de VRIXORA  
 **Primera aplicación gestionada:** TukTuk Control  
-**Versión del documento:** 1.1  
-**Fecha:** 4 de agosto de 2026  
+**Versión del documento:** 1.3
+**Fecha:** 16 de septiembre de 2026
 **Estado:** Producto en desarrollo y preparación para operación comercial  
 **Eslogan:** Aplicaciones inteligentes para negocios inteligentes
 
@@ -15,6 +15,8 @@
 |---|---|---|---|
 | 1.0 | 3 de agosto de 2026 | Documento inicial del ecosistema VRIXORA Solutions y TukTuk Control | Owner |
 | 1.1 | 4 de agosto de 2026 | Configuración dinámica de WhatsApp, separación entre soporte y pagos, plantillas de mensajes, registro manual del WhatsApp del cliente y reglas de actualización del PRD | Owner |
+| 1.2 | 15 de septiembre de 2026 | Regla oficial de referidos de TukTuk Marketplace: crédito de 100 CUP en billetera por referido válido, sin días promocionales ni impacto en TukTuk Control | Owner |
+| 1.3 | 16 de septiembre de 2026 | Regla oficial de calificación Customer → Driver de TukTuk Marketplace | Owner |
 
 ---
 
@@ -498,15 +500,74 @@ La aplicación debe actualizar el estado cuando recupere conexión.
 
 ## 8.12. Referidos
 
-El sistema podrá permitir:
+### Alcance
 
-- Compartir un código o enlace.
-- Identificar quién refirió a un nuevo usuario.
-- Registrar el beneficio.
-- Aplicar días promocionales cuando la condición se cumpla.
-- Conservar la trazabilidad del referido.
+El nuevo programa de referidos de **TukTuk Marketplace** sustituye al programa anterior de TukTuk basado en días y licencias. La recompensa vigente se acredita exclusivamente en la billetera Marketplace y ya no genera ni extiende días de licencia de TukTuk Control.
 
-## 8.13. Atención al cliente y contacto por WhatsApp
+No coexistirán dos programas activos: a partir de la implantación del nuevo modelo no se generan nuevos días por referidos, nuevas extensiones de licencia Control ni `reward_days` para nuevos referidos. Tampoco existen recompensas simultáneas en días y CUP.
+
+### Corte y transición histórica
+
+Cada recompensa **REAL** existente del programa anterior para TukTuk que tenga estado `earned` o `applied` recibirá una única acreditación de transición en la billetera Marketplace del referente. El valor inicial del corte será **100 CUP por referido válido**, aplicado por recompensa histórica elegible, no por una conversión matemática de días a CUP.
+
+No califican los registros de prueba, las recompensas `reverted` ni las relaciones de referido que nunca generaron una recompensa válida. El importe, la moneda y la versión aplicables a cada acreditación histórica quedan congelados en el corte; un cambio posterior de Vrixora a 150 CUP, 200 CUP u otro importe no recalcula estas transiciones.
+
+Los días ya aplicados a una licencia se conservan exclusivamente como beneficio histórico: no se retiran ni se restan y no se convierten mediante equivalencia días→CUP. La recompensa histórica que los originó sí recibe la acreditación única de transición en la billetera Marketplace conforme a la regla de corte. Los días `earned` pendientes tampoco volverán a aplicarse después del corte. La trazabilidad debe vincular `legacy_reward_id` con `wallet_transaction_id` para que cada recompensa histórica elegible se migre una sola vez y jamás genere otra acreditación.
+
+Desde el corte no se crean ni aplican nuevos `reward_days`, no se extienden licencias por referidos y no existe doble recompensa futura en días y CUP. Los referidos nuevos conservan la regla vigente: primer trabajo válido, seguido de crédito Marketplace configurable con snapshot del importe, moneda y versión vigentes.
+
+El mensaje comercial principal será: **"Invita a un amigo y gana dinero"**.
+
+El texto explicativo será: **"Recibe 100 CUP en tu billetera TUKTUK por cada referido válido."**
+
+### Recompensa y elegibilidad
+
+Por cada referido válido, el referente recibirá **100 CUP de saldo promocional** en su billetera de TukTuk Marketplace. El importe, la moneda y la activación deberán ser configurables mediante:
+
+- `referral_reward_amount = 100`;
+- `referral_reward_currency = CUP`;
+- `referral_reward_enabled = true`.
+
+La recompensa será configurable desde Vrixora. El valor inicial será 100 CUP, pero podrá aumentarse o reducirse según la estrategia comercial sin modificar código. El importe aplicable se congelará en el momento en que el referido cualifique para la recompensa y no se recalculará retroactivamente.
+
+Un referido será válido únicamente cuando el nuevo conductor:
+
+1. esté correctamente vinculado al referente;
+2. complete los datos obligatorios para Trabajos;
+3. tenga conductor y vehículo válidos;
+4. inicie sus 30 días gratis de Marketplace; y
+5. complete su primer trabajo válido.
+
+Un **primer trabajo válido** es el primer trabajo del referido considerado completado satisfactoriamente por Marketplace. Califica cuando alcanza `settled` o, si pasó por una incidencia, cuando esta se resuelve administrativamente con `resolution = completed`. No califican `cancelled_by_customer`, `cancelled_by_driver`, `expired` ni una incidencia resuelta como `cancelled`.
+
+La recompensa se genera exactamente una vez al completar ese primer trabajo válido. No se genera por abrir un enlace, instalar la aplicación, registrarse, introducir un código, crear un perfil, reiniciar o extender una prueba, cambiar de vehículo o recrear un perfil.
+
+### Naturaleza y límites del saldo
+
+El crédito se acredita en la billetera Marketplace, aumenta el saldo disponible para cubrir comisiones de trabajos y no es retirable, transferible ni efectivo entregado al conductor. No genera deuda ni ingreso para TukTuk.
+
+El crédito de referido no equivale a un depósito inicial verificado y no puede confirmar, simular ni sustituir el depósito inicial mínimo configurable requerido después de los 30 días iniciales. Una vez que la billetera esté habilitada mediante ese depósito, el crédito sí podrá utilizarse para pagar comisiones.
+
+Los referidos no modifican `started_at` ni `ends_at` de `marketplace_work_trials`, no crean ni reinician pruebas y no extienden el trial. Tampoco extienden, renuevan ni alteran la licencia de TukTuk Control.
+
+### Trazabilidad y diseño futuro
+
+El vínculo de referido debe ser inmutable una vez cualificado, impedir el autorreferido y conservar quién refirió a quién. Debe garantizarse una recompensa por usuario referido, sin duplicación por reintentos, reinstalaciones, cambios de vehículo o recreación de perfil.
+
+Cuando se implemente, el crédito se registrará por ledger y nunca mediante una modificación directa del balance, un `topup`, un pago ni un depósito. La transacción positiva usará `transaction_type = referral_credit`, `source_type = referral_reward`, moneda CUP e `amount_delta` positivo. Su procedencia tendrá una clave de idempotencia y, como mínimo, `referrer_user_id`, `referred_user_id`, `qualification_job_id`, `reward_amount` y `reward_rule_version`.
+
+En ayuda y términos se aclarará: **"El saldo obtenido por referidos se utiliza dentro de TUKTUK Marketplace para cubrir comisiones y no puede retirarse en efectivo."**
+
+## 8.13. Calificación Customer → Driver en Marketplace
+
+Después de que un trabajo alcance `settled`, el cliente Marketplace podrá
+calificar al transportista asignado con **1 a 5 estrellas** y un comentario
+opcional. Solo podrá existir una valoración por trabajo; deberá quedar ligada a
+`project_id`, `job_id`, `customer_id` y `driver_user_id`, ser idempotente y no
+podrá ser creada, modificada ni eliminada por el conductor. El cliente solo
+podrá valorar su propio trabajo y no habrá calificaciones antes de `settled`.
+
+## 8.14. Atención al cliente y contacto por WhatsApp
 
 TukTuk Control deberá disponer de dos vías diferenciadas de contacto por WhatsApp:
 

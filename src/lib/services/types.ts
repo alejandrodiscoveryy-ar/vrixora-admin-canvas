@@ -23,7 +23,9 @@ export type ProjectPermission =
   | "whatsapp_settings.manage"
   | "commercial.view"
   | "commercial.manage"
-  | "audit.view";
+  | "audit.view"
+  | "marketplace.view"
+  | "marketplace.manage";
 
 export interface ProjectSettings {
   notifyLicenseExpiry: boolean;
@@ -602,6 +604,15 @@ export interface P0ASettings {
   canManageWhatsapp: boolean;
 }
 
+export interface MarketplaceReferralRewardSettings {
+  rewardMode: "legacy_days" | "marketplace_wallet_credit";
+  rewardEnabled: boolean;
+  rewardAmount: number;
+  rewardCurrency: Currency;
+  rewardRuleVersion: number;
+  rewardEffectiveAt: string;
+}
+
 export interface ExchangeRateHistoryEntry {
   id: string | number;
   baseCurrency: Currency;
@@ -699,6 +710,8 @@ export interface P0AFoundationService {
   ): Promise<P0ASettings>;
   setTestMode(projectId: string, enabled: boolean): Promise<boolean>;
   setReferralRewardDays(projectId: string, rewardDays: number): Promise<number>;
+  marketplaceReferralRewardSettings(projectId: string): Promise<MarketplaceReferralRewardSettings>;
+  setMarketplaceReferralRewardSettings(projectId: string, input: Pick<MarketplaceReferralRewardSettings, "rewardEnabled" | "rewardAmount" | "rewardCurrency">): Promise<MarketplaceReferralRewardSettings>;
   exchangeRateHistory(projectId: string, limit?: number): Promise<ExchangeRateHistoryEntry[]>;
   createPreinvoice(input: CreatePreinvoiceInput): Promise<string>;
   listPreinvoices(projectId: string, includeTest?: boolean): Promise<Preinvoice[]>;
@@ -988,6 +1001,26 @@ export interface Client360Service {
   get(projectId: string, clientId: string): Promise<Client360>;
 }
 
+export interface MarketplaceOverview { driversTotal: number; driversActive: number; driversSuspended: number; driversTrialActive: number; driversPostTrialActive: number; jobsPublished: number; jobsActive: number; jobsIncidentOpen: number; jobsIncidentResolved: number; pendingTopups: number | null; }
+export interface MarketplaceCursor { at: string; id: string; }
+export interface MarketplacePage<T> { items: T[]; nextCursor: MarketplaceCursor | null; }
+export interface MarketplaceDriver { userId: string; displayName: string; phone: string | null; status: string; activatedAt: string | null; suspendedAt: string | null; suspensionReason: string | null; createdAt: string; trialStartedAt: string | null; trialEndsAt: string | null; trialActive: boolean; initialDepositConfirmed: boolean; vehicleId: string | null; vehicleName: string | null; vehicleStatus: string | null; vehicleCategoryCode: string | null; vehiclePropulsionCode: string | null; vehicleBrand: string | null; vehicleModel: string | null; isActiveAssignment: boolean | null; isAvailable: boolean | null; services: string[]; walletTotalBalance: number | null; walletReservedBalance: number | null; walletAvailableBalance: number | null; }
+export interface MarketplaceJob { jobId: string; status: string; serviceCode: string; originText: string; destinationText: string; scheduledFor: string | null; finalPrice: number; currency: string; publishedAt: string | null; expiresAt: string | null; customerDisplayName: string | null; customerWhatsappPhone: string | null; driverUserId: string | null; driverDisplayName: string | null; driverPhone: string | null; vehicleId: string | null; vehicleName: string | null; billingMode: string | null; commissionAmountSnapshot: number | null; reservationStatus: string | null; incidentFromStatus: string | null; incidentOpenedAt: string | null; incidentReason: string | null; createdAt: string; }
+export interface MarketplaceJobDetail { job: Record<string, unknown>; serviceRequest: Record<string, unknown>; assignment: Record<string, unknown> | null; timeline: Record<string, unknown>[]; customer: Record<string, unknown> | null; financial: Record<string, unknown> | null; incidentResolution: Record<string, unknown> | null; }
+export interface MarketplaceCustomer { customerId: string; displayName: string; whatsappPhone: string; createdAt: string; jobsTotal: number; jobsActive: number; jobsSettled: number; lastJobAt: string | null; }
+export interface MarketplaceTopup { topupId: string; userId: string; driverDisplayName: string; driverPhone: string | null; amount: number; currency: string; status: string; method: string; reference: string | null; notes: string | null; wasInitialCandidate: boolean; initialMinimumSnapshot: number | null; requestedAt: string; confirmedAt: string | null; confirmedBy: string | null; rejectedAt: string | null; rejectionReason: string | null; }
+export interface MarketplaceWallet { userId: string; realBalance: number; promotionalBalance: number; realReservedBalance: number; promotionalReservedBalance: number; realAvailableBalance: number; promotionalAvailableBalance: number; driverDisplayName: string; driverPhone: string | null; currency: string; totalBalance: number; reservedBalance: number; availableBalance: number; initialDepositConfirmed: boolean; initialDepositConfirmedAt: string | null; initialDepositAmount: number | null; initialMinimumSnapshot: number | null; updatedAt: string; }
+export interface MarketplaceFinancialSettings { walletCurrency: string; initialMinimumDeposit: number; commissionRate: number; updatedAt: string; updatedBy: string | null; }
+export interface MarketplaceIncident { jobId: string; serviceCode: string; incidentFromStatus: string | null; incidentReason: string; incidentOpenedAt: string; customerDisplayName: string | null; driverUserId: string | null; driverDisplayName: string | null; vehicleId: string | null; vehicleName: string | null; billingMode: string | null; commissionAmountSnapshot: number | null; reservationStatus: string | null; resolved: boolean; resolution: string | null; resolutionNote: string | null; resolvedAt: string | null; resolvedBy: string | null; }
+export interface MarketplaceIncidentResolution { resolutionId: string; resolution: string; resolvedAt: string; }
+export interface MarketplaceAdminService {
+  overview(projectId: string): Promise<MarketplaceOverview>;
+  listDrivers(projectId: string, page?: { limit?: number; cursor?: MarketplaceCursor | null }): Promise<MarketplacePage<MarketplaceDriver>>; listJobs(projectId: string, filters?: { status?: string; serviceCode?: string; limit?: number; cursor?: MarketplaceCursor | null }): Promise<MarketplacePage<MarketplaceJob>>; getJobDetail(projectId: string, jobId: string): Promise<MarketplaceJobDetail>;
+  listCustomers(projectId: string, page?: { limit?: number; cursor?: MarketplaceCursor | null }): Promise<MarketplacePage<MarketplaceCustomer>>; listTopups(projectId: string, filters?: { status?: string; limit?: number; cursor?: MarketplaceCursor | null }): Promise<MarketplacePage<MarketplaceTopup>>; listWallets(projectId: string, page?: { limit?: number; cursor?: MarketplaceCursor | null }): Promise<MarketplacePage<MarketplaceWallet>>; financialSettings(projectId: string): Promise<MarketplaceFinancialSettings>; listIncidents(projectId: string, filters?: { resolved?: boolean; limit?: number; cursor?: MarketplaceCursor | null }): Promise<MarketplacePage<MarketplaceIncident>>;
+  resolveIncident(projectId: string, input: { jobId: string; resolution: "completed" | "cancelled"; note: string; idempotencyKey: string }): Promise<MarketplaceIncidentResolution>; setDriverSuspension(projectId: string, input: { userId: string; suspended: boolean; reason?: string }): Promise<void>;
+  createTopup(projectId: string, input: { userId: string; amount: number; method: string; reference?: string; notes?: string; idempotencyKey: string }): Promise<void>; confirmTopup(projectId: string, topupId: string, idempotencyKey: string): Promise<void>; rejectTopup(projectId: string, topupId: string, reason: string): Promise<void>; updateFinancialSettings(projectId: string, input: { initialMinimumDeposit: number; commissionRate: number }): Promise<void>;
+}
+
 export interface AdminServices {
   provider: DataProvider;
   projects: ProjectService;
@@ -1002,4 +1035,5 @@ export interface AdminServices {
   client360: Client360Service;
   referrals: ReferralService;
   communications: MobileCommunicationService;
+  marketplace: MarketplaceAdminService;
 }

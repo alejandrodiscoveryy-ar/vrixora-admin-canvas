@@ -17,6 +17,7 @@ import IntegracionesSection from "@/features/admin/IntegracionesSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
 import ComercialSection from "@/features/admin/ComercialSection";
+import MarketplaceSection from "@/features/admin/MarketplaceSection";
 
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -32,6 +33,7 @@ const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   comunicados: "settings.view",
   integraciones: "settings.view",
   auditoria: "audit.view",
+  trabajos: "marketplace.view",
 };
 
 export const Route = createFileRoute("/admin/proyectos/$id/$section")({
@@ -123,6 +125,9 @@ function SectionPage() {
 
     case "auditoria":
       return <AuditoriaSection projectId={id} />;
+
+    case "trabajos":
+      return <MarketplaceSection projectId={id} />;
 
     default:
       return (
