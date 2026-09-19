@@ -51,7 +51,7 @@ end;
 $$;
 
 -- Execute the one-time cutover as part of this migration; no legacy row or licence is mutated.
-do $$ declare pid uuid; begin select id into pid from public.projects where slug='tuktuk-control'; if pid is not null then perform app_private.transition_legacy_marketplace_referral_rewards(pid); end if; end $$;
+-- CORTE FINANCIERO RETIRADO DE ESTA MIGRACION. Requiere autorizacion y ejecucion independiente, con auditoria de recompensas.
 
 -- Correct normal settlement sequencing: the settled event is the qualification hook.
 drop trigger if exists marketplace_referral_after_settlement on public.jobs;
@@ -72,7 +72,18 @@ begin
  select * into s from public.project_referral_settings where project_id=target_project_id for update; if not found or s.reward_mode<>'marketplace_wallet_credit' or not s.reward_enabled then return null; end if;
  select * into first_q from app_private.marketplace_referral_first_qualification(target_project_id,target_referred_user_id); if not found or first_q.job_id<>target_job_id or first_q.qualified_at<s.reward_effective_at then return null; end if;
  select * into rel from public.referral_relationships where project_id=target_project_id and referred_user_id=target_referred_user_id and not is_test for update; if not found or rel.referrer_user_id=rel.referred_user_id or rel.created_at>first_q.qualified_at then return null; end if;
- if not exists(select 1 from public.marketplace_work_trials t where t.project_id=target_project_id and t.user_id=target_referred_user_id and t.started_at<=first_q.qualified_at) then return null; end if;
+ -- La primera tarea valida sirve tanto para prueba iniciada como para deposito real
+ -- confirmado antes de completar el trabajo. El saldo promocional no equivale a deposito.
+ if not (
+   exists(select 1 from public.marketplace_work_trials t
+          where t.project_id=target_project_id and t.user_id=target_referred_user_id
+            and t.started_at<=first_q.qualified_at)
+   or exists(select 1 from public.wallets w
+             where w.project_id=target_project_id and w.user_id=target_referred_user_id
+               and w.initial_deposit_confirmed_at is not null
+               and w.initial_deposit_confirmed_at<=first_q.qualified_at
+               and app_private.has_confirmed_marketplace_initial_deposit(target_referred_user_id))
+ ) then return null; end if;
  if exists(select 1 from public.referral_reward_ledger l where l.project_id=target_project_id and l.referred_user_id=target_referred_user_id and not l.is_test and l.status in ('earned','applied')) or exists(select 1 from public.marketplace_legacy_referral_reward_transitions t where t.project_id=target_project_id and t.referred_user_id=target_referred_user_id) or exists(select 1 from public.marketplace_referral_rewards r where r.project_id=target_project_id and r.referred_user_id=target_referred_user_id) then return null; end if;
  insert into public.wallets(project_id,user_id,currency) select target_project_id,rel.referrer_user_id,f.wallet_currency from public.project_marketplace_financial_settings f where f.project_id=target_project_id on conflict do nothing; select * into w from public.wallets where project_id=target_project_id and user_id=rel.referrer_user_id for update; prior:=app_private.marketplace_wallet_total_balance(target_project_id,rel.referrer_user_id);
  insert into public.wallet_transactions(project_id,user_id,currency,transaction_type,amount_delta,balance_after,source_type,source_id,idempotency_key,metadata) values(target_project_id,rel.referrer_user_id,s.reward_currency,'referral_credit',s.reward_amount,prior+s.reward_amount,'referral_reward',target_job_id::text,gen_random_uuid(),jsonb_build_object('relationship_id',rel.id,'referrer_user_id',rel.referrer_user_id,'referred_user_id',target_referred_user_id,'qualification_job_id',target_job_id,'reward_amount',s.reward_amount,'reward_currency',s.reward_currency,'reward_rule_version',s.reward_rule_version)) returning id into tx;

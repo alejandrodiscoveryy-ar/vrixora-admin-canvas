@@ -175,11 +175,11 @@ create or replace function app_private.p0d_apply_earned_rewards(target_project_i
 returns integer language plpgsql security definer set search_path='' as $$
 declare target_license public.licenses%rowtype; reward public.referral_reward_ledger%rowtype; actor uuid; previous_expiry timestamptz; next_expiry timestamptz; applied_count integer:=0;
 begin
- if exists(select 1 from public.project_referral_settings s where s.project_id=target_project_id and s.reward_mode='marketplace_wallet_credit') then return 0; end if;
+ -- En modo saldo, solo pueden aplicarse los dias historicos ya ganados antes del corte; nunca se generan premios nuevos en dias.
  select l.* into target_license from public.licenses l where l.project_id=target_project_id and l.user_id=target_referrer_id and l.status='active' and l.license_type not in ('trial','admin') and l.expires_at is not null and l.expires_at>now() order by l.expires_at desc,l.updated_at desc,l.id limit 1 for update;
  if not found then return 0; end if;
  select coalesce(p.recorded_by,pr.owner_id) into actor from public.projects pr left join public.payments p on p.id=target_license.last_payment_id where pr.id=target_project_id;
- for reward in select l.* from public.referral_reward_ledger l join public.referral_relationships r on r.id=l.relationship_id where l.project_id=target_project_id and l.referrer_user_id=target_referrer_id and l.status='earned' and not l.is_test and not r.is_test order by l.created_at,l.id for update of l loop
+ for reward in select l.* from public.referral_reward_ledger l join public.referral_relationships r on r.id=l.relationship_id join public.project_referral_settings s on s.project_id=l.project_id where l.project_id=target_project_id and l.referrer_user_id=target_referrer_id and l.status='earned' and not l.is_test and not r.is_test and (s.reward_mode<>'marketplace_wallet_credit' or l.created_at<s.reward_effective_at) order by l.created_at,l.id for update of l loop
    previous_expiry:=target_license.expires_at; next_expiry:=previous_expiry+make_interval(days=>reward.reward_days);
    update public.referral_reward_ledger set status='applied',applied_license_id=target_license.id,previous_expires_at=previous_expiry,new_expires_at=next_expiry,applied_at=now(),application_note='Aplicada automáticamente a licencia pagada activa',updated_at=now() where id=reward.id;
    update public.licenses set expires_at=next_expiry,updated_at=now() where id=target_license.id;
