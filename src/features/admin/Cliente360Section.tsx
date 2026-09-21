@@ -718,9 +718,9 @@ export default function Cliente360Section({
                   {currentReferralSummary.referredBy ? (
                     <ReferralCard
                       name={currentReferralSummary.referredBy.name}
-                      code={currentReferralSummary.referredBy.code}
+                      avatarUrl={data.referrals?.referredBy?.avatarUrl ?? null}
+                      registeredAt={data.referrals?.referredBy?.registeredAt ?? null}
                       status={data.referrals?.referredBy?.rewardStatus ?? null}
-                      days={data.referrals?.referredBy?.rewardDays ?? null}
                     />
                   ) : (
                     <div className="flex flex-wrap items-center gap-2">
@@ -736,16 +736,16 @@ export default function Cliente360Section({
                   )}
                 </div>
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold">Clientes referidos</h3>
+                  <h3 className="mb-3 text-sm font-semibold">Mis referidos</h3>
                   {data.referrals?.referredClients.length ? (
                     <div className="space-y-2">
                       {data.referrals.referredClients.map((person) => (
                         <ReferralCard
                           key={person.relationshipId}
                           name={person.name}
-                          code={person.referralCode}
+                          avatarUrl={person.avatarUrl}
+                          registeredAt={person.registeredAt}
                           status={person.rewardStatus}
-                          days={person.rewardDays}
                         />
                       ))}
                     </div>
@@ -879,35 +879,35 @@ export default function Cliente360Section({
 
 function ReferralCard({
   name,
-  code,
+  avatarUrl,
+  registeredAt,
   status,
-  days,
 }: {
   name: string;
-  code: string | null;
+  avatarUrl: string | null;
+  registeredAt: string | null;
   status: string | null;
-  days: number | null;
 }) {
+  const monthsStatus = status === "applied" ? "Meses aplicados" : "Meses pendientes";
+
   return (
-    <article className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface-2 p-3">
-      <UsersRound className="h-4 w-4 shrink-0 text-[var(--module-comercial)]" />
+    <article className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-2 p-3">
+      <Avatar className="h-9 w-9 shrink-0">
+        <AvatarImage src={avatarUrl ?? undefined} alt="" />
+        <AvatarFallback className="bg-[color-mix(in_srgb,var(--module-comercial)_12%,transparent)] text-[var(--module-comercial)]">
+          <UsersRound className="h-4 w-4" aria-hidden="true" />
+        </AvatarFallback>
+      </Avatar>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{name}</p>
-        <p className="text-xs text-text-tertiary">
-          {code ? `Código ${code}` : "Sin código"}
-          {days ? ` · Beneficio histórico: ${days} días` : ""}
+        <p className="truncate text-xs text-text-tertiary">
+          Registro {registeredAt ? formatDate(registeredAt) : "sin fecha"} · {monthsStatus}
         </p>
       </div>
-      <StatusBadge
-        status={
-          status === "earned" || status === "applied"
-            ? "paid"
-            : status === "reverted"
-              ? "cancelled"
-              : "pending"
-        }
-        label={status ? statusLabel(status) : "Sin recompensa"}
-      />
+      <div className="shrink-0 text-right text-xs font-semibold leading-5 text-[var(--module-comercial)]">
+        <p>+100 CUP</p>
+        <p>+3 meses</p>
+      </div>
     </article>
   );
 }
