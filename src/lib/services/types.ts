@@ -887,11 +887,9 @@ export interface Client360ReferralPerson {
   relationshipId: string;
   userId: string;
   name: string;
-  avatarUrl: string | null;
   email?: string;
   referralCode: string | null;
   createdAt: string;
-  registeredAt: string;
   isTest: boolean;
   rewardStatus: ReferralRewardStatus | null;
   rewardDays: number | null;
