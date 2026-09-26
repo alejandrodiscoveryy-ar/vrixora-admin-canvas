@@ -77,9 +77,9 @@ export function usagePercentage(used: number | null, limit: number | null) {
 export function mapHealthLabel(status: MapHealth) {
   return {
     operational: "Operativo",
-    pending_check: "Pendiente de comprobaciÃ³n",
+    pending_check: "Pendiente de comprobación",
     warning: "Advertencia",
-    critical: "CrÃ­tico",
+    critical: "Crítico",
     error: "Error",
     disabled: "Desactivado",
     not_configured: "Sin configurar",
@@ -88,16 +88,16 @@ export function mapHealthLabel(status: MapHealth) {
 
 export function translateMapError(code: unknown) {
   const messages: Record<string, string> = {
-    INVALID_CREDENTIALS: "Las credenciales no son vÃ¡lidas.",
+    INVALID_CREDENTIALS: "Las credenciales no son válidas.",
     MISSING_CREDENTIALS: "Faltan credenciales para esta capacidad.",
-    PROVIDER_NOT_INTEGRATED: "Este proveedor estarÃ¡ disponible prÃ³ximamente.",
-    PROVIDER_DISABLED: "El proveedor estÃ¡ desactivado.",
+    PROVIDER_NOT_INTEGRATED: "Este proveedor estará disponible próximamente.",
+    PROVIDER_DISABLED: "El proveedor está desactivado.",
     MAP_PUBLIC_CREDENTIAL_CLIENT_BUILD_UNTESTABLE:
-      "No comprobable desde AdministraciÃ³n: el mapa visual actual usa la credencial incluida en el build del cliente.",
-    TIMEOUT: "La comprobaciÃ³n superÃ³ el tiempo de espera.",
-    RATE_LIMITED: "El proveedor limitÃ³ temporalmente las solicitudes.",
+      "No comprobable desde Administración: el mapa visual actual usa la credencial incluida en el build del cliente.",
+    TIMEOUT: "La comprobación superó el tiempo de espera.",
+    RATE_LIMITED: "El proveedor limitó temporalmente las solicitudes.",
   };
-  return messages[String(code ?? "")] ?? "No se pudo comprobar la conexiÃ³n.";
+  return messages[String(code ?? "")] ?? "No se pudo comprobar la conexión.";
 }
 
 function health(input: unknown): MapHealth {
@@ -190,7 +190,7 @@ export async function getMarketplaceMapDashboard(projectId: string) {
 }
 
 export async function saveMarketplaceMapCapability(projectId: string, capability: MapCapability) {
-  await requireOnline("guardar la configuraciÃ³n de mapas");
+  await requireOnline("guardar la configuración de mapas");
   const { error } = await getSupabaseClient().rpc("admin_save_marketplace_map_capability", {
     target_project_id: projectId,
     target_capability: capability.code,
@@ -226,9 +226,9 @@ export async function saveMarketplaceMapProviderConnection(
   provider: MapProvider,
 ) {
   if (!provider.integrated) {
-    throw new Error("Este proveedor estarÃ¡ disponible prÃ³ximamente.");
+    throw new Error("Este proveedor estará disponible próximamente.");
   }
-  await requireOnline("guardar la activaciÃ³n del proveedor de mapas");
+  await requireOnline("guardar la activación del proveedor de mapas");
   const { error } = await getSupabaseClient().rpc(
     "admin_save_marketplace_map_provider_connection",
     {
@@ -246,7 +246,7 @@ export async function saveMarketplaceMapQuotaConfig(
   providerCode: string,
   quotaConfig: Record<string, unknown>,
 ) {
-  await requireOnline("guardar los lÃ­mites administrativos de mapas");
+  await requireOnline("guardar los límites administrativos de mapas");
   const { error } = await getSupabaseClient().rpc("admin_save_marketplace_map_quota_config", {
     target_project_id: projectId,
     target_provider_code: providerCode,
@@ -260,7 +260,7 @@ export async function testMarketplaceMapProvider(
   providerCode: string,
   capability: MapCapabilityCode,
 ) {
-  await requireOnline("probar la conexiÃ³n de mapas");
+  await requireOnline("probar la conexión de mapas");
   const { data, error } = await getSupabaseClient().functions.invoke(
     "marketplace-map-admin-gateway",
     {
