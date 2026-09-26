@@ -14,7 +14,6 @@ import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
 import ComunicadosSection from "@/features/admin/ComunicadosSection";
 import IntegracionesSection from "@/features/admin/IntegracionesSection";
-import MarketplaceMapsSection from "@/features/admin/MarketplaceMapsSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
 import ComercialSection from "@/features/admin/ComercialSection";
@@ -33,7 +32,6 @@ const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   configuracion: "settings.view",
   comunicados: "settings.view",
   integraciones: "settings.view",
-  "mapas-rutas": "marketplace.view",
   auditoria: "audit.view",
   trabajos: "marketplace.view",
 };
@@ -112,8 +110,6 @@ function SectionPage() {
     case "integraciones":
       return <IntegracionesSection projectId={id} />;
 
-    case "mapas-rutas":
-      return <MarketplaceMapsSection projectId={id} />;
 
     case "auditoria":
       return <AuditoriaSection projectId={id} />;

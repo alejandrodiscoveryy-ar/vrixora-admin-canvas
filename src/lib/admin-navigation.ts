@@ -11,7 +11,6 @@ import {
   Users,
   Megaphone,
   PlugZap,
-  Map,
   BriefcaseBusiness,
 } from "lucide-react";
 
@@ -90,12 +89,6 @@ export const ADMIN_PROJECT_TABS = [
     label: "Comunicados",
     icon: Megaphone,
     permission: "settings.view",
-  },
-  {
-    slug: "mapas-rutas",
-    label: "Mapas y rutas",
-    icon: Map,
-    permission: "marketplace.view",
   },
   {
     slug: "integraciones",
