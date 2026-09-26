@@ -93,6 +93,9 @@ export default function IntegracionesSection({
 }) {
   const queryClient = useQueryClient();
 
+  const [activeIntegration, setActiveIntegration] =
+    useState<"eltoque" | "maps">("eltoque");
+
   const integrationQuery = useQuery({
     queryKey: ["eltoque-integration", projectId],
     queryFn: () => getElToqueIntegration(projectId),
@@ -225,6 +228,42 @@ export default function IntegracionesSection({
     },
   });
 
+  if (activeIntegration === "maps") {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <ModuleHeader
+          title="Integraciones y API"
+          description="Administra cada servicio externo de forma independiente."
+          icon={PlugZap}
+          module="configuracion"
+        />
+
+
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-surface-1 p-2">
+        <Button
+          type="button"
+          aria-pressed={activeIntegration === "eltoque"}
+          variant={activeIntegration === "eltoque" ? "default" : "outline"}
+          onClick={() => setActiveIntegration("eltoque")}
+        >
+          elTOQUE
+        </Button>
+
+        <Button
+          type="button"
+          aria-pressed={activeIntegration === "maps"}
+          variant={activeIntegration === "maps" ? "default" : "outline"}
+          onClick={() => setActiveIntegration("maps")}
+        >
+          Mapas y rutas
+        </Button>
+      </div>
+
+        <MarketplaceMapsSection projectId={projectId} />
+      </div>
+    );
+  }
+
   if (integrationQuery.isLoading) {
     return (
       <div className="flex min-h-[280px] items-center justify-center">
@@ -257,10 +296,28 @@ export default function IntegracionesSection({
         module="configuracion"
       />
 
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-surface-1 p-2">
+        <Button
+          type="button"
+          aria-pressed={activeIntegration === "eltoque"}
+          variant={activeIntegration === "eltoque" ? "default" : "outline"}
+          onClick={() => setActiveIntegration("eltoque")}
+        >
+          elTOQUE
+        </Button>
+
+        <Button
+          type="button"
+          aria-pressed={activeIntegration === "maps"}
+          variant={activeIntegration === "maps" ? "default" : "outline"}
+          onClick={() => setActiveIntegration("maps")}
+        >
+          Mapas y rutas
+        </Button>
+      </div>
+
       <PageAlert tone="info">
-        Este espacio centraliza las integraciones externas del
-        proyecto. La primera integración disponible es la API oficial
-        de tasas de elTOQUE.
+        Selecciona una integración para administrarla de forma independiente.
       </PageAlert>
 
       <SectionCard
@@ -571,7 +628,6 @@ export default function IntegracionesSection({
         </Button>
       </div>
       <div className="border-t border-border-subtle pt-6">
-        <MarketplaceMapsSection projectId={projectId} />
       </div>
     </div>
   );
