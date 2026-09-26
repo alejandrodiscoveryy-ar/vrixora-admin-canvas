@@ -14,6 +14,7 @@ import RendimientoSection from "@/features/admin/RendimientoSection";
 import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
 import ComunicadosSection from "@/features/admin/ComunicadosSection";
 import IntegracionesSection from "@/features/admin/IntegracionesSection";
+import MarketplaceMapsSection from "@/features/admin/MarketplaceMapsSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
 import ComercialSection from "@/features/admin/ComercialSection";
@@ -31,6 +32,7 @@ const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   configuracion: "settings.view",
   comunicados: "settings.view",
   integraciones: "settings.view",
+  "mapas-rutas": "marketplace.view",
   auditoria: "audit.view",
 };
 
@@ -43,13 +45,9 @@ function SectionPage() {
   const { user, loading } = useSupabaseAuth();
   const navigate = useNavigate();
 
-  const { data: project, isLoading: projectLoading } =
-    useProject(id);
+  const { data: project, isLoading: projectLoading } = useProject(id);
 
-  const {
-    data: permissions = [],
-    isLoading: permissionsLoading,
-  } = useProjectPermissions(id);
+  const { data: permissions = [], isLoading: permissionsLoading } = useProjectPermissions(id);
 
   const requiredPermission = SECTION_PERMISSION[section];
 
@@ -59,20 +57,11 @@ function SectionPage() {
     }
   }, [user, loading, navigate]);
 
-  if (
-    loading ||
-    projectLoading ||
-    permissionsLoading ||
-    !user ||
-    !project
-  ) {
+  if (loading || projectLoading || permissionsLoading || !user || !project) {
     return null;
   }
 
-  if (
-    requiredPermission &&
-    !permissions.includes(requiredPermission)
-  ) {
+  if (requiredPermission && !permissions.includes(requiredPermission)) {
     return (
       <Card className="border-destructive/30 bg-destructive/5">
         <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -121,14 +110,13 @@ function SectionPage() {
     case "integraciones":
       return <IntegracionesSection projectId={id} />;
 
+    case "mapas-rutas":
+      return <MarketplaceMapsSection projectId={id} />;
+
     case "auditoria":
       return <AuditoriaSection projectId={id} />;
 
     default:
-      return (
-        <div className="text-sm text-muted-foreground">
-          Sección no encontrada.
-        </div>
-      );
+      return <div className="text-sm text-muted-foreground">Sección no encontrada.</div>;
   }
 }

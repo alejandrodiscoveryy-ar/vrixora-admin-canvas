@@ -20,6 +20,8 @@ export type ProjectPermission =
   | "analytics.view"
   | "settings.view"
   | "settings.manage"
+  | "marketplace.view"
+  | "marketplace.manage"
   | "whatsapp_settings.manage"
   | "commercial.view"
   | "commercial.manage"
@@ -410,7 +412,12 @@ export interface AuditEvent {
 }
 
 export type AuditArea =
-  "clientes" | "comercial" | "cobros" | "licencias" | "administracion" | "otros";
+  | "clientes"
+  | "comercial"
+  | "cobros"
+  | "licencias"
+  | "administracion"
+  | "otros";
 
 export type AuditImportance = "normal" | "important" | "critical";
 
@@ -490,9 +497,21 @@ export interface UsageAnalyticsService {
 }
 
 export type CommercialLeadStatus =
-  "new" | "contacted" | "interested" | "trial" | "ready_to_charge" | "customer" | "not_interested";
+  | "new"
+  | "contacted"
+  | "interested"
+  | "trial"
+  | "ready_to_charge"
+  | "customer"
+  | "not_interested";
 export type CommercialSource =
-  "whatsapp" | "facebook" | "instagram" | "sms" | "referral" | "direct" | "other";
+  | "whatsapp"
+  | "facebook"
+  | "instagram"
+  | "sms"
+  | "referral"
+  | "direct"
+  | "other";
 
 export interface CommercialLead {
   id: string;

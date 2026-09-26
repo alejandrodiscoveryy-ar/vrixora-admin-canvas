@@ -11,6 +11,7 @@ import {
   Users,
   Megaphone,
   PlugZap,
+  Map,
 } from "lucide-react";
 
 import type { ProjectPermission } from "@/lib/services";
@@ -82,6 +83,12 @@ export const ADMIN_PROJECT_TABS = [
     label: "Comunicados",
     icon: Megaphone,
     permission: "settings.view",
+  },
+  {
+    slug: "mapas-rutas",
+    label: "Mapas y rutas",
+    icon: Map,
+    permission: "marketplace.view",
   },
   {
     slug: "integraciones",
