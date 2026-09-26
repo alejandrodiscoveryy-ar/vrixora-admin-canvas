@@ -18,6 +18,7 @@ import MarketplaceMapsSection from "@/features/admin/MarketplaceMapsSection";
 import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
 import ComercialSection from "@/features/admin/ComercialSection";
+import MarketplaceSection from "@/features/admin/MarketplaceSection";
 
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -34,6 +35,7 @@ const SECTION_PERMISSION: Record<string, ProjectPermission> = {
   integraciones: "settings.view",
   "mapas-rutas": "marketplace.view",
   auditoria: "audit.view",
+  trabajos: "marketplace.view",
 };
 
 export const Route = createFileRoute("/admin/proyectos/$id/$section")({
@@ -115,6 +117,9 @@ function SectionPage() {
 
     case "auditoria":
       return <AuditoriaSection projectId={id} />;
+
+    case "trabajos":
+      return <MarketplaceSection projectId={id} />;
 
     default:
       return <div className="text-sm text-muted-foreground">Sección no encontrada.</div>;

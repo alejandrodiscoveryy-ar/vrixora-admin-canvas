@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import MarketplaceMapsSection from "@/features/admin/MarketplaceMapsSection";
 import {
   getElToqueIntegration,
   saveElToqueIntegration,
@@ -568,6 +569,9 @@ export default function IntegracionesSection({
           )}
           Guardar y verificar
         </Button>
+      </div>
+      <div className="border-t border-border-subtle pt-6">
+        <MarketplaceMapsSection projectId={projectId} />
       </div>
     </div>
   );

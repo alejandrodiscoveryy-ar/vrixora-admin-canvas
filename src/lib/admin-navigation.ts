@@ -12,6 +12,7 @@ import {
   Megaphone,
   PlugZap,
   Map,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 import type { ProjectPermission } from "@/lib/services";
@@ -24,6 +25,12 @@ export type AdminProjectTab = {
 };
 
 export const ADMIN_PROJECT_TABS = [
+  {
+    slug: "trabajos",
+    label: "Trabajos",
+    icon: BriefcaseBusiness,
+    permission: "marketplace.view",
+  },
   {
     slug: "",
     label: "Resumen",
