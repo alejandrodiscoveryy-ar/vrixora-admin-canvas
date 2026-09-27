@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import MarketplaceMapsSection from "@/features/admin/MarketplaceMapsSection";
 import {
   getElToqueIntegration,
   saveElToqueIntegration,
@@ -91,6 +92,9 @@ export default function IntegracionesSection({
   projectId: string;
 }) {
   const queryClient = useQueryClient();
+
+  const [activeIntegration, setActiveIntegration] =
+    useState<"eltoque" | "maps">("eltoque");
 
   const integrationQuery = useQuery({
     queryKey: ["eltoque-integration", projectId],
@@ -224,24 +228,85 @@ export default function IntegracionesSection({
     },
   });
 
+  const integrationSwitcher = (
+    <div className="flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-surface-1 p-2">
+      <Button
+        type="button"
+        aria-pressed={activeIntegration === "eltoque"}
+        variant={activeIntegration === "eltoque" ? "default" : "outline"}
+        onClick={() => setActiveIntegration("eltoque")}
+      >
+        elTOQUE
+      </Button>
+
+      <Button
+        type="button"
+        aria-pressed={activeIntegration === "maps"}
+        variant={activeIntegration === "maps" ? "default" : "outline"}
+        onClick={() => setActiveIntegration("maps")}
+      >
+        Mapas y rutas
+      </Button>
+    </div>
+  );
+
+  if (activeIntegration === "maps") {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <ModuleHeader
+          title="Integraciones y API"
+          description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
+          icon={PlugZap}
+          module="configuracion"
+        />
+
+        {integrationSwitcher}
+
+        <MarketplaceMapsSection projectId={projectId} />
+      </div>
+    );
+  }
+
   if (integrationQuery.isLoading) {
     return (
-      <div className="flex min-h-[280px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="space-y-4 sm:space-y-6">
+        <ModuleHeader
+          title="Integraciones y API"
+          description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
+          icon={PlugZap}
+          module="configuracion"
+        />
+
+        {integrationSwitcher}
+
+        <div className="flex min-h-[280px] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
       </div>
     );
   }
 
   if (integrationQuery.isError || !settings) {
     return (
-      <PageAlert
+      <div className="space-y-4 sm:space-y-6">
+        <ModuleHeader
+          title="Integraciones y API"
+          description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
+          icon={PlugZap}
+          module="configuracion"
+        />
+
+        {integrationSwitcher}
+
+        <PageAlert
         tone="error"
         title="No se pudo cargar la integración"
       >
         {integrationQuery.error instanceof Error
           ? integrationQuery.error.message
           : "No fue posible consultar la configuración de elTOQUE."}
-      </PageAlert>
+        </PageAlert>
+      </div>
     );
   }
 
@@ -255,6 +320,8 @@ export default function IntegracionesSection({
         icon={PlugZap}
         module="configuracion"
       />
+
+      {integrationSwitcher}
 
       <PageAlert tone="info">
         Este espacio centraliza las integraciones externas del
