@@ -670,7 +670,7 @@ create or replace function public.preview_marketplace_customer_quote_v2(
   target_passenger_count integer,
   target_distance_km numeric,
   target_stop_count integer,
-  target_scheduled_for timestamptz
+  target_scheduled_for timestamptz DEFAULT NULL
 )
 returns jsonb
 language plpgsql
@@ -731,7 +731,7 @@ create or replace function public.preview_marketplace_customer_quote_v3(
   target_stop_count integer,
   target_destination_lat numeric,
   target_destination_lon numeric,
-  target_scheduled_for timestamptz
+  target_scheduled_for timestamptz DEFAULT NULL
 )
 returns jsonb
 language plpgsql
