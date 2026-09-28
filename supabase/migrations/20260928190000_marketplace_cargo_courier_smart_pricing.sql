@@ -528,7 +528,7 @@ begin
     )
   );
 
-  effective_at := clock_timestamp();
+  effective_at := now();
 
   select * into previous
   from public.marketplace_pricing_tariffs
@@ -932,20 +932,15 @@ begin
     'destination_text',normalized_destination,
     'scheduled_for',target_scheduled_for,
     'passenger_count',target_passenger_count,
+    'cargo_weight_kg',target_cargo_weight_kg,
+    'cargo_volume_m3',target_cargo_volume_m3,
+    'cargo_length_cm',target_cargo_length_cm,
+    'cargo_width_cm',target_cargo_width_cm,
+    'cargo_height_cm',target_cargo_height_cm,
+    'required_body_type',normalized_body_type,
     'notes',normalized_notes,
     'details',details_value
   );
-
-  if normalized_service in ('cargo','courier') then
-    payload := payload || jsonb_build_object(
-      'cargo_weight_kg',target_cargo_weight_kg,
-      'cargo_volume_m3',target_cargo_volume_m3,
-      'cargo_length_cm',target_cargo_length_cm,
-      'cargo_width_cm',target_cargo_width_cm,
-      'cargo_height_cm',target_cargo_height_cm,
-      'required_body_type',normalized_body_type
-    );
-  end if;
 
   payload_digest := encode(
     extensions.digest(convert_to(payload::text,'UTF8'),'sha256'),'hex'
@@ -1411,3 +1406,37 @@ begin
     job_row.pricing_breakdown,job_row.published_at,job_row.expires_at,now();
 end;
 $$;
+-- Preserve production execution boundaries explicitly, including clean database replays.
+revoke all on function app_private.calculate_marketplace_customer_quote_smart_v1(
+  uuid,text,text,integer,timestamptz,jsonb
+) from public, anon, authenticated;
+
+revoke all on function public.preview_marketplace_customer_quote_v2(
+  text,text,integer,numeric,integer,timestamptz
+) from public, anon, authenticated;
+grant execute on function public.preview_marketplace_customer_quote_v2(
+  text,text,integer,numeric,integer,timestamptz
+) to service_role;
+
+revoke all on function public.preview_marketplace_customer_quote_v3(
+  text,text,integer,numeric,integer,numeric,numeric,timestamptz
+) from public, anon, authenticated;
+grant execute on function public.preview_marketplace_customer_quote_v3(
+  text,text,integer,numeric,integer,numeric,numeric,timestamptz
+) to service_role;
+
+revoke all on function public.create_marketplace_customer_request_v2(
+  uuid,text,text,text,text,timestamptz,integer,numeric,numeric,numeric,numeric,numeric,
+  text,text,jsonb,text,uuid
+) from public, anon, authenticated;
+grant execute on function public.create_marketplace_customer_request_v2(
+  uuid,text,text,text,text,timestamptz,integer,numeric,numeric,numeric,numeric,numeric,
+  text,text,jsonb,text,uuid
+) to service_role;
+
+revoke all on function public.publish_marketplace_customer_job_v2(
+  uuid,text,uuid,numeric,boolean,uuid
+) from public, anon, authenticated;
+grant execute on function public.publish_marketplace_customer_job_v2(
+  uuid,text,uuid,numeric,boolean,uuid
+) to service_role;
