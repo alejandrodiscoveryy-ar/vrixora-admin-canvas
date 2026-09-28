@@ -163,7 +163,14 @@ function LicensePlansSection({ projectId }: { projectId: string }) {
                       </div>
                       <p className="font-mono text-xs text-muted-foreground mt-0.5">{plan.code}</p>
                     </div>
-                    <Badge variant={plan.isActive ? "default" : "secondary"} className={plan.isActive ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : ""}>
+                    <Badge
+                      variant={plan.isActive ? "default" : "secondary"}
+                      className={
+                        plan.isActive
+                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                          : ""
+                      }
+                    >
                       {plan.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </div>
@@ -171,12 +178,21 @@ function LicensePlansSection({ projectId }: { projectId: string }) {
                   <div className="rounded-xl border border-border/70 bg-background/60 p-3.5">
                     <div className="text-3xl font-extrabold font-mono tracking-tight text-foreground">
                       {plan.price.toLocaleString()}{" "}
-                      <span className="text-sm font-normal text-muted-foreground">{plan.currency}</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {plan.currency}
+                      </span>
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Duración: <strong className="text-foreground">{plan.durationDays ?? "Indefinida"} días</strong></span>
+                      <span>
+                        Duración:{" "}
+                        <strong className="text-foreground">
+                          {plan.durationDays ?? "Indefinida"} días
+                        </strong>
+                      </span>
                       <span>•</span>
-                      <span>Dispositivos: <strong className="text-foreground">{plan.maxDevices}</strong></span>
+                      <span>
+                        Dispositivos: <strong className="text-foreground">{plan.maxDevices}</strong>
+                      </span>
                     </div>
                   </div>
 
@@ -239,7 +255,7 @@ function LicensePlansSection({ projectId }: { projectId: string }) {
         projectId={projectId}
         open={assignOpen}
         onClose={() => setAssignOpen(false)}
-        plans={(planList).filter((plan) => plan.isActive)}
+        plans={planList.filter((plan) => plan.isActive)}
         onDone={() => {
           refresh();
           client.invalidateQueries({ queryKey: ["admin-licenses", projectId] });
@@ -275,14 +291,31 @@ function LicensePlansSection({ projectId }: { projectId: string }) {
 }
 
 export default function PlanesPreciosSection({ projectId }: { projectId: string }) {
-  const [section, setSection] = useState<"licenses" | "marketplace">("licenses");
+  const [section, setSection] = useState<"licenses" | "marketplace">("marketplace");
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-2">
-        <Button variant={section === "licenses" ? "default" : "ghost"} onClick={() => setSection("licenses")}>Planes de licencia</Button>
-        <Button variant={section === "marketplace" ? "default" : "ghost"} onClick={() => setSection("marketplace")}>Tarifas Marketplace</Button>
+        <Button
+          variant={section === "marketplace" ? "default" : "ghost"}
+          onClick={() => setSection("marketplace")}
+        >
+          Tarifas Marketplace
+        </Button>
+
+        <Button
+          variant={section === "licenses" ? "default" : "ghost"}
+          onClick={() => setSection("licenses")}
+        >
+          Planes de licencia
+        </Button>
       </div>
-      {section === "licenses" ? <LicensePlansSection projectId={projectId} /> : <MarketplacePricingSection projectId={projectId} />}
+
+      {section === "marketplace" ? (
+        <MarketplacePricingSection projectId={projectId} />
+      ) : (
+        <LicensePlansSection projectId={projectId} />
+      )}
     </div>
   );
 }

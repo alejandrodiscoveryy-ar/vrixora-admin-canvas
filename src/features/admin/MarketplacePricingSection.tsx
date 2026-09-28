@@ -27,7 +27,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { SectionCard } from "@/components/admin/SectionCard";
 import {
   supabaseServices,
   type MarketplacePricingAdjustment,
@@ -590,6 +589,71 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                         ))}
                       </div>
 
+                      {selectedService === "passenger" &&
+                      vehicleCategoryCode === "light_car" &&
+                      airport ? (
+                        <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] p-3">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-500">
+                                  Regla especial
+                                </span>
+
+                                <span
+                                  className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                                    airport.status === "active"
+                                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                                      : "border-border/70 bg-background/60 text-muted-foreground"
+                                  }`}
+                                >
+                                  {airport.status === "active" ? "Activa" : "Inactiva"}
+                                </span>
+                              </div>
+
+                              <p className="mt-1 text-sm font-semibold text-foreground">
+                                Aeropuerto José Martí
+                              </p>
+
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                Destino · radio {String(airport.conditionConfig.radius_km ?? 3)} km
+                              </p>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-3">
+                              <div className="text-right">
+                                <p className="text-sm font-semibold text-foreground">
+                                  +{usd(airport.adjustmentValue)}
+                                </p>
+
+                                <p className="text-[10px] text-muted-foreground">
+                                  ≈ {cup(airport.adjustmentValue, rate)}
+                                </p>
+                              </div>
+
+                              {canManage ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                  onClick={() =>
+                                    setAdjustmentDraft({
+                                      item: airport,
+                                      value: airport.adjustmentValue,
+                                      enabled: airport.status === "active",
+                                    })
+                                  }
+                                >
+                                  <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                                  Editar regla
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+
                       {canManage ? (
                         <Button
                           variant="outline"
@@ -705,125 +769,106 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         ) : null}
       </Dialog>
 
-      {selectedService === "passenger" ? (
-        <div className="pt-2">
-          <SectionCard
-            title="Ajustes especiales"
-            description="Reglas comerciales avanzadas que se aplican después de la tarifa base."
-            module="planes"
-          >
-            {!airport ? (
-              <p className="text-sm text-muted-foreground">
-                No hay ajuste de aeropuerto configurado.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-border/70 bg-background/40 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="font-semibold">Aeropuerto José Martí · Auto</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Recargo fijo · {airport.status === "active" ? "Activo" : "Inactivo"}
-                      </p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <p className="font-semibold">{usd(airport.adjustmentValue)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        ≈ {cup(airport.adjustmentValue, rate)}
-                      </p>
-                    </div>
-                  </div>
+      <Dialog
+        open={Boolean(adjustmentDraft)}
+        onOpenChange={(open) => {
+          if (!open && !publishAdjustment.isPending) {
+            setAdjustmentDraft(null);
+          }
+        }}
+      >
+        {adjustmentDraft ? (
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader className="pr-8">
+              <DialogTitle>Regla especial · Aeropuerto José Martí</DialogTitle>
 
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span className="rounded-full border border-border/70 px-2.5 py-1">
-                      Zona:{" "}
-                      {String(
-                        airport.conditionConfig.zone_name ?? "Aeropuerto Internacional José Martí",
-                      )}
-                    </span>
-                    <span className="rounded-full border border-border/70 px-2.5 py-1">
-                      Dirección: {String(airport.conditionConfig.direction ?? "destino")}
-                    </span>
-                    <span className="rounded-full border border-border/70 px-2.5 py-1">
-                      Radio: {String(airport.conditionConfig.radius_km ?? 3)} km
-                    </span>
-                  </div>
+              <DialogDescription>
+                Recargo aplicado a Auto ligero cuando el destino corresponde al Aeropuerto
+                Internacional José Martí.
+              </DialogDescription>
+            </DialogHeader>
 
-                  {canManage ? (
-                    <Button
-                      className="mt-4"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setAdjustmentDraft({
-                          item: airport,
-                          value: airport.adjustmentValue,
-                          enabled: airport.status === "active",
-                        })
-                      }
-                    >
-                      Editar ajuste
-                    </Button>
-                  ) : null}
+            <div className="space-y-5 py-2">
+              <div className="space-y-1.5">
+                <Label>Recargo (USD)</Label>
+
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={adjustmentDraft.value}
+                  onChange={(event) =>
+                    setAdjustmentDraft({
+                      ...adjustmentDraft,
+                      value: Number(event.target.value),
+                    })
+                  }
+                />
+
+                <p className="text-xs text-muted-foreground">
+                  Vista previa: ≈ {cup(adjustmentDraft.value, rate)}
+                </p>
+              </div>
+
+              <label className="flex items-center justify-between rounded-xl border border-border/70 bg-background/40 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Regla activa</p>
+
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Se aplicará automáticamente cuando coincidan las condiciones configuradas.
+                  </p>
                 </div>
 
-                {adjustmentDraft ? (
-                  <div className="space-y-3 rounded-xl border border-border/70 p-4">
-                    <Label>Importe USD</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={adjustmentDraft.value}
-                      onChange={(event) =>
-                        setAdjustmentDraft({
-                          ...adjustmentDraft,
-                          value: Number(event.target.value),
-                        })
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      ≈ {cup(adjustmentDraft.value, rate)} · CUP solo visual.
-                    </p>
-                    <label className="flex items-center gap-2">
-                      Activo
-                      <Switch
-                        checked={adjustmentDraft.enabled}
-                        onCheckedChange={(enabled) =>
-                          setAdjustmentDraft({
-                            ...adjustmentDraft,
-                            enabled,
-                          })
-                        }
-                      />
-                    </label>
-                    <Button
-                      disabled={publishAdjustment.isPending || adjustmentDraft.value < 0}
-                      onClick={() => {
-                        const old = adjustmentDraft.item;
-                        if (
-                          window.confirm(
-                            `Ajuste: Aeropuerto José Martí - Auto\nValor actual: $${old.adjustmentValue} USD\nValor nuevo: $${adjustmentDraft.value} USD (≈ ${cup(
-                              adjustmentDraft.value,
-                              rate,
-                            )})\nEstado actual: ${old.status}\nEstado nuevo: ${
-                              adjustmentDraft.enabled ? "Activo" : "Inactivo"
-                            }\n\nSe creará una nueva versión de esta regla. Las operaciones anteriores conservarán las condiciones con las que fueron calculadas.`,
-                          )
-                        ) {
-                          publishAdjustment.mutate();
-                        }
-                      }}
-                    >
-                      Publicar nueva versión
-                    </Button>
-                  </div>
-                ) : null}
+                <Switch
+                  checked={adjustmentDraft.enabled}
+                  onCheckedChange={(enabled) =>
+                    setAdjustmentDraft({
+                      ...adjustmentDraft,
+                      enabled,
+                    })
+                  }
+                />
+              </label>
+
+              <div className="rounded-xl border border-border/60 bg-background/35 p-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <span>
+                    Dirección: {String(adjustmentDraft.item.conditionConfig.direction ?? "destino")}
+                  </span>
+
+                  <span>
+                    Radio: {String(adjustmentDraft.item.conditionConfig.radius_km ?? 3)} km
+                  </span>
+                </div>
               </div>
-            )}
-          </SectionCard>
-        </div>
-      ) : null}
+            </div>
+
+            <DialogFooter className="border-t border-border/60 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={publishAdjustment.isPending}
+                onClick={() => setAdjustmentDraft(null)}
+              >
+                Cancelar
+              </Button>
+
+              <Button
+                type="button"
+                disabled={publishAdjustment.isPending || adjustmentDraft.value < 0}
+                onClick={() => publishAdjustment.mutate()}
+              >
+                {publishAdjustment.isPending ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <DollarSign className="mr-2 h-4 w-4" />
+                )}
+                Guardar regla
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   );
 }
