@@ -16,6 +16,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -602,97 +610,100 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         </div>
       )}
 
-      {editing && draft ? (
-        <SectionCard
-          title={`${editing.tariff ? "Editar" : "Configurar"} tarifa USD · ${serviceLabel(
-            editing.serviceCode,
-          )} · ${categoryLabel(editing.vehicleCategoryCode)}`}
-          description="Los importes CUP se actualizan al cambiar la tasa y no se almacenan."
-          module="planes"
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            {(editing.serviceCode === "passenger" ? passengerFields : cargoCourierFields).map(
-              ([key, label]) => (
-                <div key={key} className="space-y-1.5">
-                  <Label>{label} (USD)</Label>
-                  <Input
-                    type="number"
-                    min={key === "basePriceUsd" || key === "minimumPriceUsd" ? 0.0001 : 0}
-                    step="0.0001"
-                    value={numberValue(draft[key])}
-                    onChange={(event) =>
-                      setDraft({
-                        ...draft,
-                        [key]: Number(event.target.value),
-                        ...(editing.serviceCode === "passenger"
-                          ? {}
-                          : { perExtraPassengerPriceUsd: 0 }),
-                      })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Vista previa: ≈ {cup(draft[key], rate)}
-                  </p>
-                </div>
-              ),
-            )}
-          </div>
+      <Dialog
+        open={Boolean(editing && draft)}
+        onOpenChange={(open) => {
+          if (!open && !save.isPending) {
+            setEditing(null);
+            setDraft(null);
+          }
+        }}
+      >
+        {editing && draft ? (
+          <DialogContent className="sm:max-w-3xl">
+            <DialogHeader className="pr-8">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    serviceVisuals[editing.serviceCode].active.split(" ")[0]
+                  }`}
+                />
+                <DialogTitle>
+                  {editing.tariff ? "Editar" : "Configurar"} tarifa ·{" "}
+                  {serviceLabel(editing.serviceCode)} · {categoryLabel(editing.vehicleCategoryCode)}
+                </DialogTitle>
+              </div>
 
-          <div className="mt-5 flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditing(null);
-                setDraft(null);
-              }}
-            >
-              Cancelar
-            </Button>
+              <DialogDescription>
+                Los importes CUP se actualizan al cambiar la tasa y no se almacenan.
+              </DialogDescription>
+            </DialogHeader>
 
-            <Button
-              disabled={
-                save.isPending ||
-                draft.basePriceUsd <= 0 ||
-                draft.minimumPriceUsd <= 0 ||
-                draft.perKmPriceUsd < 0 ||
-                draft.perStopPriceUsd < 0
-              }
-              onClick={() => {
-                const fieldSet =
-                  editing.serviceCode === "passenger" ? passengerFields : cargoCourierFields;
+            <div className="grid gap-4 py-4 md:grid-cols-2">
+              {(editing.serviceCode === "passenger" ? passengerFields : cargoCourierFields).map(
+                ([key, label]) => (
+                  <div key={key} className="space-y-1.5">
+                    <Label>{label} (USD)</Label>
 
-                const summary = fieldSet
-                  .map(([key, label]) => {
-                    const oldValue = editing.tariff ? inputFrom(editing.tariff)[key] : null;
-                    return `${label}: ${
-                      oldValue == null ? "Sin configurar" : `$${oldValue} USD`
-                    } → $${draft[key]} USD (≈ ${cup(draft[key], rate)})`;
-                  })
-                  .join("\n");
+                    <Input
+                      type="number"
+                      min={key === "basePriceUsd" || key === "minimumPriceUsd" ? 0.0001 : 0}
+                      step="0.0001"
+                      value={numberValue(draft[key])}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          [key]: Number(event.target.value),
+                          ...(editing.serviceCode === "passenger"
+                            ? {}
+                            : { perExtraPassengerPriceUsd: 0 }),
+                        })
+                      }
+                    />
 
-                if (
-                  window.confirm(
-                    `Publicar tarifa para ${categoryLabel(
-                      editing.vehicleCategoryCode,
-                    )}\n\nServicio: ${serviceLabel(
-                      editing.serviceCode,
-                    )}\n${summary}\n\nLas operaciones anteriores no cambian.`,
-                  )
-                ) {
-                  save.mutate();
-                }
-              }}
-            >
-              {save.isPending ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <DollarSign className="mr-2 h-4 w-4" />
+                    <p className="text-xs text-muted-foreground">
+                      Vista previa: ≈ {cup(draft[key], rate)}
+                    </p>
+                  </div>
+                ),
               )}
-              Publicar nueva tarifa
-            </Button>
-          </div>
-        </SectionCard>
-      ) : null}
+            </div>
+
+            <DialogFooter className="border-t border-border/60 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={save.isPending}
+                onClick={() => {
+                  setEditing(null);
+                  setDraft(null);
+                }}
+              >
+                Cancelar
+              </Button>
+
+              <Button
+                type="button"
+                disabled={
+                  save.isPending ||
+                  draft.basePriceUsd <= 0 ||
+                  draft.minimumPriceUsd <= 0 ||
+                  draft.perKmPriceUsd < 0 ||
+                  draft.perStopPriceUsd < 0
+                }
+                onClick={() => save.mutate()}
+              >
+                {save.isPending ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <DollarSign className="mr-2 h-4 w-4" />
+                )}
+                Guardar tarifa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        ) : null}
+      </Dialog>
 
       {selectedService === "passenger" ? (
         <div className="pt-2">
