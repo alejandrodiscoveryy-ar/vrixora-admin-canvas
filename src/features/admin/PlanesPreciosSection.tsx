@@ -46,6 +46,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { SectionCard } from "@/components/admin/SectionCard";
+import MarketplacePricingSection from "@/features/admin/MarketplacePricingSection";
 
 const emptyPlan: LicensePlan = {
   code: "",
@@ -61,7 +62,7 @@ const emptyPlan: LicensePlan = {
   isFeatured: false,
 };
 
-export default function PlanesPreciosSection({ projectId }: { projectId: string }) {
+function LicensePlansSection({ projectId }: { projectId: string }) {
   const isMobile = useIsMobile();
   const client = useQueryClient();
   const [editing, setEditing] = useState<LicensePlan | null>(null);
@@ -269,6 +270,19 @@ export default function PlanesPreciosSection({ projectId }: { projectId: string 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+export default function PlanesPreciosSection({ projectId }: { projectId: string }) {
+  const [section, setSection] = useState<"licenses" | "marketplace">("licenses");
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-2">
+        <Button variant={section === "licenses" ? "default" : "ghost"} onClick={() => setSection("licenses")}>Planes de licencia</Button>
+        <Button variant={section === "marketplace" ? "default" : "ghost"} onClick={() => setSection("marketplace")}>Tarifas Marketplace</Button>
+      </div>
+      {section === "licenses" ? <LicensePlansSection projectId={projectId} /> : <MarketplacePricingSection projectId={projectId} />}
     </div>
   );
 }
