@@ -87,6 +87,9 @@ export type {
   MarketplaceFinancialSettings,
   MarketplaceIncident,
   MarketplaceIncidentResolution,
+  MarketplacePricingTariff,
+  MarketplacePricingTariffInput,
+  MarketplacePricingAdjustment,
 } from "./types";
 
 export function getAdminServices(provider: DataProvider = "supabase"): AdminServices {

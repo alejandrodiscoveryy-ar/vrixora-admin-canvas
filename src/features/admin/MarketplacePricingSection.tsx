@@ -12,7 +12,8 @@ import { supabaseServices, type MarketplacePricingTariff, type MarketplacePricin
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
-const fields: Array<[keyof MarketplacePricingTariffInput, string]> = [
+type PricingFieldKey = "basePriceUsd" | "minimumPriceUsd" | "perKmPriceUsd" | "perExtraPassengerPriceUsd" | "perStopPriceUsd";
+const fields: Array<[PricingFieldKey, string]> = [
   ["basePriceUsd", "Precio base"], ["minimumPriceUsd", "Precio mínimo"], ["perKmPriceUsd", "Por km"],
   ["perExtraPassengerPriceUsd", "Pasajero adicional"], ["perStopPriceUsd", "Parada adicional"],
 ];

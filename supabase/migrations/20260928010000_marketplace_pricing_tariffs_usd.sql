@@ -62,6 +62,7 @@ declare actor uuid; previous public.marketplace_pricing_adjustments%rowtype; res
 begin
   actor := app_private.require_project_permission(target_project_id, 'marketplace.manage');
   if target_adjustment_value is null or target_adjustment_value < 0 then raise exception 'INVALID_USD_ADJUSTMENT_VALUE' using errcode='22023'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('smart-pricing-adjustment:' || target_project_id::text || ':' || target_code, 0));
   select * into previous from public.marketplace_pricing_adjustments where project_id=target_project_id and code=target_code order by version desc limit 1 for update;
   if not found then raise exception 'MARKETPLACE_PRICING_ADJUSTMENT_NOT_FOUND' using errcode='P0002'; end if;
   effective_at := now();
