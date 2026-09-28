@@ -54,6 +54,53 @@ const serviceOptions: Array<{
   { code: "courier", label: "Mensajería", caption: "Paquetes y entregas" },
 ];
 
+const serviceVisuals: Record<
+  ServiceCode,
+  {
+    active: string;
+    idle: string;
+    card: string;
+    strip: string;
+    pricePanel: string;
+    text: string;
+  }
+> = {
+  passenger: {
+    active: "bg-sky-600 text-white shadow-sm",
+    idle: "bg-sky-500/[0.06] text-sky-700 ring-1 ring-inset ring-sky-500/15 hover:bg-sky-500/10 dark:text-sky-300",
+    card: "border-sky-500/25 bg-sky-500/[0.025]",
+    strip: "from-sky-500 via-sky-400/55 to-transparent",
+    pricePanel: "border-sky-500/20 bg-sky-500/[0.06]",
+    text: "text-sky-600 dark:text-sky-400",
+  },
+  cargo: {
+    active: "bg-amber-600 text-white shadow-sm",
+    idle: "bg-amber-500/[0.07] text-amber-700 ring-1 ring-inset ring-amber-500/20 hover:bg-amber-500/10 dark:text-amber-300",
+    card: "border-amber-500/25 bg-amber-500/[0.03]",
+    strip: "from-amber-500 via-amber-400/55 to-transparent",
+    pricePanel: "border-amber-500/20 bg-amber-500/[0.07]",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+  courier: {
+    active: "bg-emerald-600 text-white shadow-sm",
+    idle: "bg-emerald-500/[0.06] text-emerald-700 ring-1 ring-inset ring-emerald-500/20 hover:bg-emerald-500/10 dark:text-emerald-300",
+    card: "border-emerald-500/25 bg-emerald-500/[0.025]",
+    strip: "from-emerald-500 via-emerald-400/55 to-transparent",
+    pricePanel: "border-emerald-500/20 bg-emerald-500/[0.06]",
+    text: "text-emerald-600 dark:text-emerald-400",
+  },
+};
+
+const vehicleVisuals: Record<string, string> = {
+  light_car: "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  bicitaxi: "border-cyan-500/25 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+  motorcycle: "border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  tricycle: "border-violet-500/25 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  van: "border-teal-500/25 bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  truck: "border-orange-500/25 bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  other: "border-slate-500/25 bg-slate-500/10 text-slate-600 dark:text-slate-400",
+};
+
 const passengerCategories = ["light_car", "bicitaxi", "motorcycle", "tricycle"] as const;
 
 const cargoCourierCategories = [
@@ -276,6 +323,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
     serviceTariffs.some((item) => item.vehicleCategoryCode === vehicleCategoryCode),
   ).length;
 
+  const selectedVisual = serviceVisuals[selectedService];
+
   const openTariff = (
     serviceCode: ServiceCode,
     vehicleCategoryCode: string,
@@ -362,6 +411,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         <div className="grid grid-cols-3 gap-2">
           {serviceOptions.map((service) => {
             const active = selectedService === service.code;
+            const visual = serviceVisuals[service.code];
+
             return (
               <button
                 key={service.code}
@@ -372,15 +423,13 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                   setDraft(null);
                 }}
                 className={`rounded-xl px-3 py-3 text-left transition ${
-                  active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  active ? visual.active : visual.idle
                 }`}
               >
                 <span className="block text-sm font-semibold">{service.label}</span>
                 <span
                   className={`mt-0.5 hidden text-[11px] sm:block ${
-                    active ? "text-primary-foreground/75" : "text-muted-foreground"
+                    active ? "text-white/80" : "text-muted-foreground"
                   }`}
                 >
                   {service.caption}
@@ -394,7 +443,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Sparkles className={`h-4 w-4 ${selectedVisual.text}`} />
             <h3 className="text-lg font-semibold tracking-tight text-foreground">
               {serviceLabel(selectedService)}
             </h3>
@@ -426,6 +475,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                   item.vehicleCategoryCode === vehicleCategoryCode,
               ) ?? null;
 
+            const vehicleVisual = vehicleVisuals[vehicleCategoryCode] ?? vehicleVisuals.other;
+
             const secondaryMetrics =
               selectedService === "passenger"
                 ? ([
@@ -443,14 +494,16 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             return (
               <div
                 key={`${selectedService}:${vehicleCategoryCode}`}
-                className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
+                className={`group relative overflow-hidden rounded-2xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedVisual.card}`}
               >
-                <div className="h-0.5 bg-gradient-to-r from-primary/80 via-primary/30 to-transparent" />
+                <div className={`h-1 bg-gradient-to-r ${selectedVisual.strip}`} />
 
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background/60 text-foreground">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${vehicleVisual}`}
+                      >
                         <VehicleIcon code={vehicleCategoryCode} />
                       </div>
                       <div className="min-w-0">
@@ -494,9 +547,9 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                     </div>
                   ) : (
                     <>
-                      <div className="mt-5 rounded-xl border border-primary/15 bg-primary/[0.04] p-4">
+                      <div className={`mt-5 rounded-xl border p-4 ${selectedVisual.pricePanel}`}>
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                          <Route className="h-3.5 w-3.5 text-primary" />
+                          <Route className={`h-3.5 w-3.5 ${selectedVisual.text}`} />
                           Precio por kilómetro
                         </div>
                         <div className="mt-2 flex items-end justify-between gap-3">
