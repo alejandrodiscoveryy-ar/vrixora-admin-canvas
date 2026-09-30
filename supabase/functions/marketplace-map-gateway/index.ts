@@ -315,18 +315,41 @@ export async function handleRequest(request: Request): Promise<Response> {
         throw Error("DRIVER_ROUTE_STAGE_INVALID");
       }
 
-      const { data: job, error: jobError } = await db
-        .from("jobs")
-        .select("id,status,assigned_driver_user_id,service_request_id")
-        .eq("project_id", project.id)
-        .eq("id", jobId)
-        .maybeSingle();
+      const callerApiKey = request.headers.get("apikey")?.trim() ?? "";
 
-      if (jobError || !job) {
+      if (!callerApiKey) {
+        throw Error("AUTHENTICATION_REQUIRED");
+      }
+
+      const userDb = createClient(url, callerApiKey, {
+        global: {
+          headers: {
+            Authorization: authorization,
+          },
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
+
+      const { data: driverJobs, error: driverJobsError } = await userDb.rpc(
+        "list_my_marketplace_jobs",
+        {
+          target_scope: "active",
+          target_limit: 100,
+        },
+      );
+
+      if (driverJobsError || !Array.isArray(driverJobs)) {
         throw Error("DRIVER_JOB_FORBIDDEN");
       }
 
-      if (job.assigned_driver_user_id !== user.id) {
+      const job = driverJobs.find((item: any) =>
+        String(item?.job_id ?? "") === jobId
+      );
+
+      if (!job) {
         throw Error("DRIVER_JOB_FORBIDDEN");
       }
 
@@ -338,37 +361,19 @@ export async function handleRequest(request: Request): Promise<Response> {
         throw Error("JOB_NOT_ACTIVE");
       }
 
-      const { data: assignment, error: assignmentError } = await db
-        .from("job_assignments")
-        .select("job_id")
-        .eq("project_id", project.id)
-        .eq("job_id", jobId)
-        .eq("driver_user_id", user.id)
-        .maybeSingle();
-
-      if (assignmentError || !assignment) {
-        throw Error("DRIVER_JOB_FORBIDDEN");
-      }
-
-      const { data: serviceRequest, error: requestError } = await db
-        .from("service_requests")
-        .select("details")
-        .eq("project_id", project.id)
-        .eq("id", job.service_request_id)
-        .maybeSingle();
-
-      if (requestError || !serviceRequest) {
-        throw Error("JOB_COORDINATES_MISSING");
-      }
-
       let pickup: Point;
       let routeDestination: Point;
 
       try {
-        pickup = point(serviceRequest.details?.route_origin);
-        routeDestination = point(
-          serviceRequest.details?.route_destination,
-        );
+        pickup = point({
+          lat: job.origin_lat,
+          lon: job.origin_lon,
+        });
+
+        routeDestination = point({
+          lat: job.destination_lat,
+          lon: job.destination_lon,
+        });
       } catch {
         throw Error("JOB_COORDINATES_MISSING");
       }
