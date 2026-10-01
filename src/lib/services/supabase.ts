@@ -44,6 +44,7 @@ import type {
   MarketplaceTopup,
   MarketplaceWallet,
   MarketplaceFinancialSettings,
+  MarketplaceTestMode,
   MarketplaceIncident,
   MarketplaceIncidentResolution,
 } from "./types";
@@ -476,18 +477,16 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (project): Project => ({
-          id: project.id,
-          name: project.name,
-          slug: project.slug,
-          description: project.description ?? "",
-          status: project.status,
-          createdAt: project.created_at,
-          color: project.color,
-          iconUrl: project.icon_url ?? null,
-        }),
-      );
+      return (data ?? []).map((project): Project => ({
+        id: project.id,
+        name: project.name,
+        slug: project.slug,
+        description: project.description ?? "",
+        status: project.status,
+        createdAt: project.created_at,
+        color: project.color,
+        iconUrl: project.icon_url ?? null,
+      }));
     },
     async settings(projectId) {
       const { data, error } = await getSupabaseClient()
@@ -787,17 +786,15 @@ export const supabaseServices: AdminServices = {
         .order("name");
       throwIfError(error);
 
-      return (data ?? []).map(
-        (licenseType): LicenseType => ({
-          code: licenseType.code,
-          name: licenseType.name,
-          defaultDurationDays: licenseType.default_duration_days,
-          allowsCustomDuration: licenseType.allows_custom_duration,
-          neverExpires: licenseType.never_expires,
-          defaultMaxDevices: licenseType.default_max_devices,
-          defaultFeatures: licenseType.default_features ?? {},
-        }),
-      );
+      return (data ?? []).map((licenseType): LicenseType => ({
+        code: licenseType.code,
+        name: licenseType.name,
+        defaultDurationDays: licenseType.default_duration_days,
+        allowsCustomDuration: licenseType.allows_custom_duration,
+        neverExpires: licenseType.never_expires,
+        defaultMaxDevices: licenseType.default_max_devices,
+        defaultFeatures: licenseType.default_features ?? {},
+      }));
     },
     async listPlans(projectId) {
       const { data, error } = await getSupabaseClient()
@@ -809,22 +806,20 @@ export const supabaseServices: AdminServices = {
         .order("name");
       throwIfError(error);
 
-      return (data ?? []).map(
-        (plan: PlanRow): LicensePlan => ({
-          projectId: plan.project_id,
-          code: plan.code,
-          name: plan.name,
-          licenseType: plan.license_type ?? "monthly",
-          durationDays: plan.duration_days ?? null,
-          price: Number(plan.price ?? 0),
-          currency: (plan.currency ?? "CUP") as Currency,
-          maxDevices: plan.max_devices,
-          features: plan.features ?? {},
-          description: plan.description ?? null,
-          isActive: plan.active ?? true,
-          isFeatured: plan.is_featured ?? false,
-        }),
-      );
+      return (data ?? []).map((plan: PlanRow): LicensePlan => ({
+        projectId: plan.project_id,
+        code: plan.code,
+        name: plan.name,
+        licenseType: plan.license_type ?? "monthly",
+        durationDays: plan.duration_days ?? null,
+        price: Number(plan.price ?? 0),
+        currency: (plan.currency ?? "CUP") as Currency,
+        maxDevices: plan.max_devices,
+        features: plan.features ?? {},
+        description: plan.description ?? null,
+        isActive: plan.active ?? true,
+        isFeatured: plan.is_featured ?? false,
+      }));
     },
     async renew(licenseId, durationDays, note) {
       await requireOnline("Renovar una licencia");
@@ -880,15 +875,13 @@ export const supabaseServices: AdminServices = {
         .eq("license_id", licenseId)
         .order("last_seen_at", { ascending: false });
       throwIfError(error);
-      return (data ?? []).map(
-        (device): LicenseDevice => ({
-          id: device.id,
-          licenseId: device.license_id,
-          firstSeenAt: device.first_seen_at,
-          lastSeenAt: device.last_seen_at,
-          revokedAt: device.revoked_at,
-        }),
-      );
+      return (data ?? []).map((device): LicenseDevice => ({
+        id: device.id,
+        licenseId: device.license_id,
+        firstSeenAt: device.first_seen_at,
+        lastSeenAt: device.last_seen_at,
+        revokedAt: device.revoked_at,
+      }));
     },
     async listHistory(licenseId) {
       const client = getSupabaseClient();
@@ -904,18 +897,16 @@ export const supabaseServices: AdminServices = {
         : { data: [], error: null };
       throwIfError(actorError);
       const actorEmails = new Map((actors ?? []).map((actor) => [actor.id, actor.email]));
-      return (data ?? []).map(
-        (entry): LicenseAuditEntry => ({
-          id: entry.id,
-          licenseId: entry.license_id,
-          action: entry.action,
-          detail: entry.detail,
-          actorId: entry.actor_id,
-          actorEmail: actorEmails.get(entry.actor_id),
-          metadata: entry.metadata ?? {},
-          createdAt: entry.created_at,
-        }),
-      );
+      return (data ?? []).map((entry): LicenseAuditEntry => ({
+        id: entry.id,
+        licenseId: entry.license_id,
+        action: entry.action,
+        detail: entry.detail,
+        actorId: entry.actor_id,
+        actorEmail: actorEmails.get(entry.actor_id),
+        metadata: entry.metadata ?? {},
+        createdAt: entry.created_at,
+      }));
     },
     async manageDevice(deviceId, operation, reason) {
       await requireOnline("Gestionar un dispositivo");
@@ -940,22 +931,20 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []).map(
-        (plan: PlanRow): LicensePlan => ({
-          projectId,
-          code: plan.code,
-          name: plan.name,
-          licenseType: plan.license_type,
-          durationDays: plan.duration_days,
-          price: Number(plan.price),
-          currency: plan.currency as Currency,
-          maxDevices: plan.max_devices,
-          features: plan.features ?? {},
-          description: plan.description,
-          isActive: plan.active,
-          isFeatured: plan.is_featured,
-        }),
-      );
+      return (data ?? []).map((plan: PlanRow): LicensePlan => ({
+        projectId,
+        code: plan.code,
+        name: plan.name,
+        licenseType: plan.license_type,
+        durationDays: plan.duration_days,
+        price: Number(plan.price),
+        currency: plan.currency as Currency,
+        maxDevices: plan.max_devices,
+        features: plan.features ?? {},
+        description: plan.description,
+        isActive: plan.active,
+        isFeatured: plan.is_featured,
+      }));
     },
     async savePlan(projectId, plan) {
       await requireOnline("Guardar un plan");
@@ -1043,57 +1032,53 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (payment): ServicePayment => ({
-          id: payment.id,
-          projectId: payment.project_id,
-          userId: payment.user_id,
-          licenseId: payment.license_id ?? undefined,
-          amount: Number(payment.amount),
-          listPrice: Number(payment.amount),
-          discount: 0,
-          plan: "",
-          currency: payment.currency as Currency,
-          method: payment.method,
-          reference: payment.reference,
-          employeeId: payment.recorded_by,
-          createdAt: payment.created_at,
-          status: "paid",
-          notes: null,
-        }),
-      );
+      return (data ?? []).map((payment): ServicePayment => ({
+        id: payment.id,
+        projectId: payment.project_id,
+        userId: payment.user_id,
+        licenseId: payment.license_id ?? undefined,
+        amount: Number(payment.amount),
+        listPrice: Number(payment.amount),
+        discount: 0,
+        plan: "",
+        currency: payment.currency as Currency,
+        method: payment.method,
+        reference: payment.reference,
+        employeeId: payment.recorded_by,
+        createdAt: payment.created_at,
+        status: "paid",
+        notes: null,
+      }));
     },
     async listAdmin(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_list_license_payments", {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return (data ?? []).map(
-        (payment: PaymentRow): ServicePayment => ({
-          id: payment.id,
-          projectId,
-          userId: "",
-          licenseId: payment.license_id ?? undefined,
-          amount: Number(payment.amount),
-          listPrice: Number(payment.list_price),
-          discount: Number(payment.discount),
-          plan: payment.plan,
-          currency: payment.currency as Currency,
-          method: payment.method,
-          reference: payment.reference,
-          employeeId: payment.recorded_by,
-          createdAt: payment.created_at,
-          status: payment.paid_status,
-          notes: payment.notes,
-          userEmail: payment.user_email,
-          licenseKey: payment.license_key ?? undefined,
-          operatorLabel: payment.operator_label ?? payment.recorded_by,
-          hasReceipt: payment.has_receipt,
-          planName: payment.plan_name ?? payment.plan,
-          preinvoiceId: payment.preinvoice_id,
-          isTest: payment.is_test,
-        }),
-      );
+      return (data ?? []).map((payment: PaymentRow): ServicePayment => ({
+        id: payment.id,
+        projectId,
+        userId: "",
+        licenseId: payment.license_id ?? undefined,
+        amount: Number(payment.amount),
+        listPrice: Number(payment.list_price),
+        discount: Number(payment.discount),
+        plan: payment.plan,
+        currency: payment.currency as Currency,
+        method: payment.method,
+        reference: payment.reference,
+        employeeId: payment.recorded_by,
+        createdAt: payment.created_at,
+        status: payment.paid_status,
+        notes: payment.notes,
+        userEmail: payment.user_email,
+        licenseKey: payment.license_key ?? undefined,
+        operatorLabel: payment.operator_label ?? payment.recorded_by,
+        hasReceipt: payment.has_receipt,
+        planName: payment.plan_name ?? payment.plan,
+        preinvoiceId: payment.preinvoice_id,
+        isTest: payment.is_test,
+      }));
     },
     async record(input) {
       await requireOnline("Registrar un pago");
@@ -1263,16 +1248,14 @@ export const supabaseServices: AdminServices = {
         .order("created_at", { ascending: false });
       throwIfError(error);
 
-      return (data ?? []).map(
-        (entry): HistoryEntry => ({
-          id: entry.id,
-          projectId: entry.project_id,
-          action: entry.action,
-          detail: entry.detail,
-          actor: entry.actor_id,
-          createdAt: entry.created_at,
-        }),
-      );
+      return (data ?? []).map((entry): HistoryEntry => ({
+        id: entry.id,
+        projectId: entry.project_id,
+        action: entry.action,
+        detail: entry.detail,
+        actor: entry.actor_id,
+        createdAt: entry.created_at,
+      }));
     },
   },
   audit: {
@@ -1307,28 +1290,26 @@ export const supabaseServices: AdminServices = {
 
       throwIfError(error);
 
-      return ((data ?? []) as BusinessAuditEventRow[]).map(
-        (entry): BusinessAuditEvent => ({
-          id: Number(entry.id),
-          actorId: entry.actor_id,
-          actorEmail: entry.actor_email,
-          actorName: entry.actor_name,
-          actorRole: entry.actor_role,
-          action: entry.action,
-          actionLabel: entry.action_label,
-          area: entry.area,
-          importance: entry.importance,
-          entityType: entry.entity_type,
-          entityLabel: entry.entity_label,
-          entityId: entry.entity_id,
-          reason: entry.reason,
-          metadata: entry.metadata ?? {},
-          ipAddress: entry.ip_address,
-          userAgent: entry.user_agent,
-          createdAt: entry.created_at,
-          totalCount: Number(entry.total_count),
-        }),
-      );
+      return ((data ?? []) as BusinessAuditEventRow[]).map((entry): BusinessAuditEvent => ({
+        id: Number(entry.id),
+        actorId: entry.actor_id,
+        actorEmail: entry.actor_email,
+        actorName: entry.actor_name,
+        actorRole: entry.actor_role,
+        action: entry.action,
+        actionLabel: entry.action_label,
+        area: entry.area,
+        importance: entry.importance,
+        entityType: entry.entity_type,
+        entityLabel: entry.entity_label,
+        entityId: entry.entity_id,
+        reason: entry.reason,
+        metadata: entry.metadata ?? {},
+        ipAddress: entry.ip_address,
+        userAgent: entry.user_agent,
+        createdAt: entry.created_at,
+        totalCount: Number(entry.total_count),
+      }));
     },
   },
   usageAnalytics: {
@@ -1344,23 +1325,21 @@ export const supabaseServices: AdminServices = {
         target_app_version: filters.appVersion ?? null,
       });
       throwIfError(error);
-      return ((data ?? []) as UsageAnalyticsRow[]).map(
-        (row): UsageAnalyticsDay => ({
-          date: row.metric_date,
-          newUsers: Number(row.new_users),
-          trials: Number(row.trials),
-          paidLicenses: Number(row.paid_licenses),
-          activeUsers: Number(row.active_users),
-          weeklyActiveUsers: Number(row.weekly_active_users),
-          monthlyActiveUsers: Number(row.monthly_active_users),
-          logins: Number(row.logins),
-          renewals: Number(row.renewals),
-          expired: Number(row.expired),
-          revenueCUP: Number(row.revenue_cup),
-          revenueUSD: Number(row.revenue_usd),
-          revenueEUR: Number(row.revenue_eur),
-        }),
-      );
+      return ((data ?? []) as UsageAnalyticsRow[]).map((row): UsageAnalyticsDay => ({
+        date: row.metric_date,
+        newUsers: Number(row.new_users),
+        trials: Number(row.trials),
+        paidLicenses: Number(row.paid_licenses),
+        activeUsers: Number(row.active_users),
+        weeklyActiveUsers: Number(row.weekly_active_users),
+        monthlyActiveUsers: Number(row.monthly_active_users),
+        logins: Number(row.logins),
+        renewals: Number(row.renewals),
+        expired: Number(row.expired),
+        revenueCUP: Number(row.revenue_cup),
+        revenueUSD: Number(row.revenue_usd),
+        revenueEUR: Number(row.revenue_eur),
+      }));
     },
     async dimensions(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_usage_dimensions", {
@@ -1407,33 +1386,31 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return ((data ?? []) as Array<Record<string, unknown>>).map(
-        (row): CommercialLead => ({
-          id: String(row.id),
-          name: String(row.name),
-          phone: String(row.phone),
-          email: row.email as string | null,
-          source: row.source as CommercialLead["source"],
-          medium: row.medium as string | null,
-          campaign: row.campaign as string | null,
-          referralCode: row.referral_code as string | null,
-          referredByUserId: row.referred_by_user_id as string | null,
-          referredByName: row.referred_by_name as string | null,
-          status: row.status as CommercialLead["status"],
-          notes: row.notes as string | null,
-          responsibleId: row.responsible_id as string | null,
-          responsibleName: row.responsible_name as string | null,
-          userId: row.user_id as string | null,
-          createdAt: String(row.created_at),
-          lastInteractionAt: row.last_interaction_at as string | null,
-          nextActionAt: row.next_action_at as string | null,
-          registered: Boolean(row.registered),
-          trialStarted: Boolean(row.trial_started),
-          paid: Boolean(row.paid),
-          renewalCount: Number(row.renewal_count),
-          revenue: (row.revenue ?? {}) as Record<string, number>,
-        }),
-      );
+      return ((data ?? []) as Array<Record<string, unknown>>).map((row): CommercialLead => ({
+        id: String(row.id),
+        name: String(row.name),
+        phone: String(row.phone),
+        email: row.email as string | null,
+        source: row.source as CommercialLead["source"],
+        medium: row.medium as string | null,
+        campaign: row.campaign as string | null,
+        referralCode: row.referral_code as string | null,
+        referredByUserId: row.referred_by_user_id as string | null,
+        referredByName: row.referred_by_name as string | null,
+        status: row.status as CommercialLead["status"],
+        notes: row.notes as string | null,
+        responsibleId: row.responsible_id as string | null,
+        responsibleName: row.responsible_name as string | null,
+        userId: row.user_id as string | null,
+        createdAt: String(row.created_at),
+        lastInteractionAt: row.last_interaction_at as string | null,
+        nextActionAt: row.next_action_at as string | null,
+        registered: Boolean(row.registered),
+        trialStarted: Boolean(row.trial_started),
+        paid: Boolean(row.paid),
+        renewalCount: Number(row.renewal_count),
+        revenue: (row.revenue ?? {}) as Record<string, number>,
+      }));
     },
     async saveLead(projectId, input) {
       await requireOnline("Guardar lead comercial");
@@ -1492,17 +1469,15 @@ export const supabaseServices: AdminServices = {
         target_project_id: projectId,
       });
       throwIfError(error);
-      return ((data ?? []) as Array<Record<string, unknown>>).map(
-        (row): CommercialCampaign => ({
-          id: String(row.id),
-          name: String(row.name),
-          source: row.source as CommercialCampaign["source"],
-          medium: row.medium as string | null,
-          status: row.status as CommercialCampaign["status"],
-          startsAt: row.starts_at as string | null,
-          endsAt: row.ends_at as string | null,
-        }),
-      );
+      return ((data ?? []) as Array<Record<string, unknown>>).map((row): CommercialCampaign => ({
+        id: String(row.id),
+        name: String(row.name),
+        source: row.source as CommercialCampaign["source"],
+        medium: row.medium as string | null,
+        status: row.status as CommercialCampaign["status"],
+        startsAt: row.starts_at as string | null,
+        endsAt: row.ends_at as string | null,
+      }));
     },
     async saveCampaign(projectId, campaign) {
       await requireOnline("Guardar campaña comercial");
@@ -1603,11 +1578,14 @@ export const supabaseServices: AdminServices = {
       return Number(data);
     },
     async marketplaceReferralRewardSettings(projectId) {
-      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_referral_reward_settings", {
-        target_project_id: projectId,
-      });
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_referral_reward_settings",
+        {
+          target_project_id: projectId,
+        },
+      );
       throwIfError(error);
-      const row = Array.isArray(data) ? data[0] : data as Record<string, unknown>;
+      const row = Array.isArray(data) ? data[0] : (data as Record<string, unknown>);
       return {
         rewardMode: row.reward_mode as MarketplaceReferralRewardSettings["rewardMode"],
         rewardEnabled: Boolean(row.reward_enabled),
@@ -1619,12 +1597,15 @@ export const supabaseServices: AdminServices = {
     },
     async setMarketplaceReferralRewardSettings(projectId, input) {
       await requireOnline("Actualizar la recompensa Marketplace por referidos");
-      const { data, error } = await getSupabaseClient().rpc("admin_set_marketplace_referral_reward_settings", {
-        target_project_id: projectId,
-        target_enabled: input.rewardEnabled,
-        target_amount: input.rewardAmount,
-        target_currency: input.rewardCurrency,
-      });
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_set_marketplace_referral_reward_settings",
+        {
+          target_project_id: projectId,
+          target_enabled: input.rewardEnabled,
+          target_amount: input.rewardAmount,
+          target_currency: input.rewardCurrency,
+        },
+      );
       throwIfError(error);
       const row = data as Record<string, unknown>;
       return {
@@ -1675,29 +1656,27 @@ export const supabaseServices: AdminServices = {
         target_include_test: includeTest,
       });
       throwIfError(error);
-      return ((data ?? []) as Array<Record<string, unknown>>).map(
-        (row): Preinvoice => ({
-          id: String(row.id),
-          number: Number(row.number),
-          clientId: String(row.client_id),
-          planCode: String(row.plan_code),
-          basePrice: Number(row.base_price),
-          baseCurrency: row.base_currency as Preinvoice["baseCurrency"],
-          exchangeRate: Number(row.exchange_rate),
-          exchangeRateSource: String(row.exchange_rate_source),
-          chargeCurrency: row.charge_currency as Preinvoice["chargeCurrency"],
-          chargeAmount: Number(row.charge_amount),
-          status: row.status as Preinvoice["status"],
-          isTest: Boolean(row.is_test),
-          identitySnapshot: row.identity_snapshot as Preinvoice["identitySnapshot"],
-          planSnapshot: row.plan_snapshot as Record<string, unknown>,
-          issuedAt: String(row.issued_at),
-          expiresAt: String(row.expires_at),
-          paidPaymentId: row.paid_payment_id ? String(row.paid_payment_id) : null,
-          createdBy: String(row.created_by),
-          createdAt: String(row.created_at),
-        }),
-      );
+      return ((data ?? []) as Array<Record<string, unknown>>).map((row): Preinvoice => ({
+        id: String(row.id),
+        number: Number(row.number),
+        clientId: String(row.client_id),
+        planCode: String(row.plan_code),
+        basePrice: Number(row.base_price),
+        baseCurrency: row.base_currency as Preinvoice["baseCurrency"],
+        exchangeRate: Number(row.exchange_rate),
+        exchangeRateSource: String(row.exchange_rate_source),
+        chargeCurrency: row.charge_currency as Preinvoice["chargeCurrency"],
+        chargeAmount: Number(row.charge_amount),
+        status: row.status as Preinvoice["status"],
+        isTest: Boolean(row.is_test),
+        identitySnapshot: row.identity_snapshot as Preinvoice["identitySnapshot"],
+        planSnapshot: row.plan_snapshot as Record<string, unknown>,
+        issuedAt: String(row.issued_at),
+        expiresAt: String(row.expires_at),
+        paidPaymentId: row.paid_payment_id ? String(row.paid_payment_id) : null,
+        createdBy: String(row.created_by),
+        createdAt: String(row.created_at),
+      }));
     },
     async previewPreinvoiceConfirmation(projectId, preinvoiceId, chargedAt) {
       const { data, error } = await getSupabaseClient().rpc(
@@ -1979,21 +1958,513 @@ export const supabaseServices: AdminServices = {
     },
   },
   marketplace: {
-    async overview(projectId) { const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_overview", { target_project_id: projectId }); throwIfError(error); const r = (data as Record<string, unknown>[])[0] ?? {}; return { driversTotal:Number(r.drivers_total), driversActive:Number(r.drivers_active), driversSuspended:Number(r.drivers_suspended), driversTrialActive:Number(r.drivers_trial_active), driversPostTrialActive:Number(r.drivers_post_trial_active), jobsPublished:Number(r.jobs_published), jobsActive:Number(r.jobs_active), jobsIncidentOpen:Number(r.jobs_incident_open), jobsIncidentResolved:Number(r.jobs_incident_resolved), pendingTopups:r.pending_topups == null ? null : Number(r.pending_topups) } satisfies MarketplaceOverview; },
-    async listDrivers(projectId, page={}) { const limit=page.limit??25; const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_drivers",{target_project_id:projectId,target_limit:limit,target_before_created_at:page.cursor?.at??null,target_before_user_id:page.cursor?.id??null}); throwIfError(error); const items=((data??[]) as Record<string,unknown>[]).map(r=>({userId:String(r.user_id),displayName:String(r.display_name),phone:r.phone?String(r.phone):null,status:String(r.status),activatedAt:r.activated_at?String(r.activated_at):null,suspendedAt:r.suspended_at?String(r.suspended_at):null,suspensionReason:r.suspension_reason?String(r.suspension_reason):null,createdAt:String(r.created_at),trialStartedAt:r.trial_started_at?String(r.trial_started_at):null,trialEndsAt:r.trial_ends_at?String(r.trial_ends_at):null,trialActive:Boolean(r.trial_active),initialDepositConfirmed:Boolean(r.initial_deposit_confirmed),vehicleId:r.vehicle_id?String(r.vehicle_id):null,vehicleName:r.vehicle_name?String(r.vehicle_name):null,vehicleStatus:r.vehicle_status?String(r.vehicle_status):null,vehicleCategoryCode:r.vehicle_category_code?String(r.vehicle_category_code):null,vehiclePropulsionCode:r.vehicle_propulsion_code?String(r.vehicle_propulsion_code):null,vehicleBrand:r.vehicle_brand?String(r.vehicle_brand):null,vehicleModel:r.vehicle_model?String(r.vehicle_model):null,isActiveAssignment:r.is_active_assignment==null?null:Boolean(r.is_active_assignment),isAvailable:r.is_available==null?null:Boolean(r.is_available),services:Array.isArray(r.services)?r.services.map(String):[],walletTotalBalance:r.wallet_total_balance==null?null:Number(r.wallet_total_balance),walletReservedBalance:r.wallet_reserved_balance==null?null:Number(r.wallet_reserved_balance),walletAvailableBalance:r.wallet_available_balance==null?null:Number(r.wallet_available_balance)} satisfies MarketplaceDriver)); const last=items.at(-1); return {items,nextCursor:items.length===limit&&last?{at:last.createdAt,id:last.userId}:null}; },
-    async listJobs(projectId, filters={}) { const limit=filters.limit??25; const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_jobs",{target_project_id:projectId,target_status:filters.status??null,target_service_code:filters.serviceCode??null,target_limit:limit,target_before_created_at:filters.cursor?.at??null,target_before_job_id:filters.cursor?.id??null}); throwIfError(error); const items=((data??[]) as Record<string,unknown>[]).map(r=>({jobId:String(r.job_id),status:String(r.status),serviceCode:String(r.service_code),originText:String(r.origin_text),destinationText:String(r.destination_text),scheduledFor:r.scheduled_for?String(r.scheduled_for):null,finalPrice:Number(r.final_price),currency:String(r.currency),publishedAt:r.published_at?String(r.published_at):null,expiresAt:r.expires_at?String(r.expires_at):null,customerDisplayName:r.customer_display_name?String(r.customer_display_name):null,customerWhatsappPhone:r.customer_whatsapp_phone?String(r.customer_whatsapp_phone):null,driverUserId:r.driver_user_id?String(r.driver_user_id):null,driverDisplayName:r.driver_display_name?String(r.driver_display_name):null,driverPhone:r.driver_phone?String(r.driver_phone):null,vehicleId:r.vehicle_id?String(r.vehicle_id):null,vehicleName:r.vehicle_name?String(r.vehicle_name):null,billingMode:r.billing_mode?String(r.billing_mode):null,commissionAmountSnapshot:r.commission_amount_snapshot==null?null:Number(r.commission_amount_snapshot),reservationStatus:r.reservation_status?String(r.reservation_status):null,incidentFromStatus:r.incident_from_status?String(r.incident_from_status):null,incidentOpenedAt:r.incident_opened_at?String(r.incident_opened_at):null,incidentReason:r.incident_reason?String(r.incident_reason):null,createdAt:String(r.created_at)} satisfies MarketplaceJob)); const last=items.at(-1); return {items,nextCursor:items.length===limit&&last?{at:last.createdAt,id:last.jobId}:null}; },
-    async getJobDetail(projectId, jobId) { const {data,error}=await getSupabaseClient().rpc("admin_get_marketplace_job_detail",{target_project_id:projectId,target_job_id:jobId}); throwIfError(error); const r=data as Record<string,unknown>; return {job:(r.job??{}) as Record<string,unknown>,serviceRequest:(r.service_request??{}) as Record<string,unknown>,assignment:r.assignment as Record<string,unknown>|null,timeline:(r.timeline??[]) as Record<string,unknown>[],customer:r.customer as Record<string,unknown>|null,financial:r.financial as Record<string,unknown>|null,incidentResolution:r.incident_resolution as Record<string,unknown>|null} satisfies MarketplaceJobDetail; },
-    async listCustomers(projectId,page={}) { const limit=page.limit??25; const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_customers",{target_project_id:projectId,target_limit:limit,target_before_created_at:page.cursor?.at??null,target_before_customer_id:page.cursor?.id??null}); throwIfError(error); const items=((data??[]) as Record<string,unknown>[]).map(r=>({customerId:String(r.customer_id),displayName:String(r.display_name),whatsappPhone:String(r.whatsapp_phone),createdAt:String(r.created_at),jobsTotal:Number(r.jobs_total),jobsActive:Number(r.jobs_active),jobsSettled:Number(r.jobs_settled),lastJobAt:r.last_job_at?String(r.last_job_at):null} satisfies MarketplaceCustomer)); const last=items.at(-1); return {items,nextCursor:items.length===limit&&last?{at:last.createdAt,id:last.customerId}:null}; },
-    async listTopups(projectId,filters={}) { const limit=filters.limit??25; const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_topups",{target_project_id:projectId,target_status:filters.status??null,target_limit:limit,target_before_requested_at:filters.cursor?.at??null,target_before_topup_id:filters.cursor?.id??null}); throwIfError(error); const items=((data??[]) as Record<string,unknown>[]).map(r=>({topupId:String(r.topup_id),userId:String(r.user_id),driverDisplayName:String(r.driver_display_name),driverPhone:r.driver_phone?String(r.driver_phone):null,amount:Number(r.amount),currency:String(r.currency),status:String(r.status),method:String(r.method),reference:r.reference?String(r.reference):null,notes:r.notes?String(r.notes):null,wasInitialCandidate:Boolean(r.was_initial_candidate),initialMinimumSnapshot:r.initial_minimum_snapshot==null?null:Number(r.initial_minimum_snapshot),requestedAt:String(r.requested_at),confirmedAt:r.confirmed_at?String(r.confirmed_at):null,confirmedBy:r.confirmed_by?String(r.confirmed_by):null,rejectedAt:r.rejected_at?String(r.rejected_at):null,rejectionReason:r.rejection_reason?String(r.rejection_reason):null} satisfies MarketplaceTopup)); const last=items.at(-1); return {items,nextCursor:items.length===limit&&last?{at:last.requestedAt,id:last.topupId}:null}; },
-    async listWallets(projectId,page={}) { const limit=page.limit??25; const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_wallet_sources",{target_project_id:projectId,target_limit:limit,target_before_updated_at:page.cursor?.at??null,target_before_user_id:page.cursor?.id??null}); throwIfError(error); const items=((data??[]) as Record<string,unknown>[]).map(r=>({userId:String(r.user_id),driverDisplayName:String(r.driver_display_name),driverPhone:r.driver_phone?String(r.driver_phone):null,currency:String(r.currency),totalBalance:Number(r.total_balance),reservedBalance:Number(r.reserved_balance),availableBalance:Number(r.available_balance),initialDepositConfirmed:Boolean(r.initial_deposit_confirmed),initialDepositConfirmedAt:r.initial_deposit_confirmed_at?String(r.initial_deposit_confirmed_at):null,initialDepositAmount:r.initial_deposit_amount==null?null:Number(r.initial_deposit_amount),initialMinimumSnapshot:r.initial_minimum_snapshot==null?null:Number(r.initial_minimum_snapshot),updatedAt:String(r.updated_at),realBalance:Number(r.real_balance),promotionalBalance:Number(r.promotional_balance),realReservedBalance:Number(r.real_reserved_balance),promotionalReservedBalance:Number(r.promotional_reserved_balance),realAvailableBalance:Number(r.real_available_balance),promotionalAvailableBalance:Number(r.promotional_available_balance)} satisfies MarketplaceWallet)); const last=items.at(-1); return {items,nextCursor:items.length===limit&&last?{at:last.updatedAt,id:last.userId}:null}; },
-    async financialSettings(projectId) { const {data,error}=await getSupabaseClient().rpc("admin_get_marketplace_financial_settings",{target_project_id:projectId}); throwIfError(error); const r=((data as Record<string,unknown>[])[0]??{}); return {walletCurrency:String(r.wallet_currency),initialMinimumDeposit:Number(r.initial_minimum_deposit),commissionRate:Number(r.commission_rate),updatedAt:String(r.updated_at),updatedBy:r.updated_by?String(r.updated_by):null} satisfies MarketplaceFinancialSettings; },
-    async listIncidents(projectId,filters={}) { const limit=filters.limit??25; const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_incidents",{target_project_id:projectId,target_resolved:filters.resolved??null,target_limit:limit,target_before_opened_at:filters.cursor?.at??null,target_before_job_id:filters.cursor?.id??null}); throwIfError(error); const items=((data??[]) as Record<string,unknown>[]).map(r=>({jobId:String(r.job_id),serviceCode:String(r.service_code),incidentFromStatus:r.incident_from_status?String(r.incident_from_status):null,incidentReason:String(r.incident_reason),incidentOpenedAt:String(r.incident_opened_at),customerDisplayName:r.customer_display_name?String(r.customer_display_name):null,driverUserId:r.driver_user_id?String(r.driver_user_id):null,driverDisplayName:r.driver_display_name?String(r.driver_display_name):null,vehicleId:r.vehicle_id?String(r.vehicle_id):null,vehicleName:r.vehicle_name?String(r.vehicle_name):null,billingMode:r.billing_mode?String(r.billing_mode):null,commissionAmountSnapshot:r.commission_amount_snapshot==null?null:Number(r.commission_amount_snapshot),reservationStatus:r.reservation_status?String(r.reservation_status):null,resolved:Boolean(r.resolved),resolution:r.resolution?String(r.resolution):null,resolutionNote:r.resolution_note?String(r.resolution_note):null,resolvedAt:r.resolved_at?String(r.resolved_at):null,resolvedBy:r.resolved_by?String(r.resolved_by):null} satisfies MarketplaceIncident)); const last=items.at(-1); return {items,nextCursor:items.length===limit&&last?{at:last.incidentOpenedAt,id:last.jobId}:null}; },
-    async resolveIncident(projectId,input) { await requireOnline("Resolver incidencia"); const {data,error}=await getSupabaseClient().rpc("admin_resolve_marketplace_incident",{target_project_id:projectId,target_job_id:input.jobId,target_resolution:input.resolution,target_resolution_note:input.note,target_idempotency_key:input.idempotencyKey}); throwIfError(error); const r=data as Record<string,unknown>; return {resolutionId:String(r.id),resolution:String(r.resolution),resolvedAt:String(r.resolved_at)} satisfies MarketplaceIncidentResolution; },
-    async setDriverSuspension(projectId,input) { await requireOnline("Actualizar conductor"); const {error}=await getSupabaseClient().rpc("admin_set_marketplace_driver_suspension",{target_project_id:projectId,target_user_id:input.userId,target_suspended:input.suspended,target_reason:input.reason??null}); throwIfError(error); },
-    async createTopup(projectId,input) { await requireOnline("Registrar recarga"); const {error}=await getSupabaseClient().rpc("admin_create_marketplace_topup_request",{target_project_id:projectId,target_user_id:input.userId,target_amount:input.amount,target_method:input.method,target_reference:input.reference??null,target_notes:input.notes??null,target_request_idempotency_key:input.idempotencyKey}); throwIfError(error); }, async confirmTopup(projectId,topupId,idempotencyKey) { await requireOnline("Confirmar recarga"); const {error}=await getSupabaseClient().rpc("admin_confirm_marketplace_topup",{target_project_id:projectId,target_topup_id:topupId,target_confirmation_idempotency_key:idempotencyKey}); throwIfError(error); }, async rejectTopup(projectId,topupId,reason) { await requireOnline("Rechazar recarga"); const {error}=await getSupabaseClient().rpc("admin_reject_marketplace_topup",{target_project_id:projectId,target_topup_id:topupId,target_rejection_reason:reason}); throwIfError(error); }, async updateFinancialSettings(projectId,input) { await requireOnline("Actualizar configuración financiera"); const {error}=await getSupabaseClient().rpc("admin_set_marketplace_financial_settings",{target_project_id:projectId,target_initial_minimum_deposit:input.initialMinimumDeposit,target_commission_rate:input.commissionRate}); throwIfError(error); },
-    async listPricingTariffs(projectId) { const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_pricing_dashboard", { target_project_id: projectId }); throwIfError(error); return (((data as Record<string, unknown>).tariffs ?? []) as Record<string, unknown>[]).map((row) => ({ serviceCode: String(row.service_code), serviceName: String(row.service_code), vehicleCategoryCode: String(row.vehicle_category_code), basePriceUsd: Number(row.base_price_usd), minimumPriceUsd: Number(row.minimum_price_usd), perKmPriceUsd: Number(row.per_km_price_usd), perExtraPassengerPriceUsd: Number(row.per_extra_passenger_price_usd), perStopPriceUsd: Number(row.per_stop_price_usd), updatedAt: row.updated_at == null ? null : String(row.updated_at) })); },
-    async savePricingTariff(projectId, input) { await requireOnline("Publicar tarifa Marketplace"); const { error } = await getSupabaseClient().rpc("admin_publish_marketplace_pricing_tariff", { target_project_id: projectId, target_service_code: input.serviceCode, target_vehicle_category_code: input.vehicleCategoryCode, target_base_price_usd: input.basePriceUsd, target_minimum_price_usd: input.minimumPriceUsd, target_per_km_price_usd: input.perKmPriceUsd, target_per_extra_passenger_price_usd: input.perExtraPassengerPriceUsd, target_per_stop_price_usd: input.perStopPriceUsd }); throwIfError(error); },
-    async listPricingAdjustments(projectId) { const {data,error}=await getSupabaseClient().rpc("admin_get_marketplace_pricing_dashboard",{target_project_id:projectId}); throwIfError(error); return (((data as Record<string,unknown>).adjustments??[]) as Record<string,unknown>[]).map(r=>({code:String(r.code),version:Number(r.version),name:String(r.name),ruleKind:String(r.rule_kind),status:String(r.status),serviceCode:String(r.service_code),vehicleCategoryCodes:Array.isArray(r.vehicle_category_codes)?r.vehicle_category_codes.map(String):[],adjustmentType:String(r.adjustment_type),adjustmentValue:Number(r.adjustment_value),priority:Number(r.priority),effectiveFrom:String(r.effective_from),effectiveTo:r.effective_to?String(r.effective_to):null,conditionConfig:(r.condition_config??{}) as Record<string,unknown>})); },
-    async publishPricingAdjustment(projectId,input) { await requireOnline("Publicar ajuste Marketplace"); const {error}=await getSupabaseClient().rpc("admin_publish_marketplace_pricing_adjustment",{target_project_id:projectId,target_code:input.code,target_adjustment_value:input.adjustmentValue,target_enabled:input.enabled}); throwIfError(error); },
+    async overview(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_overview", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const r = (data as Record<string, unknown>[])[0] ?? {};
+      return {
+        driversTotal: Number(r.drivers_total),
+        driversActive: Number(r.drivers_active),
+        driversSuspended: Number(r.drivers_suspended),
+        driversTrialActive: Number(r.drivers_trial_active),
+        driversPostTrialActive: Number(r.drivers_post_trial_active),
+        jobsPublished: Number(r.jobs_published),
+        jobsActive: Number(r.jobs_active),
+        jobsIncidentOpen: Number(r.jobs_incident_open),
+        jobsIncidentResolved: Number(r.jobs_incident_resolved),
+        pendingTopups: r.pending_topups == null ? null : Number(r.pending_topups),
+      } satisfies MarketplaceOverview;
+    },
+    async listDrivers(projectId, page = {}) {
+      const limit = page.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_drivers", {
+        target_project_id: projectId,
+        target_limit: limit,
+        target_before_created_at: page.cursor?.at ?? null,
+        target_before_user_id: page.cursor?.id ?? null,
+      });
+      throwIfError(error);
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (r) =>
+          ({
+            userId: String(r.user_id),
+            displayName: String(r.display_name),
+            phone: r.phone ? String(r.phone) : null,
+            status: String(r.status),
+            activatedAt: r.activated_at ? String(r.activated_at) : null,
+            suspendedAt: r.suspended_at ? String(r.suspended_at) : null,
+            suspensionReason: r.suspension_reason ? String(r.suspension_reason) : null,
+            createdAt: String(r.created_at),
+            trialStartedAt: r.trial_started_at ? String(r.trial_started_at) : null,
+            trialEndsAt: r.trial_ends_at ? String(r.trial_ends_at) : null,
+            trialActive: Boolean(r.trial_active),
+            initialDepositConfirmed: Boolean(r.initial_deposit_confirmed),
+            vehicleId: r.vehicle_id ? String(r.vehicle_id) : null,
+            vehicleName: r.vehicle_name ? String(r.vehicle_name) : null,
+            vehicleStatus: r.vehicle_status ? String(r.vehicle_status) : null,
+            vehicleCategoryCode: r.vehicle_category_code ? String(r.vehicle_category_code) : null,
+            vehiclePropulsionCode: r.vehicle_propulsion_code
+              ? String(r.vehicle_propulsion_code)
+              : null,
+            vehicleBrand: r.vehicle_brand ? String(r.vehicle_brand) : null,
+            vehicleModel: r.vehicle_model ? String(r.vehicle_model) : null,
+            isActiveAssignment:
+              r.is_active_assignment == null ? null : Boolean(r.is_active_assignment),
+            isAvailable: r.is_available == null ? null : Boolean(r.is_available),
+            services: Array.isArray(r.services) ? r.services.map(String) : [],
+            walletTotalBalance:
+              r.wallet_total_balance == null ? null : Number(r.wallet_total_balance),
+            walletReservedBalance:
+              r.wallet_reserved_balance == null ? null : Number(r.wallet_reserved_balance),
+            walletAvailableBalance:
+              r.wallet_available_balance == null ? null : Number(r.wallet_available_balance),
+          }) satisfies MarketplaceDriver,
+      );
+      const last = items.at(-1);
+      return {
+        items,
+        nextCursor: items.length === limit && last ? { at: last.createdAt, id: last.userId } : null,
+      };
+    },
+    async listJobs(projectId, filters = {}) {
+      const limit = filters.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_jobs", {
+        target_project_id: projectId,
+        target_status: filters.status ?? null,
+        target_service_code: filters.serviceCode ?? null,
+        target_limit: limit,
+        target_before_created_at: filters.cursor?.at ?? null,
+        target_before_job_id: filters.cursor?.id ?? null,
+      });
+      throwIfError(error);
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (r) =>
+          ({
+            jobId: String(r.job_id),
+            status: String(r.status),
+            serviceCode: String(r.service_code),
+            originText: String(r.origin_text),
+            destinationText: String(r.destination_text),
+            scheduledFor: r.scheduled_for ? String(r.scheduled_for) : null,
+            finalPrice: Number(r.final_price),
+            currency: String(r.currency),
+            publishedAt: r.published_at ? String(r.published_at) : null,
+            expiresAt: r.expires_at ? String(r.expires_at) : null,
+            customerDisplayName: r.customer_display_name ? String(r.customer_display_name) : null,
+            customerWhatsappPhone: r.customer_whatsapp_phone
+              ? String(r.customer_whatsapp_phone)
+              : null,
+            driverUserId: r.driver_user_id ? String(r.driver_user_id) : null,
+            driverDisplayName: r.driver_display_name ? String(r.driver_display_name) : null,
+            driverPhone: r.driver_phone ? String(r.driver_phone) : null,
+            vehicleId: r.vehicle_id ? String(r.vehicle_id) : null,
+            vehicleName: r.vehicle_name ? String(r.vehicle_name) : null,
+            billingMode: r.billing_mode ? String(r.billing_mode) : null,
+            commissionAmountSnapshot:
+              r.commission_amount_snapshot == null ? null : Number(r.commission_amount_snapshot),
+            reservationStatus: r.reservation_status ? String(r.reservation_status) : null,
+            incidentFromStatus: r.incident_from_status ? String(r.incident_from_status) : null,
+            incidentOpenedAt: r.incident_opened_at ? String(r.incident_opened_at) : null,
+            incidentReason: r.incident_reason ? String(r.incident_reason) : null,
+            createdAt: String(r.created_at),
+            isTest: Boolean(r.is_test),
+          }) satisfies MarketplaceJob,
+      );
+      const last = items.at(-1);
+      return {
+        items,
+        nextCursor: items.length === limit && last ? { at: last.createdAt, id: last.jobId } : null,
+      };
+    },
+    async getJobDetail(projectId, jobId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_job_detail", {
+        target_project_id: projectId,
+        target_job_id: jobId,
+      });
+      throwIfError(error);
+      const r = data as Record<string, unknown>;
+      return {
+        job: (r.job ?? {}) as Record<string, unknown>,
+        serviceRequest: (r.service_request ?? {}) as Record<string, unknown>,
+        assignment: r.assignment as Record<string, unknown> | null,
+        timeline: (r.timeline ?? []) as Record<string, unknown>[],
+        customer: r.customer as Record<string, unknown> | null,
+        financial: r.financial as Record<string, unknown> | null,
+        incidentResolution: r.incident_resolution as Record<string, unknown> | null,
+      } satisfies MarketplaceJobDetail;
+    },
+    async listCustomers(projectId, page = {}) {
+      const limit = page.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_customers", {
+        target_project_id: projectId,
+        target_limit: limit,
+        target_before_created_at: page.cursor?.at ?? null,
+        target_before_customer_id: page.cursor?.id ?? null,
+      });
+      throwIfError(error);
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (r) =>
+          ({
+            customerId: String(r.customer_id),
+            displayName: String(r.display_name),
+            whatsappPhone: String(r.whatsapp_phone),
+            createdAt: String(r.created_at),
+            jobsTotal: Number(r.jobs_total),
+            jobsActive: Number(r.jobs_active),
+            jobsSettled: Number(r.jobs_settled),
+            lastJobAt: r.last_job_at ? String(r.last_job_at) : null,
+          }) satisfies MarketplaceCustomer,
+      );
+      const last = items.at(-1);
+      return {
+        items,
+        nextCursor:
+          items.length === limit && last ? { at: last.createdAt, id: last.customerId } : null,
+      };
+    },
+    async listTopups(projectId, filters = {}) {
+      const limit = filters.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_topups", {
+        target_project_id: projectId,
+        target_status: filters.status ?? null,
+        target_limit: limit,
+        target_before_requested_at: filters.cursor?.at ?? null,
+        target_before_topup_id: filters.cursor?.id ?? null,
+      });
+      throwIfError(error);
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (r) =>
+          ({
+            topupId: String(r.topup_id),
+            userId: String(r.user_id),
+            driverDisplayName: String(r.driver_display_name),
+            driverPhone: r.driver_phone ? String(r.driver_phone) : null,
+            amount: Number(r.amount),
+            currency: String(r.currency),
+            status: String(r.status),
+            method: String(r.method),
+            reference: r.reference ? String(r.reference) : null,
+            notes: r.notes ? String(r.notes) : null,
+            wasInitialCandidate: Boolean(r.was_initial_candidate),
+            initialMinimumSnapshot:
+              r.initial_minimum_snapshot == null ? null : Number(r.initial_minimum_snapshot),
+            requestedAt: String(r.requested_at),
+            confirmedAt: r.confirmed_at ? String(r.confirmed_at) : null,
+            confirmedBy: r.confirmed_by ? String(r.confirmed_by) : null,
+            rejectedAt: r.rejected_at ? String(r.rejected_at) : null,
+            rejectionReason: r.rejection_reason ? String(r.rejection_reason) : null,
+          }) satisfies MarketplaceTopup,
+      );
+      const last = items.at(-1);
+      return {
+        items,
+        nextCursor:
+          items.length === limit && last ? { at: last.requestedAt, id: last.topupId } : null,
+      };
+    },
+    async listWallets(projectId, page = {}) {
+      const limit = page.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_wallet_sources",
+        {
+          target_project_id: projectId,
+          target_limit: limit,
+          target_before_updated_at: page.cursor?.at ?? null,
+          target_before_user_id: page.cursor?.id ?? null,
+        },
+      );
+      throwIfError(error);
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (r) =>
+          ({
+            userId: String(r.user_id),
+            driverDisplayName: String(r.driver_display_name),
+            driverPhone: r.driver_phone ? String(r.driver_phone) : null,
+            currency: String(r.currency),
+            totalBalance: Number(r.total_balance),
+            reservedBalance: Number(r.reserved_balance),
+            availableBalance: Number(r.available_balance),
+            initialDepositConfirmed: Boolean(r.initial_deposit_confirmed),
+            initialDepositConfirmedAt: r.initial_deposit_confirmed_at
+              ? String(r.initial_deposit_confirmed_at)
+              : null,
+            initialDepositAmount:
+              r.initial_deposit_amount == null ? null : Number(r.initial_deposit_amount),
+            initialMinimumSnapshot:
+              r.initial_minimum_snapshot == null ? null : Number(r.initial_minimum_snapshot),
+            updatedAt: String(r.updated_at),
+            realBalance: Number(r.real_balance),
+            promotionalBalance: Number(r.promotional_balance),
+            realReservedBalance: Number(r.real_reserved_balance),
+            promotionalReservedBalance: Number(r.promotional_reserved_balance),
+            realAvailableBalance: Number(r.real_available_balance),
+            promotionalAvailableBalance: Number(r.promotional_available_balance),
+          }) satisfies MarketplaceWallet,
+      );
+      const last = items.at(-1);
+      return {
+        items,
+        nextCursor: items.length === limit && last ? { at: last.updatedAt, id: last.userId } : null,
+      };
+    },
+    async financialSettings(projectId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_financial_settings",
+        { target_project_id: projectId },
+      );
+      throwIfError(error);
+      const r = (data as Record<string, unknown>[])[0] ?? {};
+      return {
+        walletCurrency: String(r.wallet_currency),
+        initialMinimumDeposit: Number(r.initial_minimum_deposit),
+        commissionRate: Number(r.commission_rate),
+        updatedAt: String(r.updated_at),
+        updatedBy: r.updated_by ? String(r.updated_by) : null,
+      } satisfies MarketplaceFinancialSettings;
+    },
+    async testMode(projectId) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_test_mode", {
+        target_project_id: projectId,
+      });
+      throwIfError(error);
+      const r = (data as Record<string, unknown>[] | null)?.[0] ?? {};
+      return {
+        enabled: Boolean(r.enabled),
+        targetDriverUserId: r.target_driver_user_id ? String(r.target_driver_user_id) : null,
+        targetDriverDisplayName: r.target_driver_display_name
+          ? String(r.target_driver_display_name)
+          : null,
+        forceWalletCommission: Boolean(r.force_wallet_commission),
+        updatedAt: r.updated_at ? String(r.updated_at) : null,
+        updatedBy: r.updated_by ? String(r.updated_by) : null,
+      } satisfies MarketplaceTestMode;
+    },
+
+    async setTestMode(projectId, input) {
+      await requireOnline("Actualizar modo de prueba Marketplace");
+      const { data, error } = await getSupabaseClient().rpc("admin_set_marketplace_test_mode", {
+        target_project_id: projectId,
+        target_enabled: input.enabled,
+        target_driver_user_id: input.enabled ? input.targetDriverUserId : null,
+        target_force_wallet_commission: input.enabled ? input.forceWalletCommission : false,
+      });
+      throwIfError(error);
+      const r = (data as Record<string, unknown>[] | null)?.[0] ?? {};
+      return {
+        enabled: Boolean(r.enabled),
+        targetDriverUserId: r.driver_user_id ? String(r.driver_user_id) : null,
+        targetDriverDisplayName: null,
+        forceWalletCommission: Boolean(r.force_wallet_commission),
+        updatedAt: r.updated_at ? String(r.updated_at) : null,
+        updatedBy: null,
+      } satisfies MarketplaceTestMode;
+    },
+
+    async deleteTestJob(projectId, input) {
+      await requireOnline("Eliminar carrera de prueba");
+      const { error } = await getSupabaseClient().rpc("admin_delete_marketplace_test_job", {
+        target_project_id: projectId,
+        target_job_id: input.jobId,
+        target_reason: input.reason,
+      });
+      throwIfError(error);
+    },
+
+    async deleteAllTestJobs(projectId, reason) {
+      await requireOnline("Eliminar carreras de prueba");
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_delete_all_marketplace_test_jobs",
+        {
+          target_project_id: projectId,
+          target_reason: reason,
+        },
+      );
+      throwIfError(error);
+      return Number(data ?? 0);
+    },
+
+    async listIncidents(projectId, filters = {}) {
+      const limit = filters.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_incidents", {
+        target_project_id: projectId,
+        target_resolved: filters.resolved ?? null,
+        target_limit: limit,
+        target_before_opened_at: filters.cursor?.at ?? null,
+        target_before_job_id: filters.cursor?.id ?? null,
+      });
+      throwIfError(error);
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (r) =>
+          ({
+            jobId: String(r.job_id),
+            serviceCode: String(r.service_code),
+            incidentFromStatus: r.incident_from_status ? String(r.incident_from_status) : null,
+            incidentReason: String(r.incident_reason),
+            incidentOpenedAt: String(r.incident_opened_at),
+            customerDisplayName: r.customer_display_name ? String(r.customer_display_name) : null,
+            driverUserId: r.driver_user_id ? String(r.driver_user_id) : null,
+            driverDisplayName: r.driver_display_name ? String(r.driver_display_name) : null,
+            vehicleId: r.vehicle_id ? String(r.vehicle_id) : null,
+            vehicleName: r.vehicle_name ? String(r.vehicle_name) : null,
+            billingMode: r.billing_mode ? String(r.billing_mode) : null,
+            commissionAmountSnapshot:
+              r.commission_amount_snapshot == null ? null : Number(r.commission_amount_snapshot),
+            reservationStatus: r.reservation_status ? String(r.reservation_status) : null,
+            resolved: Boolean(r.resolved),
+            resolution: r.resolution ? String(r.resolution) : null,
+            resolutionNote: r.resolution_note ? String(r.resolution_note) : null,
+            resolvedAt: r.resolved_at ? String(r.resolved_at) : null,
+            resolvedBy: r.resolved_by ? String(r.resolved_by) : null,
+          }) satisfies MarketplaceIncident,
+      );
+      const last = items.at(-1);
+      return {
+        items,
+        nextCursor:
+          items.length === limit && last ? { at: last.incidentOpenedAt, id: last.jobId } : null,
+      };
+    },
+    async resolveIncident(projectId, input) {
+      await requireOnline("Resolver incidencia");
+      const { data, error } = await getSupabaseClient().rpc("admin_resolve_marketplace_incident", {
+        target_project_id: projectId,
+        target_job_id: input.jobId,
+        target_resolution: input.resolution,
+        target_resolution_note: input.note,
+        target_idempotency_key: input.idempotencyKey,
+      });
+      throwIfError(error);
+      const r = data as Record<string, unknown>;
+      return {
+        resolutionId: String(r.id),
+        resolution: String(r.resolution),
+        resolvedAt: String(r.resolved_at),
+      } satisfies MarketplaceIncidentResolution;
+    },
+    async setDriverSuspension(projectId, input) {
+      await requireOnline("Actualizar conductor");
+      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_driver_suspension", {
+        target_project_id: projectId,
+        target_user_id: input.userId,
+        target_suspended: input.suspended,
+        target_reason: input.reason ?? null,
+      });
+      throwIfError(error);
+    },
+    async createTopup(projectId, input) {
+      await requireOnline("Registrar recarga");
+      const { error } = await getSupabaseClient().rpc("admin_create_marketplace_topup_request", {
+        target_project_id: projectId,
+        target_user_id: input.userId,
+        target_amount: input.amount,
+        target_method: input.method,
+        target_reference: input.reference ?? null,
+        target_notes: input.notes ?? null,
+        target_request_idempotency_key: input.idempotencyKey,
+      });
+      throwIfError(error);
+    },
+    async confirmTopup(projectId, topupId, idempotencyKey) {
+      await requireOnline("Confirmar recarga");
+      const { error } = await getSupabaseClient().rpc("admin_confirm_marketplace_topup", {
+        target_project_id: projectId,
+        target_topup_id: topupId,
+        target_confirmation_idempotency_key: idempotencyKey,
+      });
+      throwIfError(error);
+    },
+    async rejectTopup(projectId, topupId, reason) {
+      await requireOnline("Rechazar recarga");
+      const { error } = await getSupabaseClient().rpc("admin_reject_marketplace_topup", {
+        target_project_id: projectId,
+        target_topup_id: topupId,
+        target_rejection_reason: reason,
+      });
+      throwIfError(error);
+    },
+    async updateFinancialSettings(projectId, input) {
+      await requireOnline("Actualizar configuración financiera");
+      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_financial_settings", {
+        target_project_id: projectId,
+        target_initial_minimum_deposit: input.initialMinimumDeposit,
+        target_commission_rate: input.commissionRate,
+      });
+      throwIfError(error);
+    },
+    async listPricingTariffs(projectId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_pricing_dashboard",
+        { target_project_id: projectId },
+      );
+      throwIfError(error);
+      return (((data as Record<string, unknown>).tariffs ?? []) as Record<string, unknown>[]).map(
+        (row) => ({
+          serviceCode: String(row.service_code),
+          serviceName: String(row.service_code),
+          vehicleCategoryCode: String(row.vehicle_category_code),
+          basePriceUsd: Number(row.base_price_usd),
+          minimumPriceUsd: Number(row.minimum_price_usd),
+          perKmPriceUsd: Number(row.per_km_price_usd),
+          perExtraPassengerPriceUsd: Number(row.per_extra_passenger_price_usd),
+          perStopPriceUsd: Number(row.per_stop_price_usd),
+          updatedAt: row.updated_at == null ? null : String(row.updated_at),
+        }),
+      );
+    },
+    async savePricingTariff(projectId, input) {
+      await requireOnline("Publicar tarifa Marketplace");
+      const { error } = await getSupabaseClient().rpc("admin_publish_marketplace_pricing_tariff", {
+        target_project_id: projectId,
+        target_service_code: input.serviceCode,
+        target_vehicle_category_code: input.vehicleCategoryCode,
+        target_base_price_usd: input.basePriceUsd,
+        target_minimum_price_usd: input.minimumPriceUsd,
+        target_per_km_price_usd: input.perKmPriceUsd,
+        target_per_extra_passenger_price_usd: input.perExtraPassengerPriceUsd,
+        target_per_stop_price_usd: input.perStopPriceUsd,
+      });
+      throwIfError(error);
+    },
+    async listPricingAdjustments(projectId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_pricing_dashboard",
+        { target_project_id: projectId },
+      );
+      throwIfError(error);
+      return (
+        ((data as Record<string, unknown>).adjustments ?? []) as Record<string, unknown>[]
+      ).map((r) => ({
+        code: String(r.code),
+        version: Number(r.version),
+        name: String(r.name),
+        ruleKind: String(r.rule_kind),
+        status: String(r.status),
+        serviceCode: String(r.service_code),
+        vehicleCategoryCodes: Array.isArray(r.vehicle_category_codes)
+          ? r.vehicle_category_codes.map(String)
+          : [],
+        adjustmentType: String(r.adjustment_type),
+        adjustmentValue: Number(r.adjustment_value),
+        priority: Number(r.priority),
+        effectiveFrom: String(r.effective_from),
+        effectiveTo: r.effective_to ? String(r.effective_to) : null,
+        conditionConfig: (r.condition_config ?? {}) as Record<string, unknown>,
+      }));
+    },
+    async publishPricingAdjustment(projectId, input) {
+      await requireOnline("Publicar ajuste Marketplace");
+      const { error } = await getSupabaseClient().rpc(
+        "admin_publish_marketplace_pricing_adjustment",
+        {
+          target_project_id: projectId,
+          target_code: input.code,
+          target_adjustment_value: input.adjustmentValue,
+          target_enabled: input.enabled,
+        },
+      );
+      throwIfError(error);
+    },
   },
 };

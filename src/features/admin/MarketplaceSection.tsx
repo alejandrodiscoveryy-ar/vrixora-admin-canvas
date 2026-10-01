@@ -18,6 +18,8 @@ import {
   Phone,
   Plus,
   ShieldCheck,
+  TestTube2,
+  Trash2,
   UserRound,
   Users,
   Wallet,
@@ -31,6 +33,7 @@ import { KpiGrid } from "@/components/admin/KpiGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -81,6 +84,11 @@ const errorText = (error: unknown) =>
         RESOLUTION_NOTE_REQUIRED: "La nota de resolución es obligatoria.",
         SUSPENSION_REASON_REQUIRED: "El motivo es obligatorio.",
         JOB_NOT_IN_INCIDENT: "El trabajo ya no está en incidencia.",
+        TEST_DRIVER_REQUIRED: "Selecciona el conductor de prueba.",
+        TEST_FORCE_COMMISSION_REQUIRES_ENABLED_MODE: "Activa primero el modo de prueba.",
+        TEST_DRIVER_NOT_FOUND: "No se encontró el conductor seleccionado.",
+        JOB_IS_NOT_TEST: "Esta acción solo está disponible para carreras de prueba.",
+        TEST_DELETE_REASON_REQUIRED: "Debes indicar el motivo de la eliminación.",
       }[error.message] ?? error.message)
     : "No se pudo completar la operación.";
 
@@ -400,6 +408,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [notes, setNotes] = useState("");
   const [minimum, setMinimum] = useState("");
   const [commission, setCommission] = useState("");
+  const [testModeEnabled, setTestModeEnabled] = useState(false);
+  const [testDriverUserId, setTestDriverUserId] = useState("");
+  const [testForceCommission, setTestForceCommission] = useState(false);
 
   const canCustomers = permissions.includes("customers.view");
   const canPayments = permissions.includes("payments.view");
@@ -506,6 +517,21 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     enabled: tab === "configuracion" && canSettings,
   });
 
+  const testMode = useQuery({
+    queryKey: ["marketplace-test-mode", projectId],
+    queryFn: () => supabaseServices.marketplace.testMode(projectId),
+    enabled: tab === "configuracion" && canSettings,
+  });
+
+  const testModeDrivers = useQuery({
+    queryKey: ["marketplace-test-mode-drivers", projectId],
+    queryFn: () =>
+      supabaseServices.marketplace.listDrivers(projectId, {
+        limit: 200,
+      }),
+    enabled: tab === "configuracion" && canSettings,
+  });
+
   const topupDrivers = useQuery({
     queryKey: ["marketplace-topup-drivers", projectId],
     queryFn: () =>
@@ -527,6 +553,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
       setCommission(String(settings.data.commissionRate * 100));
     }
   }, [settings.data]);
+
+  useEffect(() => {
+    if (testMode.data) {
+      setTestModeEnabled(testMode.data.enabled);
+      setTestDriverUserId(testMode.data.targetDriverUserId ?? "");
+      setTestForceCommission(testMode.data.forceWalletCommission);
+    }
+  }, [testMode.data]);
 
   const suspend = useMutation({
     mutationFn: () =>
@@ -627,12 +661,63 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     onError: (mutationError) => setError(errorText(mutationError)),
   });
 
+  const saveTestMode = useMutation({
+    mutationFn: () =>
+      supabaseServices.marketplace.setTestMode(projectId, {
+        enabled: testModeEnabled,
+        targetDriverUserId: testModeEnabled ? testDriverUserId || null : null,
+        forceWalletCommission: testModeEnabled ? testForceCommission : false,
+      }),
+    onSuccess: () => {
+      setError(null);
+      void invalidate(
+        "marketplace-test-mode",
+        "marketplace-jobs",
+        "marketplace-drivers",
+        "marketplace-overview",
+      );
+    },
+    onError: (mutationError) => setError(errorText(mutationError)),
+  });
+
+  const deleteTestJob = useMutation({
+    mutationFn: (input: { jobId: string; reason: string }) =>
+      supabaseServices.marketplace.deleteTestJob(projectId, input),
+    onSuccess: () => {
+      setError(null);
+      void invalidate(
+        "marketplace-jobs",
+        "marketplace-wallets",
+        "marketplace-drivers",
+        "marketplace-overview",
+      );
+    },
+    onError: (mutationError) => setError(errorText(mutationError)),
+  });
+
+  const deleteAllTestJobs = useMutation({
+    mutationFn: (reasonText: string) =>
+      supabaseServices.marketplace.deleteAllTestJobs(projectId, reasonText),
+    onSuccess: () => {
+      setError(null);
+      void invalidate(
+        "marketplace-jobs",
+        "marketplace-wallets",
+        "marketplace-drivers",
+        "marketplace-overview",
+      );
+    },
+    onError: (mutationError) => setError(errorText(mutationError)),
+  });
+
   const jobRows = rows(jobs);
   const driverRows = rows(drivers);
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
   const incidentRows = rows(incidents);
+
+  const testDriver = testModeDrivers.data?.items.find((item) => item.userId === testDriverUserId);
 
   const services = useMemo(() => [...new Set(jobRows.map((job) => job.serviceCode))], [jobRows]);
 
@@ -763,6 +848,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           <div className="flex flex-wrap items-center gap-2">
                             <StatusBadge status={job.status} />
                             <ServiceBadge service={job.serviceCode} />
+
+                            {job.isTest ? (
+                              <span className="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-semibold text-violet-300">
+                                PRUEBA
+                              </span>
+                            ) : null}
                           </div>
 
                           <div className="mt-4 grid gap-3">
@@ -813,10 +904,44 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             </p>
                           </div>
 
-                          <Button size="sm" variant="outline" onClick={() => setJobId(job.jobId)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Ver detalle
-                          </Button>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {job.isTest && canManageMarketplace ? (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={deleteTestJob.isPending}
+                                onClick={() => {
+                                  const why = window.prompt(
+                                    "Motivo de eliminación de esta carrera de prueba:",
+                                    "Prueba operativa",
+                                  );
+
+                                  if (!why?.trim()) return;
+
+                                  if (
+                                    !window.confirm(
+                                      "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
+                                    )
+                                  ) {
+                                    return;
+                                  }
+
+                                  deleteTestJob.mutate({
+                                    jobId: job.jobId,
+                                    reason: why.trim(),
+                                  });
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar prueba
+                              </Button>
+                            ) : null}
+
+                            <Button size="sm" variant="outline" onClick={() => setJobId(job.jobId)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver detalle
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </article>
@@ -1385,6 +1510,182 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 </div>
               )}
             </PremiumPanel>
+
+            <div className="mt-5">
+              <PremiumPanel
+                title="Modo de prueba Marketplace"
+                description="Prueba carreras y comisiones sin afectar a los demás conductores."
+                icon={TestTube2}
+                tone="violet"
+              >
+                {testMode.isLoading || testModeDrivers.isLoading ? (
+                  <LoadingState />
+                ) : (
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.9fr)]">
+                    <div className="space-y-4">
+                      <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-semibold text-foreground">Modo de prueba</p>
+
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Las nuevas carreras se marcarán como PRUEBA y solo podrán ser tomadas
+                              por el conductor seleccionado.
+                            </p>
+                          </div>
+
+                          <Switch
+                            checked={testModeEnabled}
+                            disabled={!canManageSettings || !canManageMarketplace}
+                            onCheckedChange={(checked) => {
+                              setTestModeEnabled(checked);
+
+                              if (!checked) {
+                                setTestForceCommission(false);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
+                        <Label htmlFor="marketplace-test-driver">Conductor de prueba</Label>
+
+                        <select
+                          id="marketplace-test-driver"
+                          className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none disabled:opacity-50"
+                          value={testDriverUserId}
+                          disabled={!testModeEnabled || !canManageSettings || !canManageMarketplace}
+                          onChange={(event) => setTestDriverUserId(event.target.value)}
+                        >
+                          <option value="">Selecciona conductor</option>
+
+                          {testModeDrivers.data?.items.map((item) => (
+                            <option key={item.userId} value={item.userId}>
+                              {item.displayName}
+                            </option>
+                          ))}
+                        </select>
+
+                        <p className="mt-1.5 text-xs text-muted-foreground">
+                          Solo este conductor recibirá las carreras de prueba.
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-semibold text-foreground">Probar comisión real</p>
+
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Aplica la comisión real aunque el conductor todavía esté dentro de su
+                              período gratuito.
+                            </p>
+                          </div>
+
+                          <Switch
+                            checked={testForceCommission}
+                            disabled={
+                              !testModeEnabled || !canManageSettings || !canManageMarketplace
+                            }
+                            onCheckedChange={setTestForceCommission}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <MiniMetric
+                        labelText="Estado"
+                        value={testModeEnabled ? "ACTIVO · SOLO PRUEBAS" : "Desactivado"}
+                      />
+
+                      <MiniMetric
+                        labelText="Conductor"
+                        value={
+                          testDriver?.displayName ?? testMode.data?.targetDriverDisplayName ?? "—"
+                        }
+                      />
+
+                      <MiniMetric
+                        labelText="Comisión actual"
+                        value={
+                          settings.data
+                            ? `${(settings.data.commissionRate * 100).toLocaleString("es")} %`
+                            : "—"
+                        }
+                      />
+
+                      <MiniMetric
+                        labelText="Saldo disponible"
+                        value={
+                          testDriver?.walletAvailableBalance == null
+                            ? "—"
+                            : formatAmount(
+                                testDriver.walletAvailableBalance,
+                                settings.data?.walletCurrency ?? "CUP",
+                              )
+                        }
+                      />
+
+                      {canManageSettings && canManageMarketplace ? (
+                        <>
+                          <Button
+                            className="w-full"
+                            disabled={
+                              saveTestMode.isPending || (testModeEnabled && !testDriverUserId)
+                            }
+                            onClick={() => saveTestMode.mutate()}
+                          >
+                            {saveTestMode.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                            )}
+                            Guardar configuración de prueba
+                          </Button>
+
+                          <Button
+                            className="w-full"
+                            variant="destructive"
+                            disabled={deleteAllTestJobs.isPending}
+                            onClick={() => {
+                              const why = window.prompt(
+                                "Motivo para eliminar todas las carreras de prueba:",
+                                "Limpieza de pruebas",
+                              );
+
+                              if (!why?.trim()) return;
+
+                              if (
+                                !window.confirm(
+                                  "Se eliminarán TODAS las carreras marcadas como PRUEBA. Las carreras reales no se tocarán. ¿Continuar?",
+                                )
+                              ) {
+                                return;
+                              }
+
+                              deleteAllTestJobs.mutate(why.trim());
+                            }}
+                          >
+                            {deleteAllTestJobs.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="mr-2 h-4 w-4" />
+                            )}
+                            Eliminar todas las carreras de prueba
+                          </Button>
+                        </>
+                      ) : null}
+
+                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-xs text-muted-foreground">
+                        Estos controles nunca pueden eliminar una carrera real.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </PremiumPanel>
+            </div>
           </TabsContent>
         ) : null}
       </Tabs>
