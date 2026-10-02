@@ -326,7 +326,7 @@ returns table(
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $summary$
 declare
   actor uuid := auth.uid();
   pid uuid;
@@ -444,7 +444,7 @@ begin
     on ranked.user_id = actor
   cross join me_active;
 end;
-$;
+$summary$;
 
 
 -- ============================================================
