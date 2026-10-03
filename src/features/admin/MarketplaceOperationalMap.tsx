@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   getMarketplaceOperationalMap,
   getMarketplaceOperationalStaticMap,
-  type MarketplaceOperationalMapPoint,
 } from "@/lib/marketplace-map";
 
 const statusLabel = (status: string | null) =>
@@ -39,11 +38,11 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     refetchInterval: 30_000,
   });
 
-  const points = useMemo<MarketplaceOperationalMapPoint[]>(() => {
+  const pointKey = useMemo(() => {
     const data = operational.data;
-    if (!data) return [];
+    if (!data) return "empty";
 
-    const result: MarketplaceOperationalMapPoint[] = [];
+    const result: string[] = [];
 
     for (const driver of data.drivers) {
       if (
@@ -51,42 +50,32 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
         driver.latitude != null &&
         driver.longitude != null
       ) {
-        result.push({
-          kind: "driver",
-          lat: driver.latitude,
-          lon: driver.longitude,
-        });
+        result.push(
+          `driver:${driver.latitude.toFixed(5)}:${driver.longitude.toFixed(5)}`,
+        );
       }
     }
 
     for (const job of data.jobs) {
       if (job.originLat != null && job.originLon != null) {
-        result.push({
-          kind: "customer",
-          lat: job.originLat,
-          lon: job.originLon,
-        });
+        result.push(
+          `customer:${job.originLat.toFixed(5)}:${job.originLon.toFixed(5)}`,
+        );
       }
 
       if (job.destinationLat != null && job.destinationLon != null) {
-        result.push({
-          kind: "destination",
-          lat: job.destinationLat,
-          lon: job.destinationLon,
-        });
+        result.push(
+          `destination:${job.destinationLat.toFixed(5)}:${job.destinationLon.toFixed(5)}`,
+        );
       }
     }
 
-    return result;
+    return result.join("|") || "empty";
   }, [operational.data]);
-
-  const pointKey = points
-    .map((point) => `${point.kind}:${point.lat.toFixed(5)}:${point.lon.toFixed(5)}`)
-    .join("|");
 
   const mapImage = useQuery({
     queryKey: ["marketplace-operational-map-image", projectId, pointKey],
-    queryFn: () => getMarketplaceOperationalStaticMap(projectId, points),
+    queryFn: () => getMarketplaceOperationalStaticMap(projectId),
     enabled: Boolean(operational.data),
     staleTime: 25_000,
   });
@@ -204,9 +193,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           </div>
 
           <div className="border-t border-border/55 px-4 py-3 text-xs text-muted-foreground">
-            La posición naranja solo se considera actual durante{" "}
-            {Math.round(data.freshnessSeconds / 60)} minutos. El punto verde representa la
-            recogida solicitada por el cliente, no un rastreo continuo de su teléfono.
+            La posición naranja solo se muestra mientras la señal siga vigente: hasta 5 minutos
+            para un conductor disponible y hasta 2 minutos durante un servicio activo. El punto
+            verde representa la recogida solicitada por el cliente, no un rastreo continuo de su
+            teléfono.
           </div>
         </section>
 
@@ -282,7 +272,11 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                         }`}
                       />
                       <p className="mt-1 text-[10px] text-muted-foreground">
-                        {formatTime(driver.capturedAt)}
+                        {driver.locationFresh
+                          ? `Señal reciente · ${formatTime(driver.capturedAt)}`
+                          : driver.capturedAt
+                            ? `Señal atrasada · ${formatTime(driver.capturedAt)}`
+                            : "Sin ubicación"}
                       </p>
                     </div>
                   </div>

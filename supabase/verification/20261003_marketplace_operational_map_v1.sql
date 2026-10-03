@@ -43,6 +43,12 @@ begin
     raise exception 'TEST_FAILED: admin operational map RPC missing';
   end if;
 
+  if to_regprocedure(
+    'public.clear_my_marketplace_driver_location()'
+  ) is null then
+    raise exception 'TEST_FAILED: clear driver location RPC missing';
+  end if;
+
   select lower(
     pg_get_functiondef(
       'public.update_my_marketplace_driver_location(text,numeric,numeric,numeric,numeric,numeric,timestamptz)'::regprocedure
@@ -66,7 +72,11 @@ begin
 
   if definition not like '%marketplace.view%'
      or definition not like '%route_origin%'
-     or definition not like '%location_fresh%' then
+     or definition not like '%location_fresh%'
+     or definition not like '%freshness_seconds%'
+     or definition not like '%interval ''120 seconds''%'
+     or definition not like '%interval ''300 seconds''%'
+     or definition not like '%interval ''15 minutes''%' then
     raise exception 'TEST_FAILED: admin map contract incomplete';
   end if;
 end;

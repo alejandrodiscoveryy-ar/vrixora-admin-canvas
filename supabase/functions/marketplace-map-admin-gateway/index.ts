@@ -13,6 +13,11 @@ const reply = (data: unknown, status = 200) =>
 
 type Capability = "map_visual" | "geocoding" | "routing";
 type OperationalPointKind = "driver" | "customer" | "destination";
+type OperationalPoint = {
+  kind: OperationalPointKind;
+  lat: number;
+  lon: number;
+};
 
 function normalizeCapability(value: unknown): Capability {
   if (value === "map_visual" || value === "geocoding" || value === "routing") return value;
@@ -106,27 +111,57 @@ async function testMapbox(capability: Capability, token: string) {
   };
 }
 
-function parseOperationalPoints(value: unknown) {
-  if (!Array.isArray(value)) return [];
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object"
+    ? value as Record<string, unknown>
+    : {};
+}
 
-  return value.slice(0, 100).map((item) => {
-    const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
-    const kind = String(row.kind ?? "") as OperationalPointKind;
-    const lat = Number(row.lat);
-    const lon = Number(row.lon);
+function validCoordinate(value: unknown, min: number, max: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max
+    ? parsed
+    : null;
+}
 
-    if (!["driver", "customer", "destination"].includes(kind)) {
-      throw new Error("MAP_POINT_KIND_INVALID");
-    }
-    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-      throw new Error("MAP_POINT_LATITUDE_INVALID");
-    }
-    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
-      throw new Error("MAP_POINT_LONGITUDE_INVALID");
+function operationalPointsFromData(value: unknown): OperationalPoint[] {
+  const root = asRecord(value);
+  const points: OperationalPoint[] = [];
+
+  const drivers = Array.isArray(root.drivers) ? root.drivers : [];
+  for (const item of drivers) {
+    const row = asRecord(item);
+    if (row.location_fresh !== true) continue;
+
+    const lat = validCoordinate(row.latitude, -90, 90);
+    const lon = validCoordinate(row.longitude, -180, 180);
+    if (lat == null || lon == null) continue;
+
+    points.push({ kind: "driver", lat, lon });
+  }
+
+  const jobs = Array.isArray(root.jobs) ? root.jobs : [];
+  for (const item of jobs) {
+    const row = asRecord(item);
+
+    const originLat = validCoordinate(row.origin_lat, -90, 90);
+    const originLon = validCoordinate(row.origin_lon, -180, 180);
+    if (originLat != null && originLon != null) {
+      points.push({ kind: "customer", lat: originLat, lon: originLon });
     }
 
-    return { kind, lat, lon };
-  });
+    const destinationLat = validCoordinate(row.destination_lat, -90, 90);
+    const destinationLon = validCoordinate(row.destination_lon, -180, 180);
+    if (destinationLat != null && destinationLon != null) {
+      points.push({
+        kind: "destination",
+        lat: destinationLat,
+        lon: destinationLon,
+      });
+    }
+  }
+
+  return points.slice(0, 50);
 }
 
 function toBase64(bytes: Uint8Array) {
@@ -160,7 +195,7 @@ async function resolveOperationalMapCredential(
 async function operationalStaticMap(
   serviceClient: ReturnType<typeof createClient>,
   projectId: string,
-  points: ReturnType<typeof parseOperationalPoints>,
+  points: OperationalPoint[],
 ) {
   const token = await resolveOperationalMapCredential(serviceClient, projectId);
   if (!token) throw new Error("MAPBOX_CREDENTIAL_MISSING");
@@ -258,14 +293,14 @@ Deno.serve(async (request: Request) => {
     if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
 
     if (operation === "operational_static_map") {
-      const { error: operationalError } = await userClient.rpc(
+      const { data: operationalData, error: operationalError } = await userClient.rpc(
         "admin_get_marketplace_operational_map",
         { target_project_id: projectId },
       );
 
       if (operationalError) throw operationalError;
 
-      const points = parseOperationalPoints(body?.points);
+      const points = operationalPointsFromData(operationalData);
       const dataUrl = await operationalStaticMap(serviceClient, projectId, points);
 
       const payload = {

@@ -90,6 +90,10 @@ begin
   from public.projects p
   where p.slug = 'tuktuk-control';
 
+  delete from public.marketplace_driver_locations l
+  where l.project_id = pid
+    and l.captured_at < now() - interval '15 minutes';
+
   select exists (
     select 1
     from public.jobs j
@@ -101,7 +105,7 @@ begin
       and j.assigned_vehicle_id = target_vehicle_id
       and j.test_deleted_at is null
       and (
-        j.status in ('accepted','en_route','pickup','in_progress','completed')
+        j.status in ('accepted','en_route','pickup','in_progress')
         or (j.status = 'incident' and ir.id is null)
       )
   )
@@ -210,6 +214,42 @@ grant execute on function public.update_my_marketplace_driver_location(
 ) to authenticated;
 
 
+
+create or replace function public.clear_my_marketplace_driver_location()
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  actor uuid := auth.uid();
+  pid uuid;
+  removed boolean;
+begin
+  if actor is null then
+    raise exception 'AUTHENTICATION_REQUIRED'
+      using errcode = '42501';
+  end if;
+
+  select p.id
+    into strict pid
+  from public.projects p
+  where p.slug = 'tuktuk-control';
+
+  delete from public.marketplace_driver_locations l
+  where l.project_id = pid
+    and l.driver_user_id = actor;
+
+  removed := found;
+  return removed;
+end;
+$function$;
+
+revoke all on function public.clear_my_marketplace_driver_location()
+from public, anon;
+
+grant execute on function public.clear_my_marketplace_driver_location()
+to authenticated;
 create or replace function public.admin_get_marketplace_operational_map(
   target_project_id uuid
 )
@@ -226,6 +266,10 @@ begin
     target_project_id,
     'marketplace.view'
   );
+
+  delete from public.marketplace_driver_locations l
+  where l.project_id = target_project_id
+    and l.captured_at < now() - interval '15 minutes';
 
   can_customers := app_private.has_project_permission(
     target_project_id,
@@ -268,8 +312,7 @@ begin
             'accepted',
             'en_route',
             'pickup',
-            'in_progress',
-            'completed'
+            'in_progress'
           )
           or (
             j.status = 'incident'
@@ -306,21 +349,35 @@ begin
       a.is_available,
       a.job_id,
       a.job_status,
-      l.latitude,
-      l.longitude,
-      l.accuracy_m,
-      l.heading_degrees,
-      l.speed_mps,
+      case when freshness.location_fresh then l.latitude end as latitude,
+      case when freshness.location_fresh then l.longitude end as longitude,
+      case when freshness.location_fresh then l.accuracy_m end as accuracy_m,
+      case when freshness.location_fresh then l.heading_degrees end as heading_degrees,
+      case when freshness.location_fresh then l.speed_mps end as speed_mps,
       l.captured_at,
-      (
-        l.captured_at is not null
-        and l.captured_at >= now() - interval '3 minutes'
-      ) as location_fresh
+      freshness.freshness_seconds,
+      freshness.location_fresh
     from selected_assignments a
     left join public.marketplace_driver_locations l
       on l.project_id = target_project_id
      and l.driver_user_id = a.driver_user_id
      and l.vehicle_id = a.vehicle_id
+    cross join lateral (
+      select
+        case
+          when a.job_id is not null then 120
+          else 300
+        end as freshness_seconds,
+        (
+          l.captured_at is not null
+          and l.captured_at >= now() - (
+            case
+              when a.job_id is not null then interval '120 seconds'
+              else interval '300 seconds'
+            end
+          )
+        ) as location_fresh
+    ) freshness
   ),
   active_jobs as (
     select
@@ -382,8 +439,7 @@ begin
           'accepted',
           'en_route',
           'pickup',
-          'in_progress',
-          'completed'
+          'in_progress'
         )
         or (
           j.status = 'incident'
@@ -393,7 +449,7 @@ begin
   )
   select jsonb_build_object(
     'server_time', now(),
-    'freshness_seconds', 180,
+    'freshness_seconds', 300,
     'summary', jsonb_build_object(
       'working_drivers',
       (select count(*) from drivers),
@@ -419,6 +475,7 @@ begin
           'heading_degrees', d.heading_degrees,
           'speed_mps', d.speed_mps,
           'captured_at', d.captured_at,
+          'freshness_seconds', d.freshness_seconds,
           'location_fresh', d.location_fresh
         )
         order by d.driver_display_name nulls last, d.driver_user_id

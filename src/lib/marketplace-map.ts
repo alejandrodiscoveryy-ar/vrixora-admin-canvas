@@ -290,6 +290,7 @@ export interface MarketplaceOperationalDriver {
   headingDegrees: number | null;
   speedMps: number | null;
   capturedAt: string | null;
+  freshnessSeconds: number;
   locationFresh: boolean;
 }
 
@@ -324,11 +325,6 @@ export interface MarketplaceOperationalMapData {
   jobs: MarketplaceOperationalJob[];
 }
 
-export type MarketplaceOperationalMapPoint = {
-  kind: "driver" | "customer" | "destination";
-  lat: number;
-  lon: number;
-};
 
 const nullableNumber = (value: unknown) =>
   value == null || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
@@ -373,6 +369,9 @@ export async function getMarketplaceOperationalMap(
         headingDegrees: nullableNumber(row.heading_degrees),
         speedMps: nullableNumber(row.speed_mps),
         capturedAt: nullableString(row.captured_at),
+        freshnessSeconds: Number(
+          row.freshness_seconds ?? (row.active_job_id ? 120 : 300),
+        ),
         locationFresh: Boolean(row.location_fresh),
       };
     }),
@@ -402,7 +401,6 @@ export async function getMarketplaceOperationalMap(
 
 export async function getMarketplaceOperationalStaticMap(
   projectId: string,
-  points: MarketplaceOperationalMapPoint[],
 ): Promise<string> {
   const { data, error } = await getSupabaseClient().functions.invoke(
     "marketplace-map-admin-gateway",
@@ -410,7 +408,6 @@ export async function getMarketplaceOperationalStaticMap(
       body: {
         operation: "operational_static_map",
         project_id: projectId,
-        points,
       },
     },
   );
