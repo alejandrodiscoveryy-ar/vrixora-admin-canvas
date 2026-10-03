@@ -1,6 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.8";
 
-const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-forwarded-for" };
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-forwarded-for" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const rateLimitCategory: Record<string, string> = {
   start_session: "session",
@@ -49,7 +49,24 @@ Deno.serve(async (request) => {
     const identity = await hmac(`${category}:${forwarded}`, rateSecret);
     const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
-    const params = body.params ?? {};
+    const params = { ...(body.params ?? {}) };
+    // Older clients can still request transport, but their browser-supplied
+    // distance cannot influence the commercial quote.
+    if (operation === "create_request") {
+      const details = params.target_details;
+      if (details != null && (typeof details !== "object" || Array.isArray(details))) throw new Error("REQUEST_DETAILS_INVALID");
+      const serviceCode = String(params.target_service_code ?? "").trim();
+      if (serviceCode === "passenger") {
+        const vehicleCategory = String(params.target_vehicle_category_code ?? "").trim();
+        if (!["motorcycle", "bicitaxi", "tricycle", "light_car"].includes(vehicleCategory)) {
+          throw new Error("PASSENGER_VEHICLE_CATEGORY_REQUIRED");
+        }
+        throw new Error("PASSENGER_ROUTE_VERIFICATION_REQUIRED");
+      }
+      params.target_details = { ...(details ?? {}), distance_source: "unavailable" };
+      delete params.target_details.estimated_distance_km;
+      delete params.target_vehicle_category_code;
+    }
     if (operation === "media") {
       const { data: jobs, error } = await supabase.rpc("get_marketplace_customer_job", params); if (error || !jobs?.[0]) throw error || new Error("JOB_NOT_FOUND");
       const job = jobs[0]; if (!job.driver_photo_asset_id && !job.vehicle_main_photo_asset_id) throw new Error("ASSIGNED_MEDIA_NOT_AVAILABLE");
@@ -60,9 +77,17 @@ Deno.serve(async (request) => {
       const sign = async (id: string | null) => { const asset = id ? byId.get(id) : null; if (!asset || asset.storage_bucket !== "marketplace-media") return null; const { data, error } = await supabase.storage.from(asset.storage_bucket).createSignedUrl(asset.storage_path, 900); if (error) throw error; return data.signedUrl; };
       return json({ data: { driver_photo_signed_url: await sign(job.driver_photo_asset_id), vehicle_photo_signed_url: await sign(job.vehicle_main_photo_asset_id), expires_at: new Date(Date.now() + 900000).toISOString() } });
     }
-    const rpc = ({ start_session: "start_marketplace_customer_session", services: "list_marketplace_customer_services", create_request: "create_marketplace_customer_request", publish: "publish_marketplace_customer_job", get_job: "get_marketplace_customer_job", cancel: "cancel_marketplace_customer_job", get_rating: "get_marketplace_customer_rating", create_rating: "create_marketplace_customer_rating" } as Record<string, string>)[operation];
+    const rpc = ({ start_session: "start_marketplace_customer_session", services: "list_marketplace_customer_services", create_request: "create_marketplace_customer_request", publish: "publish_marketplace_customer_job_v2", get_job: "get_marketplace_customer_job", cancel: "cancel_marketplace_customer_job", get_rating: "get_marketplace_customer_rating", create_rating: "create_marketplace_customer_rating" } as Record<string, string>)[operation];
     if (!rpc) throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
     const { data, error } = await supabase.rpc(rpc, params); if (error) throw error;
     return json({ data });
-  } catch (error) { return json({ error: error instanceof Error ? error.message : "CUSTOMER_GATEWAY_FAILED" }, 400); }
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : error && typeof error === "object" && "message" in error && typeof error.message === "string"
+          ? error.message
+          : "CUSTOMER_GATEWAY_FAILED";
+    return json({ error: message }, 400);
+  }
 });
