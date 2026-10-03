@@ -1,5 +1,5 @@
 -- TUKTUK Marketplace - Customer 360 admin read model.
--- Source only in this stage. Applying this migration requires explicit approval.
+-- Source only until this migration is explicitly approved for production.
 
 create or replace function public.admin_get_marketplace_customer_360(
   target_project_id uuid,
@@ -28,13 +28,20 @@ begin
   with customer_jobs as (
     select
       j.id,
-      j.status,
+      case
+        when j.status = 'incident' and ir.resolution = 'completed' then 'settled'
+        when j.status = 'incident' and ir.resolution = 'cancelled' then 'cancelled'
+        else j.status
+      end as effective_status,
       j.service_code,
       coalesce(sr.vehicle_category_code, j.pricing_vehicle_category_code) as vehicle_category_code,
       j.final_price,
       j.currency,
       j.created_at,
-      j.updated_at,
+      case
+        when j.status = 'incident' and ir.resolved_at is not null then ir.resolved_at
+        else j.updated_at
+      end as outcome_at,
       case
         when (j.pricing_breakdown ->> 'distance_km') ~ '^[0-9]+([.][0-9]+)?$'
           then (j.pricing_breakdown ->> 'distance_km')::numeric
@@ -44,6 +51,9 @@ begin
     join public.jobs j
       on j.project_id = sr.project_id
      and j.service_request_id = sr.id
+    left join public.marketplace_incident_resolutions ir
+      on ir.project_id = j.project_id
+     and ir.job_id = j.id
     where sr.project_id = target_project_id
       and sr.customer_id = target_customer_id
       and coalesce(j.is_test, false) = false
@@ -67,21 +77,27 @@ begin
   ),
   summary as (
     select
-      count(*) filter (where status in ('completed', 'settled'))::bigint as trips_completed,
       count(*) filter (
-        where status in ('cancelled_by_customer', 'cancelled_by_driver')
+        where effective_status in ('completed', 'settled')
+      )::bigint as trips_completed,
+      count(*) filter (
+        where effective_status in (
+          'cancelled_by_customer',
+          'cancelled_by_driver',
+          'cancelled'
+        )
       )::bigint as cancellations,
       coalesce(sum(distance_km) filter (
-        where status in ('completed', 'settled')
+        where effective_status in ('completed', 'settled')
       ), 0)::numeric as distance_km,
       coalesce(sum(final_price) filter (
-        where status in ('completed', 'settled')
+        where effective_status in ('completed', 'settled')
       ), 0)::numeric as total_spent,
       coalesce(avg(final_price) filter (
-        where status in ('completed', 'settled')
+        where effective_status in ('completed', 'settled')
       ), 0)::numeric as average_ticket,
-      max(updated_at) filter (
-        where status in ('completed', 'settled')
+      max(outcome_at) filter (
+        where effective_status in ('completed', 'settled')
       ) as last_service_at
     from customer_jobs
   ),
@@ -93,7 +109,7 @@ begin
       coalesce(sum(distance_km), 0)::numeric as distance_km,
       coalesce(sum(final_price), 0)::numeric as total_spent
     from customer_jobs
-    where status in ('completed', 'settled')
+    where effective_status in ('completed', 'settled')
     group by service_code, vehicle_category_code
   ),
   modalities as (
@@ -214,7 +230,11 @@ begin
     j.id,
     j.service_code,
     coalesce(sr.vehicle_category_code, j.pricing_vehicle_category_code),
-    j.status,
+    case
+      when j.status = 'incident' and ir.resolution = 'completed' then 'settled'
+      when j.status = 'incident' and ir.resolution = 'cancelled' then 'cancelled'
+      else j.status
+    end,
     sr.origin_text,
     sr.destination_text,
     sr.scheduled_for,
@@ -230,7 +250,10 @@ begin
     rating.stars,
     rating.comment,
     j.created_at,
-    j.updated_at
+    case
+      when j.status = 'incident' and ir.resolved_at is not null then ir.resolved_at
+      else j.updated_at
+    end
   from public.service_requests sr
   join public.jobs j
     on j.project_id = sr.project_id
@@ -240,6 +263,9 @@ begin
   left join public.marketplace_customer_ratings rating
     on rating.project_id = j.project_id
    and rating.job_id = j.id
+  left join public.marketplace_incident_resolutions ir
+    on ir.project_id = j.project_id
+   and ir.job_id = j.id
   where sr.project_id = target_project_id
     and sr.customer_id = target_customer_id
     and coalesce(j.is_test, false) = false
