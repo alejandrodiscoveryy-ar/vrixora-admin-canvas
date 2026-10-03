@@ -25,7 +25,7 @@ import {
   Wallet,
   WalletCards,
 } from "lucide-react";
-import { supabaseServices } from "@/lib/services";
+import { supabaseServices, type MarketplaceCustomer360, type MarketplaceCustomerHistoryItem } from "@/lib/services";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -71,6 +71,10 @@ const label = (value: string | null) =>
     courier: "Mensajería",
     tourism: "Turismo",
     wallet_commission: "Billetera",
+    motorcycle: "Moto",
+    bicitaxi: "Bicitaxi",
+    tricycle: "Triciclo",
+    light_car: "Auto",
   })[value ?? ""] ??
   value ??
   "—";
@@ -378,6 +382,160 @@ function MiniMetric({ labelText, value }: { labelText: string; value: ReactNode 
   );
 }
 
+function Customer360Detail({
+  detail,
+  history,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: {
+  detail: MarketplaceCustomer360;
+  history: MarketplaceCustomerHistoryItem[];
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
+}) {
+  const km = (value: number | null) =>
+    value == null
+      ? "\u2014"
+      : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-lg font-semibold text-foreground">{detail.customer.displayName}</h3>
+          <p className="text-sm text-muted-foreground">{detail.customer.whatsappPhone}</p>
+          <p className="text-sm text-muted-foreground">
+            {detail.customer.email ?? "Sin correo registrado"}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Cliente desde {formatDate(detail.customer.createdAt)}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+        <MiniMetric labelText="Viajes" value={detail.summary.tripsCompleted} />
+        <MiniMetric labelText="Km recorridos" value={km(detail.summary.distanceKm)} />
+        <MiniMetric labelText="Gasto total" value={formatAmount(detail.summary.totalSpent, detail.summary.currency)} />
+        <MiniMetric labelText="Ticket medio" value={formatAmount(detail.summary.averageTicket, detail.summary.currency)} />
+        <MiniMetric labelText="Solicitudes" value={detail.summary.requestsTotal} />
+        <MiniMetric labelText="Cancelaciones" value={detail.summary.cancellations} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            {"\u00daltimo servicio"}
+          </p>
+          <p className="mt-2 font-semibold text-foreground">
+            {detail.summary.lastServiceAt ? formatDate(detail.summary.lastServiceAt) : "Sin viajes completados"}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Valoraciones realizadas
+          </p>
+          <p className="mt-2 font-semibold text-foreground">
+            {detail.ratings.givenCount
+              ? `${detail.ratings.averageGiven.toFixed(1)} / 5 \u00b7 ${detail.ratings.givenCount}`
+              : "Sin valoraciones"}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-semibold text-foreground">Modalidades utilizadas</h4>
+        {detail.modalities.length ? (
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {detail.modalities.map((item) => (
+              <div
+                key={`${item.serviceCode}:${item.vehicleCategoryCode ?? "none"}`}
+                className="rounded-xl border border-border/60 bg-background/45 p-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <ServiceBadge service={item.serviceCode} />
+                  <span className="text-xs text-muted-foreground">{item.tripsCompleted} viajes</span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {item.vehicleCategoryCode ? label(item.vehicleCategoryCode) : "Sin categor\u00eda de veh\u00edculo"}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>{km(item.distanceKm)}</span>
+                  <span>{formatAmount(item.totalSpent, detail.summary.currency)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">{"Todav\u00eda no hay viajes completados."}</p>
+        )}
+      </div>
+
+      <div>
+        <h4 className="font-semibold text-foreground">Historial de servicios</h4>
+
+        {!history.length ? (
+          <p className="mt-2 text-sm text-muted-foreground">No hay servicios para mostrar.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {history.map((item) => (
+              <article key={item.jobId} className="rounded-2xl border border-border/65 bg-background/45 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <ServiceBadge service={item.serviceCode} />
+                  <StatusBadge status={item.status} />
+                  <span className="ml-auto text-xs text-muted-foreground">{formatDate(item.createdAt)}</span>
+                </div>
+
+                <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Origen</p>
+                    <p className="text-foreground">{item.originText}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Destino</p>
+                    <p className="text-foreground">{item.destinationText}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+                  <span>{formatAmount(item.finalPrice, item.currency)}</span>
+                  <span>{km(item.distanceKm)}</span>
+                  <span>{item.driverDisplayName ?? "Sin conductor asignado"}</span>
+                  {item.vehicleCategoryCode ? <span>{label(item.vehicleCategoryCode)}</span> : null}
+                </div>
+
+                {item.ratingStars ? (
+                  <div className="mt-3 rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2 text-sm">
+                    <span className="font-medium text-foreground">{"Valoraci\u00f3n: "}{item.ratingStars}/5</span>
+                    {item.ratingComment ? <p className="mt-1 text-muted-foreground">{item.ratingComment}</p> : null}
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
+
+        {hasMore ? (
+          <div className="mt-4 flex justify-center">
+            <Button variant="outline" disabled={loadingMore} onClick={onLoadMore}>
+              {loadingMore ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {"Cargando\u2026"}
+                </>
+              ) : (
+                "Cargar m\u00e1s"
+              )}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 export default function MarketplaceSection({ projectId }: { projectId: string }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
 
@@ -387,6 +545,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [incidentState, setIncidentState] = useState("open");
 
   const [jobId, setJobId] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [driver, setDriver] = useState<{
     id: string;
     suspended: boolean;
@@ -545,6 +704,24 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     queryKey: ["marketplace-job-detail", projectId, jobId],
     queryFn: () => supabaseServices.marketplace.getJobDetail(projectId, jobId!),
     enabled: Boolean(jobId),
+  });
+
+  const customer360 = useQuery({
+    queryKey: ["marketplace-customer-360", projectId, customerId],
+    queryFn: () => supabaseServices.marketplace.getCustomer360(projectId, customerId!),
+    enabled: Boolean(customerId),
+  });
+
+  const customerHistory = useInfiniteQuery({
+    queryKey: ["marketplace-customer-history", projectId, customerId],
+    queryFn: ({ pageParam }) =>
+      supabaseServices.marketplace.listCustomerHistory(projectId, customerId!, {
+        limit: PAGE_SIZE,
+        cursor: pageParam,
+      }),
+    initialPageParam: null as null | { at: string; id: string },
+    getNextPageParam: (page) => page.nextCursor,
+    enabled: Boolean(customerId),
   });
 
   useEffect(() => {
@@ -1073,7 +1250,16 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     {customerRows.map((customer) => (
                       <article
                         key={customer.customerId}
-                        className="rounded-2xl border border-border/65 bg-background/45 p-4"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setCustomerId(customer.customerId)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setCustomerId(customer.customerId);
+                          }
+                        }}
+                        className="cursor-pointer rounded-2xl border border-border/65 bg-background/45 p-4 transition hover:border-violet-500/35 hover:bg-violet-500/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.08] text-violet-300">
@@ -1095,6 +1281,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           <MiniMetric labelText="Trabajos" value={customer.jobsTotal} />
                           <MiniMetric labelText="Activos" value={customer.jobsActive} />
                           <MiniMetric labelText="Liquidados" value={customer.jobsSettled} />
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-end gap-1 text-xs font-medium text-violet-300">
+                          Ver ficha 360
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </div>
                       </article>
                     ))}
@@ -1697,6 +1888,35 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </div>
       ) : null}
 
+      <Dialog
+        open={Boolean(customerId)}
+        onOpenChange={(open) => {
+          if (!open) setCustomerId(null);
+        }}
+      >
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Ficha 360 del cliente</DialogTitle>
+            <DialogDescription>
+              Actividad, consumo, modalidades e historial de servicios en Marketplace.
+            </DialogDescription>
+          </DialogHeader>
+
+          {customer360.isLoading ? (
+            <LoadingState />
+          ) : customer360.data ? (
+            <Customer360Detail
+              detail={customer360.data}
+              history={rows(customerHistory)}
+              hasMore={Boolean(customerHistory.hasNextPage)}
+              loadingMore={customerHistory.isFetchingNextPage}
+              onLoadMore={() => customerHistory.fetchNextPage()}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">{"No se encontr\u00f3 el cliente."}</p>
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog open={Boolean(jobId)} onOpenChange={() => setJobId(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>

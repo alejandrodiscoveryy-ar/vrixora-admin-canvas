@@ -41,6 +41,8 @@ import type {
   MarketplaceJob,
   MarketplaceJobDetail,
   MarketplaceCustomer,
+  MarketplaceCustomer360,
+  MarketplaceCustomerHistoryItem,
   MarketplaceTopup,
   MarketplaceWallet,
   MarketplaceFinancialSettings,
@@ -2122,6 +2124,108 @@ export const supabaseServices: AdminServices = {
         items,
         nextCursor:
           items.length === limit && last ? { at: last.createdAt, id: last.customerId } : null,
+      };
+    },
+    async getCustomer360(projectId, customerId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_customer_360",
+        {
+          target_project_id: projectId,
+          target_customer_id: customerId,
+        },
+      );
+      throwIfError(error);
+
+      const root = (data ?? {}) as Record<string, unknown>;
+      const customer = (root.customer ?? {}) as Record<string, unknown>;
+      const summary = (root.summary ?? {}) as Record<string, unknown>;
+      const ratings = (root.ratings ?? {}) as Record<string, unknown>;
+      const modalities = Array.isArray(root.modalities)
+        ? (root.modalities as Record<string, unknown>[])
+        : [];
+
+      return {
+        customer: {
+          id: String(customer.id),
+          displayName: String(customer.display_name ?? ""),
+          whatsappPhone: String(customer.whatsapp_phone ?? ""),
+          email: customer.email ? String(customer.email) : null,
+          createdAt: String(customer.created_at),
+          updatedAt: String(customer.updated_at),
+        },
+        summary: {
+          requestsTotal: Number(summary.requests_total ?? 0),
+          tripsCompleted: Number(summary.trips_completed ?? 0),
+          cancellations: Number(summary.cancellations ?? 0),
+          distanceKm: Number(summary.distance_km ?? 0),
+          totalSpent: Number(summary.total_spent ?? 0),
+          currency: String(summary.currency ?? "CUP"),
+          averageTicket: Number(summary.average_ticket ?? 0),
+          lastServiceAt: summary.last_service_at ? String(summary.last_service_at) : null,
+        },
+        ratings: {
+          givenCount: Number(ratings.given_count ?? 0),
+          averageGiven: Number(ratings.average_given ?? 0),
+        },
+        modalities: modalities.map((row) => ({
+          serviceCode: String(row.service_code ?? ""),
+          vehicleCategoryCode: row.vehicle_category_code
+            ? String(row.vehicle_category_code)
+            : null,
+          tripsCompleted: Number(row.trips_completed ?? 0),
+          distanceKm: Number(row.distance_km ?? 0),
+          totalSpent: Number(row.total_spent ?? 0),
+        })),
+      } satisfies MarketplaceCustomer360;
+    },
+    async listCustomerHistory(projectId, customerId, page = {}) {
+      const limit = page.limit ?? 25;
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_customer_history",
+        {
+          target_project_id: projectId,
+          target_customer_id: customerId,
+          target_limit: limit,
+          target_before_created_at: page.cursor?.at ?? null,
+          target_before_job_id: page.cursor?.id ?? null,
+        },
+      );
+      throwIfError(error);
+
+      const items = ((data ?? []) as Record<string, unknown>[]).map(
+        (row) =>
+          ({
+            jobId: String(row.job_id),
+            serviceCode: String(row.service_code),
+            vehicleCategoryCode: row.vehicle_category_code
+              ? String(row.vehicle_category_code)
+              : null,
+            status: String(row.status),
+            originText: String(row.origin_text),
+            destinationText: String(row.destination_text),
+            scheduledFor: row.scheduled_for ? String(row.scheduled_for) : null,
+            finalPrice: Number(row.final_price),
+            currency: String(row.currency),
+            distanceKm: row.distance_km == null ? null : Number(row.distance_km),
+            driverUserId: row.driver_user_id ? String(row.driver_user_id) : null,
+            driverDisplayName: row.driver_display_name
+              ? String(row.driver_display_name)
+              : null,
+            ratingStars: row.rating_stars == null ? null : Number(row.rating_stars),
+            ratingComment: row.rating_comment ? String(row.rating_comment) : null,
+            createdAt: String(row.created_at),
+            updatedAt: String(row.updated_at),
+          }) satisfies MarketplaceCustomerHistoryItem,
+      );
+
+      const last = items.at(-1);
+
+      return {
+        items,
+        nextCursor:
+          items.length === limit && last
+            ? { at: last.createdAt, id: last.jobId }
+            : null,
       };
     },
     async listTopups(projectId, filters = {}) {

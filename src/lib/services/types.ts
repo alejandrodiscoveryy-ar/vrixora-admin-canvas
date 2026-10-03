@@ -1095,6 +1095,57 @@ export interface MarketplaceCustomer {
   jobsSettled: number;
   lastJobAt: string | null;
 }
+
+export interface MarketplaceCustomer360 {
+  customer: {
+    id: string;
+    displayName: string;
+    whatsappPhone: string;
+    email: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  summary: {
+    requestsTotal: number;
+    tripsCompleted: number;
+    cancellations: number;
+    distanceKm: number;
+    totalSpent: number;
+    currency: string;
+    averageTicket: number;
+    lastServiceAt: string | null;
+  };
+  ratings: {
+    givenCount: number;
+    averageGiven: number;
+  };
+  modalities: Array<{
+    serviceCode: string;
+    vehicleCategoryCode: string | null;
+    tripsCompleted: number;
+    distanceKm: number;
+    totalSpent: number;
+  }>;
+}
+
+export interface MarketplaceCustomerHistoryItem {
+  jobId: string;
+  serviceCode: string;
+  vehicleCategoryCode: string | null;
+  status: string;
+  originText: string;
+  destinationText: string;
+  scheduledFor: string | null;
+  finalPrice: number;
+  currency: string;
+  distanceKm: number | null;
+  driverUserId: string | null;
+  driverDisplayName: string | null;
+  ratingStars: number | null;
+  ratingComment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 export interface MarketplaceTopup {
   topupId: string;
   userId: string;
@@ -1229,6 +1280,12 @@ export interface MarketplaceAdminService {
     projectId: string,
     page?: { limit?: number; cursor?: MarketplaceCursor | null },
   ): Promise<MarketplacePage<MarketplaceCustomer>>;
+  getCustomer360(projectId: string, customerId: string): Promise<MarketplaceCustomer360>;
+  listCustomerHistory(
+    projectId: string,
+    customerId: string,
+    page?: { limit?: number; cursor?: MarketplaceCursor | null },
+  ): Promise<MarketplacePage<MarketplaceCustomerHistoryItem>>;
   listTopups(
     projectId: string,
     filters?: { status?: string; limit?: number; cursor?: MarketplaceCursor | null },

@@ -82,6 +82,8 @@ export type {
   MarketplaceJob,
   MarketplaceJobDetail,
   MarketplaceCustomer,
+  MarketplaceCustomer360,
+  MarketplaceCustomerHistoryItem,
   MarketplaceTopup,
   MarketplaceWallet,
   MarketplaceFinancialSettings,
