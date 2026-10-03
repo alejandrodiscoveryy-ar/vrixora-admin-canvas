@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import { supabaseServices, type MarketplaceCustomer360, type MarketplaceCustomerHistoryItem } from "@/lib/services";
 import { useProjectPermissions } from "@/hooks/useProjects";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { Button } from "@/components/ui/button";
@@ -1133,30 +1132,81 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <ModuleHeader
-        title="Trabajos"
-        description="Operación de TukTuk Marketplace."
-        icon={BriefcaseBusiness}
-        module="pagos"
-      />
-
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="h-auto w-full flex-wrap justify-start">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="trabajos">Trabajos</TabsTrigger>
-          <TabsTrigger value="conductores">Conductores</TabsTrigger>
-          {canCustomers ? <TabsTrigger value="clientes">Clientes</TabsTrigger> : null}
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-2xl border border-border/60 bg-background/45 p-1.5 shadow-[0_18px_50px_-42px_rgba(0,0,0,0.9)]">
+          <TabsTrigger
+            value="resumen"
+            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-cyan-500/25 data-[state=active]:bg-cyan-500/[0.09] data-[state=active]:text-cyan-100 data-[state=active]:shadow-none"
+          >
+            <Eye className="h-4 w-4" />
+            Resumen
+          </TabsTrigger>
+
+          <TabsTrigger
+            value="trabajos"
+            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/[0.10] data-[state=active]:text-emerald-100 data-[state=active]:shadow-none"
+          >
+            <BriefcaseBusiness className="h-4 w-4" />
+            Operaciones
+          </TabsTrigger>
+
+          <TabsTrigger
+            value="conductores"
+            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-amber-500/25 data-[state=active]:bg-amber-500/[0.08] data-[state=active]:text-amber-100 data-[state=active]:shadow-none"
+          >
+            <Users className="h-4 w-4" />
+            Conductores
+          </TabsTrigger>
+
+          {canCustomers ? (
+            <TabsTrigger
+              value="clientes"
+              className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-violet-500/30 data-[state=active]:bg-violet-500/[0.10] data-[state=active]:text-violet-100 data-[state=active]:shadow-none"
+            >
+              <UserRound className="h-4 w-4" />
+              Clientes
+            </TabsTrigger>
+          ) : null}
+
           {canPayments ? (
             <>
-              <TabsTrigger value="billeteras">Billeteras</TabsTrigger>
-              <TabsTrigger value="recargas">Recargas</TabsTrigger>
+              <TabsTrigger
+                value="billeteras"
+                className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-amber-500/25 data-[state=active]:bg-amber-500/[0.08] data-[state=active]:text-amber-100 data-[state=active]:shadow-none"
+              >
+                <Wallet className="h-4 w-4" />
+                Billeteras
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="recargas"
+                className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-cyan-500/25 data-[state=active]:bg-cyan-500/[0.08] data-[state=active]:text-cyan-100 data-[state=active]:shadow-none"
+              >
+                <WalletCards className="h-4 w-4" />
+                Recargas
+              </TabsTrigger>
             </>
           ) : null}
-          <TabsTrigger value="incidencias">Incidencias</TabsTrigger>
-          {canSettings ? <TabsTrigger value="configuracion">Configuración</TabsTrigger> : null}
-        </TabsList>
 
-        <TabsContent value="resumen">
+          <TabsTrigger
+            value="incidencias"
+            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-rose-500/30 data-[state=active]:bg-rose-500/[0.09] data-[state=active]:text-rose-100 data-[state=active]:shadow-none"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Incidencias
+          </TabsTrigger>
+
+          {canSettings ? (
+            <TabsTrigger
+              value="configuracion"
+              className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-slate-500/30 data-[state=active]:bg-slate-500/[0.10] data-[state=active]:text-slate-100 data-[state=active]:shadow-none"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Configuración
+            </TabsTrigger>
+          ) : null}
+        </TabsList>
+<TabsContent value="resumen">
           <KpiGrid columns={4} density="compact">
             {[
               ["Conductores", overview.data?.driversTotal, Users],
@@ -1188,65 +1238,66 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </KpiGrid>
         </TabsContent>
 
-        <TabsContent value="trabajos">
-          <div className="space-y-4 sm:space-y-5">
-            <section className="relative overflow-hidden rounded-[28px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.10] via-background/75 to-cyan-500/[0.06] p-5 shadow-[0_24px_70px_-44px_rgba(16,185,129,0.8)] sm:p-6">
-              <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-emerald-500/12 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
+        <TabsContent value="trabajos" className="mt-3">
+          <div className="space-y-3 sm:space-y-4">
+            <section className="relative overflow-hidden rounded-[26px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.09] via-background/75 to-cyan-500/[0.05] p-5 shadow-[0_22px_65px_-44px_rgba(16,185,129,0.75)] sm:p-6">
+              <div className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full bg-emerald-500/12 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
 
-              <div className="relative">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="max-w-2xl">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-200">
-                      <BriefcaseBusiness className="h-3.5 w-3.5" />
-                      Centro de operaciones
+              <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+                    Operación Marketplace
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                    Centro de operaciones
+                  </h3>
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                    Solicitudes, rutas, conductores y estado operativo en una sola vista.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
+                  {[
+                    ["Publicados", overview.data?.jobsPublished ?? 0, "emerald"],
+                    ["Activos", overview.data?.jobsActive ?? 0, "cyan"],
+                    ["Incidencias", overview.data?.jobsIncidentOpen ?? 0, "rose"],
+                  ].map(([metricLabel, metricValue, tone]) => (
+                    <div
+                      key={String(metricLabel)}
+                      className={`rounded-2xl border px-3 py-3 ${
+                        tone === "emerald"
+                          ? "border-emerald-500/20 bg-emerald-500/[0.055]"
+                          : tone === "cyan"
+                            ? "border-cyan-500/20 bg-cyan-500/[0.055]"
+                            : "border-rose-500/20 bg-rose-500/[0.055]"
+                      }`}
+                    >
+                      <p className="text-[10px] font-medium text-muted-foreground">
+                        {String(metricLabel)}
+                      </p>
+                      <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                        {Number(metricValue)}
+                      </p>
                     </div>
-                    <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                      Trabajos Marketplace
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                      Control visual de solicitudes, rutas, conductores, clientes y estado operativo.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
-                    {[
-                      ["Publicados", overview.data?.jobsPublished ?? 0, "emerald"],
-                      ["Activos", overview.data?.jobsActive ?? 0, "cyan"],
-                      ["Incidencias", overview.data?.jobsIncidentOpen ?? 0, "rose"],
-                    ].map(([metricLabel, metricValue, tone]) => (
-                      <div
-                        key={String(metricLabel)}
-                        className={`rounded-2xl border px-3 py-3 ${
-                          tone === "emerald"
-                            ? "border-emerald-500/20 bg-emerald-500/[0.055]"
-                            : tone === "cyan"
-                              ? "border-cyan-500/20 bg-cyan-500/[0.055]"
-                              : "border-rose-500/20 bg-rose-500/[0.055]"
-                        }`}
-                      >
-                        <p className="text-[10px] font-medium text-muted-foreground">
-                          {String(metricLabel)}
-                        </p>
-                        <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                          {Number(metricValue)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
             </section>
 
-            <section className="rounded-[22px] border border-border/60 bg-background/40 p-3 sm:p-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <section className="rounded-[24px] border border-border/60 bg-background/30 p-3 sm:p-4">
+              <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300">
-                    Filtros operativos
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-300">
+                    Operaciones
                   </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Ajusta la vista sin alterar la operacion.
-                  </p>
+                  <h4 className="mt-1 text-lg font-semibold text-foreground">
+                    {jobs.isLoading
+                      ? "Consultando..."
+                      : `${jobRows.length} ${
+                          jobRows.length === 1 ? "trabajo visible" : "trabajos visibles"
+                        }`}
+                  </h4>
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -1271,31 +1322,19 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   </FilterSelect>
                 </div>
               </div>
-            </section>
-
-            <section className="rounded-[26px] border border-border/60 bg-background/30 p-3 sm:p-4">
-              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-300">
-                    Operaciones
-                  </p>
-                  <h4 className="mt-1 text-lg font-semibold text-foreground">
-                    {jobs.isLoading
-                      ? "Consultando trabajos..."
-                      : `${jobRows.length} ${
-                          jobRows.length === 1 ? "trabajo visible" : "trabajos visibles"
-                        }`}
-                  </h4>
-                </div>
-              </div>
 
               {jobs.isLoading ? (
                 <LoadingState />
               ) : !jobRows.length ? (
-                <EmptyMarketplaceState
-                  title="No hay trabajos"
-                  description="No existen operaciones que coincidan con los filtros seleccionados."
-                />
+                <div className="flex min-h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-border/65 bg-background/35 px-5 py-6 text-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+                    <BriefcaseBusiness className="h-4.5 w-4.5" />
+                  </div>
+                  <p className="mt-3 font-semibold text-foreground">No hay trabajos</p>
+                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                    No existen operaciones que coincidan con los filtros seleccionados.
+                  </p>
+                </div>
               ) : (
                 <>
                   <div className="space-y-3">
@@ -1406,7 +1445,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                         {job.driverDisplayName || "Sin conductor asignado"}
                                       </p>
                                       <p className="mt-1 truncate text-xs text-muted-foreground">
-                                        {job.vehicleName || "Sin vehiculo asignado"}
+                                        {job.vehicleName || "Sin vehículo asignado"}
                                       </p>
                                     </div>
                                   </div>
@@ -1431,7 +1470,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 </div>
                                 {job.commissionAmountSnapshot != null ? (
                                   <div className="flex items-center justify-between gap-3">
-                                    <span>Comision</span>
+                                    <span>Comisión</span>
                                     <span className="font-medium text-foreground">
                                       {formatAmount(job.commissionAmountSnapshot, job.currency)}
                                     </span>
@@ -1458,7 +1497,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     disabled={deleteTestJob.isPending}
                                     onClick={() => {
                                       const why = window.prompt(
-                                        "Motivo de eliminacion de esta carrera de prueba:",
+                                        "Motivo de eliminación de esta carrera de prueba:",
                                         "Prueba operativa",
                                       );
 
@@ -1466,7 +1505,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                                       if (
                                         !window.confirm(
-                                          "Se eliminara esta carrera de prueba y se revertira su efecto financiero si corresponde. Continuar?",
+                                          "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
                                         )
                                       ) {
                                         return;
