@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Banknote,
   BriefcaseBusiness,
+  CalendarDays,
   CarFront,
   CheckCircle2,
   ChevronDown,
@@ -14,10 +15,13 @@ import {
   Eye,
   Filter,
   Loader2,
+  Mail,
   MapPin,
   Phone,
   Plus,
+  Route,
   ShieldCheck,
+  Star,
   TestTube2,
   Trash2,
   UserRound,
@@ -382,6 +386,38 @@ function MiniMetric({ labelText, value }: { labelText: string; value: ReactNode 
   );
 }
 
+function CustomerSummaryMetric({
+  icon: Icon,
+  labelText,
+  value,
+  accent = "violet",
+}: {
+  icon: typeof UserRound;
+  labelText: string;
+  value: ReactNode;
+  accent?: "violet" | "cyan" | "emerald" | "amber" | "rose";
+}) {
+  const accentClasses = {
+    violet: "border-violet-500/20 bg-violet-500/[0.06] text-violet-300",
+    cyan: "border-cyan-500/20 bg-cyan-500/[0.06] text-cyan-300",
+    emerald: "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300",
+    amber: "border-amber-500/20 bg-amber-500/[0.06] text-amber-300",
+    rose: "border-rose-500/20 bg-rose-500/[0.06] text-rose-300",
+  }[accent];
+
+  return (
+    <div className="group rounded-2xl border border-border/60 bg-background/55 p-3.5 shadow-sm transition hover:border-violet-500/20 hover:bg-background/70 sm:p-4">
+      <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${accentClasses}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.11em] text-muted-foreground">
+        {labelText}
+      </p>
+      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">{value}</p>
+    </div>
+  );
+}
+
 function Customer360Detail({
   detail,
   history,
@@ -401,116 +437,293 @@ function Customer360Detail({
       : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-4">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-semibold text-foreground">{detail.customer.displayName}</h3>
-          <p className="text-sm text-muted-foreground">{detail.customer.whatsappPhone}</p>
-          <p className="text-sm text-muted-foreground">
-            {detail.customer.email ?? "Sin correo registrado"}
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Cliente desde {formatDate(detail.customer.createdAt)}
-          </p>
-        </div>
-      </div>
+    <div className="space-y-5 sm:space-y-6">
+      <section className="relative overflow-hidden rounded-[28px] border border-violet-500/25 bg-gradient-to-br from-violet-500/[0.12] via-background/80 to-cyan-500/[0.08] p-5 shadow-[0_24px_70px_-42px_rgba(139,92,246,0.85)] sm:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
 
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <MiniMetric labelText="Viajes" value={detail.summary.tripsCompleted} />
-        <MiniMetric labelText="Km recorridos" value={km(detail.summary.distanceKm)} />
-        <MiniMetric labelText="Gasto total" value={formatAmount(detail.summary.totalSpent, detail.summary.currency)} />
-        <MiniMetric labelText="Ticket medio" value={formatAmount(detail.summary.averageTicket, detail.summary.currency)} />
-        <MiniMetric labelText="Solicitudes" value={detail.summary.requestsTotal} />
-        <MiniMetric labelText="Cancelaciones" value={detail.summary.cancellations} />
-      </div>
+        <div className="relative">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-400/25 bg-violet-500/10 text-violet-200 shadow-inner shadow-violet-500/10">
+                <UserRound className="h-7 w-7" />
+              </div>
+
+              <div className="min-w-0">
+                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                  Cliente Marketplace
+                </div>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                  {detail.customer.displayName}
+                </h3>
+              </div>
+            </div>
+
+            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
+              <CalendarDays className="h-3.5 w-3.5 text-violet-300" />
+              Cliente desde {formatDate(detail.customer.createdAt)}
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+                <Phone className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">WhatsApp</p>
+                <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                  {detail.customer.whatsappPhone}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
+                <Mail className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Correo</p>
+                <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                  {detail.customer.email ?? "Sin correo registrado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+              Resumen
+            </p>
+            <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+              Actividad del cliente
+            </h4>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+          <CustomerSummaryMetric
+            icon={BriefcaseBusiness}
+            labelText="Viajes"
+            value={detail.summary.tripsCompleted}
+            accent="violet"
+          />
+          <CustomerSummaryMetric
+            icon={Route}
+            labelText="Km recorridos"
+            value={km(detail.summary.distanceKm)}
+            accent="cyan"
+          />
+          <CustomerSummaryMetric
+            icon={Banknote}
+            labelText="Gasto total"
+            value={formatAmount(detail.summary.totalSpent, detail.summary.currency)}
+            accent="emerald"
+          />
+          <CustomerSummaryMetric
+            icon={CircleDollarSign}
+            labelText="Ticket medio"
+            value={formatAmount(detail.summary.averageTicket, detail.summary.currency)}
+            accent="amber"
+          />
+          <CustomerSummaryMetric
+            icon={BriefcaseBusiness}
+            labelText="Solicitudes"
+            value={detail.summary.requestsTotal}
+            accent="violet"
+          />
+          <CustomerSummaryMetric
+            icon={AlertCircle}
+            labelText="Cancelaciones"
+            value={detail.summary.cancellations}
+            accent="rose"
+          />
+        </div>
+      </section>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            {"\u00daltimo servicio"}
-          </p>
-          <p className="mt-2 font-semibold text-foreground">
-            {detail.summary.lastServiceAt ? formatDate(detail.summary.lastServiceAt) : "Sin viajes completados"}
-          </p>
-        </div>
+        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-violet-500/[0.035] p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.07] text-violet-300">
+              <Clock3 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {"\u00daltimo servicio"}
+              </p>
+              <p className="mt-2 text-base font-semibold text-foreground">
+                {detail.summary.lastServiceAt
+                  ? formatDate(detail.summary.lastServiceAt)
+                  : "Sin viajes completados"}
+              </p>
+            </div>
+          </div>
+        </section>
 
-        <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Valoraciones realizadas
-          </p>
-          <p className="mt-2 font-semibold text-foreground">
-            {detail.ratings.givenCount
-              ? `${detail.ratings.averageGiven.toFixed(1)} / 5 \u00b7 ${detail.ratings.givenCount}`
-              : "Sin valoraciones"}
-          </p>
-        </div>
+        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-amber-500/[0.035] p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/[0.07] text-amber-300">
+              <Star className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Valoraciones realizadas
+              </p>
+              <p className="mt-2 text-base font-semibold text-foreground">
+                {detail.ratings.givenCount
+                  ? `${detail.ratings.averageGiven.toFixed(1)} / 5 \u00b7 ${detail.ratings.givenCount}`
+                  : "Sin valoraciones"}
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <div>
-        <h4 className="font-semibold text-foreground">Modalidades utilizadas</h4>
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+            Preferencias
+          </p>
+          <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+            Modalidades utilizadas
+          </h4>
+        </div>
+
         {detail.modalities.length ? (
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             {detail.modalities.map((item) => (
               <div
                 key={`${item.serviceCode}:${item.vehicleCategoryCode ?? "none"}`}
-                className="rounded-xl border border-border/60 bg-background/45 p-3"
+                className="rounded-2xl border border-border/55 bg-background/60 p-4 transition hover:border-cyan-500/20"
               >
                 <div className="flex items-center justify-between gap-3">
                   <ServiceBadge service={item.serviceCode} />
-                  <span className="text-xs text-muted-foreground">{item.tripsCompleted} viajes</span>
+                  <span className="rounded-full border border-border/60 bg-muted/25 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                    {item.tripsCompleted} viajes
+                  </span>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {item.vehicleCategoryCode ? label(item.vehicleCategoryCode) : "Sin categor\u00eda de veh\u00edculo"}
+                <p className="mt-3 text-sm font-medium text-foreground">
+                  {item.vehicleCategoryCode
+                    ? label(item.vehicleCategoryCode)
+                    : "Sin categor\u00eda de veh\u00edculo"}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span>{km(item.distanceKm)}</span>
-                  <span>{formatAmount(item.totalSpent, detail.summary.currency)}</span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 text-xs text-muted-foreground">
+                    {km(item.distanceKm)}
+                  </span>
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 text-xs text-muted-foreground">
+                    {formatAmount(item.totalSpent, detail.summary.currency)}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">{"Todav\u00eda no hay viajes completados."}</p>
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
+              <CarFront className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Sin modalidades registradas</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Aparecer\u00e1n cuando el cliente complete su primer viaje.
+              </p>
+            </div>
+          </div>
         )}
-      </div>
+      </section>
 
-      <div>
-        <h4 className="font-semibold text-foreground">Historial de servicios</h4>
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+            Trazabilidad
+          </p>
+          <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+            Historial de servicios
+          </h4>
+        </div>
 
         {!history.length ? (
-          <p className="mt-2 text-sm text-muted-foreground">No hay servicios para mostrar.</p>
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/15 bg-violet-500/[0.05] text-violet-300">
+              <Route className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Sin servicios reales</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                El historial aparecer\u00e1 aqu\u00ed cuando existan operaciones reales del cliente.
+              </p>
+            </div>
+          </div>
         ) : (
-          <div className="mt-3 space-y-3">
+          <div className="relative mt-4 space-y-3 pl-5">
+            <div className="absolute bottom-3 left-[6px] top-3 w-px bg-gradient-to-b from-violet-400/45 via-border/50 to-transparent" />
+
             {history.map((item) => (
-              <article key={item.jobId} className="rounded-2xl border border-border/65 bg-background/45 p-4">
+              <article
+                key={item.jobId}
+                className="relative rounded-2xl border border-border/60 bg-background/60 p-4 transition hover:border-violet-500/20"
+              >
+                <span className="absolute -left-[18px] top-5 h-3 w-3 rounded-full border-2 border-background bg-violet-400 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]" />
+
                 <div className="flex flex-wrap items-center gap-2">
                   <ServiceBadge service={item.serviceCode} />
                   <StatusBadge status={item.status} />
-                  <span className="ml-auto text-xs text-muted-foreground">{formatDate(item.createdAt)}</span>
+                  <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">
+                    {formatDate(item.createdAt)}
+                  </span>
                 </div>
 
-                <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Origen</p>
-                    <p className="text-foreground">{item.originText}</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-border/50 bg-background/55 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Origen
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium text-foreground">{item.originText}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Destino</p>
-                    <p className="text-foreground">{item.destinationText}</p>
+                  <div className="rounded-xl border border-border/50 bg-background/55 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Destino
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium text-foreground">
+                      {item.destinationText}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-                  <span>{formatAmount(item.finalPrice, item.currency)}</span>
-                  <span>{km(item.distanceKm)}</span>
-                  <span>{item.driverDisplayName ?? "Sin conductor asignado"}</span>
-                  {item.vehicleCategoryCode ? <span>{label(item.vehicleCategoryCode)}</span> : null}
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                    {formatAmount(item.finalPrice, item.currency)}
+                  </span>
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                    {km(item.distanceKm)}
+                  </span>
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                    {item.driverDisplayName ?? "Sin conductor asignado"}
+                  </span>
+                  {item.vehicleCategoryCode ? (
+                    <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                      {label(item.vehicleCategoryCode)}
+                    </span>
+                  ) : null}
                 </div>
 
                 {item.ratingStars ? (
-                  <div className="mt-3 rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2 text-sm">
-                    <span className="font-medium text-foreground">{"Valoraci\u00f3n: "}{item.ratingStars}/5</span>
-                    {item.ratingComment ? <p className="mt-1 text-muted-foreground">{item.ratingComment}</p> : null}
+                  <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5 text-sm">
+                    <Star className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                    <div>
+                      <span className="font-medium text-foreground">
+                        {"Valoraci\u00f3n: "}
+                        {item.ratingStars}/5
+                      </span>
+                      {item.ratingComment ? (
+                        <p className="mt-1 text-muted-foreground">{item.ratingComment}</p>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
               </article>
@@ -520,7 +733,12 @@ function Customer360Detail({
 
         {hasMore ? (
           <div className="mt-4 flex justify-center">
-            <Button variant="outline" disabled={loadingMore} onClick={onLoadMore}>
+            <Button
+              className="w-full sm:w-auto"
+              variant="outline"
+              disabled={loadingMore}
+              onClick={onLoadMore}
+            >
               {loadingMore ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -532,7 +750,7 @@ function Customer360Detail({
             </Button>
           </div>
         ) : null}
-      </div>
+      </section>
     </div>
   );
 }
@@ -1248,46 +1466,67 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 <>
                   <div className="grid gap-3 xl:grid-cols-2">
                     {customerRows.map((customer) => (
-                      <article
+                      <button
                         key={customer.customerId}
-                        role="button"
-                        tabIndex={0}
+                        type="button"
                         onClick={() => setCustomerId(customer.customerId)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            setCustomerId(customer.customerId);
-                          }
-                        }}
-                        className="cursor-pointer rounded-2xl border border-border/65 bg-background/45 p-4 transition hover:border-violet-500/35 hover:bg-violet-500/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+                        className="group relative w-full overflow-hidden rounded-[26px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/60 to-cyan-500/[0.035] p-5 text-left shadow-[0_22px_55px_-38px_rgba(139,92,246,0.75)] transition duration-200 hover:-translate-y-0.5 hover:border-violet-400/35 hover:shadow-[0_26px_70px_-40px_rgba(139,92,246,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.08] text-violet-300">
-                            <UserRound className="h-5 w-5" />
+                        <div className="pointer-events-none absolute -right-10 -top-14 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl transition group-hover:bg-violet-500/15" />
+
+                        <div className="relative">
+                          <div className="flex items-start gap-3.5">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
+                              <UserRound className="h-6 w-6" />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-full border border-violet-500/20 bg-violet-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-violet-200">
+                                  Cliente
+                                </span>
+                              </div>
+                              <h4 className="mt-2 truncate text-lg font-semibold tracking-tight text-foreground">
+                                {customer.displayName}
+                              </h4>
+                              <p className="mt-1.5 flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="h-3.5 w-3.5 text-emerald-300" />
+                                {customer.whatsappPhone}
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="min-w-0">
-                            <h4 className="font-semibold text-foreground">
-                              {customer.displayName}
-                            </h4>
-                            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-3.5 w-3.5" />
-                              {customer.whatsappPhone}
+                          <div className="mt-5 grid grid-cols-3 gap-2">
+                            {[
+                              ["Trabajos", customer.jobsTotal],
+                              ["Activos", customer.jobsActive],
+                              ["Liquidados", customer.jobsSettled],
+                            ].map(([metricLabel, metricValue]) => (
+                              <div
+                                key={String(metricLabel)}
+                                className="rounded-2xl border border-border/55 bg-background/55 px-3 py-3"
+                              >
+                                <p className="text-[10px] font-medium text-muted-foreground">
+                                  {String(metricLabel)}
+                                </p>
+                                <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                                  {Number(metricValue)}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/45 pt-4">
+                            <p className="text-xs text-muted-foreground">
+                              Actividad real del Marketplace
                             </p>
+                            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition group-hover:border-violet-400/35 group-hover:bg-violet-500/15">
+                              Abrir ficha 360
+                              <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                            </span>
                           </div>
                         </div>
-
-                        <div className="mt-4 grid grid-cols-3 gap-2">
-                          <MiniMetric labelText="Trabajos" value={customer.jobsTotal} />
-                          <MiniMetric labelText="Activos" value={customer.jobsActive} />
-                          <MiniMetric labelText="Liquidados" value={customer.jobsSettled} />
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-end gap-1 text-xs font-medium text-violet-300">
-                          Ver ficha 360
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </div>
-                      </article>
+                      </button>
                     ))}
                   </div>
 
@@ -1894,27 +2133,41 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           if (!open) setCustomerId(null);
         }}
       >
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Ficha 360 del cliente</DialogTitle>
-            <DialogDescription>
-              Actividad, consumo, modalidades e historial de servicios en Marketplace.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-h-[94vh] overflow-y-auto border-violet-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl">
+          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
+            <DialogHeader className="text-left">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.75)]" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+                  Perfil de cliente
+                </span>
+              </div>
+              <DialogTitle className="text-xl tracking-tight sm:text-2xl">
+                Ficha 360 del cliente
+              </DialogTitle>
+              <DialogDescription className="max-w-2xl">
+                Actividad, consumo, modalidades e historial real de servicios en Marketplace.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          {customer360.isLoading ? (
-            <LoadingState />
-          ) : customer360.data ? (
-            <Customer360Detail
-              detail={customer360.data}
-              history={rows(customerHistory)}
-              hasMore={Boolean(customerHistory.hasNextPage)}
-              loadingMore={customerHistory.isFetchingNextPage}
-              onLoadMore={() => customerHistory.fetchNextPage()}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">{"No se encontr\u00f3 el cliente."}</p>
-          )}
+          <div className="p-4 sm:p-6">
+            {customer360.isLoading ? (
+              <LoadingState />
+            ) : customer360.data ? (
+              <Customer360Detail
+                detail={customer360.data}
+                history={rows(customerHistory)}
+                hasMore={Boolean(customerHistory.hasNextPage)}
+                loadingMore={customerHistory.isFetchingNextPage}
+                onLoadMore={() => customerHistory.fetchNextPage()}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
+                {"No se encontr\u00f3 el cliente."}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog open={Boolean(jobId)} onOpenChange={() => setJobId(null)}>
