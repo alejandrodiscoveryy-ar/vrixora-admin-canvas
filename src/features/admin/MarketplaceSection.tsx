@@ -1189,167 +1189,314 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
 
         <TabsContent value="trabajos">
-          <div className="mb-4 flex flex-wrap gap-3">
-            <FilterSelect labelText="Estado" value={status} onChange={setStatus}>
-              <option value="">Todos los estados</option>
-              {statusOptions.map((item) => (
-                <option key={item} value={item}>
-                  {label(item)}
-                </option>
-              ))}
-            </FilterSelect>
+          <div className="space-y-4 sm:space-y-5">
+            <section className="relative overflow-hidden rounded-[28px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.10] via-background/75 to-cyan-500/[0.06] p-5 shadow-[0_24px_70px_-44px_rgba(16,185,129,0.8)] sm:p-6">
+              <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-emerald-500/12 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
 
-            <FilterSelect labelText="Servicio" value={service} onChange={setService}>
-              <option value="">Todos los servicios</option>
-              {[...new Set([...services, "passenger", "cargo", "courier", "tourism"])].map(
-                (item) => (
-                  <option key={item} value={item}>
-                    {label(item)}
-                  </option>
-                ),
-              )}
-            </FilterSelect>
-          </div>
+              <div className="relative">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="max-w-2xl">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                      <BriefcaseBusiness className="h-3.5 w-3.5" />
+                      Centro de operaciones
+                    </div>
+                    <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                      Trabajos Marketplace
+                    </h3>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                      Control visual de solicitudes, rutas, conductores, clientes y estado operativo.
+                    </p>
+                  </div>
 
-          <PremiumPanel
-            title="Trabajos"
-            description={
-              jobs.isLoading
-                ? "Consultando operaciones…"
-                : `${jobRows.length} ${
-                    jobRows.length === 1 ? "trabajo cargado" : "trabajos cargados"
-                  }`
-            }
-            icon={BriefcaseBusiness}
-            tone="emerald"
-          >
-            {jobs.isLoading ? (
-              <LoadingState />
-            ) : !jobRows.length ? (
-              <EmptyMarketplaceState
-                title="No hay trabajos"
-                description="No existen operaciones que coincidan con los filtros seleccionados."
-              />
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {jobRows.map((job) => (
-                    <article
-                      key={job.jobId}
-                      className="rounded-2xl border border-border/65 bg-background/45 p-4 transition hover:border-emerald-500/25 hover:bg-background/60"
-                    >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <StatusBadge status={job.status} />
-                            <ServiceBadge service={job.serviceCode} />
-
-                            {job.isTest ? (
-                              <span className="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-semibold text-violet-300">
-                                PRUEBA
-                              </span>
-                            ) : null}
-                          </div>
-
-                          <div className="mt-4 grid gap-3">
-                            <div className="flex gap-3">
-                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300">
-                                <MapPin className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                                  Origen
-                                </p>
-                                <p className="mt-0.5 font-medium leading-snug text-foreground">
-                                  {text(job.originText)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="ml-4 h-3 border-l border-dashed border-border/70" />
-
-                            <div className="flex gap-3">
-                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.08] text-cyan-300">
-                                <ArrowRight className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                                  Destino
-                                </p>
-                                <p className="mt-0.5 font-medium leading-snug text-foreground">
-                                  {text(job.destinationText)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                            <UserRound className="h-4 w-4" />
-                            <span>{job.driverDisplayName || "Sin conductor asignado"}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex shrink-0 flex-row items-center justify-between gap-4 border-t border-border/60 pt-4 lg:min-w-44 lg:flex-col lg:items-end lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-                          <div className="lg:text-right">
-                            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                              Precio
-                            </p>
-                            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                              {formatAmount(job.finalPrice, job.currency)}
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap justify-end gap-2">
-                            {job.isTest && canManageMarketplace ? (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                disabled={deleteTestJob.isPending}
-                                onClick={() => {
-                                  const why = window.prompt(
-                                    "Motivo de eliminación de esta carrera de prueba:",
-                                    "Prueba operativa",
-                                  );
-
-                                  if (!why?.trim()) return;
-
-                                  if (
-                                    !window.confirm(
-                                      "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
-                                    )
-                                  ) {
-                                    return;
-                                  }
-
-                                  deleteTestJob.mutate({
-                                    jobId: job.jobId,
-                                    reason: why.trim(),
-                                  });
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Eliminar prueba
-                              </Button>
-                            ) : null}
-
-                            <Button size="sm" variant="outline" onClick={() => setJobId(job.jobId)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Ver detalle
-                            </Button>
-                          </div>
-                        </div>
+                  <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
+                    {[
+                      ["Publicados", overview.data?.jobsPublished ?? 0, "emerald"],
+                      ["Activos", overview.data?.jobsActive ?? 0, "cyan"],
+                      ["Incidencias", overview.data?.jobsIncidentOpen ?? 0, "rose"],
+                    ].map(([metricLabel, metricValue, tone]) => (
+                      <div
+                        key={String(metricLabel)}
+                        className={`rounded-2xl border px-3 py-3 ${
+                          tone === "emerald"
+                            ? "border-emerald-500/20 bg-emerald-500/[0.055]"
+                            : tone === "cyan"
+                              ? "border-cyan-500/20 bg-cyan-500/[0.055]"
+                              : "border-rose-500/20 bg-rose-500/[0.055]"
+                        }`}
+                      >
+                        <p className="text-[10px] font-medium text-muted-foreground">
+                          {String(metricLabel)}
+                        </p>
+                        <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                          {Number(metricValue)}
+                        </p>
                       </div>
-                    </article>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-[22px] border border-border/60 bg-background/40 p-3 sm:p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300">
+                    Filtros operativos
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Ajusta la vista sin alterar la operacion.
+                  </p>
                 </div>
 
-                <PaginationButton query={jobs} />
-              </>
-            )}
-          </PremiumPanel>
-        </TabsContent>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                  <FilterSelect labelText="Estado" value={status} onChange={setStatus}>
+                    <option value="">Todos los estados</option>
+                    {statusOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {label(item)}
+                      </option>
+                    ))}
+                  </FilterSelect>
 
-        <TabsContent value="conductores">
+                  <FilterSelect labelText="Servicio" value={service} onChange={setService}>
+                    <option value="">Todos los servicios</option>
+                    {[...new Set([...services, "passenger", "cargo", "courier", "tourism"])].map(
+                      (item) => (
+                        <option key={item} value={item}>
+                          {label(item)}
+                        </option>
+                      ),
+                    )}
+                  </FilterSelect>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-[26px] border border-border/60 bg-background/30 p-3 sm:p-4">
+              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-300">
+                    Operaciones
+                  </p>
+                  <h4 className="mt-1 text-lg font-semibold text-foreground">
+                    {jobs.isLoading
+                      ? "Consultando trabajos..."
+                      : `${jobRows.length} ${
+                          jobRows.length === 1 ? "trabajo visible" : "trabajos visibles"
+                        }`}
+                  </h4>
+                </div>
+              </div>
+
+              {jobs.isLoading ? (
+                <LoadingState />
+              ) : !jobRows.length ? (
+                <EmptyMarketplaceState
+                  title="No hay trabajos"
+                  description="No existen operaciones que coincidan con los filtros seleccionados."
+                />
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    {jobRows.map((job) => (
+                      <article
+                        key={job.jobId}
+                        className={`group relative overflow-hidden rounded-[26px] border p-4 shadow-[0_18px_52px_-40px_rgba(0,0,0,0.85)] transition duration-200 hover:-translate-y-0.5 sm:p-5 ${
+                          job.isTest
+                            ? "border-violet-500/25 bg-gradient-to-br from-violet-500/[0.08] via-background/60 to-background/45 hover:border-violet-400/40"
+                            : "border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.065] via-background/60 to-cyan-500/[0.025] hover:border-emerald-400/35"
+                        }`}
+                      >
+                        <div
+                          className={`pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full blur-3xl ${
+                            job.isTest ? "bg-violet-500/10" : "bg-emerald-500/10"
+                          }`}
+                        />
+
+                        <div className="relative">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <StatusBadge status={job.status} />
+                                <ServiceBadge service={job.serviceCode} />
+
+                                {job.isTest ? (
+                                  <span className="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.11em] text-violet-300">
+                                    PRUEBA
+                                  </span>
+                                ) : null}
+
+                                <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">
+                                  {formatDate(job.createdAt)}
+                                </span>
+                              </div>
+
+                              <div className="mt-5 rounded-2xl border border-border/55 bg-background/50 p-4">
+                                <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
+                                  <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+                                      <MapPin className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                        Origen
+                                      </p>
+                                      <p className="mt-1.5 font-medium leading-snug text-foreground">
+                                        {text(job.originText)}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="hidden items-center gap-1 md:flex">
+                                    <div className="h-px w-7 bg-border/70" />
+                                    <Route className="h-4 w-4 text-cyan-300" />
+                                    <div className="h-px w-7 bg-border/70" />
+                                  </div>
+
+                                  <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
+                                      <ArrowRight className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                        Destino
+                                      </p>
+                                      <p className="mt-1.5 font-medium leading-snug text-foreground">
+                                        {text(job.destinationText)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
+                                      <UserRound className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                                        Cliente
+                                      </p>
+                                      <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                                        {job.customerDisplayName || "Sin nombre registrado"}
+                                      </p>
+                                      {job.customerWhatsappPhone ? (
+                                        <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                          <Phone className="h-3.5 w-3.5" />
+                                          {job.customerWhatsappPhone}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/15 bg-amber-500/[0.05] text-amber-300">
+                                      <CarFront className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                                        Conductor
+                                      </p>
+                                      <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                                        {job.driverDisplayName || "Sin conductor asignado"}
+                                      </p>
+                                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                                        {job.vehicleName || "Sin vehiculo asignado"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <aside className="shrink-0 rounded-2xl border border-border/55 bg-background/55 p-4 lg:w-[220px]">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
+                                Precio final
+                              </p>
+                              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">
+                                {formatAmount(job.finalPrice, job.currency)}
+                              </p>
+
+                              <div className="mt-4 space-y-2 border-t border-border/50 pt-4 text-xs text-muted-foreground">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span>Programado</span>
+                                  <span className="text-right font-medium text-foreground">
+                                    {formatDate(job.scheduledFor)}
+                                  </span>
+                                </div>
+                                {job.commissionAmountSnapshot != null ? (
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span>Comision</span>
+                                    <span className="font-medium text-foreground">
+                                      {formatAmount(job.commissionAmountSnapshot, job.currency)}
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              <div className="mt-4 grid gap-2">
+                                <Button
+                                  className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-100 hover:bg-emerald-500/[0.12]"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setJobId(job.jobId)}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Abrir detalle
+                                </Button>
+
+                                {job.isTest && canManageMarketplace ? (
+                                  <Button
+                                    className="w-full"
+                                    size="sm"
+                                    variant="destructive"
+                                    disabled={deleteTestJob.isPending}
+                                    onClick={() => {
+                                      const why = window.prompt(
+                                        "Motivo de eliminacion de esta carrera de prueba:",
+                                        "Prueba operativa",
+                                      );
+
+                                      if (!why?.trim()) return;
+
+                                      if (
+                                        !window.confirm(
+                                          "Se eliminara esta carrera de prueba y se revertira su efecto financiero si corresponde. Continuar?",
+                                        )
+                                      ) {
+                                        return;
+                                      }
+
+                                      deleteTestJob.mutate({
+                                        jobId: job.jobId,
+                                        reason: why.trim(),
+                                      });
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar prueba
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </aside>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  <PaginationButton query={jobs} />
+                </>
+              )}
+            </section>
+          </div>
+        </TabsContent>
+<TabsContent value="conductores">
           <PremiumPanel
             title="Conductores"
             description={
@@ -2171,21 +2318,35 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </DialogContent>
       </Dialog>
       <Dialog open={Boolean(jobId)} onOpenChange={() => setJobId(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detalle del trabajo</DialogTitle>
-            <DialogDescription>
-              Información operativa y trazabilidad de la solicitud.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-h-[94vh] overflow-y-auto border-emerald-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl">
+          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
+            <DialogHeader className="text-left">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.75)]" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+                  Operacion Marketplace
+                </span>
+              </div>
+              <DialogTitle className="text-xl tracking-tight sm:text-2xl">
+                Detalle del trabajo
+              </DialogTitle>
+              <DialogDescription className="max-w-2xl">
+                Ruta, participantes, estado financiero y trazabilidad completa.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          {detail.isLoading ? (
-            <LoadingState />
-          ) : detail.data ? (
-            <JobDetail detail={detail.data} />
-          ) : (
-            <p className="text-sm text-muted-foreground">No se encontró el trabajo.</p>
-          )}
+          <div className="p-4 sm:p-6">
+            {detail.isLoading ? (
+              <LoadingState />
+            ) : detail.data ? (
+              <JobDetail detail={detail.data} />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
+                No se encontro el trabajo.
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -2385,100 +2546,228 @@ function JobDetail({ detail }: { detail: import("@/lib/services/types").Marketpl
     detail;
 
   return (
-    <div className="space-y-4 text-sm">
-      <div className="flex flex-wrap gap-2">
-        <StatusBadge status={text(job.status)} />
-        <ServiceBadge service={text(serviceRequest.service_code)} />
-      </div>
+    <div className="space-y-5 sm:space-y-6">
+      <section className="relative overflow-hidden rounded-[28px] border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.11] via-background/80 to-cyan-500/[0.07] p-5 shadow-[0_24px_70px_-42px_rgba(16,185,129,0.8)] sm:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-14 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
 
-      <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Ruta
-        </p>
-        <div className="mt-3 space-y-3">
-          <div className="flex items-start gap-3">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-            <span className="text-foreground">{text(serviceRequest.origin_text)}</span>
+        <div className="relative">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={text(job.status)} />
+            <ServiceBadge service={text(serviceRequest.service_code)} />
           </div>
-          <div className="flex items-start gap-3">
-            <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
-            <span className="text-foreground">{text(serviceRequest.destination_text)}</span>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-border/55 bg-background/55 p-4 backdrop-blur">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
+                    Origen
+                  </p>
+                  <p className="mt-1.5 font-medium leading-snug text-foreground">
+                    {text(serviceRequest.origin_text)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/55 bg-background/55 p-4 backdrop-blur">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
+                  <ArrowRight className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
+                    Destino
+                  </p>
+                  <p className="mt-1.5 font-medium leading-snug text-foreground">
+                    {text(serviceRequest.destination_text)}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <MiniMetric labelText="Programado" value={formatDate(serviceRequest.scheduled_for)} />
+      <section>
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+            Resumen
+          </p>
+          <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+            Datos de la operacion
+          </h4>
+        </div>
 
-        {financial ? (
-          <MiniMetric
-            labelText="Importe"
-            value={formatAmount(financial.amount, text(financial.currency))}
-          />
-        ) : null}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.06] text-violet-300">
+                <CalendarDays className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Programado
+                </p>
+                <p className="mt-1.5 font-semibold text-foreground">
+                  {formatDate(serviceRequest.scheduled_for)}
+                </p>
+              </div>
+            </div>
+          </div>
 
-        {customer ? (
-          <MiniMetric
-            labelText="Cliente"
-            value={`${text(customer.display_name)} · ${text(customer.whatsapp_phone)}`}
-          />
-        ) : null}
+          {financial ? (
+            <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300">
+                  <Banknote className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Importe
+                  </p>
+                  <p className="mt-1.5 text-lg font-semibold tracking-tight text-foreground">
+                    {formatAmount(financial.amount, text(financial.currency))}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
-        {assignment ? (
-          <MiniMetric
-            labelText="Conductor / vehículo"
-            value={`${text(assignment.driver_user_id)} · ${text(assignment.vehicle_id)}`}
-          />
-        ) : null}
-      </div>
+          {customer ? (
+            <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] text-cyan-300">
+                  <UserRound className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Cliente
+                  </p>
+                  <p className="mt-1.5 font-semibold text-foreground">
+                    {text(customer.display_name)}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5" />
+                    {text(customer.whatsapp_phone)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {assignment ? (
+            <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/[0.06] text-amber-300">
+                  <CarFront className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Conductor / vehiculo
+                  </p>
+                  <p className="mt-1.5 break-all text-sm font-semibold text-foreground">
+                    {text(assignment.driver_user_id)}
+                  </p>
+                  <p className="mt-1 break-all text-xs text-muted-foreground">
+                    {text(assignment.vehicle_id)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
 
       {financial ? (
-        <div className="rounded-xl border border-border/65 bg-background/45 p-3 text-muted-foreground">
-          Estado financiero:{" "}
-          <span className="font-medium text-foreground">
-            {label(text(financial.reservation_status))}
-          </span>
-        </div>
+        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/70 to-emerald-500/[0.035] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300">
+              <CircleDollarSign className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Estado financiero
+              </p>
+              <p className="mt-1 font-semibold text-foreground">
+                {label(text(financial.reservation_status))}
+              </p>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {incidentResolution ? (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.04] p-3">
-          <p className="font-medium text-foreground">Resolución de incidencia</p>
-          <p className="mt-1 text-muted-foreground">
-            {label(text(incidentResolution.resolution))} ·{" "}
-            {text(incidentResolution.resolution_note)}
-          </p>
-        </div>
+        <section className="rounded-[22px] border border-rose-500/20 bg-gradient-to-br from-rose-500/[0.07] to-background/50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/[0.07] text-rose-300">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-300">
+                Resolucion de incidencia
+              </p>
+              <p className="mt-1.5 font-semibold text-foreground">
+                {label(text(incidentResolution.resolution))}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {text(incidentResolution.resolution_note)}
+              </p>
+            </div>
+          </div>
+        </section>
       ) : null}
 
-      <div>
-        <div className="mb-2 flex items-center gap-2">
-          <Clock3 className="h-4 w-4 text-muted-foreground" />
-          <p className="font-semibold text-foreground">Historial</p>
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+            Trazabilidad
+          </p>
+          <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+            Historial de estados
+          </h4>
         </div>
 
         {timeline.length ? (
-          <div className="space-y-2">
+          <div className="relative mt-4 space-y-3 pl-5">
+            <div className="absolute bottom-3 left-[6px] top-3 w-px bg-gradient-to-b from-cyan-400/45 via-border/50 to-transparent" />
+
             {timeline.map((event, index) => (
               <div
                 key={String(event.event_id ?? index)}
-                className="rounded-xl border border-border/60 bg-background/40 p-3"
+                className="relative rounded-2xl border border-border/60 bg-background/60 p-4"
               >
+                <span className="absolute -left-[18px] top-5 h-3 w-3 rounded-full border-2 border-background bg-cyan-400 shadow-[0_0_0_3px_rgba(34,211,238,0.10)]" />
                 <p className="text-xs text-muted-foreground">{formatDate(event.created_at)}</p>
-                <p className="mt-1 text-foreground">
-                  {text(event.action)} · {label(text(event.from_status))} →{" "}
-                  {label(text(event.to_status))}
+                <p className="mt-1.5 font-medium text-foreground">
+                  {text(event.action)}
                 </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-lg border border-border/55 bg-background/55 px-2.5 py-1.5">
+                    {label(text(event.from_status))}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  <span className="rounded-lg border border-border/55 bg-background/55 px-2.5 py-1.5">
+                    {label(text(event.to_status))}
+                  </span>
+                </div>
                 {event.reason ? (
-                  <p className="mt-1 text-xs text-muted-foreground">{text(event.reason)}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">{text(event.reason)}</p>
                 ) : null}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">Sin eventos.</p>
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4">
+            <Clock3 className="h-5 w-5 text-cyan-300" />
+            <p className="text-sm text-muted-foreground">Sin eventos registrados.</p>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
