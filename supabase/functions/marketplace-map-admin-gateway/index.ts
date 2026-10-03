@@ -12,6 +12,7 @@ const reply = (data: unknown, status = 200) =>
   });
 
 type Capability = "map_visual" | "geocoding" | "routing";
+type OperationalPointKind = "driver" | "customer" | "destination";
 
 function normalizeCapability(value: unknown): Capability {
   if (value === "map_visual" || value === "geocoding" || value === "routing") return value;
@@ -105,6 +106,122 @@ async function testMapbox(capability: Capability, token: string) {
   };
 }
 
+function parseOperationalPoints(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value.slice(0, 100).map((item) => {
+    const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
+    const kind = String(row.kind ?? "") as OperationalPointKind;
+    const lat = Number(row.lat);
+    const lon = Number(row.lon);
+
+    if (!["driver", "customer", "destination"].includes(kind)) {
+      throw new Error("MAP_POINT_KIND_INVALID");
+    }
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      throw new Error("MAP_POINT_LATITUDE_INVALID");
+    }
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+      throw new Error("MAP_POINT_LONGITUDE_INVALID");
+    }
+
+    return { kind, lat, lon };
+  });
+}
+
+function toBase64(bytes: Uint8Array) {
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+async function resolveOperationalMapCredential(
+  serviceClient: ReturnType<typeof createClient>,
+  projectId: string,
+) {
+  const managedPublic = await getCredential(serviceClient, projectId, "mapbox", "public");
+  if (managedPublic) return managedPublic;
+
+  const envPublic = Deno.env.get("MAPBOX_PUBLIC_TOKEN")?.trim() || null;
+  if (envPublic) return envPublic;
+
+  const managedServer = await getCredential(serviceClient, projectId, "mapbox", "server");
+  if (managedServer) return managedServer;
+
+  return Deno.env.get("MAPBOX_SERVER_TOKEN")?.trim() || null;
+}
+
+async function operationalStaticMap(
+  serviceClient: ReturnType<typeof createClient>,
+  projectId: string,
+  points: ReturnType<typeof parseOperationalPoints>,
+) {
+  const token = await resolveOperationalMapCredential(serviceClient, projectId);
+  if (!token) throw new Error("MAPBOX_CREDENTIAL_MISSING");
+
+  const color = {
+    driver: "f97316",
+    customer: "22c55e",
+    destination: "22d3ee",
+  } satisfies Record<OperationalPointKind, string>;
+
+  const overlay = points
+    .map(
+      (point) =>
+        `pin-s+${color[point.kind]}(${point.lon.toFixed(6)},${point.lat.toFixed(6)})`,
+    )
+    .join(",");
+
+  const camera = overlay ? `${overlay}/auto` : "-82.3666,23.1136,11";
+  const params = new URLSearchParams({
+    access_token: token,
+    padding: overlay ? "60" : "0",
+  });
+
+  const url =
+    `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${camera}/1100x660?${params}`;
+
+  const started = performance.now();
+  const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  const latencyMs = Math.round(performance.now() - started);
+
+  if (!response.ok) {
+    throw new Error(`UPSTREAM_HTTP_${response.status}`);
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const contentType = response.headers.get("content-type") || "image/png";
+
+  try {
+    await serviceClient.rpc("record_marketplace_map_usage_event", {
+      target_project_id: projectId,
+      target_provider_code: "mapbox",
+      target_capability: "map_visual",
+      target_operation: "operational_static_map",
+      target_units: 1,
+      target_success: true,
+      target_fallback_used: false,
+      target_latency_ms: latencyMs,
+      target_error_code: null,
+      target_correlation_id: null,
+      target_metadata: {
+        source: "marketplace-map-admin-gateway",
+        points: points.length,
+      },
+    });
+  } catch {
+    // El mapa no falla por un problema secundario de telemetría.
+  }
+
+  return `data:${contentType};base64,${toBase64(bytes)}`;
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return reply({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405);
@@ -131,14 +248,41 @@ Deno.serve(async (request: Request) => {
     });
 
     const body = await request.json();
-    if (body?.operation !== "test_provider") throw new Error("MAP_ADMIN_OPERATION_INVALID");
+    const operation = String(body?.operation ?? "");
+
+    if (!["test_provider", "operational_static_map"].includes(operation)) {
+      throw new Error("MAP_ADMIN_OPERATION_INVALID");
+    }
 
     const projectId = String(body?.project_id ?? "").trim();
+    if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
+
+    if (operation === "operational_static_map") {
+      const { error: operationalError } = await userClient.rpc(
+        "admin_get_marketplace_operational_map",
+        { target_project_id: projectId },
+      );
+
+      if (operationalError) throw operationalError;
+
+      const points = parseOperationalPoints(body?.points);
+      const dataUrl = await operationalStaticMap(serviceClient, projectId, points);
+
+      const payload = {
+        data_url: dataUrl,
+        point_count: points.length,
+        generated_at: new Date().toISOString(),
+      };
+
+      return reply({ ...payload, data: payload });
+    }
+
     const providerCode = String(body?.provider_code ?? "").trim();
     const capability = normalizeCapability(body?.capability);
 
-    if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
-    if (!/^[a-z][a-z0-9_]*$/.test(providerCode)) throw new Error("MAP_PROVIDER_CODE_INVALID");
+    if (!/^[a-z][a-z0-9_]*$/.test(providerCode)) {
+      throw new Error("MAP_PROVIDER_CODE_INVALID");
+    }
 
     const { data: settings, error: settingsError } = await userClient.rpc(
       "admin_get_marketplace_map_settings",
@@ -265,9 +409,11 @@ Deno.serve(async (request: Request) => {
     const status =
       message === "AUTH_REQUIRED" || message === "ACCESS_DENIED"
         ? 403
-        : message.includes("INVALID") || message.includes("NOT_FOUND") || message.includes("NOT_INTEGRATED")
-        ? 400
-        : 500;
+        : message.includes("INVALID") ||
+            message.includes("NOT_FOUND") ||
+            message.includes("NOT_INTEGRATED")
+          ? 400
+          : 500;
     return reply({ ok: false, error: message }, status);
   }
 });

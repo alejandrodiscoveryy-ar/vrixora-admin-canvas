@@ -275,3 +275,152 @@ export async function testMarketplaceMapProvider(
   if (error) throw new Error(error.message);
   return record(data);
 }
+export interface MarketplaceOperationalDriver {
+  driverUserId: string;
+  driverDisplayName: string | null;
+  vehicleId: string;
+  vehicleName: string | null;
+  acceptingJobs: boolean;
+  isAvailable: boolean;
+  activeJobId: string | null;
+  activeJobStatus: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  accuracyM: number | null;
+  headingDegrees: number | null;
+  speedMps: number | null;
+  capturedAt: string | null;
+  locationFresh: boolean;
+}
+
+export interface MarketplaceOperationalJob {
+  jobId: string;
+  status: string;
+  serviceCode: string;
+  originText: string;
+  destinationText: string;
+  originLat: number | null;
+  originLon: number | null;
+  destinationLat: number | null;
+  destinationLon: number | null;
+  customerDisplayName: string | null;
+  driverUserId: string | null;
+  vehicleId: string | null;
+  driverDisplayName: string | null;
+  vehicleName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceOperationalMapData {
+  serverTime: string;
+  freshnessSeconds: number;
+  summary: {
+    workingDrivers: number;
+    driversWithFreshLocation: number;
+    activeJobs: number;
+  };
+  drivers: MarketplaceOperationalDriver[];
+  jobs: MarketplaceOperationalJob[];
+}
+
+export type MarketplaceOperationalMapPoint = {
+  kind: "driver" | "customer" | "destination";
+  lat: number;
+  lon: number;
+};
+
+const nullableNumber = (value: unknown) =>
+  value == null || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
+
+export async function getMarketplaceOperationalMap(
+  projectId: string,
+): Promise<MarketplaceOperationalMapData> {
+  const { data, error } = await getSupabaseClient().rpc(
+    "admin_get_marketplace_operational_map",
+    { target_project_id: projectId },
+  );
+
+  if (error) throw new Error(error.message);
+
+  const root = record(data);
+  const summary = record(root.summary);
+  const rawDrivers = Array.isArray(root.drivers) ? (root.drivers as unknown[]) : [];
+  const rawJobs = Array.isArray(root.jobs) ? (root.jobs as unknown[]) : [];
+
+  return {
+    serverTime: String(root.server_time ?? new Date().toISOString()),
+    freshnessSeconds: Number(root.freshness_seconds ?? 180),
+    summary: {
+      workingDrivers: Number(summary.working_drivers ?? 0),
+      driversWithFreshLocation: Number(summary.drivers_with_fresh_location ?? 0),
+      activeJobs: Number(summary.active_jobs ?? 0),
+    },
+    drivers: rawDrivers.map((item) => {
+      const row = record(item);
+      return {
+        driverUserId: String(row.driver_user_id ?? ""),
+        driverDisplayName: nullableString(row.driver_display_name),
+        vehicleId: String(row.vehicle_id ?? ""),
+        vehicleName: nullableString(row.vehicle_name),
+        acceptingJobs: Boolean(row.accepting_jobs),
+        isAvailable: Boolean(row.is_available),
+        activeJobId: nullableString(row.active_job_id),
+        activeJobStatus: nullableString(row.active_job_status),
+        latitude: nullableNumber(row.latitude),
+        longitude: nullableNumber(row.longitude),
+        accuracyM: nullableNumber(row.accuracy_m),
+        headingDegrees: nullableNumber(row.heading_degrees),
+        speedMps: nullableNumber(row.speed_mps),
+        capturedAt: nullableString(row.captured_at),
+        locationFresh: Boolean(row.location_fresh),
+      };
+    }),
+    jobs: rawJobs.map((item) => {
+      const row = record(item);
+      return {
+        jobId: String(row.job_id ?? ""),
+        status: String(row.status ?? ""),
+        serviceCode: String(row.service_code ?? ""),
+        originText: String(row.origin_text ?? ""),
+        destinationText: String(row.destination_text ?? ""),
+        originLat: nullableNumber(row.origin_lat),
+        originLon: nullableNumber(row.origin_lon),
+        destinationLat: nullableNumber(row.destination_lat),
+        destinationLon: nullableNumber(row.destination_lon),
+        customerDisplayName: nullableString(row.customer_display_name),
+        driverUserId: nullableString(row.driver_user_id),
+        vehicleId: nullableString(row.vehicle_id),
+        driverDisplayName: nullableString(row.driver_display_name),
+        vehicleName: nullableString(row.vehicle_name),
+        createdAt: String(row.created_at ?? ""),
+        updatedAt: String(row.updated_at ?? ""),
+      };
+    }),
+  };
+}
+
+export async function getMarketplaceOperationalStaticMap(
+  projectId: string,
+  points: MarketplaceOperationalMapPoint[],
+): Promise<string> {
+  const { data, error } = await getSupabaseClient().functions.invoke(
+    "marketplace-map-admin-gateway",
+    {
+      body: {
+        operation: "operational_static_map",
+        project_id: projectId,
+        points,
+      },
+    },
+  );
+
+  if (error) throw new Error(error.message);
+
+  const root = record(data);
+  const payload = record(root.data);
+  const dataUrl = nullableString(payload.data_url ?? root.data_url);
+
+  if (!dataUrl) throw new Error("MAP_IMAGE_UNAVAILABLE");
+  return dataUrl;
+}

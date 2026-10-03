@@ -46,6 +46,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
 
 const PAGE_SIZE = 25;
 
@@ -1151,6 +1152,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </TabsTrigger>
 
           <TabsTrigger
+            value="mapa"
+            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-orange-500/30 data-[state=active]:bg-orange-500/[0.10] data-[state=active]:text-orange-100 data-[state=active]:shadow-none"
+          >
+            <MapPin className="h-4 w-4" />
+            Mapa
+          </TabsTrigger>
+
+          <TabsTrigger
             value="conductores"
             className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-amber-500/25 data-[state=active]:bg-amber-500/[0.08] data-[state=active]:text-amber-100 data-[state=active]:shadow-none"
           >
@@ -1535,6 +1544,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             </section>
           </div>
         </TabsContent>
+        <TabsContent value="mapa" className="mt-3">
+          <MarketplaceOperationalMap projectId={projectId} />
+        </TabsContent>
 <TabsContent value="conductores">
           <PremiumPanel
             title="Conductores"
@@ -1725,105 +1737,132 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
         {canPayments ? (
           <>
-            <TabsContent value="billeteras">
-              <PremiumPanel
-                title="Billeteras"
-                description={
-                  wallets.isLoading
-                    ? "Consultando saldos…"
-                    : `${walletRows.length} ${
-                        walletRows.length === 1 ? "billetera cargada" : "billeteras cargadas"
-                      }`
-                }
-                icon={Wallet}
-                tone="amber"
-              >
-                {wallets.isLoading ? (
-                  <LoadingState />
-                ) : !walletRows.length ? (
-                  <EmptyMarketplaceState
-                    title="No hay billeteras"
-                    description="No existen billeteras disponibles para mostrar."
-                    icon={Wallet}
-                  />
-                ) : (
-                  <>
-                    <div className="space-y-3">
-                      {walletRows.map((wallet) => (
+            <TabsContent value="billeteras" className="mt-3">
+          <section className="overflow-hidden rounded-[24px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.045] via-background/55 to-background/35">
+            <div className="flex flex-col gap-3 border-b border-border/55 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/[0.09] text-amber-300">
+                  <Wallet className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300">
+                    Finanzas del conductor
+                  </p>
+                  <h3 className="mt-0.5 text-lg font-semibold text-foreground">Billeteras</h3>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/55 bg-background/50 px-3 py-2 text-sm">
+                {wallets.isLoading
+                  ? "Consultando..."
+                  : `${walletRows.length} ${
+                      walletRows.length === 1 ? "billetera visible" : "billeteras visibles"
+                    }`}
+              </div>
+            </div>
+
+            <div className="p-3 sm:p-4">
+              {wallets.isLoading ? (
+                <LoadingState />
+              ) : !walletRows.length ? (
+                <EmptyMarketplaceState
+                  title="No hay billeteras"
+                  description="No existen billeteras disponibles para mostrar."
+                  icon={Wallet}
+                />
+              ) : (
+                <>
+                  <div className="space-y-2.5">
+                    {walletRows.map((wallet) => {
+                      const reserved =
+                        Number(wallet.realReservedBalance) +
+                        Number(wallet.promotionalReservedBalance);
+
+                      return (
                         <article
                           key={wallet.userId}
-                          className="rounded-2xl border border-border/65 bg-background/45 p-4"
+                          className="rounded-2xl border border-border/55 bg-background/50 p-3.5 transition hover:border-amber-500/20 hover:bg-background/65 sm:p-4"
                         >
-                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <div>
-                              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          <div className="grid gap-3 xl:grid-cols-[minmax(210px,1.2fr)_repeat(4,minmax(120px,1fr))] xl:items-center">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                 Conductor
                               </p>
-                              <h4 className="mt-1 font-semibold text-foreground">
+                              <p className="mt-1 truncate font-semibold text-foreground">
                                 {wallet.driverDisplayName}
-                              </h4>
+                              </p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {wallet.driverPhone || "Sin teléfono registrado"}
+                              </p>
+                              <div className="mt-2">
+                                <span
+                                  className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${
+                                    wallet.initialDepositConfirmed
+                                      ? "border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300"
+                                      : "border-amber-500/20 bg-amber-500/[0.07] text-amber-300"
+                                  }`}
+                                >
+                                  {wallet.initialDepositConfirmed
+                                    ? "DEPÓSITO INICIAL OK"
+                                    : "DEPÓSITO INICIAL PENDIENTE"}
+                                </span>
+                              </div>
                             </div>
 
-                            <div className="lg:text-right">
-                              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                                Saldo total
+                            <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5">
+                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                Total
                               </p>
-                              <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+                              <p className="mt-1 text-lg font-semibold text-foreground">
                                 {formatAmount(wallet.totalBalance, wallet.currency)}
                               </p>
                             </div>
-                          </div>
 
-                          <div className="mt-4 grid gap-2 md:grid-cols-3">
-                            <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-3">
-                              <p className="text-xs text-muted-foreground">Saldo real</p>
-                              <p className="mt-1 font-semibold text-foreground">
-                                {formatAmount(wallet.realBalance, wallet.currency)}
+                            <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-3 py-2.5">
+                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                Disponible
                               </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Disponible:{" "}
-                                {formatAmount(wallet.realAvailableBalance, wallet.currency)}
+                              <p className="mt-1 text-lg font-semibold text-foreground">
+                                {formatAmount(wallet.availableBalance, wallet.currency)}
                               </p>
                             </div>
 
-                            <div className="rounded-xl border border-violet-500/15 bg-violet-500/[0.04] p-3">
-                              <p className="text-xs text-muted-foreground">Promocional</p>
+                            <div className="rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-2.5">
+                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                Promocional
+                              </p>
                               <p className="mt-1 font-semibold text-foreground">
                                 {formatAmount(wallet.promotionalBalance, wallet.currency)}
                               </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Disponible:{" "}
-                                {formatAmount(wallet.promotionalAvailableBalance, wallet.currency)}
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                Disp. {formatAmount(wallet.promotionalAvailableBalance, wallet.currency)}
                               </p>
                             </div>
 
-                            <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] p-3">
-                              <p className="text-xs text-muted-foreground">Reservado</p>
-                              <p className="mt-1 font-semibold text-foreground">
-                                {formatAmount(
-                                  Number(wallet.realReservedBalance) +
-                                    Number(wallet.promotionalReservedBalance),
-                                  wallet.currency,
-                                )}
+                            <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.035] px-3 py-2.5">
+                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                Reservado
                               </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Real: {formatAmount(wallet.realReservedBalance, wallet.currency)} ·
-                                Promo:{" "}
-                                {formatAmount(wallet.promotionalReservedBalance, wallet.currency)}
+                              <p className="mt-1 font-semibold text-foreground">
+                                {formatAmount(reserved, wallet.currency)}
+                              </p>
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                Real {formatAmount(wallet.realReservedBalance, wallet.currency)}
                               </p>
                             </div>
                           </div>
                         </article>
-                      ))}
-                    </div>
+                      );
+                    })}
+                  </div>
 
-                    <PaginationButton query={wallets} />
-                  </>
-                )}
-              </PremiumPanel>
-            </TabsContent>
-
-            <TabsContent value="recargas">
+                  <PaginationButton query={wallets} />
+                </>
+              )}
+            </div>
+          </section>
+        </TabsContent>
+<TabsContent value="recargas">
               <PremiumPanel
                 title="Recargas"
                 description={
@@ -2015,190 +2054,181 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
 
         {canSettings ? (
-          <TabsContent value="configuracion">
-            <PremiumPanel
-              title="Configuración financiera"
-              description="Parámetros económicos generales de Marketplace."
-              icon={CircleDollarSign}
-              tone="amber"
-            >
-              {settings.isLoading ? (
-                <LoadingState />
-              ) : (
-                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.8fr)]">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                        Moneda
-                      </p>
-                      <p className="mt-2 text-xl font-semibold text-foreground">
-                        {settings.data?.walletCurrency ?? "CUP"}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Moneda operativa de las billeteras.
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                          Estos parámetros afectan la operación financiera de Marketplace. Revisa
-                          los valores antes de guardar cambios.
-                        </p>
-                      </div>
-                    </div>
+          <TabsContent value="configuracion" className="mt-3">
+            <div className="grid gap-4 xl:grid-cols-2">
+              <section className="overflow-hidden rounded-[24px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.05] via-background/55 to-background/35">
+                <div className="flex items-center gap-3 border-b border-border/55 px-4 py-4 sm:px-5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/[0.09] text-amber-300">
+                    <CircleDollarSign className="h-4.5 w-4.5" />
                   </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300">
+                      Economía
+                    </p>
+                    <h3 className="mt-0.5 text-lg font-semibold text-foreground">
+                      Configuración financiera
+                    </h3>
+                  </div>
+                </div>
 
-                  {canManageSettings ? (
-                    <div className="space-y-4 rounded-2xl border border-border/65 bg-background/45 p-4">
-                      <div>
-                        <Label htmlFor="marketplace-minimum">Depósito mínimo inicial</Label>
-                        <div className="relative mt-1.5">
-                          <Input
-                            id="marketplace-minimum"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="pr-16"
-                            value={minimum}
-                            onChange={(event) => setMinimum(event.target.value)}
-                          />
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                            {settings.data?.walletCurrency ?? "CUP"}
-                          </span>
-                        </div>
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          Importe mínimo requerido para la activación financiera inicial.
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="marketplace-commission">Comisión Marketplace</Label>
-                        <div className="relative mt-1.5">
-                          <Input
-                            id="marketplace-commission"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            className="pr-12"
-                            value={commission}
-                            onChange={(event) => setCommission(event.target.value)}
-                          />
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                            %
-                          </span>
-                        </div>
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          Porcentaje aplicado según la configuración financiera vigente.
-                        </p>
-                      </div>
-
-                      <Button
-                        className="w-full"
-                        disabled={save.isPending || !minimum || !commission}
-                        onClick={() => save.mutate()}
-                      >
-                        {save.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                        )}
-                        Guardar cambios
-                      </Button>
-                    </div>
+                <div className="p-4 sm:p-5">
+                  {settings.isLoading ? (
+                    <LoadingState />
                   ) : (
-                    <div className="grid gap-3">
-                      <MiniMetric
-                        labelText="Depósito mínimo"
-                        value={formatAmount(
-                          settings.data?.initialMinimumDeposit,
-                          settings.data?.walletCurrency ?? "CUP",
-                        )}
-                      />
-                      <MiniMetric
-                        labelText="Comisión"
-                        value={settings.data ? `${settings.data.commissionRate * 100} %` : "—"}
-                      />
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-2">
+                        <MiniMetric
+                          labelText="Moneda"
+                          value={settings.data?.walletCurrency ?? "CUP"}
+                        />
+                        <MiniMetric
+                          labelText="Depósito mínimo"
+                          value={formatAmount(
+                            settings.data?.initialMinimumDeposit,
+                            settings.data?.walletCurrency ?? "CUP",
+                          )}
+                        />
+                        <MiniMetric
+                          labelText="Comisión"
+                          value={settings.data ? `${settings.data.commissionRate * 100} %` : "—"}
+                        />
+                      </div>
+
+                      {canManageSettings ? (
+                        <>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <Label htmlFor="marketplace-minimum">Depósito mínimo inicial</Label>
+                              <div className="relative mt-1.5">
+                                <Input
+                                  id="marketplace-minimum"
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  className="pr-16"
+                                  value={minimum}
+                                  onChange={(event) => setMinimum(event.target.value)}
+                                />
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                                  {settings.data?.walletCurrency ?? "CUP"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="marketplace-commission">Comisión Marketplace</Label>
+                              <div className="relative mt-1.5">
+                                <Input
+                                  id="marketplace-commission"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  className="pr-12"
+                                  value={commission}
+                                  onChange={(event) => setCommission(event.target.value)}
+                                />
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                                  %
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-3 rounded-xl border border-amber-500/18 bg-amber-500/[0.045] px-3 py-2.5">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                              Estos valores afectan depósitos y comisiones. Revísalos antes de guardar.
+                            </p>
+                          </div>
+
+                          <Button
+                            className="w-full"
+                            disabled={save.isPending || !minimum || !commission}
+                            onClick={() => save.mutate()}
+                          >
+                            {save.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                            )}
+                            Guardar cambios financieros
+                          </Button>
+                        </>
+                      ) : null}
                     </div>
                   )}
                 </div>
-              )}
-            </PremiumPanel>
+              </section>
 
-            <div className="mt-5">
-              <PremiumPanel
-                title="Modo de prueba Marketplace"
-                description="Prueba carreras y comisiones sin afectar a los demás conductores."
-                icon={TestTube2}
-                tone="violet"
-              >
-                {testMode.isLoading || testModeDrivers.isLoading ? (
-                  <LoadingState />
-                ) : (
-                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.9fr)]">
+              <section className="overflow-hidden rounded-[24px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.05] via-background/55 to-background/35">
+                <div className="flex items-center justify-between gap-3 border-b border-border/55 px-4 py-4 sm:px-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-500/25 bg-violet-500/[0.09] text-violet-300">
+                      <TestTube2 className="h-4.5 w-4.5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300">
+                        Entorno controlado
+                      </p>
+                      <h3 className="mt-0.5 text-lg font-semibold text-foreground">
+                        Modo de prueba
+                      </h3>
+                    </div>
+                  </div>
+
+                  <Switch
+                    checked={testModeEnabled}
+                    disabled={
+                      testMode.isLoading ||
+                      testModeDrivers.isLoading ||
+                      !canManageSettings ||
+                      !canManageMarketplace
+                    }
+                    onCheckedChange={(checked) => {
+                      setTestModeEnabled(checked);
+                      if (!checked) setTestForceCommission(false);
+                    }}
+                  />
+                </div>
+
+                <div className="p-4 sm:p-5">
+                  {testMode.isLoading || testModeDrivers.isLoading ? (
+                    <LoadingState />
+                  ) : (
                     <div className="space-y-4">
-                      <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="font-semibold text-foreground">Modo de prueba</p>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        Las carreras creadas en este modo son PRUEBA y solo las recibe el conductor seleccionado.
+                      </p>
 
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              Las nuevas carreras se marcarán como PRUEBA y solo podrán ser tomadas
-                              por el conductor seleccionado.
-                            </p>
-                          </div>
-
-                          <Switch
-                            checked={testModeEnabled}
-                            disabled={!canManageSettings || !canManageMarketplace}
-                            onCheckedChange={(checked) => {
-                              setTestModeEnabled(checked);
-
-                              if (!checked) {
-                                setTestForceCommission(false);
-                              }
-                            }}
-                          />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <Label htmlFor="marketplace-test-driver">Conductor de prueba</Label>
+                          <select
+                            id="marketplace-test-driver"
+                            className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none disabled:opacity-50"
+                            value={testDriverUserId}
+                            disabled={!testModeEnabled || !canManageSettings || !canManageMarketplace}
+                            onChange={(event) => setTestDriverUserId(event.target.value)}
+                          >
+                            <option value="">Selecciona conductor</option>
+                            {testModeDrivers.data?.items.map((item) => (
+                              <option key={item.userId} value={item.userId}>
+                                {item.displayName}
+                              </option>
+                            ))}
+                          </select>
                         </div>
-                      </div>
 
-                      <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-                        <Label htmlFor="marketplace-test-driver">Conductor de prueba</Label>
-
-                        <select
-                          id="marketplace-test-driver"
-                          className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none disabled:opacity-50"
-                          value={testDriverUserId}
-                          disabled={!testModeEnabled || !canManageSettings || !canManageMarketplace}
-                          onChange={(event) => setTestDriverUserId(event.target.value)}
-                        >
-                          <option value="">Selecciona conductor</option>
-
-                          {testModeDrivers.data?.items.map((item) => (
-                            <option key={item.userId} value={item.userId}>
-                              {item.displayName}
-                            </option>
-                          ))}
-                        </select>
-
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          Solo este conductor recibirá las carreras de prueba.
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-border/65 bg-background/45 p-4">
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center justify-between gap-4 rounded-xl border border-border/55 bg-background/45 px-3 py-2.5">
                           <div>
-                            <p className="font-semibold text-foreground">Probar comisión real</p>
-
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              Aplica la comisión real aunque el conductor todavía esté dentro de su
-                              período gratuito.
+                            <p className="text-sm font-semibold text-foreground">
+                              Probar comisión real
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              Incluso durante el período gratuito.
                             </p>
                           </div>
-
                           <Switch
                             checked={testForceCommission}
                             disabled={
@@ -2208,49 +2238,42 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           />
                         </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      <MiniMetric
-                        labelText="Estado"
-                        value={testModeEnabled ? "ACTIVO · SOLO PRUEBAS" : "Desactivado"}
-                      />
-
-                      <MiniMetric
-                        labelText="Conductor"
-                        value={
-                          testDriver?.displayName ?? testMode.data?.targetDriverDisplayName ?? "—"
-                        }
-                      />
-
-                      <MiniMetric
-                        labelText="Comisión actual"
-                        value={
-                          settings.data
-                            ? `${(settings.data.commissionRate * 100).toLocaleString("es")} %`
-                            : "—"
-                        }
-                      />
-
-                      <MiniMetric
-                        labelText="Saldo disponible"
-                        value={
-                          testDriver?.walletAvailableBalance == null
-                            ? "—"
-                            : formatAmount(
-                                testDriver.walletAvailableBalance,
-                                settings.data?.walletCurrency ?? "CUP",
-                              )
-                        }
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <MiniMetric
+                          labelText="Estado"
+                          value={testModeEnabled ? "ACTIVO · SOLO PRUEBAS" : "Desactivado"}
+                        />
+                        <MiniMetric
+                          labelText="Conductor"
+                          value={testDriver?.displayName ?? testMode.data?.targetDriverDisplayName ?? "—"}
+                        />
+                        <MiniMetric
+                          labelText="Comisión"
+                          value={
+                            settings.data
+                              ? `${(settings.data.commissionRate * 100).toLocaleString("es")} %`
+                              : "—"
+                          }
+                        />
+                        <MiniMetric
+                          labelText="Saldo disponible"
+                          value={
+                            testDriver?.walletAvailableBalance == null
+                              ? "—"
+                              : formatAmount(
+                                  testDriver.walletAvailableBalance,
+                                  settings.data?.walletCurrency ?? "CUP",
+                                )
+                          }
+                        />
+                      </div>
 
                       {canManageSettings && canManageMarketplace ? (
-                        <>
+                        <div className="grid gap-2 sm:grid-cols-2">
                           <Button
                             className="w-full"
-                            disabled={
-                              saveTestMode.isPending || (testModeEnabled && !testDriverUserId)
-                            }
+                            disabled={saveTestMode.isPending || (testModeEnabled && !testDriverUserId)}
                             onClick={() => saveTestMode.mutate()}
                           >
                             {saveTestMode.isPending ? (
@@ -2258,7 +2281,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             ) : (
                               <ShieldCheck className="mr-2 h-4 w-4" />
                             )}
-                            Guardar configuración de prueba
+                            Guardar modo de prueba
                           </Button>
 
                           <Button
@@ -2289,21 +2312,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             ) : (
                               <Trash2 className="mr-2 h-4 w-4" />
                             )}
-                            Eliminar todas las carreras de prueba
+                            Limpiar pruebas
                           </Button>
-                        </>
+                        </div>
                       ) : null}
 
-                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-xs text-muted-foreground">
-                        Estos controles nunca pueden eliminar una carrera real.
-                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Los controles de prueba nunca pueden eliminar una carrera real.
+                      </p>
                     </div>
-                  </div>
-                )}
-              </PremiumPanel>
+                  )}
+                </div>
+              </section>
             </div>
-          </TabsContent>
-        ) : null}
+          </TabsContent>        ) : null}
       </Tabs>
 
       {error ? (
