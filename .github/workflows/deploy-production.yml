@@ -80,28 +80,31 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs = require("fs");
-          const path = require("path");
 
-          const candidates = [
-            ".wrangler/deploy/config.json",
-            ".output/server/wrangler.json",
-          ];
-          const source = candidates.find((p) => fs.existsSync(p));
-          if (!source) {
-            console.error("No generated Wrangler config found.");
+          const configPath = ".output/server/wrangler.json";
+          if (!fs.existsSync(configPath)) {
+            console.error("Generated Nitro wrangler.json not found.");
             process.exit(1);
           }
 
-          const config = JSON.parse(fs.readFileSync(source, "utf8"));
+          const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+
+          if (!config.main && !(config.assets && config.assets.directory)) {
+            console.error("Generated Wrangler config has no Worker entry point or assets directory.");
+            process.exit(1);
+          }
+
           config.name = process.env.WORKER_NAME;
           config.compatibility_date = process.env.COMPATIBILITY_DATE;
           config.compatibility_flags = ["nodejs_compat"];
 
-          const out = ".wrangler/deploy/ci-config.json";
-          fs.mkdirSync(path.dirname(out), { recursive: true });
-          fs.writeFileSync(out, JSON.stringify(config, null, 2) + "\n");
-          console.log(`CONFIG_SOURCE=${source}`);
-          console.log(`CONFIG_OUTPUT=${out}`);
+          fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+
+          console.log(`CONFIG_SOURCE=${configPath}`);
+          console.log(`CONFIG_MAIN=${config.main ?? "NONE"}`);
+          console.log(`CONFIG_ASSETS=${config.assets?.directory ?? "NONE"}`);
+          console.log(`WORKER_NAME=${config.name}`);
+          console.log(`COMPATIBILITY_DATE=${config.compatibility_date}`);
           NODE
 
       - name: Calculate integrity marker hash
@@ -122,7 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           npx --yes wrangler@4.115.0 deploy \
-            --config .wrangler/deploy/ci-config.json \
+            --config .output/server/wrangler.json \
             --keep-vars
 
       - name: Verify production asset hash
