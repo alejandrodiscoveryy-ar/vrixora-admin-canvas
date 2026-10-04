@@ -97,6 +97,10 @@ jobs:
           config.name = process.env.WORKER_NAME;
           config.compatibility_date = process.env.COMPATIBILITY_DATE;
           config.compatibility_flags = ["nodejs_compat"];
+          // Production routing is managed in Cloudflare, not by this workflow.
+          // Disable workers.dev so a least-privilege Worker token can deploy
+          // without account-level subdomain permissions.
+          config.workers_dev = false;
 
           fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
 
