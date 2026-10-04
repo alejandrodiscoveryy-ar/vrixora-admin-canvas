@@ -1,12 +1,12 @@
 # PRD — Centro de Control de VRIXORA
 
-**Documento:** `PRD_CENTRO_CONTROL_VRIXORA.md`  
-**Versión:** 1.1
-**Fecha:** 15 de septiembre de 2026
-**Estado:** Listo para incorporación al repositorio  
-**Documento superior:** `docs/PRD_MASTER.md`  
-**Producto administrativo:** Centro de Control de VRIXORA  
-**Primer proyecto administrado:** TukTuk Control  
+**Documento:** `PRD_CENTRO_CONTROL_VRIXORA.md`
+**Versión:** 2.0
+**Fecha:** 4 de octubre de 2026
+**Estado:** Modelo objetivo aprobado para TUKTUK 2.0; pendiente de implementación y verificación completa
+**Documento superior:** `docs/PRD_MASTER.md`
+**Producto administrativo:** Centro de Control de VRIXORA
+**Primer proyecto administrado:** TukTuk Control
 
 ---
 
@@ -85,8 +85,8 @@ Ejemplos:
 - `Activo`
 - `Pendiente de pago`
 - `Vence en 8 días`
-- `Plan mensual`
-- `Pago anulado`
+- `Promoción activa`
+- `Recarga confirmada`
 
 No se utilizarán códigos técnicos como presentación principal.
 
@@ -104,56 +104,79 @@ El flujo principal será:
 
 Ejemplo:
 
-**VRIXORA → Proyectos → TukTuk Control**
+**VRIXORA → Proyectos → TUKTUK**
 
-Al seleccionar TukTuk Control se abrirá directamente el **Resumen del proyecto**.
+Al seleccionar TUKTUK se abrirá directamente el **Resumen del proyecto**.
 
-No existirá una tercera pantalla intermedia denominada “Centro de gestión del proyecto”.
+No existirá una pantalla intermedia innecesaria.
 
-### 4.1. Navegación del proyecto
+### 4.1. Áreas principales de TUKTUK
 
-La navegación principal será:
+La navegación lógica debe exponer:
 
 1. **Resumen**
-2. **Clientes**
-3. **Comercial**
-4. **Cobros**
-5. **Licencias**
+2. **Usuarios**
+3. **Marketplace**
+4. **Comercial**
+5. **Finanzas**
 6. **Rendimiento**
 7. **Administración**
 8. **Auditoría**
 
-La visibilidad de cada área dependerá de los permisos del usuario.
+La ubicación visual exacta podrá adaptarse al diseño existente, pero la separación funcional debe mantenerse.
 
-### 4.2. Agrupación interna recomendada
+### 4.2. Marketplace
 
-**Comercial**
+Marketplace agrupa la operación del servicio:
+
+- Trabajos
+- Conductores
+- Clientes Marketplace
+- Billeteras
+- Incidencias
+- Valoraciones
+- Configuración operativa
+
+Un usuario registrado no se mostrará como conductor solo por existir en TUKTUK.
+
+### 4.3. Finanzas
+
+Finanzas agrupa:
+
+- Recargas
+- Pagos y confirmaciones
+- Facturación / documentos
+- Conciliación y correcciones
+
+### 4.4. Comercial
+
+Comercial agrupa:
+
 - Seguimiento
 - Campañas
 - Referidos
+- Gestión Comercial
+- Tarifas y comisiones
 
-**Cobros**
-- Prefacturas
-- Pagos
-- Confirmaciones y documentos
+### 4.5. Administración
 
-**Licencias**
-- Licencias
-- Planes y precios
+Administración agrupa:
 
-**Administración**
 - Equipo y permisos
 - Configuración del proyecto
+- Identidad
+- Métodos de pago
+- Entorno y pruebas
 
-Auditoría mantiene su ubicación actual dentro de la navegación existente del proyecto. Este PRD redefine principalmente su organización interior.
+Auditoría mantiene un acceso propio porque debe poder revisar transversalmente el resto de las áreas.
 
 ---
 
 ## 5. Roles y permisos
 
-Los permisos deben aplicarse tanto en la interfaz como en backend.
+Los permisos deben aplicarse tanto en interfaz como en backend.
 
-Ocultar un botón no constituye una medida de seguridad suficiente.
+Ocultar un botón no constituye autorización.
 
 ### 5.1. Owner
 
@@ -161,66 +184,89 @@ Puede:
 
 - acceder a todas las áreas;
 - gestionar configuración;
-- administrar roles;
-- gestionar planes;
-- revisar y anular pagos;
-- realizar excepciones administrativas;
+- administrar roles y permisos;
+- configurar promoción, referidos, tarifas y comisión;
+- revisar y corregir operaciones financieras según reglas;
 - consultar Auditoría completa;
 - activar o desactivar el modo de pruebas;
-- administrar parámetros de tasa de cambio;
-- gestionar reglas de referidos.
+- administrar tasa de cambio;
+- administrar métodos de pago;
+- gestionar excepciones.
 
 ### 5.2. Administrador
 
 Puede tener acceso amplio según permisos concedidos.
 
-Debe poder, cuando el permiso correspondiente esté activo:
+Cuando corresponda podrá:
 
+- gestionar usuarios y conductores;
 - corregir operaciones;
-- anular pagos reales;
-- administrar licencias;
-- gestionar clientes;
+- anular o revertir pagos;
+- revisar billeteras;
+- gestionar incidencias;
 - revisar Auditoría;
 - gestionar operaciones de prueba.
 
-### 5.3. Operador de cobros
+No podrá realizar acciones financieras o de seguridad para las que no posea permiso específico.
+
+### 5.3. Finanzas / Cobros
 
 Puede:
 
-- buscar clientes;
-- preparar cobros;
-- generar prefacturas;
-- confirmar pagos;
-- generar y enviar la confirmación/documento correspondiente;
+- buscar conductores;
+- consultar solicitudes de recarga;
+- verificar pagos;
+- confirmar recargas;
+- consultar documentos financieros;
+- ejecutar correcciones autorizadas;
+- registrar referencias y observaciones;
 - consultar sus operaciones.
 
 No puede:
 
-- alterar precios;
-- cambiar permisos;
-- borrar pagos reales;
-- ajustar manualmente licencias si no posee permiso administrativo;
-- cambiar configuración sensible.
+- editar balances directamente;
+- alterar el ledger;
+- modificar permisos;
+- cambiar comisión o promoción salvo permiso específico;
+- borrar pagos confirmados.
 
 ### 5.4. Comercial / Marketing
 
 Puede:
 
-- gestionar clientes potenciales;
+- gestionar campañas y fuentes;
 - registrar seguimiento;
-- gestionar campañas;
-- consultar y gestionar referidos;
-- registrar fuentes de captación;
-- marcar clientes listos para cobro;
-- consultar métricas comerciales autorizadas.
+- consultar usuarios interesados en Trabajos;
+- consultar conversión a conductor;
+- gestionar referidos según permisos;
+- consultar promociones;
+- gestionar parámetros comerciales autorizados;
+- consultar métricas comerciales.
 
-No puede:
+No puede confirmar pagos ni modificar balances.
 
-- confirmar pagos;
-- anular pagos;
-- modificar licencias;
-- cambiar precios;
-- acceder a configuración crítica.
+### 5.5. Operaciones / Soporte
+
+Puede, según permisos:
+
+- consultar conductores;
+- supervisar trabajos;
+- gestionar incidencias;
+- revisar valoraciones;
+- suspender o reactivar conductores cuando tenga autorización;
+- actualizar datos de contacto permitidos.
+
+No puede acreditar saldo ni confirmar pagos sin permiso financiero.
+
+### 5.6. Principio de mínimo privilegio
+
+Las acciones sensibles deben estar protegidas mediante:
+
+- RLS;
+- funciones seguras;
+- validación de rol;
+- auditoría;
+- confirmación reforzada cuando corresponda.
 
 ---
 
@@ -228,42 +274,45 @@ No puede:
 
 La pantalla Resumen debe responder:
 
-> ¿Cómo marcha el proyecto y qué requiere atención ahora?
+> ¿Cómo marcha TUKTUK y qué requiere atención ahora?
 
 ### 6.1. Indicadores principales
 
-Se mostrarán preferentemente entre 3 y 5 indicadores principales.
+Se mostrarán preferentemente entre 3 y 6 indicadores.
 
-Para TukTuk Control podrán incluir:
+Podrán incluir:
 
-- clientes activos;
-- ingresos del período;
-- clientes en prueba;
-- licencias próximas a vencer;
-- conversión comercial.
+- usuarios registrados;
+- conductores activos;
+- trabajos del período;
+- promociones activas;
+- recargas confirmadas;
+- comisiones liquidadas.
 
 ### 6.2. Requiere atención
 
-Tendrá prioridad sobre los gráficos.
+Tendrá prioridad sobre gráficos decorativos.
 
 Podrá mostrar:
 
-- pruebas próximas a terminar;
-- prefacturas pendientes;
-- pagos pendientes de confirmación;
-- licencias próximas a vencer;
-- seguimientos comerciales pendientes;
-- operaciones administrativas que requieran revisión.
+- onboarding incompleto;
+- promociones próximas a finalizar;
+- recargas pendientes;
+- incidencias abiertas;
+- saldos o reservas que requieran revisión;
+- operaciones financieras que necesiten conciliación;
+- acciones administrativas críticas.
 
 ### 6.3. Acciones rápidas
 
 Según permisos:
 
-- Buscar cliente
-- Preparar cobro
-- Registrar cliente
-- Ver vencimientos
-- Ver seguimiento comercial
+- Buscar usuario
+- Buscar conductor
+- Ver trabajos
+- Revisar recargas
+- Ver incidencias
+- Abrir Conductor 360
 
 ### 6.4. Gráficos
 
@@ -273,184 +322,244 @@ El análisis profundo se concentrará en **Rendimiento**.
 
 ---
 
-## 7. Clientes
+## 7. Usuarios
 
-Clientes será una de las áreas centrales del sistema.
+Usuarios representa todas las cuentas registradas en TUKTUK.
 
-### 7.1. Listado
+### 7.1. Regla de identidad
 
-La vista principal debe permitir:
+Una cuenta Google crea o identifica un **usuario**.
 
-- búsqueda por nombre;
-- email;
-- teléfono;
-- WhatsApp;
-- identificador;
-- filtros esenciales;
-- acceso inmediato a la ficha del cliente.
+Ser usuario:
 
-La tabla o tarjeta mostrará únicamente:
+- permite utilizar Control y Estadísticas;
+- no significa ser conductor;
+- no crea una promoción de Trabajos;
+- no crea una billetera con saldo;
+- no debe confundirse con Cliente Marketplace.
 
-- cliente;
-- contacto principal;
-- estado;
-- plan o licencia;
-- vencimiento;
+### 7.2. Listado
+
+Debe permitir buscar por:
+
+- nombre;
+- correo;
+- teléfono o WhatsApp;
+- identificador.
+
+La vista principal mostrará solo información útil:
+
+- usuario;
+- contacto;
+- fecha de registro;
+- estado de cuenta;
+- estado de onboarding de Trabajos, cuando exista;
 - acción principal.
 
-El resto de la información se consultará dentro de la ficha.
+### 7.3. Detalle del usuario
+
+Podrá incluir:
+
+- perfil;
+- vehículos;
+- datos de Control;
+- estado de sincronización cuando sea relevante;
+- referidor, si existe;
+- inicio de onboarding de Trabajos;
+- relación con conductor, si ya completó el alta;
+- actividad administrativa relacionada.
+
+Un onboarding incompleto no convierte al usuario en conductor.
 
 ---
 
-## 8. Ficha única del cliente — Cliente 360°
+## 8. Conductores y Conductor 360°
 
-Cada cliente tendrá **una única ficha administrativa**.
+El **Conductor 360** será la ficha administrativa integral del prestador Marketplace.
 
-El usuario no deberá recorrer Comercial, Cobros, Licencias y Auditoría para reconstruir la situación de una persona.
+No se creará un Conductor 360 para cada usuario registrado. Solo corresponde a quien haya completado el alta operativa requerida para ser conductor.
 
 ### 8.1. Cabecera
 
 Debe mostrar:
 
 - nombre;
-- estado;
-- plan actual;
-- vencimiento.
+- foto;
+- estado operativo;
+- disponibilidad;
+- vehículo principal;
+- estado de promoción;
+- saldo disponible.
 
-Acciones principales:
+Acciones principales según permisos:
 
-- **Preparar cobro / Renovar**
-- **WhatsApp**
+- **Ver / gestionar operación**
+- **Contactar**
 - **Más acciones**
 
-### 8.2. Resumen
+### 8.2. Identidad y perfil
 
 Incluirá:
 
-- datos personales;
+- cuenta Google vinculada;
 - correo;
 - teléfono;
 - WhatsApp;
-- fecha de registro;
-- vehículo;
+- foto;
+- fecha de alta como conductor;
+- estado de onboarding;
+- estado operativo;
+- suspensión y motivo cuando exista.
+
+Una suspensión del conductor puede limitar su participación en Marketplace, pero no debe bloquear las funciones permanentes de Control y Estadísticas.
+
+### 8.3. Vehículos y capacidades
+
+Incluirá:
+
+- vehículos;
+- fotos;
+- modalidad/categoría;
+- servicios;
+- capacidades;
 - estado;
-- plan actual;
-- vencimiento;
-- último pago.
+- relación conductor–vehículo.
 
-### 8.3. Comercial
+### 8.4. Promoción
 
-Incluirá:
+La promoción inicial se inicia automáticamente cuando el backend confirma que el conductor completó correctamente el alta operativa requerida.
 
-- fuente de captación;
-- campaña;
-- referido por;
-- estado comercial;
-- responsable;
-- notas;
-- último contacto;
-- próxima acción.
+No existirá un botón comercial separado para iniciar manualmente una promoción que ya corresponde por alta completada.
 
-### 8.4. Cobros y documentos
+El inicio debe ser idempotente y controlado por servidor: una sola promoción inicial por conductor/proyecto.
 
 Incluirá:
 
-- prefacturas;
+- estado;
+- fecha de inicio;
+- fecha de fin;
+- duración congelada;
+- regla/versionado aplicado.
+
+La duración procede de Gestión Comercial y se congela al iniciarse.
+
+La promoción es independiente del acceso a Control.
+
+### 8.5. Billetera
+
+Incluirá:
+
+- saldo real;
+- saldo promocional;
+- saldo reservado;
+- saldo disponible;
+- movimientos;
+- origen de cada crédito/débito;
+- saldo antes y después cuando corresponda;
+- reservas y liquidaciones de comisión.
+
+### 8.6. Recargas y facturación
+
+Incluirá:
+
+- solicitudes de recarga;
 - pagos;
-- confirmaciones de pago;
-- documentos emitidos;
-- importe;
-- moneda;
-- estado;
-- método de pago.
+- método y referencia;
+- estados;
+- documentos financieros;
+- reversos y correcciones.
 
-### 8.5. Licencia y dispositivos
+### 8.7. Referidos
 
 Incluirá:
 
-- licencia actual;
-- estado;
-- plan;
-- vencimiento;
-- días restantes;
-- dispositivos autorizados;
-- renovaciones;
-- cambios administrativos.
-
-### 8.6. Referidos
-
-Incluirá:
-
-- código personal;
-- enlace personal;
+- código/enlace;
 - quién lo refirió;
 - personas referidas;
-- estado de cada referido;
-- primer trabajo válido que cualificó el referido;
-- crédito de referido acreditado;
-- estado y trazabilidad del crédito.
+- estado de cualificación;
+- primer trabajo válido;
+- recompensa;
+- ledger e idempotencia.
 
-### 8.7. Actividad
+### 8.8. Trabajos y reputación
 
-Mostrará una línea temporal comprensible con eventos relevantes:
+Incluirá:
 
-**Registro → prueba → contacto → prefactura → pago → licencia → documento → renovación → referido**
+- trabajos;
+- comisiones;
+- valoraciones;
+- incidencias;
+- cancelaciones;
+- actividad relevante.
 
-No mostrará por defecto todos los registros técnicos de Auditoría.
+### 8.9. Línea temporal
 
-Cuando sea necesario existirá acceso a **Ver auditoría relacionada**.
+Mostrará eventos comprensibles, por ejemplo:
+
+**Alta de conductor → promoción → trabajo → comisión → recarga → referido → incidencia → corrección**
+
+La información técnica completa se consultará solo cuando sea necesaria.
+
+### 8.10. Clientes Marketplace
+
+Los solicitantes de servicios se administrarán como **Clientes Marketplace**, separados de Usuarios y Conductores.
+
+Podrán disponer de su propia ficha operativa, pero no se denominarán Conductor 360.
 
 ---
 
 ## 9. Comercial
 
-Comercial debe concentrar captación, seguimiento y conversión.
+Comercial concentra captación, seguimiento, conversión y reglas de crecimiento.
 
 ### 9.1. Seguimiento
 
 Debe permitir identificar:
 
-- quién debe ser contactado;
+- usuario o prospecto;
 - estado comercial;
 - responsable;
 - último contacto;
 - próxima acción;
-- notas relevantes.
+- notas;
+- interés en convertirse en conductor.
 
 ### 9.2. Campañas
 
-Debe permitir:
+Debe permitir analizar:
 
-- identificar fuente;
+- fuente;
 - campaña;
 - registros obtenidos;
-- pruebas iniciadas;
-- conversiones;
+- onboarding iniciado;
+- conductores completados;
+- primeros trabajos;
+- referidos;
 - rendimiento comercial.
 
-### 9.3. Referidos
+### 9.3. Gestión Comercial
 
-El programa de referidos será una función comercial formal y no un simple campo del cliente.
+Debe ofrecer acceso autorizado a:
+
+- promoción inicial;
+- recompensa de referidos;
+- comisión Marketplace;
+- métodos de pago habilitados;
+- parámetros comerciales que no deban estar codificados.
+
+### 9.4. Referidos
+
+Referidos será una función comercial formal con trazabilidad financiera propia.
 
 ---
 
 ## 10. Programa de referidos
 
-Cada conductor podrá tener un código o enlace personal de referido.
+Cada conductor podrá disponer de un código o enlace personal.
 
-El nuevo programa de referidos de **TukTuk Marketplace** sustituye al programa anterior de TukTuk basado en días y licencias. La recompensa vigente se acredita exclusivamente en la billetera Marketplace y ya no genera ni extiende días de licencia de TukTuk Control.
+El programa vigente recompensa mediante **saldo promocional en la billetera Marketplace**.
 
-No coexistirán dos programas activos: a partir de la implantación del nuevo modelo no se generan nuevos días por referidos, nuevas extensiones de licencia Control ni `reward_days` para nuevos referidos. Tampoco existen recompensas simultáneas en días y CUP.
-
-### Corte y transición histórica
-
-Cada recompensa **REAL** existente del programa anterior para TukTuk que tenga estado `earned` o `applied` recibirá una única acreditación de transición en la billetera Marketplace del referente. El valor inicial del corte será **100 CUP por referido válido**, aplicado por recompensa histórica elegible, no por una conversión matemática de días a CUP.
-
-No califican los registros de prueba, las recompensas `reverted` ni las relaciones de referido que nunca generaron una recompensa válida. El importe, la moneda y la versión aplicables a cada acreditación histórica quedan congelados en el corte; un cambio posterior de Vrixora a 150 CUP, 200 CUP u otro importe no recalcula estas transiciones.
-
-Los días ya aplicados a una licencia se conservan exclusivamente como beneficio histórico: no se retiran ni se restan y no se convierten mediante equivalencia días→CUP. La recompensa histórica que los originó sí recibe la acreditación única de transición en la billetera Marketplace conforme a la regla de corte. Los días `earned` pendientes tampoco volverán a aplicarse después del corte. La trazabilidad debe vincular `legacy_reward_id` con `wallet_transaction_id` para que cada recompensa histórica elegible se migre una sola vez y jamás genere otra acreditación.
-
-Desde el corte no se crean ni aplican nuevos `reward_days`, no se extienden licencias por referidos y no existe doble recompensa futura en días y CUP. Los referidos nuevos conservan la regla vigente: primer trabajo válido, seguido de crédito Marketplace configurable con snapshot del importe, moneda y versión vigentes.
+No genera días de licencia, no amplía Control y no crea ni reinicia la promoción inicial.
 
 Ejemplo:
 
@@ -458,182 +567,209 @@ Ejemplo:
 
 ### 10.1. Regla principal
 
-Por cada nuevo conductor referido que complete **su primer trabajo válido**, la persona que lo refirió obtendrá:
+Por cada nuevo conductor referido que complete su **primer trabajo válido**, el referente obtendrá la recompensa configurada.
 
-**100 CUP de saldo promocional en su billetera TukTuk Marketplace.**
+Valor inicial:
 
-No existirá un límite de referidos válidos.
+**100 CUP por referido válido.**
 
-La comunicación comercial será: **"Invita a un amigo y gana dinero"**. Como explicación: **"Recibe 100 CUP en tu billetera TUKTUK por cada referido válido."**
+La comunicación comercial será:
+
+**"Invita a un amigo y gana dinero".**
+
+No existirá un límite de referidos válidos mientras el programa esté activo, salvo que en el futuro el owner apruebe expresamente una regla comercial diferente y esta quede versionada.
 
 ### 10.2. Configuración
 
-La recompensa será configurable desde Vrixora mediante `referral_reward_amount`, `referral_reward_currency` y `referral_reward_enabled`. El valor inicial será 100 CUP, pero podrá aumentarse o reducirse según la estrategia comercial sin modificar código. El importe aplicable se congelará en el momento en que el referido cualifique para la recompensa y no se recalculará retroactivamente.
+La recompensa tendrá:
 
-El valor no quedará fijado permanentemente en el código.
+- importe;
+- moneda;
+- estado activo/inactivo;
+- versión de regla.
 
-### 10.3. Momento de la recompensa
+El valor aplicable se congelará cuando el referido cualifique.
 
-No se concederá recompensa por:
+### 10.3. Elegibilidad
+
+No se concede recompensa por:
 
 - abrir el enlace;
-- instalar la aplicación;
+- instalar;
 - registrarse;
-- introducir un código;
-- crear un perfil;
-- iniciar o extender la prueba.
+- introducir el código;
+- completar solo el perfil;
+- iniciar onboarding;
+- recargar;
+- reinstalar.
 
-El referido debe estar vinculado correctamente, completar los datos obligatorios para Trabajos, tener conductor y vehículo válidos, iniciar sus 30 días gratis y completar su **primer trabajo válido**.
+El referido debe:
 
-Un **primer trabajo válido** es el primer trabajo del referido considerado completado satisfactoriamente por Marketplace. Califica cuando alcanza `settled` o, si pasó por una incidencia, cuando esta se resuelve administrativamente con `resolution = completed`. No califican `cancelled_by_customer`, `cancelled_by_driver`, `expired` ni una incidencia resuelta como `cancelled`.
+1. estar correctamente vinculado;
+2. completar conductor y vehículo requeridos;
+3. convertirse en conductor válido;
+4. completar su primer trabajo válido.
 
-La recompensa se genera exactamente una vez al completar ese trabajo.
+Califica cuando el trabajo alcanza `settled` o, si pasó por incidencia, cuando esta se resuelve con `resolution = completed`.
 
-### 10.4. Billetera Marketplace
+No califican estados cancelados, expirados ni incidencias resueltas como cancelación.
 
-El crédito aumenta el saldo disponible para cubrir comisiones de trabajos. No es efectivo, no se puede retirar ni transferir y no genera ingreso ni deuda de TukTuk.
+### 10.4. Saldo promocional
 
-### 10.5. Depósito inicial y pruebas
+El crédito:
 
-El crédito no cuenta como depósito inicial verificado ni puede habilitar la billetera por sí solo. Una vez habilitada mediante el depósito inicial mínimo configurado, puede utilizarse para pagar comisiones.
+- entra mediante ledger;
+- puede cubrir comisiones;
+- puede ser suficiente por sí solo después de la promoción;
+- no necesita depósito pagado previo;
+- no es retirable ni transferible como efectivo;
+- no representa dinero recibido del conductor;
+- no genera factura de pago;
+- no altera la promoción.
 
-No se modifica `started_at` ni `ends_at` de `marketplace_work_trials`, no se crea ni reinicia una prueba y no se extiende el trial. No existe efecto alguno sobre TukTuk Control.
+### 10.5. Protección contra abusos
 
-### 10.6. Protección contra abusos
-
-El sistema debe impedir:
+Debe impedir:
 
 - autorreferido;
-- recompensa duplicada;
-- varias recompensas por el mismo usuario referido;
-- recompensa por cuentas duplicadas;
-- reasignación del referidor después de la cualificación;
-- recompensa por reinstalación, cambio de vehículo o recreación de perfil.
+- duplicación;
+- varias recompensas por la misma persona;
+- recompensa mediante cuentas duplicadas creadas para abusar del programa;
+- reasignación indebida;
+- recompensa por reinstalación o recreación de perfil.
 
-El vínculo de referido será inmutable una vez cualificado. La recompensa debe tener clave de idempotencia y procedencia trazable.
+Una vez cualificado el referido, el vínculo con su referente será inmutable salvo una corrección administrativa excepcional, autorizada y auditada.
 
-### 10.7. Registro futuro en wallet
+### 10.6. Trazabilidad
 
-Cuando se implemente, el crédito entrará mediante el ledger como una transacción positiva `referral_credit`, con `source_type = referral_reward`; no se modificarán balances directamente ni se usará `topup`, pago o depósito. La procedencia incluirá, como mínimo, `referrer_user_id`, `referred_user_id`, `qualification_job_id`, `reward_amount` y `reward_rule_version`.
+La recompensa será idempotente y conservará:
 
----
+- referente;
+- referido;
+- trabajo que cualificó;
+- importe;
+- moneda;
+- versión de regla;
+- identificador de movimiento.
 
-## 11. Cobros
-
-Cobros representa el proceso completo desde la intención de compra hasta la confirmación del servicio.
-
-No será únicamente una tabla de pagos.
-
-### 11.1. Flujo nacional
-
-El flujo será:
-
-**Cliente contacta para pagar**
-
-→ se busca o selecciona al cliente
-
-→ se selecciona el plan deseado
-
-→ VRIXORA calcula el importe
-
-→ se genera la prefactura
-
-→ se envía al cliente
-
-→ el cliente paga mediante transferencia o pago físico
-
-→ el operador verifica el pago
-
-→ se confirma el pago
-
-→ se actualiza la misma licencia
-
-→ se genera la confirmación/documento final
-
-→ se envía al cliente
-
-→ se registra la trazabilidad completa.
+Los datos históricos identificados como prueba no requieren migración comercial. Cualquier relación o recompensa real debe conservarse hasta que una auditoría demuestre su tratamiento correcto.
 
 ---
 
-## 12. Prefacturas
+## 11. Finanzas — Recargas, pagos y facturación
 
-### 12.1. Generación
+Finanzas representa el proceso completo desde la intención de añadir saldo hasta su confirmación, acreditación y documentación.
 
-La prefactura se generará a partir del cliente y el plan seleccionado.
+No será solo una tabla de pagos.
 
-Debe contener como mínimo:
+### 11.1. Flujo principal
 
-- número de prefactura;
-- cliente;
+**Conductor solicita recarga**
+
+→ selecciona una vía de pago habilitada
+
+→ recibe instrucciones cuando corresponda
+
+→ realiza el pago
+
+→ la solicitud permanece pendiente
+
+→ Finanzas/Cobros verifica el pago
+
+→ confirma
+
+→ el servidor acredita exactamente una vez saldo real en la billetera
+
+→ genera exactamente un documento financiero
+
+→ registra Auditoría
+
+→ el movimiento aparece en Conductor 360.
+
+### 11.2. Regla principal
+
+Una solicitud o pago pendiente no aumenta saldo.
+
+Confirmar un pago debe ser una única operación transaccional e idempotente.
+
+### 11.3. Separación financiera
+
+El sistema distinguirá:
+
+- dinero recibido como recarga/prepago;
+- saldo promocional;
+- saldo reservado;
+- comisión liquidada;
+- reversos y ajustes.
+
+Una recarga no se registrará automáticamente como ingreso ganado por comisión.
+
+---
+
+## 12. Solicitudes de recarga e instrucciones de pago
+
+### 12.1. Creación
+
+La solicitud debe contener, como mínimo:
+
+- identificador;
+- conductor;
 - proyecto;
-- plan;
-- duración;
-- precio base;
-- moneda base;
-- tasa aplicada;
-- importe en moneda de pago;
-- fecha y hora de emisión;
-- fecha y hora de vencimiento;
-- métodos o instrucciones de pago;
-- estado.
+- importe;
+- moneda;
+- método de pago;
+- instrucciones;
+- referencia cuando corresponda;
+- fecha y hora;
+- estado;
+- actor/origen.
 
-### 12.2. Vigencia
-
-Toda prefactura tendrá una validez de **48 horas desde su emisión**.
-
-Ejemplo:
-
-**Emitida:** 14/08/2026 · 11:30 a. m.  
-**Válida hasta:** 16/08/2026 · 11:30 a. m.
-
-### 12.3. Congelación de condiciones
-
-Durante las 48 horas se conservarán:
-
-- plan;
-- precio base;
-- tasa aplicada;
-- importe final.
-
-Un cambio posterior de la tasa no modificará una prefactura vigente.
-
-### 12.4. Vencimiento
-
-Si no se confirma el pago dentro de la vigencia:
-
-**Estado → Vencida**
-
-Para realizar el cobro deberá generarse una nueva prefactura utilizando las condiciones y la tasa vigentes.
-
-Si el cliente realizó el pago dentro de las 48 horas pero la verificación administrativa ocurre posteriormente, el sistema debe permitir registrar la **fecha real del pago** para no invalidar incorrectamente una operación realizada dentro del plazo.
-
-### 12.5. Estados
+### 12.2. Estados
 
 Como mínimo:
 
 - Preparada
-- Enviada
 - Pendiente de pago
-- Pagada
-- Vencida
+- En verificación
+- Confirmada
+- Rechazada
 - Cancelada
+- Revertida, cuando corresponda
 
-### 12.6. Efectos
+### 12.3. Efectos
 
-La emisión de una prefactura:
+Crear una solicitud:
 
-- no registra ingreso;
-- no renueva la licencia;
-- no modifica el vencimiento;
-- no convierte al usuario en cliente pagado;
-- no genera recompensa de referido.
+- no acredita saldo;
+- no genera comisión;
+- no inicia ni extiende promoción;
+- no genera factura final;
+- no convierte una operación pendiente en dinero recibido.
+
+### 12.4. Vigencia
+
+TUKTUK 2.0 no establece una vigencia fija obligatoria de 48 horas para todas las recargas.
+
+Si un método de pago necesita caducidad, esta deberá configurarse explícitamente y congelarse en la solicitud.
+
+### 12.5. Condiciones congeladas
+
+Cuando corresponda, la solicitud conservará:
+
+- importe;
+- moneda;
+- tasa aplicada;
+- método;
+- instrucciones;
+- vencimiento configurado.
+
+Los cambios posteriores de configuración no reescriben una solicitud ya creada.
 
 ---
 
 ## 13. Identidad de los documentos
 
-La prefactura y la confirmación de pago deberán tomar automáticamente la identidad configurada para el proyecto.
+Los documentos financieros tomarán automáticamente la identidad configurada para el proyecto.
 
 ### 13.1. Fuente
 
@@ -641,109 +777,141 @@ La identidad procederá de:
 
 **Proyecto → Configuración → Identidad**
 
-Incluirá, según lo configurado:
+Podrá incluir:
 
 - logo;
 - nombre comercial;
 - datos de contacto;
-- datos generales utilizados en documentos;
-- otros elementos de identidad aprobados.
+- datos del emisor;
+- información administrativa o fiscal aprobada;
+- otros elementos autorizados.
 
 ### 13.2. Sin configuración duplicada
 
-No existirá un logo independiente para:
-
-- prefacturas;
-- confirmaciones de pago;
-- otros documentos emitidos.
-
-Todos utilizarán la identidad del proyecto.
+No habrá identidades independientes para cada tipo de documento salvo necesidad legal expresa.
 
 ### 13.3. Conservación histórica
 
-Cada documento deberá conservar la identidad utilizada en el momento de su emisión.
+Cada documento conservará un **snapshot** de la identidad utilizada al emitirse.
 
-Si posteriormente cambia el logo o los datos del proyecto, los documentos históricos no deben modificarse retroactivamente.
+Los cambios posteriores de logo o datos del proyecto no modificarán documentos históricos.
+
+### 13.4. Inmutabilidad
+
+Un documento emitido no se reescribe silenciosamente.
+
+Las correcciones utilizarán reversos y, cuando corresponda, documento correctivo o nota de crédito vinculada al original.
+
+### 13.5. Contenido mínimo del documento financiero
+
+Cada documento generado por una recarga pagada y confirmada deberá conservar, como mínimo:
+
+- número único;
+- conductor;
+- correo;
+- proyecto;
+- importe;
+- moneda;
+- concepto;
+- método de pago;
+- referencia;
+- fecha real del pago;
+- fecha de emisión;
+- identificador de la solicitud o recarga;
+- operador o actor de confirmación;
+- estado;
+- identificador verificable;
+- snapshot de la identidad y datos del emisor.
+
+El documento deberá poder:
+
+- visualizarse;
+- compartirse;
+- imprimirse o exportarse.
+
+Una recompensa por referido no genera este documento porque no representa un pago realizado por el conductor.
 
 ---
 
 ## 14. Confirmación del pago
 
-El operador abrirá la prefactura correspondiente y seleccionará:
+El operador abrirá la solicitud correspondiente y seleccionará:
 
 **Confirmar pago**
 
-No deberá volver a introducir información ya conocida.
+No deberá volver a introducir información que el sistema ya conoce.
 
 ### 14.1. Datos a comprobar
 
 La pantalla mostrará:
 
-- cliente;
-- plan;
+- conductor;
 - importe esperado;
 - importe recibido;
 - moneda;
 - método;
-- referencia, cuando corresponda;
-- tasa aplicada;
-- vencimiento actual;
-- nuevo vencimiento estimado;
+- referencia;
+- tasa aplicada cuando corresponda;
+- solicitud;
 - cambio de WhatsApp, si existiera.
 
 ### 14.2. Revisión final
 
-Antes de ejecutar la operación debe existir una vista de confirmación sencilla y comprensible.
+Antes de ejecutar la operación debe existir una vista clara de consecuencias.
 
 La acción principal será:
 
-**Confirmar pago y activar / renovar**
+**Confirmar pago y acreditar saldo**
 
 ### 14.3. Consecuencias
 
-La confirmación deberá:
+La confirmación debe, de forma transaccional e idempotente:
 
-1. registrar el pago;
-2. marcar la prefactura como pagada;
-3. actualizar la misma licencia existente;
-4. calcular la nueva vigencia;
-5. generar la confirmación o documento final correspondiente;
-6. registrar la operación en Auditoría;
-7. actualizar las métricas reales;
-8. aplicar la recompensa de referido cuando proceda;
-9. permitir enviar el documento al cliente.
+1. confirmar el pago;
+2. acreditar exactamente una vez saldo real;
+3. registrar el movimiento en ledger;
+4. actualizar saldos derivados;
+5. generar exactamente un documento financiero;
+6. registrar Auditoría;
+7. actualizar métricas;
+8. guardar cambios de contacto autorizados;
+9. devolver los identificadores de la operación.
 
-Estas acciones deben pertenecer a un único flujo de negocio y no depender de modificaciones manuales dispersas.
+No modifica la promoción.
+
+No genera recompensa de referido por sí misma.
+
+No actualiza ninguna licencia de Control.
 
 ---
 
-## 15. Precio base y tasa de cambio
+## 15. Monedas, precios y tasa de cambio
 
-Los planes podrán utilizar una moneda base.
+TUKTUK podrá manejar precios de servicios o parámetros comerciales en una moneda base y convertirlos cuando corresponda.
 
-Para TukTuk Control se define inicialmente:
+La tasa de cambio no estará asociada a planes de licencia.
 
-**Moneda base de referencia: USD**
+### 15.1. Aplicación
 
-Ejemplo:
+La tasa podrá utilizarse para:
 
-**Plan mensual: 1,50 USD**
+- tarifas de servicios;
+- cotizaciones;
+- recargas que requieran conversión;
+- documentos;
+- reportes.
 
-Cuando el cliente nacional pague en CUP:
+Cada operación conservará la tasa que realmente utilizó.
 
-**Precio USD × tasa USD/CUP = importe CUP**
+### 15.2. Principio
 
-### 15.1. Principio
-
-El precio comercial del plan se mantiene en su moneda base.
-
-El importe en CUP se calcula según la tasa aplicable al momento de generar la prefactura.
+Los valores históricos nunca se recalcularán con una tasa posterior.
 
 ---
 
 ## 16. Gestión de la tasa de cambio
 
-VRIXORA debe poder funcionar tanto si existe una API disponible como si no.
+VRIXORA debe funcionar tanto si existe una API disponible como si no.
 
 ### 16.1. Modo automático
 
@@ -751,15 +919,15 @@ La tasa podrá obtenerse mediante una API configurada.
 
 ### 16.2. Modo manual
 
-El Owner o administrador autorizado podrá introducir manualmente la tasa vigente.
+El Owner o administrador autorizado podrá introducir la tasa vigente.
 
-La tasa manual no será una solución provisional improvisada: será una capacidad soportada del producto.
+La tasa manual es una capacidad soportada del producto y no una solución provisional.
 
 ### 16.3. Fuente
 
-El sistema no asumirá internamente que cualquier tasa es necesariamente “oficial”.
-
 Cada tasa deberá identificar su fuente.
+
+El sistema no presentará una tasa como "oficial" salvo que la fuente configurada y aprobada permita afirmarlo.
 
 Ejemplos:
 
@@ -769,16 +937,16 @@ Ejemplos:
 
 ### 16.4. Información visible
 
-Debe ser fácil comprender:
+Debe mostrarse:
 
 - tasa vigente;
 - fuente;
 - fecha de actualización;
-- usuario que la estableció cuando sea manual.
+- usuario cuando sea manual.
 
 ### 16.5. Historial
 
-Cada modificación deberá conservar:
+Cada modificación conservará:
 
 - tasa nueva;
 - tasa anterior;
@@ -789,63 +957,94 @@ Cada modificación deberá conservar:
 
 ### 16.6. Congelación por operación
 
-Cada prefactura y cada pago conservarán la tasa aplicada.
-
-Los pagos históricos nunca se recalcularán utilizando una tasa posterior.
+Cotizaciones, recargas, pagos y documentos conservarán la tasa aplicada cuando la operación la utilice.
 
 ---
 
-## 17. Licencias
+## 17. Billeteras
 
-Licencias debe centrarse en la gestión operativa del servicio.
+Billeteras representa la capacidad económica del conductor para cubrir comisiones de Marketplace.
 
-Cada licencia debe mostrar claramente:
+Cada billetera debe mostrar claramente:
 
-- cliente;
-- plan;
+- conductor;
+- saldo real;
+- saldo promocional;
+- saldo reservado;
+- saldo disponible;
+- moneda;
+- últimos movimientos.
+
+### 17.1. Movimientos
+
+Cada movimiento debe conservar:
+
+- tipo;
+- origen;
+- importe;
+- saldo antes;
+- saldo después;
 - estado;
-- vencimiento;
-- tiempo restante;
-- dispositivos.
+- fecha;
+- referencia;
+- idempotencia.
 
-### 17.1. Acción prioritaria
+### 17.2. Fuentes de crédito
 
-La acción cotidiana principal será:
+Como mínimo:
 
-**Cobrar / Renovar**
+- recarga pagada y confirmada;
+- recompensa por referido;
+- reverso o ajuste autorizado.
 
-### 17.2. Acciones administrativas
+### 17.3. Comisiones
 
-Las operaciones excepcionales deberán quedar subordinadas dentro de `Más acciones` o `Administración avanzada`.
+Fuera de promoción:
 
-Entre ellas:
+- se verifica saldo disponible;
+- se reserva comisión al aceptar;
+- se liquida o libera según el resultado del trabajo.
 
-- crear licencia manualmente;
-- cambiar plan;
-- cambiar estado;
-- ajustar vigencia;
-- gestionar dispositivos;
-- revocar.
+### 17.4. Acciones administrativas
 
-Estas acciones deben estar restringidas por permisos y auditadas.
+No existirá edición directa del balance.
+
+Toda corrección deberá realizarse mediante una operación trazable de ledger.
 
 ---
 
-## 18. Planes y precios
+## 18. Gestión Comercial, tarifas y comisiones
 
-Cada plan podrá definir:
+TUKTUK no utilizará planes de licencia como producto comercial.
 
-- nombre comercial;
-- duración;
+Gestión Comercial deberá permitir administrar:
+
+- duración de la promoción inicial;
+- activación de promoción para nuevas altas;
+- recompensa por referido;
+- comisión Marketplace;
+- modalidades y tipos de servicio;
 - precio base;
-- moneda base;
-- dispositivos permitidos;
+- reglas por distancia u otros factores;
+- moneda;
+- tasa aplicable cuando corresponda;
+- métodos o vías de pago;
 - estado;
-- orden de presentación.
+- versionado;
+- historial de cambios.
 
-Los códigos internos y características técnicas no deben dominar la interfaz.
+### 18.1. Snapshots
 
-Planes y precios será una función administrativa vinculada a Licencias, no el centro del flujo cotidiano de cobro.
+Los cambios no recalculan retroactivamente:
+
+- promociones iniciadas;
+- trabajos publicados/aceptados cuando el contrato ya se congeló;
+- recompensas cualificadas;
+- documentos emitidos.
+
+### 18.2. Legado
+
+Los módulos antiguos de Licencias y Planes pueden permanecer técnicamente hasta completar la auditoría de dependencias, pero no son el modelo comercial vigente de TUKTUK.
 
 ---
 
@@ -855,18 +1054,27 @@ Rendimiento concentrará el análisis detallado del negocio.
 
 Podrá incluir:
 
-- ingresos;
-- clientes;
-- renovaciones;
-- no renovaciones;
-- conversiones;
-- comportamiento por plan;
-- campañas;
+- usuarios;
+- conversión a conductor;
+- conductores activos;
+- promociones;
+- trabajos;
+- valor de servicios;
+- recargas;
+- dinero recibido;
+- saldo promocional;
+- comisiones reservadas y liquidadas;
+- ingresos por comisión;
 - referidos;
+- campañas;
 - operadores;
+- valoraciones;
+- incidencias;
 - evolución temporal.
 
 El Resumen no deberá duplicar todo Rendimiento.
+
+Las métricas de licencias, renovaciones y planes vendidos dejan de ser indicadores principales de TUKTUK.
 
 ---
 
@@ -883,40 +1091,51 @@ Permitirá:
 - permisos;
 - estado;
 - actividad relevante;
-- revocación de acceso cuando proceda.
+- revocación de acceso.
 
 ### 20.2. Configuración del proyecto
 
-La configuración debe organizarse por bloques, no como una página extensa de campos.
+La configuración se organizará por bloques.
 
 #### General e identidad
 
 - nombre comercial;
 - logo;
 - datos de contacto;
-- datos utilizados en documentos;
+- datos de emisor usados en documentos;
 - estado del proyecto.
 
-#### Comercial
+#### Gestión Comercial
 
-- duración de prueba gratuita;
+- duración de promoción;
+- comisión;
+- recompensa por referido;
 - reglas comerciales;
 - parámetros de seguimiento.
 
-#### Cobros y moneda
+#### Tarifas y moneda
 
+- tarifas;
 - moneda base;
 - moneda de cobro;
 - modo de tasa;
 - tasa manual;
-- API cuando exista;
-- métodos de pago.
+- API cuando exista.
+
+#### Métodos de pago
+
+- método;
+- estado;
+- instrucciones;
+- referencias requeridas;
+- datos visibles al conductor;
+- configuración de caducidad cuando corresponda.
 
 #### Referidos
 
-- programa activo / inactivo;
-- importe de recompensa;
-- moneda de recompensa;
+- programa activo/inactivo;
+- importe;
+- moneda;
 - reglas generales.
 
 Valor inicial:
@@ -927,16 +1146,19 @@ Valor inicial:
 
 - WhatsApp;
 - información de contacto;
+- plantillas;
 - parámetros de comunicación.
 
-#### Aplicación
+#### Aplicación y Marketplace
 
-- parámetros administrativos propios de TukTuk Control.
+- parámetros administrativos de TUKTUK;
+- configuración operativa;
+- parámetros de mapas/tarifas cuando corresponda.
 
 #### Entorno y pruebas
 
 - modo de pruebas;
-- herramientas para limpiar datos de prueba.
+- herramientas para limpiar exclusivamente datos de prueba identificados como tales.
 
 ---
 
@@ -995,43 +1217,48 @@ La capacidad interna podrá conservarse para futuras validaciones controladas.
 
 ---
 
-## 22. Anulación y corrección de pagos
+## 22. Anulación, reversión y corrección financiera
 
-### 22.1. Pago real
+### 22.1. Pago confirmado
 
-Un pago real confirmado no se borrará físicamente.
-
-La acción será:
-
-**Anular pago**
+Un pago real confirmado no se borra físicamente.
 
 ### 22.2. Permisos
 
-Solo usuarios con permiso administrativo específico podrán anular pagos.
+Solo usuarios con permiso específico podrán corregir o revertir operaciones.
 
 ### 22.3. Motivo obligatorio
 
-Toda anulación requerirá un motivo.
+Toda corrección requiere un motivo.
 
 ### 22.4. Vista previa de consecuencias
 
-Antes de confirmar, VRIXORA debe explicar qué elementos están asociados al pago:
+Antes de confirmar, VRIXORA mostrará los elementos asociados:
 
-- prefactura;
+- solicitud de recarga;
 - pago;
+- movimiento de billetera;
 - documento;
-- licencia;
-- vigencia;
-- recompensa de referido;
-- otras consecuencias relacionadas.
+- reservas o comisiones afectadas;
+- métricas;
+- otras consecuencias.
 
 ### 22.5. Reversión
 
-El sistema debe revertir de forma segura aquello que corresponda y conservar la trazabilidad.
+El sistema deberá, según corresponda:
+
+- conservar la operación original;
+- crear reverso o asiento compensatorio;
+- corregir saldos derivados;
+- conservar el documento original;
+- generar documento correctivo o nota de crédito cuando corresponda;
+- registrar Auditoría.
+
+Nunca se corregirá dinero editando directamente el balance anterior.
 
 ### 22.6. Histórico
 
-La operación original y su anulación permanecerán consultables en Auditoría.
+La operación original, su corrección y los documentos vinculados permanecerán consultables.
 
 ---
 
@@ -1039,47 +1266,46 @@ La operación original y su anulación permanecerán consultables en Auditoría.
 
 Auditoría será el núcleo de control y trazabilidad administrativa.
 
-Su función principal no es mostrar una lista interminable de eventos, sino permitir comprender rápidamente:
+Debe permitir comprender:
 
-> ¿Qué ocurrió?  
-> ¿Quién lo hizo?  
-> ¿En qué área?  
+> ¿Qué ocurrió?
+> ¿Quién lo hizo?
+> ¿En qué área?
+> ¿Qué cambió?
 > ¿Existe algo que requiera revisión?
 
-### 23.1. Organización interna
+### 23.1. Organización
 
 La vista interior se organizará preferentemente en:
 
 **Resumen | Por usuario | Por área**
 
-No se añadirán múltiples pestañas sin una necesidad funcional clara.
+No se añadirán pestañas sin necesidad funcional.
 
 ---
 
 ## 24. Auditoría — Resumen
 
-La pantalla inicial mostrará únicamente información crítica y operativa.
-
-Podrá incluir:
+Mostrará:
 
 - usuarios con actividad;
 - operaciones realizadas;
-- operaciones importantes;
+- acciones importantes;
 - acciones críticas;
 - elementos que requieran revisión.
 
 ### 24.1. Requiere atención
 
-Las excepciones se mostrarán primero.
-
 Ejemplos:
 
-- pago anulado;
-- ajuste manual de licencia;
+- recarga anulada o revertida;
+- corrección de billetera;
+- suspensión de conductor;
 - modificación manual de tasa;
+- cambio de comisión o tarifa;
 - cambio de permisos;
-- modificación sensible de cliente;
-- ajuste manual de un beneficio.
+- intervención de un referido;
+- corrección de documento.
 
 Si no existen incidencias:
 
@@ -1093,49 +1319,31 @@ La actividad se agrupará por usuario.
 
 Ejemplo:
 
-**María Pérez — Operadora de cobros**  
-23 operaciones  
-12 Cobros  
-8 Licencias  
-2 Clientes  
-1 Anulación  
-1 acción crítica
+**María Pérez — Finanzas**
+23 operaciones
+12 Recargas
+8 Documentos
+2 Correcciones
+1 cambio sensible
 
 **Ver actividad**
 
-No se mostrarán inicialmente 23 eventos independientes.
-
-### 25.1. Segundo nivel
-
-Al abrir un usuario, la información volverá a agruparse:
-
-- Cobros
-- Licencias
-- Clientes
-- Comercial
-- Configuración
-- Anulaciones
-
-Solo cuando se abra una categoría se mostrarán las operaciones concretas.
+Al abrir un usuario, volverá a agruparse por áreas antes de mostrar eventos individuales.
 
 ---
 
 ## 26. Auditoría — Por área
 
-La misma información podrá analizarse por área.
+Podrá analizarse por:
 
-Ejemplo:
+- Usuarios
+- Marketplace
+- Finanzas
+- Comercial
+- Administración
+- Seguridad
 
-**Cobros**  
-18 operaciones · 2 usuarios · 1 anulación
-
-**Licencias**  
-11 operaciones · 3 usuarios
-
-**Clientes**  
-6 cambios · 2 usuarios
-
-La auditoría no duplicará registros; únicamente ofrecerá diferentes formas de agruparlos.
+La auditoría no duplicará registros; solo ofrecerá distintas formas de consulta.
 
 ---
 
@@ -1143,24 +1351,24 @@ La auditoría no duplicará registros; únicamente ofrecerá diferentes formas d
 
 La jerarquía será:
 
-**Resumen → Usuario/Área → Tipo de operación → Operación individual**
+**Resumen → Usuario/Área → Tipo → Operación**
 
 El detalle se expresará en lenguaje administrativo.
 
 Ejemplo:
 
-**Alejandro anuló un pago**
+**Alejandro revirtió una recarga**
 
-Cliente: Juan Pérez  
-Importe: 750 CUP  
-Motivo: Pago registrado por error  
+Conductor: Juan Pérez
+Importe: 750 CUP
+Motivo: Pago registrado por error
 Fecha: 14 de agosto de 2026
 
 **Consecuencias**
 
-- 1 pago anulado
-- 1 documento anulado
-- 1 licencia corregida
+- 1 pago revertido
+- 1 movimiento compensatorio
+- 1 documento corregido
 
 Los identificadores técnicos estarán bajo:
 
@@ -1172,26 +1380,24 @@ Los identificadores técnicos estarán bajo:
 
 No se utilizarán grandes bloques JSON como presentación principal.
 
-Se mostrará únicamente lo que cambió.
+Se mostrará lo que cambió.
 
 Ejemplo:
 
-**WhatsApp**  
+**WhatsApp**
 535XXXXXXX → 536XXXXXXX
 
-**Vencimiento**  
-20/08/2026 → 20/09/2026
+**Comisión**
+10 % → 8 %
 
-**Tasa USD/CUP**  
+**Tasa USD/CUP**
 480 → 500
 
-Los datos originales podrán conservarse internamente para investigación técnica.
+Los datos originales podrán conservarse internamente para investigación.
 
 ---
 
 ## 29. Niveles de importancia en Auditoría
-
-Las operaciones podrán clasificarse al menos como:
 
 ### Normal
 
@@ -1199,11 +1405,11 @@ Operaciones rutinarias.
 
 ### Importante
 
-Cambios que afectan clientes, dinero o servicio.
+Cambios que afectan usuarios, conductores, trabajos, dinero o servicio.
 
 ### Crítica
 
-Acciones administrativas sensibles, anulaciones, permisos, cambios manuales o seguridad.
+Acciones administrativas sensibles, reversos, permisos, seguridad o cambios manuales de reglas.
 
 Las operaciones rutinarias se agrupan.
 
@@ -1226,53 +1432,55 @@ No se podrá modificar:
 - motivo;
 - identificador de operación.
 
-Las acciones críticas requerirán motivo cuando corresponda.
+Las acciones críticas requerirán motivo.
 
 Entre ellas:
 
-- anular pago;
-- ajustar manualmente una licencia;
-- modificar tasa manual;
+- revertir pago;
+- ajustar billetera mediante operación compensatoria;
+- suspender conductor;
+- modificar tasa;
+- modificar comisión o tarifa;
 - modificar permisos;
-- conceder beneficios manuales;
-- cambiar relación de referido;
-- modificar información sensible del cliente.
+- conceder beneficio manual;
+- intervenir relación de referido;
+- modificar información sensible.
 
 ### 30.1. Auditoría no es diagnóstico técnico
 
-Los logs técnicos, fallos de sincronización o información de infraestructura no deben mezclarse con la Auditoría empresarial.
+Logs, fallos de sincronización e infraestructura no deben mezclarse con Auditoría empresarial.
 
-En caso de necesitarse, pertenecerán a una futura zona de diagnóstico técnico.
+Cuando sean necesarios pertenecerán a diagnóstico técnico.
 
 ---
 
 ## 31. Selectores de fecha y filtros
 
-Los filtros deben ser simples y funcionales.
+Los filtros deben ser simples.
 
 ### 31.1. Períodos rápidos
 
-Se utilizarán accesos como:
+Se utilizarán:
 
 **Hoy | 7 días | 30 días | Este mes | Personalizado**
 
-Los campos `Desde` y `Hasta` aparecerán únicamente al seleccionar `Personalizado`.
+`Desde` y `Hasta` aparecerán únicamente con `Personalizado`.
 
 ### 31.2. Período inicial recomendado
 
 - Auditoría: **Hoy**
-- Cobros: **Este mes**
+- Finanzas: **Este mes**
 - Rendimiento: **Este mes**
 
 ### 31.3. Filtros
 
-Por defecto se mostrarán solo los filtros de uso frecuente.
+Por defecto se mostrarán solo los de uso frecuente.
 
 Ejemplo:
 
-**Buscar | Estado | Plan | Más filtros**
+**Buscar | Estado | Tipo | Más filtros**
 
-La selección de período podrá conservarse mientras el usuario navega dentro de una sección cuando resulte útil.
+La selección podrá conservarse durante la navegación dentro de una sección cuando sea útil.
 
 ---
 
@@ -1299,7 +1507,7 @@ Se mantendrá la misma jerarquía funcional.
 
 ## 33. Futuras pasarelas internacionales
 
-La arquitectura deberá permitir incorporar pagos internacionales sin reconstruir Cobros y Licencias.
+La arquitectura deberá permitir incorporar pagos automáticos sin reconstruir el modelo de recargas.
 
 ### 33.1. Principio
 
@@ -1307,9 +1515,9 @@ La pasarela confirma el pago.
 
 VRIXORA continúa siendo responsable de:
 
-**Pago → licencia → vigencia → documento → auditoría**
+**Pago → recarga → billetera → documento → auditoría**
 
-### 33.2. Orígenes futuros posibles
+### 33.2. Orígenes posibles
 
 El mismo modelo deberá admitir:
 
@@ -1320,20 +1528,20 @@ El mismo modelo deberá admitir:
 - pago desde aplicación;
 - otros proveedores futuros.
 
-### 33.3. Datos de pago externos
+### 33.3. Datos externos
 
-Cuando se implemente deberán poder conservarse:
+Cuando se implemente podrán conservarse:
 
 - proveedor;
 - identificador externo;
 - importe;
 - moneda;
 - estado;
-- comisión cuando exista;
+- comisión del proveedor cuando exista;
 - origen;
 - fecha;
-- cliente;
-- plan.
+- conductor;
+- solicitud de recarga.
 
 ### 33.4. Sin proveedor fijado
 
@@ -1343,132 +1551,176 @@ Este PRD no selecciona todavía una pasarela específica.
 
 ## 34. Flujos prioritarios de extremo a extremo
 
-### 34.1. Alta y conversión
+### 34.1. Alta de usuario
 
-**Registro → prueba → seguimiento → selección de plan → prefactura → pago → licencia → confirmación/documento**
+**Google → usuario → Control y Estadísticas permanentes**
 
-### 34.2. Renovación
+### 34.2. Alta de conductor
 
-**Próximo vencimiento → contacto → prefactura → pago → renovación → documento**
+**Usuario → Trabajos → conductor + vehículo + fotos → validación → conductor → promoción configurable**
 
-### 34.3. Referido
+### 34.3. Continuidad después de promoción
 
-**Enlace/código → registro → datos y vehículo válidos → prueba Marketplace → primer trabajo válido → crédito de 100 CUP al referente**
+**Fin de promoción → cálculo de comisión → verificación de saldo → reserva → trabajo → liquidación/liberación**
 
-### 34.4. Corrección
+### 34.4. Recarga
 
-**Pago incorrecto → administrador → vista previa de consecuencias → motivo → anulación → reversión correspondiente → Auditoría**
+**Solicitud → método de pago → pago → verificación → confirmación → billetera → documento → Auditoría**
 
-### 34.5. Pruebas
+### 34.5. Referido
 
-**Modo de pruebas → operación marcada como prueba → validación → limpieza → desactivación del modo**
+**Enlace/código → usuario vinculado → conductor válido → primer trabajo válido → saldo promocional al referente**
+
+### 34.6. Corrección
+
+**Operación incorrecta → usuario autorizado → vista previa → motivo → reverso/compensación → documento correctivo → Auditoría**
+
+### 34.7. Pruebas
+
+**Modo de pruebas → operación marcada como prueba → validación → limpieza controlada → desactivación**
 
 ---
 
 ## 35. Requisitos de aceptación funcional
 
-El Centro de Control se considerará correctamente implementado cuando:
+El Centro de Control estará alineado con TUKTUK 2.0 cuando:
 
-- seleccionar un proyecto lleve directamente a su Resumen;
-- un usuario pueda comprender la situación de un cliente desde una sola ficha;
-- el flujo de cobro nacional pueda completarse de principio a fin;
-- una prefactura tenga 48 horas de vigencia;
-- una prefactura conserve su precio y tasa durante su vigencia;
-- el sistema pueda operar con tasa manual aunque no exista API;
-- una API pueda incorporarse posteriormente sin modificar el flujo comercial;
-- confirmar un pago actualice la misma licencia existente;
-- la identidad del proyecto se utilice automáticamente en prefacturas y confirmaciones;
-- los documentos históricos conserven la identidad con la que fueron emitidos;
-- los referidos se registren y recompensen según las reglas establecidas;
-- un administrador pueda anular un pago real sin destruir el historial;
-- las operaciones de prueba no contaminen las métricas reales;
-- Auditoría agrupe actividad por usuario y por área;
-- las acciones rutinarias no generen una lista inmanejable de eventos;
-- las acciones críticas sean fáciles de detectar;
-- los filtros y fechas sean simples de utilizar;
-- las pantallas móviles no requieran tablas horizontales;
-- los códigos técnicos y JSON no formen parte de la experiencia cotidiana;
-- los permisos sean aplicados tanto en interfaz como en backend.
+- seleccionar TUKTUK lleve directamente a Resumen;
+- Usuarios y Conductores sean entidades diferenciadas;
+- un usuario con onboarding incompleto no aparezca como conductor;
+- cada conductor completo disponga de Conductor 360;
+- Control no dependa de licencia ni vencimiento;
+- suspender a un conductor en Marketplace no bloquee Control y Estadísticas;
+- la promoción se configure sin código y conserve snapshot;
+- la promoción inicial se inicie automáticamente y una sola vez al completar el alta válida;
+- no exista depósito inicial mínimo obligatorio;
+- saldo de referidos pueda cubrir comisiones sin recarga pagada previa;
+- una solicitud pendiente no aumente saldo;
+- confirmar un pago acredite la billetera exactamente una vez;
+- la confirmación genere exactamente un documento financiero con número único, vínculo a la recarga y snapshot del emisor;
+- una recarga no cambie la promoción;
+- Billeteras no permita edición directa del balance;
+- las comisiones utilicen reservas/liquidaciones trazables;
+- los documentos históricos conserven identidad y contenido;
+- las correcciones conserven histórico y usen reversos;
+- las operaciones de prueba no contaminen métricas reales;
+- Auditoría agrupe actividad y destaque excepciones;
+- acciones críticas requieran permisos y motivo;
+- tasa manual funcione aunque no exista API;
+- una API pueda incorporarse sin modificar el flujo financiero;
+- pantallas móviles no requieran tablas horizontales;
+- códigos técnicos y JSON no dominen la experiencia;
+- permisos se apliquen en interfaz y backend;
+- Licencias y Planes no sean el flujo comercial activo de TUKTUK.
 
 ---
 
 ## 36. Prioridad recomendada para el rediseño
 
-### Prioridad 0 — Confianza y flujo principal
+### Prioridad 0 — Alineación del modelo
 
-- ficha Cliente 360;
-- flujo prefactura → pago → confirmación → licencia;
-- tasa manual;
-- vigencia de 48 horas;
-- identidad del proyecto en documentos;
-- anulación segura de pagos;
-- modo de pruebas;
-- corrección de métricas comerciales incorrectas;
-- eliminación de códigos técnicos visibles;
-- corrección de textos con problemas de codificación.
+- Usuarios separados de Conductores;
+- Conductor 360;
+- Control sin licencia;
+- promoción configurable;
+- continuidad por billetera;
+- retirada del depósito mínimo obligatorio;
+- referidos utilizables como saldo;
+- transformación de Licencias/Planes;
+- actualización de navegación y métricas.
 
-### Prioridad 1 — Organización funcional
+### Prioridad 1 — Flujo financiero seguro
 
-- agrupación de navegación;
-- simplificación del Resumen;
+- solicitudes de recarga;
+- métodos de pago;
+- confirmación transaccional;
+- ledger;
+- facturación/documentos;
+- reversos;
+- conciliación;
+- Auditoría.
+
+### Prioridad 2 — Operación Marketplace
+
+- Conductores;
+- Trabajos;
+- Clientes Marketplace;
+- Billeteras;
+- Incidencias;
+- Valoraciones;
+- tarifas;
+- mapas/configuración operativa.
+
+### Prioridad 3 — Crecimiento y administración
+
 - Referidos;
-- rediseño interior de Auditoría;
-- configuración del proyecto por bloques;
-- normalización visual de tablas, filtros, estados y acciones.
+- campañas;
+- Rendimiento;
+- configuración por bloques;
+- roles y permisos;
+- mejoras de Auditoría;
+- modo de pruebas.
 
-### Prioridad 2 — Profundidad y escalabilidad
+### Prioridad 4 — Escalabilidad
 
-- mejoras avanzadas de Rendimiento;
-- automatización de tasa mediante API;
-- integración futura de pasarela internacional;
-- refinamientos de accesibilidad;
-- capacidades adicionales para nuevos proyectos de VRIXORA.
+- API de tasa;
+- pasarelas;
+- facturación fiscal según jurisdicción;
+- nuevas aplicaciones VRIXORA;
+- automatizaciones.
 
 ---
 
 ## 37. Decisiones expresamente pendientes
 
-Las siguientes decisiones **no se fijan todavía** porque no existe información suficiente:
+Las siguientes decisiones no se fijan todavía cuando no existe información suficiente.
 
-### 37.1. Denominación jurídica del documento final
+### 37.1. Clasificación jurídica/fiscal del documento
 
-No se decide todavía si será:
+El producto gestionará **Facturación / documentos financieros**.
 
-- factura;
-- recibo;
-- comprobante de pago;
-- otra denominación.
+La denominación fiscal definitiva, numeración legal, impuestos y datos obligatorios se ajustarán a la jurisdicción aplicable antes de utilizar el documento como factura fiscal formal.
 
-La interfaz y el modelo deberán permitir definirlo correctamente cuando se determinen los requisitos aplicables.
-
-### 37.2. Proveedor definitivo de tasa USD/CUP
+### 37.2. Proveedor definitivo de tasa
 
 La arquitectura admite API y tasa manual.
 
-No se fija todavía el proveedor de API.
+No se fija proveedor todavía.
 
 ### 37.3. Pasarela internacional
 
-La integración futura está contemplada, pero no se selecciona un proveedor específico.
+La integración futura está contemplada, pero no se selecciona proveedor.
 
 ### 37.4. Configuración global frente a configuración por proyecto
 
-La separación definitiva de determinados parámetros globales de VRIXORA se establecerá a medida que se incorporen otros proyectos y exista una necesidad real.
+Se definirá a medida que existan otros productos y una necesidad real.
+
+### 37.5. Orden de consumo de saldos
+
+Este PRD establece que saldo real y saldo promocional pueden cubrir comisiones.
+
+El orden exacto de consumo entre ambos saldos deberá respetar el contrato técnico vigente o definirse explícitamente antes de modificarlo. No se inventará desde la interfaz.
 
 ---
 
 ## 38. Regla final del producto
 
-El Centro de Control debe construirse alrededor de los **flujos de gestión del negocio**, no alrededor de tablas técnicas independientes.
+El Centro de Control debe construirse alrededor de los **flujos reales del negocio**, no alrededor de tablas técnicas ni del modelo comercial antiguo.
 
-**Clientes, Comercial, Cobros, Licencias, Referidos, Configuración y Auditoría deben compartir contexto y trazabilidad.**
+Para TUKTUK:
 
-La experiencia debe permitir que el usuario:
+- una cuenta autenticada es un **Usuario**;
+- un usuario solo se convierte en **Conductor** cuando completa el alta de Trabajos;
+- Control y Estadísticas son permanentes;
+- el conductor recibe una promoción inicial configurable;
+- después trabaja con saldo disponible;
+- recargas y referidos alimentan la billetera;
+- la comisión se gestiona por trabajo;
+- Finanzas confirma dinero;
+- el servidor acredita y liquida;
+- Conductor 360 concentra la radiografía del prestador;
+- Auditoría permite reconstruir quién hizo qué y por qué.
 
-1. comprenda qué está ocurriendo;
-2. identifique qué necesita atención;
-3. ejecute la acción correcta;
-4. compruebe el resultado;
-5. pueda reconstruir posteriormente quién hizo qué y por qué.
+**Usuarios, Conductores, Marketplace, Comercial, Finanzas, Rendimiento, Administración y Auditoría deben compartir contexto y trazabilidad.**
 
-La profundidad de información seguirá disponible, pero nunca deberá impedir comprender la operación cotidiana.
+El legado de Licencias y Planes se retirará de forma incremental, después de comprobar dependencias y sin destruir información real.
