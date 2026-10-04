@@ -1,12 +1,12 @@
 # DOCUMENTO DE REQUISITOS DEL PRODUCTO
 ## Ecosistema VRIXORA Solutions y TukTuk Control
 
-**Empresa:** VRIXORA Solutions  
-**Producto administrativo:** Centro de Control de VRIXORA  
-**Primera aplicación gestionada:** TukTuk Control  
-**Versión del documento:** 1.3
-**Fecha:** 16 de septiembre de 2026
-**Estado:** Producto en desarrollo y preparación para operación comercial  
+**Empresa:** VRIXORA Solutions
+**Producto administrativo:** Centro de Control de VRIXORA
+**Primera aplicación gestionada:** TukTuk Control
+**Versión del documento:** 2.0
+**Fecha:** 4 de octubre de 2026
+**Estado:** Producto en evolución con componentes en producción; el modelo comercial TUKTUK 2.0 es el objetivo aprobado y permanece pendiente de implementación y verificación completa
 **Eslogan:** Aplicaciones inteligentes para negocios inteligentes
 
 ## Historial de versiones
@@ -17,65 +17,97 @@
 | 1.1 | 4 de agosto de 2026 | Configuración dinámica de WhatsApp, separación entre soporte y pagos, plantillas de mensajes, registro manual del WhatsApp del cliente y reglas de actualización del PRD | Owner |
 | 1.2 | 15 de septiembre de 2026 | Regla oficial de referidos de TukTuk Marketplace: crédito de 100 CUP en billetera por referido válido, sin días promocionales ni impacto en TukTuk Control | Owner |
 | 1.3 | 16 de septiembre de 2026 | Regla oficial de calificación Customer → Driver de TukTuk Marketplace | Owner |
+| 2.0 | 4 de octubre de 2026 | Nuevo modelo comercial TUKTUK: Control y Estadísticas permanentes; alta diferenciada de conductor; promoción configurable; continuidad por billetera; recargas y referidos; comisión por trabajo; facturación por recarga confirmada; Conductor 360; retirada de licencias y planes de TUKTUK | Owner |
 
 ---
 
 # 1. Resumen ejecutivo
 
-El ecosistema VRIXORA está compuesto por dos productos conectados:
+El ecosistema VRIXORA está compuesto por productos digitales conectados que pueden utilizar modelos comerciales diferentes según cada proyecto.
 
-1. **TukTuk Control**, aplicación utilizada por propietarios y conductores de triciclos para controlar ingresos, gastos, kilometraje, batería, mantenimiento y rentabilidad.
-2. **Centro de Control de VRIXORA**, plataforma administrativa utilizada para gestionar clientes, licencias, planes, pagos, recibos, empleados, permisos, marketing, estadísticas y auditoría.
+Para **TUKTUK**, la versión 2.0 sustituye el modelo anterior basado en licencia, plan, vencimiento y renovación.
 
-TukTuk Control es la primera aplicación comercial administrada desde el Centro de Control de VRIXORA. La plataforma deberá quedar preparada para incorporar en el futuro otras aplicaciones desarrolladas por VRIXORA Solutions.
+El ecosistema TUKTUK se organiza en cuatro componentes conectados:
 
-El sistema tiene como principio central que el cliente pueda concentrarse en la gestión de su negocio y que VRIXORA pueda controlar la operación comercial sin modificar manualmente datos sensibles de manera innecesaria.
+1. **TUKTUK Control**, utilizado por cualquier usuario autenticado con Google para controlar ingresos, gastos, kilometraje, batería, mantenimiento y estadísticas. Control y Estadísticas son permanentes y no vencen.
+2. **TUKTUK Trabajos**, integrado en la aplicación del prestador. Un usuario solo se convierte en **conductor** cuando completa el alta requerida de conductor y vehículo.
+3. **TUKTUK Cliente**, experiencia desde la cual el solicitante crea y sigue servicios.
+4. **Centro de Control de VRIXORA**, plataforma administrativa para gestionar usuarios, conductores, clientes Marketplace, trabajos, billeteras, recargas, referidos, comisiones, facturación, configuración comercial, empleados, permisos, métricas y auditoría.
 
-Cuando un usuario se registra en TukTuk Control, recibe automáticamente una licencia de prueba por 30 días. Si compra un plan, un operador registra el pago desde la sección Pagos del Centro de Control. El sistema actualiza automáticamente la misma licencia, genera el recibo, registra la operación y mantiene la trazabilidad.
+Al completar correctamente el alta de Trabajos, el conductor recibe una **promoción comercial inicial de X días**. Su duración se configura desde Gestión Comercial y se congela al iniciarse.
+
+Durante la promoción, las nuevas aceptaciones usan el modo promocional definido para Trabajos y no consumen comisión de la billetera.
+
+Terminada la promoción, no existe compra ni renovación de plan. El conductor puede continuar aceptando trabajos siempre que su saldo disponible cubra la comisión aplicable. El saldo puede proceder de recargas pagadas o de recompensas por referidos.
+
+Una recarga solo aumenta saldo después de que el pago sea confirmado. La confirmación debe acreditar la billetera y generar el documento financiero correspondiente de forma transaccional e idempotente.
+
+Para TUKTUK dejan de ser productos operativos las licencias de Control, los planes periódicos, las renovaciones y los bloqueos por vencimiento. La infraestructura heredada se retirará únicamente después de auditar dependencias y verificar que no se afecten usuarios ni datos reales.
 
 ---
 
 # 2. Visión del producto
 
-Crear un ecosistema digital que permita a propietarios y conductores de triciclos conocer con precisión el comportamiento económico y operativo de su vehículo, mientras VRIXORA administra de forma centralizada y segura los clientes, planes, pagos, licencias y procesos comerciales.
+Crear un ecosistema en el que cualquier usuario pueda utilizar permanentemente TUKTUK Control para conocer el comportamiento económico y operativo de su actividad, y pueda convertirse en conductor de TUKTUK Trabajos cuando decida prestar servicios.
 
-El producto debe facilitar el trabajo diario, reducir errores manuales y permitir que cada persona vea y utilice únicamente las funciones necesarias para su responsabilidad.
+VRIXORA administrará la operación comercial del conductor mediante una promoción inicial configurable, una billetera prepago, recargas, recompensas por referidos, comisión por trabajo, facturación y auditoría.
+
+La experiencia administrativa se organizará alrededor de la cadena:
+
+**usuario → conductor → promoción → billetera → trabajos → comisiones**
+
+Los conceptos heredados de licencia y plan no condicionarán el acceso a Control y Estadísticas.
 
 ---
 
 # 3. Problemas que resuelve
 
-## 3.1. Problemas del propietario o conductor
+## 3.1. Problemas del usuario
 
-Muchos propietarios y conductores de triciclos no conocen con exactitud:
+Los usuarios necesitan conocer con precisión:
 
-- Cuánto dinero generan diariamente.
-- Cuánto gastan en la operación.
-- Cuál es su ganancia real.
-- Cuántos kilómetros recorren.
-- Cómo se comporta el vehículo durante diferentes períodos.
-- Cuándo corresponde realizar un mantenimiento.
-- Qué gastos afectan más la rentabilidad.
-- Cuál es el estado general de su actividad.
+- cuánto dinero generan;
+- cuánto gastan;
+- cuál es su ganancia real;
+- cuántos kilómetros recorren;
+- cómo se comporta su vehículo;
+- cuándo corresponde realizar mantenimiento;
+- qué gastos afectan más su rentabilidad;
+- cómo evoluciona su actividad.
 
-La información suele estar dispersa, anotada manualmente o no registrarse.
+Estas funciones no deben dejar de estar disponibles porque termine una promoción comercial o no exista saldo Marketplace.
 
-## 3.2. Problemas de VRIXORA
+## 3.2. Problemas del conductor
 
-VRIXORA necesita una plataforma que permita:
+Quien decide prestar servicios necesita:
 
-- Identificar a cada usuario.
-- Gestionar las pruebas gratuitas.
-- Configurar planes y precios.
-- Registrar pagos manuales.
-- Actualizar licencias de manera segura.
-- Generar y compartir recibos.
-- Controlar renovaciones y vencimientos.
-- Separar las responsabilidades de los empleados.
-- Medir la captación y conversión de clientes.
-- Mantener un historial completo de las operaciones.
-- Evitar alteraciones financieras o administrativas sin autorización.
-- Gestionar nuevas aplicaciones en el futuro.
+- completar una sola vez sus datos de conductor;
+- registrar vehículos válidos;
+- recibir oportunidades compatibles;
+- conocer el estado de su promoción;
+- conocer saldo real, promocional, reservado y disponible;
+- recargar la billetera;
+- utilizar recompensas de referidos;
+- comprender la comisión aplicable;
+- mantener historial de trabajos, valoraciones, incidencias y movimientos.
+
+## 3.3. Problemas de VRIXORA
+
+VRIXORA necesita:
+
+- distinguir usuario de conductor;
+- disponer de un Conductor 360;
+- configurar la promoción sin publicar código;
+- gestionar billeteras, recargas y comisiones de forma trazable;
+- confirmar pagos antes de acreditar saldo;
+- generar documentos financieros por recargas confirmadas;
+- separar recargas, saldo promocional, reservas y comisiones;
+- administrar referidos sin duplicaciones;
+- separar responsabilidades de empleados;
+- medir captación, conversión, actividad e ingresos por comisión;
+- conservar auditoría;
+- retirar de forma segura el modelo antiguo de licencias TUKTUK;
+- mantener la plataforma preparada para otros productos de VRIXORA.
 
 ---
 
@@ -83,294 +115,307 @@ VRIXORA necesita una plataforma que permita:
 
 ## 4.1. Objetivo general
 
-Desarrollar y operar una solución integrada para el control del negocio de triciclos y la administración comercial de los servicios digitales ofrecidos por VRIXORA Solutions.
+Operar TUKTUK como una suite de control y marketplace en la que Control y Estadísticas permanezcan disponibles para el usuario y la monetización de Trabajos se base en promoción inicial, billetera y comisión por trabajo.
 
 ## 4.2. Objetivos específicos
 
-- Permitir que el cliente registre y analice sus operaciones diarias.
-- Mantener disponible la aplicación aunque no exista conexión a internet.
-- Sincronizar automáticamente la información cuando se recupere la conexión.
-- Asignar automáticamente una prueba gratuita de 30 días.
-- Convertir la prueba en un plan pagado sin crear licencias duplicadas.
-- Facilitar el registro de pagos y la generación de recibos.
-- Reducir la intervención manual sobre las licencias.
-- Aplicar permisos diferentes para owner, cobros y marketing.
-- Proteger los datos financieros y administrativos.
-- Medir registros, conversiones, renovaciones e ingresos.
-- Mantener trazabilidad mediante auditoría.
-- Preparar el Centro de Control para otras aplicaciones de VRIXORA.
+- Permitir que el usuario registre y analice sus operaciones diarias.
+- Mantener las funciones esenciales de Control disponibles sin conexión.
+- Sincronizar automáticamente al recuperar conectividad.
+- Mantener Control y Estadísticas sin vencimiento de licencia.
+- Convertir al usuario en conductor solo cuando complete el onboarding de Trabajos.
+- Configurar la duración de la promoción desde Gestión Comercial.
+- Permitir continuidad posterior sin planes ni renovaciones.
+- Cubrir comisiones con saldo real o promocional.
+- Confirmar pagos antes de acreditar una recarga.
+- Generar documento financiero al confirmar una recarga.
+- Centralizar la situación operativa y comercial en Conductor 360.
+- Aplicar permisos diferentes para owner, finanzas/cobros, operaciones, soporte y marketing.
+- Proteger datos financieros y administrativos.
+- Mantener trazabilidad mediante ledger y auditoría.
+- Retirar de forma controlada el modelo heredado de licencias TUKTUK.
+- Preparar el Centro de Control para otros productos de VRIXORA.
 
 ---
 
 # 5. Alcance del proyecto
 
-## 5.1. TukTuk Control
-
-TukTuk Control será la aplicación utilizada por el cliente final.
+## 5.1. TUKTUK Control
 
 Debe incluir:
 
-- Registro e inicio de sesión con Google.
-- Creación de perfil.
-- Creación y gestión del vehículo.
-- Registro diario de ingresos.
-- Registro de gastos.
-- Categorías de gastos.
-- Registro de kilometraje.
-- Registro del voltaje de la batería.
-- Notas de operación.
-- Estadísticas por períodos.
-- Control de mantenimiento.
-- Funcionamiento sin conexión.
-- Sincronización automática.
-- Consulta del estado de la licencia.
-- Sistema de referidos.
-- Acceso a soporte.
-- Actualizaciones sin pérdida de datos.
+- registro e inicio de sesión con Google;
+- perfil del usuario;
+- vehículos;
+- ingresos y gastos;
+- categorías;
+- kilometraje;
+- batería cuando corresponda;
+- notas;
+- estadísticas;
+- mantenimiento;
+- funcionamiento sin conexión;
+- sincronización;
+- referidos;
+- soporte;
+- actualizaciones sin pérdida de datos;
+- acceso permanente a Control y Estadísticas.
 
-## 5.2. Centro de Control de VRIXORA
-
-Será la plataforma administrativa de la empresa.
+## 5.2. TUKTUK Trabajos — Prestador
 
 Debe incluir:
 
-- Panel de resumen.
-- Clientes.
-- Pagos.
-- Recibos.
-- Licencias.
-- Planes y precios.
-- Empleados.
-- Roles y permisos.
-- Marketing y seguimiento comercial.
-- Campañas.
-- Referidos.
-- Estadísticas.
-- Configuración.
+- onboarding de conductor;
+- datos y foto del conductor;
+- vehículo y foto principal;
+- capacidades y servicios;
+- disponibilidad;
+- promoción comercial;
+- oportunidades;
+- trabajos activos, programados e históricos;
+- billetera;
+- recargas;
+- referidos;
+- comisiones;
+- valoraciones;
+- incidencias.
+
+## 5.3. TUKTUK Cliente
+
+Debe permitir solicitar y seguir servicios sin confundir la identidad del cliente con la del conductor.
+
+## 5.4. Centro de Control de VRIXORA
+
+Debe incluir para TUKTUK:
+
+- Resumen;
+- Usuarios;
+- Conductores;
+- Conductor 360;
+- Clientes Marketplace;
+- Trabajos;
+- Billeteras;
+- Recargas;
+- Facturación;
+- Referidos;
+- Gestión Comercial;
+- Tarifas y comisiones;
+- Incidencias;
+- Valoraciones;
+- Empleados;
+- Roles y permisos;
+- Marketing;
+- Rendimiento;
+- Configuración;
 - Auditoría.
-- Diseño adaptable a móvil y escritorio.
 
-## 5.3. Backend compartido
+Las pantallas operativas de **Licencias** y **Planes de licencia** dejan de formar parte del negocio de TUKTUK.
 
-El backend deberá gestionar:
+## 5.5. Backend compartido
 
-- Autenticación.
-- Usuarios.
-- Perfiles.
-- Vehículos.
-- Registros operativos.
-- Licencias.
-- Planes.
-- Pagos.
-- Recibos.
-- Empleados.
-- Permisos.
-- Auditoría.
-- Sincronización.
-- Seguridad mediante RLS.
-- Operaciones transaccionales mediante funciones seguras.
+El backend debe gestionar:
+
+- autenticación;
+- usuarios y perfiles;
+- conductores;
+- vehículos;
+- relaciones conductor–vehículo;
+- registros operativos;
+- promoción comercial;
+- trabajos;
+- billeteras y ledger;
+- recargas y pagos;
+- documentos financieros;
+- referidos;
+- comisiones y reservas;
+- valoraciones e incidencias;
+- empleados y permisos;
+- auditoría;
+- sincronización;
+- RLS;
+- operaciones transaccionales e idempotentes.
+
+La infraestructura antigua de licencias y planes se considera legado de TUKTUK hasta completar su retiro seguro.
 
 ---
 
 # 6. Usuarios del sistema
 
-## 6.1. Cliente de TukTuk Control
+## 6.1. Usuario TUKTUK
 
-Es el propietario o conductor que utiliza la aplicación.
+Es la persona que inicia sesión con su cuenta Google.
 
-### Puede:
+Ser usuario no significa ser conductor.
 
-- Registrar ingresos.
-- Registrar gastos.
-- Consultar estadísticas.
-- Gestionar su vehículo.
-- Registrar kilometraje y voltaje.
-- Consultar mantenimientos.
-- Utilizar la aplicación sin conexión.
-- Sincronizar sus datos.
-- Consultar el estado de su licencia.
-- Contactar al soporte.
-- Participar en el sistema de referidos.
+Puede:
 
-### No puede:
+- registrar ingresos y gastos;
+- consultar estadísticas;
+- gestionar sus datos y vehículos permitidos;
+- registrar kilometraje y batería cuando corresponda;
+- consultar mantenimientos;
+- utilizar funciones esenciales sin conexión;
+- sincronizar datos;
+- contactar al soporte;
+- consultar el programa de referidos;
+- iniciar el alta de conductor cuando quiera trabajar.
 
-- Modificar su propia licencia.
-- Cambiar su fecha de vencimiento.
-- Asignarse un plan.
-- Registrar pagos administrativos.
-- Modificar precios.
-- Acceder al Centro de Control.
-- Consultar información de otros clientes.
+No puede:
 
-## 6.2. Owner de VRIXORA
+- modificar saldos;
+- confirmar pagos;
+- modificar tarifas;
+- acceder al Centro de Control;
+- consultar datos de otros usuarios.
 
-El owner es el propietario y administrador principal del sistema.
+## 6.2. Conductor TUKTUK
 
-### Puede:
+Un usuario se convierte en conductor cuando completa los requisitos obligatorios de Trabajos y el backend reconoce un perfil de conductor válido.
 
-- Acceder a todos los módulos.
-- Crear y modificar planes.
-- Configurar precios y duración.
-- Gestionar empleados.
-- Asignar roles y permisos.
-- Consultar clientes.
-- Registrar y revisar pagos.
-- Anular pagos cuando corresponda.
-- Consultar y gestionar recibos.
-- Administrar licencias.
-- Ajustar vigencias.
-- Suspender o revocar licencias.
-- Revisar estadísticas.
-- Consultar auditoría.
-- Configurar la plataforma.
-- Gestionar excepciones administrativas.
+Puede:
 
-### Menú visible:
+- gestionar su disponibilidad;
+- recibir oportunidades compatibles;
+- aceptar y ejecutar trabajos;
+- consultar promoción;
+- consultar billetera;
+- solicitar recargas;
+- utilizar saldo de referidos para cubrir comisiones;
+- consultar trabajos, valoraciones, incidencias y movimientos propios.
 
-- Resumen.
-- Clientes.
-- Pagos.
-- Recibos.
-- Licencias.
-- Planes y precios.
-- Marketing.
-- Campañas.
-- Referidos.
-- Empleados.
-- Rendimiento.
-- Configuración.
-- Auditoría.
+## 6.3. Cliente Marketplace
 
-## 6.3. Operador de cobros
+Es la persona o empresa que solicita un servicio. Es una entidad distinta del conductor y del usuario de Control.
 
-El operador se encarga de registrar el pago y asignar el plan comprado.
+## 6.4. Owner de VRIXORA
 
-Su trabajo debe realizarse principalmente desde la sección **Pagos**.
+Puede:
 
-### Puede:
+- acceder a todos los módulos;
+- consultar usuarios, conductores y clientes;
+- configurar promoción, recompensa y comisión;
+- gestionar empleados, roles y permisos;
+- revisar y anular operaciones financieras según reglas;
+- gestionar tarifas;
+- revisar incidencias;
+- consultar auditoría;
+- gestionar excepciones.
 
-- Buscar clientes.
-- Consultar el resumen de su licencia.
-- Consultar los planes activos.
-- Seleccionar el plan comprado.
-- Registrar el importe.
-- Registrar la moneda.
-- Registrar el método de pago.
-- Añadir referencia u observación.
-- Confirmar el pago.
-- Generar y compartir el recibo.
-- Consultar sus operaciones realizadas.
+## 6.5. Finanzas / Cobros
 
-### No puede:
+Puede:
 
-- Crear o editar planes.
-- Modificar precios.
-- Modificar directamente la fecha de una licencia.
-- Ajustar vigencia manualmente.
-- Suspender o revocar licencias.
-- Gestionar empleados.
-- Cambiar permisos.
-- Modificar configuraciones.
-- Eliminar pagos confirmados.
-- Acceder a la auditoría completa.
+- buscar conductores;
+- consultar solicitudes de recarga;
+- revisar importe, moneda, método y referencia;
+- registrar o actualizar WhatsApp autorizado cuando corresponda;
+- confirmar pagos recibidos;
+- generar/consultar el documento financiero resultante;
+- consultar sus operaciones.
 
-### Menú visible:
+No puede:
 
-- Resumen de cobros.
-- Pagos.
-- Buscar cliente.
-- Recibos.
-- Mis operaciones.
+- editar balances directamente;
+- alterar ledger;
+- modificar promoción o comisión salvo permiso específico;
+- gestionar empleados;
+- cambiar permisos;
+- eliminar pagos confirmados.
 
-## 6.4. Marketing y atención comercial
+## 6.6. Marketing y Gestión Comercial
 
-Este empleado se encarga de captar, orientar y dar seguimiento a los clientes.
+Puede, según permisos:
 
-### Puede:
+- consultar nuevos registros;
+- registrar fuentes;
+- gestionar campañas;
+- consultar referidos;
+- añadir notas y etiquetas;
+- seguir conversión de usuario a conductor;
+- consultar promociones;
+- gestionar parámetros comerciales autorizados;
+- consultar estadísticas comerciales sin datos financieros sensibles innecesarios.
 
-- Consultar nuevos registros.
-- Identificar usuarios en período de prueba.
-- Registrar la fuente de captación.
-- Gestionar campañas.
-- Consultar referidos.
-- Añadir notas comerciales.
-- Aplicar etiquetas de seguimiento.
-- Consultar próximos vencimientos.
-- Marcar clientes como listos para cobro.
-- Consultar estadísticas de captación y conversión.
-- Exportar reportes comerciales sin datos financieros sensibles.
+## 6.7. Operaciones y Soporte
 
-### Estados comerciales permitidos:
-
-- Nuevo.
-- Contactado.
-- Interesado.
-- En prueba.
-- Listo para cobro.
-- Convertido.
-- No interesado.
-
-### No puede:
-
-- Registrar pagos.
-- Modificar pagos.
-- Anular pagos.
-- Cambiar precios.
-- Modificar planes.
-- Modificar licencias.
-- Cambiar vencimientos.
-- Suspender o revocar licencias.
-- Gestionar empleados.
-- Acceder a configuración crítica.
-- Consultar datos bancarios sensibles.
-- Acceder a auditoría técnica completa.
-
-### Menú visible:
-
-- Resumen comercial.
-- Clientes potenciales.
-- Seguimiento.
-- Campañas.
-- Referidos.
-- Estadísticas comerciales.
-- Reportes.
+Puede supervisar conductores, trabajos, estados e incidencias según permisos. No puede acreditar saldo ni confirmar pagos sin capacidad financiera.
 
 ---
 
-# 7. Flujo general del cliente
+# 7. Flujos generales
+
+## 7.1. Usuario de Control
 
 ```text
-El cliente instala TukTuk Control
-                ↓
+Instala TUKTUK
+      ↓
 Inicia sesión con Google
-                ↓
-Se crea su perfil
-                ↓
-Se crea o vincula su vehículo
-                ↓
-Se crea automáticamente una licencia de prueba
-                ↓
-La prueba tiene una duración de 30 días
-                ↓
-El cliente utiliza la aplicación
-                ↓
-Marketing realiza seguimiento
-                ↓
-El cliente decide comprar un plan
-                ↓
-El operador busca al cliente desde Pagos
-                ↓
-Selecciona el plan comprado
-                ↓
-Registra y confirma el pago
-                ↓
-El sistema actualiza automáticamente la misma licencia
-                ↓
-Se genera el recibo
-                ↓
-TukTuk Control recibe el nuevo estado
-                ↓
-El cliente continúa utilizando la aplicación
+      ↓
+Se crea o vincula su perfil
+      ↓
+Utiliza Control y Estadísticas
+      ↓
+Registra y sincroniza sus datos
+      ↓
+El acceso permanece disponible sin vencimiento
+```
+
+## 7.2. Alta como conductor
+
+```text
+Usuario decide trabajar
+      ↓
+Entra en Trabajos
+      ↓
+Completa conductor + vehículo + fotos
+      ↓
+Backend valida onboarding
+      ↓
+Se consolida su condición de conductor
+      ↓
+Se inicia promoción comercial de X días configurada en Gestión Comercial
+      ↓
+Durante promoción acepta en modo promocional
+      ↓
+Finaliza promoción
+      ↓
+Continúa si el saldo disponible cubre la comisión
+```
+
+## 7.3. Recarga
+
+```text
+Conductor solicita recarga
+      ↓
+Realiza el pago por una vía habilitada
+      ↓
+La solicitud permanece pendiente
+      ↓
+Finanzas/Cobros verifica el pago
+      ↓
+Confirma
+      ↓
+El servidor acredita exactamente una vez la billetera
+      ↓
+Genera exactamente un documento financiero
+      ↓
+Movimiento y documento aparecen en Conductor 360
+```
+
+## 7.4. Referido
+
+```text
+Conductor comparte código/enlace
+      ↓
+Nuevo usuario queda vinculado
+      ↓
+Completa alta de conductor
+      ↓
+Completa su primer trabajo válido
+      ↓
+Se acredita una sola recompensa
+      ↓
+El saldo promocional puede cubrir comisiones futuras
 ```
 
 ---
@@ -485,78 +530,87 @@ Los períodos deben incluir:
 - Los conflictos deben resolverse mediante reglas predecibles.
 - La eliminación debe ser lógica cuando sea necesario.
 
-## 8.11. Licencia en la aplicación
+## 8.11. Acceso permanente a Control y Estadísticas
 
-La aplicación debe mostrar:
+TUKTUK Control no utilizará plan, licencia, vencimiento ni tiempo restante como condición para usar las funciones de Control y Estadísticas.
 
-- Plan actual.
-- Estado.
-- Fecha de vencimiento.
-- Tiempo restante.
-- Dispositivos autorizados.
-- Información de contacto para renovar.
+El usuario podrá continuar utilizando:
 
-La aplicación debe actualizar el estado cuando recupere conexión.
+- registros;
+- ingresos y gastos;
+- kilometraje;
+- batería cuando corresponda;
+- mantenimiento;
+- estadísticas;
+- historial;
+- sincronización.
+
+La finalización de la promoción de Trabajos o la falta de saldo no convierten Control en modo solo lectura.
+
+Las restricciones económicas se aplican únicamente a las operaciones de Trabajos que requieren saldo.
 
 ## 8.12. Referidos
 
 ### Alcance
 
-El nuevo programa de referidos de **TukTuk Marketplace** sustituye al programa anterior de TukTuk basado en días y licencias. La recompensa vigente se acredita exclusivamente en la billetera Marketplace y ya no genera ni extiende días de licencia de TukTuk Control.
+El programa vigente de referidos de TUKTUK acredita una recompensa en la billetera Marketplace. No genera días de licencia, no prolonga Control y no crea ni reinicia la promoción comercial inicial.
 
-No coexistirán dos programas activos: a partir de la implantación del nuevo modelo no se generan nuevos días por referidos, nuevas extensiones de licencia Control ni `reward_days` para nuevos referidos. Tampoco existen recompensas simultáneas en días y CUP.
+El mensaje comercial principal será:
 
-### Corte y transición histórica
+**"Invita a un amigo y gana dinero".**
 
-Cada recompensa **REAL** existente del programa anterior para TukTuk que tenga estado `earned` o `applied` recibirá una única acreditación de transición en la billetera Marketplace del referente. El valor inicial del corte será **100 CUP por referido válido**, aplicado por recompensa histórica elegible, no por una conversión matemática de días a CUP.
+El valor inicial de referencia será **100 CUP por referido válido**. Importe, moneda y activación deberán ser configurables desde VRIXORA y el valor aplicable quedará congelado cuando el referido cualifique.
 
-No califican los registros de prueba, las recompensas `reverted` ni las relaciones de referido que nunca generaron una recompensa válida. El importe, la moneda y la versión aplicables a cada acreditación histórica quedan congelados en el corte; un cambio posterior de Vrixora a 150 CUP, 200 CUP u otro importe no recalcula estas transiciones.
-
-Los días ya aplicados a una licencia se conservan exclusivamente como beneficio histórico: no se retiran ni se restan y no se convierten mediante equivalencia días→CUP. La recompensa histórica que los originó sí recibe la acreditación única de transición en la billetera Marketplace conforme a la regla de corte. Los días `earned` pendientes tampoco volverán a aplicarse después del corte. La trazabilidad debe vincular `legacy_reward_id` con `wallet_transaction_id` para que cada recompensa histórica elegible se migre una sola vez y jamás genere otra acreditación.
-
-Desde el corte no se crean ni aplican nuevos `reward_days`, no se extienden licencias por referidos y no existe doble recompensa futura en días y CUP. Los referidos nuevos conservan la regla vigente: primer trabajo válido, seguido de crédito Marketplace configurable con snapshot del importe, moneda y versión vigentes.
-
-El mensaje comercial principal será: **"Invita a un amigo y gana dinero"**.
-
-El texto explicativo será: **"Recibe 100 CUP en tu billetera TUKTUK por cada referido válido."**
-
-### Recompensa y elegibilidad
-
-Por cada referido válido, el referente recibirá **100 CUP de saldo promocional** en su billetera de TukTuk Marketplace. El importe, la moneda y la activación deberán ser configurables mediante:
-
-- `referral_reward_amount = 100`;
-- `referral_reward_currency = CUP`;
-- `referral_reward_enabled = true`.
-
-La recompensa será configurable desde Vrixora. El valor inicial será 100 CUP, pero podrá aumentarse o reducirse según la estrategia comercial sin modificar código. El importe aplicable se congelará en el momento en que el referido cualifique para la recompensa y no se recalculará retroactivamente.
+### Elegibilidad
 
 Un referido será válido únicamente cuando el nuevo conductor:
 
-1. esté correctamente vinculado al referente;
-2. complete los datos obligatorios para Trabajos;
+1. quede correctamente vinculado al referente;
+2. complete los requisitos obligatorios para Trabajos;
 3. tenga conductor y vehículo válidos;
-4. inicie sus 30 días gratis de Marketplace; y
-5. complete su primer trabajo válido.
+4. complete su primer trabajo válido.
 
-Un **primer trabajo válido** es el primer trabajo del referido considerado completado satisfactoriamente por Marketplace. Califica cuando alcanza `settled` o, si pasó por una incidencia, cuando esta se resuelve administrativamente con `resolution = completed`. No califican `cancelled_by_customer`, `cancelled_by_driver`, `expired` ni una incidencia resuelta como `cancelled`.
+Un **primer trabajo válido** es el primer trabajo del referido completado satisfactoriamente por Marketplace. Califica cuando alcanza `settled` o, si pasó por una incidencia, cuando esta se resuelve administrativamente con `resolution = completed`.
 
-La recompensa se genera exactamente una vez al completar ese primer trabajo válido. No se genera por abrir un enlace, instalar la aplicación, registrarse, introducir un código, crear un perfil, reiniciar o extender una prueba, cambiar de vehículo o recrear un perfil.
+No califican `cancelled_by_customer`, `cancelled_by_driver`, `expired` ni una incidencia resuelta como `cancelled`.
 
-### Naturaleza y límites del saldo
+La recompensa se genera exactamente una vez. No se genera por abrir un enlace, instalar, iniciar sesión, introducir un código, completar solo el perfil, cambiar de vehículo, reinstalar, recargar la billetera ni modificar la promoción.
 
-El crédito se acredita en la billetera Marketplace, aumenta el saldo disponible para cubrir comisiones de trabajos y no es retirable, transferible ni efectivo entregado al conductor. No genera deuda ni ingreso para TukTuk.
+### Naturaleza del saldo
 
-El crédito de referido no equivale a un depósito inicial verificado y no puede confirmar, simular ni sustituir el depósito inicial mínimo configurable requerido después de los 30 días iniciales. Una vez que la billetera esté habilitada mediante ese depósito, el crédito sí podrá utilizarse para pagar comisiones.
+El crédito:
 
-Los referidos no modifican `started_at` ni `ends_at` de `marketplace_work_trials`, no crean ni reinician pruebas y no extienden el trial. Tampoco extienden, renuevan ni alteran la licencia de TukTuk Control.
+- entra en la billetera como saldo promocional;
+- aumenta el saldo disponible para cubrir comisiones;
+- puede cubrir comisiones aunque no exista una recarga pagada previa;
+- no es retirable ni transferible como efectivo;
+- no requiere un depósito inicial mínimo;
+- no genera una factura de pago;
+- no modifica `started_at` ni `ends_at` de la promoción;
+- no crea ni reinicia promociones;
+- no afecta el acceso permanente a Control y Estadísticas.
 
-### Trazabilidad y diseño futuro
+Si la promoción terminó y el saldo disponible procedente únicamente de referidos cubre la comisión requerida, el conductor puede aceptar el trabajo.
 
-El vínculo de referido debe ser inmutable una vez cualificado, impedir el autorreferido y conservar quién refirió a quién. Debe garantizarse una recompensa por usuario referido, sin duplicación por reintentos, reinstalaciones, cambios de vehículo o recreación de perfil.
+### Trazabilidad
 
-Cuando se implemente, el crédito se registrará por ledger y nunca mediante una modificación directa del balance, un `topup`, un pago ni un depósito. La transacción positiva usará `transaction_type = referral_credit`, `source_type = referral_reward`, moneda CUP e `amount_delta` positivo. Su procedencia tendrá una clave de idempotencia y, como mínimo, `referrer_user_id`, `referred_user_id`, `qualification_job_id`, `reward_amount` y `reward_rule_version`.
+El crédito se registra mediante ledger y nunca mediante una modificación directa del balance, un pago o una recarga.
 
-En ayuda y términos se aclarará: **"El saldo obtenido por referidos se utiliza dentro de TUKTUK Marketplace para cubrir comisiones y no puede retirarse en efectivo."**
+La operación positiva utilizará el tipo funcional `referral_credit` y procedencia `referral_reward`, o sus equivalentes versionados si el contrato técnico evoluciona.
+
+La trazabilidad conservará, como mínimo:
+
+- referente;
+- referido;
+- trabajo que cualificó;
+- importe;
+- moneda;
+- versión de regla;
+- clave de idempotencia.
+
+Se impedirán autorreferidos, duplicaciones, reinstalaciones utilizadas para obtener una segunda recompensa y reasignaciones indebidas.
+
+En ayuda y términos se aclarará que el saldo obtenido por referidos se utiliza dentro de TUKTUK Marketplace para cubrir comisiones y no puede retirarse en efectivo.
 
 ## 8.13. Calificación Customer → Driver en Marketplace
 
@@ -569,629 +623,608 @@ podrá valorar su propio trabajo y no habrá calificaciones antes de `settled`.
 
 ## 8.14. Atención al cliente y contacto por WhatsApp
 
-TukTuk Control deberá disponer de dos vías diferenciadas de contacto por WhatsApp:
+TUKTUK deberá disponer de dos vías diferenciadas:
 
-1. **Atención al cliente**, destinada a dudas, soporte técnico y consultas generales.
-2. **Pagar, activar o renovar**, destinada a la compra, activación o renovación de planes.
+1. **Atención al cliente**, para soporte y consultas generales.
+2. **Recargas y billetera**, para solicitudes y seguimiento financiero del conductor.
 
-Ambas vías podrán utilizar inicialmente el mismo número de WhatsApp, pero deberán generar mensajes diferentes y quedar preparadas para utilizar números distintos en el futuro.
+Ambas vías podrán usar inicialmente el mismo número, pero deberán generar mensajes distintos y quedar preparadas para números diferentes.
 
 ### Atención al cliente
 
-El área de Usuario deberá mostrar un botón denominado:
+El mensaje podrá incluir:
 
-**Atención al cliente**
-
-La aplicación deberá generar un mensaje general de soporte que pueda incluir:
-
-- nombre del cliente;
-- correo de la cuenta;
+- nombre;
+- correo;
 - nombre de la aplicación;
-- descripción opcional escrita por el usuario.
+- descripción opcional.
 
-La vía de soporte no deberá incluir obligatoriamente los datos comerciales completos de la licencia.
+### Recargas y billetera
 
-### Pagar, activar o renovar
+El mensaje podrá incluir automáticamente:
 
-Cuando el usuario se encuentre en prueba, próximo a vencer, vencido o pulse una opción de compra o renovación, la aplicación deberá mostrar un botón denominado:
+- nombre del conductor;
+- correo;
+- identificador de solicitud de recarga;
+- importe;
+- moneda;
+- método;
+- referencia;
+- motivo de contacto.
 
-**Contactar para pagar y activar**
-
-El mensaje deberá incluir automáticamente, como mínimo:
-
-- nombre del cliente;
-- correo de la cuenta;
-- clave o número de licencia;
-- nombre de la aplicación;
-- plan actual;
-- plan solicitado, cuando se haya seleccionado;
-- fecha de vencimiento actual;
-- tipo de solicitud: activación, compra o renovación.
-
-El cliente no deberá escribir manualmente estos datos. La aplicación deberá obtenerlos de la sesión autenticada y de la licencia vinculada.
+No deberá incluir plan, licencia ni vencimiento de Control.
 
 ### Configuración dinámica
 
-El número, las etiquetas, las plantillas y el estado de cada vía deberán administrarse desde el Centro de Control.
+El número, las etiquetas, plantillas y estado de cada vía se administrarán desde el Centro de Control.
 
-La aplicación deberá consultar la configuración remota cuando tenga conexión y conservar localmente la última configuración válida.
+La aplicación consultará la configuración remota cuando tenga conexión y conservará localmente la última configuración válida.
 
 Cuando no haya conexión:
 
-- utilizará la última configuración válida guardada;
-- no bloqueará el funcionamiento general de la aplicación;
-- utilizará un valor de respaldo únicamente cuando nunca haya existido una configuración remota o local válida.
+- utilizará la última configuración válida;
+- no bloqueará el funcionamiento general;
+- utilizará un valor de respaldo únicamente cuando nunca haya existido una configuración válida.
 
-La aplicación deberá construir correctamente el enlace de WhatsApp utilizando formato internacional y codificación segura del mensaje.
+Los enlaces de WhatsApp utilizarán formato internacional y codificación segura.
 
-## 8.14. Plantillas y variables de WhatsApp
+## 8.15. Plantillas y variables de WhatsApp
 
-Las plantillas administrables podrán utilizar variables como:
+Las plantillas podrán utilizar:
 
-- `{{customer_name}}`
-- `{{customer_email}}`
-- `{{license_key}}`
-- `{{current_plan}}`
-- `{{requested_plan}}`
-- `{{expires_at}}`
+- `{{user_name}}`
+- `{{user_email}}`
+- `{{driver_name}}`
 - `{{application_name}}`
+- `{{topup_request_id}}`
+- `{{topup_amount}}`
+- `{{currency}}`
+- `{{payment_method}}`
+- `{{payment_reference}}`
 - `{{contact_reason}}`
 
-TukTuk Control deberá sustituir las variables con información válida antes de abrir WhatsApp.
+Si falta un dato opcional, el mensaje se generará sin variables sin resolver.
 
-Si falta un dato opcional, el mensaje deberá generarse sin mostrar variables sin resolver.
-
-## 8.15. Limitación de la primera versión
-
-La primera versión no utilizará la API de WhatsApp para identificar automáticamente el número del cliente.
-
-Abrir un enlace de WhatsApp no permitirá al sistema conocer desde qué número escribió finalmente el cliente.
-
-El registro o actualización del WhatsApp del cliente se realizará manualmente por un operador autorizado desde el Centro de Control.
-
----
+La primera versión no utilizará la API de WhatsApp para identificar automáticamente el número del usuario. Las actualizaciones manuales autorizadas conservarán trazabilidad.
 
 # 9. Requisitos funcionales del Centro de Control
 
 ## 9.1. Panel principal
 
-Debe mostrar información según el rol.
+Debe mostrar información según rol.
 
 Para el owner:
 
-- Clientes totales.
-- Nuevos registros.
-- Usuarios en prueba.
-- Licencias activas.
-- Licencias vencidas.
-- Pagos confirmados.
-- Ingresos.
-- Renovaciones.
-- Próximos vencimientos.
-- Actividad reciente.
+- usuarios totales;
+- nuevos registros;
+- conductores totales y activos;
+- conductores en onboarding;
+- promociones activas y próximas a finalizar;
+- trabajos por estado;
+- recargas pendientes y confirmadas;
+- comisiones reservadas y liquidadas;
+- referidos;
+- documentos financieros recientes;
+- incidencias;
+- actividad reciente.
 
-Para cobros:
+Para finanzas/cobros:
 
-- Pagos del día.
-- Pagos pendientes.
-- Clientes listos para cobro.
-- Recibos recientes.
-- Mis operaciones.
+- recargas pendientes;
+- pagos confirmados del período;
+- documentos recientes;
+- operaciones propias;
+- elementos que requieran conciliación.
 
 Para marketing:
 
-- Nuevos registros.
-- Usuarios en prueba.
-- Clientes contactados.
-- Clientes listos para cobro.
-- Conversiones.
-- Campañas activas.
-- Referidos.
+- nuevos usuarios;
+- usuarios interesados en Trabajos;
+- onboarding iniciado;
+- nuevos conductores;
+- campañas;
+- referidos;
+- conversiones.
 
-## 9.2. Clientes
+Las recargas y las comisiones deben medirse por separado.
 
-El módulo debe permitir:
+## 9.2. Usuarios
 
-- Buscar por nombre.
-- Buscar por correo.
-- Buscar por teléfono o WhatsApp.
-- Buscar por identificador.
-- Consultar perfil.
-- Consultar licencia.
-- Consultar vehículo.
-- Consultar pagos.
-- Consultar recibos.
-- Consultar historial comercial.
-- Consultar auditoría relacionada, según permisos.
+Debe permitir:
 
-El perfil del cliente podrá incluir:
+- buscar por nombre;
+- correo;
+- teléfono o WhatsApp;
+- identificador;
+- consultar perfil;
+- consultar vehículos;
+- consultar historial comercial;
+- consultar auditoría relacionada, según permisos.
+
+Un usuario sin alta completa de Trabajos no debe aparecer como conductor.
+
+El perfil podrá incluir:
 
 - WhatsApp principal;
 - fecha de actualización;
 - usuario que lo actualizó;
-- origen de la actualización;
+- origen;
 - estado de confirmación manual;
-- historial de cambios, cuando corresponda.
+- historial de cambios.
 
-El owner y los usuarios autorizados podrán registrar o actualizar el WhatsApp durante una interacción de soporte.
+Si un operador introduce un WhatsApp diferente, se mostrará el valor anterior y el nuevo antes de confirmar. No se sustituirá silenciosamente.
 
-Si se introduce un número diferente al registrado, el sistema deberá mostrar el valor anterior y el nuevo antes de confirmar.
+## 9.3. Conductores y Conductor 360
 
-Los datos sensibles deben limitarse según el rol.
+Cada conductor tendrá una ficha 360° única vinculada a su cuenta de usuario.
 
-## 9.3. Pagos
+Debe integrar, según permisos:
 
-El módulo de Pagos será el punto principal para completar una venta o renovación.
+- identidad y contacto;
+- cuenta Google vinculada;
+- foto y datos del conductor;
+- onboarding;
+- estado operativo y suspensión;
+- vehículo o vehículos;
+- servicios y capacidades;
+- promoción: inicio, fin, duración y estado;
+- billetera: saldo real, promocional, reservado y disponible;
+- recargas;
+- pagos y referencias;
+- movimientos financieros con saldo antes y después cuando corresponda;
+- documentos financieros;
+- referidos y recompensas;
+- trabajos;
+- comisiones;
+- valoraciones;
+- incidencias;
+- actividad y auditoría.
 
-El formulario debe incluir:
+El objetivo es comprender la situación completa del conductor sin reconstruirla entre módulos.
 
-- Cliente.
-- Nombre y correo.
-- Número o clave de licencia.
-- Plan seleccionado.
-- Plan actual.
-- Estado actual.
-- Vencimiento actual.
-- Nuevo vencimiento estimado.
-- WhatsApp actualmente registrado.
-- Nuevo WhatsApp, cuando corresponda.
-- Importe.
-- Moneda.
-- Método de pago.
-- Referencia.
-- Observación.
-- Operador.
-- Fecha y hora.
+## 9.4. Recargas y pagos
 
-Antes de confirmar debe mostrarse una vista previa.
+El módulo será el punto principal para acreditar saldo pagado.
 
-### Registro manual del WhatsApp durante el pago
+La solicitud deberá incluir:
 
-Si el cliente no tiene WhatsApp registrado, el operador podrá introducir el número desde el cual recibió la solicitud.
+- conductor;
+- nombre y correo;
+- WhatsApp;
+- importe;
+- moneda;
+- método de pago;
+- referencia;
+- observación;
+- operador;
+- fecha y hora;
+- estado.
 
-Si el número ya existe, el formulario deberá mostrarlo automáticamente.
+Antes de confirmar se mostrará una vista previa.
 
-Si el operador introduce uno diferente:
+Si el conductor no tiene WhatsApp registrado, un operador autorizado podrá introducirlo. Si cambia, se mostrarán valor anterior y nuevo, se pedirá confirmación y se conservará auditoría.
 
-- se mostrará el número anterior;
-- se mostrará el número nuevo;
-- se solicitará confirmación expresa;
-- no se reemplazará silenciosamente;
-- se conservará trazabilidad del cambio.
+Al confirmar el pago, una única operación deberá:
 
-Al confirmar el pago, la operación deberá:
+1. confirmar la recarga;
+2. acreditar exactamente una vez el saldo real;
+3. generar exactamente un documento financiero;
+4. guardar o actualizar el WhatsApp autorizado cuando corresponda;
+5. registrar actor, fecha y procedencia;
+6. actualizar las métricas correctas.
 
-1. registrar el pago;
-2. actualizar la misma licencia;
-3. generar el recibo;
-4. guardar o actualizar el WhatsApp del cliente;
-5. registrar el operador, la fecha y el origen del cambio.
+Una solicitud pendiente no aumenta saldo.
 
-El número deberá almacenarse en formato internacional.
+## 9.5. Facturación / documentos financieros
 
-El sistema deberá identificar la actualización como:
+Cada recarga pagada y confirmada debe generar exactamente un documento financiero único asociado a esa operación.
 
-**Confirmada manualmente por el operador**
+La interfaz administrativa podrá presentarlo dentro del módulo **Facturación**. Su clasificación fiscal formal deberá adaptarse a la jurisdicción aplicable antes de utilizarlo como factura fiscal oficial.
 
-y no como verificación automática.
+El documento debe incluir, como mínimo:
 
-## 9.4. Recibos
+- número único;
+- conductor;
+- correo;
+- importe;
+- moneda;
+- concepto;
+- método de pago;
+- referencia;
+- fecha de pago;
+- fecha de emisión;
+- identificador de recarga;
+- operador;
+- estado;
+- identificador verificable;
+- proyecto;
+- snapshot de la identidad y datos del emisor utilizados al emitirlo.
 
-Cada pago confirmado debe generar un recibo.
+Debe poder:
 
-El recibo debe incluir:
+- visualizarse;
+- compartirse;
+- imprimirse o exportarse.
 
-- Número.
-- Cliente.
-- Correo.
-- Plan.
-- Importe.
-- Moneda.
-- Método de pago.
-- Referencia.
-- Fecha.
-- Vencimiento anterior.
-- Nuevo vencimiento.
-- Operador.
-- Estado.
-- Identificador verificable.
+Una vez emitido, su contenido histórico no se reescribirá silenciosamente.
 
-El recibo debe poder:
+Cuando corresponda corregir o anular una operación:
 
-- Visualizarse.
-- Compartirse.
-- Imprimirse o exportarse cuando corresponda.
-- Marcarse como anulado si el pago se anula.
+- se conservará el documento original;
+- se registrará el motivo;
+- se realizará el reverso o asiento compensatorio necesario;
+- se generará el documento correctivo o nota de crédito cuando corresponda;
+- se vinculará la corrección con el documento original;
+- se conservará la auditoría completa.
 
-## 9.5. Licencias
+Una recarga de saldo promocional por referidos no genera factura de pago porque no representa dinero recibido del conductor.
 
-El módulo debe permitir al owner consultar y administrar licencias.
+## 9.6. Gestión Comercial
 
-La tarjeta debe mostrar:
+El owner o rol autorizado podrá configurar:
 
-- Cliente.
-- Estado.
-- Plan comercial.
-- Vencimiento.
-- Tiempo restante.
-- Dispositivos utilizados y permitidos.
+- duración de la promoción inicial;
+- activación de promoción para nuevas altas;
+- importe y moneda de recompensa por referido;
+- activación del programa de referidos;
+- comisión Marketplace;
+- métodos o vías de pago habilitados para recargas y sus instrucciones;
+- parámetros de seguimiento;
+- otros parámetros comerciales expresamente aprobados.
 
-La información técnica debe quedar dentro de los detalles.
+Los cambios no recalculan retroactivamente promociones, recompensas ni comisiones cuyo snapshot ya esté congelado.
 
-Las acciones deben organizarse así:
+## 9.7. Tarifas y comisiones
 
-### Acción principal
+Para TUKTUK, Planes y precios deja de referirse a planes de licencia.
 
-- Registrar pago y renovar.
+Debe permitir administrar:
 
-### Acciones secundarias
+- tipos/modalidades de servicio;
+- precio base;
+- reglas por distancia u otros factores;
+- moneda;
+- tasa cuando corresponda;
+- comisión;
+- estado;
+- orden;
+- versionado e historial de cambios importantes.
 
-- Cambiar plan.
-- Cambiar estado.
-
-### Opciones avanzadas
-
-- Ajustar vigencia.
-- Ver historial.
-- Gestionar dispositivos.
-
-## 9.6. Planes y precios
+## 9.8. Empleados
 
 El owner debe poder:
 
-- Crear planes.
-- Definir nombre comercial.
-- Definir duración.
-- Definir precio.
-- Definir moneda.
-- Definir dispositivos permitidos.
-- Activar o desactivar planes.
-- Definir orden de presentación.
-- Mantener historial de cambios importantes.
+- crear o invitar empleados;
+- activar o desactivar accesos;
+- asignar roles;
+- revisar actividad;
+- revocar sesiones cuando sea necesario.
 
-El operador solo puede consultar planes activos.
+## 9.9. Roles y permisos
 
-## 9.7. Empleados
-
-El owner debe poder:
-
-- Crear o invitar empleados.
-- Activar o desactivar accesos.
-- Asignar roles.
-- Revisar actividad.
-- Revocar sesiones cuando sea necesario.
-
-## 9.8. Roles y permisos
-
-Los permisos deben aplicarse tanto en frontend como en backend.
+Los permisos deben aplicarse en frontend y backend.
 
 No es suficiente ocultar botones.
 
 Las acciones bloqueadas deben rechazarse también mediante:
 
-- RLS.
-- Funciones seguras.
-- Validaciones de rol.
-- Políticas de acceso.
+- RLS;
+- funciones seguras;
+- validaciones de rol;
+- políticas de acceso.
 
-## 9.9. Marketing
+## 9.10. Marketing
 
 Debe permitir:
 
-- Gestionar campañas.
-- Registrar fuentes.
-- Crear códigos o enlaces de campaña.
-- Añadir notas.
-- Aplicar etiquetas.
-- Consultar conversiones.
-- Consultar usuarios próximos a terminar la prueba.
-- Marcar clientes como listos para cobro.
-- Medir resultados por canal.
+- gestionar campañas;
+- registrar fuentes;
+- crear códigos o enlaces de campaña;
+- añadir notas;
+- aplicar etiquetas;
+- consultar conversiones;
+- seguir usuarios interesados en Trabajos;
+- consultar onboarding y nuevos conductores;
+- consultar referidos;
+- medir resultados por canal;
+- exportar reportes autorizados sin datos financieros sensibles.
 
-## 9.10. Auditoría
+## 9.11. Auditoría
 
 Debe registrar:
 
-- Usuario que realizó la acción.
-- Acción.
-- Entidad afectada.
-- Valor anterior.
-- Valor nuevo.
-- Motivo.
-- Fecha y hora.
-- Identificador de la operación.
+- usuario que realizó la acción;
+- acción;
+- entidad afectada;
+- valor anterior;
+- valor nuevo;
+- motivo;
+- fecha y hora;
+- identificador de operación.
 
-Las acciones sensibles incluyen:
+Son acciones sensibles:
 
-- Cambiar plan.
-- Ajustar vigencia.
-- Cambiar estado.
-- Suspender.
-- Revocar.
-- Anular pago.
-- Modificar permisos.
-- Cambiar precios.
-- Reiniciar dispositivos.
-- Modificar números o plantillas de WhatsApp.
-- Actualizar el WhatsApp principal de un cliente.
+- confirmar/anular una recarga;
+- acreditar/revertir saldo;
+- modificar promoción;
+- modificar comisión o tarifas;
+- suspender/reactivar conductor;
+- modificar permisos;
+- corregir un documento;
+- modificar WhatsApp principal;
+- intervenir una relación de referido.
 
-## 9.11. Configuración de WhatsApp por proyecto
+## 9.12. Configuración de WhatsApp por proyecto
 
-Dentro de:
-
-**Configuración → Proyecto → TukTuk Control → Soporte y contacto**
-
-el owner podrá administrar:
+Dentro de la configuración del proyecto, el owner podrá administrar:
 
 ### Configuración general
 
-- número principal de WhatsApp;
-- estado general activo o inactivo;
-- nombre visible del canal.
+- número principal;
+- estado activo/inactivo;
+- nombre visible.
 
 ### Atención al cliente
 
 - número específico opcional;
 - texto del botón;
-- plantilla del mensaje;
-- estado activo o inactivo.
+- plantilla;
+- estado.
 
-### Pagos y activaciones
+### Recargas y billetera
 
 - número específico opcional;
 - texto del botón;
-- plantilla del mensaje;
-- estado activo o inactivo;
-- variables que deben incluirse.
+- plantilla;
+- estado;
+- variables.
 
-Cuando no exista un número específico para una vía, se utilizará el número principal.
+Cuando no exista número específico, se utilizará el principal.
 
-Solo el owner podrá modificar esta configuración.
+Solo roles autorizados podrán modificarlo.
 
-Otros roles podrán visualizarla únicamente cuando sea necesario para su trabajo.
+Toda modificación debe registrar valor anterior, valor nuevo, usuario, fecha, proyecto y motivo opcional.
 
-Toda modificación deberá registrar:
+La lectura necesaria para TUKTUK debe ser segura y no exponer datos administrativos sensibles.
 
-- valor anterior;
-- valor nuevo;
-- usuario;
-- fecha y hora;
-- proyecto afectado;
-- motivo opcional.
-
-La configuración necesaria para TukTuk Control deberá estar disponible mediante una lectura segura que no exponga datos administrativos sensibles.
-
-No se utilizará `service_role` en el frontend.
+No se utilizará `service_role` en frontend.
 
 ---
 
-# 10. Reglas de negocio de las licencias
+# 10. Modelo comercial de TUKTUK
 
-## 10.1. Creación inicial
+## 10.1. Control y Estadísticas
 
-Cuando el usuario se registra por primera vez:
+Son permanentes para el usuario autenticado. No existe vencimiento de licencia que las bloquee o convierta en solo lectura.
 
-- Se crea una licencia automáticamente.
-- Plan: Prueba inicial.
-- Estado: Activa.
-- Duración: 30 días.
-- Fecha de inicio: primer registro.
-- Fecha de vencimiento: 30 días después.
+## 10.2. Conversión a conductor
 
-Debe existir una sola licencia por usuario y aplicación.
+La cuenta Google identifica al usuario.
 
-## 10.2. Compra durante la prueba
+La condición de conductor se adquiere cuando se completan los datos obligatorios de Trabajos y el backend valida el onboarding.
 
-Cuando el cliente compra durante la prueba:
+## 10.3. Promoción inicial
 
-- No se crea otra licencia.
-- Se modifica la licencia existente.
-- La prueba se sustituye por el plan comprado.
-- El plan comienza desde la confirmación del pago.
-- Los días restantes de prueba no se acumulan.
-- Se actualizan duración y dispositivos.
-- Se conserva el historial de la prueba.
+Al completar el alta se inicia una única promoción comercial inicial.
 
-Ejemplo:
+Debe cumplir:
 
-- Registro: 1 de agosto.
-- Prueba hasta: 31 de agosto.
-- Compra mensual: 10 de agosto.
-- Nuevo plan: desde el 10 de agosto hasta el vencimiento correspondiente.
+- duración de **X días** configurada desde Gestión Comercial;
+- inicio y fin calculados por servidor;
+- duración congelada al inicio;
+- una promoción inicial por conductor/proyecto;
+- independencia absoluta respecto a Control;
+- trabajos aceptados en modo promocional sin comisión retroactiva.
 
-## 10.3. Renovación de plan pagado activo
+## 10.4. Después de la promoción
 
-Cuando el cliente tiene un plan pagado vigente:
+No existe renovación, compra de plan ni cuota periódica.
 
-- Se conservan los días restantes.
-- La nueva duración se suma desde el vencimiento actual.
-- No se pierden días pagados.
+Para una nueva aceptación:
 
-## 10.4. Renovación de licencia vencida
+- el servidor calcula la comisión;
+- verifica saldo disponible;
+- si alcanza, reserva la comisión;
+- si no alcanza, rechaza únicamente esa aceptación con un mensaje comprensible.
 
-Cuando la licencia está vencida:
+## 10.5. Fuentes de saldo
 
-- El nuevo período comienza desde la confirmación del pago.
-- No se suman días vencidos.
+El saldo puede proceder de:
 
-## 10.5. Cambio de plan
+1. **Recargas pagadas y confirmadas**: saldo real.
+2. **Recompensas por referidos**: saldo promocional.
 
-El sistema debe indicar si el cambio será:
+Ambas fuentes pueden cubrir comisiones.
 
-- Inmediato.
-- Aplicado al finalizar el plan actual.
+El conductor puede recargar antes, durante o después de la promoción. Una recarga no inicia, reinicia, extiende ni modifica las fechas de la promoción.
 
-La decisión debe mostrarse antes de confirmar.
+No existe un depósito inicial mínimo obligatorio como condición separada de habilitación.
 
-## 10.6. Ajuste de vigencia
+## 10.6. Comisión
 
-El ajuste manual será una operación excepcional.
+La comisión debe quedar congelada según la regla aplicable al trabajo.
 
-Debe exigir:
+Fuera de promoción:
 
-- Motivo.
-- Fecha anterior.
-- Días agregados o retirados.
-- Nueva fecha.
-- Vista previa.
-- Confirmación.
-- Auditoría.
+- se reserva al aceptar;
+- se liquida cuando corresponde;
+- se libera si corresponde;
+- ninguna interfaz modifica balances directamente.
 
-No representa un pago.
+## 10.7. Suspensión
 
-No genera ingreso.
+La suspensión es una decisión operativa o de riesgo independiente de Control y del saldo.
 
-No genera recibo.
+Una suspensión puede impedir participar en TUKTUK Trabajos según su alcance, pero no debe bloquear las funciones permanentes de Control y Estadísticas.
 
-## 10.7. Estados
+Debe exigir permiso, motivo, trazabilidad y ser reversible cuando corresponda.
 
-Estados permitidos:
+## 10.8. Retirada del modelo anterior
 
-- Activa.
-- Pendiente.
-- Suspendida.
-- Revocada.
-- Vencida.
+Para TUKTUK quedan obsoletos:
 
-“Vencida” debe calcularse automáticamente cuando la fecha de vencimiento sea anterior a la fecha actual.
+- licencia de prueba de Control;
+- planes periódicos;
+- vencimiento de Control;
+- renovación;
+- pago para desbloquear Control;
+- extensión de licencia por referidos;
+- pantalla operativa de Licencias;
+- planes de licencia como producto comercial TUKTUK.
 
-No debe seleccionarse manualmente.
+Se conservan usuarios y datos reales de Control.
 
-## 10.8. Suspensión
-
-La suspensión debe:
-
-- Exigir motivo.
-- Ser reversible.
-- Conservar el historial.
-- No borrar pagos ni recibos.
-
-## 10.9. Revocación
-
-La revocación debe:
-
-- Exigir motivo.
-- Mostrar una confirmación reforzada.
-- Conservar el historial.
-- No eliminar cliente, pagos ni recibos.
-- Quedar registrada en auditoría.
+Los datos exclusivamente de prueba no requieren migración de negocio. Las tablas, RPC y dependencias heredadas solo se eliminan después de auditoría técnica.
 
 ---
 
-# 11. Reglas de negocio de los pagos
+# 11. Recargas, pagos y facturación
 
-## 11.1. Registro
+## 11.1. Registro de solicitud
 
-El operador selecciona:
+Debe registrar:
 
-- Cliente.
-- Plan.
-- Importe.
-- Moneda.
-- Método.
-- Referencia.
-- Observación.
+- conductor;
+- importe;
+- moneda;
+- método;
+- referencia;
+- observación;
+- estado;
+- fecha;
+- actor;
+- clave de idempotencia cuando corresponda.
+
+La solicitud no altera el saldo.
 
 ## 11.2. Confirmación
 
 Una única operación transaccional debe:
 
-1. Registrar el pago.
-2. Actualizar la licencia.
-3. Aplicar las reglas de duración.
-4. Actualizar los dispositivos permitidos.
-5. Generar el recibo.
-6. Registrar la auditoría.
-7. Actualizar las estadísticas.
-8. Devolver los identificadores creados.
+1. confirmar el pago;
+2. acreditar exactamente una vez el saldo real;
+3. actualizar saldos derivados;
+4. generar exactamente un documento;
+5. registrar auditoría;
+6. actualizar métricas;
+7. devolver identificadores.
 
-El frontend no debe modificar directamente las fechas de la licencia.
+El frontend no modifica balances.
 
 ## 11.3. Pagos confirmados
 
-Los pagos confirmados no deben eliminarse físicamente.
+No se eliminan físicamente como corrección ordinaria.
 
-Deben conservarse por trazabilidad.
+## 11.4. Anulación y corrección
 
-## 11.4. Anulación
+Requiere autorización y motivo.
 
-Un pago confirmado puede anularse únicamente con autorización y motivo.
+Antes de confirmar debe mostrarse una vista previa de consecuencias.
 
-Al anularlo:
+La corrección debe:
 
-- El pago cambia a estado Anulado.
-- El recibo queda marcado como Anulado.
-- El importe deja de contar como ingreso.
-- La operación queda registrada en auditoría.
-- La licencia no debe modificarse automáticamente.
+- conservar la operación y el documento originales;
+- realizar reverso o asiento compensatorio cuando corresponda;
+- generar y vincular un documento correctivo o nota de crédito cuando corresponda;
+- actualizar el estado administrativo sin reescribir el contenido histórico;
+- excluir de métricas aquello que corresponda;
+- registrar auditoría.
 
-Si corresponde retirar o ajustar la vigencia concedida, el owner deberá hacerlo mediante una operación administrativa separada y documentada.
+Nunca se corrige dinero reescribiendo silenciosamente el saldo ni sustituyendo el documento histórico.
 
 ## 11.5. Pagos pendientes
 
-Un pago pendiente puede eliminarse solamente cuando:
+Pueden cancelarse o eliminarse únicamente cuando:
 
-- No tenga recibo.
-- No esté vinculado a una licencia.
-- No haya producido efectos financieros.
-- El usuario tenga permiso.
+- no hayan acreditado saldo;
+- no tengan un documento final emitido que requiera anulación;
+- no hayan producido efectos financieros;
+- el usuario tenga permiso.
 
 ## 11.6. Duplicados
 
 El sistema debe impedir:
 
-- Confirmaciones por doble clic.
-- Dos operaciones con la misma referencia cuando no corresponde.
-- Múltiples recibos para el mismo pago.
-- Actualizaciones parciales de licencia sin pago confirmado.
+- confirmaciones por doble clic;
+- doble crédito para la misma operación;
+- referencias duplicadas cuando la regla no lo permita;
+- múltiples documentos finales para la misma confirmación salvo corrección formal;
+- estados parciales en los que el pago quede confirmado sin crédito o documento.
+
+## 11.7. Separación contable
+
+Debe distinguirse entre:
+
+- efectivo recibido como recarga/prepago;
+- saldo promocional;
+- saldo reservado;
+- comisión liquidada;
+- reversos y ajustes.
+
+Una recarga no se contabiliza automáticamente como ingreso ganado por comisión.
 
 ---
 
 # 12. Distribución de responsabilidades
 
-| Persona | Función | Pagos | Licencias manuales | Marketing | Configuración |
-|---|---|---:|---:|---:|---:|
-| Owner | Administración general | Sí | Sí | Sí | Sí |
-| Operador de cobros | Cobros y recibos | Sí | No | Lectura limitada | No |
-| Marketing | Captación y seguimiento | No | No | Sí | No |
-| Cliente | Uso de TukTuk Control | No | No | No | No |
+| Persona | Función principal | Recargas/Pagos | Billetera | Gestión Comercial | Operación | Auditoría |
+|---|---|---:|---:|---:|---:|---:|
+| Owner | Administración general | Sí | Supervisión | Sí | Sí | Sí |
+| Finanzas/Cobros | Verificar y confirmar recargas | Sí | Sin edición directa | Lectura | Limitada | Sus operaciones |
+| Operaciones/Soporte | Conductores, trabajos e incidencias | No, salvo permiso | Lectura según rol | No | Sí | Limitada |
+| Marketing | Captación, campañas y referidos | No | No sensible | Según permiso | No | Comercial |
+| Usuario | Control y Estadísticas | No | No | No | No | No |
+| Conductor | Prestación de servicios | Solicita recarga | Consulta la propia | No | Sus trabajos | No |
 
 La regla principal será:
 
-> Marketing capta y acompaña, Cobros registra la venta, el sistema actualiza la licencia y el owner controla las excepciones.
+> El usuario utiliza Control permanentemente. El conductor trabaja primero con promoción y después con saldo. Finanzas confirma el dinero recibido. El servidor acredita y liquida. El owner controla reglas y excepciones.
 
 ---
 
 # 13. Modelo de datos principal
 
-El sistema debe manejar, como mínimo, las siguientes entidades:
+El sistema debe manejar, como mínimo:
 
 - Usuarios.
 - Perfiles.
+- Conductores.
 - Vehículos.
+- Relaciones conductor–vehículo.
 - Registros diarios.
 - Gastos.
 - Categorías.
 - Mantenimientos.
-- Aplicaciones.
-- Clientes.
-- Licencias.
-- Historial de licencias.
-- Planes.
+- Aplicaciones/proyectos.
+- Clientes Marketplace.
+- Solicitudes de servicio.
+- Trabajos.
+- Asignaciones y eventos.
+- Promociones comerciales.
+- Billeteras.
+- Ledger.
+- Reservas de comisión.
+- Recargas.
 - Pagos.
-- Recibos.
+- Facturas/comprobantes.
+- Referidos.
+- Recompensas.
+- Valoraciones.
+- Incidencias.
+- Tarifas y reglas comerciales.
 - Empleados.
 - Roles.
 - Permisos.
 - Campañas.
 - Fuentes de captación.
-- Referidos.
 - Notas comerciales.
 - Auditoría.
 - Dispositivos.
 - Configuración.
 
 Cada entidad debe utilizar identificadores únicos y relaciones controladas.
+
+Las entidades heredadas de licencias, planes y recibos antiguos pueden permanecer temporalmente por compatibilidad técnica, pero no forman parte del modelo comercial vigente de TUKTUK.
 
 ---
 
@@ -1215,11 +1248,14 @@ Cada entidad debe utilizar identificadores únicos y relaciones controladas.
 
 ## 14.3. Datos financieros
 
-- Los pagos no deben eliminarse físicamente después de confirmados.
-- Los recibos deben conservarse.
-- Las anulaciones requieren motivo.
+- Los pagos confirmados no deben eliminarse físicamente como corrección ordinaria.
+- Los documentos financieros deben conservarse.
+- Las anulaciones y reversos requieren motivo.
 - Los importes deben almacenarse de forma consistente.
-- Las estadísticas deben excluir operaciones anuladas.
+- Ningún frontend modifica balances directamente.
+- Créditos y débitos se registran mediante ledger e idempotencia.
+- Las estadísticas deben separar recargas, saldo promocional, reservas y comisiones.
+- Las operaciones anuladas o revertidas no deben contaminar métricas.
 
 ## 14.4. Auditoría
 
@@ -1265,14 +1301,17 @@ La auditoría no podrá editarse desde el frontend.
 
 ## 16.3. Fechas
 
-En vistas principales:
+En vistas principales se usarán textos comprensibles según el contexto.
 
-- Vence hoy.
-- Vence mañana.
-- Quedan 12 días.
-- Vencida hace 3 días.
+Ejemplos:
 
-La hora exacta debe quedar en los detalles.
+- Promoción finaliza hoy.
+- Promoción finaliza mañana.
+- Quedan 12 días de promoción.
+- Recarga confirmada hoy.
+- Trabajo programado para mañana.
+
+La hora exacta debe quedar en los detalles cuando sea relevante.
 
 ## 16.4. Accesibilidad
 
@@ -1288,76 +1327,86 @@ La hora exacta debe quedar en los detalles.
 
 El Centro de Control debe medir:
 
-- Nuevos registros.
-- Usuarios en prueba.
-- Conversión de prueba a pago.
-- Clientes activos.
-- Licencias vencidas.
-- Licencias suspendidas.
-- Renovaciones.
-- Clientes que no renuevan.
-- Ingresos por período.
-- Ingresos por plan.
-- Planes más vendidos.
-- Pagos por operador.
-- Conversiones por campaña.
-- Conversiones por canal.
-- Referidos.
-- Clientes próximos a vencer.
-- Uso de la aplicación.
-- Sincronizaciones pendientes o fallidas.
+- nuevos usuarios;
+- usuarios activos de Control;
+- onboarding iniciado;
+- conversión de usuario a conductor;
+- conductores por estado;
+- promociones activas y finalizadas;
+- trabajos por estado;
+- valor de servicios;
+- recargas solicitadas, pendientes y confirmadas;
+- importe recibido por recargas;
+- saldo real, promocional y reservado;
+- comisiones reservadas, liquidadas y revertidas;
+- ingresos por comisión;
+- pagos por operador;
+- conversiones por campaña;
+- conversiones por canal;
+- referidos vinculados, cualificados y recompensados;
+- documentos financieros emitidos y anulados;
+- valoraciones;
+- incidencias;
+- uso de aplicación;
+- sincronizaciones pendientes o fallidas.
+
+No se utilizarán licencias vencidas, renovaciones o planes vendidos como métricas principales de TUKTUK.
 
 ---
 
 # 18. Criterios de éxito
 
-El producto será considerado funcional cuando:
+El producto será considerado alineado con TUKTUK 2.0 cuando:
 
-1. Un nuevo usuario pueda registrarse con Google.
-2. Se cree automáticamente su perfil.
-3. Se cree una licencia de prueba por 30 días.
-4. El usuario pueda registrar información sin conexión.
-5. Los datos se sincronicen al recuperar internet.
-6. Marketing pueda identificar y seguir usuarios en prueba.
-7. El operador pueda registrar una venta desde Pagos.
-8. El sistema actualice automáticamente la misma licencia.
-9. Se genere un recibo.
-10. TukTuk Control reconozca el nuevo plan.
-11. Las renovaciones conserven los días pagados restantes.
-12. Los vencimientos se calculen automáticamente.
-13. Los empleados vean solamente sus módulos.
-14. Las acciones sensibles queden auditadas.
-15. Los pagos anulados no cuenten como ingresos.
-16. Las actualizaciones no eliminen los datos del cliente.
-17. El owner pueda supervisar toda la operación.
-18. El owner pueda cambiar el número y las plantillas de WhatsApp sin publicar una nueva versión de TukTuk Control.
-19. Atención al cliente y pagos generen mensajes distintos.
-20. El mensaje de pago incluya nombre, correo, licencia, plan y vencimiento.
-21. El operador pueda registrar o actualizar manualmente el WhatsApp al confirmar un pago.
-22. Los cambios de WhatsApp queden auditados y no sustituyan silenciosamente el número anterior.
+1. un usuario pueda registrarse con Google;
+2. se cree o vincule su perfil;
+3. pueda usar Control y Estadísticas sin licencia temporal;
+4. pueda registrar información sin conexión;
+5. pueda sincronizar al recuperar internet;
+6. el fin de promoción o la falta de saldo no bloquee Control;
+7. un usuario solo se convierta en conductor al completar el alta requerida;
+8. cada conductor tenga un Conductor 360 coherente;
+9. la duración promocional proceda de Gestión Comercial y no esté fijada en 30 días;
+10. una promoción iniciada conserve su duración;
+11. durante promoción no exista comisión retroactiva;
+12. después de promoción se pueda aceptar si el saldo cubre la comisión;
+13. saldo procedente solo de referidos pueda cubrir comisiones;
+14. no se exija depósito inicial mínimo adicional;
+15. saldo insuficiente bloquee únicamente la nueva aceptación;
+16. una recarga pendiente no aumente saldo;
+17. confirmar un pago acredite exactamente una vez la billetera;
+18. la confirmación genere exactamente un documento financiero;
+19. una corrección financiera conserve historia y use compensación cuando corresponda;
+20. empleados vean y ejecuten solo módulos y acciones autorizadas;
+21. acciones sensibles queden auditadas;
+22. los datos reales de usuarios y Control se conserven al retirar el legado;
+23. WhatsApp de soporte y recargas se configure sin publicar nueva versión;
+24. los cambios manuales de WhatsApp queden auditados;
+25. TUKTUK no presente planes ni renovaciones de licencia como requisito de uso.
 
 ---
 
-# 19. Elementos no incluidos en la primera versión
+# 19. Elementos no incluidos en esta etapa
 
-La primera versión no dependerá de:
+Esta etapa no dependerá de:
 
-- Pasarela de pago automática.
-- Cobros bancarios automáticos.
-- Facturación fiscal electrónica.
-- Marketplace.
-- Chat interno avanzado.
-- Inteligencia artificial dentro de TukTuk Control.
-- Gestión automática de nóminas.
-- Contabilidad empresarial completa.
-- Gestión de inventario.
-- Soporte multimoneda avanzado.
-- Venta internacional automatizada.
-- Administración de otras aplicaciones todavía no lanzadas.
-- Identificación automática del número del cliente mediante la API de WhatsApp.
-- Webhooks de WhatsApp Business Platform en la primera versión.
+- pasarela internacional automática;
+- cobros bancarios automáticos;
+- facturación fiscal electrónica completa para todas las jurisdicciones;
+- chat interno avanzado;
+- inteligencia artificial dentro de TUKTUK Control;
+- gestión automática de nóminas;
+- contabilidad empresarial completa;
+- gestión de inventario;
+- soporte multimoneda avanzado;
+- venta internacional automatizada;
+- identificación automática del número del usuario mediante API de WhatsApp;
+- webhooks de WhatsApp Business Platform;
+- retiro o transferencia a efectivo del saldo promocional;
+- pago del servicio del cliente mediante la billetera de comisiones;
+- eliminación inmediata de la infraestructura heredada de licencias.
 
-La arquitectura sí debe permitir incorporar estas funciones posteriormente.
+La arquitectura debe permitir incorporar posteriormente pasarelas y requisitos fiscales sin reconstruir el ledger ni el flujo de recargas.
 
 ---
 
@@ -1365,75 +1414,102 @@ La arquitectura sí debe permitir incorporar estas funciones posteriormente.
 
 El Centro de Control deberá estar preparado para administrar otras aplicaciones de VRIXORA.
 
-Cada aplicación podrá tener:
+Cada producto podrá tener un modelo comercial propio, por ejemplo:
 
-- Sus propios planes.
-- Sus propios precios.
-- Sus propias licencias.
-- Sus propias reglas de dispositivos.
-- Sus propios clientes.
-- Sus propias estadísticas.
-- Sus propios períodos de prueba.
+- suscripción;
+- licencia;
+- compra única;
+- billetera;
+- comisión;
+- consumo;
+- promoción;
+- combinaciones.
 
-Un mismo cliente podrá utilizar diferentes productos de VRIXORA, pero deberá tener una licencia independiente para cada aplicación.
+Cada aplicación podrá tener además:
+
+- sus propios precios;
+- reglas de dispositivos;
+- usuarios y clientes;
+- estadísticas;
+- parámetros comerciales.
+
+La retirada de licencias en TUKTUK no obliga a otros productos a utilizar el mismo modelo.
+
+Los servicios compartidos de usuarios, empleados, permisos, auditoría, facturación, pagos y configuración deben poder reutilizarse sin imponer el modelo comercial de un proyecto a otro.
 
 ---
 
 # 21. Prioridades del desarrollo
 
-## Prioridad 1: operación comercial segura
+## Prioridad 0: alineación con el nuevo modelo
 
-- Pagos.
-- Licencias.
-- Planes.
-- Recibos.
-- Clientes.
+- Actualizar PRD Maestro, Centro de Control y Marketplace.
+- Retirar el bloqueo de Control por licencia.
+- Sustituir 30 días fijos por promoción configurable.
+- Retirar requisito de depósito inicial mínimo.
+- Permitir continuidad por saldo real o promocional.
+- Definir Conductor 360.
+- Transformar Licencias/Planes de TUKTUK.
+- Adaptar mensajes, métricas y estados.
+
+## Prioridad 1: operación financiera segura
+
+- Recargas.
+- Confirmación de pagos.
+- Ledger.
+- Facturación/documentos.
+- Reversos.
+- Conciliación.
 - Auditoría.
-- Configuración dinámica de WhatsApp.
-- Mensajes diferenciados de soporte y renovación.
-- Registro manual y trazable del WhatsApp del cliente.
+- Roles y permisos.
 
-## Prioridad 2: roles y empleados
+## Prioridad 2: operación y crecimiento
 
-- Owner.
-- Operador de cobros.
-- Marketing.
-- Permisos de backend.
-- Navegación por rol.
-
-## Prioridad 3: seguimiento comercial
-
+- Conductores.
+- Trabajos.
+- Incidencias.
+- Valoraciones.
 - Campañas.
 - Fuentes.
 - Notas.
-- Estados comerciales.
-- Conversiones.
 - Referidos.
+- Informes.
 
-## Prioridad 4: optimización y crecimiento
+## Prioridad 3: retirada del legado
 
-- Informes avanzados.
+- Inventario de dependencias.
+- Migración o eliminación de referencias.
+- Limpieza de datos exclusivamente de prueba.
+- Retirada de UI y RPC obsoletos.
+- Verificación de que ningún usuario real pierda datos.
+
+## Prioridad 4: optimización y expansión
+
 - Automatizaciones.
 - Notificaciones.
-- Nuevas aplicaciones.
 - Pagos automáticos.
+- Pasarelas.
+- Facturación fiscal según jurisdicción.
+- Nuevas aplicaciones.
 - Expansión internacional.
 
 ---
 
 # 22. Definición final del producto
 
-**VRIXORA Solutions** será la plataforma empresarial que desarrolla y administra aplicaciones inteligentes para pequeños negocios.
+**VRIXORA Solutions** será la plataforma empresarial que desarrolla y administra productos digitales con modelos comerciales configurables.
 
-**TukTuk Control** será su primera aplicación comercial, orientada al control económico y operativo de triciclos.
+**TUKTUK Control** será la herramienta permanente de control económico y operativo del usuario.
 
-El Centro de Control permitirá administrar clientes, pruebas gratuitas, licencias, planes, pagos, recibos, empleados, marketing y estadísticas.
+**TUKTUK Trabajos** convertirá en conductor únicamente al usuario que complete su alta y monetizará mediante comisión cubierta por billetera después de una promoción inicial configurable.
+
+El Centro de Control administrará usuarios, conductores, Conductor 360, clientes Marketplace, trabajos, billeteras, recargas, referidos, comisiones, facturación, empleados, marketing, configuración, rendimiento y auditoría.
 
 El principio operativo será:
 
-> El cliente controla su negocio desde TukTuk Control. Marketing atrae y acompaña. Cobros registra la venta. El sistema administra automáticamente la licencia. El owner supervisa y controla las excepciones.
+> El usuario controla su actividad sin vencimiento. El conductor trabaja primero con promoción y después con saldo. Los referidos y las recargas alimentan la billetera. El sistema cobra comisión por trabajo, no una licencia periódica de TUKTUK.
 
-Este documento constituye la base funcional oficial para continuar el desarrollo, revisar el sistema existente y definir las siguientes etapas del proyecto.
+El modelo anterior de licencia, plan y renovación queda declarado legado para TUKTUK.
 
 ---
 
@@ -1476,48 +1552,73 @@ El PDF se regenerará a partir de `PRD_MASTER.md` cuando se cierre una versión 
 
 ---
 
-# 24. Distribución entre los tres proyectos
+# 24. Distribución entre los proyectos
 
 ## 24.1. Centro de Control de VRIXORA
 
 Responsable de:
 
-- clientes;
-- pagos;
-- recibos;
-- licencias;
-- planes;
+- usuarios;
+- conductores;
+- Conductor 360;
+- clientes Marketplace;
+- trabajos;
+- billeteras;
+- recargas;
+- documentos financieros;
+- Gestión Comercial;
+- tarifas y comisiones;
+- referidos;
 - empleados;
 - roles;
 - marketing;
-- configuración dinámica;
+- configuración;
 - auditoría;
-- administración del WhatsApp de soporte y pagos.
+- administración de WhatsApp de soporte y recargas.
 
-## 24.2. TukTuk Control
+## 24.2. TUKTUK Control / Prestador
 
 Responsable de:
 
-- experiencia del cliente;
+- experiencia del usuario;
 - datos operativos;
+- Control y Estadísticas permanentes;
 - funcionamiento sin conexión;
 - sincronización;
-- lectura del estado de la licencia;
-- generación de mensajes de soporte y renovación;
-- uso de la configuración remota de WhatsApp;
+- onboarding de conductor;
+- experiencia de Trabajos;
+- consulta de promoción;
+- consulta de billetera y recargas;
+- referidos;
+- soporte;
+- uso de configuración remota autorizada;
 - caché local de la última configuración válida.
 
-## 24.3. Sitio web de VRIXORA
+No debe decidir directamente saldos, comisiones, confirmaciones de pago ni autorizaciones críticas.
+
+## 24.3. TUKTUK Cliente
+
+Responsable de:
+
+- solicitud y seguimiento del servicio;
+- interacción del cliente con el trabajo;
+- visualización autorizada del conductor asignado;
+- valoración cuando corresponda.
+
+## 24.4. Sitio web de VRIXORA
 
 Responsable de:
 
 - información pública;
 - captación;
 - presentación comercial;
-- páginas de privacidad;
+- privacidad;
 - soporte;
 - enlaces de instalación o acceso;
-- uso de la misma configuración de contacto cuando se decida integrarla.
+- uso de configuración de contacto cuando corresponda.
 
-La lógica crítica de pagos, licencias y permisos no deberá duplicarse entre repositorios.
+## 24.5. Regla de arquitectura
 
+La lógica crítica de billetera, recargas, pagos, facturación, comisiones, referidos, permisos y estados de trabajo no deberá duplicarse entre repositorios.
+
+Las dependencias antiguas de licencias de TUKTUK se retirarán de forma incremental y verificable.
