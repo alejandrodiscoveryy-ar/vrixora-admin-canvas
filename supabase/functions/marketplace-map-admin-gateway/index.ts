@@ -25,6 +25,13 @@ type OperationalRouteCandidate = {
   destination: { lat: number; lon: number };
 };
 
+type OperationalRouteRender = {
+  jobId: string;
+  polyline: string;
+  distanceKm: number | null;
+  durationSeconds: number | null;
+};
+
 function normalizeCapability(value: unknown): Capability {
   if (value === "map_visual" || value === "geocoding" || value === "routing") return value;
   throw new Error("MAP_CAPABILITY_INVALID");
@@ -170,13 +177,20 @@ function operationalPointsFromData(value: unknown): OperationalPoint[] {
   return points.slice(0, 50);
 }
 
-function operationalRoutesFromData(value: unknown): OperationalRouteCandidate[] {
+function operationalRoutesFromData(
+  value: unknown,
+  routeJobId: string | null = null,
+): OperationalRouteCandidate[] {
   const root = asRecord(value);
   const jobs = Array.isArray(root.jobs) ? root.jobs : [];
   const routes: OperationalRouteCandidate[] = [];
 
   for (const item of jobs) {
     const row = asRecord(item);
+    const jobId = String(row.job_id ?? "");
+
+    if (routeJobId && jobId !== routeJobId) continue;
+
     const originLat = validCoordinate(row.origin_lat, -90, 90);
     const originLon = validCoordinate(row.origin_lon, -180, 180);
     const destinationLat = validCoordinate(row.destination_lat, -90, 90);
@@ -192,19 +206,19 @@ function operationalRoutesFromData(value: unknown): OperationalRouteCandidate[] 
     }
 
     routes.push({
-      jobId: String(row.job_id ?? ""),
+      jobId,
       origin: { lat: originLat, lon: originLon },
       destination: { lat: destinationLat, lon: destinationLon },
     });
   }
 
-  return routes.slice(0, 8);
+  return routes.slice(0, routeJobId ? 1 : 8);
 }
 
 async function operationalRoutePolyline(
   route: OperationalRouteCandidate,
   token: string,
-) {
+): Promise<OperationalRouteRender | null> {
   const params = new URLSearchParams({
     geometries: "polyline",
     overview: "simplified",
@@ -220,13 +234,23 @@ async function operationalRoutePolyline(
   if (!response.ok) throw new Error(`UPSTREAM_HTTP_${response.status}`);
 
   const data = await response.json();
-  const geometry = data?.routes?.[0]?.geometry;
+  const firstRoute = data?.routes?.[0];
+  const geometry = firstRoute?.geometry;
 
-  return typeof geometry === "string" && geometry.trim()
-    ? geometry.trim()
-    : null;
+  if (typeof geometry !== "string" || !geometry.trim()) return null;
+
+  const distanceMeters = Number(firstRoute?.distance);
+  const durationSeconds = Number(firstRoute?.duration);
+
+  return {
+    jobId: route.jobId,
+    polyline: geometry.trim(),
+    distanceKm: Number.isFinite(distanceMeters) ? distanceMeters / 1000 : null,
+    durationSeconds: Number.isFinite(durationSeconds)
+      ? Math.round(durationSeconds)
+      : null,
+  };
 }
-
 function toBase64(bytes: Uint8Array) {
   let binary = "";
   const chunkSize = 0x8000;
@@ -277,6 +301,7 @@ async function operationalStaticMap(
   points: OperationalPoint[],
   routes: OperationalRouteCandidate[],
   showRoutes: boolean,
+  mapStyle: string,
 ) {
   const token = await resolveOperationalMapCredential(serviceClient, projectId);
   if (!token) throw new Error("MAPBOX_CREDENTIAL_MISSING");
@@ -293,6 +318,7 @@ async function operationalStaticMap(
   );
 
   const routeOverlays: string[] = [];
+  const renderedRoutes: OperationalRouteRender[] = [];
 
   if (showRoutes && routes.length) {
     const routingToken = await resolveOperationalRoutingCredential(serviceClient, projectId);
@@ -301,23 +327,24 @@ async function operationalStaticMap(
       const results = await Promise.all(
         routes.map(async (route) => {
           try {
-            const polyline = await operationalRoutePolyline(route, routingToken);
-            return polyline
-              ? `path-4+22d3ee-0.85(${encodeURIComponent(polyline)})`
-              : null;
+            return await operationalRoutePolyline(route, routingToken);
           } catch {
             return null;
           }
         }),
       );
 
-      for (const routeOverlay of results) {
-        if (!routeOverlay) continue;
+      for (const result of results) {
+        if (!result) continue;
 
+        const routeOverlay =
+          `path-4+22d3ee-0.85(${encodeURIComponent(result.polyline)})`;
         const candidate = [...routeOverlays, routeOverlay, ...pointOverlays].join(",");
+
         if (candidate.length > 6500) break;
 
         routeOverlays.push(routeOverlay);
+        renderedRoutes.push(result);
       }
     }
   }
@@ -330,7 +357,7 @@ async function operationalStaticMap(
   });
 
   const url =
-    `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${camera}/1100x660?${params}`;
+    `https://api.mapbox.com/styles/v1/${mapStyle}/static/${camera}/1100x660?${params}`;
 
   const started = performance.now();
   const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
@@ -360,6 +387,7 @@ async function operationalStaticMap(
         points: points.length,
         routes: routeOverlays.length,
         show_routes: showRoutes,
+        map_style: mapStyle,
       },
     });
 
@@ -382,12 +410,13 @@ async function operationalStaticMap(
       });
     }
   } catch {
-    // El mapa no falla por un problema secundario de telemetría.
+    // El mapa no falla por un problema secundario de telemetria.
   }
 
   return {
     dataUrl: `data:${contentType};base64,${toBase64(bytes)}`,
     routeCount: routeOverlays.length,
+    renderedRoutes,
   };
 }
 Deno.serve(async (request: Request) => {
@@ -433,27 +462,67 @@ Deno.serve(async (request: Request) => {
 
       if (operationalError) throw operationalError;
 
-      const points = operationalPointsFromData(operationalData);
-      const routes = operationalRoutesFromData(operationalData);
+      const { data: mapSettings, error: mapSettingsError } = await userClient.rpc(
+        "admin_get_marketplace_map_settings",
+        { target_project_id: projectId },
+      );
+      if (mapSettingsError) throw mapSettingsError;
+
+      const mapVisualSetting = Array.isArray(mapSettings?.settings)
+        ? mapSettings.settings.find((item: any) => item?.capability === "map_visual")
+        : null;
+
+      const configuredStyle = String(mapVisualSetting?.config?.style ?? "")
+        .trim()
+        .replace(/^mapbox:\/\/styles\//, "");
+
+      const mapStyle = /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/.test(configuredStyle)
+        ? configuredStyle
+        : "mapbox/dark-v11";
+
+      const routeJobId = String(body?.route_job_id ?? "").trim();
+
+      if (routeJobId && !/^[0-9a-f-]{36}$/i.test(routeJobId)) {
+        throw new Error("ROUTE_JOB_ID_INVALID");
+      }
+
       const showRoutes = body?.show_routes !== false;
+      const routeCandidates = operationalRoutesFromData(
+        operationalData,
+        routeJobId || null,
+      );
+
+      if (routeJobId && routeCandidates.length === 0) {
+        throw new Error("ROUTE_JOB_NOT_FOUND");
+      }
+
+      const points = operationalPointsFromData(operationalData);
       const rendered = await operationalStaticMap(
         serviceClient,
         projectId,
         points,
-        routes,
+        showRoutes ? routeCandidates : [],
         showRoutes,
+        mapStyle,
       );
+
+      const selectedRoute = routeJobId
+        ? rendered.renderedRoutes.find((route) => route.jobId === routeJobId) ?? null
+        : null;
 
       const payload = {
         data_url: rendered.dataUrl,
         point_count: points.length,
         route_count: rendered.routeCount,
+        map_style: mapStyle,
+        route_job_id: selectedRoute?.jobId ?? null,
+        route_distance_km: selectedRoute?.distanceKm ?? null,
+        route_duration_seconds: selectedRoute?.durationSeconds ?? null,
         generated_at: new Date().toISOString(),
       };
 
       return reply({ ...payload, data: payload });
     }
-
     const providerCode = String(body?.provider_code ?? "").trim();
     const capability = normalizeCapability(body?.capability);
 
