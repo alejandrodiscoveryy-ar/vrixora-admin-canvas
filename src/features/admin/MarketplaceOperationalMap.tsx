@@ -361,10 +361,24 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    const id = window.setTimeout(() => map.resize(), 80);
-    return () => window.clearTimeout(id);
-  }, [expanded, panelOpen]);
+    const node = mapNodeRef.current;
+    if (!map || !node) return;
+
+    let frame = 0;
+    const resize = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => map.resize());
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(node);
+    resize();
+
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [expanded, panelOpen, mapLoaded]);
 
   const pointFeatures = useMemo(() => {
     const data = operational.data;
@@ -647,7 +661,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             </div>
 
             {mapConfig.data ? (
-              <div ref={mapNodeRef} className="absolute inset-0 min-h-[420px] w-full" />
+              <div
+                ref={mapNodeRef}
+                className={`absolute inset-0 w-full ${expanded ? "h-full min-h-0" : "min-h-[420px]"}`}
+              />
             ) : mapConfig.isLoading ? (
               <div className="flex h-full min-h-[420px] items-center justify-center">
                 <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
