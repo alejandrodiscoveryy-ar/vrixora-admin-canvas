@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Navigation, RefreshCw, Route, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,24 @@ const formatTime = (value: string | null) => {
   }).format(date);
 };
 
+const formatDistance = (value: number | null) =>
+  value == null
+    ? "Distancia s/d"
+    : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
+
+const formatDuration = (value: number | null) => {
+  if (value == null || !Number.isFinite(value)) return "Tiempo s/d";
+  const totalMinutes = Math.max(1, Math.round(value / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (!hours) return `${totalMinutes} min`;
+  if (!minutes) return `${hours} h`;
+  return `${hours} h ${minutes} min`;
+};
+
 export default function MarketplaceOperationalMap({ projectId }: { projectId: string }) {
+  const [showRoutes, setShowRoutes] = useState(true);
   const operational = useQuery({
     queryKey: ["marketplace-operational-map", projectId],
     queryFn: () => getMarketplaceOperationalMap(projectId),
@@ -68,14 +85,21 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           `destination:${job.destinationLat.toFixed(5)}:${job.destinationLon.toFixed(5)}`,
         );
       }
+
+      result.push(
+        `job:${job.jobId}:${job.status}:${job.estimatedDistanceKm ?? "na"}:${job.routeDurationSeconds ?? "na"}`,
+      );
     }
 
     return result.join("|") || "empty";
   }, [operational.data]);
 
   const mapImage = useQuery({
-    queryKey: ["marketplace-operational-map-image", projectId, pointKey],
-    queryFn: () => getMarketplaceOperationalStaticMap(projectId),
+    queryKey: ["marketplace-operational-map-image", projectId, pointKey, showRoutes],
+    queryFn: () =>
+      getMarketplaceOperationalStaticMap(projectId, {
+        showRoutes,
+      }),
     enabled: Boolean(operational.data),
     staleTime: 25_000,
   });
@@ -159,23 +183,46 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </span>
             </div>
 
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={operational.isFetching}
-              onClick={() => operational.refetch()}
-            >
-              <RefreshCw
-                className={`mr-2 h-3.5 w-3.5 ${operational.isFetching ? "animate-spin" : ""}`}
-              />
-              Actualizar
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                aria-pressed={showRoutes}
+                onClick={() => setShowRoutes((value) => !value)}
+              >
+                <Route className="mr-2 h-3.5 w-3.5" />
+                {showRoutes ? "Rutas visibles" : "Rutas ocultas"}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={operational.isFetching || mapImage.isFetching}
+                onClick={() => {
+                  void operational.refetch();
+                  void mapImage.refetch();
+                }}
+              >
+                <RefreshCw
+                  className={`mr-2 h-3.5 w-3.5 ${
+                    operational.isFetching || mapImage.isFetching ? "animate-spin" : ""
+                  }`}
+                />
+                Actualizar
+              </Button>
+            </div>
           </div>
 
           <div className="relative min-h-[420px] bg-muted/15">
+            {showRoutes && mapImage.data?.routeCount ? (
+              <div className="absolute left-3 top-3 z-10 rounded-full border border-cyan-400/25 bg-background/85 px-3 py-1.5 text-[11px] font-semibold text-cyan-200 shadow-sm backdrop-blur">
+                {mapImage.data.routeCount} {mapImage.data.routeCount === 1 ? "ruta visible" : "rutas visibles"}
+              </div>
+            ) : null}
+
             {mapImage.data ? (
               <img
-                src={mapImage.data}
+                src={mapImage.data.dataUrl}
                 alt="Mapa operativo de TukTuk Marketplace"
                 className="h-full min-h-[420px] w-full object-cover"
               />
@@ -195,8 +242,9 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           <div className="border-t border-border/55 px-4 py-3 text-xs text-muted-foreground">
             La posición naranja solo se muestra mientras la señal siga vigente: hasta 5 minutos
             para un conductor disponible y hasta 2 minutos durante un servicio activo. El punto
-            verde representa la recogida solicitada por el cliente, no un rastreo continuo de su
-            teléfono.
+            verde representa la recogida solicitada por el cliente. La capa de rutas reconstruye
+            el trayecto vial entre origen y destino mediante Mapbox y puede mostrarse u ocultarse
+            sin afectar los datos operativos.
           </div>
         </section>
 
@@ -228,6 +276,16 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                     <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                       {job.originText} → {job.destinationText}
                     </p>
+
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
+                        {formatDistance(job.estimatedDistanceKm)}
+                      </span>
+                      <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
+                        {formatDuration(job.routeDurationSeconds)}
+                      </span>
+                    </div>
+
                     {job.driverDisplayName ? (
                       <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Navigation className="h-3.5 w-3.5 text-orange-300" />

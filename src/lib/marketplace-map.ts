@@ -304,6 +304,8 @@ export interface MarketplaceOperationalJob {
   originLon: number | null;
   destinationLat: number | null;
   destinationLon: number | null;
+  estimatedDistanceKm: number | null;
+  routeDurationSeconds: number | null;
   customerDisplayName: string | null;
   driverUserId: string | null;
   vehicleId: string | null;
@@ -325,6 +327,13 @@ export interface MarketplaceOperationalMapData {
   jobs: MarketplaceOperationalJob[];
 }
 
+
+export interface MarketplaceOperationalStaticMapData {
+  dataUrl: string;
+  pointCount: number;
+  routeCount: number;
+  generatedAt: string | null;
+}
 
 const nullableNumber = (value: unknown) =>
   value == null || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
@@ -387,6 +396,8 @@ export async function getMarketplaceOperationalMap(
         originLon: nullableNumber(row.origin_lon),
         destinationLat: nullableNumber(row.destination_lat),
         destinationLon: nullableNumber(row.destination_lon),
+        estimatedDistanceKm: nullableNumber(row.estimated_distance_km),
+        routeDurationSeconds: nullableNumber(row.route_duration_seconds),
         customerDisplayName: nullableString(row.customer_display_name),
         driverUserId: nullableString(row.driver_user_id),
         vehicleId: nullableString(row.vehicle_id),
@@ -401,13 +412,15 @@ export async function getMarketplaceOperationalMap(
 
 export async function getMarketplaceOperationalStaticMap(
   projectId: string,
-): Promise<string> {
+  options: { showRoutes?: boolean } = {},
+): Promise<MarketplaceOperationalStaticMapData> {
   const { data, error } = await getSupabaseClient().functions.invoke(
     "marketplace-map-admin-gateway",
     {
       body: {
         operation: "operational_static_map",
         project_id: projectId,
+        show_routes: options.showRoutes !== false,
       },
     },
   );
@@ -419,5 +432,11 @@ export async function getMarketplaceOperationalStaticMap(
   const dataUrl = nullableString(payload.data_url ?? root.data_url);
 
   if (!dataUrl) throw new Error("MAP_IMAGE_UNAVAILABLE");
-  return dataUrl;
+
+  return {
+    dataUrl,
+    pointCount: Number(payload.point_count ?? root.point_count ?? 0),
+    routeCount: Number(payload.route_count ?? root.route_count ?? 0),
+    generatedAt: nullableString(payload.generated_at ?? root.generated_at),
+  };
 }

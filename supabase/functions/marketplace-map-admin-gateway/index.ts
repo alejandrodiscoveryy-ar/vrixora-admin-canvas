@@ -19,6 +19,12 @@ type OperationalPoint = {
   lon: number;
 };
 
+type OperationalRouteCandidate = {
+  jobId: string;
+  origin: { lat: number; lon: number };
+  destination: { lat: number; lon: number };
+};
+
 function normalizeCapability(value: unknown): Capability {
   if (value === "map_visual" || value === "geocoding" || value === "routing") return value;
   throw new Error("MAP_CAPABILITY_INVALID");
@@ -164,6 +170,63 @@ function operationalPointsFromData(value: unknown): OperationalPoint[] {
   return points.slice(0, 50);
 }
 
+function operationalRoutesFromData(value: unknown): OperationalRouteCandidate[] {
+  const root = asRecord(value);
+  const jobs = Array.isArray(root.jobs) ? root.jobs : [];
+  const routes: OperationalRouteCandidate[] = [];
+
+  for (const item of jobs) {
+    const row = asRecord(item);
+    const originLat = validCoordinate(row.origin_lat, -90, 90);
+    const originLon = validCoordinate(row.origin_lon, -180, 180);
+    const destinationLat = validCoordinate(row.destination_lat, -90, 90);
+    const destinationLon = validCoordinate(row.destination_lon, -180, 180);
+
+    if (
+      originLat == null ||
+      originLon == null ||
+      destinationLat == null ||
+      destinationLon == null
+    ) {
+      continue;
+    }
+
+    routes.push({
+      jobId: String(row.job_id ?? ""),
+      origin: { lat: originLat, lon: originLon },
+      destination: { lat: destinationLat, lon: destinationLon },
+    });
+  }
+
+  return routes.slice(0, 8);
+}
+
+async function operationalRoutePolyline(
+  route: OperationalRouteCandidate,
+  token: string,
+) {
+  const params = new URLSearchParams({
+    geometries: "polyline",
+    overview: "simplified",
+    alternatives: "false",
+    steps: "false",
+    access_token: token,
+  });
+
+  const url =
+    `https://api.mapbox.com/directions/v5/mapbox/driving/${route.origin.lon},${route.origin.lat};${route.destination.lon},${route.destination.lat}?${params}`;
+
+  const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  if (!response.ok) throw new Error(`UPSTREAM_HTTP_${response.status}`);
+
+  const data = await response.json();
+  const geometry = data?.routes?.[0]?.geometry;
+
+  return typeof geometry === "string" && geometry.trim()
+    ? geometry.trim()
+    : null;
+}
+
 function toBase64(bytes: Uint8Array) {
   let binary = "";
   const chunkSize = 0x8000;
@@ -192,10 +255,28 @@ async function resolveOperationalMapCredential(
   return Deno.env.get("MAPBOX_SERVER_TOKEN")?.trim() || null;
 }
 
+async function resolveOperationalRoutingCredential(
+  serviceClient: ReturnType<typeof createClient>,
+  projectId: string,
+) {
+  const managedServer = await getCredential(serviceClient, projectId, "mapbox", "server");
+  if (managedServer) return managedServer;
+
+  const envServer = Deno.env.get("MAPBOX_SERVER_TOKEN")?.trim() || null;
+  if (envServer) return envServer;
+
+  const managedPublic = await getCredential(serviceClient, projectId, "mapbox", "public");
+  if (managedPublic) return managedPublic;
+
+  return Deno.env.get("MAPBOX_PUBLIC_TOKEN")?.trim() || null;
+}
+
 async function operationalStaticMap(
   serviceClient: ReturnType<typeof createClient>,
   projectId: string,
   points: OperationalPoint[],
+  routes: OperationalRouteCandidate[],
+  showRoutes: boolean,
 ) {
   const token = await resolveOperationalMapCredential(serviceClient, projectId);
   if (!token) throw new Error("MAPBOX_CREDENTIAL_MISSING");
@@ -206,13 +287,42 @@ async function operationalStaticMap(
     destination: "22d3ee",
   } satisfies Record<OperationalPointKind, string>;
 
-  const overlay = points
-    .map(
-      (point) =>
-        `pin-s+${color[point.kind]}(${point.lon.toFixed(6)},${point.lat.toFixed(6)})`,
-    )
-    .join(",");
+  const pointOverlays = points.map(
+    (point) =>
+      `pin-s+${color[point.kind]}(${point.lon.toFixed(6)},${point.lat.toFixed(6)})`,
+  );
 
+  const routeOverlays: string[] = [];
+
+  if (showRoutes && routes.length) {
+    const routingToken = await resolveOperationalRoutingCredential(serviceClient, projectId);
+
+    if (routingToken) {
+      const results = await Promise.all(
+        routes.map(async (route) => {
+          try {
+            const polyline = await operationalRoutePolyline(route, routingToken);
+            return polyline
+              ? `path-4+22d3ee-0.85(${encodeURIComponent(polyline)})`
+              : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      for (const routeOverlay of results) {
+        if (!routeOverlay) continue;
+
+        const candidate = [...routeOverlays, routeOverlay, ...pointOverlays].join(",");
+        if (candidate.length > 6500) break;
+
+        routeOverlays.push(routeOverlay);
+      }
+    }
+  }
+
+  const overlay = [...routeOverlays, ...pointOverlays].join(",");
   const camera = overlay ? `${overlay}/auto` : "-82.3666,23.1136,11";
   const params = new URLSearchParams({
     access_token: token,
@@ -248,15 +358,38 @@ async function operationalStaticMap(
       target_metadata: {
         source: "marketplace-map-admin-gateway",
         points: points.length,
+        routes: routeOverlays.length,
+        show_routes: showRoutes,
       },
     });
+
+    if (routeOverlays.length) {
+      await serviceClient.rpc("record_marketplace_map_usage_event", {
+        target_project_id: projectId,
+        target_provider_code: "mapbox",
+        target_capability: "routing",
+        target_operation: "operational_route_overlay",
+        target_units: routeOverlays.length,
+        target_success: true,
+        target_fallback_used: false,
+        target_latency_ms: null,
+        target_error_code: null,
+        target_correlation_id: null,
+        target_metadata: {
+          source: "marketplace-map-admin-gateway",
+          routes: routeOverlays.length,
+        },
+      });
+    }
   } catch {
     // El mapa no falla por un problema secundario de telemetría.
   }
 
-  return `data:${contentType};base64,${toBase64(bytes)}`;
+  return {
+    dataUrl: `data:${contentType};base64,${toBase64(bytes)}`,
+    routeCount: routeOverlays.length,
+  };
 }
-
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return reply({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405);
@@ -301,11 +434,20 @@ Deno.serve(async (request: Request) => {
       if (operationalError) throw operationalError;
 
       const points = operationalPointsFromData(operationalData);
-      const dataUrl = await operationalStaticMap(serviceClient, projectId, points);
+      const routes = operationalRoutesFromData(operationalData);
+      const showRoutes = body?.show_routes !== false;
+      const rendered = await operationalStaticMap(
+        serviceClient,
+        projectId,
+        points,
+        routes,
+        showRoutes,
+      );
 
       const payload = {
-        data_url: dataUrl,
+        data_url: rendered.dataUrl,
         point_count: points.length,
+        route_count: rendered.routeCount,
         generated_at: new Date().toISOString(),
       };
 
