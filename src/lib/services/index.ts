@@ -85,6 +85,8 @@ export type {
   MarketplaceCustomer360,
   MarketplaceCustomerHistoryItem,
   MarketplaceTopup,
+  MarketplacePaymentMethod,
+  MarketplaceFinancialDocument,
   MarketplaceWallet,
   MarketplaceFinancialSettings,
   MarketplaceIncident,

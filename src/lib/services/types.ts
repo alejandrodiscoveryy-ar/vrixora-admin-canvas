@@ -1146,6 +1146,30 @@ export interface MarketplaceCustomerHistoryItem {
   createdAt: string;
   updatedAt: string;
 }
+export interface MarketplacePaymentMethod {
+  code: string;
+  name: string;
+  active: boolean;
+  confirmationMode: string;
+  requiresReference: boolean;
+  sortOrder: number;
+}
+
+export interface MarketplaceFinancialDocument {
+  id: string;
+  userId: string;
+  topupId: string;
+  documentType: string;
+  documentNumber: string;
+  amount: number;
+  currency: string;
+  concept: string;
+  paymentMethod: string;
+  paymentReference: string | null;
+  correctionOfDocumentId: string | null;
+  issuedAt: string;
+}
+
 export interface MarketplaceTopup {
   topupId: string;
   userId: string;
@@ -1290,6 +1314,11 @@ export interface MarketplaceAdminService {
     projectId: string,
     filters?: { status?: string; limit?: number; cursor?: MarketplaceCursor | null },
   ): Promise<MarketplacePage<MarketplaceTopup>>;
+  listPaymentMethods(projectId: string): Promise<MarketplacePaymentMethod[]>;
+  listFinancialDocuments(
+    projectId: string,
+    filters?: { userId?: string; limit?: number },
+  ): Promise<MarketplaceFinancialDocument[]>;
   listWallets(
     projectId: string,
     page?: { limit?: number; cursor?: MarketplaceCursor | null },

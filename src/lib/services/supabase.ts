@@ -2268,6 +2268,61 @@ export const supabaseServices: AdminServices = {
           items.length === limit && last ? { at: last.requestedAt, id: last.topupId } : null,
       };
     },
+    async listPaymentMethods(projectId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_payment_methods",
+        { target_project_id: projectId },
+      );
+      throwIfError(error);
+
+      return ((data ?? []) as Record<string, unknown>[])
+        .filter((row) => Boolean(row.active))
+        .map(
+          (row) =>
+            ({
+              code: String(row.code),
+              name: String(row.name),
+              active: Boolean(row.active),
+              confirmationMode: String(row.confirmation_mode),
+              requiresReference: Boolean(row.requires_reference),
+              sortOrder: Number(row.sort_order),
+            }) satisfies MarketplacePaymentMethod,
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.code.localeCompare(b.code));
+    },
+    async listFinancialDocuments(projectId, filters = {}) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_financial_documents",
+        {
+          target_project_id: projectId,
+          target_user_id: filters.userId ?? null,
+          target_limit: filters.limit ?? 200,
+        },
+      );
+      throwIfError(error);
+
+      return ((data ?? []) as Record<string, unknown>[]).map(
+        (row) =>
+          ({
+            id: String(row.id),
+            userId: String(row.user_id),
+            topupId: String(row.topup_id),
+            documentType: String(row.document_type),
+            documentNumber: String(row.document_number),
+            amount: Number(row.amount),
+            currency: String(row.currency),
+            concept: String(row.concept),
+            paymentMethod: String(row.payment_method),
+            paymentReference: row.payment_reference
+              ? String(row.payment_reference)
+              : null,
+            correctionOfDocumentId: row.correction_of_document_id
+              ? String(row.correction_of_document_id)
+              : null,
+            issuedAt: String(row.issued_at),
+          }) satisfies MarketplaceFinancialDocument,
+      );
+    },
     async listWallets(projectId, page = {}) {
       const limit = page.limit ?? 25;
       const { data, error } = await getSupabaseClient().rpc(

@@ -66,6 +66,7 @@ const label = (value: string | null) =>
     cancelled_by_customer: "Cancelado por cliente",
     cancelled_by_driver: "Cancelado por conductor",
     confirmed: "Confirmada",
+    reconciled: "Conciliada",
     rejected: "Rechazada",
     active: "Activo",
     suspended: "Suspendido",
@@ -97,6 +98,15 @@ const errorText = (error: unknown) =>
         TEST_DRIVER_NOT_FOUND: "No se encontró el conductor seleccionado.",
         JOB_IS_NOT_TEST: "Esta acción solo está disponible para carreras de prueba.",
         TEST_DELETE_REASON_REQUIRED: "Debes indicar el motivo de la eliminación.",
+        TOPUP_AMOUNT_MUST_BE_POSITIVE: "El importe de la recarga debe ser mayor que cero.",
+        INVALID_TOPUP_METHOD: "El método de pago seleccionado no es válido.",
+        TOPUP_REFERENCE_REQUIRED: "Este método de pago requiere una referencia.",
+        AUTHENTICATION_REQUIRED: "La sesión ha vencido. Vuelve a iniciar sesión.",
+        PROFILE_NOT_FOUND: "No se encontró el perfil del conductor.",
+        TOPUP_NOT_REQUESTED_OR_NOT_FOUND:
+          "La recarga ya fue procesada o dejó de estar pendiente. Actualiza la lista.",
+        IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION:
+          "La operación ya fue procesada. Actualiza la lista antes de volver a intentarlo.",
       }[error.message] ?? error.message)
     : "No se pudo completar la operación.";
 
@@ -135,6 +145,7 @@ const statusClasses = (status: string | null) => {
     status === "completed" ||
     status === "settled" ||
     status === "confirmed" ||
+    status === "reconciled" ||
     status === "active"
   ) {
     return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
@@ -776,13 +787,16 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [topup, setTopup] = useState<{
     id: string;
     driver: string;
+    confirmationKey: string;
   } | null>(null);
   const [newTopup, setNewTopup] = useState(false);
+  const [topupStatus, setTopupStatus] = useState("");
   const [topupDriver, setTopupDriver] = useState("");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [createTopupKey, setCreateTopupKey] = useState(() => crypto.randomUUID());
   const [minimum, setMinimum] = useState("");
   const [commission, setCommission] = useState("");
   const [testModeEnabled, setTestModeEnabled] = useState(false);
@@ -864,15 +878,31 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   });
 
   const topups = useInfiniteQuery({
-    queryKey: ["marketplace-topups", projectId],
+    queryKey: ["marketplace-topups", projectId, topupStatus],
     queryFn: ({ pageParam }) =>
       supabaseServices.marketplace.listTopups(projectId, {
+        status: topupStatus || undefined,
         limit: PAGE_SIZE,
         cursor: pageParam,
       }),
     initialPageParam: null as null | { at: string; id: string },
     getNextPageParam: (page) => page.nextCursor,
     enabled: tab === "recargas" && canPayments,
+  });
+
+  const paymentMethods = useQuery({
+    queryKey: ["marketplace-payment-methods", projectId],
+    queryFn: () => supabaseServices.marketplace.listPaymentMethods(projectId),
+    enabled: tab === "recargas" && canPayments,
+  });
+
+  const financialDocuments = useQuery({
+    queryKey: ["marketplace-financial-documents", projectId],
+    queryFn: () =>
+      supabaseServices.marketplace.listFinancialDocuments(projectId, {
+        limit: 200,
+      }),
+    enabled: tab === "recargas" && canManagePayments,
   });
 
   const incidents = useInfiniteQuery({
@@ -1007,43 +1037,61 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         method,
         reference: reference || undefined,
         notes: notes || undefined,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: createTopupKey,
       }),
     onSuccess: () => {
+      setError(null);
       setNewTopup(false);
       setTopupDriver("");
       setAmount("");
       setMethod("");
       setReference("");
       setNotes("");
+      setCreateTopupKey(crypto.randomUUID());
       void invalidate("marketplace-topups", "marketplace-overview");
     },
-    onError: (mutationError) => setError(errorText(mutationError)),
+    onError: (mutationError) => {
+      setError(errorText(mutationError));
+      void invalidate("marketplace-topups", "marketplace-overview");
+    },
   });
 
   const confirm = useMutation({
     mutationFn: () =>
-      supabaseServices.marketplace.confirmTopup(projectId, topup!.id, crypto.randomUUID()),
+      supabaseServices.marketplace.confirmTopup(
+        projectId,
+        topup!.id,
+        topup!.confirmationKey,
+      ),
     onSuccess: () => {
+      setError(null);
       setTopup(null);
       void invalidate(
         "marketplace-topups",
         "marketplace-wallets",
         "marketplace-overview",
         "marketplace-drivers",
+        "marketplace-financial-documents",
       );
     },
-    onError: (mutationError) => setError(errorText(mutationError)),
+    onError: (mutationError) => {
+      setError(errorText(mutationError));
+      void invalidate("marketplace-topups", "marketplace-financial-documents");
+    },
   });
 
   const reject = useMutation({
     mutationFn: () => supabaseServices.marketplace.rejectTopup(projectId, topup!.id, reason),
     onSuccess: () => {
+      setError(null);
       setTopup(null);
       setReason("");
       void invalidate("marketplace-topups", "marketplace-overview");
     },
-    onError: (mutationError) => setError(errorText(mutationError)),
+    onError: (mutationError) => {
+      setError(errorText(mutationError));
+      void invalidate("marketplace-topups", "marketplace-overview");
+    },
   });
 
   const save = useMutation({
@@ -1110,6 +1158,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
+  const selectedPaymentMethod = paymentMethods.data?.find((item) => item.code === method);
+  const paymentMethodLabel = (code: string) =>
+    paymentMethods.data?.find((item) => item.code === code)?.name ?? code;
   const incidentRows = rows(incidents);
 
   const testDriver = testModeDrivers.data?.items.find((item) => item.userId === testDriverUserId);
@@ -1875,17 +1926,38 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 icon={Banknote}
                 tone="cyan"
                 action={
-                  canManagePayments ? (
-                    <Button
-                      onClick={() => {
-                        setError(null);
-                        setNewTopup(true);
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Registrar recarga
-                    </Button>
-                  ) : null
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-background/50 p-1">
+                      {[
+                        ["", "Todas"],
+                        ["requested", "Pendientes"],
+                        ["confirmed", "Confirmadas"],
+                        ["reconciled", "Conciliadas"],
+                        ["rejected", "Rechazadas"],
+                      ].map(([value, name]) => (
+                        <Button
+                          key={value || "all"}
+                          size="sm"
+                          variant={topupStatus === value ? "default" : "ghost"}
+                          onClick={() => setTopupStatus(value)}
+                        >
+                          {name}
+                        </Button>
+                      ))}
+                    </div>
+
+                    {canManagePayments ? (
+                      <Button
+                        onClick={() => {
+                          setError(null);
+                          setNewTopup(true);
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Registrar recarga
+                      </Button>
+                    ) : null}
+                  </div>
                 }
               >
                 {topups.isLoading ? (
@@ -1899,47 +1971,127 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {topupRows.map((item) => (
-                        <article
-                          key={item.topupId}
-                          className="rounded-2xl border border-border/65 bg-background/45 p-4"
-                        >
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="font-semibold text-foreground">
-                                  {item.driverDisplayName}
-                                </h4>
-                                <StatusBadge status={item.status} />
+                      {topupRows.map((item) => {
+                        const receipt = financialDocuments.data?.find(
+                          (document) => document.topupId === item.topupId,
+                        );
+
+                        return (
+                          <article
+                            key={item.topupId}
+                            className="rounded-2xl border border-border/65 bg-background/45 p-4"
+                          >
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="font-semibold text-foreground">
+                                    {item.driverDisplayName}
+                                  </h4>
+                                  <StatusBadge status={item.status} />
+                                </div>
+
+                                <div className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                                  <p className="text-muted-foreground">
+                                    Método:{" "}
+                                    <span className="text-foreground">
+                                      {paymentMethodLabel(item.method)}
+                                    </span>
+                                  </p>
+
+                                  <p className="text-muted-foreground">
+                                    Solicitada:{" "}
+                                    <span className="text-foreground">
+                                      {formatDate(item.requestedAt)}
+                                    </span>
+                                  </p>
+
+                                  {item.driverPhone ? (
+                                    <p className="text-muted-foreground">
+                                      Teléfono:{" "}
+                                      <span className="text-foreground">{item.driverPhone}</span>
+                                    </p>
+                                  ) : null}
+
+                                  {item.reference ? (
+                                    <p className="text-muted-foreground">
+                                      Referencia:{" "}
+                                      <span className="text-foreground">{item.reference}</span>
+                                    </p>
+                                  ) : null}
+
+                                  {item.confirmedAt ? (
+                                    <p className="text-muted-foreground">
+                                      Confirmada:{" "}
+                                      <span className="text-foreground">
+                                        {formatDate(item.confirmedAt)}
+                                      </span>
+                                    </p>
+                                  ) : null}
+
+                                  {item.rejectedAt ? (
+                                    <p className="text-muted-foreground">
+                                      Rechazada:{" "}
+                                      <span className="text-foreground">
+                                        {formatDate(item.rejectedAt)}
+                                      </span>
+                                    </p>
+                                  ) : null}
+
+                                  {item.rejectionReason ? (
+                                    <p className="text-muted-foreground sm:col-span-2">
+                                      Motivo:{" "}
+                                      <span className="text-foreground">
+                                        {item.rejectionReason}
+                                      </span>
+                                    </p>
+                                  ) : null}
+
+                                  {item.notes ? (
+                                    <p className="text-muted-foreground sm:col-span-2">
+                                      Notas:{" "}
+                                      <span className="text-foreground">{item.notes}</span>
+                                    </p>
+                                  ) : null}
+
+                                  {receipt ? (
+                                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2 sm:col-span-2">
+                                      <p className="text-xs font-semibold text-emerald-300">
+                                        Comprobante {receipt.documentNumber}
+                                      </p>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        Emitido {formatDate(receipt.issuedAt)}
+                                      </p>
+                                    </div>
+                                  ) : null}
+                                </div>
                               </div>
-                              <p className="mt-2 text-sm text-muted-foreground">
-                                Método: <span className="text-foreground">{text(item.method)}</span>
-                              </p>
-                            </div>
 
-                            <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                              <p className="text-xl font-semibold text-foreground">
-                                {formatAmount(item.amount, item.currency)}
-                              </p>
+                              <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
+                                <p className="text-xl font-semibold text-foreground">
+                                  {formatAmount(item.amount, item.currency)}
+                                </p>
 
-                              {canManagePayments && item.status === "requested" ? (
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    setTopup({
-                                      id: item.topupId,
-                                      driver: item.driverDisplayName,
-                                    });
-                                    setReason("");
-                                  }}
-                                >
-                                  Gestionar
-                                </Button>
-                              ) : null}
+                                {canManagePayments && item.status === "requested" ? (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setError(null);
+                                      setTopup({
+                                        id: item.topupId,
+                                        driver: item.driverDisplayName,
+                                        confirmationKey: crypto.randomUUID(),
+                                      });
+                                      setReason("");
+                                    }}
+                                  >
+                                    Gestionar
+                                  </Button>
+                                ) : null}
+                              </div>
                             </div>
-                          </div>
-                        </article>
-                      ))}
+                          </article>
+                        );
+                      })}
                     </div>
 
                     <PaginationButton query={topups} />
@@ -2479,12 +2631,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </DialogContent>
       </Dialog>
 
-      <Dialog open={newTopup} onOpenChange={setNewTopup}>
+      <Dialog
+        open={newTopup}
+        onOpenChange={(open) => {
+          setNewTopup(open);
+          if (!open) setError(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrar recarga</DialogTitle>
             <DialogDescription>
-              Registra una nueva solicitud de recarga para un conductor.
+              Registra una nueva solicitud utilizando los métodos de pago habilitados.
             </DialogDescription>
           </DialogHeader>
 
@@ -2520,26 +2678,49 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
 
           <div>
-            <Label htmlFor="topup-method">Método</Label>
-            <Input
-              id="topup-method"
-              className="mt-1.5"
-              value={method}
-              onChange={(event) => setMethod(event.target.value)}
-              placeholder="Método"
-            />
+            <Label htmlFor="topup-method">Método de pago</Label>
+
+            {paymentMethods.isLoading ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Cargando métodos de pago…
+              </p>
+            ) : paymentMethods.isError ? (
+              <div className="mt-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-sm text-amber-200">
+                No se pudo cargar el catálogo de métodos de pago. La recarga no se
+                registrará hasta resolver el permiso del catálogo.
+              </div>
+            ) : (
+              <select
+                id="topup-method"
+                className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none"
+                value={method}
+                onChange={(event) => {
+                  setMethod(event.target.value);
+                  setReference("");
+                }}
+              >
+                <option value="">Selecciona método</option>
+                {paymentMethods.data?.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
-          <div>
-            <Label htmlFor="topup-reference">Referencia</Label>
-            <Input
-              id="topup-reference"
-              className="mt-1.5"
-              value={reference}
-              onChange={(event) => setReference(event.target.value)}
-              placeholder="Opcional"
-            />
-          </div>
+          {selectedPaymentMethod?.requiresReference ? (
+            <div>
+              <Label htmlFor="topup-reference">Referencia obligatoria</Label>
+              <Input
+                id="topup-reference"
+                className="mt-1.5"
+                value={reference}
+                onChange={(event) => setReference(event.target.value)}
+                placeholder="Número o referencia del pago"
+              />
+            </div>
+          ) : null}
 
           <div>
             <Label htmlFor="topup-notes">Notas</Label>
@@ -2553,7 +2734,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
 
           <Button
-            disabled={create.isPending || !topupDriver || Number(amount) <= 0 || !method.trim()}
+            disabled={
+              create.isPending ||
+              paymentMethods.isLoading ||
+              paymentMethods.isError ||
+              !topupDriver ||
+              Number(amount) <= 0 ||
+              !selectedPaymentMethod ||
+              (selectedPaymentMethod.requiresReference && !reference.trim())
+            }
             onClick={() => create.mutate()}
           >
             {create.isPending ? (
@@ -2566,12 +2755,22 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(topup)} onOpenChange={() => setTopup(null)}>
+      <Dialog
+        open={Boolean(topup)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTopup(null);
+            setReason("");
+            void invalidate("marketplace-topups", "marketplace-financial-documents");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Gestionar recarga de {topup?.driver}</DialogTitle>
             <DialogDescription>
-              Puedes confirmar la operación o rechazarla indicando el motivo.
+              Confirmar acredita la billetera una sola vez. Para rechazar debes indicar
+              el motivo.
             </DialogDescription>
           </DialogHeader>
 
@@ -2582,14 +2781,17 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           />
 
           <div className="grid grid-cols-2 gap-2">
-            <Button disabled={confirm.isPending} onClick={() => confirm.mutate()}>
+            <Button
+              disabled={confirm.isPending || reject.isPending}
+              onClick={() => confirm.mutate()}
+            >
               {confirm.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Confirmar
             </Button>
 
             <Button
               variant="destructive"
-              disabled={reject.isPending || !reason.trim()}
+              disabled={reject.isPending || confirm.isPending || !reason.trim()}
               onClick={() => reject.mutate()}
             >
               {reject.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -2598,6 +2800,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
