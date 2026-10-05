@@ -69,21 +69,18 @@ async function recordHealth(
 ) {
   const requestedCheckedAt = new Date().toISOString();
 
-  const { data, error } = await serviceClient.rpc(
-    "record_marketplace_map_health_check_service",
-    {
-      target_project_id: args.projectId,
-      target_provider_code: args.providerCode,
-      target_capability: args.capability,
-      target_status: args.status,
-      target_http_status: args.httpStatus ?? null,
-      target_latency_ms: args.latencyMs ?? null,
-      target_error_code: args.errorCode ?? null,
-      target_checked_by: args.checkedBy ?? null,
-      target_metadata: args.metadata ?? {},
-      target_checked_at: requestedCheckedAt,
-    },
-  );
+  const { data, error } = await serviceClient.rpc("record_marketplace_map_health_check_service", {
+    target_project_id: args.projectId,
+    target_provider_code: args.providerCode,
+    target_capability: args.capability,
+    target_status: args.status,
+    target_http_status: args.httpStatus ?? null,
+    target_latency_ms: args.latencyMs ?? null,
+    target_error_code: args.errorCode ?? null,
+    target_checked_by: args.checkedBy ?? null,
+    target_metadata: args.metadata ?? {},
+    target_checked_at: requestedCheckedAt,
+  });
 
   if (error) throw error;
   return typeof data === "string" && data ? data : requestedCheckedAt;
@@ -106,11 +103,9 @@ async function testMapbox(capability: Capability, token: string) {
       overview: "false",
       access_token: token,
     });
-    url =
-      `https://api.mapbox.com/directions/v5/mapbox/driving/-82.3666,23.1136;-82.3537,23.1367?${params}`;
+    url = `https://api.mapbox.com/directions/v5/mapbox/driving/-82.3666,23.1136;-82.3537,23.1367?${params}`;
   } else {
-    url =
-      `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/0/0/0?access_token=${encodeURIComponent(token)}`;
+    url = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/0/0/0?access_token=${encodeURIComponent(token)}`;
   }
 
   const started = performance.now();
@@ -125,16 +120,12 @@ async function testMapbox(capability: Capability, token: string) {
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object"
-    ? value as Record<string, unknown>
-    : {};
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
 function validCoordinate(value: unknown, min: number, max: number) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= min && parsed <= max
-    ? parsed
-    : null;
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
 }
 
 function operationalPointsFromData(value: unknown): OperationalPoint[] {
@@ -227,8 +218,7 @@ async function operationalRoutePolyline(
     access_token: token,
   });
 
-  const url =
-    `https://api.mapbox.com/directions/v5/mapbox/driving/${route.origin.lon},${route.origin.lat};${route.destination.lon},${route.destination.lat}?${params}`;
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${route.origin.lon},${route.origin.lat};${route.destination.lon},${route.destination.lat}?${params}`;
 
   const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`UPSTREAM_HTTP_${response.status}`);
@@ -246,9 +236,7 @@ async function operationalRoutePolyline(
     jobId: route.jobId,
     polyline: geometry.trim(),
     distanceKm: Number.isFinite(distanceMeters) ? distanceMeters / 1000 : null,
-    durationSeconds: Number.isFinite(durationSeconds)
-      ? Math.round(durationSeconds)
-      : null,
+    durationSeconds: Number.isFinite(durationSeconds) ? Math.round(durationSeconds) : null,
   };
 }
 function toBase64(bytes: Uint8Array) {
@@ -277,6 +265,19 @@ async function resolveOperationalMapCredential(
   if (managedServer) return managedServer;
 
   return Deno.env.get("MAPBOX_SERVER_TOKEN")?.trim() || null;
+}
+
+async function resolveOperationalPublicCredential(
+  serviceClient: ReturnType<typeof createClient>,
+  projectId: string,
+) {
+  const managedPublic = await getCredential(serviceClient, projectId, "mapbox", "public");
+  if (managedPublic) return managedPublic;
+
+  const envPublic = Deno.env.get("MAPBOX_PUBLIC_TOKEN")?.trim() || null;
+  if (envPublic) return envPublic;
+
+  return null;
 }
 
 async function resolveOperationalRoutingCredential(
@@ -313,8 +314,7 @@ async function operationalStaticMap(
   } satisfies Record<OperationalPointKind, string>;
 
   const pointOverlays = points.map(
-    (point) =>
-      `pin-s+${color[point.kind]}(${point.lon.toFixed(6)},${point.lat.toFixed(6)})`,
+    (point) => `pin-s+${color[point.kind]}(${point.lon.toFixed(6)},${point.lat.toFixed(6)})`,
   );
 
   const routeOverlays: string[] = [];
@@ -337,8 +337,7 @@ async function operationalStaticMap(
       for (const result of results) {
         if (!result) continue;
 
-        const routeOverlay =
-          `path-4+22d3ee-0.85(${encodeURIComponent(result.polyline)})`;
+        const routeOverlay = `path-4+22d3ee-0.85(${encodeURIComponent(result.polyline)})`;
         const candidate = [...routeOverlays, routeOverlay, ...pointOverlays].join(",");
 
         if (candidate.length > 6500) break;
@@ -351,13 +350,12 @@ async function operationalStaticMap(
 
   const overlay = [...routeOverlays, ...pointOverlays].join(",");
   const camera = overlay ? `${overlay}/auto` : "-82.3666,23.1136,11";
-  const params = new URLSearchParams({
-    access_token: token,
-    padding: overlay ? "60" : "0",
-  });
+  const params = new URLSearchParams({ access_token: token });
+  if (overlay) {
+    params.set("padding", "60");
+  }
 
-  const url =
-    `https://api.mapbox.com/styles/v1/${mapStyle}/static/${camera}/1100x660?${params}`;
+  const url = `https://api.mapbox.com/styles/v1/${mapStyle}/static/${camera}/1100x660?${params}`;
 
   const started = performance.now();
   const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
@@ -447,12 +445,129 @@ Deno.serve(async (request: Request) => {
     const body = await request.json();
     const operation = String(body?.operation ?? "");
 
-    if (!["test_provider", "operational_static_map"].includes(operation)) {
+    if (
+      ![
+        "test_provider",
+        "operational_static_map",
+        "operational_map_config",
+        "operational_route_geometry",
+      ].includes(operation)
+    ) {
       throw new Error("MAP_ADMIN_OPERATION_INVALID");
     }
 
     const projectId = String(body?.project_id ?? "").trim();
     if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
+
+    if (operation === "operational_map_config") {
+      const { error: operationalError } = await userClient.rpc(
+        "admin_get_marketplace_operational_map",
+        { target_project_id: projectId },
+      );
+      if (operationalError) throw operationalError;
+
+      const { data: mapSettings, error: mapSettingsError } = await userClient.rpc(
+        "admin_get_marketplace_map_settings",
+        { target_project_id: projectId },
+      );
+      if (mapSettingsError) throw mapSettingsError;
+
+      const mapVisualSetting = Array.isArray(mapSettings?.settings)
+        ? mapSettings.settings.find((item: any) => item?.capability === "map_visual")
+        : null;
+
+      const configuredStyle = String(mapVisualSetting?.config?.style ?? "")
+        .trim()
+        .replace(/^mapbox:\/\/styles\//, "");
+
+      const mapStyle = /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/.test(configuredStyle)
+        ? configuredStyle
+        : "mapbox/dark-v11";
+
+      const publicToken = await resolveOperationalPublicCredential(serviceClient, projectId);
+      if (!publicToken) throw new Error("MAP_PUBLIC_CREDENTIAL_MISSING");
+      if (!publicToken.startsWith("pk.")) {
+        throw new Error("MAP_PUBLIC_CREDENTIAL_UNSAFE");
+      }
+
+      const payload = {
+        access_token: publicToken,
+        map_style: mapStyle,
+        generated_at: new Date().toISOString(),
+      };
+
+      return reply({ ...payload, data: payload });
+    }
+
+    if (operation === "operational_route_geometry") {
+      const { data: operationalData, error: operationalError } = await userClient.rpc(
+        "admin_get_marketplace_operational_map",
+        { target_project_id: projectId },
+      );
+      if (operationalError) throw operationalError;
+
+      const routeJobId = String(body?.route_job_id ?? "").trim();
+      if (routeJobId && !/^[0-9a-f-]{36}$/i.test(routeJobId)) {
+        throw new Error("ROUTE_JOB_ID_INVALID");
+      }
+
+      const routeCandidates = operationalRoutesFromData(operationalData, routeJobId || null);
+      if (routeJobId && routeCandidates.length === 0) {
+        throw new Error("ROUTE_JOB_NOT_FOUND");
+      }
+
+      const routingToken = await resolveOperationalRoutingCredential(serviceClient, projectId);
+      if (!routingToken) throw new Error("MAPBOX_ROUTING_CREDENTIAL_MISSING");
+
+      const results = await Promise.all(
+        routeCandidates.map(async (route) => {
+          try {
+            return await operationalRoutePolyline(route, routingToken);
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      const renderedRoutes = results.filter(
+        (route): route is OperationalRouteRender => route != null,
+      );
+
+      try {
+        if (renderedRoutes.length) {
+          await serviceClient.rpc("record_marketplace_map_usage_event", {
+            target_project_id: projectId,
+            target_provider_code: "mapbox",
+            target_capability: "routing",
+            target_operation: "operational_route_geometry",
+            target_units: renderedRoutes.length,
+            target_success: true,
+            target_fallback_used: false,
+            target_latency_ms: null,
+            target_error_code: null,
+            target_correlation_id: null,
+            target_metadata: {
+              source: "marketplace-map-admin-gateway",
+              routes: renderedRoutes.length,
+            },
+          });
+        }
+      } catch {
+        // La respuesta operativa no falla por un problema secundario de telemetria.
+      }
+
+      const payload = {
+        routes: renderedRoutes.map((route) => ({
+          job_id: route.jobId,
+          polyline: route.polyline,
+          distance_km: route.distanceKm,
+          duration_seconds: route.durationSeconds,
+        })),
+        generated_at: new Date().toISOString(),
+      };
+
+      return reply({ ...payload, data: payload });
+    }
 
     if (operation === "operational_static_map") {
       const { data: operationalData, error: operationalError } = await userClient.rpc(
@@ -487,10 +602,7 @@ Deno.serve(async (request: Request) => {
       }
 
       const showRoutes = body?.show_routes !== false;
-      const routeCandidates = operationalRoutesFromData(
-        operationalData,
-        routeJobId || null,
-      );
+      const routeCandidates = operationalRoutesFromData(operationalData, routeJobId || null);
 
       if (routeJobId && routeCandidates.length === 0) {
         throw new Error("ROUTE_JOB_NOT_FOUND");
@@ -507,7 +619,7 @@ Deno.serve(async (request: Request) => {
       );
 
       const selectedRoute = routeJobId
-        ? rendered.renderedRoutes.find((route) => route.jobId === routeJobId) ?? null
+        ? (rendered.renderedRoutes.find((route) => route.jobId === routeJobId) ?? null)
         : null;
 
       const payload = {
@@ -577,8 +689,8 @@ Deno.serve(async (request: Request) => {
         capability === "map_visual" && connection?.public_credential_mode === "client_build"
           ? "MAP_PUBLIC_CREDENTIAL_CLIENT_BUILD_UNTESTABLE"
           : capability === "map_visual"
-          ? "MAP_PUBLIC_CREDENTIAL_NOT_MANAGED"
-          : "MAP_SERVER_CREDENTIAL_MISSING";
+            ? "MAP_PUBLIC_CREDENTIAL_NOT_MANAGED"
+            : "MAP_SERVER_CREDENTIAL_MISSING";
 
       const checkedAt = await recordHealth(serviceClient, {
         projectId,
@@ -591,8 +703,8 @@ Deno.serve(async (request: Request) => {
           credential_source: "none",
           configured_mode:
             capability === "map_visual"
-              ? connection?.public_credential_mode ?? "none"
-              : connection?.server_credential_mode ?? "none",
+              ? (connection?.public_credential_mode ?? "none")
+              : (connection?.server_credential_mode ?? "none"),
         },
       });
 
