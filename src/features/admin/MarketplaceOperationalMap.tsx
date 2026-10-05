@@ -1,11 +1,54 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Navigation, RefreshCw, Route, Users } from "lucide-react";
+import mapboxgl, { type CircleLayerSpecification } from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import {
+  AlertTriangle,
+  Clock3,
+  MapPin,
+  Maximize2,
+  Minimize2,
+  Navigation,
+  PanelRightClose,
+  PanelRightOpen,
+  RefreshCw,
+  Route,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getMarketplaceOperationalMap,
+  getMarketplaceOperationalMapConfig,
+  getMarketplaceOperationalRoutes,
   getMarketplaceOperationalStaticMap,
+  type MarketplaceOperationalDriver,
+  type MarketplaceOperationalJob,
 } from "@/lib/marketplace-map";
+
+const MAP_SOURCE_POINTS = "tuktuk-live-points";
+const MAP_SOURCE_ROUTES = "tuktuk-live-routes";
+const MAP_LAYERS = {
+  routes: "tuktuk-live-routes-layer",
+  routesSelected: "tuktuk-live-routes-selected-layer",
+  driversFresh: "tuktuk-live-drivers-fresh-layer",
+  driversStale: "tuktuk-live-drivers-stale-layer",
+  pickups: "tuktuk-live-pickups-layer",
+  destinations: "tuktuk-live-destinations-layer",
+  incidents: "tuktuk-live-incidents-layer",
+} as const;
+
+type LayerKey = "drivers" | "pickups" | "destinations" | "routes" | "incidents";
+type LayerState = Record<LayerKey, boolean>;
+
+type Coordinate = [number, number];
+
+const defaultLayers: LayerState = {
+  drivers: true,
+  pickups: true,
+  destinations: true,
+  routes: true,
+  incidents: true,
+};
 
 const statusLabel = (status: string | null) =>
   ({
@@ -47,62 +90,410 @@ const formatDuration = (value: number | null) => {
   return `${hours} h ${minutes} min`;
 };
 
+const signalAgeLabel = (capturedAt: string | null, serverTime: string) => {
+  if (!capturedAt) return "Sin ubicación";
+  const captured = new Date(capturedAt).getTime();
+  const server = new Date(serverTime).getTime();
+  if (!Number.isFinite(captured) || !Number.isFinite(server)) return "Señal registrada";
+
+  const seconds = Math.max(0, Math.round((server - captured) / 1000));
+  if (seconds < 60) return `Señal hace ${seconds} s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `Señal hace ${minutes} min`;
+  return `Última señal ${formatTime(capturedAt)}`;
+};
+
+const validCoordinate = (value: number | null, min: number, max: number) =>
+  value != null && Number.isFinite(value) && value >= min && value <= max ? value : null;
+
+function driverCoordinate(driver: MarketplaceOperationalDriver): Coordinate | null {
+  const lon = validCoordinate(
+    driver.locationFresh ? driver.longitude : driver.lastLongitude,
+    -180,
+    180,
+  );
+  const lat = validCoordinate(
+    driver.locationFresh ? driver.latitude : driver.lastLatitude,
+    -90,
+    90,
+  );
+  return lon == null || lat == null ? null : [lon, lat];
+}
+
+function decodePolyline(encoded: string): Coordinate[] {
+  const coordinates: Coordinate[] = [];
+  let index = 0;
+  let lat = 0;
+  let lon = 0;
+
+  while (index < encoded.length) {
+    let result = 0;
+    let shift = 0;
+    let byte = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index <= encoded.length);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+
+    result = 0;
+    shift = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index <= encoded.length);
+    lon += result & 1 ? ~(result >> 1) : result >> 1;
+
+    coordinates.push([lon / 1e5, lat / 1e5]);
+  }
+
+  return coordinates;
+}
+
+function jobCoordinate(job: MarketplaceOperationalJob, kind: "origin" | "destination") {
+  const lat = validCoordinate(kind === "origin" ? job.originLat : job.destinationLat, -90, 90);
+  const lon = validCoordinate(kind === "origin" ? job.originLon : job.destinationLon, -180, 180);
+  return lon == null || lat == null ? null : ([lon, lat] satisfies Coordinate);
+}
+
+function addOperationalLayers(map: mapboxgl.Map) {
+  if (!map.getSource(MAP_SOURCE_ROUTES)) {
+    map.addSource(MAP_SOURCE_ROUTES, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+  }
+
+  if (!map.getSource(MAP_SOURCE_POINTS)) {
+    map.addSource(MAP_SOURCE_POINTS, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+  }
+
+  if (!map.getLayer(MAP_LAYERS.routes)) {
+    map.addLayer({
+      id: MAP_LAYERS.routes,
+      type: "line",
+      source: MAP_SOURCE_ROUTES,
+      filter: ["!=", ["get", "selected"], true],
+      paint: {
+        "line-color": "#22d3ee",
+        "line-width": 4,
+        "line-opacity": 0.78,
+      },
+    });
+  }
+
+  if (!map.getLayer(MAP_LAYERS.routesSelected)) {
+    map.addLayer({
+      id: MAP_LAYERS.routesSelected,
+      type: "line",
+      source: MAP_SOURCE_ROUTES,
+      filter: ["==", ["get", "selected"], true],
+      paint: {
+        "line-color": "#67e8f9",
+        "line-width": 7,
+        "line-opacity": 0.98,
+      },
+    });
+  }
+
+  const pointLayer = (
+    id: string,
+    kind: string,
+    color: string,
+    radius: number,
+    extraPaint: NonNullable<CircleLayerSpecification["paint"]> = {},
+  ) => {
+    if (map.getLayer(id)) return;
+    map.addLayer({
+      id,
+      type: "circle",
+      source: MAP_SOURCE_POINTS,
+      filter: ["==", ["get", "kind"], kind],
+      paint: {
+        "circle-color": color,
+        "circle-radius": radius,
+        "circle-stroke-color": "#0f172a",
+        "circle-stroke-width": 2,
+        ...extraPaint,
+      },
+    });
+  };
+
+  pointLayer(MAP_LAYERS.driversFresh, "driver_fresh", "#f97316", 8, {
+    "circle-stroke-color": "#ffedd5",
+    "circle-stroke-width": 3,
+  });
+  pointLayer(MAP_LAYERS.driversStale, "driver_stale", "#f59e0b", 7, {
+    "circle-opacity": 0.65,
+    "circle-stroke-color": "#fde68a",
+  });
+  pointLayer(MAP_LAYERS.pickups, "pickup", "#22c55e", 7);
+  pointLayer(MAP_LAYERS.destinations, "destination", "#22d3ee", 7);
+  pointLayer(MAP_LAYERS.incidents, "incident", "#ef4444", 12, {
+    "circle-opacity": 0.35,
+    "circle-stroke-color": "#fecaca",
+    "circle-stroke-width": 3,
+  });
+}
+
+function setLayerVisibility(map: mapboxgl.Map, id: string, visible: boolean) {
+  if (map.getLayer(id)) {
+    map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
+}
+
 export default function MarketplaceOperationalMap({ projectId }: { projectId: string }) {
-  const [showRoutes, setShowRoutes] = useState(true);
+  const [layers, setLayers] = useState<LayerState>(defaultLayers);
+  const [expanded, setExpanded] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapNodeRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+
   const operational = useQuery({
-    queryKey: ["marketplace-operational-map", projectId],
+    queryKey: ["marketplace-operational-map-live", projectId],
     queryFn: () => getMarketplaceOperationalMap(projectId),
-    refetchInterval: 30_000,
+    refetchInterval: (query) => ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 15_000),
+    refetchIntervalInBackground: false,
   });
 
-  const pointKey = useMemo(() => {
-    const data = operational.data;
-    if (!data) return "empty";
+  const mapConfig = useQuery({
+    queryKey: ["marketplace-operational-map-config", projectId],
+    queryFn: () => getMarketplaceOperationalMapConfig(projectId),
+    staleTime: 15 * 60_000,
+    retry: 1,
+  });
 
-    const result: string[] = [];
+  const routeKey = useMemo(() => {
+    const jobs = operational.data?.jobs ?? [];
+    return jobs
+      .map(
+        (job) =>
+          `${job.jobId}:${job.originLat ?? "x"}:${job.originLon ?? "x"}:${job.destinationLat ?? "x"}:${job.destinationLon ?? "x"}`,
+      )
+      .sort()
+      .join("|");
+  }, [operational.data?.jobs]);
+
+  const routes = useQuery({
+    queryKey: ["marketplace-operational-routes-live", projectId, routeKey],
+    queryFn: () => getMarketplaceOperationalRoutes(projectId),
+    enabled: Boolean(routeKey),
+    staleTime: 10 * 60_000,
+    retry: 1,
+  });
+
+  const staticFallback = useQuery({
+    queryKey: ["marketplace-operational-map-static-fallback", projectId, routeKey],
+    queryFn: () => getMarketplaceOperationalStaticMap(projectId, { showRoutes: layers.routes }),
+    enabled: Boolean(operational.data && mapConfig.isError),
+    staleTime: 20_000,
+  });
+
+  const selectedJob = useMemo(
+    () => operational.data?.jobs.find((job) => job.jobId === selectedJobId) ?? null,
+    [operational.data?.jobs, selectedJobId],
+  );
+
+  useEffect(() => {
+    if (!selectedJobId && operational.data?.jobs.length) {
+      setSelectedJobId(operational.data.jobs[0].jobId);
+    } else if (
+      selectedJobId &&
+      operational.data &&
+      !operational.data.jobs.some((job) => job.jobId === selectedJobId)
+    ) {
+      setSelectedJobId(operational.data.jobs[0]?.jobId ?? null);
+    }
+  }, [operational.data, selectedJobId]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [expanded]);
+
+  useEffect(() => {
+    const node = mapNodeRef.current;
+    const config = mapConfig.data;
+    if (!node || !config || mapRef.current) return;
+
+    mapboxgl.accessToken = config.accessToken;
+    const map = new mapboxgl.Map({
+      container: node,
+      style: `mapbox://styles/${config.mapStyle}`,
+      center: [-82.3666, 23.1136],
+      zoom: 11,
+      attributionControl: false,
+    });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), "bottom-right");
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
+    setMapLoaded(false);
+    map.on("load", () => {
+      addOperationalLayers(map);
+      setMapLoaded(true);
+    });
+    mapRef.current = map;
+
+    return () => {
+      setMapLoaded(false);
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [mapConfig.data]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const id = window.setTimeout(() => map.resize(), 80);
+    return () => window.clearTimeout(id);
+  }, [expanded, panelOpen]);
+
+  const pointFeatures = useMemo(() => {
+    const data = operational.data;
+    if (!data) return [];
+    const features: Array<Record<string, unknown>> = [];
 
     for (const driver of data.drivers) {
-      if (
-        driver.locationFresh &&
-        driver.latitude != null &&
-        driver.longitude != null
-      ) {
-        result.push(
-          `driver:${driver.latitude.toFixed(5)}:${driver.longitude.toFixed(5)}`,
-        );
-      }
+      const coordinate = driverCoordinate(driver);
+      if (!coordinate) continue;
+      features.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: coordinate },
+        properties: {
+          kind: driver.locationFresh ? "driver_fresh" : "driver_stale",
+          driverUserId: driver.driverUserId,
+          activeJobId: driver.activeJobId,
+          label: driver.driverDisplayName ?? "Conductor",
+        },
+      });
     }
 
     for (const job of data.jobs) {
-      if (job.originLat != null && job.originLon != null) {
-        result.push(
-          `customer:${job.originLat.toFixed(5)}:${job.originLon.toFixed(5)}`,
-        );
+      const origin = jobCoordinate(job, "origin");
+      const destination = jobCoordinate(job, "destination");
+      if (origin) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: origin },
+          properties: { kind: "pickup", jobId: job.jobId, selected: job.jobId === selectedJobId },
+        });
+        if (job.status === "incident") {
+          features.push({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: origin },
+            properties: { kind: "incident", jobId: job.jobId },
+          });
+        }
       }
-
-      if (job.destinationLat != null && job.destinationLon != null) {
-        result.push(
-          `destination:${job.destinationLat.toFixed(5)}:${job.destinationLon.toFixed(5)}`,
-        );
+      if (destination) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: destination },
+          properties: {
+            kind: "destination",
+            jobId: job.jobId,
+            selected: job.jobId === selectedJobId,
+          },
+        });
       }
-
-      result.push(
-        `job:${job.jobId}:${job.status}:${job.estimatedDistanceKm ?? "na"}:${job.routeDurationSeconds ?? "na"}`,
-      );
     }
 
-    return result.join("|") || "empty";
-  }, [operational.data]);
+    return features;
+  }, [operational.data, selectedJobId]);
 
-  const mapImage = useQuery({
-    queryKey: ["marketplace-operational-map-image", projectId, pointKey, showRoutes],
-    queryFn: () =>
-      getMarketplaceOperationalStaticMap(projectId, {
-        showRoutes,
-      }),
-    enabled: Boolean(operational.data),
-    staleTime: 25_000,
-  });
+  const routeFeatures = useMemo(() => {
+    return (routes.data ?? []).flatMap((route) => {
+      const coordinates = decodePolyline(route.polyline);
+      if (coordinates.length < 2) return [];
+      return [
+        {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates },
+          properties: {
+            jobId: route.jobId,
+            selected: route.jobId === selectedJobId,
+          },
+        },
+      ];
+    });
+  }, [routes.data, selectedJobId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
+    addOperationalLayers(map);
+
+    const pointsSource = map.getSource(MAP_SOURCE_POINTS) as mapboxgl.GeoJSONSource | undefined;
+    pointsSource?.setData({ type: "FeatureCollection", features: pointFeatures } as never);
+
+    const routeSource = map.getSource(MAP_SOURCE_ROUTES) as mapboxgl.GeoJSONSource | undefined;
+    routeSource?.setData({ type: "FeatureCollection", features: routeFeatures } as never);
+  }, [pointFeatures, routeFeatures, mapConfig.data, mapLoaded]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
+    setLayerVisibility(map, MAP_LAYERS.driversFresh, layers.drivers);
+    setLayerVisibility(map, MAP_LAYERS.driversStale, layers.drivers);
+    setLayerVisibility(map, MAP_LAYERS.pickups, layers.pickups);
+    setLayerVisibility(map, MAP_LAYERS.destinations, layers.destinations);
+    setLayerVisibility(map, MAP_LAYERS.routes, layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.routesSelected, layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.incidents, layers.incidents);
+  }, [layers, pointFeatures, routeFeatures, mapLoaded]);
+
+  const focusJob = useCallback(
+    (job: MarketplaceOperationalJob | null) => {
+      const map = mapRef.current;
+      if (!map || !job) return;
+
+      const bounds = new mapboxgl.LngLatBounds();
+      const origin = jobCoordinate(job, "origin");
+      const destination = jobCoordinate(job, "destination");
+      if (origin) bounds.extend(origin);
+      if (destination) bounds.extend(destination);
+
+      const driver = operational.data?.drivers.find(
+        (item) => item.driverUserId === job.driverUserId,
+      );
+      const driverPoint = driver ? driverCoordinate(driver) : null;
+      if (driverPoint) bounds.extend(driverPoint);
+
+      const route = routes.data?.find((item) => item.jobId === job.jobId);
+      if (route) {
+        for (const coordinate of decodePolyline(route.polyline)) bounds.extend(coordinate);
+      }
+
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, {
+          padding: expanded ? 90 : 60,
+          maxZoom: 15,
+          duration: 550,
+        });
+      }
+    },
+    [expanded, operational.data?.drivers, routes.data],
+  );
+
+  useEffect(() => {
+    focusJob(selectedJob);
+  }, [selectedJob, focusJob]);
 
   if (operational.isLoading) {
     return (
@@ -117,121 +508,158 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
       <div className="rounded-[26px] border border-rose-500/20 bg-rose-500/[0.04] p-6">
         <p className="font-semibold text-foreground">Mapa operativo aún no disponible</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          La pantalla está preparada, pero necesita el contrato de ubicación operativa del backend.
+          No pudimos recuperar la operación geográfica. Los demás módulos de Administración no se
+          ven afectados.
         </p>
       </div>
     );
   }
 
   const data = operational.data;
+  const liveAt = formatTime(data.serverTime);
+  const rootClass = expanded
+    ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
+    : "space-y-4";
+
+  const layerButton = (key: LayerKey, label: string, dotClass: string) => (
+    <button
+      type="button"
+      aria-pressed={layers[key]}
+      onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+        layers[key]
+          ? "border-border/70 bg-background/90 text-foreground shadow-sm"
+          : "border-border/40 bg-background/45 text-muted-foreground opacity-60"
+      }`}
+    >
+      <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
+      {label}
+    </button>
+  );
 
   return (
-    <div className="space-y-4">
-      <section className="relative overflow-hidden rounded-[28px] border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] via-background/70 to-emerald-500/[0.045] p-5 shadow-[0_24px_70px_-46px_rgba(249,115,22,0.75)] sm:p-6">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full bg-orange-500/10 blur-3xl" />
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">
-              Operación geográfica
-            </p>
-            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Mapa operativo
-            </h3>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Conductores trabajando, puntos de recogida y destinos de los servicios activos.
-            </p>
-          </div>
+    <div className={rootClass}>
+      {!expanded ? (
+        <section className="relative overflow-hidden rounded-[28px] border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] via-background/70 to-emerald-500/[0.045] p-5 shadow-[0_24px_70px_-46px_rgba(249,115,22,0.75)] sm:p-6">
+          <div className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">
+                Centro de operaciones en vivo
+              </p>
+              <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                Mapa operativo
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Conductores, recogidas, destinos, rutas e incidencias de los servicios activos.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.055] px-3 py-3">
-              <p className="text-[10px] text-muted-foreground">Trabajando</p>
-              <p className="mt-1 text-xl font-semibold text-foreground">
-                {data.summary.workingDrivers}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-3">
-              <p className="text-[10px] text-muted-foreground">Con señal</p>
-              <p className="mt-1 text-xl font-semibold text-foreground">
-                {data.summary.driversWithFreshLocation}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.055] px-3 py-3">
-              <p className="text-[10px] text-muted-foreground">Servicios</p>
-              <p className="mt-1 text-xl font-semibold text-foreground">
-                {data.summary.activeJobs}
-              </p>
+            <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
+              <div className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.055] px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">Trabajando</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">
+                  {data.summary.workingDrivers}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">Con señal</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">
+                  {data.summary.driversWithFreshLocation}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.055] px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">Servicios</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">
+                  {data.summary.activeJobs}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]">
-        <section className="overflow-hidden rounded-[26px] border border-border/60 bg-background/35">
+      <div
+        className={`grid gap-4 ${
+          expanded
+            ? panelOpen
+              ? "h-full grid-cols-[minmax(0,1fr)_360px]"
+              : "h-full grid-cols-1"
+            : "xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]"
+        }`}
+      >
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-[26px] border border-border/60 bg-background/35">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/55 px-4 py-3.5">
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-                Conductor reciente
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                EN VIVO · {liveAt}
               </span>
-              <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Recogida del cliente
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-cyan-500" />
-                Destino
+              <span className="text-[11px] text-muted-foreground">
+                {data.summary.activeJobs ? "Actualización cada 5 s" : "Actualización cada 15 s"}
               </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                aria-pressed={showRoutes}
-                onClick={() => setShowRoutes((value) => !value)}
-              >
-                <Route className="mr-2 h-3.5 w-3.5" />
-                {showRoutes ? "Rutas visibles" : "Rutas ocultas"}
-              </Button>
+              {expanded ? (
+                <Button size="sm" variant="outline" onClick={() => setPanelOpen((value) => !value)}>
+                  {panelOpen ? (
+                    <PanelRightClose className="mr-2 h-3.5 w-3.5" />
+                  ) : (
+                    <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
+                  )}
+                  {panelOpen ? "Ocultar panel" : "Mostrar panel"}
+                </Button>
+              ) : null}
 
               <Button
                 size="sm"
                 variant="outline"
-                disabled={operational.isFetching || mapImage.isFetching}
-                onClick={() => {
-                  void operational.refetch();
-                  void mapImage.refetch();
-                }}
+                disabled={operational.isFetching}
+                onClick={() => void operational.refetch()}
               >
                 <RefreshCw
-                  className={`mr-2 h-3.5 w-3.5 ${
-                    operational.isFetching || mapImage.isFetching ? "animate-spin" : ""
-                  }`}
+                  className={`mr-2 h-3.5 w-3.5 ${operational.isFetching ? "animate-spin" : ""}`}
                 />
                 Actualizar
+              </Button>
+
+              <Button size="sm" variant="outline" onClick={() => setExpanded((value) => !value)}>
+                {expanded ? (
+                  <Minimize2 className="mr-2 h-3.5 w-3.5" />
+                ) : (
+                  <Maximize2 className="mr-2 h-3.5 w-3.5" />
+                )}
+                {expanded ? "Salir de pantalla completa" : "Pantalla completa"}
               </Button>
             </div>
           </div>
 
-          <div className="relative min-h-[420px] bg-muted/15">
-            {showRoutes && mapImage.data?.routeCount ? (
-              <div className="absolute left-3 top-3 z-10 rounded-full border border-cyan-400/25 bg-background/85 px-3 py-1.5 text-[11px] font-semibold text-cyan-200 shadow-sm backdrop-blur">
-                {mapImage.data.routeCount} {mapImage.data.routeCount === 1 ? "ruta visible" : "rutas visibles"}
-              </div>
-            ) : null}
+          <div className={`relative min-h-[420px] flex-1 bg-muted/15 ${expanded ? "min-h-0" : ""}`}>
+            <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-2xl border border-border/60 bg-background/80 p-2 shadow-lg backdrop-blur">
+              {layerButton("drivers", "Conductores", "bg-orange-500")}
+              {layerButton("pickups", "Recogidas", "bg-emerald-500")}
+              {layerButton("destinations", "Destinos", "bg-cyan-400")}
+              {layerButton("routes", "Rutas", "bg-cyan-600")}
+              {layerButton("incidents", "Incidencias", "bg-red-500")}
+            </div>
 
-            {mapImage.data ? (
+            {mapConfig.data ? (
+              <div ref={mapNodeRef} className="absolute inset-0 min-h-[420px] w-full" />
+            ) : mapConfig.isLoading ? (
+              <div className="flex h-full min-h-[420px] items-center justify-center">
+                <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : staticFallback.data ? (
               <img
-                src={mapImage.data.dataUrl}
+                src={staticFallback.data.dataUrl}
                 alt="Mapa operativo de TukTuk Marketplace"
                 className="h-full min-h-[420px] w-full object-cover"
               />
             ) : (
-              <div className="flex min-h-[420px] flex-col items-center justify-center px-6 text-center">
+              <div className="flex h-full min-h-[420px] flex-col items-center justify-center px-6 text-center">
                 <MapPin className="h-10 w-10 text-orange-300" />
-                <p className="mt-3 font-semibold text-foreground">
-                  {mapImage.isLoading ? "Cargando mapa..." : "Mapa base no disponible"}
-                </p>
+                <p className="mt-3 font-semibold text-foreground">Mapa interactivo no disponible</p>
                 <p className="mt-1 max-w-md text-sm text-muted-foreground">
                   Los datos operativos siguen visibles en el panel lateral.
                 </p>
@@ -240,113 +668,164 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           </div>
 
           <div className="border-t border-border/55 px-4 py-3 text-xs text-muted-foreground">
-            La posición naranja solo se muestra mientras la señal siga vigente: hasta 5 minutos
-            para un conductor disponible y hasta 2 minutos durante un servicio activo. El punto
-            verde representa la recogida solicitada por el cliente. La capa de rutas reconstruye
-            el trayecto vial entre origen y destino mediante Mapbox y puede mostrarse u ocultarse
-            sin afectar los datos operativos.
+            Naranja: conductor con señal reciente. Ámbar: última ubicación conocida con señal
+            atrasada. Verde: recogida. Cian: destino y recorrido. Rojo: incidencia. Las capas se
+            pueden activar o desactivar sin alterar la operación.
           </div>
         </section>
 
-        <aside className="space-y-4">
-          <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
-            <div className="flex items-center gap-2">
-              <Route className="h-4 w-4 text-cyan-300" />
-              <h4 className="font-semibold text-foreground">Servicios activos</h4>
-            </div>
+        {!expanded || panelOpen ? (
+          <aside className={`space-y-4 ${expanded ? "min-h-0 overflow-y-auto pr-1" : ""}`}>
+            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+              <div className="flex items-center gap-2">
+                <Route className="h-4 w-4 text-cyan-300" />
+                <h4 className="font-semibold text-foreground">Servicios activos</h4>
+              </div>
 
-            <div className="mt-3 space-y-2">
-              {data.jobs.length ? (
-                data.jobs.slice(0, 8).map((job) => (
-                  <div
-                    key={job.jobId}
-                    className="rounded-2xl border border-border/55 bg-background/55 p-3"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-full border border-cyan-500/20 bg-cyan-500/[0.07] px-2 py-1 text-[10px] font-semibold text-cyan-300">
-                        {statusLabel(job.status)}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                        {job.serviceCode}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-foreground">
-                      {job.customerDisplayName || "Cliente"}
-                    </p>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {job.originText} → {job.destinationText}
-                    </p>
-
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
-                        {formatDistance(job.estimatedDistanceKm)}
-                      </span>
-                      <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
-                        {formatDuration(job.routeDurationSeconds)}
-                      </span>
-                    </div>
-
-                    {job.driverDisplayName ? (
-                      <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Navigation className="h-3.5 w-3.5 text-orange-300" />
-                        {job.driverDisplayName}
-                      </p>
-                    ) : null}
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-2xl border border-dashed border-border/55 p-4 text-sm text-muted-foreground">
-                  No hay servicios activos ahora.
-                </p>
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-orange-300" />
-              <h4 className="font-semibold text-foreground">Conductores</h4>
-            </div>
-
-            <div className="mt-3 space-y-2">
-              {data.drivers.length ? (
-                data.drivers.slice(0, 10).map((driver) => (
-                  <div
-                    key={driver.driverUserId}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 px-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {driver.driverDisplayName || "Conductor"}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {driver.vehicleName || driver.vehicleId}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={`inline-block h-2.5 w-2.5 rounded-full ${
-                          driver.locationFresh ? "bg-orange-500" : "bg-muted-foreground/40"
+              <div className="mt-3 space-y-2">
+                {data.jobs.length ? (
+                  data.jobs.slice(0, 12).map((job) => {
+                    const selected = job.jobId === selectedJobId;
+                    return (
+                      <button
+                        type="button"
+                        key={job.jobId}
+                        onClick={() => {
+                          setSelectedJobId(job.jobId);
+                          focusJob(job);
+                        }}
+                        className={`w-full rounded-2xl border p-3 text-left transition ${
+                          selected
+                            ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
+                            : "border-border/55 bg-background/55 hover:border-cyan-500/25"
                         }`}
-                      />
-                      <p className="mt-1 text-[10px] text-muted-foreground">
-                        {driver.locationFresh
-                          ? `Señal reciente · ${formatTime(driver.capturedAt)}`
-                          : driver.capturedAt
-                            ? `Señal atrasada · ${formatTime(driver.capturedAt)}`
-                            : "Sin ubicación"}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No hay conductores en modo Trabajando.
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
+                              job.status === "incident"
+                                ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
+                                : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                            }`}
+                          >
+                            {statusLabel(job.status)}
+                          </span>
+                          <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                            {job.serviceCode}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-foreground">
+                          {job.customerDisplayName || "Cliente"}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {job.originText} → {job.destinationText}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
+                            {formatDistance(job.estimatedDistanceKm)}
+                          </span>
+                          <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
+                            {formatDuration(job.routeDurationSeconds)}
+                          </span>
+                        </div>
+                        {job.driverDisplayName ? (
+                          <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Navigation className="h-3.5 w-3.5 text-orange-300" />
+                            {job.driverDisplayName}
+                          </p>
+                        ) : null}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-border/55 p-4 text-sm text-muted-foreground">
+                    No hay servicios activos ahora.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-orange-300" />
+                <h4 className="font-semibold text-foreground">Conductores</h4>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {data.drivers.length ? (
+                  data.drivers.slice(0, 14).map((driver) => {
+                    const hasLastPosition = driverCoordinate(driver) != null;
+                    return (
+                      <div
+                        key={driver.driverUserId}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 px-3 py-2.5"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {driver.driverDisplayName || "Conductor"}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {driver.vehicleName || driver.vehicleId}
+                          </p>
+                          {driver.activeJobId ? (
+                            <p className="mt-1 text-[10px] font-semibold text-cyan-300">
+                              Servicio activo · {statusLabel(driver.activeJobStatus)}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`inline-block h-2.5 w-2.5 rounded-full ${
+                              driver.locationFresh
+                                ? "bg-orange-500"
+                                : hasLastPosition
+                                  ? "bg-amber-400"
+                                  : "bg-muted-foreground/40"
+                            }`}
+                          />
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            {driver.locationFresh
+                              ? `Señal reciente · ${formatTime(driver.capturedAt)}`
+                              : signalAgeLabel(driver.capturedAt, data.serverTime)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No hay conductores en modo Trabajando.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {selectedJob?.status === "incident" ? (
+              <section className="rounded-[24px] border border-red-500/25 bg-red-500/[0.05] p-4">
+                <div className="flex items-center gap-2 text-red-300">
+                  <AlertTriangle className="h-4 w-4" />
+                  <h4 className="font-semibold">Incidencia activa</h4>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  El servicio seleccionado tiene una incidencia sin resolver y permanece visible en
+                  el centro de operaciones.
                 </p>
-              )}
-            </div>
-          </section>
-        </aside>
+              </section>
+            ) : null}
+
+            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-foreground">
+                <Clock3 className="h-4 w-4 text-emerald-300" />
+                <span className="font-semibold">Seguimiento operativo</span>
+              </div>
+              <p className="mt-2 leading-relaxed">
+                Durante un servicio activo, la posición del conductor se considera reciente durante
+                2 minutos. Si la señal se retrasa, conservamos temporalmente la última ubicación
+                conocida para que la pérdida de señal sea visible y comprensible.
+              </p>
+            </section>
+          </aside>
+        ) : null}
       </div>
     </div>
   );

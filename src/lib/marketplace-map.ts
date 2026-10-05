@@ -286,6 +286,9 @@ export interface MarketplaceOperationalDriver {
   activeJobStatus: string | null;
   latitude: number | null;
   longitude: number | null;
+  lastLatitude: number | null;
+  lastLongitude: number | null;
+  lastAccuracyM: number | null;
   accuracyM: number | null;
   headingDegrees: number | null;
   speedMps: number | null;
@@ -327,12 +330,24 @@ export interface MarketplaceOperationalMapData {
   jobs: MarketplaceOperationalJob[];
 }
 
-
 export interface MarketplaceOperationalStaticMapData {
   dataUrl: string;
   pointCount: number;
   routeCount: number;
   generatedAt: string | null;
+}
+
+export interface MarketplaceOperationalMapConfig {
+  accessToken: string;
+  mapStyle: string;
+  generatedAt: string | null;
+}
+
+export interface MarketplaceOperationalRoute {
+  jobId: string;
+  polyline: string;
+  distanceKm: number | null;
+  durationSeconds: number | null;
 }
 
 const nullableNumber = (value: unknown) =>
@@ -341,10 +356,9 @@ const nullableNumber = (value: unknown) =>
 export async function getMarketplaceOperationalMap(
   projectId: string,
 ): Promise<MarketplaceOperationalMapData> {
-  const { data, error } = await getSupabaseClient().rpc(
-    "admin_get_marketplace_operational_map",
-    { target_project_id: projectId },
-  );
+  const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_operational_map", {
+    target_project_id: projectId,
+  });
 
   if (error) throw new Error(error.message);
 
@@ -374,13 +388,14 @@ export async function getMarketplaceOperationalMap(
         activeJobStatus: nullableString(row.active_job_status),
         latitude: nullableNumber(row.latitude),
         longitude: nullableNumber(row.longitude),
+        lastLatitude: nullableNumber(row.last_latitude),
+        lastLongitude: nullableNumber(row.last_longitude),
+        lastAccuracyM: nullableNumber(row.last_accuracy_m),
         accuracyM: nullableNumber(row.accuracy_m),
         headingDegrees: nullableNumber(row.heading_degrees),
         speedMps: nullableNumber(row.speed_mps),
         capturedAt: nullableString(row.captured_at),
-        freshnessSeconds: Number(
-          row.freshness_seconds ?? (row.active_job_id ? 120 : 300),
-        ),
+        freshnessSeconds: Number(row.freshness_seconds ?? (row.active_job_id ? 120 : 300)),
         locationFresh: Boolean(row.location_fresh),
       };
     }),
@@ -439,4 +454,75 @@ export async function getMarketplaceOperationalStaticMap(
     routeCount: Number(payload.route_count ?? root.route_count ?? 0),
     generatedAt: nullableString(payload.generated_at ?? root.generated_at),
   };
+}
+
+export async function getMarketplaceOperationalMapConfig(
+  projectId: string,
+): Promise<MarketplaceOperationalMapConfig> {
+  const { data, error } = await getSupabaseClient().functions.invoke(
+    "marketplace-map-admin-gateway",
+    {
+      body: {
+        operation: "operational_map_config",
+        project_id: projectId,
+      },
+    },
+  );
+
+  if (error) throw new Error(error.message);
+
+  const root = record(data);
+  const payload = record(root.data);
+  const accessToken = nullableString(payload.access_token ?? root.access_token);
+  const mapStyle = nullableString(payload.map_style ?? root.map_style);
+
+  if (!accessToken || !mapStyle) {
+    throw new Error("MAP_INTERACTIVE_CONFIG_UNAVAILABLE");
+  }
+
+  return {
+    accessToken,
+    mapStyle,
+    generatedAt: nullableString(payload.generated_at ?? root.generated_at),
+  };
+}
+
+export async function getMarketplaceOperationalRoutes(
+  projectId: string,
+): Promise<MarketplaceOperationalRoute[]> {
+  const { data, error } = await getSupabaseClient().functions.invoke(
+    "marketplace-map-admin-gateway",
+    {
+      body: {
+        operation: "operational_route_geometry",
+        project_id: projectId,
+      },
+    },
+  );
+
+  if (error) throw new Error(error.message);
+
+  const root = record(data);
+  const payload = record(root.data);
+  const rawRoutes = Array.isArray(payload.routes)
+    ? payload.routes
+    : Array.isArray(root.routes)
+      ? root.routes
+      : [];
+
+  return rawRoutes
+    .map((item) => {
+      const row = record(item);
+      const jobId = String(row.job_id ?? "").trim();
+      const polyline = String(row.polyline ?? "").trim();
+      if (!jobId || !polyline) return null;
+
+      return {
+        jobId,
+        polyline,
+        distanceKm: nullableNumber(row.distance_km),
+        durationSeconds: nullableNumber(row.duration_seconds),
+      } satisfies MarketplaceOperationalRoute;
+    })
+    .filter((item): item is MarketplaceOperationalRoute => item != null);
 }
