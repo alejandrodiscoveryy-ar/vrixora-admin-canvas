@@ -317,12 +317,14 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     if (!expanded) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    document.body.classList.add("marketplace-map-fullscreen");
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setExpanded(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previous;
+      document.body.classList.remove("marketplace-map-fullscreen");
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [expanded]);

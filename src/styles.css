@@ -561,6 +561,11 @@
     animation: admin-enter 280ms ease-out both;
   }
 
+  body.marketplace-map-fullscreen .admin-shell main > div > * {
+    animation: none !important;
+    transform: none !important;
+  }
+
   .admin-shell [data-slot="card"] {
     border-color: color-mix(in oklab, var(--border) 82%, transparent);
   }
