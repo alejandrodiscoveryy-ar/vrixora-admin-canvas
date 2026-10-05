@@ -29,7 +29,13 @@ import {
   Wallet,
   WalletCards,
 } from "lucide-react";
-import { supabaseServices, type MarketplaceCustomer360, type MarketplaceCustomerHistoryItem } from "@/lib/services";
+import {
+  supabaseServices,
+  type MarketplaceCustomer360,
+  type MarketplaceCustomerHistoryItem,
+  type MarketplaceDriver360,
+  type MarketplaceDriverFinancial360,
+} from "@/lib/services";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { KpiGrid } from "@/components/admin/KpiGrid";
@@ -107,6 +113,7 @@ const errorText = (error: unknown) =>
         TOPUP_REFERENCE_REQUIRED: "Este método de pago requiere una referencia.",
         AUTHENTICATION_REQUIRED: "La sesión ha vencido. Vuelve a iniciar sesión.",
         PROFILE_NOT_FOUND: "No se encontró el perfil del conductor.",
+        MARKETPLACE_DRIVER_NOT_FOUND: "No se encontró el conductor en Marketplace.",
         TOPUP_NOT_REQUESTED_OR_NOT_FOUND:
           "La recarga ya fue procesada o dejó de estar pendiente. Actualiza la lista.",
         IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION:
@@ -429,6 +436,190 @@ function CustomerSummaryMetric({
         {labelText}
       </p>
       <p className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">{value}</p>
+    </div>
+  );
+}
+
+function Driver360Detail({
+  detail,
+  financial,
+  canSeeFinancial,
+  financialLoading,
+}: {
+  detail: MarketplaceDriver360;
+  financial: MarketplaceDriverFinancial360 | null;
+  canSeeFinancial: boolean;
+  financialLoading: boolean;
+}) {
+  const displayName = detail.account?.displayName || "Conductor";
+  const currency =
+    financial?.topups[0]?.currency ??
+    financial?.documents[0]?.currency ??
+    financial?.referralCredits[0]?.currency ??
+    "CUP";
+  const availableBalance = financial
+    ? financial.wallet.realAvailableBalance + financial.wallet.promotionalAvailableBalance
+    : 0;
+  const referralCreditTotal =
+    financial?.referralCredits.reduce((sum, item) => sum + item.amount, 0) ?? 0;
+
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      <section className="rounded-[28px] border border-cyan-500/25 bg-gradient-to-br from-cyan-500/[0.10] via-background/80 to-emerald-500/[0.06] p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200">
+                Conductor Marketplace
+              </span>
+              <StatusBadge status={detail.driver.status} />
+            </div>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              {displayName}
+            </h3>
+          </div>
+          <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground">
+            <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />
+            Alta {formatDate(detail.driver.activatedAt ?? detail.driver.createdAt)}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <MiniMetric labelText="Teléfono" value={detail.account?.phone ?? "Sin teléfono"} />
+          <MiniMetric labelText="Correo" value={detail.account?.email ?? "Sin correo"} />
+        </div>
+      </section>
+
+      <section>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+          Operación
+        </p>
+        <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+          Actividad del conductor
+        </h4>
+        <div className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-3">
+          <CustomerSummaryMetric icon={BriefcaseBusiness} labelText="Trabajos" value={detail.jobsSummary.total} accent="cyan" />
+          <CustomerSummaryMetric icon={CheckCircle2} labelText="Completados" value={detail.jobsSummary.completedOrSettled} accent="emerald" />
+          <CustomerSummaryMetric icon={Clock3} labelText="Activos" value={detail.jobsSummary.active} accent="violet" />
+          <CustomerSummaryMetric icon={AlertCircle} labelText="Incidencias" value={detail.incidents} accent="rose" />
+          <CustomerSummaryMetric
+            icon={Star}
+            labelText="Valoración"
+            value={detail.ratings.count ? `${detail.ratings.average.toFixed(1)} / 5 · ${detail.ratings.count}` : "Sin valoraciones"}
+            accent="amber"
+          />
+          <CustomerSummaryMetric icon={Users} labelText="Referidos premiados" value={detail.referral.rewardedCount} accent="cyan" />
+        </div>
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <section className="rounded-[22px] border border-border/60 bg-background/45 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300">Promoción</p>
+          {detail.promotion ? (
+            <div className="mt-3 space-y-2 text-sm">
+              <p className="font-medium text-foreground">
+                {detail.promotion.durationDaysSnapshot} días · regla v{detail.promotion.ruleVersionSnapshot}
+              </p>
+              <p className="text-muted-foreground">Inicio: {formatDate(detail.promotion.startedAt)}</p>
+              <p className="text-muted-foreground">Fin: {formatDate(detail.promotion.endsAt)}</p>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">Sin promoción registrada.</p>
+          )}
+        </section>
+
+        <section className="rounded-[22px] border border-border/60 bg-background/45 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-300">Referidos</p>
+          <div className="mt-3 space-y-2 text-sm">
+            <p className="font-medium text-foreground">Código: {detail.referral.code ?? "Sin código"}</p>
+            <p className="text-muted-foreground">Referidos: {detail.referral.referredCount}</p>
+            <p className="text-muted-foreground">Premiados: {detail.referral.rewardedCount}</p>
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Vehículos</p>
+        {detail.vehicles.length ? (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {detail.vehicles.map((item) => (
+              <div key={item.vehicle.id} className="rounded-2xl border border-border/55 bg-background/60 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-foreground">{item.vehicle.name || "Vehículo"}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {[item.vehicle.brand, item.vehicle.model, item.vehicle.year].filter(Boolean).join(" · ") || "Sin datos de marca/modelo"}
+                    </p>
+                  </div>
+                  <StatusBadge status={item.vehicle.marketplaceStatus} />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {item.vehicle.categoryCode ? (
+                    <span className="rounded-lg border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
+                      {label(item.vehicle.categoryCode)}
+                    </span>
+                  ) : null}
+                  {item.assignment ? (
+                    <span className="rounded-lg border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
+                      {item.assignment.isAvailable ? "Disponible" : "No disponible"}
+                    </span>
+                  ) : null}
+                </div>
+                {item.services.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {item.services.map((service) => (
+                      <ServiceBadge key={service} service={service} />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">Sin vehículos asociados.</p>
+        )}
+      </section>
+
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">Finanzas</p>
+        {!canSeeFinancial ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Tu rol no tiene permiso para consultar la información financiera del conductor.
+          </p>
+        ) : financialLoading ? (
+          <div className="mt-3"><LoadingState /></div>
+        ) : financial ? (
+          <>
+            <div className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-4">
+              <CustomerSummaryMetric icon={Wallet} labelText="Saldo real" value={formatAmount(financial.wallet.realBalance, currency)} accent="emerald" />
+              <CustomerSummaryMetric icon={WalletCards} labelText="Promocional" value={formatAmount(financial.wallet.promotionalBalance, currency)} accent="violet" />
+              <CustomerSummaryMetric icon={CircleDollarSign} labelText="Disponible" value={formatAmount(availableBalance, currency)} accent="cyan" />
+              <CustomerSummaryMetric icon={Banknote} labelText="Comisiones" value={formatAmount(financial.commissionTotal, currency)} accent="amber" />
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <MiniMetric labelText="Recargas" value={financial.topups.length} />
+              <MiniMetric labelText="Comprobantes" value={financial.documents.length} />
+              <MiniMetric labelText="Créditos por referidos" value={formatAmount(referralCreditTotal, currency)} />
+            </div>
+            {financial.topups.length ? (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-semibold text-foreground">Últimas recargas</p>
+                {financial.topups.slice(0, 5).map((topup) => (
+                  <div key={topup.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/55 bg-background/55 px-3 py-2.5">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{formatAmount(topup.amount, topup.currency)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(topup.requestedAt)} · {topup.method}</p>
+                    </div>
+                    <StatusBadge status={topup.status} />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">No se pudo cargar la información financiera.</p>
+        )}
+      </section>
     </div>
   );
 }
@@ -783,6 +974,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     id: string;
     suspended: boolean;
   } | null>(null);
+  const [driver360Id, setDriver360Id] = useState<string | null>(null);
   const [incident, setIncident] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [resolution, setResolution] = useState<"completed" | "cancelled">("completed");
@@ -958,6 +1150,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     enabled: Boolean(jobId),
   });
 
+  const driver360 = useQuery({
+    queryKey: ["marketplace-driver-360", projectId, driver360Id],
+    queryFn: () => supabaseServices.marketplace.getDriver360(projectId, driver360Id!),
+    enabled: Boolean(driver360Id),
+  });
+
+  const driverFinancial360 = useQuery({
+    queryKey: ["marketplace-driver-financial-360", projectId, driver360Id],
+    queryFn: () => supabaseServices.marketplace.getDriverFinancial360(projectId, driver360Id!),
+    enabled: Boolean(driver360Id) && canManagePayments,
+  });
+
   const customer360 = useQuery({
     queryKey: ["marketplace-customer-360", projectId, customerId],
     queryFn: () => supabaseServices.marketplace.getCustomer360(projectId, customerId!),
@@ -1006,6 +1210,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         "marketplace-drivers",
         "marketplace-jobs",
         "marketplace-incidents",
+        "marketplace-driver-360",
       );
     },
     onError: (mutationError) => setError(errorText(mutationError)),
@@ -2510,6 +2715,49 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           <span>{error}</span>
         </div>
       ) : null}
+
+      <Dialog
+        open={Boolean(driver360Id)}
+        onOpenChange={(open) => {
+          if (!open) setDriver360Id(null);
+        }}
+      >
+        <DialogContent className="max-h-[94vh] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl">
+          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
+            <DialogHeader className="text-left">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+                  Perfil de conductor
+                </span>
+              </div>
+              <DialogTitle className="text-xl tracking-tight sm:text-2xl">
+                Ficha 360 del conductor
+              </DialogTitle>
+              <DialogDescription className="max-w-2xl">
+                Perfil, vehículo, promoción, actividad, referidos, valoraciones y situación financiera.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="p-4 sm:p-6">
+            {driver360.isLoading ? (
+              <LoadingState />
+            ) : driver360.data ? (
+              <Driver360Detail
+                detail={driver360.data}
+                financial={driverFinancial360.data ?? null}
+                canSeeFinancial={canManagePayments}
+                financialLoading={driverFinancial360.isLoading}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
+                No se encontró el conductor.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(customerId)}

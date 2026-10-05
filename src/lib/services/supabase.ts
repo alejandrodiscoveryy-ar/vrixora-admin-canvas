@@ -38,6 +38,8 @@ import type {
   MobilePushAudience,
   MarketplaceOverview,
   MarketplaceDriver,
+  MarketplaceDriver360,
+  MarketplaceDriverFinancial360,
   MarketplaceJob,
   MarketplaceJobDetail,
   MarketplaceCustomer,
@@ -2030,6 +2032,163 @@ export const supabaseServices: AdminServices = {
         items,
         nextCursor: items.length === limit && last ? { at: last.createdAt, id: last.userId } : null,
       };
+    },
+    async getDriver360(projectId, driverUserId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_driver_360",
+        {
+          target_project_id: projectId,
+          target_driver_user_id: driverUserId,
+        },
+      );
+      throwIfError(error);
+
+      const root = (data ?? {}) as Record<string, unknown>;
+      const account = root.account as Record<string, unknown> | null;
+      const driver = (root.driver ?? {}) as Record<string, unknown>;
+      const promotion = root.promotion as Record<string, unknown> | null;
+      const jobsSummary = (root.jobs_summary ?? {}) as Record<string, unknown>;
+      const referral = (root.referral ?? {}) as Record<string, unknown>;
+      const ratings = (root.ratings ?? {}) as Record<string, unknown>;
+      const vehicles = Array.isArray(root.vehicles)
+        ? (root.vehicles as Record<string, unknown>[])
+        : [];
+
+      return {
+        account: account
+          ? {
+              id: String(account.id),
+              displayName: String(account.display_name ?? ""),
+              phone: account.phone ? String(account.phone) : null,
+              email: account.email ? String(account.email) : null,
+              createdAt: String(account.created_at),
+            }
+          : null,
+        driver: {
+          status: String(driver.status ?? ""),
+          createdAt: String(driver.created_at ?? ""),
+          activatedAt: driver.activated_at ? String(driver.activated_at) : null,
+          suspendedAt: driver.suspended_at ? String(driver.suspended_at) : null,
+          suspensionReason: driver.suspension_reason ? String(driver.suspension_reason) : null,
+        },
+        vehicles: vehicles.map((row) => {
+          const vehicle = (row.vehicle ?? {}) as Record<string, unknown>;
+          const assignment = row.assignment as Record<string, unknown> | null;
+          const services = Array.isArray(row.services)
+            ? (row.services as Record<string, unknown>[])
+            : [];
+
+          return {
+            vehicle: {
+              id: String(vehicle.id ?? ""),
+              name: String(vehicle.name ?? ""),
+              brand: vehicle.brand ? String(vehicle.brand) : null,
+              model: vehicle.model ? String(vehicle.model) : null,
+              year: vehicle.year == null ? null : Number(vehicle.year),
+              categoryCode: vehicle.category_code ? String(vehicle.category_code) : null,
+              propulsionCode: vehicle.propulsion_code ? String(vehicle.propulsion_code) : null,
+              registration: vehicle.registration ? String(vehicle.registration) : null,
+              marketplaceStatus: vehicle.marketplace_status
+                ? String(vehicle.marketplace_status)
+                : null,
+            },
+            assignment: assignment
+              ? {
+                  isActive: Boolean(assignment.is_active),
+                  isAvailable: Boolean(assignment.is_available),
+                  acceptingJobs: Boolean(assignment.accepting_jobs),
+                }
+              : null,
+            services: services
+              .filter((service) => service.enabled !== false)
+              .map((service) => String(service.service_code ?? ""))
+              .filter(Boolean),
+          };
+        }),
+        promotion: promotion
+          ? {
+              startedAt: String(promotion.started_at),
+              endsAt: String(promotion.ends_at),
+              durationDaysSnapshot: Number(promotion.duration_days_snapshot ?? 0),
+              ruleVersionSnapshot: Number(promotion.rule_version_snapshot ?? 0),
+            }
+          : null,
+        jobsSummary: {
+          total: Number(jobsSummary.total ?? 0),
+          completedOrSettled: Number(jobsSummary.completed_or_settled ?? 0),
+          active: Number(jobsSummary.active ?? 0),
+        },
+        referral: {
+          code: referral.code ? String(referral.code) : null,
+          referredCount: Number(referral.referred_count ?? 0),
+          rewardedCount: Number(referral.rewarded_count ?? 0),
+        },
+        ratings: {
+          count: Number(ratings.count ?? 0),
+          average: Number(ratings.average ?? 0),
+        },
+        incidents: Number(root.incidents ?? 0),
+      } satisfies MarketplaceDriver360;
+    },
+    async getDriverFinancial360(projectId, driverUserId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_driver_financial_360",
+        {
+          target_project_id: projectId,
+          target_driver_user_id: driverUserId,
+        },
+      );
+      throwIfError(error);
+
+      const root = (data ?? {}) as Record<string, unknown>;
+      const wallet = (root.wallet ?? {}) as Record<string, unknown>;
+      const topups = Array.isArray(root.topups)
+        ? (root.topups as Record<string, unknown>[])
+        : [];
+      const documents = Array.isArray(root.documents)
+        ? (root.documents as Record<string, unknown>[])
+        : [];
+      const referralCredits = Array.isArray(root.referral_credits)
+        ? (root.referral_credits as Record<string, unknown>[])
+        : [];
+
+      return {
+        wallet: {
+          realBalance: Number(wallet.real_balance ?? 0),
+          promotionalBalance: Number(wallet.promotional_balance ?? 0),
+          realReservedBalance: Number(wallet.real_reserved_balance ?? 0),
+          promotionalReservedBalance: Number(wallet.promotional_reserved_balance ?? 0),
+          realAvailableBalance: Number(wallet.real_available_balance ?? 0),
+          promotionalAvailableBalance: Number(wallet.promotional_available_balance ?? 0),
+        },
+        topups: topups.map((row) => ({
+          id: String(row.id),
+          amount: Number(row.amount ?? 0),
+          currency: String(row.currency ?? "CUP"),
+          status: String(row.status ?? ""),
+          method: String(row.method ?? ""),
+          reference: row.reference ? String(row.reference) : null,
+          requestedAt: String(row.requested_at ?? ""),
+          confirmedAt: row.confirmed_at ? String(row.confirmed_at) : null,
+          rejectedAt: row.rejected_at ? String(row.rejected_at) : null,
+        })),
+        documents: documents.map((row) => ({
+          id: String(row.id),
+          documentType: String(row.document_type ?? ""),
+          documentNumber: String(row.document_number ?? ""),
+          amount: Number(row.amount ?? 0),
+          currency: String(row.currency ?? "CUP"),
+          concept: String(row.concept ?? ""),
+          issuedAt: String(row.issued_at ?? ""),
+        })),
+        referralCredits: referralCredits.map((row) => ({
+          id: String(row.id),
+          amount: Number(row.reward_amount_snapshot ?? 0),
+          currency: String(row.reward_currency_snapshot ?? "CUP"),
+          qualifiedAt: String(row.qualified_at ?? ""),
+        })),
+        commissionTotal: Number(root.commission_total ?? 0),
+      } satisfies MarketplaceDriverFinancial360;
     },
     async listJobs(projectId, filters = {}) {
       const limit = filters.limit ?? 25;

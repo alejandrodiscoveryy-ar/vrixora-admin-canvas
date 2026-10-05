@@ -1049,6 +1049,100 @@ export interface MarketplaceDriver {
   walletReservedBalance: number | null;
   walletAvailableBalance: number | null;
 }
+export interface MarketplaceDriver360 {
+  account: {
+    id: string;
+    displayName: string;
+    phone: string | null;
+    email: string | null;
+    createdAt: string;
+  } | null;
+  driver: {
+    status: string;
+    createdAt: string;
+    activatedAt: string | null;
+    suspendedAt: string | null;
+    suspensionReason: string | null;
+  };
+  vehicles: Array<{
+    vehicle: {
+      id: string;
+      name: string;
+      brand: string | null;
+      model: string | null;
+      year: number | null;
+      categoryCode: string | null;
+      propulsionCode: string | null;
+      registration: string | null;
+      marketplaceStatus: string | null;
+    };
+    assignment: {
+      isActive: boolean;
+      isAvailable: boolean;
+      acceptingJobs: boolean;
+    } | null;
+    services: string[];
+  }>;
+  promotion: {
+    startedAt: string;
+    endsAt: string;
+    durationDaysSnapshot: number;
+    ruleVersionSnapshot: number;
+  } | null;
+  jobsSummary: {
+    total: number;
+    completedOrSettled: number;
+    active: number;
+  };
+  referral: {
+    code: string | null;
+    referredCount: number;
+    rewardedCount: number;
+  };
+  ratings: {
+    count: number;
+    average: number;
+  };
+  incidents: number;
+}
+
+export interface MarketplaceDriverFinancial360 {
+  wallet: {
+    realBalance: number;
+    promotionalBalance: number;
+    realReservedBalance: number;
+    promotionalReservedBalance: number;
+    realAvailableBalance: number;
+    promotionalAvailableBalance: number;
+  };
+  topups: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    method: string;
+    reference: string | null;
+    requestedAt: string;
+    confirmedAt: string | null;
+    rejectedAt: string | null;
+  }>;
+  documents: Array<{
+    id: string;
+    documentType: string;
+    documentNumber: string;
+    amount: number;
+    currency: string;
+    concept: string;
+    issuedAt: string;
+  }>;
+  referralCredits: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    qualifiedAt: string;
+  }>;
+  commissionTotal: number;
+}
 export interface MarketplaceJob {
   jobId: string;
   status: string;
@@ -1298,6 +1392,11 @@ export interface MarketplaceAdminService {
     projectId: string,
     page?: { limit?: number; cursor?: MarketplaceCursor | null },
   ): Promise<MarketplacePage<MarketplaceDriver>>;
+  getDriver360(projectId: string, driverUserId: string): Promise<MarketplaceDriver360>;
+  getDriverFinancial360(
+    projectId: string,
+    driverUserId: string,
+  ): Promise<MarketplaceDriverFinancial360>;
   listJobs(
     projectId: string,
     filters?: {

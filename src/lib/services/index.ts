@@ -79,6 +79,8 @@ export type {
   MarketplaceAdminService,
   MarketplaceOverview,
   MarketplaceDriver,
+  MarketplaceDriver360,
+  MarketplaceDriverFinancial360,
   MarketplaceJob,
   MarketplaceJobDetail,
   MarketplaceCustomer,
