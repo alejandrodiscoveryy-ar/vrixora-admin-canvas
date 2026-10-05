@@ -1216,6 +1216,14 @@ export interface MarketplaceFinancialSettings {
   updatedAt: string;
   updatedBy: string | null;
 }
+export interface MarketplaceCommercialSettings {
+  walletCurrency: string;
+  promotionDurationDays: number;
+  promotionRuleVersion: number;
+  commissionRate: number;
+  updatedAt: string;
+  updatedBy: string | null;
+}
 export interface MarketplaceTestMode {
   enabled: boolean;
   targetDriverUserId: string | null;
@@ -1324,6 +1332,7 @@ export interface MarketplaceAdminService {
     page?: { limit?: number; cursor?: MarketplaceCursor | null },
   ): Promise<MarketplacePage<MarketplaceWallet>>;
   financialSettings(projectId: string): Promise<MarketplaceFinancialSettings>;
+  commercialSettings(projectId: string): Promise<MarketplaceCommercialSettings>;
   listIncidents(
     projectId: string,
     filters?: { resolved?: boolean; limit?: number; cursor?: MarketplaceCursor | null },
@@ -1357,6 +1366,10 @@ export interface MarketplaceAdminService {
   updateFinancialSettings(
     projectId: string,
     input: { initialMinimumDeposit: number; commissionRate: number },
+  ): Promise<void>;
+  updateCommercialSettings(
+    projectId: string,
+    input: { promotionDurationDays: number; commissionRate: number },
   ): Promise<void>;
   testMode(projectId: string): Promise<MarketplaceTestMode>;
   setTestMode(

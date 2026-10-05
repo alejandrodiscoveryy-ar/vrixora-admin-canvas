@@ -90,6 +90,10 @@ const errorText = (error: unknown) =>
   error instanceof Error
     ? ({
         INITIAL_MINIMUM_DEPOSIT_REQUIRED: "El primer depósito debe alcanzar el mínimo configurado.",
+        INVALID_MARKETPLACE_PROMOTION_DURATION: "La promoción debe durar entre 1 y 365 días.",
+        INVALID_COMMISSION_RATE: "La comisión debe ser mayor que 0 % y no superar 100 %.",
+        MARKETPLACE_FINANCIAL_SETTINGS_NOT_FOUND:
+          "No existe la configuración comercial del Marketplace para este proyecto.",
         RESOLUTION_NOTE_REQUIRED: "La nota de resolución es obligatoria.",
         SUSPENSION_REASON_REQUIRED: "El motivo es obligatorio.",
         JOB_NOT_IN_INCIDENT: "El trabajo ya no está en incidencia.",
@@ -797,7 +801,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [createTopupKey, setCreateTopupKey] = useState(() => crypto.randomUUID());
-  const [minimum, setMinimum] = useState("");
+  const [promotionDays, setPromotionDays] = useState("");
   const [commission, setCommission] = useState("");
   const [testModeEnabled, setTestModeEnabled] = useState(false);
   const [testDriverUserId, setTestDriverUserId] = useState("");
@@ -919,8 +923,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   });
 
   const settings = useQuery({
-    queryKey: ["marketplace-financial-settings", projectId],
-    queryFn: () => supabaseServices.marketplace.financialSettings(projectId),
+    queryKey: ["marketplace-commercial-settings", projectId],
+    queryFn: () => supabaseServices.marketplace.commercialSettings(projectId),
     enabled: tab === "configuracion" && canSettings,
   });
 
@@ -974,7 +978,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   useEffect(() => {
     if (settings.data) {
-      setMinimum(String(settings.data.initialMinimumDeposit));
+      setPromotionDays(String(settings.data.promotionDurationDays));
       setCommission(String(settings.data.commissionRate * 100));
     }
   }, [settings.data]);
@@ -1096,11 +1100,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   const save = useMutation({
     mutationFn: () =>
-      supabaseServices.marketplace.updateFinancialSettings(projectId, {
-        initialMinimumDeposit: Number(minimum),
+      supabaseServices.marketplace.updateCommercialSettings(projectId, {
+        promotionDurationDays: Number(promotionDays),
         commissionRate: Number(commission) / 100,
       }),
-    onSuccess: () => void invalidate("marketplace-financial-settings"),
+    onSuccess: () => {
+      setError(null);
+      void invalidate("marketplace-commercial-settings", "marketplace-overview");
+    },
     onError: (mutationError) => setError(errorText(mutationError)),
   });
 
@@ -1271,8 +1278,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             {[
               ["Conductores", overview.data?.driversTotal, Users],
               ["Activos", overview.data?.driversActive, Users],
-              ["En prueba", overview.data?.driversTrialActive, BriefcaseBusiness],
-              ["Post-prueba activos", overview.data?.driversPostTrialActive, WalletCards],
+              ["En promoción", overview.data?.driversTrialActive, BriefcaseBusiness],
+              ["Post-promoción activos", overview.data?.driversPostTrialActive, WalletCards],
               ["Trabajos publicados", overview.data?.jobsPublished, BriefcaseBusiness],
               ["Trabajos activos", overview.data?.jobsActive, BriefcaseBusiness],
               ["Incidencias abiertas", overview.data?.jobsIncidentOpen, AlertTriangle],
@@ -2218,7 +2225,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       Economía
                     </p>
                     <h3 className="mt-0.5 text-lg font-semibold text-foreground">
-                      Configuración financiera
+                      Configuración comercial
                     </h3>
                   </div>
                 </div>
@@ -2226,6 +2233,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 <div className="p-4 sm:p-5">
                   {settings.isLoading ? (
                     <LoadingState />
+                  ) : settings.isError ? (
+                    <p className="text-sm text-rose-300">
+                      No se pudo cargar la configuración comercial.
+                    </p>
                   ) : (
                     <div className="space-y-4">
                       <div className="grid grid-cols-3 gap-2">
@@ -2234,35 +2245,49 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           value={settings.data?.walletCurrency ?? "CUP"}
                         />
                         <MiniMetric
-                          labelText="Depósito mínimo"
-                          value={formatAmount(
-                            settings.data?.initialMinimumDeposit,
-                            settings.data?.walletCurrency ?? "CUP",
-                          )}
+                          labelText="Promoción"
+                          value={
+                            settings.data ? `${settings.data.promotionDurationDays} d├¡as` : "—"
+                          }
                         />
                         <MiniMetric
                           labelText="Comisión"
-                          value={settings.data ? `${settings.data.commissionRate * 100} %` : "—"}
+                          value={settings.data ? `${settings.data.commissionRate * 100} %` : "ΓÇö"}
                         />
+                      </div>
+
+                      <div className="flex items-start gap-3 rounded-xl border border-amber-500/18 bg-amber-500/[0.045] px-3 py-2.5">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                        <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+                          <p>
+                            Regla comercial v{settings.data?.promotionRuleVersion ?? "—"}. Durante
+                            la promoci├│n no se aplica la comisi├│n normal; al finalizar, se utiliza
+                            la comisión configurada.
+                          </p>
+                          <p>├Ültima actualizaci├│n: {formatDate(settings.data?.updatedAt)}.</p>
+                        </div>
                       </div>
 
                       {canManageSettings ? (
                         <>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div>
-                              <Label htmlFor="marketplace-minimum">Depósito mínimo inicial</Label>
+                              <Label htmlFor="marketplace-promotion-days">
+                                Duración de la promoción
+                              </Label>
                               <div className="relative mt-1.5">
                                 <Input
-                                  id="marketplace-minimum"
+                                  id="marketplace-promotion-days"
                                   type="number"
-                                  min="0"
-                                  step="0.01"
-                                  className="pr-16"
-                                  value={minimum}
-                                  onChange={(event) => setMinimum(event.target.value)}
+                                  min="1"
+                                  max="365"
+                                  step="1"
+                                  className="pr-14"
+                                  value={promotionDays}
+                                  onChange={(event) => setPromotionDays(event.target.value)}
                                 />
                                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                                  {settings.data?.walletCurrency ?? "CUP"}
+                                  días
                                 </span>
                               </div>
                             </div>
@@ -2273,7 +2298,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 <Input
                                   id="marketplace-commission"
                                   type="number"
-                                  min="0"
+                                  min="0.01"
                                   max="100"
                                   step="0.01"
                                   className="pr-12"
@@ -2287,16 +2312,16 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             </div>
                           </div>
 
-                          <div className="flex items-start gap-3 rounded-xl border border-amber-500/18 bg-amber-500/[0.045] px-3 py-2.5">
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                            <p className="text-xs leading-relaxed text-muted-foreground">
-                              Estos valores afectan depósitos y comisiones. Revísalos antes de guardar.
-                            </p>
-                          </div>
-
                           <Button
                             className="w-full"
-                            disabled={save.isPending || !minimum || !commission}
+                            disabled={
+                              save.isPending ||
+                              !Number.isInteger(Number(promotionDays)) ||
+                              Number(promotionDays) < 1 ||
+                              Number(promotionDays) > 365 ||
+                              Number(commission) <= 0 ||
+                              Number(commission) > 100
+                            }
                             onClick={() => save.mutate()}
                           >
                             {save.isPending ? (
@@ -2304,7 +2329,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             ) : (
                               <ShieldCheck className="mr-2 h-4 w-4" />
                             )}
-                            Guardar cambios financieros
+                            Guardar configuración comercial
                           </Button>
                         </>
                       ) : null}
@@ -2312,7 +2337,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   )}
                 </div>
               </section>
-
               <section className="overflow-hidden rounded-[24px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.05] via-background/55 to-background/35">
                 <div className="flex items-center justify-between gap-3 border-b border-border/55 px-4 py-4 sm:px-5">
                   <div className="flex items-center gap-3">

@@ -46,6 +46,7 @@ import type {
   MarketplaceTopup,
   MarketplaceWallet,
   MarketplaceFinancialSettings,
+  MarketplaceCommercialSettings,
   MarketplaceTestMode,
   MarketplaceIncident,
   MarketplaceIncidentResolution,
@@ -2383,6 +2384,22 @@ export const supabaseServices: AdminServices = {
         updatedBy: r.updated_by ? String(r.updated_by) : null,
       } satisfies MarketplaceFinancialSettings;
     },
+    async commercialSettings(projectId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_commercial_settings",
+        { target_project_id: projectId },
+      );
+      throwIfError(error);
+      const r = (data as Record<string, unknown>[] | null)?.[0] ?? {};
+      return {
+        walletCurrency: String(r.wallet_currency ?? "CUP"),
+        promotionDurationDays: Number(r.promotion_duration_days),
+        promotionRuleVersion: Number(r.promotion_rule_version),
+        commissionRate: Number(r.commission_rate),
+        updatedAt: String(r.updated_at ?? ""),
+        updatedBy: r.updated_by ? String(r.updated_by) : null,
+      } satisfies MarketplaceCommercialSettings;
+    },
     async testMode(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_test_mode", {
         target_project_id: projectId,
@@ -2548,6 +2565,15 @@ export const supabaseServices: AdminServices = {
       const { error } = await getSupabaseClient().rpc("admin_set_marketplace_financial_settings", {
         target_project_id: projectId,
         target_initial_minimum_deposit: input.initialMinimumDeposit,
+        target_commission_rate: input.commissionRate,
+      });
+      throwIfError(error);
+    },
+    async updateCommercialSettings(projectId, input) {
+      await requireOnline("Actualizar configuración comercial");
+      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_commercial_settings", {
+        target_project_id: projectId,
+        target_promotion_duration_days: input.promotionDurationDays,
         target_commission_rate: input.commissionRate,
       });
       throwIfError(error);
