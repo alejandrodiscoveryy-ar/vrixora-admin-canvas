@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import mapboxgl, { type CircleLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -351,7 +351,9 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   const [panelOpen, setPanelOpen] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapViewportHeight, setMapViewportHeight] = useState<number | null>(null);
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
+  const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
@@ -437,9 +439,62 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     };
   }, [expanded]);
 
+  useLayoutEffect(() => {
+    if (expanded) {
+      setMapViewportHeight(null);
+      return;
+    }
+
+    const viewport = mapViewportRef.current;
+    if (!viewport) return;
+
+    let frame = 0;
+    const visualViewport = window.visualViewport;
+
+    const measure = () => {
+      window.cancelAnimationFrame(frame);
+
+      frame = window.requestAnimationFrame(() => {
+        const current = mapViewportRef.current;
+        if (!current) return;
+
+        const visibleHeight = visualViewport?.height ?? window.innerHeight;
+        const visibleTop = visualViewport?.offsetTop ?? 0;
+        const mapTop = current.getBoundingClientRect().top - visibleTop;
+        const available = Math.floor(visibleHeight - Math.max(mapTop, 0) - 12);
+        const nextHeight = Math.max(320, available);
+
+        setMapViewportHeight((previous) =>
+          previous === nextHeight ? previous : nextHeight,
+        );
+      });
+    };
+
+    const toolbar = viewport.previousElementSibling;
+    const observer = new ResizeObserver(measure);
+
+    if (toolbar instanceof HTMLElement) {
+      observer.observe(toolbar);
+    }
+
+    window.addEventListener("resize", measure);
+    visualViewport?.addEventListener("resize", measure);
+
+    measure();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      visualViewport?.removeEventListener("resize", measure);
+      window.cancelAnimationFrame(frame);
+    };
+  }, [expanded, panelOpen]);
+
   useEffect(() => {
     const node = mapNodeRef.current;
     const config = mapConfig.data;
+
+    if (!expanded && mapViewportHeight == null) return;
     if (!node || !config || mapRef.current) return;
 
     mapboxgl.accessToken = config.accessToken;
@@ -467,7 +522,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
       map.remove();
       mapRef.current = null;
     };
-  }, [mapConfig.data]);
+  }, [expanded, mapConfig.data, mapViewportHeight]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -843,10 +898,14 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           </div>
 
           <div
+            ref={mapViewportRef}
+            style={
+              !expanded && mapViewportHeight != null
+                ? { height: `${mapViewportHeight}px` }
+                : undefined
+            }
             className={`relative overflow-hidden bg-muted/15 ${
-              expanded
-                ? "min-h-0 flex-1"
-                : "h-[62vh] min-h-[440px] max-h-[720px] flex-none"
+              expanded ? "min-h-0 flex-1" : "min-h-[320px] flex-none"
             }`}
           >
             <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/35 p-2 shadow-[0_18px_48px_-22px_rgba(0,0,0,0.95)] backdrop-blur-xl">
@@ -885,7 +944,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             {mapConfig.data ? (
               <div
                 ref={mapNodeRef}
-                className={`absolute inset-0 h-full w-full ${expanded ? "min-h-0" : "min-h-[420px]"}`}
+                className="absolute inset-0 h-full w-full"
               />
             ) : mapConfig.isLoading ? (
               <div className="flex h-full min-h-[420px] items-center justify-center">
