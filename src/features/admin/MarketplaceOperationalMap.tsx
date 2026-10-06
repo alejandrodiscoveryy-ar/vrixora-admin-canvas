@@ -518,7 +518,8 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           element.style.fontSize = "19px";
           element.style.lineHeight = "1";
           element.style.userSelect = "none";
-          element.style.pointerEvents = "none";
+          element.style.pointerEvents = "auto";
+          element.style.cursor = "help";
 
           marker = new mapboxgl.Marker({ element, anchor: "center" })
             .setLngLat(coordinate)
