@@ -352,7 +352,6 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
-  const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
@@ -437,70 +436,6 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [expanded]);
-
-  useEffect(() => {
-    const viewport = mapViewportRef.current;
-    if (!viewport) return;
-
-    if (expanded) {
-      viewport.style.removeProperty("height");
-      return;
-    }
-
-    let frame = 0;
-    let disposed = false;
-    const toolbar = viewport.previousElementSibling;
-    const visualViewport = window.visualViewport;
-
-    const updateHeight = () => {
-      window.cancelAnimationFrame(frame);
-
-      frame = window.requestAnimationFrame(() => {
-        if (disposed) return;
-
-        const current = mapViewportRef.current;
-        if (!current) return;
-
-        const visibleHeight = visualViewport?.height ?? window.innerHeight;
-        const visibleTop = visualViewport?.offsetTop ?? 0;
-        const mapTop = current.getBoundingClientRect().top - visibleTop;
-        const bottomGap = 12;
-        const availableHeight = Math.floor(
-          visibleHeight - Math.max(mapTop, 0) - bottomGap,
-        );
-
-        current.style.height = `${Math.max(320, availableHeight)}px`;
-      });
-    };
-
-    const observer = new ResizeObserver(updateHeight);
-
-    if (toolbar instanceof HTMLElement) {
-      observer.observe(toolbar);
-    }
-
-    window.addEventListener("resize", updateHeight);
-    visualViewport?.addEventListener("resize", updateHeight);
-
-    const settleFast = window.setTimeout(updateHeight, 80);
-    const settleLayout = window.setTimeout(updateHeight, 240);
-
-    void document.fonts.ready.then(() => {
-      if (!disposed) updateHeight();
-    });
-
-    updateHeight();
-
-    return () => {
-      disposed = true;
-      observer.disconnect();
-      window.removeEventListener("resize", updateHeight);
-      visualViewport?.removeEventListener("resize", updateHeight);
-      window.clearTimeout(settleFast);
-      window.clearTimeout(settleLayout);
-      window.cancelAnimationFrame(frame);
-    };
-  }, [expanded, panelOpen]);
 
   useEffect(() => {
     const node = mapNodeRef.current;
@@ -908,9 +843,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           </div>
 
           <div
-            ref={mapViewportRef}
             className={`relative overflow-hidden bg-muted/15 ${
-              expanded ? "min-h-0 flex-1" : "min-h-[320px] flex-none"
+              expanded
+                ? "min-h-0 flex-1"
+                : "h-[62vh] min-h-[440px] max-h-[720px] flex-none"
             }`}
           >
             <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/35 p-2 shadow-[0_18px_48px_-22px_rgba(0,0,0,0.95)] backdrop-blur-xl">
@@ -949,20 +885,20 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             {mapConfig.data ? (
               <div
                 ref={mapNodeRef}
-                className="absolute inset-0 h-full w-full"
+                className={`absolute inset-0 h-full w-full ${expanded ? "min-h-0" : "min-h-[420px]"}`}
               />
             ) : mapConfig.isLoading ? (
-              <div className="flex h-full items-center justify-center">
+              <div className="flex h-full min-h-[420px] items-center justify-center">
                 <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : staticFallback.data ? (
               <img
                 src={staticFallback.data.dataUrl}
                 alt="Mapa operativo de TukTuk Marketplace"
-                className="h-full w-full object-cover"
+                className="h-full min-h-[420px] w-full object-cover"
               />
             ) : (
-              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+              <div className="flex h-full min-h-[420px] flex-col items-center justify-center px-6 text-center">
                 <MapPin className="h-10 w-10 text-orange-300" />
                 <p className="mt-3 font-semibold text-foreground">Mapa interactivo no disponible</p>
                 <p className="mt-1 max-w-md text-sm text-muted-foreground">
