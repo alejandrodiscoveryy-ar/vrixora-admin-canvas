@@ -36,7 +36,7 @@ export const ADMIN_PROJECT_TABS = [
   },
   {
     slug: "clientes",
-    label: "Clientes",
+    label: "Usuarios app",
     icon: Users,
     permission: "customers.view",
   },

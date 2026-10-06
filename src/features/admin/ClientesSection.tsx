@@ -75,7 +75,6 @@ function formatClientExpiry(value: string | null) {
 }
 
 export default function ClientesSection({ projectId }: { projectId: string }) {
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [adoptionFilter, setAdoptionFilter] = useState("all");
   const [adoptionSort, setAdoptionSort] = useState("none");
@@ -138,15 +137,15 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-4 md:space-y-8">
       <ModuleHeader
-        title="Clientes"
-        description="Directorio de clientes y actividad dentro del ecosistema."
+        title="Usuarios app"
+        description="Personas registradas en la aplicación del prestador y su nivel de actividad."
         icon={Users}
         module="clientes"
       />
 
       <KpiGrid columns={4} density="compact">
         <MetricCard
-          label="Total clientes"
+          label="Total usuarios"
           value={allClients.length}
           description="Registrados en el sistema"
           icon={Users}
@@ -176,8 +175,8 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
       </KpiGrid>
 
       <AdminDataTableShell
-        title="Todos los clientes"
-        description="Directorio y actividad de clientes"
+        title="Usuarios registrados"
+        description="Registro y actividad de usuarios de la aplicación"
         actions={
           <DataToolbar
             searchValue={search}
@@ -227,8 +226,8 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         emptyState={
           <EmptyState
             icon={Users}
-            title="Sin clientes encontrados"
-            description="No hay clientes que coincidan con los criterios actuales."
+            title="Sin usuarios encontrados"
+            description="No hay usuarios que coincidan con los criterios actuales."
             module="clientes"
           />
         }
@@ -278,22 +277,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                   <Badge variant="secondary">
                     {client.usageProfile ?? "Sin actividad"}
                   </Badge>
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      void navigate({
-                        to: "/admin/proyectos/$id/clientes/$clientId",
-                        params: { id: projectId, clientId: client.userId },
-                      })
-                    }
-                  >
-                    <Eye className="h-4 w-4" />
-                    Ver ficha
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -358,23 +341,6 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
 
                   <TableCell className="text-xs text-muted-foreground">
                     {client.usageProfile ?? "Sin actividad"}
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() =>
-                        void navigate({
-                          to: "/admin/proyectos/$id/clientes/$clientId",
-                          params: { id: projectId, clientId: client.userId },
-                        })
-                      }
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Ver ficha
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -516,7 +482,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-4 md:space-y-8">
       <ModuleHeader
-        title="Clientes"
+        title="Usuarios app"
         description="Directorio de clientes, usuarios registrados y estado de sus licencias."
         icon={Users}
         module="clientes"
@@ -524,7 +490,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
 
       <KpiGrid columns={4} density="compact">
         <MetricCard
-          label="Total clientes"
+          label="Total usuarios"
           value={allClients.length}
           description="Registrados en sistema"
           icon={Users}
@@ -555,7 +521,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
 
       {/* Tabla con FilterToolbar & AdminDataTableShell */}
       <AdminDataTableShell
-        title="Todos los clientes"
+        title="Usuarios registrados"
         description="Gestión detallada de cuentas y accesos"
         actions={
           <DataToolbar
@@ -606,7 +572,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
         emptyState={
           <EmptyState
             icon={Users}
-            title="Sin clientes encontrados"
+            title="Sin usuarios encontrados"
             description="No hay clientes que coincidan con los criterios de búsqueda actuales."
             module="clientes"
           />
@@ -704,7 +670,6 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                 <TableHead>Estado</TableHead>
                 <TableHead>Adopción</TableHead>
                 <TableHead>Vencimiento</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
