@@ -4,8 +4,12 @@ import mapboxgl, { type CircleLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
   AlertTriangle,
+  Bike,
+  Boxes,
+  CarFront,
   Clock3,
   MapPin,
+  Package,
   Maximize2,
   Minimize2,
   Navigation,
@@ -13,6 +17,7 @@ import {
   PanelRightOpen,
   RefreshCw,
   Route,
+  Truck,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,6 +68,65 @@ const statusLabel = (status: string | null) =>
   status ??
   "—";
 
+const vehicleCategoryLabel = (code: string | null) =>
+  ({
+    motorcycle: "Moto",
+    bicitaxi: "Bicitaxi",
+    tricycle: "Triciclo",
+    light_car: "Auto",
+    van: "Furgoneta",
+    truck: "Camion",
+    other: "Otro",
+  })[code ?? ""] ??
+  code ??
+  "Modalidad s/d";
+
+const vehicleMapGlyph = (code: string | null) =>
+  ({
+    motorcycle: "\u{1F3CD}\uFE0F",
+    bicitaxi: "\u{1F6B2}",
+    tricycle: "\u{1F6FA}",
+    light_car: "\u{1F697}",
+    van: "\u{1F690}",
+    truck: "\u{1F69A}",
+    other: "\u{1F4E6}",
+  })[code ?? ""] ?? "\u{1F698}";
+
+function VehicleModeIcon({
+  code,
+  className = "h-4 w-4",
+}: {
+  code: string | null;
+  className?: string;
+}) {
+  switch (code) {
+    case "light_car":
+      return <CarFront className={className} />;
+    case "motorcycle":
+    case "bicitaxi":
+    case "tricycle":
+      return <Bike className={className} />;
+    case "van":
+    case "truck":
+      return <Truck className={className} />;
+    case "other":
+      return <Boxes className={className} />;
+    default:
+      return <Package className={className} />;
+  }
+}
+
+function VehicleModeBadge({ code }: { code: string | null }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/20 bg-orange-500/[0.06] px-2 py-1 text-[10px] font-semibold text-orange-200"
+      title={`Modalidad: ${vehicleCategoryLabel(code)}`}
+    >
+      <VehicleModeIcon code={code} className="h-3.5 w-3.5" />
+      {vehicleCategoryLabel(code)}
+    </span>
+  );
+}
 const formatTime = (value: string | null) => {
   if (!value) return "Sin señal";
   const date = new Date(value);
@@ -255,6 +319,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const operational = useQuery({
     queryKey: ["marketplace-operational-map-live", projectId],
@@ -354,6 +419,8 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
 
     return () => {
       setMapLoaded(false);
+      for (const marker of driverMarkersRef.current.values()) marker.remove();
+      driverMarkersRef.current.clear();
       map.remove();
       mapRef.current = null;
     };
@@ -380,25 +447,77 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     };
   }, [expanded, panelOpen, mapLoaded]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    const markers = driverMarkersRef.current;
+    const visible = new Set<string>();
+
+    if (layers.drivers) {
+      for (const driver of operational.data?.drivers ?? []) {
+        const coordinate = driverCoordinate(driver);
+        if (!coordinate) continue;
+
+        visible.add(driver.driverUserId);
+        let marker = markers.get(driver.driverUserId);
+
+        if (!marker) {
+          const element = document.createElement("div");
+          element.style.width = "36px";
+          element.style.height = "36px";
+          element.style.display = "flex";
+          element.style.alignItems = "center";
+          element.style.justifyContent = "center";
+          element.style.borderRadius = "9999px";
+          element.style.borderWidth = "2px";
+          element.style.borderStyle = "solid";
+          element.style.fontSize = "19px";
+          element.style.lineHeight = "1";
+          element.style.userSelect = "none";
+          element.style.pointerEvents = "none";
+
+          marker = new mapboxgl.Marker({ element, anchor: "center" })
+            .setLngLat(coordinate)
+            .addTo(map);
+          markers.set(driver.driverUserId, marker);
+        }
+
+        marker.setLngLat(coordinate);
+        const element = marker.getElement();
+        element.textContent = vehicleMapGlyph(driver.vehicleCategoryCode);
+        element.setAttribute("role", "img");
+        element.setAttribute(
+          "aria-label",
+          `${vehicleCategoryLabel(driver.vehicleCategoryCode)} - ${
+            driver.driverDisplayName ?? "Conductor"
+          }`,
+        );
+        element.title = `${driver.driverDisplayName ?? "Conductor"} - ${vehicleCategoryLabel(
+          driver.vehicleCategoryCode,
+        )}`;
+        element.style.backgroundColor = driver.locationFresh
+          ? "rgba(249,115,22,0.96)"
+          : "rgba(251,191,36,0.94)";
+        element.style.borderColor = driver.activeJobId ? "#22d3ee" : "rgba(255,255,255,0.92)";
+        element.style.boxShadow = driver.activeJobId
+          ? "0 0 0 3px rgba(34,211,238,0.22), 0 6px 18px rgba(0,0,0,0.38)"
+          : "0 6px 18px rgba(0,0,0,0.38)";
+      }
+    }
+
+    for (const [driverUserId, marker] of markers.entries()) {
+      if (!visible.has(driverUserId)) {
+        marker.remove();
+        markers.delete(driverUserId);
+      }
+    }
+  }, [operational.data?.drivers, layers.drivers, mapLoaded]);
+
   const pointFeatures = useMemo(() => {
     const data = operational.data;
     if (!data) return [];
     const features: Array<Record<string, unknown>> = [];
-
-    for (const driver of data.drivers) {
-      const coordinate = driverCoordinate(driver);
-      if (!coordinate) continue;
-      features.push({
-        type: "Feature",
-        geometry: { type: "Point", coordinates: coordinate },
-        properties: {
-          kind: driver.locationFresh ? "driver_fresh" : "driver_stale",
-          driverUserId: driver.driverUserId,
-          activeJobId: driver.activeJobId,
-          label: driver.driverDisplayName ?? "Conductor",
-        },
-      });
-    }
 
     for (const job of data.jobs) {
       const origin = jobCoordinate(job, "origin");
@@ -532,6 +651,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   }
 
   const data = operational.data;
+  const runningJobs = data.jobs.filter((job) => job.status !== "published");
   const liveAt = formatTime(data.serverTime);
   const rootClass = expanded
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
@@ -686,24 +806,31 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             )}
           </div>
 
-          <div className="border-t border-border/55 px-4 py-3 text-xs text-muted-foreground">
-            Naranja: conductor con señal reciente. Ámbar: última ubicación conocida con señal
-            atrasada. Verde: recogida. Cian: destino y recorrido. Rojo: incidencia. Las capas se
-            pueden activar o desactivar sin alterar la operación.
-          </div>
+          {!expanded ? (
+            <div className="border-t border-border/55 px-4 py-3 text-xs text-muted-foreground">
+              Naranja: conductor con señal reciente. Ambar: ultima ubicacion conocida con señal
+              atrasada. Verde: recogida. Cian: destino y recorrido. Rojo: incidencia. Las capas se
+              pueden activar o desactivar sin alterar la operacion.
+            </div>
+          ) : null}
         </section>
 
         {!expanded || panelOpen ? (
           <aside className={`space-y-4 ${expanded ? "min-h-0 overflow-y-auto pr-1" : ""}`}>
             <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
-              <div className="flex items-center gap-2">
-                <Route className="h-4 w-4 text-cyan-300" />
-                <h4 className="font-semibold text-foreground">Servicios activos</h4>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Route className="h-4 w-4 text-cyan-300" />
+                  <h4 className="font-semibold text-foreground">Servicios en curso</h4>
+                </div>
+                <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2.5 py-1 text-sm font-semibold text-cyan-200">
+                  {runningJobs.length}
+                </span>
               </div>
 
               <div className="mt-3 space-y-2">
-                {data.jobs.length ? (
-                  data.jobs.slice(0, 12).map((job) => {
+                {runningJobs.length ? (
+                  runningJobs.slice(0, 12).map((job) => {
                     const selected = job.jobId === selectedJobId;
                     return (
                       <button
@@ -729,9 +856,12 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                           >
                             {statusLabel(job.status)}
                           </span>
-                          <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                            {job.serviceCode}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                              {job.serviceCode}
+                            </span>
+                            <VehicleModeBadge code={job.vehicleCategoryCode} />
+                          </div>
                         </div>
                         <p className="mt-2 text-sm font-semibold text-foreground">
                           {job.customerDisplayName || "Cliente"}
@@ -770,6 +900,25 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                 <h4 className="font-semibold text-foreground">Conductores</h4>
               </div>
 
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-2.5">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
+                    Activos
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">
+                    {data.summary.workingDrivers}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border/55 bg-background/45 px-3 py-2.5">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Inactivos
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">
+                    {data.summary.inactiveDrivers}
+                  </p>
+                </div>
+              </div>
+
               <div className="mt-3 space-y-2">
                 {data.drivers.length ? (
                   data.drivers.slice(0, 14).map((driver) => {
@@ -783,9 +932,18 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                           <p className="truncate text-sm font-medium text-foreground">
                             {driver.driverDisplayName || "Conductor"}
                           </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {driver.vehicleName || driver.vehicleId}
-                          </p>
+                          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                            <VehicleModeIcon
+                              code={driver.vehicleCategoryCode}
+                              className="h-3.5 w-3.5 shrink-0 text-orange-300"
+                            />
+                            <span className="shrink-0 font-medium text-orange-200">
+                              {vehicleCategoryLabel(driver.vehicleCategoryCode)}
+                            </span>
+                            <span className="truncate">
+                              - {driver.vehicleName || driver.vehicleId}
+                            </span>
+                          </div>
                           {driver.activeJobId ? (
                             <p className="mt-1 text-[10px] font-semibold text-cyan-300">
                               Servicio activo · {statusLabel(driver.activeJobStatus)}
@@ -832,6 +990,44 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </section>
             ) : null}
 
+            {expanded ? (
+              <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-cyan-300" />
+                  <h4 className="font-semibold text-foreground">Leyenda</h4>
+                </div>
+                <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                    <span>Conductor con señal reciente</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                    <span>Ultima ubicacion conocida</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    <span>Recogida</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
+                    <span>Destino</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-cyan-600" />
+                    <span>Ruta del servicio</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                    <span>Incidencia</span>
+                  </div>
+                </div>
+                <p className="mt-3 border-t border-border/50 pt-3 text-[11px] leading-relaxed text-muted-foreground">
+                  El icono dentro del marcador identifica la modalidad del vehiculo. Los botones
+                  sobre el mapa permiten mostrar u ocultar cada capa sin alterar la operacion.
+                </p>
+              </section>
+            ) : null}
             <section className="rounded-[24px] border border-border/60 bg-background/40 p-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-2 text-foreground">
                 <Clock3 className="h-4 w-4 text-emerald-300" />

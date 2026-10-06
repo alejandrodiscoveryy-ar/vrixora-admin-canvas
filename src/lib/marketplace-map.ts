@@ -280,6 +280,7 @@ export interface MarketplaceOperationalDriver {
   driverDisplayName: string | null;
   vehicleId: string;
   vehicleName: string | null;
+  vehicleCategoryCode: string | null;
   acceptingJobs: boolean;
   isAvailable: boolean;
   activeJobId: string | null;
@@ -314,6 +315,7 @@ export interface MarketplaceOperationalJob {
   vehicleId: string | null;
   driverDisplayName: string | null;
   vehicleName: string | null;
+  vehicleCategoryCode: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -323,6 +325,7 @@ export interface MarketplaceOperationalMapData {
   freshnessSeconds: number;
   summary: {
     workingDrivers: number;
+    inactiveDrivers: number;
     driversWithFreshLocation: number;
     activeJobs: number;
   };
@@ -372,6 +375,7 @@ export async function getMarketplaceOperationalMap(
     freshnessSeconds: Number(root.freshness_seconds ?? 180),
     summary: {
       workingDrivers: Number(summary.working_drivers ?? 0),
+      inactiveDrivers: Number(summary.inactive_drivers ?? 0),
       driversWithFreshLocation: Number(summary.drivers_with_fresh_location ?? 0),
       activeJobs: Number(summary.active_jobs ?? 0),
     },
@@ -382,6 +386,7 @@ export async function getMarketplaceOperationalMap(
         driverDisplayName: nullableString(row.driver_display_name),
         vehicleId: String(row.vehicle_id ?? ""),
         vehicleName: nullableString(row.vehicle_name),
+        vehicleCategoryCode: nullableString(row.vehicle_category_code),
         acceptingJobs: Boolean(row.accepting_jobs),
         isAvailable: Boolean(row.is_available),
         activeJobId: nullableString(row.active_job_id),
@@ -418,6 +423,7 @@ export async function getMarketplaceOperationalMap(
         vehicleId: nullableString(row.vehicle_id),
         driverDisplayName: nullableString(row.driver_display_name),
         vehicleName: nullableString(row.vehicle_name),
+        vehicleCategoryCode: nullableString(row.vehicle_category_code),
         createdAt: String(row.created_at ?? ""),
         updatedAt: String(row.updated_at ?? ""),
       };
