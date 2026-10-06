@@ -1,15 +1,15 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  BriefcaseBusiness,
   Gauge,
+  Megaphone,
+  PlugZap,
   ScrollText,
   Settings2,
   ShieldCheck,
   Tags,
   Users,
-  Megaphone,
-  PlugZap,
-  BriefcaseBusiness,
 } from "lucide-react";
 
 import type { ProjectPermission } from "@/lib/services";
@@ -20,6 +20,42 @@ export type AdminProjectTab = {
   icon: LucideIcon;
   permission: ProjectPermission;
 };
+
+export type AdminProjectGroup = {
+  slug: string;
+  label: string;
+  icon: LucideIcon;
+  children: AdminProjectTab[];
+};
+
+export type AdminProjectNavItem = AdminProjectTab | AdminProjectGroup;
+
+const administrationChildren = [
+  {
+    slug: "configuracion",
+    label: "Configuración",
+    icon: Settings2,
+    permission: "settings.view",
+  },
+  {
+    slug: "empleados",
+    label: "Empleados",
+    icon: ShieldCheck,
+    permission: "members.view",
+  },
+  {
+    slug: "comunicados",
+    label: "Comunicados",
+    icon: Megaphone,
+    permission: "settings.view",
+  },
+  {
+    slug: "integraciones",
+    label: "Integraciones",
+    icon: PlugZap,
+    permission: "settings.view",
+  },
+] satisfies Array<AdminProjectTab>;
 
 export const ADMIN_PROJECT_TABS = [
   {
@@ -53,34 +89,16 @@ export const ADMIN_PROJECT_TABS = [
     permission: "plans.view",
   },
   {
-    slug: "empleados",
-    label: "Empleados",
-    icon: ShieldCheck,
-    permission: "members.view",
-  },
-  {
     slug: "rendimiento",
     label: "Rendimiento",
     icon: BarChart3,
     permission: "analytics.view",
   },
   {
-    slug: "configuracion",
-    label: "Configuración",
+    slug: "administracion",
+    label: "Administración",
     icon: Settings2,
-    permission: "settings.view",
-  },
-  {
-    slug: "comunicados",
-    label: "Comunicados",
-    icon: Megaphone,
-    permission: "settings.view",
-  },
-  {
-    slug: "integraciones",
-    label: "Integraciones",
-    icon: PlugZap,
-    permission: "settings.view",
+    children: administrationChildren,
   },
   {
     slug: "auditoria",
@@ -88,4 +106,4 @@ export const ADMIN_PROJECT_TABS = [
     icon: ScrollText,
     permission: "audit.view",
   },
-] satisfies Array<AdminProjectTab>;
+] satisfies Array<AdminProjectNavItem>;

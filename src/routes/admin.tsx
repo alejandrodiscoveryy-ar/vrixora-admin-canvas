@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { ADMIN_PROJECT_TABS } from "@/lib/admin-navigation";
+import { ADMIN_PROJECT_TABS, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -165,7 +165,32 @@ function ProjectNavItem({
   }, [isActiveProject]);
 
   const { data: permissions = [] } = useProjectPermissions(project.id);
-  const visibleTabs = ADMIN_PROJECT_TABS.filter((tab) => permissions.includes(tab.permission));
+
+  const visibleTabs = ADMIN_PROJECT_TABS.reduce<AdminProjectNavItem[]>(
+    (items, item) => {
+      if ("children" in item) {
+        const visibleChildren = item.children.filter((child) =>
+          permissions.includes(child.permission),
+        );
+
+        if (visibleChildren.length > 0) {
+          items.push({
+            ...item,
+            children: visibleChildren,
+          });
+        }
+
+        return items;
+      }
+
+      if (permissions.includes(item.permission)) {
+        items.push(item);
+      }
+
+      return items;
+    },
+    [],
+  );
 
   const projectBasePath = `/admin/proyectos/${project.id}`;
 
@@ -223,6 +248,68 @@ function ProjectNavItem({
         <div className="ml-4 pl-3 border-l border-border/60 space-y-1 my-1">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
+
+            if ("children" in tab) {
+              const groupActive = tab.children.some((child) => {
+                const childPath = `${projectBasePath}/${child.slug}`;
+
+                return (
+                  path === childPath ||
+                  path === `${childPath}/` ||
+                  path.startsWith(`${childPath}/`)
+                );
+              });
+
+              return (
+                <div key={tab.slug} className="space-y-1">
+                  <details open={groupActive || undefined} className="group/admin">
+                    <summary
+                      className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all [&::-webkit-details-marker]:hidden ${
+                        groupActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">{tab.label}</span>
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
+                    </summary>
+
+                    <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2">
+                      {tab.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const childPath = `${projectBasePath}/${child.slug}`;
+                        const childActive =
+                          path === childPath ||
+                          path === `${childPath}/` ||
+                          path.startsWith(`${childPath}/`);
+
+                        return (
+                          <Link
+                            key={child.slug}
+                            to="/admin/proyectos/$id/$section"
+                            params={{
+                              id: project.id,
+                              section: child.slug,
+                            }}
+                            onClick={closeDrawer}
+                            className={`flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                              childActive
+                                ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30"
+                                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                            }`}
+                          >
+                            <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{child.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </details>
+                </div>
+              );
+            }
+
             const to = tab.slug ? `${projectBasePath}/${tab.slug}` : projectBasePath;
             const active = tab.slug
               ? path === to || path === `${to}/` || path.startsWith(`${to}/`)
