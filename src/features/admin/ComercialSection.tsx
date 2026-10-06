@@ -111,21 +111,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     queryKey: ["commercial-campaigns", projectId],
     queryFn: () => supabaseServices.commercial.listCampaigns(projectId),
   });
-  const metrics = useQuery({
-    queryKey: ["commercial-metrics", projectId],
-    queryFn: () => supabaseServices.commercial.metrics(projectId),
-  });
-  const referrals = useQuery({
-    queryKey: ["commercial-referrals", projectId],
-    queryFn: () => supabaseServices.referrals.overview(projectId),
-  });
 
   const refresh = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: ["commercial-leads", projectId] }),
       client.invalidateQueries({ queryKey: ["commercial-campaigns", projectId] }),
-      client.invalidateQueries({ queryKey: ["commercial-metrics", projectId] }),
-      client.invalidateQueries({ queryKey: ["commercial-referrals", projectId] }),
     ]);
 
   const rows = useMemo(
@@ -151,76 +141,99 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     ...new Set((leads.data ?? []).map((lead) => lead.responsibleName ?? "unassigned")),
   ];
 
-  const m = metrics.data;
+  const activeLeads = (leads.data ?? []).filter((lead) => !lead.archivedAt);
 
-  // Funnel data from leads
-  const activeLeads = (leads.data ?? []).filter((l) => !l.archivedAt);
+  const contactedLeads = activeLeads.filter(
+    (lead) =>
+      Boolean(lead.lastInteractionAt) ||
+      ["contacted", "interested", "trial", "ready_to_charge", "customer"].includes(
+        lead.status,
+      ),
+  ).length;
+
+  const interestedLeads = activeLeads.filter((lead) =>
+    ["interested", "trial", "ready_to_charge", "customer"].includes(lead.status),
+  ).length;
+
+  const registeredLeads = activeLeads.filter(
+    (lead) => lead.registered || lead.status === "customer",
+  ).length;
+
+  const registrationConversionRate =
+    activeLeads.length > 0
+      ? Math.round((registeredLeads / activeLeads.length) * 100)
+      : 0;
+
   const funnelSteps = [
-    { label: "Leads", count: activeLeads.length, desc: "Total leads activos" },
+    {
+      label: "Leads",
+      count: activeLeads.length,
+      desc: "Personas captadas",
+    },
     {
       label: "Contactados",
-      count: activeLeads.filter(
-        (l) =>
-          l.status === "contacted" ||
-          l.status === "trial" ||
-          l.status === "customer" ||
-          l.lastInteractionAt,
-      ).length,
-      desc: "Con interacción",
+      count: contactedLeads,
+      desc: "Con interacción comercial",
     },
     {
-      label: "Prueba",
-      count: activeLeads.filter((l) => l.trialStarted || l.status === "trial").length,
-      desc: "En trial",
+      label: "Interesados",
+      count: interestedLeads,
+      desc: "Con interés identificado",
     },
     {
-      label: "Pago",
-      count: activeLeads.filter((l) => l.paid || l.status === "customer").length,
-      desc: "Clientes pagados",
-    },
-    {
-      label: "Renovación",
-      count: activeLeads.reduce((total, lead) => total + lead.renewalCount, 0),
-      desc: "Renovaciones",
+      label: "Registrados",
+      count: registeredLeads,
+      desc: "Convertidos en usuarios",
     },
   ];
 
-  // Source distribution
   const sourceDistribution = useMemo(() => {
     const counts = new Map<string, number>();
-    activeLeads.forEach((l) => {
-      const src = l.source || "other";
-      counts.set(src, (counts.get(src) ?? 0) + 1);
+
+    activeLeads.forEach((lead) => {
+      const currentSource = lead.source || "other";
+      counts.set(currentSource, (counts.get(currentSource) ?? 0) + 1);
     });
-    return Array.from(counts.entries()).map(([source, count]) => ({
-      source: sourceLabel(source as CommercialSource),
+
+    return Array.from(counts.entries()).map(([sourceName, count]) => ({
+      source: sourceLabel(sourceName as CommercialSource),
       count,
     }));
   }, [activeLeads]);
 
-  // Campaign summary
   const campaignSummary = useMemo(() => {
-    const map = new Map<string, { leads: number; trials: number; paid: number }>();
-    activeLeads.forEach((l) => {
-      const camp = l.campaign || "General";
-      const entry = map.get(camp) ?? { leads: 0, trials: 0, paid: 0 };
+    const map = new Map<string, { leads: number; registered: number }>();
+
+    activeLeads.forEach((lead) => {
+      const campaignName = lead.campaign || "General";
+      const entry = map.get(campaignName) ?? {
+        leads: 0,
+        registered: 0,
+      };
+
       entry.leads += 1;
-      if (l.trialStarted || l.status === "trial") entry.trials += 1;
-      if (l.paid || l.status === "customer") entry.paid += 1;
-      map.set(camp, entry);
+
+      if (lead.registered || lead.status === "customer") {
+        entry.registered += 1;
+      }
+
+      map.set(campaignName, entry);
     });
-    return Array.from(map.entries()).map(([campaign, data]) => ({
-      campaign,
+
+    return Array.from(map.entries()).map(([campaignName, data]) => ({
+      campaign: campaignName,
       ...data,
-      conversion: data.trials > 0 ? Math.round((data.paid / data.trials) * 100) : 0,
+      conversion:
+        data.leads > 0
+          ? Math.round((data.registered / data.leads) * 100)
+          : 0,
     }));
   }, [activeLeads]);
-
   return (
     <div className="space-y-6 md:space-y-8">
       <ModuleHeader
         title="Comercial"
-        description="Seguimiento de embudo, canales de adquisición y gestión de leads."
+        description="Captación, campañas, fuentes y seguimiento de personas interesadas."
         icon={Megaphone}
         module="comercial"
         actions={
@@ -242,34 +255,33 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Leads"
-          value={m?.totalLeads ?? activeLeads.length}
-          description="Total canalizados"
+          value={activeLeads.length}
+          description="Personas captadas"
           icon={Megaphone}
           module="comercial"
         />
         <MetricCard
-          label="Pruebas"
-          value={m?.trials ?? 0}
-          description="En periodo trial"
-          icon={Layers}
+          label="Contactados"
+          value={contactedLeads}
+          description="Con interacción comercial"
+          icon={History}
           module="comercial"
         />
         <MetricCard
-          label="Clientes pagados"
-          value={m?.paid ?? 0}
-          description="Conversión confirmada"
-          icon={History}
+          label="Registrados"
+          value={registeredLeads}
+          description="Convertidos en usuarios"
+          icon={UsersRound}
           semanticState="success"
         />
         <MetricCard
           label="Conversión"
-          value={`${m?.conversionRate ?? 0}%`}
-          description="Tasa global"
-          icon={Megaphone}
+          value={`${registrationConversionRate}%`}
+          description="Lead a usuario registrado"
+          icon={Layers}
           semanticState="info"
         />
       </div>
-
       {/* Embudo Comercial */}
       <SectionCard title="Embudo comercial" module="comercial">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -353,8 +365,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                   <TableRow>
                     <TableHead>Campaña</TableHead>
                     <TableHead className="text-right">Leads</TableHead>
-                    <TableHead className="text-right">Pruebas</TableHead>
-                    <TableHead className="text-right">Pagados</TableHead>
+                    <TableHead className="text-right">Registrados</TableHead>
                     <TableHead className="text-right">Conv.</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -365,8 +376,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                         {c.campaign}
                       </TableCell>
                       <TableCell className="text-right font-mono">{c.leads}</TableCell>
-                      <TableCell className="text-right font-mono">{c.trials}</TableCell>
-                      <TableCell className="text-right font-mono">{c.paid}</TableCell>
+                      <TableCell className="text-right font-mono">{c.registered}</TableCell>
                       <TableCell className="text-right font-mono text-emerald-400">
                         {c.conversion}%
                       </TableCell>
@@ -386,93 +396,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         </SectionCard>
       </div>
 
-      <SectionCard
-        title="Referidos"
-        description="Relaciones y recompensas reales del proyecto"
-        module="comercial"
-      >
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            label="Relaciones"
-            value={referrals.data?.relationships ?? 0}
-            description="Clientes vinculados"
-            icon={UsersRound}
-            module="comercial"
-          />
-          <MetricCard
-            label="Convertidos"
-            value={referrals.data?.converted ?? 0}
-            description="Con recompensa ganada"
-            icon={History}
-            semanticState="success"
-          />
-          <MetricCard
-            label="Aplicadas"
-            value={referrals.data?.appliedRewards ?? 0}
-            description="Recompensas entregadas"
-            icon={Layers}
-            module="comercial"
-          />
-          <MetricCard
-            label="Días entregados"
-            value={referrals.data?.deliveredDays ?? 0}
-            description="Extensión acumulada"
-            icon={Megaphone}
-            module="comercial"
-          />
-        </div>
-        {(referrals.data?.rows.length ?? 0) > 0 ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Referidor</TableHead>
-                  <TableHead>Referido</TableHead>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Días</TableHead>
-                  <TableHead>Fecha</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {referrals.data?.rows.map((row) => (
-                  <TableRow key={row.relationshipId}>
-                    <TableCell className="font-medium">{row.referrerName}</TableCell>
-                    <TableCell>{row.referredName}</TableCell>
-                    <TableCell className="font-mono text-xs">{row.code ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {row.status === "pending"
-                          ? "Pendiente"
-                          : row.status === "earned"
-                            ? "Ganada"
-                            : row.status === "applied"
-                              ? "Aplicada"
-                              : "Revertida"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{row.days ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {new Date(row.createdAt).toLocaleDateString("es")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <EmptyState
-            icon={UsersRound}
-            title="Sin referidos"
-            description="Aún no hay relaciones reales de referidos."
-            module="comercial"
-          />
-        )}
-      </SectionCard>
-
       {/* Tabla de Leads con FilterToolbar & AdminDataTableShell */}
       <AdminDataTableShell
-        title="Leads y conversiones"
+        title="Leads y seguimiento"
         description="Listado completo y filtros de seguimiento comercial."
         actions={
           <FilterToolbar
@@ -691,9 +617,9 @@ function labelStatus(status: CommercialLeadStatus) {
     new: "Nuevo",
     contacted: "Contactado",
     interested: "Interesado",
-    trial: "Prueba",
-    ready_to_charge: "Listo para cobrar",
-    customer: "Cliente",
+    trial: "Prueba (legado)",
+    ready_to_charge: "Cobro (legado)",
+    customer: "Registrado",
     not_interested: "No interesado",
   };
   return map[status] ?? status;
