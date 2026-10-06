@@ -7,8 +7,10 @@ import {
   Bike,
   Boxes,
   CarFront,
+  Copy,
   Clock3,
   MapPin,
+  MessageCircle,
   Package,
   Maximize2,
   Minimize2,
@@ -18,9 +20,11 @@ import {
   RefreshCw,
   Route,
   Truck,
+  UserRound,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabaseServices } from "@/lib/services";
 import {
   getMarketplaceOperationalDriverAvatars,
   getMarketplaceOperationalMap,
@@ -345,11 +349,22 @@ function setLayerVisibility(map: mapboxgl.Map, id: string, visible: boolean) {
   }
 }
 
-export default function MarketplaceOperationalMap({ projectId }: { projectId: string }) {
+export default function MarketplaceOperationalMap({
+  projectId,
+  canViewCustomers = false,
+  onOpenCustomer,
+  onOpenJob,
+}: {
+  projectId: string;
+  canViewCustomers?: boolean;
+  onOpenCustomer?: (customerId: string) => void;
+  onOpenJob?: (jobId: string) => void;
+}) {
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
   const [expanded, setExpanded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [customerDetailsJobId, setCustomerDetailsJobId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapViewportHeight, setMapViewportHeight] = useState<number | null>(null);
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
@@ -410,6 +425,32 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     () => operational.data?.jobs.find((job) => job.jobId === selectedJobId) ?? null,
     [operational.data?.jobs, selectedJobId],
   );
+
+  const customerDetailsJob = useMemo(
+    () =>
+      operational.data?.jobs.find(
+        (job) => job.jobId === customerDetailsJobId,
+      ) ?? null,
+    [operational.data?.jobs, customerDetailsJobId],
+  );
+
+  const selectedCustomer = useQuery({
+    queryKey: [
+      "marketplace-map-customer-360",
+      projectId,
+      customerDetailsJob?.customerId,
+    ],
+    queryFn: () =>
+      supabaseServices.marketplace.getCustomer360(
+        projectId,
+        customerDetailsJob!.customerId!,
+      ),
+    enabled:
+      canViewCustomers &&
+      Boolean(customerDetailsJob?.customerId),
+    staleTime: 60_000,
+    retry: 1,
+  });
 
   useEffect(() => {
     if (!selectedJobId && operational.data?.jobs.length) {
@@ -731,6 +772,49 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     setLayerVisibility(map, MAP_LAYERS.incidents, layers.incidents);
   }, [layers, pointFeatures, routeFeatures, mapLoaded]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !map.isStyleLoaded()) return;
+
+    const interactiveLayers = [
+      MAP_LAYERS.pickups,
+      MAP_LAYERS.destinations,
+      MAP_LAYERS.incidents,
+    ];
+
+    const selectPoint = (event: mapboxgl.MapLayerMouseEvent) => {
+      const rawJobId = event.features?.[0]?.properties?.jobId;
+      const jobId = rawJobId == null ? "" : String(rawJobId);
+
+      if (jobId) {
+        setSelectedJobId(jobId);
+        setCustomerDetailsJobId(jobId);
+      }
+    };
+
+    const showPointer = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+
+    const clearPointer = () => {
+      map.getCanvas().style.cursor = "";
+    };
+
+    for (const layer of interactiveLayers) {
+      map.on("click", layer, selectPoint);
+      map.on("mouseenter", layer, showPointer);
+      map.on("mouseleave", layer, clearPointer);
+    }
+
+    return () => {
+      for (const layer of interactiveLayers) {
+        map.off("click", layer, selectPoint);
+        map.off("mouseenter", layer, showPointer);
+        map.off("mouseleave", layer, clearPointer);
+      }
+    };
+  }, [mapLoaded]);
+
   const focusJob = useCallback(
     (job: MarketplaceOperationalJob | null) => {
       const map = mapRef.current;
@@ -794,6 +878,12 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   const rootClass = expanded
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
     : "";
+
+  const customer = selectedCustomer.data?.customer ?? null;
+  const customerPhone = customer?.whatsappPhone ?? null;
+  const whatsappUrl = customerPhone
+    ? `https://wa.me/${customerPhone.replace(/\D/g, "")}`
+    : null;
 
   const layerButton = (
     key: LayerKey,
@@ -974,6 +1064,146 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               expanded ? "min-h-0 overflow-y-auto pr-1" : ""
             }`}
           >
+            {selectedJob && customerDetailsJobId === selectedJob.jobId ? (
+              <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/45 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
+                      <UserRound className="h-4 w-4" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-300">
+                        Cliente del servicio
+                      </p>
+
+                      <h4 className="mt-0.5 truncate text-sm font-semibold text-foreground">
+                        {customer?.displayName ||
+                          selectedJob.customerDisplayName ||
+                          "Cliente"}
+                      </h4>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {selectedCustomer.isLoading
+                          ? "Consultando contacto…"
+                          : customerPhone || "Contacto no disponible"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${
+                      selectedJob.status === "incident"
+                        ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
+                        : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                    }`}
+                  >
+                    {statusLabel(selectedJob.status)}
+                  </span>
+                </div>
+
+                <div className="mt-3 rounded-xl border border-white/10 bg-background/40 p-2.5">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {selectedJob.originText}
+                    </p>
+                  </div>
+
+                  <div className="mt-1.5 flex items-start gap-2">
+                    <Navigation className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {selectedJob.destinationText}
+                    </p>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2 py-1 text-[10px] font-medium text-cyan-200">
+                      {formatDistance(selectedJob.estimatedDistanceKm)}
+                    </span>
+
+                    <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2 py-1 text-[10px] font-medium text-violet-200">
+                      {formatDuration(selectedJob.routeDurationSeconds)}
+                    </span>
+
+                    <VehicleModeBadge code={selectedJob.vehicleCategoryCode} />
+                  </div>
+                </div>
+
+                <div className="mt-2.5 rounded-xl border border-orange-500/15 bg-orange-500/[0.04] px-3 py-2">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-orange-300">
+                    Conductor
+                  </p>
+                  <p className="mt-1 truncate text-xs font-medium text-foreground">
+                    {selectedJob.driverDisplayName || "Pendiente de asignación"}
+                    {selectedJob.vehicleName
+                      ? ` · ${selectedJob.vehicleName}`
+                      : ""}
+                  </p>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!whatsappUrl}
+                    onClick={() => {
+                      if (whatsappUrl) {
+                        window.open(
+                          whatsappUrl,
+                          "_blank",
+                          "noopener,noreferrer",
+                        );
+                      }
+                    }}
+                  >
+                    <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                    WhatsApp
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!customerPhone}
+                    onClick={() => {
+                      if (customerPhone && navigator.clipboard) {
+                        void navigator.clipboard.writeText(customerPhone);
+                      }
+                    }}
+                  >
+                    <Copy className="mr-1.5 h-3.5 w-3.5" />
+                    Copiar
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      !canViewCustomers ||
+                      !selectedJob.customerId ||
+                      !onOpenCustomer
+                    }
+                    onClick={() => {
+                      if (selectedJob.customerId) {
+                        onOpenCustomer?.(selectedJob.customerId);
+                      }
+                    }}
+                  >
+                    Cliente 360
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!onOpenJob}
+                    onClick={() => onOpenJob?.(selectedJob.jobId)}
+                  >
+                    Ver servicio
+                  </Button>
+                </div>
+              </section>
+            ) : null}
+
             <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -995,6 +1225,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                         key={job.jobId}
                         onClick={() => {
                           setSelectedJobId(job.jobId);
+                          setCustomerDetailsJobId(job.jobId);
                           focusJob(job);
                         }}
                         className={`w-full rounded-2xl border p-3 text-left transition ${

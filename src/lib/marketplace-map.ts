@@ -310,6 +310,7 @@ export interface MarketplaceOperationalJob {
   destinationLon: number | null;
   estimatedDistanceKm: number | null;
   routeDurationSeconds: number | null;
+  customerId: string | null;
   customerDisplayName: string | null;
   driverUserId: string | null;
   vehicleId: string | null;
@@ -418,6 +419,7 @@ export async function getMarketplaceOperationalMap(
         destinationLon: nullableNumber(row.destination_lon),
         estimatedDistanceKm: nullableNumber(row.estimated_distance_km),
         routeDurationSeconds: nullableNumber(row.route_duration_seconds),
+        customerId: nullableString(row.customer_id),
         customerDisplayName: nullableString(row.customer_display_name),
         driverUserId: nullableString(row.driver_user_id),
         vehicleId: nullableString(row.vehicle_id),

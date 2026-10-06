@@ -1779,7 +1779,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
         </TabsContent>
         <TabsContent value="mapa" className="mt-3">
-          <MarketplaceOperationalMap projectId={projectId} />
+          <MarketplaceOperationalMap
+            projectId={projectId}
+            canViewCustomers={canCustomers}
+            onOpenCustomer={setCustomerId}
+            onOpenJob={setJobId}
+          />
         </TabsContent>
 <TabsContent value="conductores">
           <PremiumPanel
