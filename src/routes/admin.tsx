@@ -362,13 +362,21 @@ function DesktopSidebar({
   return (
         <aside
       className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 lg:flex ${
-        compact ? "w-[236px]" : "w-[272px]"
+        compact ? "w-[208px]" : "w-[272px]"
       }`}
     >
-      <div className="border-b border-sidebar-border/80 px-5 py-5">
-        <Link to="/admin/proyectos" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-black ring-1 ring-primary/30 shadow-[0_0_24px_-8px_var(--primary)]">
-            <VrixoraLogo variant="mark" size={28} />
+            <div
+        className={`border-b border-sidebar-border/80 ${
+          compact ? "px-3.5 py-4" : "px-5 py-5"
+        }`}
+      >
+        <Link to="/admin/proyectos" className={`flex items-center ${compact ? "gap-2.5" : "gap-3"}`}>
+                    <div
+            className={`flex items-center justify-center rounded-xl bg-black ring-1 ring-primary/30 shadow-[0_0_24px_-8px_var(--primary)] ${
+              compact ? "h-9 w-9" : "h-11 w-11"
+            }`}
+          >
+            <VrixoraLogo variant="mark" size={compact ? 24 : 28} />
           </div>
           <div>
             <div className="text-sm font-semibold tracking-[0.22em] text-gradient">VRIXORA</div>
@@ -379,14 +387,22 @@ function DesktopSidebar({
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 p-3.5 overflow-y-auto">
+            <nav
+        className={`flex-1 space-y-1 overflow-y-auto ${
+          compact ? "p-2.5" : "p-3.5"
+        }`}
+      >
         <DesktopLink
           to="/admin/proyectos"
           icon={LayoutDashboard}
           label="Proyectos"
           active={path === "/admin/proyectos"}
         />
-        <div className="mb-2.5 mt-7 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+                <div
+          className={`px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 ${
+            compact ? "mb-2 mt-4" : "mb-2.5 mt-7"
+          }`}
+        >
           Espacios de trabajo
         </div>
         {projectsLoading ? (
@@ -406,7 +422,11 @@ function DesktopSidebar({
         )}
       </nav>
 
-      <div className="border-t border-sidebar-border/80 p-3.5">
+            <div
+        className={`border-t border-sidebar-border/80 ${
+          compact ? "p-2.5" : "p-3.5"
+        }`}
+      >
         <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
           <div className="flex items-center gap-2 text-xs font-medium text-emerald-300">
             <Activity className="h-3.5 w-3.5" />

@@ -768,10 +768,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
         className={`grid gap-4 ${
           expanded
             ? panelOpen
-              ? "h-full grid-cols-[minmax(0,1fr)_320px]"
+              ? "h-full grid-cols-[minmax(0,1fr)_280px]"
               : "h-full grid-cols-1"
             : panelOpen
-              ? "items-start xl:grid-cols-[minmax(0,1fr)_290px]"
+              ? "items-start xl:grid-cols-[minmax(0,1fr)_260px]"
               : "items-start grid-cols-1"
         }`}
       >
@@ -911,15 +911,15 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
 
         {panelOpen ? (
           <aside
-            className={`space-y-2 bg-transparent ${
+            className={`space-y-2.5 bg-transparent ${
               expanded ? "min-h-0 overflow-y-auto pr-1" : ""
             }`}
           >
-            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Route className="h-4 w-4 text-cyan-300" />
-                  <h4 className="font-semibold text-foreground">Servicios en curso</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Servicios en curso</h4>
                 </div>
                 <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2.5 py-1 text-sm font-semibold text-cyan-200">
                   {runningJobs.length}
@@ -992,10 +992,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-orange-300" />
-                <h4 className="font-semibold text-foreground">Conductores</h4>
+                <h4 className="text-sm font-semibold text-foreground">Conductores</h4>
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1094,10 +1094,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </section>
             ) : null}
 
-            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-cyan-300" />
-                <h4 className="font-semibold text-foreground">Leyenda</h4>
+                <h4 className="text-sm font-semibold text-foreground">Leyenda</h4>
               </div>
               <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -1130,7 +1130,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                 señal. Las capas se pueden mostrar u ocultar sin alterar la operación.
               </p>
             </section>
-            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl text-xs text-muted-foreground">
+            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl text-xs text-muted-foreground">
               <div className="flex items-center gap-2 text-foreground">
                 <Clock3 className="h-4 w-4 text-emerald-300" />
                 <span className="font-semibold">Seguimiento operativo</span>
