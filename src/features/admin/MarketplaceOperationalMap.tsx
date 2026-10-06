@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  getMarketplaceOperationalDriverAvatars,
   getMarketplaceOperationalMap,
   getMarketplaceOperationalMapConfig,
   getMarketplaceOperationalRoutes,
@@ -127,6 +128,39 @@ function VehicleModeBadge({ code }: { code: string | null }) {
     </span>
   );
 }
+const driverInitials = (name: string | null) => {
+  const parts = String(name ?? "Conductor")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "C";
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+};
+
+function DriverAvatar({ name, url }: { name: string | null; url: string | null }) {
+  return (
+    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background shadow-sm">
+      <div className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
+        {driverInitials(name)}
+      </div>
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          referrerPolicy="no-referrer"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 const formatTime = (value: string | null) => {
   if (!value) return "Sin señal";
   const date = new Date(value);
@@ -332,6 +366,15 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     queryKey: ["marketplace-operational-map-config", projectId],
     queryFn: () => getMarketplaceOperationalMapConfig(projectId),
     staleTime: 15 * 60_000,
+    retry: 1,
+  });
+
+  const driverAvatars = useQuery({
+    queryKey: ["marketplace-operational-driver-avatars", projectId],
+    queryFn: () => getMarketplaceOperationalDriverAvatars(projectId),
+    staleTime: 10 * 60_000,
+    refetchInterval: 10 * 60_000,
+    refetchIntervalInBackground: false,
     retry: 1,
   });
 
@@ -805,14 +848,6 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </div>
             )}
           </div>
-
-          {!expanded ? (
-            <div className="border-t border-border/55 px-4 py-3 text-xs text-muted-foreground">
-              Naranja: conductor con señal reciente. Ambar: ultima ubicacion conocida con señal
-              atrasada. Verde: recogida. Cian: destino y recorrido. Rojo: incidencia. Las capas se
-              pueden activar o desactivar sin alterar la operacion.
-            </div>
-          ) : null}
         </section>
 
         {!expanded || panelOpen ? (
@@ -928,29 +963,35 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                         key={driver.driverUserId}
                         className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 px-3 py-2.5"
                       >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {driver.driverDisplayName || "Conductor"}
-                          </p>
-                          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                            <VehicleModeIcon
-                              code={driver.vehicleCategoryCode}
-                              className="h-3.5 w-3.5 shrink-0 text-orange-300"
-                            />
-                            <span className="shrink-0 font-medium text-orange-200">
-                              {vehicleCategoryLabel(driver.vehicleCategoryCode)}
-                            </span>
-                            <span className="truncate">
-                              - {driver.vehicleName || driver.vehicleId}
-                            </span>
-                          </div>
-                          {driver.activeJobId ? (
-                            <p className="mt-1 text-[10px] font-semibold text-cyan-300">
-                              Servicio activo · {statusLabel(driver.activeJobStatus)}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <DriverAvatar
+                            name={driver.driverDisplayName}
+                            url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {driver.driverDisplayName || "Conductor"}
                             </p>
-                          ) : null}
+                            <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                              <VehicleModeIcon
+                                code={driver.vehicleCategoryCode}
+                                className="h-3.5 w-3.5 shrink-0 text-orange-300"
+                              />
+                              <span className="shrink-0 font-medium text-orange-200">
+                                {vehicleCategoryLabel(driver.vehicleCategoryCode)}
+                              </span>
+                              <span className="truncate">
+                                - {driver.vehicleName || driver.vehicleId}
+                              </span>
+                            </div>
+                            {driver.activeJobId ? (
+                              <p className="mt-1 text-[10px] font-semibold text-cyan-300">
+                                Servicio activo · {statusLabel(driver.activeJobStatus)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
-                        <div className="text-right">
+                        <div className="shrink-0 text-right">
                           <span
                             className={`inline-block h-2.5 w-2.5 rounded-full ${
                               driver.locationFresh
@@ -990,44 +1031,42 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </section>
             ) : null}
 
-            {expanded ? (
-              <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-cyan-300" />
+                <h4 className="font-semibold text-foreground">Leyenda</h4>
+              </div>
+              <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-cyan-300" />
-                  <h4 className="font-semibold text-foreground">Leyenda</h4>
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                  <span>Conductor con señal reciente</span>
                 </div>
-                <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-                    <span>Conductor con señal reciente</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                    <span>Ultima ubicacion conocida</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    <span>Recogida</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
-                    <span>Destino</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-cyan-600" />
-                    <span>Ruta del servicio</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                    <span>Incidencia</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                  <span>Última ubicación conocida</span>
                 </div>
-                <p className="mt-3 border-t border-border/50 pt-3 text-[11px] leading-relaxed text-muted-foreground">
-                  El icono dentro del marcador identifica la modalidad del vehiculo. Los botones
-                  sobre el mapa permiten mostrar u ocultar cada capa sin alterar la operacion.
-                </p>
-              </section>
-            ) : null}
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                  <span>Recogida</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
+                  <span>Destino</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-600" />
+                  <span>Ruta del servicio</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                  <span>Incidencia</span>
+                </div>
+              </div>
+              <p className="mt-3 border-t border-border/50 pt-3 text-[11px] leading-relaxed text-muted-foreground">
+                El icono del marcador identifica la modalidad. El color indica el estado de la
+                señal. Las capas se pueden mostrar u ocultar sin alterar la operación.
+              </p>
+            </section>
             <section className="rounded-[24px] border border-border/60 bg-background/40 p-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-2 text-foreground">
                 <Clock3 className="h-4 w-4 text-emerald-300" />

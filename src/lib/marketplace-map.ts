@@ -431,6 +431,55 @@ export async function getMarketplaceOperationalMap(
   };
 }
 
+export interface MarketplaceOperationalDriverAvatar {
+  driverUserId: string;
+  avatarUrl: string | null;
+  avatarSource: "driver_photo" | "google" | null;
+}
+
+export async function getMarketplaceOperationalDriverAvatars(
+  projectId: string,
+): Promise<Record<string, MarketplaceOperationalDriverAvatar>> {
+  const { data, error } = await getSupabaseClient().functions.invoke(
+    "marketplace-map-admin-gateway",
+    {
+      body: {
+        operation: "operational_driver_avatars",
+        project_id: projectId,
+      },
+    },
+  );
+
+  if (error) throw new Error(error.message);
+
+  const root = record(data);
+  const payload = record(root.data);
+  const rawDrivers = Array.isArray(payload.drivers)
+    ? (payload.drivers as unknown[])
+    : Array.isArray(root.drivers)
+      ? (root.drivers as unknown[])
+      : [];
+
+  return Object.fromEntries(
+    rawDrivers.map((item) => {
+      const row = record(item);
+      const driverUserId = String(row.driver_user_id ?? "");
+      const rawSource = nullableString(row.avatar_source);
+      const avatarSource =
+        rawSource === "driver_photo" || rawSource === "google" ? rawSource : null;
+
+      return [
+        driverUserId,
+        {
+          driverUserId,
+          avatarUrl: nullableString(row.avatar_url),
+          avatarSource,
+        },
+      ];
+    }),
+  );
+}
+
 export async function getMarketplaceOperationalStaticMap(
   projectId: string,
   options: { showRoutes?: boolean } = {},

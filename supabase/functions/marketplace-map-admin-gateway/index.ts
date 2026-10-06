@@ -451,6 +451,7 @@ Deno.serve(async (request: Request) => {
         "operational_static_map",
         "operational_map_config",
         "operational_route_geometry",
+        "operational_driver_avatars",
       ].includes(operation)
     ) {
       throw new Error("MAP_ADMIN_OPERATION_INVALID");
@@ -458,6 +459,113 @@ Deno.serve(async (request: Request) => {
 
     const projectId = String(body?.project_id ?? "").trim();
     if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
+
+    if (operation === "operational_driver_avatars") {
+      const { data: operationalData, error: operationalError } = await userClient.rpc(
+        "admin_get_marketplace_operational_map",
+        { target_project_id: projectId },
+      );
+      if (operationalError) throw operationalError;
+
+      const operationalRoot = asRecord(operationalData);
+      const operationalDrivers = Array.isArray(operationalRoot.drivers)
+        ? operationalRoot.drivers
+        : [];
+      const driverIds = Array.from(
+        new Set(
+          operationalDrivers
+            .map((item) => String(asRecord(item).driver_user_id ?? ""))
+            .filter((value) => /^[0-9a-f-]{36}$/i.test(value)),
+        ),
+      );
+
+      if (!driverIds.length) {
+        const payload = {
+          drivers: [],
+          expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        };
+        return reply({ ...payload, data: payload });
+      }
+
+      const { data: driverProfiles, error: driverProfilesError } = await serviceClient
+        .from("driver_profiles")
+        .select("user_id,photo_asset_id")
+        .eq("project_id", projectId)
+        .in("user_id", driverIds);
+      if (driverProfilesError) throw driverProfilesError;
+
+      const { data: profiles, error: profilesError } = await serviceClient
+        .from("profiles")
+        .select("id,avatar_url")
+        .in("id", driverIds);
+      if (profilesError) throw profilesError;
+
+      const photoAssetIds = Array.from(
+        new Set(
+          (driverProfiles ?? [])
+            .map((row: any) => String(row?.photo_asset_id ?? ""))
+            .filter((value: string) => /^[0-9a-f-]{36}$/i.test(value)),
+        ),
+      );
+
+      let mediaAssets: any[] = [];
+      if (photoAssetIds.length) {
+        const { data, error } = await serviceClient
+          .from("media_assets")
+          .select("id,storage_bucket,storage_path,status")
+          .eq("project_id", projectId)
+          .eq("status", "available")
+          .in("id", photoAssetIds);
+        if (error) throw error;
+        mediaAssets = data ?? [];
+      }
+
+      const driverProfileByUserId = new Map(
+        (driverProfiles ?? []).map((row: any) => [String(row.user_id), row]),
+      );
+      const profileByUserId = new Map((profiles ?? []).map((row: any) => [String(row.id), row]));
+      const assetById = new Map(mediaAssets.map((row: any) => [String(row.id), row]));
+
+      const drivers = await Promise.all(
+        driverIds.map(async (driverUserId) => {
+          const driverProfile = driverProfileByUserId.get(driverUserId) as any;
+          const profile = profileByUserId.get(driverUserId) as any;
+          const photoAssetId = String(driverProfile?.photo_asset_id ?? "");
+          const asset = assetById.get(photoAssetId) as any;
+
+          let uploadedPhotoUrl: string | null = null;
+          if (
+            asset?.storage_bucket === "marketplace-media" &&
+            typeof asset?.storage_path === "string" &&
+            asset.storage_path
+          ) {
+            const { data: signed, error: signedError } = await serviceClient.storage
+              .from(asset.storage_bucket)
+              .createSignedUrl(asset.storage_path, 900);
+            if (!signedError && signed?.signedUrl) {
+              uploadedPhotoUrl = signed.signedUrl;
+            }
+          }
+
+          const googleAvatar =
+            typeof profile?.avatar_url === "string" && profile.avatar_url.trim()
+              ? profile.avatar_url.trim()
+              : null;
+
+          return {
+            driver_user_id: driverUserId,
+            avatar_url: uploadedPhotoUrl ?? googleAvatar,
+            avatar_source: uploadedPhotoUrl ? "driver_photo" : googleAvatar ? "google" : null,
+          };
+        }),
+      );
+
+      const payload = {
+        drivers,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      };
+      return reply({ ...payload, data: payload });
+    }
 
     if (operation === "operational_map_config") {
       const { error: operationalError } = await userClient.rpc(
