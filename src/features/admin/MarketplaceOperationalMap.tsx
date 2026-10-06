@@ -597,7 +597,13 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   }, [operational.data, selectedJobId]);
 
   const routeFeatures = useMemo(() => {
+    const activeJobIds = new Set(
+      (operational.data?.jobs ?? []).map((job) => job.jobId),
+    );
+
     return (routes.data ?? []).flatMap((route) => {
+      if (!activeJobIds.has(route.jobId)) return [];
+
       const coordinates = decodePolyline(route.polyline);
       if (coordinates.length < 2) return [];
       return [
@@ -611,7 +617,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
         },
       ];
     });
-  }, [routes.data, selectedJobId]);
+  }, [operational.data?.jobs, routes.data, selectedJobId]);
 
   useEffect(() => {
     const map = mapRef.current;
