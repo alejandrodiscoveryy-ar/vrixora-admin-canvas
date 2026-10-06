@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Loader2, Plus, Save, Trash2, TriangleAlert, Upload } from "lucide-react";
+import { Building2, Loader2, Plus, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -18,7 +18,7 @@ import { SectionCard } from "@/components/admin/SectionCard";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,42 +30,21 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
-const paymentMethods = [
-  { value: "cash", label: "Efectivo" },
-  { value: "transfer", label: "Transferencia" },
-  { value: "card", label: "Tarjeta" },
-  { value: "paypal", label: "PayPal" },
-] as const;
 
 type SectionKey =
   | "general"
-  | "commercial"
   | "billing"
   | "referrals"
   | "communication"
-  | "application"
-  | "testing";
+  | "application";
 
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: "general", label: "General e identidad" },
-  { key: "commercial", label: "Comercial" },
-  { key: "billing", label: "Cobros y moneda" },
+  { key: "billing", label: "Moneda y cambio" },
   { key: "referrals", label: "Referidos" },
   { key: "communication", label: "Comunicación" },
   { key: "application", label: "Aplicación" },
-  { key: "testing", label: "Entorno y pruebas" },
 ];
 
 const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
@@ -355,18 +334,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     }
   };
 
-  const deleteTestData = useMutation({
-    mutationFn: () => supabaseServices.foundations.deleteTestData(projectId),
-
-    onSuccess: (result) => {
-      toast.success(
-        `Datos de prueba eliminados: ${result.preinvoices} prefacturas, ${result.payments} pagos, ${result.receipts} recibos, ${result.referralRewards} recompensas y ${result.referralRelationships} relaciones de referidos.`,
-      );
-    },
-
-    onError: (error: Error) => toast.error(error.message),
-  });
-
   const startReferralCampaign = useMutation({
     mutationFn: async () => {
       if (!canManage) {
@@ -440,17 +407,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     );
   };
 
-  const togglePaymentMethod = (
-    method: ProjectSettings["paymentMethods"][number],
-    enabled: boolean,
-  ) => {
-    const next = enabled
-      ? [...new Set([...form!.paymentMethods, method])]
-      : form!.paymentMethods.filter((item) => item !== method);
-
-    update("paymentMethods", next);
-  };
-
   const handleBaseCurrencyChange = (value: P0ASettings["baseCurrency"]) => {
     updateFoundation("baseCurrency", value);
     update("currency", value);
@@ -487,7 +443,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     <div className="space-y-3">
       <ModuleHeader
         title="Configuración"
-        description="Administra la identidad, reglas comerciales, cobros, comunicación y comportamiento del proyecto."
+        description="Administra identidad, moneda, referidos, comunicación y comportamiento de la aplicación."
         icon={Building2}
         module="configuracion"
         actions={
@@ -515,7 +471,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         }
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
         {sections.map((section) => (
           <Button
             key={section.key}
@@ -774,60 +730,16 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </div>
       ) : null}
 
-      {activeSection === "commercial" ? (
-        <SectionCard
-          title="Reglas comerciales"
-          description="Parámetros generales que afectan la relación con clientes y licencias."
-          module="configuracion"
-          className={CONFIG_CARD_CLASS}
-          headerClassName={CONFIG_HEADER_CLASS}
-          contentClassName={CONFIG_CONTENT_CLASS}
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Días de prueba gratuita</Label>
-              <Input
-                className={CONFIG_CONTROL_CLASS}
-                type="number"
-                min={0}
-                value={form.trialDays}
-                onChange={(event) => update("trialDays", Number(event.target.value))}
-                disabled={!canManage}
-              />
-              <p className="text-xs text-text-tertiary">
-                Duración general configurada para el período de prueba.
-              </p>
-            </div>
-
-            <SettingToggle
-              title="Renovación automática al confirmar pagos"
-              description="Actualiza la licencia cuando se confirma un pago válido."
-              checked={form.autoRenewVerifiedPayments}
-              onCheckedChange={(checked) => update("autoRenewVerifiedPayments", checked)}
-              disabled={!canManage}
-            />
-
-            <SettingToggle
-              title="Notificar vencimientos"
-              description="Permite generar avisos operativos relacionados con licencias próximas a vencer."
-              checked={form.notifyLicenseExpiry}
-              onCheckedChange={(checked) => update("notifyLicenseExpiry", checked)}
-              disabled={!canManage}
-            />
-          </div>
-        </SectionCard>
-      ) : null}
-
       {activeSection === "billing" ? (
         <div className="space-y-3">
           <PageAlert tone="info" title="Configuración monetaria">
-            La moneda base debe coincidir con la moneda en que están definidos los planes. La tasa
-            se conserva en cada documento emitido.
+            Estas monedas y el tipo de cambio se utilizan como referencia para la operación
+            Marketplace y sus tarifas.
           </PageAlert>
 
           <SectionCard
             title="Monedas y tipo de cambio"
-            description="Define cómo se calculan los importes de cobro."
+            description="Define las monedas y el tipo de cambio utilizados por Marketplace."
             module="configuracion"
             className={CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
@@ -939,32 +851,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Métodos de pago"
-            description="Opciones permitidas al registrar operaciones."
-            module="configuracion"
-            className={CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
-          >
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {paymentMethods.map((method) => (
-                <label
-                  key={method.value}
-                  className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2.5 text-sm font-medium"
-                >
-                  <Checkbox
-                    checked={form.paymentMethods.includes(method.value)}
-                    onCheckedChange={(checked) =>
-                      togglePaymentMethod(method.value, Boolean(checked))
-                    }
-                    disabled={!canManage}
-                  />
-                  {method.label}
-                </label>
-              ))}
-            </div>
-          </SectionCard>
         </div>
       ) : null}
 
@@ -1355,92 +1241,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </SectionCard>
       ) : null}
 
-      {activeSection === "testing" ? (
-        <div className="space-y-3">
-          <SectionCard
-            title="Modo de pruebas"
-            description="Permite identificar operaciones creadas exclusivamente para validación."
-            module="configuracion"
-            className={CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
-          >
-            <div className="space-y-3">
-              <SettingToggle
-                title="Permitir operaciones de prueba"
-                description="Cuando está activo, al preparar un cobro puedes marcar la operación como prueba antes de crear la prefactura."
-                checked={foundationForm.testModeEnabled}
-                onCheckedChange={(checked) => updateFoundation("testModeEnabled", checked)}
-                disabled={!canManage}
-              />
-
-              <Badge
-                variant="outline"
-                className={
-                  foundationForm.testModeEnabled
-                    ? "border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]"
-                    : "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]"
-                }
-              >
-                {foundationForm.testModeEnabled
-                  ? "Modo de pruebas activado"
-                  : "Modo de pruebas desactivado"}
-              </Badge>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            title="Limpieza de datos de prueba"
-            description="Herramienta administrativa para retirar datos creados expresamente como prueba."
-            module="configuracion"
-            className={CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
-          >
-            <div className="space-y-3">
-              <PageAlert tone="warning" title="Esta acción es irreversible">
-                La limpieza elimina prefacturas, pagos, recibos, recompensas y relaciones de
-                referidos marcados como prueba. No elimina operaciones reales.
-              </PageAlert>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={!canManage || deleteTestData.isPending}>
-                    {deleteTestData.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="mr-2 h-4 w-4" />
-                    )}
-                    Eliminar datos de prueba
-                  </Button>
-                </AlertDialogTrigger>
-
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar los datos de prueba?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Se eliminarán únicamente prefacturas, pagos, recibos y datos de referidos que
-                      fueron marcados como prueba. Las operaciones reales permanecerán intactas.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-
-                  <div className="flex items-start gap-2 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] p-3 text-sm">
-                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>Esta acción no se puede deshacer.</span>
-                  </div>
-
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => deleteTestData.mutate()}>
-                      Confirmar eliminación
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </SectionCard>
-        </div>
-      ) : null}
     </div>
   );
 }
