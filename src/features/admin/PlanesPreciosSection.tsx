@@ -62,7 +62,7 @@ const emptyPlan: LicensePlan = {
   isFeatured: false,
 };
 
-function LicensePlansSection({ projectId }: { projectId: string }) {
+export function LicensePlansSection({ projectId }: { projectId: string }) {
   const isMobile = useIsMobile();
   const client = useQueryClient();
   const [editing, setEditing] = useState<LicensePlan | null>(null);
@@ -291,33 +291,7 @@ function LicensePlansSection({ projectId }: { projectId: string }) {
 }
 
 export default function PlanesPreciosSection({ projectId }: { projectId: string }) {
-  const [section, setSection] = useState<"licenses" | "marketplace">("marketplace");
-
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-2">
-        <Button
-          variant={section === "marketplace" ? "default" : "ghost"}
-          onClick={() => setSection("marketplace")}
-        >
-          Tarifas Marketplace
-        </Button>
-
-        <Button
-          variant={section === "licenses" ? "default" : "ghost"}
-          onClick={() => setSection("licenses")}
-        >
-          Planes de licencia
-        </Button>
-      </div>
-
-      {section === "marketplace" ? (
-        <MarketplacePricingSection projectId={projectId} />
-      ) : (
-        <LicensePlansSection projectId={projectId} />
-      )}
-    </div>
-  );
+  return <MarketplacePricingSection projectId={projectId} />;
 }
 
 function planDeleteError(error: unknown) {
