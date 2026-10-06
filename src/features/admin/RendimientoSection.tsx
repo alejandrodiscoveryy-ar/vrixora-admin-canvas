@@ -2,18 +2,17 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
-  CalendarDays,
+  BriefcaseBusiness,
   Loader2,
-  TrendingDown,
+  LogIn,
+  Megaphone,
   TrendingUp,
   Users,
-  ShieldCheck,
-  CreditCard,
+  WalletCards,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -23,14 +22,19 @@ import {
   YAxis,
 } from "recharts";
 
+import {
+  supabaseServices,
+  type CommercialSource,
+  type UsageAnalyticsDay,
+} from "@/lib/services";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
-import { supabaseServices, type LicenseStatus, type UsageAnalyticsDay } from "@/lib/services";
-import { Badge } from "@/components/ui/badge";
+import { useProjectPermissions } from "@/hooks/useProjects";
 import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
-import { identifyAdminPeriod, type AdminPeriodKey } from "@/components/admin/admin-period";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  identifyAdminPeriod,
+  type AdminPeriodKey,
+} from "@/components/admin/admin-period";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   MobileFiltersPanel,
@@ -42,7 +46,6 @@ import { MetricCard } from "@/components/admin/MetricCard";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { FilterToolbar } from "@/components/admin/FilterToolbar";
 import {
   Select,
   SelectContent,
@@ -58,125 +61,245 @@ type FilterOption = {
   label: string;
 };
 
-const STATUS_OPTIONS: FilterOption[] = [
-  { value: "all", label: "Todos los estados" },
-  { value: "active", label: "Activa" },
-  { value: "pending", label: "Pendiente" },
-  { value: "expired", label: "Vencida" },
-  { value: "suspended", label: "Suspendida" },
-  { value: "revoked", label: "Revocada" },
-];
+type UsageTrendRow = {
+  date: string;
+  newUsers: number;
+  logins: number;
+  label: string;
+};
 
-export default function RendimientoSection({ projectId }: { projectId: string }) {
+export default function RendimientoSection({
+  projectId,
+}: {
+  projectId: string;
+}) {
   const isMobile = useIsMobile();
+
+  const { data: permissions = [], isLoading: permissionsLoading } =
+    useProjectPermissions(projectId);
+
+  const canViewCommercial = permissions.includes("commercial.view");
+  const canViewMarketplace = permissions.includes("marketplace.view");
+
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:analytics-range:${projectId}`,
   );
-  const [period, setPeriod] = useState<AdminPeriodKey>(() => identifyAdminPeriod(dateRange));
+
+  const [period, setPeriod] = useState<AdminPeriodKey>(() =>
+    identifyAdminPeriod(dateRange),
+  );
+
   const [grain, setGrain] = useState<Grain>("daily");
-  const [plan, setPlan] = useState("all");
-  const [status, setStatus] = useState("all");
   const [source, setSource] = useState("all");
   const [campaign, setCampaign] = useState("all");
   const [version, setVersion] = useState("all");
 
   const fromDate = dateRange.from;
   const toDate = dateRange.to;
-  const periodDays = Math.max(
-    1,
-    Math.round(
-      (new Date(`${toDate}T12:00:00`).getTime() - new Date(`${fromDate}T12:00:00`).getTime()) /
-        86_400_000,
-    ) + 1,
+
+  const periodDays =
+    Math.max(
+      1,
+      Math.round(
+        (new Date(`${toDate}T12:00:00`).getTime() -
+          new Date(`${fromDate}T12:00:00`).getTime()) /
+          86_400_000,
+      ) + 1,
+    );
+
+  const analyticsFrom = isoDate(
+    addDays(new Date(`${fromDate}T12:00:00`), -periodDays),
   );
 
-  const from = isoDate(addDays(new Date(`${fromDate}T12:00:00`), -periodDays));
-  const filters = {
-    from,
+  const analyticsFilters = {
+    from: analyticsFrom,
     to: toDate,
-    plan: plan === "all" ? undefined : plan,
-    licenseStatus: status === "all" ? undefined : (status as LicenseStatus),
     source: source === "all" ? undefined : source,
     campaign: campaign === "all" ? undefined : campaign,
     appVersion: version === "all" ? undefined : version,
   };
 
   const analytics = useQuery({
-    queryKey: ["usage-analytics", projectId, filters],
-    queryFn: () => supabaseServices.usageAnalytics.series(projectId, filters),
+    queryKey: ["usage-analytics-v2", projectId, analyticsFilters],
+    queryFn: () =>
+      supabaseServices.usageAnalytics.series(projectId, analyticsFilters),
     refetchInterval: 30_000,
   });
+
   const dimensions = useQuery({
     queryKey: ["usage-analytics-dimensions", projectId],
     queryFn: () => supabaseServices.usageAnalytics.dimensions(projectId),
   });
-  const plans = useQuery({
-    queryKey: ["admin-license-plans", projectId],
-    queryFn: () => supabaseServices.licenses.listAdminPlans(projectId),
-  });
+
   const retention = useQuery({
-    queryKey: ["usage-retention", projectId, plan, source, campaign],
+    queryKey: ["usage-retention-v2", projectId, source, campaign],
     queryFn: () =>
       supabaseServices.usageAnalytics.retention(projectId, {
-        plan: plan === "all" ? undefined : plan,
         source: source === "all" ? undefined : source,
         campaign: campaign === "all" ? undefined : campaign,
       }),
   });
 
+  const commercialLeads = useQuery({
+    queryKey: ["commercial-leads", projectId],
+    queryFn: () => supabaseServices.commercial.listLeads(projectId),
+    enabled: !permissionsLoading && canViewCommercial,
+    refetchInterval: 30_000,
+  });
+
+  const marketplace = useQuery({
+    queryKey: ["marketplace-overview", projectId],
+    queryFn: () => supabaseServices.marketplace.overview(projectId),
+    enabled: !permissionsLoading && canViewMarketplace,
+    refetchInterval: 30_000,
+  });
+
   const allRows = useMemo(() => analytics.data ?? [], [analytics.data]);
+
   const current = allRows.slice(-periodDays);
   const previous = allRows.slice(-periodDays * 2, -periodDays);
-  const chartRows = aggregate(current, grain);
 
-  const currentTotals = totals(current);
-  const previousTotals = totals(previous);
-  const todayRow = current.at(-1);
+  const chartRows = aggregateUsage(current, grain);
 
-  const isLoading = analytics.isLoading || dimensions.isLoading || plans.isLoading;
-  const error = analytics.error || dimensions.error || plans.error;
-  const activeFilterCount = [plan, status, source, campaign, version].filter(
+  const currentTotals = usageTotals(current);
+  const previousTotals = usageTotals(previous);
+
+  const rangeStart = new Date(`${fromDate}T00:00:00`).getTime();
+  const rangeEnd = new Date(`${toDate}T23:59:59.999`).getTime();
+
+  const periodLeads = useMemo(() => {
+    return (commercialLeads.data ?? []).filter((lead) => {
+      const createdAt = new Date(lead.createdAt).getTime();
+
+      return (
+        createdAt >= rangeStart &&
+        createdAt <= rangeEnd &&
+        (source === "all" || lead.source === source) &&
+        (campaign === "all" || lead.campaign === campaign)
+      );
+    });
+  }, [
+    commercialLeads.data,
+    rangeStart,
+    rangeEnd,
+    source,
+    campaign,
+  ]);
+
+  const contactedLeads = periodLeads.filter(
+    (lead) =>
+      Boolean(lead.lastInteractionAt) ||
+      ["contacted", "interested", "trial", "ready_to_charge", "customer"].includes(
+        lead.status,
+      ),
+  ).length;
+
+  const interestedLeads = periodLeads.filter((lead) =>
+    ["interested", "trial", "ready_to_charge", "customer"].includes(
+      lead.status,
+    ),
+  ).length;
+
+  const registeredLeads = periodLeads.filter(
+    (lead) => lead.registered || lead.status === "customer",
+  ).length;
+
+  const commercialConversion =
+    periodLeads.length > 0
+      ? Math.round((registeredLeads / periodLeads.length) * 100)
+      : null;
+
+  const sourceDistribution = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    periodLeads.forEach((lead) => {
+      counts.set(lead.source, (counts.get(lead.source) ?? 0) + 1);
+    });
+
+    return Array.from(counts.entries())
+      .map(([currentSource, count]) => ({
+        source: sourceLabel(currentSource as CommercialSource),
+        count,
+      }))
+      .sort((left, right) => right.count - left.count);
+  }, [periodLeads]);
+
+  const overview = marketplace.data;
+
+  const activeFilterCount = [source, campaign, version].filter(
     (value) => value !== "all",
   ).length;
 
+  const isLoading =
+    permissionsLoading ||
+    analytics.isLoading ||
+    dimensions.isLoading ||
+    retention.isLoading ||
+    (canViewCommercial && commercialLeads.isLoading) ||
+    (canViewMarketplace && marketplace.isLoading);
+
+  const error =
+    analytics.error ||
+    dimensions.error ||
+    retention.error ||
+    (canViewCommercial ? commercialLeads.error : null) ||
+    (canViewMarketplace ? marketplace.error : null);
+
   const mobileMetrics: MobileMetric[] = [
-    { key: "newUsers", icon: Users, label: "Registros", value: String(currentTotals.newUsers) },
-    { key: "trials", icon: Activity, label: "Prueba inicial", value: String(currentTotals.trials) },
     {
-      key: "paidLicenses",
-      icon: TrendingUp,
-      label: "Licencias pagadas",
-      value: String(currentTotals.paidLicenses),
+      key: "newUsers",
+      icon: Users,
+      label: "Registros",
+      value: String(currentTotals.newUsers),
     },
     {
-      key: "activeToday",
+      key: "logins",
+      icon: LogIn,
+      label: "Accesos",
+      value: String(currentTotals.logins),
+    },
+    {
+      key: "retention7",
       icon: Activity,
-      label: "Activos hoy",
-      value: String(todayRow?.activeUsers ?? 0),
-    },
-    {
-      key: "renewals",
-      icon: TrendingUp,
-      label: "Renovaciones",
-      value: String(currentTotals.renewals),
-    },
-    {
-      key: "expired",
-      icon: TrendingDown,
-      label: "Vencidas",
-      value: String(currentTotals.expired),
-    },
-    {
-      key: "conversion",
-      icon: BarChart3,
-      label: "Conversion",
-      value: `${retention.data?.trialToPaidRate ?? 0}%`,
+      label: "Retención 7 días",
+      value: `${retention.data?.retention7Rate ?? 0}%`,
     },
     {
       key: "retention30",
-      icon: BarChart3,
-      label: "Retencion 30 dias",
+      icon: Activity,
+      label: "Retención 30 días",
       value: `${retention.data?.retention30Rate ?? 0}%`,
+    },
+    {
+      key: "leads",
+      icon: Megaphone,
+      label: "Leads",
+      value: canViewCommercial ? String(periodLeads.length) : "—",
+    },
+    {
+      key: "conversion",
+      icon: TrendingUp,
+      label: "Conversión",
+      value:
+        canViewCommercial && commercialConversion !== null
+          ? `${commercialConversion}%`
+          : "—",
+    },
+    {
+      key: "drivers",
+      icon: Users,
+      label: "Conductores activos",
+      value: canViewMarketplace
+        ? String(overview?.driversActive ?? 0)
+        : "—",
+    },
+    {
+      key: "jobs",
+      icon: BriefcaseBusiness,
+      label: "Trabajos activos",
+      value: canViewMarketplace
+        ? String(overview?.jobsActive ?? 0)
+        : "—",
     },
   ];
 
@@ -200,14 +323,10 @@ export default function RendimientoSection({ projectId }: { projectId: string })
     <div className="space-y-4 md:space-y-8">
       <ModuleHeader
         title="Rendimiento"
-        description="Analítica de uso, adopción, retención y evolución operativa del sistema."
+        description="Crecimiento, captación, acceso y retención del ecosistema."
         icon={BarChart3}
         module="rendimiento"
-        actions={
-          <div className="flex items-center gap-2">
-            <GrainSelect value={grain} onChange={setGrain} />
-          </div>
-        }
+        actions={<GrainSelect value={grain} onChange={setGrain} />}
       />
 
       <section className="space-y-3">
@@ -223,54 +342,48 @@ export default function RendimientoSection({ projectId }: { projectId: string })
         <MobileFiltersPanel
           activeFilters={activeFilterCount}
           onClear={() => {
-            setPlan("all");
-            setStatus("all");
             setSource("all");
             setCampaign("all");
             setVersion("all");
           }}
         >
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            <FilterSelect
-              value={plan}
-              onChange={setPlan}
-              label="Plan"
-              options={[
-                { value: "all", label: "Todos los planes" },
-                ...(plans.data ?? []).map((p) => ({ value: p.code, label: p.name })),
-              ]}
-            />
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              label="Estado"
-              options={STATUS_OPTIONS}
-            />
+          <div className="grid gap-2 sm:grid-cols-3">
             <FilterSelect
               value={source}
               onChange={setSource}
               label="Fuente"
               options={[
                 { value: "all", label: "Todas las fuentes" },
-                ...(dimensions.data?.sources ?? []).map((s) => ({ value: s, label: s })),
+                ...(dimensions.data?.sources ?? []).map((item) => ({
+                  value: item,
+                  label: item,
+                })),
               ]}
             />
+
             <FilterSelect
               value={campaign}
               onChange={setCampaign}
               label="Campaña"
               options={[
                 { value: "all", label: "Todas las campañas" },
-                ...(dimensions.data?.campaigns ?? []).map((c) => ({ value: c, label: c })),
+                ...(dimensions.data?.campaigns ?? []).map((item) => ({
+                  value: item,
+                  label: item,
+                })),
               ]}
             />
+
             <FilterSelect
               value={version}
               onChange={setVersion}
               label="Versión"
               options={[
                 { value: "all", label: "Todas las versiones" },
-                ...(dimensions.data?.versions ?? []).map((v) => ({ value: v, label: v })),
+                ...(dimensions.data?.versions ?? []).map((item) => ({
+                  value: item,
+                  label: item,
+                })),
               ]}
             />
           </div>
@@ -278,230 +391,322 @@ export default function RendimientoSection({ projectId }: { projectId: string })
       </section>
 
       {isMobile ? (
-        <MobileMetricsGrid metrics={mobileMetrics} moreLabel="Ver metricas completas" />
+        <MobileMetricsGrid
+          metrics={mobileMetrics}
+          moreLabel="Ver métricas completas"
+        />
       ) : null}
 
-      {/* BLOQUE A: ADQUISICIÓN */}
-      <SectionCard title="A. Adquisición" module="rendimiento">
-        <KpiGrid columns={3} density="compact">
+      <SectionCard
+        title="Usuarios app"
+        description="Registro, acceso y retorno de usuarios"
+        module="rendimiento"
+      >
+        <KpiGrid columns={4} density="compact">
           <MetricCard
             label="Registros nuevos"
             value={currentTotals.newUsers}
-            comparison={compare(currentTotals.newUsers, previousTotals.newUsers)}
+            comparison={compare(
+              currentTotals.newUsers,
+              previousTotals.newUsers,
+            )}
             icon={Users}
             module="rendimiento"
           />
-          <MetricCard
-            label="Pruebas iniciadas"
-            value={currentTotals.trials}
-            comparison={compare(currentTotals.trials, previousTotals.trials)}
-            icon={Activity}
-            module="rendimiento"
-          />
-          <MetricCard
-            label="Licencias pagadas"
-            value={currentTotals.paidLicenses}
-            comparison={compare(currentTotals.paidLicenses, previousTotals.paidLicenses)}
-            icon={TrendingUp}
-            semanticState="success"
-          />
-        </KpiGrid>
-      </SectionCard>
 
-      {/* BLOQUE B: USO */}
-      <SectionCard title="B. Uso y Actividad" module="rendimiento">
-        <KpiGrid columns={4} density="compact">
           <MetricCard
-            label="Activos hoy"
-            value={todayRow?.activeUsers ?? 0}
-            comparison="Usuarios únicos activos"
-            icon={Activity}
+            label="Accesos"
+            value={currentTotals.logins}
+            comparison={compare(
+              currentTotals.logins,
+              previousTotals.logins,
+            )}
+            icon={LogIn}
             module="rendimiento"
           />
-          <MetricCard
-            label="Activos semanales (WAU)"
-            value={averageMetric(current, "activeUsers", 7)}
-            comparison="Promedio últimos 7 días"
-            icon={Users}
-            module="rendimiento"
-          />
-          <MetricCard
-            label="Activos mensuales (MAU)"
-            value={averageMetric(current, "activeUsers", 30)}
-            comparison="Promedio últimos 30 días"
-            icon={Users}
-            module="rendimiento"
-          />
-          <MetricCard
-            label="Inicios de sesión"
-            value={currentTotals.sessions}
-            comparison={compare(currentTotals.sessions, previousTotals.sessions)}
-            icon={ShieldCheck}
-            module="rendimiento"
-          />
-        </KpiGrid>
-      </SectionCard>
 
-      {/* BLOQUE C: NEGOCIO */}
-      <SectionCard title="C. Negocio y Retención" module="rendimiento">
-        <KpiGrid columns={4} density="compact">
           <MetricCard
-            label="Renovaciones"
-            value={currentTotals.renewals}
-            comparison={compare(currentTotals.renewals, previousTotals.renewals)}
-            icon={TrendingUp}
-            semanticState="success"
+            label="Retención 7 días"
+            value={`${retention.data?.retention7Rate ?? 0}%`}
+            comparison={`${retention.data?.retained7 ?? 0} de ${
+              retention.data?.eligible7 ?? 0
+            } usuarios elegibles`}
+            icon={Activity}
+            semanticState="info"
           />
+
           <MetricCard
-            label="Licencias vencidas"
-            value={currentTotals.expired}
-            comparison={compare(currentTotals.expired, previousTotals.expired)}
-            icon={TrendingDown}
-            semanticState="danger"
-          />
-          <MetricCard
-            label="Conversión prueba → pago"
-            value={`${retention.data?.trialToPaidRate ?? 0}%`}
-            comparison="Tasa global del periodo"
-            icon={BarChart3}
-            module="rendimiento"
-          />
-          <MetricCard
-            label="Retención (30 días)"
+            label="Retención 30 días"
             value={`${retention.data?.retention30Rate ?? 0}%`}
-            comparison="Usuarios recurrentes"
+            comparison={`${retention.data?.retained30 ?? 0} de ${
+              retention.data?.eligible30 ?? 0
+            } usuarios elegibles`}
             icon={Activity}
             semanticState="info"
           />
         </KpiGrid>
       </SectionCard>
 
-      {/* GRÁFICO 1: USO REAL DE LA APLICACIÓN */}
-      <SectionCard title="Uso real de la aplicación (Activos vs Sesiones)" module="rendimiento">
-        {chartRows.length > 0 ? (
-          <div className="h-64 md:h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartRows} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--module-comercial)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--module-comercial)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                <XAxis
-                  dataKey="label"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  stroke="var(--muted-foreground)"
-                />
-                <YAxis
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  stroke="var(--muted-foreground)"
-                />
-                <Tooltip {...adminChartTooltipProps} />
-                <Area
-                  type="monotone"
-                  dataKey="activeUsers"
-                  name="Usuarios activos"
-                  stroke="var(--primary)"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#colorActive)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="sessions"
-                  name="Sesiones"
-                  stroke="var(--module-comercial)"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorSessions)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      <SectionCard
+        title="Captación comercial"
+        description="Conversión de personas interesadas a usuarios registrados"
+        module="comercial"
+      >
+        {canViewCommercial ? (
+          <KpiGrid columns={5} density="compact">
+            <MetricCard
+              label="Leads"
+              value={periodLeads.length}
+              comparison="Captados en el período"
+              icon={Megaphone}
+              module="comercial"
+            />
+
+            <MetricCard
+              label="Contactados"
+              value={contactedLeads}
+              comparison="Con interacción"
+              icon={Activity}
+              module="comercial"
+            />
+
+            <MetricCard
+              label="Interesados"
+              value={interestedLeads}
+              comparison="Con interés identificado"
+              icon={Users}
+              module="comercial"
+            />
+
+            <MetricCard
+              label="Registrados"
+              value={registeredLeads}
+              comparison="Convertidos en usuarios"
+              icon={Users}
+              semanticState="success"
+            />
+
+            <MetricCard
+              label="Conversión"
+              value={
+                commercialConversion === null
+                  ? "Sin datos"
+                  : `${commercialConversion}%`
+              }
+              comparison="Lead a usuario registrado"
+              icon={TrendingUp}
+              semanticState="info"
+            />
+          </KpiGrid>
         ) : (
           <EmptyState
-            icon={Activity}
-            title="Sin datos de uso"
-            description="No se registran métricas de actividad para el rango de fechas seleccionado."
+            icon={Megaphone}
+            title="Sin acceso a Comercial"
+            description="No tienes permisos para consultar la captación comercial."
+            module="comercial"
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Marketplace actual"
+        description="Estado operativo en este momento"
+        module="rendimiento"
+      >
+        {canViewMarketplace ? (
+          <KpiGrid columns={4} density="compact">
+            <MetricCard
+              label="Conductores activos"
+              value={overview?.driversActive ?? 0}
+              comparison={`De ${overview?.driversTotal ?? 0} registrados`}
+              icon={Users}
+              semanticState="info"
+            />
+
+            <MetricCard
+              label="Trabajos activos"
+              value={overview?.jobsActive ?? 0}
+              comparison={`${overview?.jobsPublished ?? 0} publicados`}
+              icon={BriefcaseBusiness}
+              module="rendimiento"
+            />
+
+            <MetricCard
+              label="Incidencias abiertas"
+              value={overview?.jobsIncidentOpen ?? 0}
+              comparison={`${overview?.jobsIncidentResolved ?? 0} resueltas`}
+              icon={AlertTriangle}
+              semanticState={
+                (overview?.jobsIncidentOpen ?? 0) > 0
+                  ? "warning"
+                  : "success"
+              }
+            />
+
+            <MetricCard
+              label="Recargas pendientes"
+              value={overview?.pendingTopups ?? 0}
+              comparison="Pendientes de gestión"
+              icon={WalletCards}
+              semanticState={
+                (overview?.pendingTopups ?? 0) > 0
+                  ? "warning"
+                  : "success"
+              }
+            />
+          </KpiGrid>
+        ) : (
+          <EmptyState
+            icon={BriefcaseBusiness}
+            title="Sin acceso a Marketplace"
+            description="No tienes permisos para consultar la operación."
             module="rendimiento"
           />
         )}
       </SectionCard>
 
-      {/* GRÁFICO 2: CRECIMIENTO Y LICENCIAS */}
-      <SectionCard
-        title="Crecimiento y licencias (Registros, Pruebas y Pagadas)"
-        module="rendimiento"
-      >
-        {chartRows.length > 0 ? (
-          <div className="h-64 md:h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartRows} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                <XAxis
-                  dataKey="label"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  stroke="var(--muted-foreground)"
-                />
-                <YAxis
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  stroke="var(--muted-foreground)"
-                />
-                <Tooltip {...adminChartTooltipProps} />
-                <Bar
-                  dataKey="newUsers"
-                  name="Registros"
-                  fill="var(--module-clientes)"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="trials"
-                  name="Pruebas"
-                  fill="var(--module-comercial)"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="paidLicenses"
-                  name="Pagadas"
-                  fill="var(--semantic-success)"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <EmptyState
-            icon={BarChart3}
-            title="Sin datos de crecimiento"
-            description="No hay registros de licencias ni pruebas para este periodo."
-            module="rendimiento"
-          />
-        )}
-      </SectionCard>
+      <section className="grid gap-4 xl:grid-cols-2">
+        <SectionCard
+          title="Registros y accesos"
+          description="Evolución de altas y accesos a la aplicación"
+          module="rendimiento"
+        >
+          {chartRows.length ? (
+            <div className="h-64 w-full md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartRows}
+                  margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    opacity={0.15}
+                  />
+
+                  <XAxis
+                    dataKey="label"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <YAxis
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                    allowDecimals={false}
+                  />
+
+                  <Tooltip {...adminChartTooltipProps} />
+
+                  <Bar
+                    dataKey="newUsers"
+                    name="Registros"
+                    fill="var(--module-clientes)"
+                    radius={[4, 4, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="logins"
+                    name="Accesos"
+                    fill="var(--module-comercial)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState
+              icon={BarChart3}
+              title="Sin datos de usuarios"
+              description="No hay registros o accesos para el período seleccionado."
+              module="rendimiento"
+            />
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Fuentes de captación"
+          description="Origen de los leads del período seleccionado"
+          module="comercial"
+        >
+          {canViewCommercial && sourceDistribution.length ? (
+            <div className="h-64 w-full md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={sourceDistribution}
+                  layout="vertical"
+                  margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    opacity={0.15}
+                  />
+
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <YAxis
+                    dataKey="source"
+                    type="category"
+                    width={85}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <Tooltip {...adminChartTooltipProps} />
+
+                  <Bar
+                    dataKey="count"
+                    name="Leads"
+                    fill="var(--module-comercial)"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Megaphone}
+              title="Sin datos de captación"
+              description="No hay fuentes comerciales para el período y filtros seleccionados."
+              module="comercial"
+            />
+          )}
+        </SectionCard>
+      </section>
     </div>
   );
 }
 
-function GrainSelect({ value, onChange }: { value: Grain; onChange: (v: Grain) => void }) {
+function GrainSelect({
+  value,
+  onChange,
+}: {
+  value: Grain;
+  onChange: (value: Grain) => void;
+}) {
   return (
-    <Select value={value} onValueChange={(v) => onChange(v as Grain)}>
-      <SelectTrigger className="h-9 w-32 text-xs bg-card/60">
+    <Select
+      value={value}
+      onValueChange={(nextValue) => onChange(nextValue as Grain)}
+    >
+      <SelectTrigger className="h-9 w-32 bg-card/60 text-xs">
         <SelectValue placeholder="Granularidad" />
       </SelectTrigger>
+
       <SelectContent>
         <SelectItem value="daily">Diaria</SelectItem>
         <SelectItem value="weekly">Semanal</SelectItem>
@@ -518,19 +723,20 @@ function FilterSelect({
   options,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   label: string;
   options: FilterOption[];
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-10 text-xs bg-background/60 border-border/80">
+      <SelectTrigger className="h-10 border-border/80 bg-background/60 text-xs">
         <SelectValue placeholder={label} />
       </SelectTrigger>
+
       <SelectContent>
-        {options.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value}>
-            {opt.label}
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
           </SelectItem>
         ))}
       </SelectContent>
@@ -538,82 +744,109 @@ function FilterSelect({
   );
 }
 
-function aggregate(rows: UsageAnalyticsDay[], grain: Grain) {
+function aggregateUsage(
+  rows: UsageAnalyticsDay[],
+  grain: Grain,
+): UsageTrendRow[] {
   if (grain === "daily") {
-    return rows.map((r) => ({
-      ...r,
-      label: formatDate(r.date),
+    return rows.map((row) => ({
+      date: row.date,
+      newUsers: row.newUsers,
+      logins: row.logins,
+      label: formatDate(row.date),
     }));
   }
 
-  const map = new Map<string, UsageAnalyticsDay>();
-  rows.forEach((r) => {
-    const d = new Date(`${r.date}T12:00:00`);
+  const grouped = new Map<
+    string,
+    {
+      date: string;
+      newUsers: number;
+      logins: number;
+    }
+  >();
+
+  rows.forEach((row) => {
+    const date = new Date(`${row.date}T12:00:00`);
     const key =
       grain === "weekly"
-        ? `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`
-        : `${d.getFullYear()}-${d.getMonth()}`;
-    const existing = map.get(key) ?? {
-      date: r.date,
+        ? weekStart(date)
+        : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+    const existing = grouped.get(key) ?? {
+      date: grain === "weekly" ? key : row.date,
       newUsers: 0,
-      trials: 0,
-      paidLicenses: 0,
-      activeUsers: 0,
-      sessions: 0,
-      renewals: 0,
-      expired: 0,
+      logins: 0,
     };
-    existing.newUsers += r.newUsers;
-    existing.trials += r.trials;
-    existing.paidLicenses += r.paidLicenses;
-    existing.activeUsers = Math.max(existing.activeUsers, r.activeUsers);
-    existing.sessions += r.sessions;
-    existing.renewals += r.renewals;
-    existing.expired += r.expired;
-    map.set(key, existing);
+
+    existing.newUsers += row.newUsers;
+    existing.logins += row.logins;
+
+    grouped.set(key, existing);
   });
 
-  return Array.from(map.values()).map((r) => ({
-    ...r,
-    label: formatDate(r.date),
+  return Array.from(grouped.values()).map((row) => ({
+    ...row,
+    label: formatDate(row.date),
   }));
 }
 
-function totals(rows: UsageAnalyticsDay[]) {
+function usageTotals(rows: UsageAnalyticsDay[]) {
   return rows.reduce(
-    (acc, r) => ({
-      newUsers: acc.newUsers + r.newUsers,
-      trials: acc.trials + r.trials,
-      paidLicenses: acc.paidLicenses + r.paidLicenses,
-      sessions: acc.sessions + r.sessions,
-      renewals: acc.renewals + r.renewals,
-      expired: acc.expired + r.expired,
+    (total, row) => ({
+      newUsers: total.newUsers + row.newUsers,
+      logins: total.logins + row.logins,
     }),
-    { newUsers: 0, trials: 0, paidLicenses: 0, sessions: 0, renewals: 0, expired: 0 },
+    {
+      newUsers: 0,
+      logins: 0,
+    },
   );
 }
 
-function averageMetric(rows: UsageAnalyticsDay[], key: keyof UsageAnalyticsDay, days: number) {
-  const slice = rows.slice(-days);
-  if (!slice.length) return 0;
-  const sum = slice.reduce((acc, r) => acc + Number(r[key] ?? 0), 0);
-  return Math.round(sum / slice.length);
+function compare(current: number, previous: number) {
+  if (previous === 0) {
+    return current === 0 ? "Sin cambio" : "Sin base anterior";
+  }
+
+  const delta = ((current - previous) / previous) * 100;
+
+  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% vs período anterior`;
 }
 
-function compare(current: number, previous: number) {
-  if (previous === 0) return current === 0 ? "Sin cambio" : "Sin base anterior";
-  const delta = ((current - previous) / previous) * 100;
-  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}% vs periodo anterior`;
+function sourceLabel(source: CommercialSource) {
+  const labels: Record<CommercialSource, string> = {
+    whatsapp: "WhatsApp",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    sms: "SMS",
+    referral: "Referido",
+    direct: "Directo",
+    other: "Otro",
+  };
+
+  return labels[source] ?? source;
 }
 
 function formatDate(dateStr: string) {
   try {
-    return new Intl.DateTimeFormat("es", { day: "2-digit", month: "short" }).format(
-      new Date(`${dateStr}T12:00:00`),
-    );
+    return new Intl.DateTimeFormat("es", {
+      day: "2-digit",
+      month: "short",
+    }).format(new Date(`${dateStr}T12:00:00`));
   } catch {
     return dateStr;
   }
+}
+
+function weekStart(date: Date) {
+  const start = new Date(date);
+  const day = start.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+
+  start.setDate(start.getDate() + offset);
+
+  return isoDate(start);
 }
 
 function isoDate(date: Date) {
