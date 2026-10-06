@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
-  CreditCard,
   Gauge,
   ScrollText,
   Settings2,
@@ -52,12 +51,6 @@ export const ADMIN_PROJECT_TABS = [
     label: "Tarifas",
     icon: Tags,
     permission: "plans.view",
-  },
-  {
-    slug: "pagos",
-    label: "Finanzas",
-    icon: CreditCard,
-    permission: "payments.view",
   },
   {
     slug: "empleados",
