@@ -19,14 +19,18 @@ type OperationalPoint = {
   lon: number;
 };
 
+type OperationalRouteSegment = "pickup" | "trip";
+
 type OperationalRouteCandidate = {
   jobId: string;
+  segment: OperationalRouteSegment;
   origin: { lat: number; lon: number };
   destination: { lat: number; lon: number };
 };
 
 type OperationalRouteRender = {
   jobId: string;
+  segment: OperationalRouteSegment;
   polyline: string;
   distanceKm: number | null;
   durationSeconds: number | null;
@@ -174,11 +178,16 @@ function operationalRoutesFromData(
 ): OperationalRouteCandidate[] {
   const root = asRecord(value);
   const jobs = Array.isArray(root.jobs) ? root.jobs : [];
+  const drivers = Array.isArray(root.drivers) ? root.drivers : [];
   const routes: OperationalRouteCandidate[] = [];
+  const pickupStatuses = new Set(["accepted", "en_route", "pickup"]);
 
   for (const item of jobs) {
     const row = asRecord(item);
     const jobId = String(row.job_id ?? "");
+    const status = String(row.status ?? "");
+    const assignedDriverUserId = String(row.driver_user_id ?? "");
+    const assignedVehicleId = String(row.vehicle_id ?? "");
 
     if (routeJobId && jobId !== routeJobId) continue;
 
@@ -187,23 +196,73 @@ function operationalRoutesFromData(
     const destinationLat = validCoordinate(row.destination_lat, -90, 90);
     const destinationLon = validCoordinate(row.destination_lon, -180, 180);
 
+    if (originLat == null || originLon == null) continue;
+
     if (
-      originLat == null ||
-      originLon == null ||
-      destinationLat == null ||
-      destinationLon == null
+      pickupStatuses.has(status) &&
+      assignedDriverUserId
     ) {
-      continue;
+      const assignedDriver = drivers
+        .map(asRecord)
+        .find((driver) => {
+          if (String(driver.driver_user_id ?? "") !== assignedDriverUserId) {
+            return false;
+          }
+
+          if (
+            assignedVehicleId &&
+            String(driver.vehicle_id ?? "") !== assignedVehicleId
+          ) {
+            return false;
+          }
+
+          return true;
+        });
+
+      if (assignedDriver) {
+        const locationFresh = assignedDriver.location_fresh === true;
+
+        const driverLat = validCoordinate(
+          locationFresh
+            ? assignedDriver.latitude
+            : assignedDriver.last_latitude,
+          -90,
+          90,
+        );
+
+        const driverLon = validCoordinate(
+          locationFresh
+            ? assignedDriver.longitude
+            : assignedDriver.last_longitude,
+          -180,
+          180,
+        );
+
+        if (driverLat != null && driverLon != null) {
+          routes.push({
+            jobId,
+            segment: "pickup",
+            origin: { lat: driverLat, lon: driverLon },
+            destination: { lat: originLat, lon: originLon },
+          });
+        }
+      }
     }
 
-    routes.push({
-      jobId,
-      origin: { lat: originLat, lon: originLon },
-      destination: { lat: destinationLat, lon: destinationLon },
-    });
+    if (destinationLat != null && destinationLon != null) {
+      routes.push({
+        jobId,
+        segment: "trip",
+        origin: { lat: originLat, lon: originLon },
+        destination: {
+          lat: destinationLat,
+          lon: destinationLon,
+        },
+      });
+    }
   }
 
-  return routes.slice(0, routeJobId ? 1 : 8);
+  return routes.slice(0, routeJobId ? 2 : 16);
 }
 
 async function operationalRoutePolyline(
@@ -234,6 +293,7 @@ async function operationalRoutePolyline(
 
   return {
     jobId: route.jobId,
+    segment: route.segment,
     polyline: geometry.trim(),
     distanceKm: Number.isFinite(distanceMeters) ? distanceMeters / 1000 : null,
     durationSeconds: Number.isFinite(durationSeconds) ? Math.round(durationSeconds) : null,
@@ -337,7 +397,10 @@ async function operationalStaticMap(
       for (const result of results) {
         if (!result) continue;
 
-        const routeOverlay = `path-4+22d3ee-0.85(${encodeURIComponent(result.polyline)})`;
+        const routeColor =
+          result.segment === "pickup" ? "f97316" : "22d3ee";
+        const routeOverlay =
+          `path-4+${routeColor}-0.85(${encodeURIComponent(result.polyline)})`;
         const candidate = [...routeOverlays, routeOverlay, ...pointOverlays].join(",");
 
         if (candidate.length > 6500) break;
@@ -668,6 +731,7 @@ Deno.serve(async (request: Request) => {
       const payload = {
         routes: renderedRoutes.map((route) => ({
           job_id: route.jobId,
+          segment: route.segment,
           polyline: route.polyline,
           distance_km: route.distanceKm,
           duration_seconds: route.durationSeconds,
@@ -728,7 +792,17 @@ Deno.serve(async (request: Request) => {
       );
 
       const selectedRoute = routeJobId
-        ? (rendered.renderedRoutes.find((route) => route.jobId === routeJobId) ?? null)
+        ? (
+            rendered.renderedRoutes.find(
+              (route) =>
+                route.jobId === routeJobId &&
+                route.segment === "trip",
+            ) ??
+            rendered.renderedRoutes.find(
+              (route) => route.jobId === routeJobId,
+            ) ??
+            null
+          )
         : null;
 
       const payload = {

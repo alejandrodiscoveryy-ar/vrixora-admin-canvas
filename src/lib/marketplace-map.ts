@@ -349,6 +349,7 @@ export interface MarketplaceOperationalMapConfig {
 
 export interface MarketplaceOperationalRoute {
   jobId: string;
+  segment: "pickup" | "trip";
   polyline: string;
   distanceKm: number | null;
   durationSeconds: number | null;
@@ -572,10 +573,16 @@ export async function getMarketplaceOperationalRoutes(
       const row = record(item);
       const jobId = String(row.job_id ?? "").trim();
       const polyline = String(row.polyline ?? "").trim();
+      const segment =
+        String(row.segment ?? "trip").trim() === "pickup"
+          ? "pickup"
+          : "trip";
+
       if (!jobId || !polyline) return null;
 
       return {
         jobId,
+        segment,
         polyline,
         distanceKm: nullableNumber(row.distance_km),
         durationSeconds: nullableNumber(row.duration_seconds),

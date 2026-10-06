@@ -43,7 +43,9 @@ const MAP_LAYERS = {
   driversFresh: "tuktuk-live-drivers-fresh-layer",
   driversStale: "tuktuk-live-drivers-stale-layer",
   pickups: "tuktuk-live-pickups-layer",
+  pickupLabels: "tuktuk-live-pickup-labels-layer",
   destinations: "tuktuk-live-destinations-layer",
+  destinationLabels: "tuktuk-live-destination-labels-layer",
   incidents: "tuktuk-live-incidents-layer",
 } as const;
 
@@ -62,7 +64,7 @@ const defaultLayers: LayerState = {
 
 const statusLabel = (status: string | null) =>
   ({
-    published: "Publicado",
+    published: "Buscando conductor",
     accepted: "Aceptado",
     en_route: "En camino",
     pickup: "Recogida",
@@ -282,7 +284,12 @@ function addOperationalLayers(map: mapboxgl.Map) {
       source: MAP_SOURCE_ROUTES,
       filter: ["!=", ["get", "selected"], true],
       paint: {
-        "line-color": "#22d3ee",
+        "line-color": [
+          "case",
+          ["==", ["get", "segment"], "pickup"],
+          "#f97316",
+          "#22d3ee",
+        ],
         "line-width": 4,
         "line-opacity": 0.78,
       },
@@ -296,7 +303,12 @@ function addOperationalLayers(map: mapboxgl.Map) {
       source: MAP_SOURCE_ROUTES,
       filter: ["==", ["get", "selected"], true],
       paint: {
-        "line-color": "#67e8f9",
+        "line-color": [
+          "case",
+          ["==", ["get", "segment"], "pickup"],
+          "#fb923c",
+          "#67e8f9",
+        ],
         "line-width": 7,
         "line-opacity": 0.98,
       },
@@ -326,6 +338,33 @@ function addOperationalLayers(map: mapboxgl.Map) {
     });
   };
 
+  const labelLayer = (
+    id: string,
+    kind: string,
+    color: string,
+  ) => {
+    if (map.getLayer(id)) return;
+
+    map.addLayer({
+      id,
+      type: "symbol",
+      source: MAP_SOURCE_POINTS,
+      filter: ["==", ["get", "kind"], kind],
+      layout: {
+        "text-field": ["get", "label"],
+        "text-size": 11,
+        "text-offset": [0, 1.45],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": color,
+        "text-halo-color": "#0f172a",
+        "text-halo-width": 1.5,
+      },
+    });
+  };
+
   pointLayer(MAP_LAYERS.driversFresh, "driver_fresh", "#f97316", 8, {
     "circle-stroke-color": "#ffedd5",
     "circle-stroke-width": 3,
@@ -334,8 +373,11 @@ function addOperationalLayers(map: mapboxgl.Map) {
     "circle-opacity": 0.65,
     "circle-stroke-color": "#fde68a",
   });
-  pointLayer(MAP_LAYERS.pickups, "pickup", "#22c55e", 7);
-  pointLayer(MAP_LAYERS.destinations, "destination", "#22d3ee", 7);
+  pointLayer(MAP_LAYERS.pickups, "pickup", "#22c55e", 8);
+  labelLayer(MAP_LAYERS.pickupLabels, "pickup", "#86efac");
+
+  pointLayer(MAP_LAYERS.destinations, "destination", "#22d3ee", 8);
+  labelLayer(MAP_LAYERS.destinationLabels, "destination", "#67e8f9");
   pointLayer(MAP_LAYERS.incidents, "incident", "#ef4444", 12, {
     "circle-opacity": 0.35,
     "circle-stroke-color": "#fecaca",
@@ -397,20 +439,41 @@ export default function MarketplaceOperationalMap({
 
   const routeKey = useMemo(() => {
     const jobs = operational.data?.jobs ?? [];
+    const drivers = operational.data?.drivers ?? [];
+
     return jobs
-      .map(
-        (job) =>
-          `${job.jobId}:${job.originLat ?? "x"}:${job.originLon ?? "x"}:${job.destinationLat ?? "x"}:${job.destinationLon ?? "x"}`,
-      )
+      .map((job) => {
+        const driver = drivers.find(
+          (item) =>
+            item.driverUserId === job.driverUserId &&
+            (!job.vehicleId || item.vehicleId === job.vehicleId),
+        );
+
+        const driverPoint = driver ? driverCoordinate(driver) : null;
+
+        return [
+          job.jobId,
+          job.status,
+          job.driverUserId ?? "x",
+          job.vehicleId ?? "x",
+          job.originLat ?? "x",
+          job.originLon ?? "x",
+          job.destinationLat ?? "x",
+          job.destinationLon ?? "x",
+          driverPoint?.[0] ?? "x",
+          driverPoint?.[1] ?? "x",
+          driver?.capturedAt ?? "x",
+        ].join(":");
+      })
       .sort()
       .join("|");
-  }, [operational.data?.jobs]);
+  }, [operational.data?.drivers, operational.data?.jobs]);
 
   const routes = useQuery({
     queryKey: ["marketplace-operational-routes-live", projectId, routeKey],
     queryFn: () => getMarketplaceOperationalRoutes(projectId),
     enabled: Boolean(routeKey),
-    staleTime: 10 * 60_000,
+    staleTime: 4_000,
     retry: 1,
   });
 
@@ -676,6 +739,16 @@ export default function MarketplaceOperationalMap({
         element.style.boxShadow = driver.activeJobId
           ? "0 0 0 3px rgba(34,211,238,0.22), 0 6px 18px rgba(0,0,0,0.38)"
           : "0 6px 18px rgba(0,0,0,0.38)";
+
+        element.style.cursor = driver.activeJobId ? "pointer" : "default";
+
+        element.onclick = driver.activeJobId
+          ? (event) => {
+              event.stopPropagation();
+              setSelectedJobId(driver.activeJobId);
+              setCustomerDetailsJobId(driver.activeJobId);
+            }
+          : null;
       }
     }
 
@@ -699,7 +772,12 @@ export default function MarketplaceOperationalMap({
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: origin },
-          properties: { kind: "pickup", jobId: job.jobId, selected: job.jobId === selectedJobId },
+          properties: {
+            kind: "pickup",
+            jobId: job.jobId,
+            label: job.customerDisplayName || "Cliente",
+            selected: job.jobId === selectedJobId,
+          },
         });
         if (job.status === "incident") {
           features.push({
@@ -716,6 +794,7 @@ export default function MarketplaceOperationalMap({
           properties: {
             kind: "destination",
             jobId: job.jobId,
+            label: "Destino",
             selected: job.jobId === selectedJobId,
           },
         });
@@ -741,6 +820,7 @@ export default function MarketplaceOperationalMap({
           geometry: { type: "LineString", coordinates },
           properties: {
             jobId: route.jobId,
+            segment: route.segment,
             selected: route.jobId === selectedJobId,
           },
         },
@@ -766,7 +846,9 @@ export default function MarketplaceOperationalMap({
     setLayerVisibility(map, MAP_LAYERS.driversFresh, layers.drivers);
     setLayerVisibility(map, MAP_LAYERS.driversStale, layers.drivers);
     setLayerVisibility(map, MAP_LAYERS.pickups, layers.pickups);
+    setLayerVisibility(map, MAP_LAYERS.pickupLabels, layers.pickups);
     setLayerVisibility(map, MAP_LAYERS.destinations, layers.destinations);
+    setLayerVisibility(map, MAP_LAYERS.destinationLabels, layers.destinations);
     setLayerVisibility(map, MAP_LAYERS.routes, layers.routes);
     setLayerVisibility(map, MAP_LAYERS.routesSelected, layers.routes);
     setLayerVisibility(map, MAP_LAYERS.incidents, layers.incidents);
@@ -778,7 +860,9 @@ export default function MarketplaceOperationalMap({
 
     const interactiveLayers = [
       MAP_LAYERS.pickups,
+      MAP_LAYERS.pickupLabels,
       MAP_LAYERS.destinations,
+      MAP_LAYERS.destinationLabels,
       MAP_LAYERS.incidents,
     ];
 
@@ -832,9 +916,13 @@ export default function MarketplaceOperationalMap({
       const driverPoint = driver ? driverCoordinate(driver) : null;
       if (driverPoint) bounds.extend(driverPoint);
 
-      const route = routes.data?.find((item) => item.jobId === job.jobId);
-      if (route) {
-        for (const coordinate of decodePolyline(route.polyline)) bounds.extend(coordinate);
+      const jobRoutes =
+        routes.data?.filter((item) => item.jobId === job.jobId) ?? [];
+
+      for (const route of jobRoutes) {
+        for (const coordinate of decodePolyline(route.polyline)) {
+          bounds.extend(coordinate);
+        }
       }
 
       if (!bounds.isEmpty()) {
@@ -873,7 +961,7 @@ export default function MarketplaceOperationalMap({
   }
 
   const data = operational.data;
-  const runningJobs = data.jobs.filter((job) => job.status !== "published");
+  const operationalJobs = data.jobs;
   const liveAt = formatTime(data.serverTime);
   const rootClass = expanded
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
@@ -884,6 +972,52 @@ export default function MarketplaceOperationalMap({
   const whatsappUrl = customerPhone
     ? `https://wa.me/${customerPhone.replace(/\D/g, "")}`
     : null;
+
+  const selectedDriver =
+    selectedJob?.driverUserId
+      ? data.drivers.find(
+          (driver) =>
+            driver.driverUserId === selectedJob.driverUserId &&
+            (!selectedJob.vehicleId ||
+              driver.vehicleId === selectedJob.vehicleId),
+        ) ?? null
+      : null;
+
+  const selectedDriverPoint = selectedDriver
+    ? driverCoordinate(selectedDriver)
+    : null;
+
+  const selectedPickupRoute =
+    selectedJob
+      ? routes.data?.find(
+          (route) =>
+            route.jobId === selectedJob.jobId &&
+            route.segment === "pickup",
+        ) ?? null
+      : null;
+
+  const selectedTripRoute =
+    selectedJob
+      ? routes.data?.find(
+          (route) =>
+            route.jobId === selectedJob.jobId &&
+            route.segment === "trip",
+        ) ?? null
+      : null;
+
+  const selectedPhase = !selectedJob
+    ? null
+    : selectedJob.status === "published"
+      ? "Esperando que un conductor tome el servicio"
+      : ["accepted", "en_route", "pickup"].includes(selectedJob.status)
+        ? selectedDriverPoint
+          ? "Conductor en ruta hacia el cliente"
+          : "Conductor asignado · esperando ubicación GPS"
+        : selectedJob.status === "in_progress"
+          ? "Cliente recogido · viaje hacia el destino"
+          : selectedJob.status === "incident"
+            ? "Servicio con incidencia activa"
+            : statusLabel(selectedJob.status);
 
   const layerButton = (
     key: LayerKey,
@@ -1007,7 +1141,7 @@ export default function MarketplaceOperationalMap({
               )}
               {layerButton(
                 "pickups",
-                "Recogidas",
+                "Clientes",
                 "bg-emerald-500",
                 "border-emerald-400/30 bg-emerald-500/20 text-emerald-100",
               )}
@@ -1134,12 +1268,66 @@ export default function MarketplaceOperationalMap({
                   <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-orange-300">
                     Conductor
                   </p>
+
                   <p className="mt-1 truncate text-xs font-medium text-foreground">
                     {selectedJob.driverDisplayName || "Pendiente de asignación"}
                     {selectedJob.vehicleName
                       ? ` · ${selectedJob.vehicleName}`
                       : ""}
                   </p>
+
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {selectedJob.driverUserId
+                      ? selectedDriverPoint
+                        ? selectedDriver?.locationFresh
+                          ? "Ubicación en vivo"
+                          : "Mostrando última ubicación conocida"
+                        : "Sin ubicación disponible del conductor"
+                      : "Todavía sin conductor asignado"}
+                  </p>
+                </div>
+
+                {selectedPhase ? (
+                  <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-white/10 bg-background/35 px-3 py-2">
+                    <Clock3 className="h-3.5 w-3.5 shrink-0 text-violet-300" />
+                    <span className="text-[11px] font-medium text-foreground">
+                      {selectedPhase}
+                    </span>
+                  </div>
+                ) : null}
+
+                <div className="mt-2.5 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.05] p-2.5">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-orange-300">
+                      Chofer → cliente
+                    </p>
+
+                    <p className="mt-1 text-[11px] font-medium text-foreground">
+                      {selectedPickupRoute
+                        ? `${formatDistance(selectedPickupRoute.distanceKm)} · ${formatDuration(
+                            selectedPickupRoute.durationSeconds,
+                          )}`
+                        : selectedJob.driverUserId
+                          ? "Pendiente de GPS"
+                          : "Pendiente de conductor"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
+                      Cliente → destino
+                    </p>
+
+                    <p className="mt-1 text-[11px] font-medium text-foreground">
+                      {selectedTripRoute
+                        ? `${formatDistance(selectedTripRoute.distanceKm)} · ${formatDuration(
+                            selectedTripRoute.durationSeconds,
+                          )}`
+                        : `${formatDistance(selectedJob.estimatedDistanceKm)} · ${formatDuration(
+                            selectedJob.routeDurationSeconds,
+                          )}`}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-1.5">
@@ -1212,16 +1400,16 @@ export default function MarketplaceOperationalMap({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Route className="h-4 w-4 text-cyan-300" />
-                  <h4 className="text-sm font-semibold text-foreground">Servicios en curso</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Servicios activos</h4>
                 </div>
                 <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2.5 py-1 text-sm font-semibold text-cyan-200">
-                  {runningJobs.length}
+                  {operationalJobs.length}
                 </span>
               </div>
 
               <div className="mt-3 space-y-2">
-                {runningJobs.length ? (
-                  runningJobs.slice(0, 12).map((job) => {
+                {operationalJobs.length ? (
+                  operationalJobs.slice(0, 12).map((job) => {
                     const selected = job.jobId === selectedJobId;
                     return (
                       <button
@@ -1440,8 +1628,12 @@ export default function MarketplaceOperationalMap({
                   <span>Destino</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                  <span>Chofer → recogida</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-cyan-600" />
-                  <span>Ruta del servicio</span>
+                  <span>Recogida → destino</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
