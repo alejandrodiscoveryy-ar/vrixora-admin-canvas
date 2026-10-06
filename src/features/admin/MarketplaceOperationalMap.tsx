@@ -475,18 +475,51 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     if (!map || !node) return;
 
     let frame = 0;
+
     const resize = () => {
       window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => map.resize());
+
+      frame = window.requestAnimationFrame(() => {
+        map.resize();
+
+        window.requestAnimationFrame(() => {
+          if (mapRef.current === map) {
+            map.resize();
+          }
+        });
+      });
     };
 
     const observer = new ResizeObserver(resize);
     observer.observe(node);
+
+    if (node.parentElement) {
+      observer.observe(node.parentElement);
+    }
+
+    const settleFast = window.setTimeout(resize, 80);
+    const settleLayout = window.setTimeout(resize, 240);
+    const settleMap = window.setTimeout(resize, 520);
+
+    window.addEventListener("resize", resize);
+
+    if (mapLoaded) {
+      map.once("idle", resize);
+    }
+
     resize();
 
     return () => {
       observer.disconnect();
+      window.removeEventListener("resize", resize);
+      window.clearTimeout(settleFast);
+      window.clearTimeout(settleLayout);
+      window.clearTimeout(settleMap);
       window.cancelAnimationFrame(frame);
+
+      if (mapRef.current === map) {
+        map.off("idle", resize);
+      }
     };
   }, [expanded, panelOpen, mapLoaded]);
 
@@ -707,18 +740,23 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
     : "space-y-4";
 
-  const layerButton = (key: LayerKey, label: string, dotClass: string) => (
+  const layerButton = (
+    key: LayerKey,
+    label: string,
+    dotClass: string,
+    activeClass: string,
+  ) => (
     <button
       type="button"
       aria-pressed={layers[key]}
       onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-semibold backdrop-blur-xl transition-all duration-200 ${
         layers[key]
-          ? "border-border/70 bg-background/90 text-foreground shadow-sm"
-          : "border-border/40 bg-background/45 text-muted-foreground opacity-60"
+          ? `${activeClass} shadow-[0_12px_30px_-18px_rgba(0,0,0,0.9)]`
+          : "border-white/10 bg-background/25 text-muted-foreground opacity-65 hover:bg-background/40 hover:opacity-90"
       }`}
     >
-      <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
+      <span className={`h-2.5 w-2.5 rounded-full shadow-sm ${dotClass}`} />
       {label}
     </button>
   );
@@ -821,19 +859,44 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             </div>
           </div>
 
-          <div className={`relative min-h-[420px] flex-1 bg-muted/15 ${expanded ? "min-h-0" : ""}`}>
-            <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-2xl border border-border/60 bg-background/80 p-2 shadow-lg backdrop-blur">
-              {layerButton("drivers", "Conductores", "bg-orange-500")}
-              {layerButton("pickups", "Recogidas", "bg-emerald-500")}
-              {layerButton("destinations", "Destinos", "bg-cyan-400")}
-              {layerButton("routes", "Rutas", "bg-cyan-600")}
-              {layerButton("incidents", "Incidencias", "bg-red-500")}
+          <div className={`relative min-h-[420px] flex-1 overflow-hidden bg-muted/15 ${expanded ? "min-h-0" : ""}`}>
+            <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/35 p-2 shadow-[0_18px_48px_-22px_rgba(0,0,0,0.95)] backdrop-blur-xl">
+              {layerButton(
+                "drivers",
+                "Conductores",
+                "bg-orange-500",
+                "border-orange-400/30 bg-orange-500/20 text-orange-100",
+              )}
+              {layerButton(
+                "pickups",
+                "Recogidas",
+                "bg-emerald-500",
+                "border-emerald-400/30 bg-emerald-500/20 text-emerald-100",
+              )}
+              {layerButton(
+                "destinations",
+                "Destinos",
+                "bg-cyan-400",
+                "border-cyan-300/30 bg-cyan-400/20 text-cyan-100",
+              )}
+              {layerButton(
+                "routes",
+                "Rutas",
+                "bg-cyan-600",
+                "border-sky-400/30 bg-sky-500/20 text-sky-100",
+              )}
+              {layerButton(
+                "incidents",
+                "Incidencias",
+                "bg-red-500",
+                "border-red-400/30 bg-red-500/20 text-red-100",
+              )}
             </div>
 
             {mapConfig.data ? (
               <div
                 ref={mapNodeRef}
-                className={`absolute inset-0 w-full ${expanded ? "h-full min-h-0" : "min-h-[420px]"}`}
+                className={`absolute inset-0 h-full w-full ${expanded ? "min-h-0" : "min-h-[420px]"}`}
               />
             ) : mapConfig.isLoading ? (
               <div className="flex h-full min-h-[420px] items-center justify-center">
@@ -858,8 +921,12 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
         </section>
 
         {!expanded || panelOpen ? (
-          <aside className={`space-y-4 ${expanded ? "min-h-0 overflow-y-auto pr-1" : ""}`}>
-            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+          <aside
+            className={`space-y-3 rounded-[28px] border border-white/10 bg-background/25 p-2 shadow-[0_24px_65px_-34px_rgba(0,0,0,0.9)] backdrop-blur-xl ${
+              expanded ? "min-h-0 overflow-y-auto pr-2" : ""
+            }`}
+          >
+            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Route className="h-4 w-4 text-cyan-300" />
@@ -885,7 +952,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                         className={`w-full rounded-2xl border p-3 text-left transition ${
                           selected
                             ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
-                            : "border-border/55 bg-background/55 hover:border-cyan-500/25"
+                            : "border-white/10 bg-background/40 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -936,7 +1003,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-orange-300" />
                 <h4 className="font-semibold text-foreground">Conductores</h4>
@@ -951,7 +1018,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                     {data.summary.workingDrivers}
                   </p>
                 </div>
-                <div className="rounded-xl border border-border/55 bg-background/45 px-3 py-2.5">
+                <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2.5 backdrop-blur-md">
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                     Inactivos
                   </p>
@@ -968,7 +1035,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                     return (
                       <div
                         key={driver.driverUserId}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 px-3 py-2.5"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-background/38 px-3 py-2.5 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <DriverAvatar
@@ -1038,7 +1105,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </section>
             ) : null}
 
-            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4">
+            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-cyan-300" />
                 <h4 className="font-semibold text-foreground">Leyenda</h4>
@@ -1074,7 +1141,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                 señal. Las capas se pueden mostrar u ocultar sin alterar la operación.
               </p>
             </section>
-            <section className="rounded-[24px] border border-border/60 bg-background/40 p-4 text-xs text-muted-foreground">
+            <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl text-xs text-muted-foreground">
               <div className="flex items-center gap-2 text-foreground">
                 <Clock3 className="h-4 w-4 text-emerald-300" />
                 <span className="font-semibold">Seguimiento operativo</span>
