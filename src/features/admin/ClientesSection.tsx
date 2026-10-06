@@ -76,6 +76,317 @@ function formatClientExpiry(value: string | null) {
 
 export default function ClientesSection({ projectId }: { projectId: string }) {
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [adoptionFilter, setAdoptionFilter] = useState("all");
+  const [adoptionSort, setAdoptionSort] = useState("none");
+
+  const query = useQuery({
+    queryKey: ["admin-clients", projectId],
+    queryFn: () => supabaseServices.licenses.listClients(projectId),
+  });
+
+  const allClients = useMemo(() => query.data ?? [], [query.data]);
+
+  const clients = useMemo(() => {
+    const filtered = allClients.filter((client) => {
+      const matchesSearch =
+        `${client.displayName} ${client.email} ${client.phone ?? ""}`
+          .toLowerCase()
+          .includes(search.toLowerCase());
+
+      const matchesAdoption =
+        adoptionFilter === "all" ||
+        (client.adoptionLevel ?? "Sin actividad") === adoptionFilter;
+
+      return matchesSearch && matchesAdoption;
+    });
+
+    if (adoptionSort === "high") {
+      return [...filtered].sort(
+        (left, right) => (right.adoptionScore ?? 0) - (left.adoptionScore ?? 0),
+      );
+    }
+
+    if (adoptionSort === "low") {
+      return [...filtered].sort(
+        (left, right) => (left.adoptionScore ?? 0) - (right.adoptionScore ?? 0),
+      );
+    }
+
+    return filtered;
+  }, [allClients, search, adoptionFilter, adoptionSort]);
+
+  const adoptionSummary = useMemo(
+    () => ({
+      high: allClients.filter((client) => client.adoptionLevel === "Alta").length,
+      medium: allClients.filter((client) => client.adoptionLevel === "Media").length,
+      inactive: allClients.filter(
+        (client) => !client.adoptionLevel || client.adoptionLevel === "Sin actividad",
+      ).length,
+    }),
+    [allClients],
+  );
+
+  if (query.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 md:space-y-8">
+      <ModuleHeader
+        title="Clientes"
+        description="Directorio de clientes y actividad dentro del ecosistema."
+        icon={Users}
+        module="clientes"
+      />
+
+      <KpiGrid columns={4} density="compact">
+        <MetricCard
+          label="Total clientes"
+          value={allClients.length}
+          description="Registrados en el sistema"
+          icon={Users}
+          module="clientes"
+        />
+        <MetricCard
+          label="Adopción alta"
+          value={adoptionSummary.high}
+          description="Uso consolidado"
+          icon={Users}
+          semanticState="success"
+        />
+        <MetricCard
+          label="Adopción media"
+          value={adoptionSummary.medium}
+          description="Uso en desarrollo"
+          icon={Users}
+          module="clientes"
+        />
+        <MetricCard
+          label="Sin actividad"
+          value={adoptionSummary.inactive}
+          description="Sin actividad observable"
+          icon={Users}
+          module="clientes"
+        />
+      </KpiGrid>
+
+      <AdminDataTableShell
+        title="Todos los clientes"
+        description="Directorio y actividad de clientes"
+        actions={
+          <DataToolbar
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Nombre, correo o teléfono..."
+            resultCount={clients.length}
+            activeFilterCount={
+              (search ? 1 : 0) +
+              (adoptionFilter !== "all" ? 1 : 0) +
+              (adoptionSort !== "none" ? 1 : 0)
+            }
+            filters={
+              <>
+                <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
+                  <SelectTrigger className="w-[155px]">
+                    <SelectValue placeholder="Adopción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toda adopción</SelectItem>
+                    <SelectItem value="Alta">Alta</SelectItem>
+                    <SelectItem value="Media">Media</SelectItem>
+                    <SelectItem value="Baja">Baja</SelectItem>
+                    <SelectItem value="Sin actividad">Sin actividad</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={adoptionSort} onValueChange={setAdoptionSort}>
+                  <SelectTrigger className="w-[175px]">
+                    <SelectValue placeholder="Ordenar adopción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Orden original</SelectItem>
+                    <SelectItem value="high">Mayor adopción primero</SelectItem>
+                    <SelectItem value="low">Menor adopción primero</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            }
+            onReset={() => {
+              setSearch("");
+              setAdoptionFilter("all");
+              setAdoptionSort("none");
+            }}
+          />
+        }
+        isEmpty={clients.length === 0}
+        emptyState={
+          <EmptyState
+            icon={Users}
+            title="Sin clientes encontrados"
+            description="No hay clientes que coincidan con los criterios actuales."
+            module="clientes"
+          />
+        }
+      >
+        <div className="space-y-3 md:hidden">
+          {clients.map((client) => (
+            <Card
+              key={client.userId}
+              data-admin-module="clientes"
+              className="rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]"
+            >
+              <CardContent className="space-y-3 p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="h-9 w-9 shrink-0 border border-[var(--module-border)]">
+                    <AvatarImage src={client.avatarUrl ?? undefined} />
+                    <AvatarFallback className="bg-[var(--module-surface)] text-xs font-semibold text-[var(--module-foreground)]">
+                      {client.displayName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-text-primary">
+                      {client.displayName}
+                    </p>
+                    <p className="truncate text-xs text-text-secondary">
+                      {client.email}
+                    </p>
+                    <p className="truncate text-xs text-text-secondary">
+                      {client.phone || "Sin teléfono"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
+                    className="gap-1.5 rounded-full"
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                        client.adoptionLevel ?? "Sin actividad",
+                      )}`}
+                    />
+                    {client.adoptionLevel ?? "Sin actividad"} · {client.adoptionScore ?? 0}
+                  </Badge>
+
+                  <Badge variant="secondary">
+                    {client.usageProfile ?? "Sin actividad"}
+                  </Badge>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      void navigate({
+                        to: "/admin/proyectos/$id/clientes/$clientId",
+                        params: { id: projectId, clientId: client.userId },
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ver ficha
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Contacto</TableHead>
+                <TableHead>Adopción</TableHead>
+                <TableHead>Perfil de uso</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {clients.map((client) => (
+                <TableRow
+                  key={client.userId}
+                  className="group transition-colors hover:bg-muted/40"
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-border/70">
+                        <AvatarImage src={client.avatarUrl ?? undefined} />
+                        <AvatarFallback className="bg-blue-500/10 text-xs font-semibold text-blue-400">
+                          {client.displayName.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {client.displayName}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {client.email}
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="text-xs text-muted-foreground">
+                    {client.phone || "Sin teléfono"}
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge
+                      variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
+                      className="gap-1.5 rounded-full"
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                          client.adoptionLevel ?? "Sin actividad",
+                        )}`}
+                      />
+                      {client.adoptionLevel ?? "Sin actividad"} · {client.adoptionScore ?? 0}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="text-xs text-muted-foreground">
+                    {client.usageProfile ?? "Sin actividad"}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        void navigate({
+                          to: "/admin/proyectos/$id/clientes/$clientId",
+                          params: { id: projectId, clientId: client.userId },
+                        })
+                      }
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Ver ficha
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </AdminDataTableShell>
+    </div>
+  );
+}
+export function LegacyClientesSection({ projectId }: { projectId: string }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [adoptionFilter, setAdoptionFilter] = useState("all");
