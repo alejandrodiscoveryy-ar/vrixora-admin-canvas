@@ -1083,51 +1083,80 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
                     return (
                       <div
                         key={driver.driverUserId}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-background/38 px-3 py-2.5 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                        className="rounded-xl border border-white/10 bg-background/38 px-3 py-2.5 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
                       >
-                        <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex min-w-0 items-start gap-3">
                           <DriverAvatar
                             name={driver.driverDisplayName}
                             url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
                           />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {driver.driverDisplayName || "Conductor"}
-                            </p>
-                            <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="min-w-0 text-sm font-semibold leading-tight text-foreground">
+                                {driver.driverDisplayName || "Conductor"}
+                              </p>
+
+                              <span
+                                className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                                  driver.locationFresh
+                                    ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.75)]"
+                                    : hasLastPosition
+                                      ? "bg-amber-400"
+                                      : "bg-muted-foreground/40"
+                                }`}
+                                title={
+                                  driver.locationFresh
+                                    ? "Ubicación en línea"
+                                    : signalAgeLabel(driver.capturedAt, data.serverTime)
+                                }
+                              />
+                            </div>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
                               <VehicleModeIcon
                                 code={driver.vehicleCategoryCode}
                                 className="h-3.5 w-3.5 shrink-0 text-orange-300"
                               />
-                              <span className="shrink-0 font-medium text-orange-200">
+                              <span className="font-medium text-orange-200">
                                 {vehicleCategoryLabel(driver.vehicleCategoryCode)}
                               </span>
-                              <span className="truncate">
-                                - {driver.vehicleName || driver.vehicleId}
+                              <span className="text-muted-foreground/60">·</span>
+                              <span className="min-w-0 break-words">
+                                {driver.vehicleName || driver.vehicleId}
                               </span>
                             </div>
-                            {driver.activeJobId ? (
-                              <p className="mt-1 text-[10px] font-semibold text-cyan-300">
-                                Servicio activo · {statusLabel(driver.activeJobStatus)}
-                              </p>
-                            ) : null}
+
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {driver.activeJobId ? (
+                                <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                  En servicio · {statusLabel(driver.activeJobStatus)}
+                                </span>
+                              ) : driver.isAvailable ? (
+                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
+                                  Disponible
+                                </span>
+                              ) : driver.acceptingJobs ? (
+                                <span className="inline-flex rounded-full border border-orange-500/25 bg-orange-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-orange-200">
+                                  Trabajando
+                                </span>
+                              ) : (
+                                <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  No disponible
+                                </span>
+                              )}
+
+                              {!driver.locationFresh ? (
+                                <span
+                                  className={`text-[10px] ${
+                                    hasLastPosition ? "text-amber-300" : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {signalAgeLabel(driver.capturedAt, data.serverTime)}
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <span
-                            className={`inline-block h-2.5 w-2.5 rounded-full ${
-                              driver.locationFresh
-                                ? "bg-orange-500"
-                                : hasLastPosition
-                                  ? "bg-amber-400"
-                                  : "bg-muted-foreground/40"
-                            }`}
-                          />
-                          <p className="mt-1 text-[10px] text-muted-foreground">
-                            {driver.locationFresh
-                              ? `Señal reciente · ${formatTime(driver.capturedAt)}`
-                              : signalAgeLabel(driver.capturedAt, data.serverTime)}
-                          </p>
                         </div>
                       </div>
                     );

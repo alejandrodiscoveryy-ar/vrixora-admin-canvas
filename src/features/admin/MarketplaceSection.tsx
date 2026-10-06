@@ -1400,7 +1400,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-2xl border border-border/60 bg-background/45 p-1.5 shadow-[0_18px_50px_-42px_rgba(0,0,0,0.9)]">
           <TabsTrigger
             value="resumen"
-            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-cyan-500/25 data-[state=active]:bg-cyan-500/[0.09] data-[state=active]:text-cyan-100 data-[state=active]:shadow-none"
+            className="shrink-0 gap-2 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.025] px-3.5 py-2.5 text-xs text-cyan-300/80 shadow-none transition-all hover:border-cyan-400/35 hover:bg-cyan-500/[0.07] hover:text-cyan-100 sm:text-sm data-[state=active]:border-cyan-400/60 data-[state=active]:bg-cyan-500/[0.16] data-[state=active]:text-cyan-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(34,211,238,0.75)]"
           >
             <Eye className="h-4 w-4" />
             Resumen
@@ -1408,7 +1408,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
           <TabsTrigger
             value="trabajos"
-            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/[0.10] data-[state=active]:text-emerald-100 data-[state=active]:shadow-none"
+            className="shrink-0 gap-2 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.025] px-3.5 py-2.5 text-xs text-emerald-300/80 shadow-none transition-all hover:border-emerald-400/35 hover:bg-emerald-500/[0.07] hover:text-emerald-100 sm:text-sm data-[state=active]:border-emerald-400/60 data-[state=active]:bg-emerald-500/[0.16] data-[state=active]:text-emerald-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(52,211,153,0.75)]"
           >
             <BriefcaseBusiness className="h-4 w-4" />
             Operaciones
@@ -1416,7 +1416,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
           <TabsTrigger
             value="mapa"
-            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-orange-500/30 data-[state=active]:bg-orange-500/[0.10] data-[state=active]:text-orange-100 data-[state=active]:shadow-none"
+            className="shrink-0 gap-2 rounded-xl border border-orange-500/15 bg-orange-500/[0.025] px-3.5 py-2.5 text-xs text-orange-300/80 shadow-none transition-all hover:border-orange-400/35 hover:bg-orange-500/[0.07] hover:text-orange-100 sm:text-sm data-[state=active]:border-orange-400/60 data-[state=active]:bg-orange-500/[0.16] data-[state=active]:text-orange-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(251,146,60,0.75)]"
           >
             <MapPin className="h-4 w-4" />
             Mapa
@@ -1452,7 +1452,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
               <TabsTrigger
                 value="recargas"
-                className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-cyan-500/25 data-[state=active]:bg-cyan-500/[0.08] data-[state=active]:text-cyan-100 data-[state=active]:shadow-none"
+                className="shrink-0 gap-2 rounded-xl border border-sky-500/15 bg-sky-500/[0.025] px-3.5 py-2.5 text-xs text-sky-300/80 shadow-none transition-all hover:border-sky-400/35 hover:bg-sky-500/[0.07] hover:text-sky-100 sm:text-sm data-[state=active]:border-sky-400/60 data-[state=active]:bg-sky-500/[0.16] data-[state=active]:text-sky-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(56,189,248,0.7)]"
               >
                 <WalletCards className="h-4 w-4" />
                 Recargas
@@ -1462,7 +1462,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
           <TabsTrigger
             value="incidencias"
-            className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-rose-500/30 data-[state=active]:bg-rose-500/[0.09] data-[state=active]:text-rose-100 data-[state=active]:shadow-none"
+            className="shrink-0 gap-2 rounded-xl border border-rose-500/15 bg-rose-500/[0.025] px-3.5 py-2.5 text-xs text-rose-300/80 shadow-none transition-all hover:border-rose-400/35 hover:bg-rose-500/[0.07] hover:text-rose-100 sm:text-sm data-[state=active]:border-rose-400/60 data-[state=active]:bg-rose-500/[0.16] data-[state=active]:text-rose-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(251,113,133,0.75)]"
           >
             <AlertTriangle className="h-4 w-4" />
             Incidencias
@@ -1471,7 +1471,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           {canSettings ? (
             <TabsTrigger
               value="configuracion"
-              className="shrink-0 gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-xs shadow-none sm:text-sm data-[state=active]:border-slate-500/30 data-[state=active]:bg-slate-500/[0.10] data-[state=active]:text-slate-100 data-[state=active]:shadow-none"
+              className="shrink-0 gap-2 rounded-xl border border-slate-400/15 bg-slate-400/[0.025] px-3.5 py-2.5 text-xs text-slate-300/80 shadow-none transition-all hover:border-slate-300/35 hover:bg-slate-400/[0.07] hover:text-slate-100 sm:text-sm data-[state=active]:border-slate-300/55 data-[state=active]:bg-slate-400/[0.14] data-[state=active]:text-slate-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(148,163,184,0.6)]"
             >
               <ShieldCheck className="h-4 w-4" />
               Configuración
