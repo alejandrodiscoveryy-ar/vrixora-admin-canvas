@@ -135,14 +135,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <ModuleHeader
-        title="Usuarios app"
-        description="Personas registradas en la aplicación del prestador y su nivel de actividad."
-        icon={Users}
-        module="clientes"
-      />
-
+    <div className="space-y-4 md:space-y-5">
       <KpiGrid columns={4} density="compact">
         <MetricCard
           label="Total usuarios"

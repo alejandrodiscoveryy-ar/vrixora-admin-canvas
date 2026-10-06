@@ -15,7 +15,7 @@ import {
 
 import { supabaseServices } from "@/lib/services";
 import type { AuditArea, AuditImportance, BusinessAuditEvent } from "@/lib/services/types";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+
 import { MetricCard } from "@/components/admin/MetricCard";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { SectionCard } from "@/components/admin/SectionCard";
@@ -239,22 +239,15 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <ModuleHeader
-        title="Auditoría"
-        description="Control y trazabilidad de las operaciones importantes del proyecto."
-        icon={ScrollText}
-        module="auditoria"
-        actions={
-          <AdminPeriodSelector
-            value={period}
-            range={range}
-            onChange={handlePeriodChange}
-            options={AUDIT_PERIOD_OPTIONS}
-          />
-        }
-      />
-
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex flex-col gap-2 rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-fuchsia-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-end">
+        <AdminPeriodSelector
+          value={period}
+          range={range}
+          onChange={handlePeriodChange}
+          options={AUDIT_PERIOD_OPTIONS}
+        />
+      </div>
       {error ? (
         <PageAlert tone="error" title="No se pudo cargar la Auditoría">
           Intenta actualizar la página. Si el problema continúa, revisa la conexión con el servicio.

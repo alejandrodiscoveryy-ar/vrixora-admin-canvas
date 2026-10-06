@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
 import type { AdminPeriodKey } from "@/components/admin/admin-period";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+
 import { MetricCard } from "@/components/admin/MetricCard";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -146,31 +146,33 @@ function ResumenPage() {
   const rangeLabel = `${formatDateShort(range.start)} - ${formatDateShort(range.end)}`;
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <ModuleHeader
-        title="Resumen ejecutivo"
-        description={`Visión general del ecosistema · ${rangeLabel}`}
-        icon={TrendingUp}
-        module="resumen"
-        actions={
-          <Badge variant="outline" className="gap-2 bg-card/50 px-3 py-1 text-xs">
-            <RefreshCw
-              className={`h-3 w-3 text-primary ${allLoading ? "animate-spin" : ""}`}
-            />
-            {buildFreshnessLabel(dataUpdatedAt, allLoading)}
-          </Badge>
-        }
-      />
+    <div className="space-y-4 md:space-y-5">
+      <div className="flex flex-col gap-3 rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-cyan-500/[0.025] p-3 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <AdminPeriodSelector
+            value={period}
+            range={dateRange}
+            onChange={(nextPeriod, nextRange) => {
+              setPeriod(nextPeriod);
+              setDateRange(nextRange);
+            }}
+          />
 
-      <AdminPeriodSelector
-        value={period}
-        range={dateRange}
-        onChange={(nextPeriod, nextRange) => {
-          setPeriod(nextPeriod);
-          setDateRange(nextRange);
-        }}
-      />
+          <span className="hidden rounded-full border border-white/10 bg-background/40 px-3 py-1.5 text-[11px] text-muted-foreground xl:inline-flex">
+            {rangeLabel}
+          </span>
+        </div>
 
+        <Badge
+          variant="outline"
+          className="w-fit gap-2 border-cyan-500/20 bg-cyan-500/[0.055] px-3 py-1.5 text-xs"
+        >
+          <RefreshCw
+            className={`h-3 w-3 text-cyan-300 ${allLoading ? "animate-spin" : ""}`}
+          />
+          {buildFreshnessLabel(dataUpdatedAt, allLoading)}
+        </Badge>
+      </div>
       {queryError ? (
         <PageAlert tone="error" title="No fue posible actualizar el resumen">
           {friendlyError(queryError)}
@@ -178,14 +180,6 @@ function ResumenPage() {
       ) : null}
 
       <section className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--module-foreground)]">
-            Estado actual
-          </p>
-          <h2 className="mt-1 text-lg font-semibold text-text-primary">
-            Indicadores principales
-          </h2>
-        </div>
 
         <KpiGrid columns={4} density="compact">
           <MetricCard

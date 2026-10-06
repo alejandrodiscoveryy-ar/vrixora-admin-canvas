@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Loader2, Plus, Save, Upload } from "lucide-react";
+import { Loader2, Plus, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -13,7 +13,7 @@ import {
   type ReferralQualificationMode,
   type WhatsAppSettings,
 } from "@/lib/services";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+
 import { SectionCard } from "@/components/admin/SectionCard";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Badge } from "@/components/ui/badge";
@@ -441,13 +441,23 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   return (
     <div className="space-y-3">
-      <ModuleHeader
-        title="Configuración"
-        description="Administra identidad, moneda, referidos, comunicación y comportamiento de la aplicación."
-        icon={Building2}
-        module="configuracion"
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-cyan-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+        <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+            {sections.map((section) => (
+              <Button
+                key={section.key}
+                type="button"
+                variant={activeSection === section.key ? "default" : "outline"}
+                onClick={() => setActiveSection(section.key)}
+                className="h-auto min-h-9 whitespace-normal px-3 py-1.5 text-xs leading-tight"
+              >
+                {section.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {isDirty ? (
               <Badge
                 variant="outline"
@@ -458,7 +468,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             ) : null}
 
             {canSave ? (
-              <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || !isDirty}>
+              <Button
+                size="sm"
+                onClick={() => save.mutate()}
+                disabled={save.isPending || !isDirty}
+              >
                 {save.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -468,23 +482,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               </Button>
             ) : null}
           </div>
-        }
-      />
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        {sections.map((section) => (
-          <Button
-            key={section.key}
-            type="button"
-            variant={activeSection === section.key ? "default" : "outline"}
-            onClick={() => setActiveSection(section.key)}
-            className="h-auto min-h-10 whitespace-normal px-3 py-1.5 text-xs leading-tight"
-          >
-            {section.label}
-          </Button>
-        ))}
+        </div>
       </div>
-
       {activeSection === "general" ? (
         <div className="space-y-3">
           <SectionCard

@@ -1512,64 +1512,36 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
         <TabsContent value="trabajos" className="mt-3">
           <div className="space-y-3 sm:space-y-4">
-            <section className="relative overflow-hidden rounded-[26px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.09] via-background/75 to-cyan-500/[0.05] p-5 shadow-[0_22px_65px_-44px_rgba(16,185,129,0.75)] sm:p-6">
-              <div className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full bg-emerald-500/12 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
-
-              <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="max-w-2xl">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-                    Operación Marketplace
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                    Centro de operaciones
-                  </h3>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                    Solicitudes, rutas, conductores y estado operativo en una sola vista.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
-                  {[
-                    ["Publicados", overview.data?.jobsPublished ?? 0, "emerald"],
-                    ["Activos", overview.data?.jobsActive ?? 0, "cyan"],
-                    ["Incidencias", overview.data?.jobsIncidentOpen ?? 0, "rose"],
-                  ].map(([metricLabel, metricValue, tone]) => (
-                    <div
-                      key={String(metricLabel)}
-                      className={`rounded-2xl border px-3 py-3 ${
-                        tone === "emerald"
-                          ? "border-emerald-500/20 bg-emerald-500/[0.055]"
-                          : tone === "cyan"
-                            ? "border-cyan-500/20 bg-cyan-500/[0.055]"
-                            : "border-rose-500/20 bg-rose-500/[0.055]"
-                      }`}
-                    >
-                      <p className="text-[10px] font-medium text-muted-foreground">
-                        {String(metricLabel)}
-                      </p>
-                      <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                        {Number(metricValue)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[24px] border border-border/60 bg-background/30 p-3 sm:p-4">
-              <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-300">
-                    Operaciones
-                  </p>
-                  <h4 className="mt-1 text-lg font-semibold text-foreground">
+            <section className="rounded-[22px] border border-white/10 bg-gradient-to-br from-background/70 via-background/45 to-emerald-500/[0.025] p-3 shadow-[0_22px_60px_-44px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-4">
+              <div className="mb-3 flex flex-col gap-3 rounded-[18px] border border-white/10 bg-background/45 p-2.5 shadow-[0_16px_42px_-32px_rgba(0,0,0,0.95)] backdrop-blur-xl xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-1.5 text-xs font-semibold text-emerald-200">
+                    <BriefcaseBusiness className="h-3.5 w-3.5" />
                     {jobs.isLoading
                       ? "Consultando..."
-                      : `${jobRows.length} ${
-                          jobRows.length === 1 ? "trabajo visible" : "trabajos visibles"
-                        }`}
-                  </h4>
+                      : `${jobRows.length} ${jobRows.length === 1 ? "trabajo" : "trabajos"}`}
+                  </span>
+
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.055] px-2.5 py-1.5 text-[11px] text-emerald-200">
+                    Publicados
+                    <strong className="text-foreground">
+                      {overview.data?.jobsPublished ?? 0}
+                    </strong>
+                  </span>
+
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1.5 text-[11px] text-cyan-200">
+                    Activos
+                    <strong className="text-foreground">
+                      {overview.data?.jobsActive ?? 0}
+                    </strong>
+                  </span>
+
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/[0.055] px-2.5 py-1.5 text-[11px] text-rose-200">
+                    Incidencias
+                    <strong className="text-foreground">
+                      {overview.data?.jobsIncidentOpen ?? 0}
+                    </strong>
+                  </span>
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -1594,7 +1566,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   </FilterSelect>
                 </div>
               </div>
-
               {jobs.isLoading ? (
                 <LoadingState />
               ) : !jobRows.length ? (

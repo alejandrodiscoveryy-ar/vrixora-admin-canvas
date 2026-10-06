@@ -41,7 +41,7 @@ import {
   MobileMetricsGrid,
   type MobileMetric,
 } from "@/components/admin/MobileAdminSystem";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+
 import { MetricCard } from "@/components/admin/MetricCard";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { SectionCard } from "@/components/admin/SectionCard";
@@ -320,25 +320,20 @@ export default function RendimientoSection({
   }
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <ModuleHeader
-        title="Rendimiento"
-        description="Crecimiento, captación, acceso y retención del ecosistema."
-        icon={BarChart3}
-        module="rendimiento"
-        actions={<GrainSelect value={grain} onChange={setGrain} />}
-      />
+    <div className="space-y-4 md:space-y-5">
+      <section className="space-y-3 rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-orange-500/[0.025] p-3 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <AdminPeriodSelector
+            value={period}
+            range={dateRange}
+            onChange={(nextPeriod, nextRange) => {
+              setPeriod(nextPeriod);
+              setDateRange(nextRange);
+            }}
+          />
 
-      <section className="space-y-3">
-        <AdminPeriodSelector
-          value={period}
-          range={dateRange}
-          onChange={(nextPeriod, nextRange) => {
-            setPeriod(nextPeriod);
-            setDateRange(nextRange);
-          }}
-        />
-
+          <GrainSelect value={grain} onChange={setGrain} />
+        </div>
         <MobileFiltersPanel
           activeFilters={activeFilterCount}
           onClear={() => {
