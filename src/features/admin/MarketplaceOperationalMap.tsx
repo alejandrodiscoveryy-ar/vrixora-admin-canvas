@@ -768,9 +768,11 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
         className={`grid gap-4 ${
           expanded
             ? panelOpen
-              ? "h-full grid-cols-[minmax(0,1fr)_360px]"
+              ? "h-full grid-cols-[minmax(0,1fr)_320px]"
               : "h-full grid-cols-1"
-            : "items-start xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]"
+            : panelOpen
+              ? "items-start xl:grid-cols-[minmax(0,1fr)_290px]"
+              : "items-start grid-cols-1"
         }`}
       >
         <section
@@ -778,8 +780,8 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             expanded ? "h-full" : "self-start"
           }`}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/55 px-4 py-3.5">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/55 px-3 py-2.5 xl:flex-nowrap">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
                 EN VIVO · {liveAt}
@@ -807,17 +809,15 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {expanded ? (
-                <Button size="sm" variant="outline" onClick={() => setPanelOpen((value) => !value)}>
-                  {panelOpen ? (
-                    <PanelRightClose className="mr-2 h-3.5 w-3.5" />
-                  ) : (
-                    <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
-                  )}
-                  {panelOpen ? "Ocultar panel" : "Mostrar panel"}
-                </Button>
-              ) : null}
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
+              <Button size="sm" variant="outline" onClick={() => setPanelOpen((value) => !value)}>
+                {panelOpen ? (
+                  <PanelRightClose className="mr-2 h-3.5 w-3.5" />
+                ) : (
+                  <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
+                )}
+                {panelOpen ? "Ocultar panel" : "Mostrar panel"}
+              </Button>
 
               <Button
                 size="sm"
@@ -909,10 +909,10 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
           </div>
         </section>
 
-        {!expanded || panelOpen ? (
+        {panelOpen ? (
           <aside
-            className={`space-y-3 rounded-[28px] border border-white/10 bg-background/25 p-2 shadow-[0_24px_65px_-34px_rgba(0,0,0,0.9)] backdrop-blur-xl ${
-              expanded ? "min-h-0 overflow-y-auto pr-2" : ""
+            className={`space-y-2 bg-transparent ${
+              expanded ? "min-h-0 overflow-y-auto pr-1" : ""
             }`}
           >
             <section className="rounded-[24px] border border-white/10 bg-background/42 p-4 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl">

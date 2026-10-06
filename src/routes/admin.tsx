@@ -74,6 +74,7 @@ function AdminChrome() {
   );
   const currentProjectId = projectRouteMatch?.[1] ?? null;
   const currentSection = projectRouteMatch?.[2] ?? "";
+  const compactWorkspace = currentSection === "trabajos";
 
   const { data: currentProject } = useProject(currentProjectId);
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
@@ -106,6 +107,7 @@ function AdminChrome() {
           path={path}
           currentProjectId={currentProjectId}
           currentSection={currentSection}
+          compact={compactWorkspace}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
@@ -114,8 +116,12 @@ function AdminChrome() {
             project={currentProject ?? null}
             section={currentSection}
           />
-          <main className="min-w-0 flex-1 px-3 py-4 sm:px-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
-            <div className="mx-auto w-full max-w-[1480px]">
+          <main
+            className={`min-w-0 flex-1 px-3 py-4 sm:px-4 md:px-6 md:py-6 ${
+              compactWorkspace ? "lg:px-5 lg:py-5" : "lg:px-8 lg:py-8"
+            }`}
+          >
+            <div className={`mx-auto w-full ${compactWorkspace ? "max-w-none" : "max-w-[1480px]"}`}>
               <Outlet />
             </div>
           </main>
@@ -344,15 +350,21 @@ function DesktopSidebar({
   path,
   currentProjectId,
   currentSection,
+  compact,
 }: {
   projects: Awaited<ReturnType<typeof useUserProjects>>["data"] | undefined;
   projectsLoading: boolean;
   path: string;
   currentProjectId: string | null;
   currentSection: string;
+  compact: boolean;
 }) {
   return (
-    <aside className="hidden w-[272px] shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl lg:flex">
+        <aside
+      className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 lg:flex ${
+        compact ? "w-[236px]" : "w-[272px]"
+      }`}
+    >
       <div className="border-b border-sidebar-border/80 px-5 py-5">
         <Link to="/admin/proyectos" className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-black ring-1 ring-primary/30 shadow-[0_0_24px_-8px_var(--primary)]">
