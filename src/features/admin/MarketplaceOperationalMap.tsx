@@ -738,7 +738,7 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
   const liveAt = formatTime(data.serverTime);
   const rootClass = expanded
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
-    : "space-y-4";
+    : "";
 
   const layerButton = (
     key: LayerKey,
@@ -763,45 +763,6 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
 
   return (
     <div className={rootClass}>
-      {!expanded ? (
-        <section className="relative overflow-hidden rounded-[28px] border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] via-background/70 to-emerald-500/[0.045] p-5 shadow-[0_24px_70px_-46px_rgba(249,115,22,0.75)] sm:p-6">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full bg-orange-500/10 blur-3xl" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">
-                Centro de operaciones en vivo
-              </p>
-              <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                Mapa operativo
-              </h3>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Conductores, recogidas, destinos, rutas e incidencias de los servicios activos.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 lg:min-w-[390px]">
-              <div className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.055] px-3 py-3">
-                <p className="text-[10px] text-muted-foreground">Trabajando</p>
-                <p className="mt-1 text-xl font-semibold text-foreground">
-                  {data.summary.workingDrivers}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-3">
-                <p className="text-[10px] text-muted-foreground">Con señal</p>
-                <p className="mt-1 text-xl font-semibold text-foreground">
-                  {data.summary.driversWithFreshLocation}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.055] px-3 py-3">
-                <p className="text-[10px] text-muted-foreground">Servicios</p>
-                <p className="mt-1 text-xl font-semibold text-foreground">
-                  {data.summary.activeJobs}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       <div
         className={`grid gap-4 ${
@@ -809,17 +770,39 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             ? panelOpen
               ? "h-full grid-cols-[minmax(0,1fr)_360px]"
               : "h-full grid-cols-1"
-            : "xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]"
+            : "items-start xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]"
         }`}
       >
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-[26px] border border-border/60 bg-background/35">
+        <section
+          className={`flex min-h-0 flex-col overflow-hidden rounded-[26px] border border-border/60 bg-background/35 ${
+            expanded ? "h-full" : "self-start"
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/55 px-4 py-3.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
                 EN VIVO · {liveAt}
               </span>
-              <span className="text-[11px] text-muted-foreground">
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/[0.06] px-2.5 py-1.5 text-[10px] text-orange-200">
+                Trabajando
+                <strong className="text-foreground">{data.summary.workingDrivers}</strong>
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1.5 text-[10px] text-emerald-200">
+                Con señal
+                <strong className="text-foreground">
+                  {data.summary.driversWithFreshLocation}
+                </strong>
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-2.5 py-1.5 text-[10px] text-cyan-200">
+                Servicios
+                <strong className="text-foreground">{data.summary.activeJobs}</strong>
+              </span>
+
+              <span className="hidden text-[10px] text-muted-foreground 2xl:inline">
                 {data.summary.activeJobs ? "Actualización cada 5 s" : "Actualización cada 15 s"}
               </span>
             </div>
@@ -859,7 +842,13 @@ export default function MarketplaceOperationalMap({ projectId }: { projectId: st
             </div>
           </div>
 
-          <div className={`relative min-h-[420px] flex-1 overflow-hidden bg-muted/15 ${expanded ? "min-h-0" : ""}`}>
+          <div
+            className={`relative overflow-hidden bg-muted/15 ${
+              expanded
+                ? "min-h-0 flex-1"
+                : "h-[62vh] min-h-[440px] max-h-[720px] flex-none"
+            }`}
+          >
             <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/35 p-2 shadow-[0_18px_48px_-22px_rgba(0,0,0,0.95)] backdrop-blur-xl">
               {layerButton(
                 "drivers",
