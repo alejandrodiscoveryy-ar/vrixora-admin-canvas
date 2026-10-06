@@ -1185,6 +1185,7 @@ export default function MarketplaceOperationalMap({
                     }
                     onClick={() => {
                       if (selectedJob.customerId) {
+                        setExpanded(false);
                         onOpenCustomer?.(selectedJob.customerId);
                       }
                     }}
@@ -1196,7 +1197,10 @@ export default function MarketplaceOperationalMap({
                     size="sm"
                     variant="outline"
                     disabled={!onOpenJob}
-                    onClick={() => onOpenJob?.(selectedJob.jobId)}
+                    onClick={() => {
+                      setExpanded(false);
+                      onOpenJob?.(selectedJob.jobId);
+                    }}
                   >
                     Ver servicio
                   </Button>
