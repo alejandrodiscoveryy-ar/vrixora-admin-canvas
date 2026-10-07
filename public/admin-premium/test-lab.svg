@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320">
+  <defs>
+    <radialGradient id="vr">
+      <stop offset="0" stop-color="#a78bfa" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="505" cy="140" r="170" fill="url(#vr)"/>
+
+  <g opacity=".13" stroke="#c4b5fd">
+    <path d="M330 25L625 285M390 0L640 220M300 95L540 315"/>
+    <path d="M335 285L625 25M390 320L640 85"/>
+  </g>
+
+  <g transform="translate(430 45)" fill="none" stroke="#c4b5fd" stroke-width="6" stroke-linejoin="round">
+    <path d="M55 0h72"/>
+    <path d="M72 0v68L18 176c-17 35 8 72 47 72h82c39 0 64-37 47-72L140 68V0"/>
+    <path d="M45 171c42-18 79 18 126-5"/>
+  </g>
+
+  <g fill="#a78bfa">
+    <circle cx="425" cy="76" r="6"/>
+    <circle cx="576" cy="92" r="8"/>
+    <circle cx="602" cy="155" r="5"/>
+    <circle cx="392" cy="158" r="5"/>
+  </g>
+
+  <g opacity=".55" stroke="#8b5cf6" stroke-width="2">
+    <path d="M425 76L576 92L602 155"/>
+    <path d="M425 76L392 158"/>
+  </g>
+</svg>

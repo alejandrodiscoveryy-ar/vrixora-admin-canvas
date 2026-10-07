@@ -476,9 +476,16 @@ export default function MarketplaceDispatchSettingsCard({
   ]);
 
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-cyan-400/30 bg-gradient-to-br from-cyan-500/[0.075] via-background/95 to-background shadow-[0_28px_85px_-46px_rgba(34,211,238,0.9)] xl:col-span-2">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/[0.055] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-violet-500/[0.035] blur-3xl" />
+    <section className="relative overflow-hidden rounded-[28px] border border-cyan-400/35 bg-gradient-to-br from-cyan-500/[0.10] via-background/95 to-background shadow-[0_32px_95px_-48px_rgba(34,211,238,0.95)] xl:col-span-2">
+      <img
+        src="/admin-premium/dispatch-radar.svg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40 mix-blend-screen"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/5 via-background/30 to-background/75" />
+      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/[0.08] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-violet-500/[0.05] blur-3xl" />
 
       <div className="relative flex flex-col gap-4 border-b border-cyan-500/15 bg-cyan-500/[0.02] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-3.5">
@@ -578,9 +585,15 @@ export default function MarketplaceDispatchSettingsCard({
             </div>
 
             <div className="grid gap-4 xl:grid-cols-2">
-              <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:p-5">
-                <div className="pointer-events-none absolute -right-16 top-10 h-40 w-40 rounded-full border border-cyan-400/[0.07]" />
-                <div className="pointer-events-none absolute -right-8 top-18 h-24 w-24 rounded-full border border-cyan-400/[0.06]" />
+              <div className="relative overflow-hidden rounded-2xl border border-cyan-400/25 bg-cyan-500/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] sm:p-5">
+                <img
+                  src="/admin-premium/dispatch-radar.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-20 top-0 h-64 w-80 object-cover opacity-24 mix-blend-screen"
+                />
+                <div className="pointer-events-none absolute -right-16 top-10 h-40 w-40 rounded-full border border-cyan-400/[0.10]" />
+                <div className="pointer-events-none absolute -right-8 top-18 h-24 w-24 rounded-full border border-cyan-400/[0.08]" />
 
                 <div className="relative flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-300">
@@ -729,7 +742,13 @@ export default function MarketplaceDispatchSettingsCard({
               </div>
 
               <div className="space-y-3">
-                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:p-5">
+                <div className="relative overflow-hidden rounded-2xl border border-amber-400/25 bg-amber-500/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] sm:p-5">
+                  <img
+                    src="/admin-premium/reputation.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -right-10 top-0 h-56 w-72 object-cover opacity-32 mix-blend-screen"
+                  />
                   <div className="flex items-start gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/[0.08] text-amber-300">
                       <Star className="h-4 w-4" />
@@ -855,7 +874,13 @@ export default function MarketplaceDispatchSettingsCard({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.08] via-background/75 to-background/65 p-3.5 shadow-[0_18px_50px_-38px_rgba(139,92,246,0.95)]">
+                <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.11] via-background/80 to-background/70 p-3.5 shadow-[0_20px_55px_-38px_rgba(139,92,246,1)]">
+                  <img
+                    src="/admin-premium/test-lab.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-0 top-0 h-full w-48 object-cover opacity-24 mix-blend-screen"
+                  />
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-violet-300">

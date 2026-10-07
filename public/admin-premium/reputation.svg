@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <radialGradient id="ar">
+      <stop offset="0" stop-color="#facc15" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="485" cy="120" r="180" fill="url(#ar)"/>
+
+  <g transform="translate(470 130)" fill="#facc15" fill-opacity=".10" stroke="#fde047" stroke-width="5">
+    <path d="M0-78L23-26L79-20L36 17L49 73L0 44L-49 73L-36 17L-79-20L-23-26Z"/>
+  </g>
+
+  <g stroke="#fbbf24" stroke-width="2" opacity=".28">
+    <path d="M300 75L390 125L315 205L460 235L535 160"/>
+  </g>
+
+  <g fill="#fde047">
+    <circle cx="300" cy="75" r="5"/>
+    <circle cx="390" cy="125" r="7"/>
+    <circle cx="315" cy="205" r="5"/>
+    <circle cx="460" cy="235" r="7"/>
+    <circle cx="535" cy="160" r="5"/>
+  </g>
+</svg>

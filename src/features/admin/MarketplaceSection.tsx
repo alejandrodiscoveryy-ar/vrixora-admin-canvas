@@ -2397,7 +2397,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canSettings ? (
           <TabsContent value="configuracion" className="mt-3">
             <div className="grid gap-4 xl:grid-cols-2">
-              <section className="relative overflow-hidden rounded-[28px] border border-amber-400/35 bg-gradient-to-br from-amber-500/[0.11] via-background/90 to-background/75 shadow-[0_24px_70px_-42px_rgba(245,158,11,0.9)]">
+              <section className="relative overflow-hidden rounded-[28px] border border-amber-400/40 bg-gradient-to-br from-amber-500/[0.13] via-background/92 to-background/80 shadow-[0_28px_85px_-42px_rgba(245,158,11,0.95)]">
+                <img
+                  src="/admin-premium/economy.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 right-0 h-full w-[58%] object-cover object-right opacity-60 mix-blend-screen"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/15 to-amber-500/[0.035]" />
                 <div className="flex items-center gap-3 border-b border-amber-500/15 bg-amber-500/[0.025] px-5 py-5 sm:px-6">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/35 bg-amber-400/[0.11] text-amber-300 shadow-[0_0_26px_-10px_rgba(251,191,36,0.9)]">
                     <CircleDollarSign className="h-4.5 w-4.5" />
@@ -2519,7 +2526,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   )}
                 </div>
               </section>
-              <section className="relative overflow-hidden rounded-[28px] border border-violet-400/35 bg-gradient-to-br from-violet-500/[0.11] via-background/90 to-background/75 shadow-[0_24px_70px_-42px_rgba(139,92,246,0.9)]">
+              <section className="relative overflow-hidden rounded-[28px] border border-violet-400/40 bg-gradient-to-br from-violet-500/[0.13] via-background/92 to-background/80 shadow-[0_28px_85px_-42px_rgba(139,92,246,0.95)]">
+                <img
+                  src="/admin-premium/test-lab.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 right-0 h-full w-[58%] object-cover object-right opacity-60 mix-blend-screen"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/15 to-violet-500/[0.04]" />
                 <div className="flex items-center justify-between gap-3 border-b border-violet-500/15 bg-violet-500/[0.025] px-5 py-5 sm:px-6">
                   <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/35 bg-violet-400/[0.11] text-violet-300 shadow-[0_0_26px_-10px_rgba(167,139,250,0.9)]">
