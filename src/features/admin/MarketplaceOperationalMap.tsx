@@ -736,29 +736,77 @@ export default function MarketplaceOperationalMap({
 
         if (!marker) {
           const element = document.createElement("div");
-          element.style.width = "36px";
-          element.style.height = "36px";
           element.style.display = "flex";
+          element.style.flexDirection = "column";
           element.style.alignItems = "center";
-          element.style.justifyContent = "center";
-          element.style.borderRadius = "9999px";
-          element.style.borderWidth = "2px";
-          element.style.borderStyle = "solid";
-          element.style.fontSize = "19px";
-          element.style.lineHeight = "1";
-          element.style.userSelect = "none";
+          element.style.gap = "3px";
           element.style.pointerEvents = "auto";
-          element.style.cursor = "help";
+          element.style.userSelect = "none";
 
-          marker = new mapboxgl.Marker({ element, anchor: "center" })
+          const caption = document.createElement("div");
+          caption.dataset.role = "driver-caption";
+          caption.textContent = "Chofer";
+          caption.style.padding = "3px 8px";
+          caption.style.borderRadius = "9999px";
+          caption.style.fontSize = "10px";
+          caption.style.fontWeight = "800";
+          caption.style.lineHeight = "1";
+          caption.style.color = "#f8fafc";
+          caption.style.background = "rgba(15,23,42,0.94)";
+          caption.style.border = "1px solid rgba(249,115,22,0.48)";
+          caption.style.boxShadow = "0 6px 18px rgba(0,0,0,0.30)";
+          caption.style.whiteSpace = "nowrap";
+
+          const pin = document.createElement("div");
+          pin.dataset.role = "driver-pin";
+          pin.style.width = "40px";
+          pin.style.height = "40px";
+          pin.style.display = "flex";
+          pin.style.alignItems = "center";
+          pin.style.justifyContent = "center";
+          pin.style.borderRadius = "50% 50% 50% 0";
+          pin.style.transform = "rotate(-45deg)";
+          pin.style.border = "2px solid rgba(255,255,255,0.92)";
+
+          const glyph = document.createElement("span");
+          glyph.dataset.role = "driver-glyph";
+          glyph.style.display = "flex";
+          glyph.style.alignItems = "center";
+          glyph.style.justifyContent = "center";
+          glyph.style.transform = "rotate(45deg)";
+          glyph.style.fontSize = "18px";
+          glyph.style.lineHeight = "1";
+
+          pin.append(glyph);
+          element.append(caption, pin);
+
+          marker = new mapboxgl.Marker({
+            element,
+            anchor: "bottom",
+          })
             .setLngLat(coordinate)
             .addTo(map);
+
           markers.set(driver.driverUserId, marker);
         }
 
         marker.setLngLat(coordinate);
+
         const element = marker.getElement();
-        element.textContent = vehicleMapGlyph(driver.vehicleCategoryCode);
+        const caption = element.querySelector<HTMLElement>(
+          '[data-role="driver-caption"]',
+        );
+        const pin = element.querySelector<HTMLElement>(
+          '[data-role="driver-pin"]',
+        );
+        const glyph = element.querySelector<HTMLElement>(
+          '[data-role="driver-glyph"]',
+        );
+
+        if (!caption || !pin || !glyph) continue;
+
+        glyph.textContent = vehicleMapGlyph(driver.vehicleCategoryCode);
+
         element.setAttribute("role", "img");
         element.setAttribute(
           "aria-label",
@@ -766,16 +814,22 @@ export default function MarketplaceOperationalMap({
             driver.driverDisplayName ?? "Conductor"
           }`,
         );
+
         element.title = `${driver.driverDisplayName ?? "Conductor"} - ${vehicleCategoryLabel(
           driver.vehicleCategoryCode,
         )}`;
-        element.style.backgroundColor = driver.locationFresh
-          ? "rgba(249,115,22,0.96)"
-          : "rgba(251,191,36,0.94)";
-        element.style.borderColor = driver.activeJobId ? "#22d3ee" : "rgba(255,255,255,0.92)";
-        element.style.boxShadow = driver.activeJobId
-          ? "0 0 0 3px rgba(34,211,238,0.22), 0 6px 18px rgba(0,0,0,0.38)"
-          : "0 6px 18px rgba(0,0,0,0.38)";
+
+        pin.style.backgroundColor = driver.locationFresh
+          ? "rgba(249,115,22,0.98)"
+          : "rgba(245,158,11,0.96)";
+
+        pin.style.borderColor = driver.activeJobId
+          ? "#ffffff"
+          : "rgba(255,255,255,0.92)";
+
+        pin.style.boxShadow = driver.activeJobId
+          ? "0 0 0 4px rgba(249,115,22,0.22), 0 9px 22px rgba(0,0,0,0.46)"
+          : "0 9px 22px rgba(0,0,0,0.42)";
 
         element.style.cursor = driver.activeJobId ? "pointer" : "default";
 
@@ -845,18 +899,27 @@ export default function MarketplaceOperationalMap({
 
         const bubble = document.createElement("div");
         bubble.dataset.role = "bubble";
-        bubble.style.width = "38px";
-        bubble.style.height = "38px";
+        bubble.style.width = "40px";
+        bubble.style.height = "40px";
         bubble.style.display = "flex";
         bubble.style.alignItems = "center";
         bubble.style.justifyContent = "center";
-        bubble.style.borderRadius = "9999px";
+        bubble.style.borderRadius = "50% 50% 50% 0";
+        bubble.style.transform = "rotate(-45deg)";
         bubble.style.borderWidth = "2px";
         bubble.style.borderStyle = "solid";
-        bubble.style.fontSize = "19px";
         bubble.style.lineHeight = "1";
-        bubble.style.boxShadow = "0 8px 20px rgba(0,0,0,0.38)";
+        bubble.style.boxShadow = "0 9px 22px rgba(0,0,0,0.42)";
 
+        const glyph = document.createElement("span");
+        glyph.dataset.role = "glyph";
+        glyph.style.display = "flex";
+        glyph.style.alignItems = "center";
+        glyph.style.justifyContent = "center";
+        glyph.style.transform = "rotate(45deg)";
+        glyph.style.lineHeight = "1";
+
+        bubble.append(glyph);
         element.append(caption, bubble);
 
         marker = new mapboxgl.Marker({
@@ -878,44 +941,48 @@ export default function MarketplaceOperationalMap({
       const bubble = element.querySelector<HTMLElement>(
         '[data-role="bubble"]',
       );
+      const glyph = element.querySelector<HTMLElement>(
+        '[data-role="glyph"]',
+      );
 
-      if (!caption || !bubble) return;
+      if (!caption || !bubble || !glyph) return;
 
       const isPickup = kind === "pickup";
       const selected = job.jobId === selectedJobId;
 
       caption.textContent = isPickup ? "Cliente" : "Destino";
 
-      bubble.textContent = isPickup ? "👤" : "🏁";
+      glyph.textContent = isPickup ? "\u{1F464}" : "\u{1F3C1}";
+      glyph.style.fontSize = isPickup ? "18px" : "19px";
 
-      bubble.style.width = isPickup ? "38px" : "34px";
-      bubble.style.height = isPickup ? "38px" : "38px";
-      bubble.style.borderRadius = isPickup ? "9999px" : "0";
-      bubble.style.borderWidth = isPickup ? "2px" : "0";
+      bubble.style.width = "40px";
+      bubble.style.height = "40px";
+      bubble.style.borderRadius = "50% 50% 50% 0";
+      bubble.style.transform = "rotate(-45deg)";
+      bubble.style.borderWidth = "2px";
       bubble.style.borderStyle = "solid";
-      bubble.style.fontSize = isPickup ? "19px" : "30px";
 
       bubble.style.backgroundColor = isPickup
-        ? "rgba(34,197,94,0.97)"
-        : "transparent";
+        ? "rgba(34,197,94,0.98)"
+        : "rgba(239,68,68,0.98)";
 
-      bubble.style.borderColor = isPickup
-        ? selected
-          ? "#ffffff"
-          : "#bbf7d0"
-        : "transparent";
+      bubble.style.borderColor = selected
+        ? "#ffffff"
+        : isPickup
+          ? "#bbf7d0"
+          : "#fecaca";
 
-      bubble.style.boxShadow = isPickup
-        ? selected
-          ? "0 0 0 4px rgba(34,197,94,0.25), 0 8px 22px rgba(0,0,0,0.42)"
-          : "0 8px 20px rgba(0,0,0,0.38)"
-        : "none";
+      bubble.style.boxShadow = selected
+        ? isPickup
+          ? "0 0 0 4px rgba(34,197,94,0.25), 0 9px 22px rgba(0,0,0,0.46)"
+          : "0 0 0 4px rgba(239,68,68,0.25), 0 9px 22px rgba(0,0,0,0.46)"
+        : "0 9px 22px rgba(0,0,0,0.42)";
 
-      bubble.style.filter = isPickup
-        ? "none"
-        : selected
-          ? "drop-shadow(0 0 6px rgba(34,211,238,0.85)) drop-shadow(0 5px 8px rgba(0,0,0,0.45))"
-          : "drop-shadow(0 5px 7px rgba(0,0,0,0.42))";
+      bubble.style.filter = "none";
+
+      caption.style.borderColor = isPickup
+        ? "rgba(34,197,94,0.48)"
+        : "rgba(239,68,68,0.48)";
       element.onclick = (event) => {
         event.stopPropagation();
         setSelectedJobId(job.jobId);
@@ -1390,8 +1457,8 @@ export default function MarketplaceOperationalMap({
               {layerButton(
                 "destinations",
                 "Destinos",
-                "bg-cyan-400",
-                "border-cyan-300/30 bg-cyan-400/20 text-cyan-100",
+                "bg-red-500",
+                "border-red-400/30 bg-red-500/20 text-red-100",
               )}
               {layerButton(
                 "routes",
@@ -1487,7 +1554,7 @@ export default function MarketplaceOperationalMap({
                   </div>
 
                   <div className="mt-1.5 flex items-start gap-2">
-                    <Navigation className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
                     <p className="text-xs leading-relaxed text-muted-foreground">
                       {selectedJob.destinationText}
                     </p>
