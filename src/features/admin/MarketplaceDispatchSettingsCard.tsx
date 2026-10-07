@@ -25,7 +25,7 @@ function ToggleRow({
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/55 bg-background/45 px-3 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/55 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-colors">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground">
           {title}
@@ -476,35 +476,36 @@ export default function MarketplaceDispatchSettingsCard({
   ]);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.05] via-background/55 to-background/35 xl:col-span-2">
-      <div className="flex flex-col gap-4 border-b border-border/55 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/25 bg-cyan-500/[0.09] text-cyan-300">
-            <Radar className="h-4.5 w-4.5" />
+    <section className="relative overflow-hidden rounded-[28px] border border-cyan-400/30 bg-gradient-to-br from-cyan-500/[0.075] via-background/95 to-background shadow-[0_28px_85px_-46px_rgba(34,211,238,0.9)] xl:col-span-2">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/[0.055] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-violet-500/[0.035] blur-3xl" />
+
+      <div className="relative flex flex-col gap-4 border-b border-cyan-500/15 bg-cyan-500/[0.02] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/35 bg-cyan-400/[0.11] text-cyan-300 shadow-[0_0_28px_-10px_rgba(34,211,238,0.95)]">
+            <Radar className="h-5 w-5" />
           </div>
 
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-300">
-              Política de despacho
+            <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">
+              PolÃ­tica de despacho
             </p>
 
-            <h3 className="mt-0.5 text-lg font-semibold text-foreground">
-              Búsqueda de conductores
+            <h3 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground">
+              BÃºsqueda de conductores
             </h3>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 rounded-full border border-border/60 bg-background/65 px-3 py-2 shadow-sm">
           <span
             className={
               enabled
-                ? "rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300"
-                : "rounded-full border border-border/70 bg-muted/35 px-3 py-1 text-[11px] font-semibold text-muted-foreground"
+                ? "rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300"
+                : "rounded-full border border-border/70 bg-muted/35 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground"
             }
           >
-            {enabled
-              ? "ACTIVO"
-              : "DESACTIVADO"}
+            {enabled ? "ACTIVO" : "DESACTIVADO"}
           </span>
 
           <Switch
@@ -515,320 +516,366 @@ export default function MarketplaceDispatchSettingsCard({
         </div>
       </div>
 
-      <div className="space-y-5 p-4 sm:p-5">
+      <div className="relative space-y-5 p-4 sm:p-5">
         {settings.isLoading ? (
           <div className="flex min-h-32 items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-cyan-300" />
           </div>
         ) : settings.isError ? (
           <p className="text-sm text-rose-300">
-            No se pudo cargar la configuración de búsqueda.
+            No se pudo cargar la configuraciÃ³n de bÃºsqueda.
           </p>
         ) : (
           <>
-            <div className="rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.035] p-4">
-              <p className="text-sm font-medium text-foreground">
-                {summary}
-              </p>
+            <div className="grid gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.045] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {summary}
+                </p>
 
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Última actualización:{" "}
-                {formatDate(
-                  settings.data?.updatedAt,
-                )}
-              </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ãšltima actualizaciÃ³n:{" "}
+                  {formatDate(settings.data?.updatedAt)}
+                </p>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
+                <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                    Radios
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold text-foreground">
+                    {activeRadii.length
+                      ? activeRadii
+                          .map((item) => `${item.value.toLocaleString("es")} km`)
+                          .join(" â†’ ")
+                      : "Sin radios"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                    AmpliaciÃ³n
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold text-foreground">
+                    {expansionEnabled
+                      ? `cada ${Number(expansionSeconds).toLocaleString("es")} s`
+                      : "Desactivada"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-amber-400/20 bg-background/60 px-3 py-2">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-amber-300">
+                    Preferencia
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold text-foreground">
+                    {ratingPriorityEnabled && preferredMinRatingEnabled
+                      ? `desde ${Number(preferredMinRating).toLocaleString("es")} estrellas`
+                      : "Sin filtro"}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-2">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300">
-                    Cobertura
-                  </p>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:p-5">
+                <div className="pointer-events-none absolute -right-16 top-10 h-40 w-40 rounded-full border border-cyan-400/[0.07]" />
+                <div className="pointer-events-none absolute -right-8 top-18 h-24 w-24 rounded-full border border-cyan-400/[0.06]" />
 
-                  <h4 className="mt-1 font-semibold text-foreground">
-                    Radios y ampliación
-                  </h4>
+                <div className="relative flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-300">
+                    <Radar className="h-4 w-4" />
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+                      Cobertura
+                    </p>
+                    <h4 className="mt-0.5 text-base font-semibold text-foreground">
+                      Radios y ampliaciÃ³n
+                    </h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Define cÃ³mo y hasta dÃ³nde se buscan conductores.
+                    </p>
+                  </div>
                 </div>
 
-                <ToggleRow
-                  title="Buscar por radio"
-                  description="Limita los candidatos según su distancia al origen del cliente."
-                  checked={radiusSearchEnabled}
-                  disabled={!canManage}
-                  onCheckedChange={
-                    setRadiusSearchEnabled
-                  }
-                />
+                <div className="relative mt-4 space-y-3">
+                  <ToggleRow
+                    title="Buscar por radio"
+                    description="Limita los candidatos segÃºn su distancia al origen del cliente."
+                    checked={radiusSearchEnabled}
+                    disabled={!canManage}
+                    onCheckedChange={setRadiusSearchEnabled}
+                  />
 
-                {[
-                  {
-                    number: 1,
-                    enabled: radius1Enabled,
-                    setEnabled:
-                      setRadius1Enabled,
-                    value: radius1Km,
-                    setValue: setRadius1Km,
-                  },
-                  {
-                    number: 2,
-                    enabled: radius2Enabled,
-                    setEnabled:
-                      setRadius2Enabled,
-                    value: radius2Km,
-                    setValue: setRadius2Km,
-                  },
-                  {
-                    number: 3,
-                    enabled: radius3Enabled,
-                    setEnabled:
-                      setRadius3Enabled,
-                    value: radius3Km,
-                    setValue: setRadius3Km,
-                  },
-                ].map((radius) => (
                   <div
-                    key={radius.number}
-                    className="grid gap-3 rounded-xl border border-border/55 bg-background/45 p-3 sm:grid-cols-[auto_1fr]"
+                    className={`grid gap-2 sm:grid-cols-3 ${
+                      radiusSearchEnabled ? "" : "opacity-50"
+                    }`}
                   >
-                    <Switch
-                      checked={radius.enabled}
-                      disabled={
-                        !canManage ||
-                        !radiusSearchEnabled
-                      }
-                      onCheckedChange={
-                        radius.setEnabled
-                      }
-                    />
-
-                    <div>
-                      <Label
-                        htmlFor={`dispatch-radius-${radius.number}`}
+                    {[
+                      {
+                        number: 1,
+                        enabled: radius1Enabled,
+                        setEnabled: setRadius1Enabled,
+                        value: radius1Km,
+                        setValue: setRadius1Km,
+                      },
+                      {
+                        number: 2,
+                        enabled: radius2Enabled,
+                        setEnabled: setRadius2Enabled,
+                        value: radius2Km,
+                        setValue: setRadius2Km,
+                      },
+                      {
+                        number: 3,
+                        enabled: radius3Enabled,
+                        setEnabled: setRadius3Enabled,
+                        value: radius3Km,
+                        setValue: setRadius3Km,
+                      },
+                    ].map((radius) => (
+                      <div
+                        key={radius.number}
+                        className="rounded-xl border border-cyan-500/15 bg-background/55 p-3 shadow-sm"
                       >
-                        Radio {radius.number}
-                      </Label>
+                        <div className="flex items-center justify-between gap-2">
+                          <Label htmlFor={`dispatch-radius-${radius.number}`}>
+                            Radio {radius.number}
+                          </Label>
 
-                      <div className="relative mt-1.5">
-                        <Input
-                          id={`dispatch-radius-${radius.number}`}
-                          type="number"
-                          min="0.1"
-                          max="100"
-                          step="0.1"
-                          className="pr-12"
-                          value={radius.value}
-                          disabled={
-                            !canManage ||
-                            !radiusSearchEnabled ||
-                            !radius.enabled
-                          }
-                          onChange={(event) =>
-                            radius.setValue(
-                              event.target.value,
-                            )
-                          }
-                        />
+                          <Switch
+                            checked={radius.enabled}
+                            disabled={!canManage || !radiusSearchEnabled}
+                            onCheckedChange={radius.setEnabled}
+                          />
+                        </div>
 
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                          km
-                        </span>
+                        <div className="relative mt-2">
+                          <Input
+                            id={`dispatch-radius-${radius.number}`}
+                            type="number"
+                            min="0.1"
+                            max="100"
+                            step="0.1"
+                            className="pr-10"
+                            value={radius.value}
+                            disabled={
+                              !canManage ||
+                              !radiusSearchEnabled ||
+                              !radius.enabled
+                            }
+                            onChange={(event) =>
+                              radius.setValue(event.target.value)
+                            }
+                          />
+
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-muted-foreground">
+                            km
+                          </span>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+
+                  <ToggleRow
+                    title="AmpliaciÃ³n automÃ¡tica"
+                    description="Si nadie toma la carrera, avanza al siguiente radio activo."
+                    checked={expansionEnabled}
+                    disabled={!canManage || !radiusSearchEnabled}
+                    onCheckedChange={setExpansionEnabled}
+                  />
+
+                  <div className="rounded-xl border border-cyan-500/15 bg-background/55 p-3">
+                    <Label htmlFor="dispatch-expansion-seconds">
+                      Tiempo para ampliar
+                    </Label>
+
+                    <div className="relative mt-2">
+                      <Input
+                        id="dispatch-expansion-seconds"
+                        type="number"
+                        min="5"
+                        max="600"
+                        step="1"
+                        className="pr-20"
+                        value={expansionSeconds}
+                        disabled={
+                          !canManage ||
+                          !radiusSearchEnabled ||
+                          !expansionEnabled
+                        }
+                        onChange={(event) =>
+                          setExpansionSeconds(event.target.value)
+                        }
+                      />
+
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-muted-foreground">
+                        segundos
+                      </span>
                     </div>
                   </div>
-                ))}
 
-                <ToggleRow
-                  title="Ampliación automática"
-                  description="Si nadie toma la carrera, avanza al siguiente radio activo."
-                  checked={expansionEnabled}
-                  disabled={
-                    !canManage ||
-                    !radiusSearchEnabled
-                  }
-                  onCheckedChange={
-                    setExpansionEnabled
-                  }
-                />
-
-                <div>
-                  <Label htmlFor="dispatch-expansion-seconds">
-                    Tiempo para ampliar
-                  </Label>
-
-                  <div className="relative mt-1.5">
-                    <Input
-                      id="dispatch-expansion-seconds"
-                      type="number"
-                      min="5"
-                      max="600"
-                      step="1"
-                      className="pr-20"
-                      value={expansionSeconds}
-                      disabled={
-                        !canManage ||
-                        !radiusSearchEnabled ||
-                        !expansionEnabled
-                      }
-                      onChange={(event) =>
-                        setExpansionSeconds(
-                          event.target.value,
-                        )
-                      }
-                    />
-
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                      segundos
-                    </span>
-                  </div>
+                  <ToggleRow
+                    title="Buscar fuera del radio mÃ¡ximo"
+                    description="Permite utilizar conductores mÃ¡s alejados despuÃ©s de agotar todos los radios definidos."
+                    checked={allowOutsideMaxRadius}
+                    disabled={!canManage || !radiusSearchEnabled}
+                    onCheckedChange={setAllowOutsideMaxRadius}
+                  />
                 </div>
-
-                <ToggleRow
-                  title="Buscar fuera del radio máximo"
-                  description="Permite utilizar conductores más alejados después de agotar todos los radios definidos."
-                  checked={
-                    allowOutsideMaxRadius
-                  }
-                  disabled={
-                    !canManage ||
-                    !radiusSearchEnabled
-                  }
-                  onCheckedChange={
-                    setAllowOutsideMaxRadius
-                  }
-                />
               </div>
 
               <div className="space-y-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300">
-                    Reputación
-                  </p>
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/[0.08] text-amber-300">
+                      <Star className="h-4 w-4" />
+                    </div>
 
-                  <h4 className="mt-1 flex items-center gap-2 font-semibold text-foreground">
-                    <Star className="h-4 w-4 text-amber-300" />
-                    Valoración y prioridad
-                  </h4>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
+                        ReputaciÃ³n
+                      </p>
+                      <h4 className="mt-0.5 text-base font-semibold text-foreground">
+                        ValoraciÃ³n y prioridad
+                      </h4>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Usa las valoraciones reales de clientes para priorizar conductores.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <ToggleRow
+                      title="Priorizar por valoraciÃ³n"
+                      description="Utiliza las valoraciones reales cliente a conductor."
+                      checked={ratingPriorityEnabled}
+                      disabled={!canManage}
+                      onCheckedChange={setRatingPriorityEnabled}
+                    />
+
+                    <div className="rounded-xl border border-amber-500/15 bg-background/55 p-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            ValoraciÃ³n mÃ­nima preferente
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Define quÃ© conductores forman el grupo preferente.
+                          </p>
+                        </div>
+
+                        <Switch
+                          checked={preferredMinRatingEnabled}
+                          disabled={!canManage || !ratingPriorityEnabled}
+                          onCheckedChange={setPreferredMinRatingEnabled}
+                        />
+                      </div>
+
+                      <div className="mt-3">
+                        <Label htmlFor="dispatch-preferred-rating">
+                          ValoraciÃ³n preferente
+                        </Label>
+                        <Input
+                          id="dispatch-preferred-rating"
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="0.1"
+                          className="mt-1.5"
+                          value={preferredMinRating}
+                          disabled={
+                            !canManage ||
+                            !ratingPriorityEnabled ||
+                            !preferredMinRatingEnabled
+                          }
+                          onChange={(event) =>
+                            setPreferredMinRating(event.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-amber-500/15 bg-background/55 p-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            MÃ­nimo de valoraciones
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Evita tratar como reputaciÃ³n consolidada a un conductor nuevo.
+                          </p>
+                        </div>
+
+                        <Switch
+                          checked={minimumRatingCountEnabled}
+                          disabled={!canManage || !ratingPriorityEnabled}
+                          onCheckedChange={setMinimumRatingCountEnabled}
+                        />
+                      </div>
+
+                      <div className="mt-3">
+                        <Label htmlFor="dispatch-rating-count">
+                          Cantidad mÃ­nima
+                        </Label>
+                        <Input
+                          id="dispatch-rating-count"
+                          type="number"
+                          min="0"
+                          max="1000"
+                          step="1"
+                          className="mt-1.5"
+                          value={minimumRatingCount}
+                          disabled={
+                            !canManage ||
+                            !ratingPriorityEnabled ||
+                            !minimumRatingCountEnabled
+                          }
+                          onChange={(event) =>
+                            setMinimumRatingCount(event.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <ToggleRow
+                      title="Permitir valoraciones inferiores"
+                      description="Usa esos conductores como respaldo si los preferentes no resuelven el servicio."
+                      checked={allowBelowPreferred}
+                      disabled={
+                        !canManage ||
+                        !ratingPriorityEnabled ||
+                        !preferredMinRatingEnabled
+                      }
+                      onCheckedChange={setAllowBelowPreferred}
+                    />
+                  </div>
                 </div>
 
-                <ToggleRow
-                  title="Priorizar por valoración"
-                  description="Utiliza las valoraciones reales cliente a conductor."
-                  checked={
-                    ratingPriorityEnabled
-                  }
-                  disabled={!canManage}
-                  onCheckedChange={
-                    setRatingPriorityEnabled
-                  }
-                />
+                <div className="rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.08] via-background/75 to-background/65 p-3.5 shadow-[0_18px_50px_-38px_rgba(139,92,246,0.95)]">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-violet-300">
+                        Pruebas
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">
+                        Aplicar a carreras de prueba
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Apagado: las pruebas siguen usando directamente el conductor seleccionado.
+                      </p>
+                    </div>
 
-                <ToggleRow
-                  title="Valoración mínima preferente"
-                  description="Define qué conductores forman el grupo preferente."
-                  checked={
-                    preferredMinRatingEnabled
-                  }
-                  disabled={
-                    !canManage ||
-                    !ratingPriorityEnabled
-                  }
-                  onCheckedChange={
-                    setPreferredMinRatingEnabled
-                  }
-                />
-
-                <div>
-                  <Label htmlFor="dispatch-preferred-rating">
-                    Valoración preferente
-                  </Label>
-
-                  <Input
-                    id="dispatch-preferred-rating"
-                    type="number"
-                    min="1"
-                    max="5"
-                    step="0.1"
-                    className="mt-1.5"
-                    value={preferredMinRating}
-                    disabled={
-                      !canManage ||
-                      !ratingPriorityEnabled ||
-                      !preferredMinRatingEnabled
-                    }
-                    onChange={(event) =>
-                      setPreferredMinRating(
-                        event.target.value,
-                      )
-                    }
-                  />
+                    <Switch
+                      checked={applyToTestJobs}
+                      disabled={!canManage}
+                      onCheckedChange={setApplyToTestJobs}
+                    />
+                  </div>
                 </div>
-
-                <ToggleRow
-                  title="Mínimo de valoraciones"
-                  description="Evita tratar como reputación consolidada a un conductor nuevo."
-                  checked={
-                    minimumRatingCountEnabled
-                  }
-                  disabled={
-                    !canManage ||
-                    !ratingPriorityEnabled
-                  }
-                  onCheckedChange={
-                    setMinimumRatingCountEnabled
-                  }
-                />
-
-                <div>
-                  <Label htmlFor="dispatch-rating-count">
-                    Cantidad mínima
-                  </Label>
-
-                  <Input
-                    id="dispatch-rating-count"
-                    type="number"
-                    min="0"
-                    max="1000"
-                    step="1"
-                    className="mt-1.5"
-                    value={minimumRatingCount}
-                    disabled={
-                      !canManage ||
-                      !ratingPriorityEnabled ||
-                      !minimumRatingCountEnabled
-                    }
-                    onChange={(event) =>
-                      setMinimumRatingCount(
-                        event.target.value,
-                      )
-                    }
-                  />
-                </div>
-
-                <ToggleRow
-                  title="Permitir valoraciones inferiores"
-                  description="Usa esos conductores como respaldo si los preferentes no resuelven el servicio."
-                  checked={
-                    allowBelowPreferred
-                  }
-                  disabled={
-                    !canManage ||
-                    !ratingPriorityEnabled ||
-                    !preferredMinRatingEnabled
-                  }
-                  onCheckedChange={
-                    setAllowBelowPreferred
-                  }
-                />
-<ToggleRow
-                  title="Aplicar a carreras de prueba"
-                  description="Apagado: las pruebas siguen usando directamente el conductor seleccionado."
-                  checked={applyToTestJobs}
-                  disabled={!canManage}
-                  onCheckedChange={
-                    setApplyToTestJobs
-                  }
-                />
               </div>
             </div>
 
@@ -840,17 +887,14 @@ export default function MarketplaceDispatchSettingsCard({
 
             {save.isError ? (
               <p className="rounded-xl border border-rose-500/20 bg-rose-500/[0.05] px-3 py-2.5 text-sm text-rose-300">
-                No se pudo guardar la configuración.
+                No se pudo guardar la configuraciÃ³n.
               </p>
             ) : null}
 
             {canManage ? (
               <Button
-                className="w-full"
-                disabled={
-                  save.isPending ||
-                  Boolean(validationError)
-                }
+                className="h-11 w-full rounded-xl shadow-[0_0_30px_-14px_rgba(34,211,238,0.95)]"
+                disabled={save.isPending || Boolean(validationError)}
                 onClick={() => save.mutate()}
               >
                 {save.isPending ? (
@@ -859,7 +903,7 @@ export default function MarketplaceDispatchSettingsCard({
                   <ShieldCheck className="mr-2 h-4 w-4" />
                 )}
 
-                Guardar búsqueda de conductores
+                Guardar bÃºsqueda de conductores
               </Button>
             ) : null}
           </>

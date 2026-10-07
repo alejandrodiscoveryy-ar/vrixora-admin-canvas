@@ -2397,9 +2397,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canSettings ? (
           <TabsContent value="configuracion" className="mt-3">
             <div className="grid gap-4 xl:grid-cols-2">
-              <section className="overflow-hidden rounded-[24px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.05] via-background/55 to-background/35">
-                <div className="flex items-center gap-3 border-b border-border/55 px-4 py-4 sm:px-5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/[0.09] text-amber-300">
+              <section className="relative overflow-hidden rounded-[28px] border border-amber-400/35 bg-gradient-to-br from-amber-500/[0.11] via-background/90 to-background/75 shadow-[0_24px_70px_-42px_rgba(245,158,11,0.9)]">
+                <div className="flex items-center gap-3 border-b border-amber-500/15 bg-amber-500/[0.025] px-5 py-5 sm:px-6">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/35 bg-amber-400/[0.11] text-amber-300 shadow-[0_0_26px_-10px_rgba(251,191,36,0.9)]">
                     <CircleDollarSign className="h-4.5 w-4.5" />
                   </div>
                   <div>
@@ -2438,7 +2438,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         />
                       </div>
 
-                      <div className="flex items-start gap-3 rounded-xl border border-amber-500/18 bg-amber-500/[0.045] px-3 py-2.5">
+                      <div className="flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
                         <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
                           <p>
@@ -2519,10 +2519,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   )}
                 </div>
               </section>
-              <section className="overflow-hidden rounded-[24px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.05] via-background/55 to-background/35">
-                <div className="flex items-center justify-between gap-3 border-b border-border/55 px-4 py-4 sm:px-5">
+              <section className="relative overflow-hidden rounded-[28px] border border-violet-400/35 bg-gradient-to-br from-violet-500/[0.11] via-background/90 to-background/75 shadow-[0_24px_70px_-42px_rgba(139,92,246,0.9)]">
+                <div className="flex items-center justify-between gap-3 border-b border-violet-500/15 bg-violet-500/[0.025] px-5 py-5 sm:px-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-500/25 bg-violet-500/[0.09] text-violet-300">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/35 bg-violet-400/[0.11] text-violet-300 shadow-[0_0_26px_-10px_rgba(167,139,250,0.9)]">
                       <TestTube2 className="h-4.5 w-4.5" />
                     </div>
                     <div>
