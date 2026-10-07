@@ -794,6 +794,8 @@ export default function MarketplaceOperationalMap({
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [customerDetailsJobId, setCustomerDetailsJobId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapInitNonce, setMapInitNonce] = useState(0);
+  const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const [mapViewportHeight, setMapViewportHeight] = useState<number | null>(null);
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
@@ -801,6 +803,7 @@ export default function MarketplaceOperationalMap({
   const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const jobMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const jobHoverPopupRef = useRef<mapboxgl.Popup | null>(null);
+  const mapInitRetryRef = useRef(0);
 
   const operational = useQuery({
     queryKey: ["marketplace-operational-map-live", projectId],
@@ -989,40 +992,218 @@ export default function MarketplaceOperationalMap({
     if (!expanded && mapViewportHeight == null) return;
     if (!node || !config || mapRef.current) return;
 
-    mapboxgl.accessToken = config.accessToken;
-    const map = new mapboxgl.Map({
-      container: node,
-      style: `mapbox://styles/${config.mapStyle}`,
-      center: [-82.3666, 23.1136],
-      zoom: 11,
-      attributionControl: false,
+    let disposed = false;
+    let map: mapboxgl.Map | null = null;
+    let initFrame = 0;
+    let settleFrame = 0;
+    let resizeFrame = 0;
+    let initTimer = 0;
+    let watchdog = 0;
+    let ready = false;
+
+    const settleMap = () => {
+      if (
+        disposed ||
+        !map ||
+        mapRef.current !== map
+      ) {
+        return;
+      }
+
+      window.cancelAnimationFrame(resizeFrame);
+
+      resizeFrame = window.requestAnimationFrame(() => {
+        if (
+          disposed ||
+          !map ||
+          mapRef.current !== map
+        ) {
+          return;
+        }
+
+        map.resize();
+        map.triggerRepaint();
+
+        window.requestAnimationFrame(() => {
+          if (
+            !disposed &&
+            map &&
+            mapRef.current === map
+          ) {
+            map.resize();
+            map.triggerRepaint();
+          }
+        });
+      });
+    };
+
+    const markReady = () => {
+      if (
+        disposed ||
+        !map ||
+        mapRef.current !== map
+      ) {
+        return;
+      }
+
+      ready = true;
+
+      addOperationalLayers(map);
+      settleMap();
+
+      mapInitRetryRef.current = 0;
+      setMapLoadError(null);
+      setMapLoaded(true);
+    };
+
+    const initialize = () => {
+      if (
+        disposed ||
+        mapRef.current
+      ) {
+        return;
+      }
+
+      const current = mapNodeRef.current;
+
+      if (!current || current !== node) {
+        return;
+      }
+
+      const bounds = current.getBoundingClientRect();
+
+      if (bounds.width < 64 || bounds.height < 64) {
+        window.clearTimeout(initTimer);
+        initTimer = window.setTimeout(initialize, 60);
+        return;
+      }
+
+      mapboxgl.accessToken = config.accessToken;
+
+      map = new mapboxgl.Map({
+        container: current,
+        style: `mapbox://styles/${config.mapStyle}`,
+        center: [-82.3666, 23.1136],
+        zoom: 11,
+        attributionControl: false,
+      });
+
+      mapRef.current = map;
+
+      setMapLoaded(false);
+      setMapLoadError(null);
+
+      map.addControl(
+        new mapboxgl.NavigationControl({ showCompass: true }),
+        "bottom-right",
+      );
+
+      map.addControl(
+        new mapboxgl.AttributionControl({ compact: true }),
+        "bottom-left",
+      );
+
+      map.on("style.load", markReady);
+      map.on("load", markReady);
+
+      settleMap();
+
+      watchdog = window.setTimeout(() => {
+        if (
+          disposed ||
+          !map ||
+          mapRef.current !== map ||
+          ready
+        ) {
+          return;
+        }
+
+        map.resize();
+        map.triggerRepaint();
+
+        if (mapInitRetryRef.current < 1) {
+          mapInitRetryRef.current += 1;
+
+          map.off("style.load", markReady);
+          map.off("load", markReady);
+          map.remove();
+
+          if (mapRef.current === map) {
+            mapRef.current = null;
+          }
+
+          setMapLoaded(false);
+          setMapLoadError(null);
+          setMapInitNonce((value) => value + 1);
+          return;
+        }
+
+        setMapLoadError(
+          "El mapa no completó su carga inicial.",
+        );
+      }, 4500);
+    };
+
+    const observer = new ResizeObserver(() => {
+      if (!mapRef.current) {
+        initialize();
+        return;
+      }
+
+      if (mapRef.current === map) {
+        settleMap();
+      }
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), "bottom-right");
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
-    setMapLoaded(false);
-    map.on("load", () => {
-      addOperationalLayers(map);
-      setMapLoaded(true);
+    observer.observe(node);
+
+    initFrame = window.requestAnimationFrame(() => {
+      settleFrame = window.requestAnimationFrame(initialize);
     });
-    mapRef.current = map;
 
     return () => {
+      disposed = true;
+
+      observer.disconnect();
+
+      window.cancelAnimationFrame(initFrame);
+      window.cancelAnimationFrame(settleFrame);
+      window.cancelAnimationFrame(resizeFrame);
+
+      window.clearTimeout(initTimer);
+      window.clearTimeout(watchdog);
+
       setMapLoaded(false);
-      for (const marker of driverMarkersRef.current.values()) marker.remove();
+
+      for (const marker of driverMarkersRef.current.values()) {
+        marker.remove();
+      }
       driverMarkersRef.current.clear();
 
-      for (const marker of jobMarkersRef.current.values()) marker.remove();
+      for (const marker of jobMarkersRef.current.values()) {
+        marker.remove();
+      }
       jobMarkersRef.current.clear();
 
       jobHoverPopupRef.current?.remove();
       jobHoverPopupRef.current = null;
 
-      map.remove();
-      mapRef.current = null;
-    };
-  }, [expanded, mapConfig.data, mapViewportHeight]);
+      if (map) {
+        map.off("style.load", markReady);
+        map.off("load", markReady);
 
+        if (mapRef.current === map) {
+          map.remove();
+          mapRef.current = null;
+        }
+      }
+    };
+  }, [
+    expanded,
+    mapConfig.data,
+    mapViewportHeight,
+    mapInitNonce,
+  ]);
   useEffect(() => {
     const map = mapRef.current;
     const node = mapNodeRef.current;
@@ -1803,10 +1984,58 @@ export default function MarketplaceOperationalMap({
             </div>
 
             {mapConfig.data ? (
-              <div
-                ref={mapNodeRef}
-                className="absolute inset-0 h-full w-full"
-              />
+              <>
+                <div
+                  ref={mapNodeRef}
+                  className="absolute inset-0 h-full w-full"
+                />
+
+                {!mapLoaded ? (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/78 px-6 text-center backdrop-blur-sm">
+                    <div className="rounded-[22px] border border-cyan-400/15 bg-background/70 px-6 py-5 shadow-[0_20px_60px_-38px_rgba(34,211,238,0.8)]">
+                      {mapLoadError ? (
+                        <>
+                          <MapPin className="mx-auto h-7 w-7 text-amber-300" />
+
+                          <p className="mt-3 text-sm font-semibold text-foreground">
+                            El mapa necesita reintentarse
+                          </p>
+
+                          <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
+                            {mapLoadError}
+                          </p>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="pointer-events-auto mt-4"
+                            onClick={() => {
+                              mapInitRetryRef.current = 0;
+                              setMapLoadError(null);
+                              setMapInitNonce((value) => value + 1);
+                            }}
+                          >
+                            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                            Reintentar mapa
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mx-auto h-6 w-6 animate-spin text-cyan-300" />
+
+                          <p className="mt-3 text-sm font-semibold text-foreground">
+                            Cargando mapa operativo
+                          </p>
+
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Preparando el mapa y ajustando el área visible…
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </>
             ) : mapConfig.isLoading ? (
               <div className="flex h-full min-h-[420px] items-center justify-center">
                 <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
