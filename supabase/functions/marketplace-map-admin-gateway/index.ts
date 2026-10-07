@@ -271,7 +271,7 @@ async function operationalRoutePolyline(
 ): Promise<OperationalRouteRender | null> {
   const params = new URLSearchParams({
     geometries: "polyline",
-    overview: "simplified",
+    overview: "full",
     alternatives: "false",
     steps: "false",
     access_token: token,
