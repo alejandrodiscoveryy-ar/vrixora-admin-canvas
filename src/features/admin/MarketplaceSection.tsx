@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
+import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 
 const PAGE_SIZE = 25;
 
@@ -2681,6 +2682,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   )}
                 </div>
               </section>
+
+              <MarketplaceDispatchSettingsCard
+                projectId={projectId}
+                canManage={canManageSettings}
+              />
             </div>
           </TabsContent>        ) : null}
       </Tabs>

@@ -49,6 +49,7 @@ import type {
   MarketplaceWallet,
   MarketplaceFinancialSettings,
   MarketplaceCommercialSettings,
+  MarketplaceDispatchSettings,
   MarketplaceTestMode,
   MarketplaceIncident,
   MarketplaceIncidentResolution,
@@ -2559,6 +2560,327 @@ export const supabaseServices: AdminServices = {
         updatedBy: r.updated_by ? String(r.updated_by) : null,
       } satisfies MarketplaceCommercialSettings;
     },
+    async dispatchSettings(projectId) {
+      const { data, error } =
+        await getSupabaseClient().rpc(
+          "admin_get_marketplace_dispatch_settings",
+          {
+            target_project_id: projectId,
+          },
+        );
+
+      throwIfError(error);
+
+      const r =
+        (
+          data as
+            | Record<string, unknown>[]
+            | null
+        )?.[0] ?? {};
+
+      return {
+        enabled:
+          Boolean(r.enabled),
+
+        radiusSearchEnabled:
+          r.radius_search_enabled == null
+            ? true
+            : Boolean(
+                r.radius_search_enabled,
+              ),
+
+        radius1Enabled:
+          r.radius_1_enabled == null
+            ? true
+            : Boolean(
+                r.radius_1_enabled,
+              ),
+
+        radius1Km:
+          Number(r.radius_1_km ?? 1),
+
+        radius2Enabled:
+          r.radius_2_enabled == null
+            ? true
+            : Boolean(
+                r.radius_2_enabled,
+              ),
+
+        radius2Km:
+          Number(r.radius_2_km ?? 2),
+
+        radius3Enabled:
+          r.radius_3_enabled == null
+            ? true
+            : Boolean(
+                r.radius_3_enabled,
+              ),
+
+        radius3Km:
+          Number(r.radius_3_km ?? 3),
+
+        expansionEnabled:
+          r.expansion_enabled == null
+            ? true
+            : Boolean(
+                r.expansion_enabled,
+              ),
+
+        expansionSeconds:
+          Number(
+            r.expansion_seconds ?? 30,
+          ),
+
+        ratingPriorityEnabled:
+          r.rating_priority_enabled == null
+            ? true
+            : Boolean(
+                r.rating_priority_enabled,
+              ),
+
+        preferredMinRatingEnabled:
+          r.preferred_min_rating_enabled == null
+            ? true
+            : Boolean(
+                r.preferred_min_rating_enabled,
+              ),
+
+        preferredMinRating:
+          Number(
+            r.preferred_min_rating ?? 4,
+          ),
+
+        minimumRatingCountEnabled:
+          r.minimum_rating_count_enabled == null
+            ? true
+            : Boolean(
+                r.minimum_rating_count_enabled,
+              ),
+
+        minimumRatingCount:
+          Number(
+            r.minimum_rating_count ?? 5,
+          ),
+
+        allowBelowPreferred:
+          r.allow_below_preferred == null
+            ? true
+            : Boolean(
+                r.allow_below_preferred,
+              ),
+
+        allowOutsideMaxRadius:
+          Boolean(
+            r.allow_outside_max_radius,
+          ),
+
+        applyToTestJobs:
+          Boolean(
+            r.apply_to_test_jobs,
+          ),
+
+        tieBreaker:
+          r.tie_breaker ===
+          "distance_then_rating"
+            ? "distance_then_rating"
+            : "rating_then_distance",
+
+        updatedAt:
+          r.updated_at
+            ? String(r.updated_at)
+            : null,
+
+        updatedBy:
+          r.updated_by
+            ? String(r.updated_by)
+            : null,
+      } satisfies MarketplaceDispatchSettings;
+    },
+
+    async updateDispatchSettings(
+      projectId,
+      input,
+    ) {
+      await requireOnline(
+        "Actualizar búsqueda de conductores",
+      );
+
+      const { data, error } =
+        await getSupabaseClient().rpc(
+          "admin_set_marketplace_dispatch_settings",
+          {
+            target_project_id:
+              projectId,
+
+            target_enabled:
+              input.enabled,
+
+            target_radius_search_enabled:
+              input.radiusSearchEnabled,
+
+            target_radius_1_enabled:
+              input.radius1Enabled,
+
+            target_radius_1_km:
+              input.radius1Km,
+
+            target_radius_2_enabled:
+              input.radius2Enabled,
+
+            target_radius_2_km:
+              input.radius2Km,
+
+            target_radius_3_enabled:
+              input.radius3Enabled,
+
+            target_radius_3_km:
+              input.radius3Km,
+
+            target_expansion_enabled:
+              input.expansionEnabled,
+
+            target_expansion_seconds:
+              input.expansionSeconds,
+
+            target_rating_priority_enabled:
+              input.ratingPriorityEnabled,
+
+            target_preferred_min_rating_enabled:
+              input.preferredMinRatingEnabled,
+
+            target_preferred_min_rating:
+              input.preferredMinRating,
+
+            target_minimum_rating_count_enabled:
+              input.minimumRatingCountEnabled,
+
+            target_minimum_rating_count:
+              input.minimumRatingCount,
+
+            target_allow_below_preferred:
+              input.allowBelowPreferred,
+
+            target_allow_outside_max_radius:
+              input.allowOutsideMaxRadius,
+
+            target_apply_to_test_jobs:
+              input.applyToTestJobs,
+
+            target_tie_breaker:
+              input.tieBreaker,
+          },
+        );
+
+      throwIfError(error);
+
+      const r =
+        (
+          data as
+            | Record<string, unknown>[]
+            | null
+        )?.[0] ?? {};
+
+      return {
+        enabled:
+          Boolean(r.enabled),
+
+        radiusSearchEnabled:
+          Boolean(
+            r.radius_search_enabled,
+          ),
+
+        radius1Enabled:
+          Boolean(
+            r.radius_1_enabled,
+          ),
+
+        radius1Km:
+          Number(r.radius_1_km),
+
+        radius2Enabled:
+          Boolean(
+            r.radius_2_enabled,
+          ),
+
+        radius2Km:
+          Number(r.radius_2_km),
+
+        radius3Enabled:
+          Boolean(
+            r.radius_3_enabled,
+          ),
+
+        radius3Km:
+          Number(r.radius_3_km),
+
+        expansionEnabled:
+          Boolean(
+            r.expansion_enabled,
+          ),
+
+        expansionSeconds:
+          Number(
+            r.expansion_seconds,
+          ),
+
+        ratingPriorityEnabled:
+          Boolean(
+            r.rating_priority_enabled,
+          ),
+
+        preferredMinRatingEnabled:
+          Boolean(
+            r.preferred_min_rating_enabled,
+          ),
+
+        preferredMinRating:
+          Number(
+            r.preferred_min_rating,
+          ),
+
+        minimumRatingCountEnabled:
+          Boolean(
+            r.minimum_rating_count_enabled,
+          ),
+
+        minimumRatingCount:
+          Number(
+            r.minimum_rating_count,
+          ),
+
+        allowBelowPreferred:
+          Boolean(
+            r.allow_below_preferred,
+          ),
+
+        allowOutsideMaxRadius:
+          Boolean(
+            r.allow_outside_max_radius,
+          ),
+
+        applyToTestJobs:
+          Boolean(
+            r.apply_to_test_jobs,
+          ),
+
+        tieBreaker:
+          r.tie_breaker ===
+          "distance_then_rating"
+            ? "distance_then_rating"
+            : "rating_then_distance",
+
+        updatedAt:
+          r.updated_at
+            ? String(r.updated_at)
+            : null,
+
+        updatedBy:
+          r.updated_by
+            ? String(r.updated_by)
+            : null,
+      } satisfies MarketplaceDispatchSettings;
+    },
+
     async testMode(projectId) {
       const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_test_mode", {
         target_project_id: projectId,

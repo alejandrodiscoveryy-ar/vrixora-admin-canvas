@@ -91,6 +91,8 @@ export type {
   MarketplaceFinancialDocument,
   MarketplaceWallet,
   MarketplaceFinancialSettings,
+  MarketplaceDispatchSettings,
+  MarketplaceDispatchSettingsInput,
   MarketplaceIncident,
   MarketplaceIncidentResolution,
   MarketplacePricingTariff,

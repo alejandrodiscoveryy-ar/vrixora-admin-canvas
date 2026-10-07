@@ -1326,6 +1326,50 @@ export interface MarketplaceTestMode {
   updatedAt: string | null;
   updatedBy: string | null;
 }
+export interface MarketplaceDispatchSettings {
+  enabled: boolean;
+
+  radiusSearchEnabled: boolean;
+
+  radius1Enabled: boolean;
+  radius1Km: number;
+
+  radius2Enabled: boolean;
+  radius2Km: number;
+
+  radius3Enabled: boolean;
+  radius3Km: number;
+
+  expansionEnabled: boolean;
+  expansionSeconds: number;
+
+  ratingPriorityEnabled: boolean;
+
+  preferredMinRatingEnabled: boolean;
+  preferredMinRating: number;
+
+  minimumRatingCountEnabled: boolean;
+  minimumRatingCount: number;
+
+  allowBelowPreferred: boolean;
+
+  allowOutsideMaxRadius: boolean;
+
+  applyToTestJobs: boolean;
+
+  tieBreaker:
+    | "rating_then_distance"
+    | "distance_then_rating";
+
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+export type MarketplaceDispatchSettingsInput = Omit<
+  MarketplaceDispatchSettings,
+  "updatedAt" | "updatedBy"
+>;
+
 export interface MarketplacePricingTariff {
   serviceCode: string;
   serviceName: string;
@@ -1432,6 +1476,11 @@ export interface MarketplaceAdminService {
   ): Promise<MarketplacePage<MarketplaceWallet>>;
   financialSettings(projectId: string): Promise<MarketplaceFinancialSettings>;
   commercialSettings(projectId: string): Promise<MarketplaceCommercialSettings>;
+  dispatchSettings(projectId: string): Promise<MarketplaceDispatchSettings>;
+  updateDispatchSettings(
+    projectId: string,
+    input: MarketplaceDispatchSettingsInput,
+  ): Promise<MarketplaceDispatchSettings>;
   listIncidents(
     projectId: string,
     filters?: { resolved?: boolean; limit?: number; cursor?: MarketplaceCursor | null },
