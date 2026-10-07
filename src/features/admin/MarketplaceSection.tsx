@@ -2436,12 +2436,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <MiniMetric
                           labelText="Promoción"
                           value={
-                            settings.data ? `${settings.data.promotionDurationDays} d├¡as` : "—"
+                            settings.data ? `${settings.data.promotionDurationDays} días` : "—"
                           }
                         />
                         <MiniMetric
                           labelText="Comisión"
-                          value={settings.data ? `${settings.data.commissionRate * 100} %` : "ΓÇö"}
+                          value={settings.data ? `${settings.data.commissionRate * 100} %` : "—"}
                         />
                       </div>
 
@@ -2450,10 +2450,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
                           <p>
                             Regla comercial v{settings.data?.promotionRuleVersion ?? "—"}. Durante
-                            la promoci├│n no se aplica la comisi├│n normal; al finalizar, se utiliza
-                            la comisión configurada.
+                            la promoción no se cobra la comisión habitual. Al finalizar, se aplica
+                            automáticamente la comisión configurada.
                           </p>
-                          <p>├Ültima actualizaci├│n: {formatDate(settings.data?.updatedAt)}.</p>
+                          <p>Última actualización: {formatDate(settings.data?.updatedAt)}.</p>
                         </div>
                       </div>
 
