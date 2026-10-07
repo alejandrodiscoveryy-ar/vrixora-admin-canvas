@@ -1931,9 +1931,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               }
               icon={UserRound}
               tone="violet"
+              backgroundImage="/admin-premium/customers.svg"
               action={
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                  <label className="relative min-w-0 sm:w-64">
+                <div className="flex w-full flex-col gap-2 rounded-[18px] border border-violet-400/15 bg-background/55 p-1.5 shadow-[0_14px_45px_-32px_rgba(139,92,246,0.9)] backdrop-blur-sm sm:w-auto sm:flex-row sm:items-center">
+                  <label className="relative min-w-0 sm:w-72">
                     <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300" />
                     <Input
                       value={customerSearchInput}
@@ -1941,17 +1942,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         setCustomerSearchInput(event.target.value)
                       }
                       placeholder="Buscar nombre o WhatsApp"
-                      className="h-9 rounded-xl border-violet-400/20 bg-background/65 pl-9"
+                      className="h-9 rounded-xl border-violet-400/20 bg-black/20 pl-9 shadow-inner shadow-violet-500/[0.04] focus-visible:border-violet-400/40"
                     />
                   </label>
 
-                  <div className="flex rounded-xl border border-violet-400/15 bg-background/55 p-1">
+                  <div className="flex rounded-xl border border-violet-400/15 bg-black/20 p-1">
                     <Button
                       size="sm"
-                      variant={
+                      variant="ghost"
+                      className={
                         customerSort === "points_desc"
-                          ? "default"
-                          : "ghost"
+                          ? "border border-violet-400/25 bg-violet-500/20 text-violet-100 shadow-[0_8px_24px_-14px_rgba(139,92,246,0.95)] hover:bg-violet-500/25 hover:text-violet-50"
+                          : "text-muted-foreground hover:bg-violet-500/[0.08] hover:text-violet-100"
                       }
                       onClick={() => setCustomerSort("points_desc")}
                     >
@@ -1960,10 +1962,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                     <Button
                       size="sm"
-                      variant={
+                      variant="ghost"
+                      className={
                         customerSort === "recent"
-                          ? "default"
-                          : "ghost"
+                          ? "border border-violet-400/25 bg-violet-500/20 text-violet-100 shadow-[0_8px_24px_-14px_rgba(139,92,246,0.95)] hover:bg-violet-500/25 hover:text-violet-50"
+                          : "text-muted-foreground hover:bg-violet-500/[0.08] hover:text-violet-100"
                       }
                       onClick={() => setCustomerSort("recent")}
                     >
@@ -1991,8 +1994,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 />
               ) : (
                 <>
-                  <div className="overflow-hidden rounded-[22px] border border-violet-500/18 bg-background/35">
-                    <div className="hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 border-b border-violet-500/15 bg-violet-500/[0.045] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid">
+                  <div className="relative overflow-hidden rounded-[24px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-cyan-500/[0.025] shadow-[0_24px_65px_-44px_rgba(139,92,246,0.9)]">
+                    <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-violet-500/[0.055] blur-3xl" />
+                    <div className="relative hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 border-b border-violet-400/18 bg-violet-500/[0.07] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200/70 backdrop-blur-sm lg:grid">
                       <span>Cliente</span>
                       <span>Ranking</span>
                       <span>Trabajos</span>
@@ -2002,7 +2006,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       <span />
                     </div>
 
-                    <div className="divide-y divide-border/45">
+                    <div className="relative divide-y divide-violet-400/[0.09]">
                       {customerRows.map((customer) => (
                         <button
                           key={customer.customerId}
@@ -2010,7 +2014,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           onClick={() =>
                             setCustomerId(customer.customerId)
                           }
-                          className="group w-full px-4 py-3 text-left transition hover:bg-violet-500/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/50"
+                          className="group relative w-full px-4 py-3.5 text-left transition duration-200 hover:bg-gradient-to-r hover:from-violet-500/[0.085] hover:via-violet-500/[0.035] hover:to-cyan-500/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/50"
                         >
                           <div className="hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 lg:grid">
                             <div className="min-w-0">
@@ -2023,16 +2027,19 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </p>
                             </div>
 
-                            <div>
-                              <p className="font-semibold text-violet-200">
-                                {customer.points.toLocaleString("es")} pt
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                {customer.distanceKm.toLocaleString("es", {
-                                  maximumFractionDigits: 1,
-                                })}{" "}
-                                km
-                              </p>
+                            <div className="inline-flex w-fit min-w-[104px] items-center gap-2 rounded-xl border border-violet-400/16 bg-violet-500/[0.065] px-3 py-2 shadow-inner shadow-violet-500/[0.04]">
+                              <Star className="h-4 w-4 shrink-0 text-violet-300" />
+                              <div>
+                                <p className="font-semibold text-violet-100">
+                                  {customer.points.toLocaleString("es")} pt
+                                </p>
+                                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                                  {customer.distanceKm.toLocaleString("es", {
+                                    maximumFractionDigits: 1,
+                                  })}{" "}
+                                  km
+                                </p>
+                              </div>
                             </div>
 
                             <p className="font-semibold text-foreground">
@@ -2053,7 +2060,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 : "Sin actividad"}
                             </p>
 
-                            <ArrowRight className="h-4 w-4 text-violet-300 transition group-hover:translate-x-0.5" />
+                            <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-400/15 bg-violet-500/[0.06] text-violet-300 transition group-hover:border-violet-400/30 group-hover:bg-violet-500/[0.12]">
+                              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                            </span>
                           </div>
 
                           <div className="lg:hidden">
