@@ -1,0 +1,37 @@
+<svg width="720" height="420" viewBox="0 0 720 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="line" x1="130" y1="60" x2="650" y2="350" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="0.52" stop-color="#2DD4BF"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(535 195) rotate(148) scale(250 200)">
+      <stop stop-color="#22D3EE" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="530" cy="195" rx="250" ry="195" fill="url(#glow)"/>
+
+  <g opacity="0.72" stroke="url(#line)" stroke-width="3">
+    <circle cx="430" cy="126" r="30"/>
+    <path d="M376 207C382 164 400 146 430 146C461 146 480 165 486 207"/>
+
+    <path d="M497 226H635L659 272H477L497 226Z"/>
+    <path d="M520 226L541 187H603L626 226"/>
+    <circle cx="514" cy="283" r="25"/>
+    <circle cx="625" cy="283" r="25"/>
+    <path d="M539 283H600"/>
+    <path d="M500 252H646"/>
+
+    <circle cx="587" cy="112" r="36"/>
+    <path d="M587 88V136"/>
+    <path d="M563 112H611"/>
+  </g>
+
+  <g opacity="0.42" stroke="url(#line)" stroke-width="2">
+    <path d="M315 304C361 337 416 352 469 347"/>
+    <path d="M330 95C373 69 417 60 466 65"/>
+  </g>
+</svg>

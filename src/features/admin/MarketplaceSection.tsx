@@ -1832,11 +1832,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               drivers.isLoading
                 ? "Consultando conductores…"
                 : `${driverRows.length} ${
-                    driverRows.length === 1 ? "conductor cargado" : "conductores cargados"
+                    driverRows.length === 1
+                      ? "conductor mostrado"
+                      : "conductores mostrados"
                   }`
             }
             icon={Users}
             tone="cyan"
+            backgroundImage="/admin-premium/drivers.svg"
           >
             {drivers.isLoading ? (
               <LoadingState />
@@ -1848,53 +1851,80 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               />
             ) : (
               <>
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {driverRows.map((item) => (
                     <article
                       key={item.userId}
-                      className="rounded-2xl border border-border/65 bg-background/45 p-4"
+                      className="group relative overflow-hidden rounded-[22px] border border-cyan-400/14 bg-gradient-to-r from-cyan-500/[0.055] via-background/60 to-emerald-500/[0.025] px-4 py-3.5 shadow-[0_18px_50px_-40px_rgba(34,211,238,0.9)] transition duration-200 hover:border-cyan-400/26 hover:from-cyan-500/[0.075] hover:to-emerald-500/[0.04]"
                     >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="font-semibold text-foreground">{item.displayName}</h4>
-                            <StatusBadge status={item.status} />
-                            <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                                item.isAvailable
-                                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                                  : "border-border/70 bg-muted/40 text-muted-foreground"
-                              }`}
-                            >
-                              {item.isAvailable ? "Disponible" : "No disponible"}
-                            </span>
-                          </div>
+                      <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-cyan-400/[0.035] blur-3xl" />
 
-                          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                            <MiniMetric
-                              labelText="WhatsApp"
-                              value={
-                                <span className="flex items-center gap-2">
-                                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                                  {item.phone ?? "Sin WhatsApp"}
+                      <div className="relative grid gap-3 lg:grid-cols-[minmax(220px,1.15fr)_minmax(190px,0.8fr)_minmax(220px,1fr)_auto] lg:items-center">
+                        <div className="min-w-0">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
+                              <Users className="h-5 w-5" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <h4 className="truncate font-semibold text-foreground">
+                                {item.displayName}
+                              </h4>
+
+                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                <StatusBadge status={item.status} />
+
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                                    item.isAvailable
+                                      ? "border-emerald-500/25 bg-emerald-500/[0.09] text-emerald-300"
+                                      : "border-border/70 bg-muted/35 text-muted-foreground"
+                                  }`}
+                                >
+                                  {item.isAvailable
+                                    ? "Disponible"
+                                    : "No disponible"}
                                 </span>
-                              }
-                            />
-                            <MiniMetric
-                              labelText="Vehículo"
-                              value={
-                                <span className="flex items-center gap-2">
-                                  <CarFront className="h-3.5 w-3.5 text-muted-foreground" />
-                                  {item.vehicleName ?? "Sin vehículo"}
-                                </span>
-                              }
-                            />
+                              </div>
+                            </div>
                           </div>
+                        </div>
+
+                        <div className="rounded-xl border border-cyan-400/10 bg-background/45 px-3 py-2.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                            WhatsApp
+                          </p>
+
+                          <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+                            <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
+                            <span className="truncate">
+                              {item.phone ?? "Sin WhatsApp"}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-cyan-400/10 bg-background/45 px-3 py-2.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                            Vehículo
+                          </p>
+
+                          <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+                            <CarFront className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                            <span className="truncate">
+                              {item.vehicleName ?? "Sin vehículo"}
+                            </span>
+                          </p>
                         </div>
 
                         {canManageMarketplace ? (
                           <Button
+                            size="sm"
                             variant="outline"
+                            className={`w-full lg:w-auto ${
+                              item.status === "suspended"
+                                ? "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-200 hover:bg-emerald-500/[0.12] hover:text-emerald-100"
+                                : "border-rose-500/20 bg-rose-500/[0.035] text-rose-200 hover:bg-rose-500/[0.08] hover:text-rose-100"
+                            }`}
                             onClick={() =>
                               setDriver({
                                 id: item.userId,
@@ -1902,7 +1932,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               })
                             }
                           >
-                            {item.status === "suspended" ? "Reactivar" : "Suspender"}
+                            {item.status === "suspended"
+                              ? "Reactivar"
+                              : "Suspender"}
                           </Button>
                         ) : null}
                       </div>
@@ -1915,7 +1947,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             )}
           </PremiumPanel>
         </TabsContent>
-
         {canCustomers ? (
           <TabsContent value="clientes">
             <PremiumPanel
