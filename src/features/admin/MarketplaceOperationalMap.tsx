@@ -300,8 +300,8 @@ function operationalPinSvg({
   const colors =
     kind === "driver"
       ? stale
-        ? ["#ffc56e", "#f28c28", "#c85d12", "#8f3c0b"]
-        : ["#ffd09a", "#ff7a1a", "#d94a0d", "#8f2f0a"]
+        ? ["#b58a6a", "#85533b", "#60392b", "#35231e"]
+        : ["#ffd19a", "#ff6b00", "#e24a00", "#922c05"]
       : kind === "customer"
         ? ["#9bf2b7", "#22c55e", "#15803d", "#14532d"]
         : ["#fecaca", "#ef4444", "#b91c1c", "#7f1d1d"];
@@ -320,7 +320,7 @@ function operationalPinSvg({
     : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
 
   const markerOpacity =
-    kind === "driver" && stale ? "0.88" : "1";
+    kind === "driver" && stale ? "0.62" : "1";
 
   return `
     <svg
@@ -1123,20 +1123,6 @@ export default function MarketplaceOperationalMap({
           element.style.pointerEvents = "auto";
           element.style.userSelect = "none";
 
-          const caption = document.createElement("div");
-          caption.dataset.role = "driver-caption";
-          caption.textContent = "Chofer";
-          caption.style.padding = "3px 8px";
-          caption.style.borderRadius = "9999px";
-          caption.style.fontSize = "10px";
-          caption.style.fontWeight = "800";
-          caption.style.lineHeight = "1";
-          caption.style.color = "#f8fafc";
-          caption.style.background = "rgba(15,23,42,0.94)";
-          caption.style.border = "1px solid rgba(249,115,22,0.48)";
-          caption.style.boxShadow = "0 6px 18px rgba(0,0,0,0.30)";
-          caption.style.whiteSpace = "nowrap";
-
           const pin = document.createElement("div");
           pin.dataset.role = "driver-pin";
           pin.style.width = "48px";
@@ -1145,7 +1131,7 @@ export default function MarketplaceOperationalMap({
           pin.style.alignItems = "center";
           pin.style.justifyContent = "center";
 
-          element.append(caption, pin);
+          element.append(pin);
 
           marker = new mapboxgl.Marker({
             element,
@@ -1160,14 +1146,11 @@ export default function MarketplaceOperationalMap({
         marker.setLngLat(coordinate);
 
         const element = marker.getElement();
-        const caption = element.querySelector<HTMLElement>(
-          '[data-role="driver-caption"]',
-        );
         const pin = element.querySelector<HTMLElement>(
           '[data-role="driver-pin"]',
         );
 
-        if (!caption || !pin) continue;
+        if (!pin) continue;
 
         pin.innerHTML = operationalPinSvg({
           kind: "driver",
@@ -1188,10 +1171,6 @@ export default function MarketplaceOperationalMap({
         element.title = `${driver.driverDisplayName ?? "Conductor"} - ${vehicleCategoryLabel(
           driver.vehicleCategoryCode,
         )}`;
-
-        caption.style.borderColor = driver.locationFresh
-          ? "rgba(249,115,22,0.60)"
-          : "rgba(242,140,40,0.60)";
 
         element.style.cursor = driver.activeJobId ? "pointer" : "default";
 
