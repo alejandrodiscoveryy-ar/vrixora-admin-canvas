@@ -125,35 +125,13 @@ function operationalPinIconSvg(
 
   if (vehicleCategoryCode === "tricycle") {
     return `
-      <path
-        d="M18 17.8h12l-1.6-3.2h-8.8L18 17.8Z"
-        fill="#1e293b"
-        stroke="#1e293b"
-        stroke-width="0.8"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M17.1 18h13.8l1.3 8.4H15.8L17.1 18Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M19.5 19.3h9v4.2h-9z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.2"
-      />
-      <path
-        d="M24 23.7v2.5"
-        stroke="#1e293b"
-        stroke-width="1.5"
-        stroke-linecap="round"
-      />
-      <circle cx="18.3" cy="27.7" r="2" fill="#1e293b"/>
-      <circle cx="29.7" cy="27.7" r="2" fill="#1e293b"/>
-      <circle cx="24" cy="27.2" r="1.3" fill="#1e293b"/>
+      <text
+        x="24"
+        y="26.5"
+        text-anchor="middle"
+        font-size="16"
+        font-family="Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif"
+      >🛺</text>
     `;
   }
 
