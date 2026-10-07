@@ -488,11 +488,11 @@ export default function MarketplaceDispatchSettingsCard({
 
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">
-              PolÃ­tica de despacho
+              Política de despacho
             </p>
 
             <h3 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground">
-              BÃºsqueda de conductores
+              Búsqueda de conductores
             </h3>
           </div>
         </div>
@@ -523,7 +523,7 @@ export default function MarketplaceDispatchSettingsCard({
           </div>
         ) : settings.isError ? (
           <p className="text-sm text-rose-300">
-            No se pudo cargar la configuraciÃ³n de bÃºsqueda.
+            No se pudo cargar la configuración de búsqueda.
           </p>
         ) : (
           <>
@@ -534,7 +534,7 @@ export default function MarketplaceDispatchSettingsCard({
                 </p>
 
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Ãšltima actualizaciÃ³n:{" "}
+                  Última actualización:{" "}
                   {formatDate(settings.data?.updatedAt)}
                 </p>
               </div>
@@ -548,14 +548,14 @@ export default function MarketplaceDispatchSettingsCard({
                     {activeRadii.length
                       ? activeRadii
                           .map((item) => `${item.value.toLocaleString("es")} km`)
-                          .join(" â†’ ")
+                          .join(" → ")
                       : "Sin radios"}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2">
                   <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
-                    AmpliaciÃ³n
+                    Ampliación
                   </p>
                   <p className="mt-0.5 text-xs font-semibold text-foreground">
                     {expansionEnabled
@@ -592,10 +592,10 @@ export default function MarketplaceDispatchSettingsCard({
                       Cobertura
                     </p>
                     <h4 className="mt-0.5 text-base font-semibold text-foreground">
-                      Radios y ampliaciÃ³n
+                      Radios y ampliación
                     </h4>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Define cÃ³mo y hasta dÃ³nde se buscan conductores.
+                      Define cómo y hasta dónde se buscan conductores.
                     </p>
                   </div>
                 </div>
@@ -603,7 +603,7 @@ export default function MarketplaceDispatchSettingsCard({
                 <div className="relative mt-4 space-y-3">
                   <ToggleRow
                     title="Buscar por radio"
-                    description="Limita los candidatos segÃºn su distancia al origen del cliente."
+                    description="Limita los candidatos según su distancia al origen del cliente."
                     checked={radiusSearchEnabled}
                     disabled={!canManage}
                     onCheckedChange={setRadiusSearchEnabled}
@@ -681,7 +681,7 @@ export default function MarketplaceDispatchSettingsCard({
                   </div>
 
                   <ToggleRow
-                    title="AmpliaciÃ³n automÃ¡tica"
+                    title="Ampliación automática"
                     description="Si nadie toma la carrera, avanza al siguiente radio activo."
                     checked={expansionEnabled}
                     disabled={!canManage || !radiusSearchEnabled}
@@ -719,8 +719,8 @@ export default function MarketplaceDispatchSettingsCard({
                   </div>
 
                   <ToggleRow
-                    title="Buscar fuera del radio mÃ¡ximo"
-                    description="Permite utilizar conductores mÃ¡s alejados despuÃ©s de agotar todos los radios definidos."
+                    title="Buscar fuera del radio máximo"
+                    description="Permite utilizar conductores más alejados después de agotar todos los radios definidos."
                     checked={allowOutsideMaxRadius}
                     disabled={!canManage || !radiusSearchEnabled}
                     onCheckedChange={setAllowOutsideMaxRadius}
@@ -737,10 +737,10 @@ export default function MarketplaceDispatchSettingsCard({
 
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
-                        ReputaciÃ³n
+                        Reputación
                       </p>
                       <h4 className="mt-0.5 text-base font-semibold text-foreground">
-                        ValoraciÃ³n y prioridad
+                        Valoración y prioridad
                       </h4>
                       <p className="mt-1 text-xs text-muted-foreground">
                         Usa las valoraciones reales de clientes para priorizar conductores.
@@ -750,7 +750,7 @@ export default function MarketplaceDispatchSettingsCard({
 
                   <div className="mt-4 space-y-3">
                     <ToggleRow
-                      title="Priorizar por valoraciÃ³n"
+                      title="Priorizar por valoración"
                       description="Utiliza las valoraciones reales cliente a conductor."
                       checked={ratingPriorityEnabled}
                       disabled={!canManage}
@@ -761,10 +761,10 @@ export default function MarketplaceDispatchSettingsCard({
                       <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">
-                            ValoraciÃ³n mÃ­nima preferente
+                            Valoración mínima preferente
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            Define quÃ© conductores forman el grupo preferente.
+                            Define qué conductores forman el grupo preferente.
                           </p>
                         </div>
 
@@ -777,7 +777,7 @@ export default function MarketplaceDispatchSettingsCard({
 
                       <div className="mt-3">
                         <Label htmlFor="dispatch-preferred-rating">
-                          ValoraciÃ³n preferente
+                          Valoración preferente
                         </Label>
                         <Input
                           id="dispatch-preferred-rating"
@@ -803,10 +803,10 @@ export default function MarketplaceDispatchSettingsCard({
                       <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">
-                            MÃ­nimo de valoraciones
+                            Mínimo de valoraciones
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            Evita tratar como reputaciÃ³n consolidada a un conductor nuevo.
+                            Evita tratar como reputación consolidada a un conductor nuevo.
                           </p>
                         </div>
 
@@ -819,7 +819,7 @@ export default function MarketplaceDispatchSettingsCard({
 
                       <div className="mt-3">
                         <Label htmlFor="dispatch-rating-count">
-                          Cantidad mÃ­nima
+                          Cantidad mínima
                         </Label>
                         <Input
                           id="dispatch-rating-count"
@@ -887,7 +887,7 @@ export default function MarketplaceDispatchSettingsCard({
 
             {save.isError ? (
               <p className="rounded-xl border border-rose-500/20 bg-rose-500/[0.05] px-3 py-2.5 text-sm text-rose-300">
-                No se pudo guardar la configuraciÃ³n.
+                No se pudo guardar la configuración.
               </p>
             ) : null}
 
@@ -903,7 +903,7 @@ export default function MarketplaceDispatchSettingsCard({
                   <ShieldCheck className="mr-2 h-4 w-4" />
                 )}
 
-                Guardar bÃºsqueda de conductores
+                Guardar búsqueda de conductores
               </Button>
             ) : null}
           </>
