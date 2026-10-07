@@ -2,6 +2,10 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useQuery } from "@tanstack/react-query";
 import mapboxgl, { type CircleLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+
+if (typeof window !== "undefined") {
+  mapboxgl.prewarm();
+}
 import {
   AlertTriangle,
   Bike,

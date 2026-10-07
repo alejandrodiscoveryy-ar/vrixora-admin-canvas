@@ -52,6 +52,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
+import {
+  getMarketplaceOperationalMap,
+  getMarketplaceOperationalMapConfig,
+} from "@/lib/marketplace-map";
 
 const PAGE_SIZE = 25;
 
@@ -1025,6 +1029,22 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const canManageMarketplace = permissions.includes("marketplace.manage");
 
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!permissions.includes("marketplace.view")) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: ["marketplace-operational-map-config", projectId],
+      queryFn: () => getMarketplaceOperationalMapConfig(projectId),
+      staleTime: 15 * 60_000,
+    });
+
+    void queryClient.prefetchQuery({
+      queryKey: ["marketplace-operational-map-live", projectId],
+      queryFn: () => getMarketplaceOperationalMap(projectId),
+      staleTime: 5_000,
+    });
+  }, [permissions, projectId, queryClient]);
 
   const invalidate = (...keys: string[]) =>
     Promise.all(
