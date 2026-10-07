@@ -109,8 +109,16 @@ function VehicleModeIcon({
       return <CarFront className={className} />;
     case "motorcycle":
     case "bicitaxi":
-    case "tricycle":
       return <Bike className={className} />;
+    case "tricycle":
+      return (
+        <span
+          className={`${className} inline-flex items-center justify-center text-[14px] leading-none`}
+          aria-hidden="true"
+        >
+          🛺
+        </span>
+      );
     case "van":
     case "truck":
       return <Truck className={className} />;
@@ -879,21 +887,35 @@ export default function MarketplaceOperationalMap({
       caption.textContent = isPickup ? "Cliente" : "Destino";
 
       bubble.textContent = isPickup ? "👤" : "🏁";
+
+      bubble.style.width = isPickup ? "38px" : "34px";
+      bubble.style.height = isPickup ? "38px" : "38px";
+      bubble.style.borderRadius = isPickup ? "9999px" : "0";
+      bubble.style.borderWidth = isPickup ? "2px" : "0";
+      bubble.style.borderStyle = "solid";
+      bubble.style.fontSize = isPickup ? "19px" : "30px";
+
       bubble.style.backgroundColor = isPickup
         ? "rgba(34,197,94,0.97)"
-        : "rgba(34,211,238,0.97)";
-      bubble.style.borderColor = selected
-        ? "#ffffff"
-        : isPickup
-          ? "#bbf7d0"
-          : "#cffafe";
+        : "transparent";
 
-      bubble.style.boxShadow = selected
-        ? isPickup
+      bubble.style.borderColor = isPickup
+        ? selected
+          ? "#ffffff"
+          : "#bbf7d0"
+        : "transparent";
+
+      bubble.style.boxShadow = isPickup
+        ? selected
           ? "0 0 0 4px rgba(34,197,94,0.25), 0 8px 22px rgba(0,0,0,0.42)"
-          : "0 0 0 4px rgba(34,211,238,0.25), 0 8px 22px rgba(0,0,0,0.42)"
-        : "0 8px 20px rgba(0,0,0,0.38)";
+          : "0 8px 20px rgba(0,0,0,0.38)"
+        : "none";
 
+      bubble.style.filter = isPickup
+        ? "none"
+        : selected
+          ? "drop-shadow(0 0 6px rgba(34,211,238,0.85)) drop-shadow(0 5px 8px rgba(0,0,0,0.45))"
+          : "drop-shadow(0 5px 7px rgba(0,0,0,0.42))";
       element.onclick = (event) => {
         event.stopPropagation();
         setSelectedJobId(job.jobId);
@@ -1267,10 +1289,10 @@ export default function MarketplaceOperationalMap({
         className={`grid gap-4 ${
           expanded
             ? panelOpen
-              ? "h-full grid-cols-[minmax(0,1fr)_280px]"
+              ? "h-full grid-cols-[minmax(0,1fr)_300px]"
               : "h-full grid-cols-1"
             : panelOpen
-              ? "items-start xl:grid-cols-[minmax(0,1fr)_260px]"
+              ? "items-start xl:grid-cols-[minmax(0,1fr)_284px]"
               : "items-start grid-cols-1"
         }`}
       >
@@ -1864,21 +1886,6 @@ export default function MarketplaceOperationalMap({
                   <span>Incidencia</span>
                 </div>
               </div>
-              <p className="mt-3 border-t border-border/50 pt-3 text-[11px] leading-relaxed text-muted-foreground">
-                El icono del marcador identifica la modalidad. El color indica el estado de la
-                señal. Las capas se pueden mostrar u ocultar sin alterar la operación.
-              </p>
-            </section>
-            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 text-foreground">
-                <Clock3 className="h-4 w-4 text-emerald-300" />
-                <span className="font-semibold">Seguimiento operativo</span>
-              </div>
-              <p className="mt-2 leading-relaxed">
-                Durante un servicio activo, la posición del conductor se considera reciente durante
-                2 minutos. Si la señal se retrasa, conservamos temporalmente la última ubicación
-                conocida para que la pérdida de señal sea visible y comprensible.
-              </p>
             </section>
           </aside>
         ) : null}
