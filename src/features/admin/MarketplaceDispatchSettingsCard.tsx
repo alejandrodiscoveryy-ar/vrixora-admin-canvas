@@ -820,38 +820,7 @@ export default function MarketplaceDispatchSettingsCard({
                     setAllowBelowPreferred
                   }
                 />
-
-                <div>
-                  <Label htmlFor="dispatch-tie-breaker">
-                    Prioridad entre candidatos
-                  </Label>
-
-                  <select
-                    id="dispatch-tie-breaker"
-                    className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none disabled:opacity-50"
-                    value={tieBreaker}
-                    disabled={
-                      !canManage ||
-                      !ratingPriorityEnabled
-                    }
-                    onChange={(event) =>
-                      setTieBreaker(
-                        event.target
-                          .value as TieBreaker,
-                      )
-                    }
-                  >
-                    <option value="rating_then_distance">
-                      Mejor valoración y luego distancia
-                    </option>
-
-                    <option value="distance_then_rating">
-                      Menor distancia y luego valoración
-                    </option>
-                  </select>
-                </div>
-
-                <ToggleRow
+<ToggleRow
                   title="Aplicar a carreras de prueba"
                   description="Apagado: las pruebas siguen usando directamente el conductor seleccionado."
                   checked={applyToTestJobs}
