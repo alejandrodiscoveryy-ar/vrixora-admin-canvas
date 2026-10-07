@@ -38,14 +38,12 @@ import {
 const MAP_SOURCE_POINTS = "tuktuk-live-points";
 const MAP_SOURCE_ROUTES = "tuktuk-live-routes";
 const MAP_LAYERS = {
-  routes: "tuktuk-live-routes-layer",
-  routesSelected: "tuktuk-live-routes-selected-layer",
+  routes: "tuktuk-live-routes-trip-layer",
+  routesSelected: "tuktuk-live-routes-trip-selected-layer",
+  routesPickup: "tuktuk-live-routes-pickup-layer",
+  routesPickupSelected: "tuktuk-live-routes-pickup-selected-layer",
   driversFresh: "tuktuk-live-drivers-fresh-layer",
   driversStale: "tuktuk-live-drivers-stale-layer",
-  pickups: "tuktuk-live-pickups-layer",
-  pickupLabels: "tuktuk-live-pickup-labels-layer",
-  destinations: "tuktuk-live-destinations-layer",
-  destinationLabels: "tuktuk-live-destination-labels-layer",
   incidents: "tuktuk-live-incidents-layer",
 } as const;
 
@@ -277,21 +275,70 @@ function addOperationalLayers(map: mapboxgl.Map) {
     });
   }
 
+  if (!map.getLayer(MAP_LAYERS.routesPickup)) {
+    map.addLayer({
+      id: MAP_LAYERS.routesPickup,
+      type: "line",
+      source: MAP_SOURCE_ROUTES,
+      filter: [
+        "all",
+        ["!=", ["get", "selected"], true],
+        ["==", ["get", "segment"], "pickup"],
+      ],
+      layout: {
+        "line-cap": "butt",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": "#f97316",
+        "line-width": 4,
+        "line-opacity": 0.88,
+        "line-dasharray": [2.2, 1.7],
+      },
+    });
+  }
+
+  if (!map.getLayer(MAP_LAYERS.routesPickupSelected)) {
+    map.addLayer({
+      id: MAP_LAYERS.routesPickupSelected,
+      type: "line",
+      source: MAP_SOURCE_ROUTES,
+      filter: [
+        "all",
+        ["==", ["get", "selected"], true],
+        ["==", ["get", "segment"], "pickup"],
+      ],
+      layout: {
+        "line-cap": "butt",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": "#fb923c",
+        "line-width": 6,
+        "line-opacity": 1,
+        "line-dasharray": [2.2, 1.6],
+      },
+    });
+  }
+
   if (!map.getLayer(MAP_LAYERS.routes)) {
     map.addLayer({
       id: MAP_LAYERS.routes,
       type: "line",
       source: MAP_SOURCE_ROUTES,
-      filter: ["!=", ["get", "selected"], true],
+      filter: [
+        "all",
+        ["!=", ["get", "selected"], true],
+        ["==", ["get", "segment"], "trip"],
+      ],
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
       paint: {
-        "line-color": [
-          "case",
-          ["==", ["get", "segment"], "pickup"],
-          "#f97316",
-          "#22d3ee",
-        ],
-        "line-width": 4,
-        "line-opacity": 0.78,
+        "line-color": "#22c55e",
+        "line-width": 5,
+        "line-opacity": 0.88,
       },
     });
   }
@@ -301,16 +348,19 @@ function addOperationalLayers(map: mapboxgl.Map) {
       id: MAP_LAYERS.routesSelected,
       type: "line",
       source: MAP_SOURCE_ROUTES,
-      filter: ["==", ["get", "selected"], true],
+      filter: [
+        "all",
+        ["==", ["get", "selected"], true],
+        ["==", ["get", "segment"], "trip"],
+      ],
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
       paint: {
-        "line-color": [
-          "case",
-          ["==", ["get", "segment"], "pickup"],
-          "#fb923c",
-          "#67e8f9",
-        ],
+        "line-color": "#4ade80",
         "line-width": 7,
-        "line-opacity": 0.98,
+        "line-opacity": 1,
       },
     });
   }
@@ -338,46 +388,16 @@ function addOperationalLayers(map: mapboxgl.Map) {
     });
   };
 
-  const labelLayer = (
-    id: string,
-    kind: string,
-    color: string,
-  ) => {
-    if (map.getLayer(id)) return;
-
-    map.addLayer({
-      id,
-      type: "symbol",
-      source: MAP_SOURCE_POINTS,
-      filter: ["==", ["get", "kind"], kind],
-      layout: {
-        "text-field": ["get", "label"],
-        "text-size": 11,
-        "text-offset": [0, 1.45],
-        "text-anchor": "top",
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": color,
-        "text-halo-color": "#0f172a",
-        "text-halo-width": 1.5,
-      },
-    });
-  };
-
   pointLayer(MAP_LAYERS.driversFresh, "driver_fresh", "#f97316", 8, {
     "circle-stroke-color": "#ffedd5",
     "circle-stroke-width": 3,
   });
+
   pointLayer(MAP_LAYERS.driversStale, "driver_stale", "#f59e0b", 7, {
     "circle-opacity": 0.65,
     "circle-stroke-color": "#fde68a",
   });
-  pointLayer(MAP_LAYERS.pickups, "pickup", "#22c55e", 8);
-  labelLayer(MAP_LAYERS.pickupLabels, "pickup", "#86efac");
 
-  pointLayer(MAP_LAYERS.destinations, "destination", "#22d3ee", 8);
-  labelLayer(MAP_LAYERS.destinationLabels, "destination", "#67e8f9");
   pointLayer(MAP_LAYERS.incidents, "incident", "#ef4444", 12, {
     "circle-opacity": 0.35,
     "circle-stroke-color": "#fecaca",
@@ -413,6 +433,8 @@ export default function MarketplaceOperationalMap({
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const jobMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const jobHoverPopupRef = useRef<mapboxgl.Popup | null>(null);
 
   const operational = useQuery({
     queryKey: ["marketplace-operational-map-live", projectId],
@@ -623,6 +645,13 @@ export default function MarketplaceOperationalMap({
       setMapLoaded(false);
       for (const marker of driverMarkersRef.current.values()) marker.remove();
       driverMarkersRef.current.clear();
+
+      for (const marker of jobMarkersRef.current.values()) marker.remove();
+      jobMarkersRef.current.clear();
+
+      jobHoverPopupRef.current?.remove();
+      jobHoverPopupRef.current = null;
+
       map.remove();
       mapRef.current = null;
     };
@@ -760,6 +789,203 @@ export default function MarketplaceOperationalMap({
     }
   }, [operational.data?.drivers, layers.drivers, mapLoaded]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    const markers = jobMarkersRef.current;
+    const visible = new Set<string>();
+
+    const renderMarker = (
+      job: MarketplaceOperationalJob,
+      kind: "pickup" | "destination",
+      coordinate: Coordinate | null,
+    ) => {
+      const layerVisible =
+        kind === "pickup" ? layers.pickups : layers.destinations;
+
+      if (!layerVisible || !coordinate) return;
+
+      const key = `${job.jobId}:${kind}`;
+      visible.add(key);
+
+      let marker = markers.get(key);
+
+      if (!marker) {
+        const element = document.createElement("div");
+
+        element.style.display = "flex";
+        element.style.flexDirection = "column";
+        element.style.alignItems = "center";
+        element.style.gap = "4px";
+        element.style.pointerEvents = "auto";
+        element.style.cursor = "pointer";
+        element.style.userSelect = "none";
+
+        const caption = document.createElement("div");
+        caption.dataset.role = "caption";
+        caption.style.padding = "3px 8px";
+        caption.style.borderRadius = "9999px";
+        caption.style.fontSize = "10px";
+        caption.style.fontWeight = "800";
+        caption.style.lineHeight = "1";
+        caption.style.color = "#f8fafc";
+        caption.style.background = "rgba(15,23,42,0.92)";
+        caption.style.border = "1px solid rgba(255,255,255,0.18)";
+        caption.style.boxShadow = "0 6px 18px rgba(0,0,0,0.28)";
+        caption.style.whiteSpace = "nowrap";
+
+        const bubble = document.createElement("div");
+        bubble.dataset.role = "bubble";
+        bubble.style.width = "38px";
+        bubble.style.height = "38px";
+        bubble.style.display = "flex";
+        bubble.style.alignItems = "center";
+        bubble.style.justifyContent = "center";
+        bubble.style.borderRadius = "9999px";
+        bubble.style.borderWidth = "2px";
+        bubble.style.borderStyle = "solid";
+        bubble.style.fontSize = "19px";
+        bubble.style.lineHeight = "1";
+        bubble.style.boxShadow = "0 8px 20px rgba(0,0,0,0.38)";
+
+        element.append(caption, bubble);
+
+        marker = new mapboxgl.Marker({
+          element,
+          anchor: "bottom",
+        })
+          .setLngLat(coordinate)
+          .addTo(map);
+
+        markers.set(key, marker);
+      }
+
+      marker.setLngLat(coordinate);
+
+      const element = marker.getElement();
+      const caption = element.querySelector<HTMLElement>(
+        '[data-role="caption"]',
+      );
+      const bubble = element.querySelector<HTMLElement>(
+        '[data-role="bubble"]',
+      );
+
+      if (!caption || !bubble) return;
+
+      const isPickup = kind === "pickup";
+      const selected = job.jobId === selectedJobId;
+
+      caption.textContent = isPickup ? "Cliente" : "Destino";
+
+      bubble.textContent = isPickup ? "👤" : "🏁";
+      bubble.style.backgroundColor = isPickup
+        ? "rgba(34,197,94,0.97)"
+        : "rgba(34,211,238,0.97)";
+      bubble.style.borderColor = selected
+        ? "#ffffff"
+        : isPickup
+          ? "#bbf7d0"
+          : "#cffafe";
+
+      bubble.style.boxShadow = selected
+        ? isPickup
+          ? "0 0 0 4px rgba(34,197,94,0.25), 0 8px 22px rgba(0,0,0,0.42)"
+          : "0 0 0 4px rgba(34,211,238,0.25), 0 8px 22px rgba(0,0,0,0.42)"
+        : "0 8px 20px rgba(0,0,0,0.38)";
+
+      element.onclick = (event) => {
+        event.stopPropagation();
+        setSelectedJobId(job.jobId);
+        setCustomerDetailsJobId(job.jobId);
+      };
+
+      element.onmouseenter = () => {
+        const popup =
+          jobHoverPopupRef.current ??
+          new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: 28,
+          });
+
+        jobHoverPopupRef.current = popup;
+
+        const content = document.createElement("div");
+        content.style.minWidth = "150px";
+        content.style.maxWidth = "270px";
+
+        const title = document.createElement("div");
+        title.textContent = isPickup
+          ? job.customerDisplayName || "Cliente"
+          : "Destino";
+        title.style.fontSize = "12px";
+        title.style.fontWeight = "800";
+        title.style.color = "#f8fafc";
+
+        const detail = document.createElement("div");
+        detail.textContent = isPickup
+          ? job.originText
+          : job.destinationText;
+        detail.style.marginTop = "4px";
+        detail.style.fontSize = "10px";
+        detail.style.lineHeight = "1.35";
+        detail.style.color = "#cbd5e1";
+
+        content.append(title, detail);
+
+        popup
+          .setLngLat(coordinate)
+          .setDOMContent(content)
+          .addTo(map);
+
+        const popupContent = popup
+          .getElement()
+          .querySelector(".mapboxgl-popup-content");
+
+        if (popupContent instanceof HTMLElement) {
+          popupContent.style.background = "rgba(15,23,42,0.97)";
+          popupContent.style.border =
+            "1px solid rgba(148,163,184,0.30)";
+          popupContent.style.borderRadius = "12px";
+          popupContent.style.padding = "10px 12px";
+          popupContent.style.boxShadow =
+            "0 14px 32px rgba(0,0,0,0.40)";
+        }
+      };
+
+      element.onmouseleave = () => {
+        jobHoverPopupRef.current?.remove();
+      };
+    };
+
+    for (const job of operational.data?.jobs ?? []) {
+      renderMarker(
+        job,
+        "pickup",
+        jobCoordinate(job, "origin"),
+      );
+
+      renderMarker(
+        job,
+        "destination",
+        jobCoordinate(job, "destination"),
+      );
+    }
+
+    for (const [key, marker] of markers.entries()) {
+      if (!visible.has(key)) {
+        marker.remove();
+        markers.delete(key);
+      }
+    }
+  }, [
+    operational.data?.jobs,
+    layers.pickups,
+    layers.destinations,
+    mapLoaded,
+    selectedJobId,
+  ]);
   const pointFeatures = useMemo(() => {
     const data = operational.data;
     if (!data) return [];
@@ -845,10 +1071,8 @@ export default function MarketplaceOperationalMap({
     if (!map || !mapLoaded || !map.isStyleLoaded()) return;
     setLayerVisibility(map, MAP_LAYERS.driversFresh, layers.drivers);
     setLayerVisibility(map, MAP_LAYERS.driversStale, layers.drivers);
-    setLayerVisibility(map, MAP_LAYERS.pickups, layers.pickups);
-    setLayerVisibility(map, MAP_LAYERS.pickupLabels, layers.pickups);
-    setLayerVisibility(map, MAP_LAYERS.destinations, layers.destinations);
-    setLayerVisibility(map, MAP_LAYERS.destinationLabels, layers.destinations);
+    setLayerVisibility(map, MAP_LAYERS.routesPickup, layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.routesPickupSelected, layers.routes);
     setLayerVisibility(map, MAP_LAYERS.routes, layers.routes);
     setLayerVisibility(map, MAP_LAYERS.routesSelected, layers.routes);
     setLayerVisibility(map, MAP_LAYERS.incidents, layers.incidents);
@@ -859,10 +1083,6 @@ export default function MarketplaceOperationalMap({
     if (!map || !mapLoaded || !map.isStyleLoaded()) return;
 
     const interactiveLayers = [
-      MAP_LAYERS.pickups,
-      MAP_LAYERS.pickupLabels,
-      MAP_LAYERS.destinations,
-      MAP_LAYERS.destinationLabels,
       MAP_LAYERS.incidents,
     ];
 
@@ -1313,8 +1533,8 @@ export default function MarketplaceOperationalMap({
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-emerald-300">
                       Cliente → destino
                     </p>
 
@@ -1620,20 +1840,24 @@ export default function MarketplaceOperationalMap({
                   <span>Última ubicación conocida</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <span>Recogida</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px]">
+                    👤
+                  </span>
+                  <span>Cliente</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400 text-[10px]">
+                    🏁
+                  </span>
                   <span>Destino</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-                  <span>Chofer → recogida</span>
+                  <span className="w-7 border-t-2 border-dashed border-orange-500" />
+                  <span>Chofer → cliente</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-600" />
-                  <span>Recogida → destino</span>
+                  <span className="w-7 border-t-2 border-emerald-400" />
+                  <span>Cliente → destino</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
