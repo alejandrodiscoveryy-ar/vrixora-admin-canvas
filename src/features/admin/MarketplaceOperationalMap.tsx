@@ -989,7 +989,6 @@ export default function MarketplaceOperationalMap({
     const node = mapNodeRef.current;
     const config = mapConfig.data;
 
-    if (!expanded && mapViewportHeight == null) return;
     if (!node || !config || mapRef.current) return;
 
     let disposed = false;
@@ -1110,7 +1109,11 @@ export default function MarketplaceOperationalMap({
       map.on("style.load", markReady);
       map.on("load", markReady);
 
-      settleMap();
+      if (map.isStyleLoaded()) {
+        markReady();
+      } else {
+        settleMap();
+      }
 
       watchdog = window.setTimeout(() => {
         if (
@@ -1203,9 +1206,7 @@ export default function MarketplaceOperationalMap({
       }
     };
   }, [
-    expanded,
     mapConfig.data,
-    mapViewportHeight,
     mapInitNonce,
   ]);
   useEffect(() => {
