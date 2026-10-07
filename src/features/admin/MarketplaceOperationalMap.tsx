@@ -2425,9 +2425,9 @@ export default function MarketplaceOperationalMap({
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 max-h-[46vh] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
                 {data.drivers.length ? (
-                  data.drivers.slice(0, 14).map((driver) => {
+                  data.drivers.map((driver) => {
                     const hasLastPosition = driverCoordinate(driver) != null;
                     return (
                       <div

@@ -981,6 +981,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const { data: permissions = [] } = useProjectPermissions(projectId);
 
   const [tab, setTab] = useState("resumen");
+  const [mapVisited, setMapVisited] = useState(false);
   const [status, setStatus] = useState("");
   const [service, setService] = useState("");
   const [incidentState, setIncidentState] = useState("open");
@@ -1029,6 +1030,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const canManageMarketplace = permissions.includes("marketplace.manage");
 
   const queryClient = useQueryClient();
+
+  const handleTabChange = (value: string) => {
+    setTab(value);
+
+    if (value === "mapa") {
+      setMapVisited(true);
+    }
+  };
 
   useEffect(() => {
     if (!permissions.includes("marketplace.view")) return;
@@ -1453,7 +1462,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-2xl border border-border/60 bg-background/45 p-1.5 shadow-[0_18px_50px_-42px_rgba(0,0,0,0.9)]">
           <TabsTrigger
             value="resumen"
@@ -2004,14 +2013,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             </section>
           </div>
         </TabsContent>
-        <TabsContent value="mapa" className="mt-3">
-          <MarketplaceOperationalMap
-            projectId={projectId}
-            canViewCustomers={canCustomers}
-            onOpenCustomer={setCustomerId}
-            onOpenJob={setJobId}
-          />
-        </TabsContent>
+        {mapVisited ? (
+          <TabsContent
+            value="mapa"
+            forceMount
+            className="mt-3 data-[state=inactive]:hidden"
+          >
+            <MarketplaceOperationalMap
+              projectId={projectId}
+              canViewCustomers={canCustomers}
+              onOpenCustomer={setCustomerId}
+              onOpenJob={setJobId}
+            />
+          </TabsContent>
+        ) : null}
 <TabsContent value="conductores">
           <PremiumPanel
             title="Conductores"
