@@ -1017,6 +1017,7 @@ export interface MarketplaceOverview {
 export interface MarketplaceCursor {
   at: string;
   id: string;
+  score?: number;
 }
 export interface MarketplacePage<T> {
   items: T[];
@@ -1188,6 +1189,8 @@ export interface MarketplaceCustomer {
   jobsActive: number;
   jobsSettled: number;
   lastJobAt: string | null;
+  distanceKm: number;
+  points: number;
 }
 
 export interface MarketplaceCustomer360 {
@@ -1453,7 +1456,12 @@ export interface MarketplaceAdminService {
   getJobDetail(projectId: string, jobId: string): Promise<MarketplaceJobDetail>;
   listCustomers(
     projectId: string,
-    page?: { limit?: number; cursor?: MarketplaceCursor | null },
+    filters?: {
+      search?: string;
+      sort?: "recent" | "points_desc";
+      limit?: number;
+      cursor?: MarketplaceCursor | null;
+    },
   ): Promise<MarketplacePage<MarketplaceCustomer>>;
   getCustomer360(projectId: string, customerId: string): Promise<MarketplaceCustomer360>;
   listCustomerHistory(

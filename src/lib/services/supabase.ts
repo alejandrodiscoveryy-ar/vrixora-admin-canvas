@@ -2258,15 +2258,27 @@ export const supabaseServices: AdminServices = {
         incidentResolution: r.incident_resolution as Record<string, unknown> | null,
       } satisfies MarketplaceJobDetail;
     },
-    async listCustomers(projectId, page = {}) {
-      const limit = page.limit ?? 25;
-      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_customers", {
-        target_project_id: projectId,
-        target_limit: limit,
-        target_before_created_at: page.cursor?.at ?? null,
-        target_before_customer_id: page.cursor?.id ?? null,
-      });
+    async listCustomers(projectId, filters = {}) {
+      const limit = filters.limit ?? 25;
+      const sort = filters.sort ?? "points_desc";
+
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_customers_v2",
+        {
+          target_project_id: projectId,
+          target_search: filters.search?.trim() || null,
+          target_sort: sort,
+          target_limit: limit,
+          target_before_created_at:
+            sort === "recent" ? filters.cursor?.at ?? null : null,
+          target_before_points:
+            sort === "points_desc" ? filters.cursor?.score ?? null : null,
+          target_before_customer_id: filters.cursor?.id ?? null,
+        },
+      );
+
       throwIfError(error);
+
       const items = ((data ?? []) as Record<string, unknown>[]).map(
         (r) =>
           ({
@@ -2278,13 +2290,23 @@ export const supabaseServices: AdminServices = {
             jobsActive: Number(r.jobs_active),
             jobsSettled: Number(r.jobs_settled),
             lastJobAt: r.last_job_at ? String(r.last_job_at) : null,
+            distanceKm: Number(r.distance_km ?? 0),
+            points: Number(r.points ?? 0),
           }) satisfies MarketplaceCustomer,
       );
+
       const last = items.at(-1);
+
       return {
         items,
         nextCursor:
-          items.length === limit && last ? { at: last.createdAt, id: last.customerId } : null,
+          items.length === limit && last
+            ? {
+                at: last.createdAt,
+                id: last.customerId,
+                score: sort === "points_desc" ? last.points : undefined,
+              }
+            : null,
       };
     },
     async getCustomer360(projectId, customerId) {
