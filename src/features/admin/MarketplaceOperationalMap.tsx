@@ -2409,7 +2409,7 @@ export default function MarketplaceOperationalMap({
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-2.5">
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
-                    Activos
+                    Trabajando
                   </p>
                   <p className="mt-1 text-xl font-semibold text-foreground">
                     {data.summary.workingDrivers}
@@ -2417,7 +2417,7 @@ export default function MarketplaceOperationalMap({
                 </div>
                 <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2.5 backdrop-blur-md">
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Inactivos
+                    Descansando
                   </p>
                   <p className="mt-1 text-xl font-semibold text-foreground">
                     {data.summary.inactiveDrivers}
@@ -2481,17 +2481,13 @@ export default function MarketplaceOperationalMap({
                                 <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
                                   En servicio · {statusLabel(driver.activeJobStatus)}
                                 </span>
-                              ) : driver.isAvailable ? (
-                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
-                                  Disponible
-                                </span>
                               ) : driver.acceptingJobs ? (
-                                <span className="inline-flex rounded-full border border-orange-500/25 bg-orange-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-orange-200">
-                                  Trabajando
+                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
+                                  {driver.isAvailable ? "Trabajando · disponible" : "Trabajando"}
                                 </span>
                               ) : (
                                 <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  No disponible
+                                  Descansando
                                 </span>
                               )}
 
@@ -2512,7 +2508,7 @@ export default function MarketplaceOperationalMap({
                   })
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    No hay conductores en modo Trabajando.
+                    No hay conductores activos.
                   </p>
                 )}
               </div>
