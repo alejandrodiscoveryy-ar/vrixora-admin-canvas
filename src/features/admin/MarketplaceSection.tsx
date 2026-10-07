@@ -1997,7 +1997,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               src="/admin-premium/wallets.svg"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-0 h-60 w-[42%] object-cover object-right opacity-[0.16] mix-blend-screen"
+              className="pointer-events-none absolute right-0 top-0 hidden h-52 w-[38%] object-cover object-right opacity-[0.11] mix-blend-screen sm:block xl:h-60 xl:w-[42%] xl:opacity-[0.16]"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/18 to-amber-500/[0.025]" />
             <div className="relative z-[1] flex flex-col gap-3 border-b border-amber-400/15 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -2048,11 +2048,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             src="/admin-premium/wallets.svg"
                             alt=""
                             aria-hidden="true"
-                            className="pointer-events-none absolute right-0 top-0 h-full w-56 object-cover object-right opacity-[0.045] mix-blend-screen"
+                            className="pointer-events-none absolute right-0 top-1/2 hidden h-[115%] w-48 -translate-y-1/2 object-cover object-right opacity-[0.035] mix-blend-screen sm:block xl:w-56 xl:opacity-[0.045]"
                           />
                           <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-amber-400/[0.03] blur-3xl" />
 
-                          <div className="relative grid gap-3 xl:grid-cols-[minmax(210px,1.2fr)_repeat(4,minmax(120px,1fr))] xl:items-center">
+                          <div className="relative grid gap-3 lg:grid-cols-[minmax(200px,0.9fr)_minmax(0,3.1fr)] lg:items-center">
                             <div className="min-w-0">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                 Conductor
@@ -2078,7 +2078,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </div>
                             </div>
 
-                            <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5">
+                            <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
+                              <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5">
                               <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
                                 Total
                               </p>
@@ -2108,16 +2109,17 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </p>
                             </div>
 
-                            <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.035] px-3 py-2.5">
-                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                Reservado
-                              </p>
-                              <p className="mt-1 font-semibold text-foreground">
-                                {formatAmount(reserved, wallet.currency)}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                Real {formatAmount(wallet.realReservedBalance, wallet.currency)}
-                              </p>
+                              <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.035] px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                  Reservado
+                                </p>
+                                <p className="mt-1 font-semibold text-foreground">
+                                  {formatAmount(reserved, wallet.currency)}
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  Real {formatAmount(wallet.realReservedBalance, wallet.currency)}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </article>
