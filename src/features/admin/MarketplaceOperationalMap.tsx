@@ -88,12 +88,15 @@ const vehicleCategoryLabel = (code: string | null) =>
 
 type OperationalPinKind = "driver" | "customer" | "destination";
 
-function operationalPinIconSvg(kind: OperationalPinKind) {
+function operationalPinIconSvg(
+  kind: OperationalPinKind,
+  vehicleCategoryCode: string | null = null,
+) {
   if (kind === "customer") {
     return `
-      <circle cx="24" cy="18.5" r="4.2" fill="#1e293b"/>
+      <circle cx="24" cy="18.2" r="4" fill="#1e293b"/>
       <path
-        d="M16.5 30.5c.8-5.3 3.5-7.8 7.5-7.8s6.7 2.5 7.5 7.8H16.5Z"
+        d="M16.7 30c.8-5 3.4-7.4 7.3-7.4s6.5 2.4 7.3 7.4H16.7Z"
         fill="#1e293b"
       />
     `;
@@ -102,21 +105,162 @@ function operationalPinIconSvg(kind: OperationalPinKind) {
   if (kind === "destination") {
     return `
       <path
-        d="M19 31V14.5"
+        d="M18.8 31V14.2"
         fill="none"
         stroke="#1e293b"
-        stroke-width="2.1"
+        stroke-width="2"
         stroke-linecap="round"
       />
       <path
-        d="M20 15h11v8H20z"
+        d="M20 14.8h11v8H20z"
         fill="#ffffff"
         stroke="#1e293b"
         stroke-width="1.2"
         stroke-linejoin="round"
       />
-      <path d="M20 15h5.5v4H20z" fill="#1e293b"/>
-      <path d="M25.5 19H31v4h-5.5z" fill="#1e293b"/>
+      <path d="M20 14.8h5.5v4H20z" fill="#1e293b"/>
+      <path d="M25.5 18.8H31v4h-5.5z" fill="#1e293b"/>
+    `;
+  }
+
+  if (vehicleCategoryCode === "tricycle") {
+    return `
+      <path
+        d="M18 17.8h12l-1.6-3.2h-8.8L18 17.8Z"
+        fill="#1e293b"
+        stroke="#1e293b"
+        stroke-width="0.8"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M17.1 18h13.8l1.3 8.4H15.8L17.1 18Z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.7"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M19.5 19.3h9v4.2h-9z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.2"
+      />
+      <path
+        d="M24 23.7v2.5"
+        stroke="#1e293b"
+        stroke-width="1.5"
+        stroke-linecap="round"
+      />
+      <circle cx="18.3" cy="27.7" r="2" fill="#1e293b"/>
+      <circle cx="29.7" cy="27.7" r="2" fill="#1e293b"/>
+      <circle cx="24" cy="27.2" r="1.3" fill="#1e293b"/>
+    `;
+  }
+
+  if (vehicleCategoryCode === "motorcycle") {
+    return `
+      <circle
+        cx="17.5"
+        cy="27"
+        r="2.8"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.7"
+      />
+      <circle
+        cx="30.5"
+        cy="27"
+        r="2.8"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.7"
+      />
+      <path
+        d="M17.5 27l4.3-6.2h4.3l4.4 6.2M21.8 20.8l3 6.2M24.8 27l3.5-8.8h3"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    `;
+  }
+
+  if (vehicleCategoryCode === "bicitaxi") {
+    return `
+      <circle
+        cx="16.5"
+        cy="27.2"
+        r="2.4"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.5"
+      />
+      <circle
+        cx="31.5"
+        cy="27.2"
+        r="2.4"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.5"
+      />
+      <path
+        d="M18.8 27.2h10.3l-1.3-8H20l-1.2 8Z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M19.9 19.2h8.3M23.9 19.2v-3.5M21.7 15.7h4.5"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.5"
+        stroke-linecap="round"
+      />
+    `;
+  }
+
+  if (
+    vehicleCategoryCode === "light_car" ||
+    vehicleCategoryCode === "van"
+  ) {
+    return `
+      <path
+        d="M16 23.8l2.3-6.1h11.4l2.3 6.1v4H16v-4Z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.7"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M19.2 18.2h9.6l1.4 4.2H17.8l1.4-4.2Z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.2"
+      />
+      <circle cx="19" cy="28.2" r="1.7" fill="#1e293b"/>
+      <circle cx="29" cy="28.2" r="1.7" fill="#1e293b"/>
+    `;
+  }
+
+  if (vehicleCategoryCode === "truck") {
+    return `
+      <path
+        d="M15.5 17.5h10v9.8h-10z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.6"
+      />
+      <path
+        d="M25.5 20h4.2l2.8 3.2v4.1h-7V20Z"
+        fill="none"
+        stroke="#1e293b"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+      />
+      <circle cx="19" cy="28.1" r="1.8" fill="#1e293b"/>
+      <circle cx="29" cy="28.1" r="1.8" fill="#1e293b"/>
     `;
   }
 
@@ -145,32 +289,38 @@ function operationalPinSvg({
   key,
   selected = false,
   stale = false,
+  vehicleCategoryCode = null,
 }: {
   kind: OperationalPinKind;
   key: string;
   selected?: boolean;
   stale?: boolean;
+  vehicleCategoryCode?: string | null;
 }) {
   const colors =
     kind === "driver"
       ? stale
-        ? ["#ffe08a", "#f59e0b", "#a16207", "#78350f"]
-        : ["#ffbf72", "#f97316", "#c2410c", "#9a3412"]
+        ? ["#ffc56e", "#f28c28", "#c85d12", "#8f3c0b"]
+        : ["#ffd09a", "#ff7a1a", "#d94a0d", "#8f2f0a"]
       : kind === "customer"
-        ? ["#86efac", "#22c55e", "#15803d", "#166534"]
-        : ["#fca5a5", "#ef4444", "#b91c1c", "#991b1b"];
+        ? ["#9bf2b7", "#22c55e", "#15803d", "#14532d"]
+        : ["#fecaca", "#ef4444", "#b91c1c", "#7f1d1d"];
 
   const safeKey =
     key.replace(/[^a-zA-Z0-9_-]/g, "").slice(-30) || "marker";
 
   const bodyId = `pin-body-${kind}-${safeKey}`;
   const innerId = `pin-inner-${kind}-${safeKey}`;
+  const innerShadowId = `pin-inner-shadow-${kind}-${safeKey}`;
 
   const [top, middle, bottom, edge] = colors;
 
   const selectedShadow = selected
-    ? "drop-shadow(0 0 5px rgba(255,255,255,0.65)) drop-shadow(0 8px 8px rgba(0,0,0,0.42))"
-    : "drop-shadow(0 8px 7px rgba(0,0,0,0.40))";
+    ? "drop-shadow(0 0 5px rgba(255,255,255,0.68)) drop-shadow(0 9px 8px rgba(0,0,0,0.45))"
+    : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
+
+  const markerOpacity =
+    kind === "driver" && stale ? "0.88" : "1";
 
   return `
     <svg
@@ -179,72 +329,141 @@ function operationalPinSvg({
       viewBox="0 0 48 60"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      style="overflow:visible;filter:${selectedShadow}"
+      style="overflow:visible;filter:${selectedShadow};opacity:${markerOpacity}"
     >
       <defs>
-        <linearGradient id="${bodyId}" x1="10" y1="5" x2="36" y2="53" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="${bodyId}"
+          x1="9"
+          y1="3"
+          x2="38"
+          y2="54"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0" stop-color="${top}"/>
-          <stop offset="0.46" stop-color="${middle}"/>
+          <stop offset="0.18" stop-color="${middle}"/>
+          <stop offset="0.63" stop-color="${middle}"/>
           <stop offset="1" stop-color="${bottom}"/>
         </linearGradient>
 
-        <radialGradient id="${innerId}" cx="35%" cy="28%" r="80%">
+        <radialGradient id="${innerId}" cx="32%" cy="24%" r="82%">
           <stop offset="0" stop-color="#ffffff"/>
-          <stop offset="0.62" stop-color="#f8fafc"/>
-          <stop offset="1" stop-color="#cbd5e1"/>
+          <stop offset="0.48" stop-color="#f8fafc"/>
+          <stop offset="0.78" stop-color="#e2e8f0"/>
+          <stop offset="1" stop-color="#b8c3cf"/>
         </radialGradient>
+
+        <filter
+          id="${innerShadowId}"
+          x="-30%"
+          y="-30%"
+          width="160%"
+          height="160%"
+        >
+          <feDropShadow
+            dx="0"
+            dy="1.2"
+            stdDeviation="1.2"
+            flood-color="#020617"
+            flood-opacity="0.48"
+          />
+        </filter>
       </defs>
 
       <ellipse
         cx="24"
-        cy="57.2"
-        rx="9.8"
-        ry="2.4"
+        cy="57.1"
+        rx="10.2"
+        ry="2.5"
         fill="#020617"
-        opacity="0.30"
+        opacity="0.32"
       />
 
       <path
         d="M24 2.2C12.35 2.2 3 11.45 3 23c0 15.9 21 34.8 21 34.8S45 38.9 45 23C45 11.45 35.65 2.2 24 2.2Z"
         fill="url(#${bodyId})"
         stroke="${selected ? "#ffffff" : edge}"
-        stroke-width="${selected ? "2.4" : "1.6"}"
+        stroke-width="${selected ? "2.5" : "1.7"}"
         stroke-linejoin="round"
       />
 
       <path
-        d="M7.2 29.4C11.8 41.8 24 54.1 24 54.1s12.2-12.3 16.8-24.7c-4.7 5.5-10.2 8.3-16.8 8.3S11.9 34.9 7.2 29.4Z"
+        d="M7 29.1C11.5 42 24 54.5 24 54.5S36.5 42 41 29.1c-4.6 5.8-10.3 8.7-17 8.7S11.6 34.9 7 29.1Z"
         fill="#020617"
-        opacity="0.12"
+        opacity="0.15"
       />
 
       <path
-        d="M10.1 19.4C11.7 11 18.6 6.4 27.6 7c-6.2 1.3-11.3 5.1-14.3 11.4-1 2-3.7 2.7-3.2 1Z"
+        d="M8.7 20.1C10.7 10.8 18.5 5.9 28.4 6.9c-7.1 1.2-12.5 5.3-15.4 11.7-1.2 2.5-4.8 3.5-4.3 1.5Z"
         fill="#ffffff"
-        opacity="0.33"
+        opacity="0.38"
       />
 
       <circle
         cx="24"
-        cy="21.5"
-        r="13"
+        cy="22"
+        r="13.1"
         fill="#020617"
-        opacity="0.17"
+        opacity="0.31"
       />
 
       <circle
         cx="24"
         cy="21"
-        r="11.3"
+        r="11.5"
         fill="url(#${innerId})"
         stroke="#ffffff"
-        stroke-width="1.3"
-        stroke-opacity="0.82"
+        stroke-width="1.4"
+        stroke-opacity="0.96"
+        filter="url(#${innerShadowId})"
       />
 
-      ${operationalPinIconSvg(kind)}
+      <path
+        d="M17.2 17.5c1.7-3.2 4.5-4.8 8.3-4.8"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="1.25"
+        stroke-linecap="round"
+        opacity="0.72"
+      />
+
+      ${operationalPinIconSvg(kind, vehicleCategoryCode)}
     </svg>
   `;
+}
+
+function OperationalPinLegend({
+  kind,
+  stale = false,
+  vehicleCategoryCode = null,
+}: {
+  kind: OperationalPinKind;
+  stale?: boolean;
+  vehicleCategoryCode?: string | null;
+}) {
+  const markup = operationalPinSvg({
+    kind,
+    key: `legend-${kind}-${stale ? "stale" : "fresh"}`,
+    stale,
+    vehicleCategoryCode,
+  });
+
+  return (
+    <span
+      className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-visible"
+      aria-hidden="true"
+    >
+      <span
+        className="pointer-events-none absolute block h-[60px] w-[48px]"
+        style={{
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%) scale(0.38)",
+        }}
+        dangerouslySetInnerHTML={{ __html: markup }}
+      />
+    </span>
+  );
 }
 
 function VehicleModeIcon({
@@ -955,6 +1174,7 @@ export default function MarketplaceOperationalMap({
           key: driver.driverUserId,
           selected: Boolean(driver.activeJobId),
           stale: !driver.locationFresh,
+          vehicleCategoryCode: driver.vehicleCategoryCode,
         });
 
         element.setAttribute("role", "img");
@@ -971,7 +1191,7 @@ export default function MarketplaceOperationalMap({
 
         caption.style.borderColor = driver.locationFresh
           ? "rgba(249,115,22,0.60)"
-          : "rgba(245,158,11,0.60)";
+          : "rgba(242,140,40,0.60)";
 
         element.style.cursor = driver.activeJobId ? "pointer" : "default";
 
@@ -2072,23 +2292,26 @@ export default function MarketplaceOperationalMap({
               </div>
               <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                  <OperationalPinLegend
+                    kind="driver"
+                    vehicleCategoryCode="tricycle"
+                  />
                   <span>Conductor con señal reciente</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                  <OperationalPinLegend
+                    kind="driver"
+                    stale
+                    vehicleCategoryCode="tricycle"
+                  />
                   <span>Última ubicación conocida</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px]">
-                    👤
-                  </span>
+                  <OperationalPinLegend kind="customer" />
                   <span>Cliente</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400 text-[10px]">
-                    🏁
-                  </span>
+                  <OperationalPinLegend kind="destination" />
                   <span>Destino</span>
                 </div>
                 <div className="flex items-center gap-2">
