@@ -1684,40 +1684,53 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
         <TabsContent value="trabajos" className="mt-3">
           <div className="space-y-3 sm:space-y-4">
-            <section className="rounded-[22px] border border-white/10 bg-gradient-to-br from-background/70 via-background/45 to-emerald-500/[0.025] p-3 shadow-[0_22px_60px_-44px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-4">
-              <div className="mb-3 flex flex-col gap-3 rounded-[18px] border border-white/10 bg-background/45 p-2.5 shadow-[0_16px_42px_-32px_rgba(0,0,0,0.95)] backdrop-blur-xl xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-1.5 text-xs font-semibold text-emerald-200">
-                    <BriefcaseBusiness className="h-3.5 w-3.5" />
+            <section className="relative overflow-hidden rounded-[26px] border border-emerald-400/16 bg-gradient-to-br from-emerald-500/[0.055] via-background/60 to-cyan-500/[0.025] p-3 shadow-[0_24px_70px_-48px_rgba(16,185,129,0.85)] backdrop-blur-xl sm:p-4">
+              <img
+                src="/admin-premium/operations.svg"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute right-0 top-0 hidden h-60 w-[38%] object-cover object-right opacity-[0.12] mix-blend-screen md:block xl:w-[34%]"
+              />
+
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/20 to-emerald-500/[0.015]" />
+
+              <div className="relative mb-3 flex flex-col gap-3 rounded-[20px] border border-emerald-400/14 bg-background/55 p-3 shadow-[0_18px_46px_-34px_rgba(16,185,129,0.75)] backdrop-blur-md xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/[0.10] px-3 py-2 text-xs font-semibold text-emerald-100 shadow-inner shadow-emerald-500/[0.04]">
+                    <BriefcaseBusiness className="h-4 w-4" />
                     {jobs.isLoading
                       ? "Consultando..."
                       : `${jobRows.length} ${jobRows.length === 1 ? "trabajo" : "trabajos"}`}
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.055] px-2.5 py-1.5 text-[11px] text-emerald-200">
-                    Publicados
-                    <strong className="text-foreground">
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/16 bg-emerald-500/[0.055] px-3 py-2 text-[11px] text-emerald-200">
+                    <span>Publicados</span>
+                    <strong className="rounded-md bg-emerald-500/[0.10] px-1.5 py-0.5 text-foreground">
                       {overview.data?.jobsPublished ?? 0}
                     </strong>
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1.5 text-[11px] text-cyan-200">
-                    Activos
-                    <strong className="text-foreground">
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/16 bg-cyan-500/[0.055] px-3 py-2 text-[11px] text-cyan-200">
+                    <span>Activos</span>
+                    <strong className="rounded-md bg-cyan-500/[0.10] px-1.5 py-0.5 text-foreground">
                       {overview.data?.jobsActive ?? 0}
                     </strong>
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/[0.055] px-2.5 py-1.5 text-[11px] text-rose-200">
-                    Incidencias
-                    <strong className="text-foreground">
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-rose-400/16 bg-rose-500/[0.05] px-3 py-2 text-[11px] text-rose-200">
+                    <span>Incidencias</span>
+                    <strong className="rounded-md bg-rose-500/[0.09] px-1.5 py-0.5 text-foreground">
                       {overview.data?.jobsIncidentOpen ?? 0}
                     </strong>
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <FilterSelect labelText="Estado" value={status} onChange={setStatus}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:justify-end">
+                  <FilterSelect
+                    labelText="Estado"
+                    value={status}
+                    onChange={setStatus}
+                  >
                     <option value="">Todos los estados</option>
                     {statusOptions.map((item) => (
                       <option key={item} value={item}>
@@ -1726,29 +1739,50 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     ))}
                   </FilterSelect>
 
-                  <FilterSelect labelText="Servicio" value={service} onChange={setService}>
+                  <FilterSelect
+                    labelText="Servicio"
+                    value={service}
+                    onChange={setService}
+                  >
                     <option value="">Todos los servicios</option>
-                    {[...new Set([...services, "passenger", "cargo", "courier", "tourism"])].map(
-                      (item) => (
-                        <option key={item} value={item}>
-                          {label(item)}
-                        </option>
-                      ),
-                    )}
+                    {[...new Set([
+                      ...services,
+                      "passenger",
+                      "cargo",
+                      "courier",
+                      "tourism",
+                    ])].map((item) => (
+                      <option key={item} value={item}>
+                        {label(item)}
+                      </option>
+                    ))}
                   </FilterSelect>
                 </div>
               </div>
               {jobs.isLoading ? (
                 <LoadingState />
               ) : !jobRows.length ? (
-                <div className="flex min-h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-border/65 bg-background/35 px-5 py-6 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
-                    <BriefcaseBusiness className="h-4.5 w-4.5" />
+                <div className="relative flex min-h-44 overflow-hidden rounded-[22px] border border-dashed border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.035] via-background/42 to-cyan-500/[0.02] px-5 py-8">
+                  <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/[0.035] blur-3xl" />
+
+                  <div className="relative m-auto flex flex-col items-center text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/22 bg-emerald-500/[0.08] text-emerald-300 shadow-[0_14px_34px_-20px_rgba(16,185,129,0.8)]">
+                      <BriefcaseBusiness className="h-5 w-5" />
+                    </div>
+
+                    <p className="mt-4 font-semibold text-foreground">
+                      No hay trabajos
+                    </p>
+
+                    <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
+                      No existen operaciones que coincidan con los filtros seleccionados.
+                    </p>
+
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-emerald-300/70">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
+                      Operación sin actividad pendiente
+                    </div>
                   </div>
-                  <p className="mt-3 font-semibold text-foreground">No hay trabajos</p>
-                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    No existen operaciones que coincidan con los filtros seleccionados.
-                  </p>
                 </div>
               ) : (
                 <>

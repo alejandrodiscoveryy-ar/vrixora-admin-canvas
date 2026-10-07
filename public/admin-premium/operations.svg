@@ -1,0 +1,41 @@
+<svg width="760" height="420" viewBox="0 0 760 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="line" x1="300" y1="70" x2="680" y2="350" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="0.52" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(560 200) rotate(150) scale(270 210)">
+      <stop stop-color="#34D399" stop-opacity="0.19"/>
+      <stop offset="0.52" stop-color="#22D3EE" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="560" cy="200" rx="270" ry="210" fill="url(#glow)"/>
+
+  <g opacity="0.68" stroke="url(#line)" stroke-width="3">
+    <rect x="390" y="105" width="98" height="76" rx="18"/>
+    <path d="M415 105V91C415 82 422 75 431 75H447C456 75 463 82 463 91V105"/>
+    <path d="M416 143H462"/>
+
+    <circle cx="595" cy="135" r="38"/>
+    <path d="M575 135L589 149L616 119"/>
+
+    <path d="M411 275C457 225 506 213 553 231C592 246 620 241 653 207"/>
+    <path d="M636 205L655 205L654 225"/>
+
+    <circle cx="411" cy="275" r="12"/>
+    <circle cx="553" cy="231" r="12"/>
+    <circle cx="653" cy="207" r="12"/>
+
+    <rect x="481" y="292" width="142" height="48" rx="16"/>
+    <path d="M505 316H599"/>
+  </g>
+
+  <g opacity="0.42" stroke="url(#line)" stroke-width="2">
+    <path d="M330 337C397 372 471 379 537 360"/>
+    <path d="M344 71C393 47 445 42 494 51"/>
+  </g>
+</svg>
