@@ -1992,8 +1992,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canPayments ? (
           <>
             <TabsContent value="billeteras" className="mt-3">
-          <section className="overflow-hidden rounded-[24px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.045] via-background/55 to-background/35">
-            <div className="flex flex-col gap-3 border-b border-border/55 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <section className="relative overflow-hidden rounded-[26px] border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.065] via-background/60 to-background/40 shadow-[0_28px_80px_-52px_rgba(245,158,11,0.95)]">
+            <img
+              src="/admin-premium/wallets.svg"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute right-0 top-0 h-60 w-[42%] object-cover object-right opacity-[0.16] mix-blend-screen"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/18 to-amber-500/[0.025]" />
+            <div className="relative z-[1] flex flex-col gap-3 border-b border-amber-400/15 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/[0.09] text-amber-300">
                   <Wallet className="h-4.5 w-4.5" />
@@ -2015,7 +2022,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               </div>
             </div>
 
-            <div className="p-3 sm:p-4">
+            <div className="relative z-[1] p-3 sm:p-4">
               {wallets.isLoading ? (
                 <LoadingState />
               ) : !walletRows.length ? (
@@ -2035,9 +2042,17 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       return (
                         <article
                           key={wallet.userId}
-                          className="rounded-2xl border border-border/55 bg-background/50 p-3.5 transition hover:border-amber-500/20 hover:bg-background/65 sm:p-4"
+                          className="group relative overflow-hidden rounded-[20px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3.5 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4"
                         >
-                          <div className="grid gap-3 xl:grid-cols-[minmax(210px,1.2fr)_repeat(4,minmax(120px,1fr))] xl:items-center">
+                          <img
+                            src="/admin-premium/wallets.svg"
+                            alt=""
+                            aria-hidden="true"
+                            className="pointer-events-none absolute right-0 top-0 h-full w-56 object-cover object-right opacity-[0.045] mix-blend-screen"
+                          />
+                          <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-amber-400/[0.03] blur-3xl" />
+
+                          <div className="relative grid gap-3 xl:grid-cols-[minmax(210px,1.2fr)_repeat(4,minmax(120px,1fr))] xl:items-center">
                             <div className="min-w-0">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                 Conductor
