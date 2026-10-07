@@ -1080,9 +1080,13 @@ export default function MarketplaceOperationalMap({
 
       mapboxgl.accessToken = config.accessToken;
 
+      const mapStyleUrl = config.mapStyle.startsWith("mapbox://styles/")
+        ? config.mapStyle
+        : `mapbox://styles/${config.mapStyle}`;
+
       map = new mapboxgl.Map({
         container: current,
-        style: `mapbox://styles/${config.mapStyle}`,
+        style: mapStyleUrl,
         center: [-82.3666, 23.1136],
         zoom: 11,
         attributionControl: false,
