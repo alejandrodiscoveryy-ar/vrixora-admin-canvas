@@ -1036,7 +1036,10 @@ export default function MarketplaceOperationalMap({
       });
     };
 
-    const markReady = () => {
+    let stylePrepared = false;
+    let lastMapError: string | null = null;
+
+    const prepareStyle = () => {
       if (
         disposed ||
         !map ||
@@ -1045,14 +1048,54 @@ export default function MarketplaceOperationalMap({
         return;
       }
 
-      ready = true;
+      if (!stylePrepared) {
+        addOperationalLayers(map);
+        stylePrepared = true;
+      }
 
-      addOperationalLayers(map);
       settleMap();
+    };
+
+    const markReady = () => {
+      if (
+        disposed ||
+        !map ||
+        mapRef.current !== map ||
+        !map.isStyleLoaded()
+      ) {
+        return;
+      }
+
+      prepareStyle();
+      ready = true;
 
       mapInitRetryRef.current = 0;
       setMapLoadError(null);
-      setMapLoaded(true);
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (
+            !disposed &&
+            map &&
+            mapRef.current === map
+          ) {
+            map.resize();
+            map.triggerRepaint();
+            setMapLoaded(true);
+          }
+        });
+      });
+    };
+
+    const captureMapError = (event: unknown) => {
+      const candidate = (event as { error?: unknown }).error;
+
+      lastMapError =
+        candidate instanceof Error
+          ? candidate.message
+          : candidate
+            ? String(candidate)
+            : "Error de carga de Mapbox";
     };
 
     const initialize = () => {
@@ -1106,11 +1149,13 @@ export default function MarketplaceOperationalMap({
         "bottom-left",
       );
 
-      map.on("style.load", markReady);
-      map.on("load", markReady);
+      map.on("style.load", prepareStyle);
+      map.on("load", prepareStyle);
+      map.on("idle", markReady);
+      map.on("error", captureMapError);
 
       if (map.isStyleLoaded()) {
-        markReady();
+        prepareStyle();
       } else {
         settleMap();
       }
@@ -1131,8 +1176,10 @@ export default function MarketplaceOperationalMap({
         if (mapInitRetryRef.current < 1) {
           mapInitRetryRef.current += 1;
 
-          map.off("style.load", markReady);
-          map.off("load", markReady);
+          map.off("style.load", prepareStyle);
+          map.off("load", prepareStyle);
+          map.off("idle", markReady);
+          map.off("error", captureMapError);
           map.remove();
 
           if (mapRef.current === map) {
@@ -1146,7 +1193,9 @@ export default function MarketplaceOperationalMap({
         }
 
         setMapLoadError(
-          "El mapa no completó su carga inicial.",
+          lastMapError
+            ? `Mapbox no pudo completar la carga: ${lastMapError}`
+            : "El mapa no completó su carga inicial.",
         );
       }, 4500);
     };
@@ -1196,8 +1245,10 @@ export default function MarketplaceOperationalMap({
       jobHoverPopupRef.current = null;
 
       if (map) {
-        map.off("style.load", markReady);
-        map.off("load", markReady);
+        map.off("style.load", prepareStyle);
+        map.off("load", prepareStyle);
+        map.off("idle", markReady);
+        map.off("error", captureMapError);
 
         if (mapRef.current === map) {
           map.remove();
