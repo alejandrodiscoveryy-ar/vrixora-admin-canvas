@@ -37,8 +37,6 @@ import {
   type MarketplaceDriverFinancial360,
 } from "@/lib/services";
 import { useProjectPermissions } from "@/hooks/useProjects";
-import { MetricCard } from "@/components/admin/MetricCard";
-import { KpiGrid } from "@/components/admin/KpiGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1518,37 +1516,172 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           ) : null}
         </TabsList>
 <TabsContent value="resumen">
-          <KpiGrid columns={4} density="compact">
-            {[
-              ["Conductores", overview.data?.driversTotal, Users],
-              ["Activos", overview.data?.driversActive, Users],
-              ["En promoción", overview.data?.driversTrialActive, BriefcaseBusiness],
-              ["Post-promoción activos", overview.data?.driversPostTrialActive, WalletCards],
-              ["Trabajos publicados", overview.data?.jobsPublished, BriefcaseBusiness],
-              ["Trabajos activos", overview.data?.jobsActive, BriefcaseBusiness],
-              ["Incidencias abiertas", overview.data?.jobsIncidentOpen, AlertTriangle],
-            ].map(([name, value, Icon]) => (
-              <MetricCard
-                key={String(name)}
-                label={String(name)}
-                value={Number(value ?? 0)}
-                icon={Icon as typeof Users}
-                module="pagos"
-                isLoading={overview.isLoading}
-              />
-            ))}
+          <PremiumPanel
+            title="Pulso operativo"
+            description="Visión general del estado actual del Marketplace"
+            icon={Eye}
+            tone="emerald"
+            backgroundImage="/admin-premium/overview.svg"
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                {
+                  label: "Conductores",
+                  eyebrow: "Equipo",
+                  value: overview.data?.driversTotal,
+                  Icon: Users,
+                  shell:
+                    "border-cyan-400/18 bg-gradient-to-br from-cyan-500/[0.075] via-background/62 to-background/45",
+                  icon:
+                    "border-cyan-400/20 bg-cyan-500/[0.09] text-cyan-300",
+                  glow: "bg-cyan-400/[0.07]",
+                },
+                {
+                  label: "Activos",
+                  eyebrow: "Operación",
+                  value: overview.data?.driversActive,
+                  Icon: Users,
+                  shell:
+                    "border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.075] via-background/62 to-background/45",
+                  icon:
+                    "border-emerald-400/20 bg-emerald-500/[0.09] text-emerald-300",
+                  glow: "bg-emerald-400/[0.07]",
+                },
+                {
+                  label: "En promoción",
+                  eyebrow: "Beneficio",
+                  value: overview.data?.driversTrialActive,
+                  Icon: BriefcaseBusiness,
+                  shell:
+                    "border-violet-400/18 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-background/45",
+                  icon:
+                    "border-violet-400/20 bg-violet-500/[0.09] text-violet-300",
+                  glow: "bg-violet-400/[0.07]",
+                },
+                {
+                  label: "Post-promoción activos",
+                  eyebrow: "Comercial",
+                  value: overview.data?.driversPostTrialActive,
+                  Icon: WalletCards,
+                  shell:
+                    "border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-background/45",
+                  icon:
+                    "border-amber-400/20 bg-amber-500/[0.08] text-amber-300",
+                  glow: "bg-amber-400/[0.06]",
+                },
+                {
+                  label: "Trabajos publicados",
+                  eyebrow: "Marketplace",
+                  value: overview.data?.jobsPublished,
+                  Icon: BriefcaseBusiness,
+                  shell:
+                    "border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.065] via-background/62 to-cyan-500/[0.02]",
+                  icon:
+                    "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300",
+                  glow: "bg-emerald-400/[0.06]",
+                },
+                {
+                  label: "Trabajos activos",
+                  eyebrow: "Actividad",
+                  value: overview.data?.jobsActive,
+                  Icon: BriefcaseBusiness,
+                  shell:
+                    "border-cyan-400/18 bg-gradient-to-br from-cyan-500/[0.065] via-background/62 to-violet-500/[0.02]",
+                  icon:
+                    "border-cyan-400/20 bg-cyan-500/[0.08] text-cyan-300",
+                  glow: "bg-cyan-400/[0.06]",
+                },
+                {
+                  label: "Incidencias abiertas",
+                  eyebrow: "Atención",
+                  value: overview.data?.jobsIncidentOpen,
+                  Icon: AlertTriangle,
+                  shell:
+                    "border-rose-400/18 bg-gradient-to-br from-rose-500/[0.07] via-background/62 to-background/45",
+                  icon:
+                    "border-rose-400/20 bg-rose-500/[0.08] text-rose-300",
+                  glow: "bg-rose-400/[0.06]",
+                },
+              ].map(
+                ({
+                  label: metricLabel,
+                  eyebrow,
+                  value,
+                  Icon,
+                  shell,
+                  icon,
+                  glow,
+                }) => (
+                  <article
+                    key={metricLabel}
+                    className={`group relative min-h-[128px] overflow-hidden rounded-[22px] border p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${shell}`}
+                  >
+                    <div
+                      className={`pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl ${glow}`}
+                    />
 
-            {!overview.isLoading && overview.data?.pendingTopups !== null ? (
-              <MetricCard
-                label="Recargas pendientes"
-                value={overview.data?.pendingTopups ?? 0}
-                icon={WalletCards}
-                module="pagos"
-              />
-            ) : null}
-          </KpiGrid>
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            {eyebrow}
+                          </p>
+                          <p className="mt-1.5 text-xs font-semibold text-foreground/80">
+                            {metricLabel}
+                          </p>
+                        </div>
+
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${icon}`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      <div className="mt-5">
+                        {overview.isLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        ) : (
+                          <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
+                            {Number(value ?? 0)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ),
+              )}
+
+              {!overview.isLoading &&
+              overview.data?.pendingTopups !== null ? (
+                <article className="group relative min-h-[128px] overflow-hidden rounded-[22px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5">
+                  <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-amber-400/[0.06] blur-3xl" />
+
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Finanzas
+                        </p>
+                        <p className="mt-1.5 text-xs font-semibold text-foreground/80">
+                          Recargas pendientes
+                        </p>
+                      </div>
+
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-500/[0.08] text-amber-300">
+                        <WalletCards className="h-4 w-4" />
+                      </div>
+                    </div>
+
+                    <p className="mt-5 font-mono text-3xl font-bold tracking-tight text-foreground">
+                      {overview.data?.pendingTopups ?? 0}
+                    </p>
+                  </div>
+                </article>
+              ) : null}
+            </div>
+          </PremiumPanel>
         </TabsContent>
-
         <TabsContent value="trabajos" className="mt-3">
           <div className="space-y-3 sm:space-y-4">
             <section className="rounded-[22px] border border-white/10 bg-gradient-to-br from-background/70 via-background/45 to-emerald-500/[0.025] p-3 shadow-[0_22px_60px_-44px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-4">
