@@ -269,6 +269,7 @@ function PremiumPanel({
   icon: Icon,
   tone = "emerald",
   action,
+  backgroundImage,
   children,
 }: {
   title: string;
@@ -276,15 +277,28 @@ function PremiumPanel({
   icon: typeof BriefcaseBusiness;
   tone?: PanelTone;
   action?: ReactNode;
+  backgroundImage?: string;
   children: ReactNode;
 }) {
   const visual = panelVisuals[tone];
 
   return (
     <section className={`relative overflow-hidden rounded-2xl border shadow-sm ${visual.card}`}>
-      <div className={`h-1 bg-gradient-to-r ${visual.strip}`} />
+      {backgroundImage ? (
+        <>
+          <img
+            src={backgroundImage}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 h-56 w-[42%] object-cover object-right opacity-[0.17] mix-blend-screen"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/20 to-cyan-500/[0.025]" />
+        </>
+      ) : null}
 
-      <div className="flex flex-col gap-4 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`relative z-[1] h-1 bg-gradient-to-r ${visual.strip}`} />
+
+      <div className="relative z-[1] flex flex-col gap-4 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${visual.icon}`}
@@ -303,7 +317,7 @@ function PremiumPanel({
         {action}
       </div>
 
-      <div className="p-5">{children}</div>
+      <div className="relative z-[1] p-5">{children}</div>
     </section>
   );
 }
@@ -2114,9 +2128,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 }
                 icon={Banknote}
                 tone="cyan"
+                backgroundImage="/admin-premium/topups.svg"
                 action={
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-background/50 p-1">
+                    <div className="flex flex-wrap gap-1 rounded-2xl border border-cyan-400/15 bg-background/60 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-sm">
                       {[
                         ["", "Todas"],
                         ["requested", "Pendientes"],
@@ -2137,6 +2152,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                     {canManagePayments ? (
                       <Button
+                        className="rounded-xl border border-cyan-300/20 shadow-[0_0_26px_-12px_rgba(34,211,238,0.95)]"
                         onClick={() => {
                           setError(null);
                           setNewTopup(true);
@@ -2168,9 +2184,17 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         return (
                           <article
                             key={item.topupId}
-                            className="rounded-2xl border border-border/65 bg-background/45 p-4"
+                            className="group relative overflow-hidden rounded-[22px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.045] via-background/60 to-background/45 p-4 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.85)] transition-colors hover:border-cyan-400/25"
                           >
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <img
+                              src="/admin-premium/topups.svg"
+                              alt=""
+                              aria-hidden="true"
+                              className="pointer-events-none absolute right-0 top-0 h-full w-64 object-cover object-right opacity-[0.055] mix-blend-screen"
+                            />
+                            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-cyan-400/[0.035] blur-3xl" />
+
+                            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <h4 className="font-semibold text-foreground">
@@ -2243,22 +2267,34 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ) : null}
 
                                   {receipt ? (
-                                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2 sm:col-span-2">
-                                      <p className="text-xs font-semibold text-emerald-300">
-                                        Comprobante {receipt.documentNumber}
-                                      </p>
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        Emitido {formatDate(receipt.issuedAt)}
-                                      </p>
+                                    <div className="rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.075] via-emerald-500/[0.035] to-cyan-500/[0.035] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:col-span-2">
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300">
+                                          <ShieldCheck className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-semibold text-emerald-300">
+                                            Comprobante {receipt.documentNumber}
+                                          </p>
+                                          <p className="mt-1 text-xs text-muted-foreground">
+                                            Emitido {formatDate(receipt.issuedAt)}
+                                          </p>
+                                        </div>
+                                      </div>
                                     </div>
                                   ) : null}
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                                <p className="text-xl font-semibold text-foreground">
-                                  {formatAmount(item.amount, item.currency)}
-                                </p>
+                                <div className="min-w-[118px] rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.055] px-4 py-3 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                                    Importe
+                                  </p>
+                                  <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                                    {formatAmount(item.amount, item.currency)}
+                                  </p>
+                                </div>
 
                                 {canManagePayments && item.status === "requested" ? (
                                   <Button
