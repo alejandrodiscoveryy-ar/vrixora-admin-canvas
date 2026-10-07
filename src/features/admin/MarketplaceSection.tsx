@@ -2184,7 +2184,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         return (
                           <article
                             key={item.topupId}
-                            className="group relative overflow-hidden rounded-[22px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.045] via-background/60 to-background/45 p-4 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.85)] transition-colors hover:border-cyan-400/25"
+                            className="group relative overflow-hidden rounded-[22px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.045] via-background/60 to-background/45 p-3.5 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.85)] transition-colors hover:border-cyan-400/25"
                           >
                             <img
                               src="/admin-premium/topups.svg"
@@ -2194,8 +2194,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             />
                             <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-cyan-400/[0.035] blur-3xl" />
 
-                            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="min-w-0 flex-1">
+                            <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(250px,0.72fr)_auto] lg:items-start">
+                              <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <h4 className="font-semibold text-foreground">
                                     {item.driverDisplayName}
@@ -2203,25 +2203,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   <StatusBadge status={item.status} />
                                 </div>
 
-                                <div className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                                <div className="mt-2 space-y-1.5 text-sm">
                                   <p className="text-muted-foreground">
                                     Método:{" "}
-                                    <span className="text-foreground">
+                                    <span className="font-medium text-foreground">
                                       {paymentMethodLabel(item.method)}
-                                    </span>
-                                  </p>
-
-                                  <p className="text-muted-foreground">
-                                    Solicitada:{" "}
-                                    <span className="text-foreground">
-                                      {formatDate(item.requestedAt)}
                                     </span>
                                   </p>
 
                                   {item.driverPhone ? (
                                     <p className="text-muted-foreground">
                                       Teléfono:{" "}
-                                      <span className="text-foreground">{item.driverPhone}</span>
+                                      <span className="font-medium text-foreground">
+                                        {item.driverPhone}
+                                      </span>
                                     </p>
                                   ) : null}
 
@@ -2232,66 +2227,57 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     </p>
                                   ) : null}
 
-                                  {item.confirmedAt ? (
+                                  {item.notes ? (
                                     <p className="text-muted-foreground">
-                                      Confirmada:{" "}
-                                      <span className="text-foreground">
-                                        {formatDate(item.confirmedAt)}
-                                      </span>
-                                    </p>
-                                  ) : null}
-
-                                  {item.rejectedAt ? (
-                                    <p className="text-muted-foreground">
-                                      Rechazada:{" "}
-                                      <span className="text-foreground">
-                                        {formatDate(item.rejectedAt)}
-                                      </span>
+                                      Notas:{" "}
+                                      <span className="text-foreground">{item.notes}</span>
                                     </p>
                                   ) : null}
 
                                   {item.rejectionReason ? (
-                                    <p className="text-muted-foreground sm:col-span-2">
+                                    <p className="text-muted-foreground">
                                       Motivo:{" "}
                                       <span className="text-foreground">
                                         {item.rejectionReason}
                                       </span>
                                     </p>
                                   ) : null}
-
-                                  {item.notes ? (
-                                    <p className="text-muted-foreground sm:col-span-2">
-                                      Notas:{" "}
-                                      <span className="text-foreground">{item.notes}</span>
-                                    </p>
-                                  ) : null}
-
-                                  {receipt ? (
-                                    <div className="rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.075] via-emerald-500/[0.035] to-cyan-500/[0.035] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:col-span-2">
-                                      <div className="flex items-center gap-3">
-                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300">
-                                          <ShieldCheck className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                          <p className="text-xs font-semibold text-emerald-300">
-                                            Comprobante {receipt.documentNumber}
-                                          </p>
-                                          <p className="mt-1 text-xs text-muted-foreground">
-                                            Emitido {formatDate(receipt.issuedAt)}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ) : null}
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                                <div className="min-w-[118px] rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.055] px-4 py-3 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                              <div className="grid gap-2 rounded-2xl border border-border/55 bg-background/40 px-3.5 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+                                <p className="text-muted-foreground">
+                                  Solicitada:{" "}
+                                  <span className="font-medium text-foreground">
+                                    {formatDate(item.requestedAt)}
+                                  </span>
+                                </p>
+
+                                {item.confirmedAt ? (
+                                  <p className="text-muted-foreground">
+                                    Confirmada:{" "}
+                                    <span className="font-medium text-foreground">
+                                      {formatDate(item.confirmedAt)}
+                                    </span>
+                                  </p>
+                                ) : null}
+
+                                {item.rejectedAt ? (
+                                  <p className="text-muted-foreground">
+                                    Rechazada:{" "}
+                                    <span className="font-medium text-foreground">
+                                      {formatDate(item.rejectedAt)}
+                                    </span>
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div className="flex items-center justify-between gap-3 lg:flex-col lg:items-end">
+                                <div className="min-w-[112px] rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.055] px-3.5 py-2.5 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                                   <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
                                     Importe
                                   </p>
-                                  <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                                  <p className="mt-0.5 text-xl font-semibold tracking-tight text-foreground">
                                     {formatAmount(item.amount, item.currency)}
                                   </p>
                                 </div>
@@ -2314,6 +2300,24 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 ) : null}
                               </div>
                             </div>
+
+                            {receipt ? (
+                              <div className="relative mt-3 rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.075] via-emerald-500/[0.035] to-cyan-500/[0.035] px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300">
+                                    <ShieldCheck className="h-4 w-4" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-emerald-300">
+                                      Comprobante {receipt.documentNumber}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                      Emitido {formatDate(receipt.issuedAt)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : null}
                           </article>
                         );
                       })}
