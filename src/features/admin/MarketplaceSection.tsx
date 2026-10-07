@@ -2402,7 +2402,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   src="/admin-premium/economy.svg"
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 right-0 h-full w-[58%] object-cover object-right opacity-60 mix-blend-screen"
+                  className="pointer-events-none absolute right-[-2%] top-[8%] h-[76%] w-[40%] object-contain object-right opacity-24 mix-blend-screen"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/15 to-amber-500/[0.035]" />
                 <div className="flex items-center gap-3 border-b border-amber-500/15 bg-amber-500/[0.025] px-5 py-5 sm:px-6">
@@ -2531,7 +2531,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   src="/admin-premium/test-lab.svg"
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 right-0 h-full w-[58%] object-cover object-right opacity-60 mix-blend-screen"
+                  className="pointer-events-none absolute right-[-2%] top-[8%] h-[76%] w-[40%] object-contain object-right opacity-22 mix-blend-screen"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/15 to-violet-500/[0.04]" />
                 <div className="flex items-center justify-between gap-3 border-b border-violet-500/15 bg-violet-500/[0.025] px-5 py-5 sm:px-6">
