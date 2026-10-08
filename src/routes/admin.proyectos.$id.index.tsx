@@ -149,14 +149,14 @@ function ResumenPage() {
 
   return (
     <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.85)] sm:p-3">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/72 via-background/86 to-background/95" />
+
       <img
         src="/admin-premium/overview.svg"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-[0.16] mix-blend-screen"
+        className="pointer-events-none absolute -right-10 top-8 h-[34rem] w-[68%] object-contain object-right-top opacity-[0.13] mix-blend-screen"
       />
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/68 via-background/84 to-background/95" />
 
       <div className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
 
@@ -306,12 +306,19 @@ function ResumenPage() {
           title="Captación"
           description="Recorrido comercial del período seleccionado"
           module="comercial"
-          className="border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(139,92,246,0.8)]"
-          headerClassName="px-4 py-3 sm:px-4"
+          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(139,92,246,0.8)]"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
           contentClassName="p-3 sm:p-4"
         >
+          <img
+            src="/admin-premium/customers.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-12 top-7 h-52 w-[58%] object-contain object-right opacity-[0.10] mix-blend-screen"
+          />
+
           {periodLeads.length ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="relative z-10 grid gap-3 sm:grid-cols-2">
               <SummaryItem
                 label="Leads"
                 value={periodLeads.length}
@@ -339,7 +346,7 @@ function ResumenPage() {
               title="Sin captación en el período"
               description="No hay leads comerciales registrados en las fechas seleccionadas."
               module="comercial"
-              className="min-h-[116px] py-3"
+              className="relative z-10 min-h-[116px] py-3"
             />
           )}
         </SectionCard>
@@ -348,12 +355,19 @@ function ResumenPage() {
           title="Operación Marketplace"
           description="Situación operativa actual"
           module="resumen"
-          className="border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(34,211,238,0.75)]"
-          headerClassName="px-4 py-3 sm:px-4"
+          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(34,211,238,0.75)]"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
           contentClassName="p-3 sm:p-4"
         >
+          <img
+            src="/admin-premium/operations.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-14 top-5 h-56 w-[60%] object-contain object-right opacity-[0.105] mix-blend-screen"
+          />
+
           {canViewMarketplace ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="relative z-10 grid gap-3 sm:grid-cols-2">
               <SummaryItem
                 label="Conductores activos"
                 value={overview?.driversActive ?? 0}
@@ -381,7 +395,7 @@ function ResumenPage() {
               title="Sin acceso a Marketplace"
               description="No tienes permisos para consultar los indicadores operativos."
               module="resumen"
-              className="min-h-[116px] py-3"
+              className="relative z-10 min-h-[116px] py-3"
             />
           )}
         </SectionCard>
@@ -393,8 +407,8 @@ function ResumenPage() {
             title="Actividad reciente"
             description="Últimos movimientos administrativos"
             module="resumen"
-            className="border-cyan-400/12 bg-gradient-to-br from-cyan-500/[0.03] via-surface-1 to-background/50"
-            headerClassName="px-4 py-3 sm:px-4"
+            className="relative isolate border-cyan-400/12 bg-gradient-to-br from-cyan-500/[0.03] via-surface-1 to-background/50"
+            headerClassName="relative z-10 px-4 py-3 sm:px-4"
             contentClassName="p-3.5 sm:p-4"
             actions={
               <Button asChild variant="ghost" size="sm">
@@ -408,8 +422,15 @@ function ResumenPage() {
               </Button>
             }
           >
+            <img
+              src="/admin-premium/activity.svg"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 bottom-0 h-[88%] w-[52%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+            />
+
             {recentActivity.length ? (
-              <ol className="divide-y divide-border-subtle">
+              <ol className="relative z-10 divide-y divide-border-subtle">
                 {recentActivity.map((event) => (
                   <li
                     key={event.id}
@@ -445,7 +466,7 @@ function ResumenPage() {
                 title="Sin actividad reciente"
                 description="Los próximos movimientos auditados aparecerán aquí."
                 module="resumen"
-                className="min-h-[116px] py-3"
+                className="relative z-10 min-h-[116px] py-3"
               />
             )}
           </SectionCard>
@@ -455,11 +476,17 @@ function ResumenPage() {
           <SectionCard
             title="Accesos rápidos"
             module="resumen"
-            className="border-cyan-400/12 bg-gradient-to-br from-cyan-500/[0.035] via-surface-1 to-background/50"
-            headerClassName="px-4 py-3 sm:px-4"
+            className="relative isolate border-cyan-400/12 bg-gradient-to-br from-cyan-500/[0.035] via-surface-1 to-background/50"
+            headerClassName="relative z-10 px-4 py-3 sm:px-4"
             contentClassName="grid gap-2 p-3 sm:p-3"
           >
-            <Button asChild variant="subtle" className="justify-start">
+            <img
+              src="/admin-premium/shortcuts.svg"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 bottom-0 h-full w-[72%] object-contain object-right-bottom opacity-[0.085] mix-blend-screen"
+            />
+            <Button asChild variant="subtle" className="relative z-10 justify-start">
               <Link
                 to="/admin/proyectos/$id/$section"
                 params={{ id, section: "trabajos" }}
@@ -469,7 +496,7 @@ function ResumenPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="justify-start">
+            <Button asChild variant="outline" className="relative z-10 justify-start">
               <Link
                 to="/admin/proyectos/$id/$section"
                 params={{ id, section: "clientes" }}
@@ -479,7 +506,7 @@ function ResumenPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="justify-start">
+            <Button asChild variant="outline" className="relative z-10 justify-start">
               <Link
                 to="/admin/proyectos/$id/$section"
                 params={{ id, section: "comercial" }}
@@ -489,7 +516,7 @@ function ResumenPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="justify-start">
+            <Button asChild variant="outline" className="relative z-10 justify-start">
               <Link
                 to="/admin/proyectos/$id/$section"
                 params={{ id, section: "planes" }}
