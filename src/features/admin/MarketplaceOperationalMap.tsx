@@ -801,6 +801,9 @@ export default function MarketplaceOperationalMap({
   const [mapInitNonce, setMapInitNonce] = useState(0);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const [mapViewportHeight, setMapViewportHeight] = useState<number | null>(null);
+  const [driverListMode, setDriverListMode] = useState<"working" | "resting">(
+    "working",
+  );
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -831,6 +834,16 @@ export default function MarketplaceOperationalMap({
     refetchIntervalInBackground: false,
     retry: 1,
   });
+
+  const filteredDrivers = useMemo(
+    () =>
+      (operational.data?.drivers ?? []).filter((driver) =>
+        driverListMode === "working"
+          ? driver.acceptingJobs || Boolean(driver.activeJobId)
+          : !driver.acceptingJobs && !driver.activeJobId,
+      ),
+    [driverListMode, operational.data?.drivers],
+  );
 
   const routeKey = useMemo(() => {
     const jobs = operational.data?.jobs ?? [];
@@ -1041,6 +1054,7 @@ export default function MarketplaceOperationalMap({
     };
 
     let stylePrepared = false;
+    let firstRenderArmed = false;
     let lastMapError: string | null = null;
 
     const prepareStyle = () => {
@@ -1062,6 +1076,7 @@ export default function MarketplaceOperationalMap({
 
     const markReady = () => {
       if (
+        ready ||
         disposed ||
         !map ||
         mapRef.current !== map ||
@@ -1077,18 +1092,33 @@ export default function MarketplaceOperationalMap({
       setMapLoadError(null);
 
       window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          if (
-            !disposed &&
-            map &&
-            mapRef.current === map
-          ) {
-            map.resize();
-            map.triggerRepaint();
-            setMapLoaded(true);
-          }
-        });
+        if (
+          !disposed &&
+          map &&
+          mapRef.current === map
+        ) {
+          map.resize();
+          map.triggerRepaint();
+          setMapLoaded(true);
+        }
       });
+    };
+
+    const revealOnFirstRender = () => {
+      if (
+        ready ||
+        firstRenderArmed ||
+        disposed ||
+        !map ||
+        mapRef.current !== map
+      ) {
+        return;
+      }
+
+      prepareStyle();
+      firstRenderArmed = true;
+      map.once("render", markReady);
+      map.triggerRepaint();
     };
 
     const captureMapError = (event: unknown) => {
@@ -1154,12 +1184,12 @@ export default function MarketplaceOperationalMap({
       );
 
       map.on("style.load", prepareStyle);
-      map.on("load", prepareStyle);
+      map.on("load", revealOnFirstRender);
       map.on("idle", markReady);
       map.on("error", captureMapError);
 
       if (map.isStyleLoaded()) {
-        prepareStyle();
+        revealOnFirstRender();
       } else {
         settleMap();
       }
@@ -1181,7 +1211,7 @@ export default function MarketplaceOperationalMap({
           mapInitRetryRef.current += 1;
 
           map.off("style.load", prepareStyle);
-          map.off("load", prepareStyle);
+          map.off("load", revealOnFirstRender);
           map.off("idle", markReady);
           map.off("error", captureMapError);
           map.remove();
@@ -1250,7 +1280,7 @@ export default function MarketplaceOperationalMap({
 
       if (map) {
         map.off("style.load", prepareStyle);
-        map.off("load", prepareStyle);
+        map.off("load", revealOnFirstRender);
         map.off("idle", markReady);
         map.off("error", captureMapError);
 
@@ -1327,6 +1357,8 @@ export default function MarketplaceOperationalMap({
 
     if (layers.drivers) {
       for (const driver of operational.data?.drivers ?? []) {
+        if (!driver.acceptingJobs && !driver.activeJobId) continue;
+
         const coordinate = driverCoordinate(driver);
         if (!coordinate) continue;
 
@@ -2050,48 +2082,32 @@ export default function MarketplaceOperationalMap({
                   className="absolute inset-0 h-full w-full"
                 />
 
-                {!mapLoaded ? (
+                {!mapLoaded && mapLoadError ? (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/78 px-6 text-center backdrop-blur-sm">
-                    <div className="rounded-[22px] border border-cyan-400/15 bg-background/70 px-6 py-5 shadow-[0_20px_60px_-38px_rgba(34,211,238,0.8)]">
-                      {mapLoadError ? (
-                        <>
-                          <MapPin className="mx-auto h-7 w-7 text-amber-300" />
+                    <div className="rounded-[22px] border border-amber-400/20 bg-background/75 px-6 py-5 shadow-[0_20px_60px_-38px_rgba(251,191,36,0.65)]">
+                      <MapPin className="mx-auto h-7 w-7 text-amber-300" />
 
-                          <p className="mt-3 text-sm font-semibold text-foreground">
-                            El mapa necesita reintentarse
-                          </p>
+                      <p className="mt-3 text-sm font-semibold text-foreground">
+                        El mapa necesita reintentarse
+                      </p>
 
-                          <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-                            {mapLoadError}
-                          </p>
+                      <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
+                        {mapLoadError}
+                      </p>
 
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="pointer-events-auto mt-4"
-                            onClick={() => {
-                              mapInitRetryRef.current = 0;
-                              setMapLoadError(null);
-                              setMapInitNonce((value) => value + 1);
-                            }}
-                          >
-                            <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                            Reintentar mapa
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="mx-auto h-6 w-6 animate-spin text-cyan-300" />
-
-                          <p className="mt-3 text-sm font-semibold text-foreground">
-                            Cargando mapa operativo
-                          </p>
-
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Preparando el mapa y ajustando el área visible…
-                          </p>
-                        </>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="pointer-events-auto mt-4"
+                        onClick={() => {
+                          mapInitRetryRef.current = 0;
+                          setMapLoadError(null);
+                          setMapInitNonce((value) => value + 1);
+                        }}
+                      >
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                        Reintentar mapa
+                      </Button>
                     </div>
                   </div>
                 ) : null}
@@ -2407,27 +2423,46 @@ export default function MarketplaceOperationalMap({
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.055] px-3 py-2.5">
+                <button
+                  type="button"
+                  aria-pressed={driverListMode === "working"}
+                  onClick={() => setDriverListMode("working")}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    driverListMode === "working"
+                      ? "border-emerald-400/45 bg-emerald-500/[0.11] shadow-[0_10px_28px_-20px_rgba(52,211,153,0.8)]"
+                      : "border-emerald-500/15 bg-emerald-500/[0.035] hover:border-emerald-400/30"
+                  }`}
+                >
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
                     Trabajando
                   </p>
                   <p className="mt-1 text-xl font-semibold text-foreground">
                     {data.summary.workingDrivers}
                   </p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-background/35 px-3 py-2.5 backdrop-blur-md">
+                </button>
+
+                <button
+                  type="button"
+                  aria-pressed={driverListMode === "resting"}
+                  onClick={() => setDriverListMode("resting")}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    driverListMode === "resting"
+                      ? "border-slate-400/40 bg-slate-500/[0.12] shadow-[0_10px_28px_-20px_rgba(148,163,184,0.55)]"
+                      : "border-white/10 bg-background/35 hover:border-white/20"
+                  }`}
+                >
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                     Descansando
                   </p>
                   <p className="mt-1 text-xl font-semibold text-foreground">
                     {data.summary.inactiveDrivers}
                   </p>
-                </div>
+                </button>
               </div>
 
               <div className="mt-3 max-h-[46vh] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
-                {data.drivers.length ? (
-                  data.drivers.map((driver) => {
+                {filteredDrivers.length ? (
+                  filteredDrivers.map((driver) => {
                     const hasLastPosition = driverCoordinate(driver) != null;
                     return (
                       <div
@@ -2508,7 +2543,9 @@ export default function MarketplaceOperationalMap({
                   })
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    No hay conductores activos.
+                    {driverListMode === "working"
+                      ? "No hay conductores trabajando."
+                      : "No hay conductores descansando."}
                   </p>
                 )}
               </div>
