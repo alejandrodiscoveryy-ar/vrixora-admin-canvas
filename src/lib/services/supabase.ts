@@ -3005,6 +3005,29 @@ export const supabaseServices: AdminServices = {
           items.length === limit && last ? { at: last.incidentOpenedAt, id: last.jobId } : null,
       };
     },
+    async finishJob(_projectId, input) {
+      await requireOnline("Finalizar carrera");
+
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_finish_marketplace_job",
+        {
+          target_job_id: input.jobId,
+          target_reason: input.reason,
+          target_idempotency_key: input.idempotencyKey,
+        },
+      );
+
+      throwIfError(error);
+
+      const result = data as Record<string, unknown> | null;
+      if (
+        !result ||
+        String(result.id ?? "") !== input.jobId ||
+        result.status !== "settled"
+      ) {
+        throw new Error("ADMIN_FINISH_RESPONSE_INVALID");
+      }
+    },
     async resolveIncident(projectId, input) {
       await requireOnline("Resolver incidencia");
       const { data, error } = await getSupabaseClient().rpc("admin_resolve_marketplace_incident", {

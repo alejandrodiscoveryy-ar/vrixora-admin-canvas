@@ -103,6 +103,12 @@ const errorText = (error: unknown) =>
         INVALID_COMMISSION_RATE: "La comisión debe ser mayor que 0 % y no superar 100 %.",
         MARKETPLACE_FINANCIAL_SETTINGS_NOT_FOUND:
           "No existe la configuración comercial del Marketplace para este proyecto.",
+        ADMIN_FINISH_REASON_REQUIRED: "Debes indicar el motivo del cierre.",
+        ADMIN_FINISH_RESPONSE_INVALID: "No se pudo verificar el cierre. Actualiza los trabajos.",
+        FINISH_REASON_TOO_LONG: "El motivo no puede superar 1000 caracteres.",
+        INVALID_JOB_TRANSITION: "La carrera ya no permite esta operación. Actualiza la lista.",
+        SETTLEMENT_PRECONDITION_FAILED: "La liquidación requiere una revisión antes de continuar.",
+        INSUFFICIENT_MARKETPLACE_WALLET_BALANCE: "No se puede liquidar por saldo insuficiente.",
         RESOLUTION_NOTE_REQUIRED: "La nota de resolución es obligatoria.",
         SUSPENSION_REASON_REQUIRED: "El motivo es obligatorio.",
         JOB_NOT_IN_INCIDENT: "El trabajo ya no está en incidencia.",
@@ -999,6 +1005,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   } | null>(null);
   const [driver360Id, setDriver360Id] = useState<string | null>(null);
   const [incident, setIncident] = useState<string | null>(null);
+  const [adminFinish, setAdminFinish] = useState<{
+    jobId: string;
+    idempotencyKey: string;
+  } | null>(null);
+  const [adminFinishReason, setAdminFinishReason] = useState("");
+  const [adminFinishError, setAdminFinishError] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [resolution, setResolution] = useState<"completed" | "cancelled">("completed");
   const [error, setError] = useState<string | null>(null);
@@ -1028,6 +1040,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const canSettings = permissions.includes("settings.view");
   const canManageSettings = permissions.includes("settings.manage");
   const canManageMarketplace = permissions.includes("marketplace.manage");
+  const canFinishAdmin = canManageMarketplace && canManagePayments;
 
   const queryClient = useQueryClient();
 
@@ -1282,6 +1295,42 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     onError: (mutationError) => setError(errorText(mutationError)),
   });
 
+  const adminFinishMutation = useMutation({
+    mutationFn: async () => {
+      if (
+        !canFinishAdmin ||
+        !adminFinish ||
+        adminFinishReason.trim().length < 8
+      ) {
+        throw new Error("ADMIN_FINISH_REASON_REQUIRED");
+      }
+
+      return supabaseServices.marketplace.finishJob(projectId, {
+        jobId: adminFinish.jobId,
+        reason: adminFinishReason.trim(),
+        idempotencyKey: adminFinish.idempotencyKey,
+      });
+    },
+    onSuccess: () => {
+      setAdminFinish(null);
+      setAdminFinishReason("");
+      setAdminFinishError(null);
+
+      void invalidate(
+        "marketplace-overview",
+        "marketplace-jobs",
+        "marketplace-job-detail",
+        "marketplace-drivers",
+        "marketplace-wallets",
+        "marketplace-incidents",
+        "marketplace-operational-map-live",
+      );
+    },
+    onError: (mutationError) => {
+      setAdminFinishError(errorText(mutationError));
+      void invalidate("marketplace-jobs", "marketplace-job-detail");
+    },
+  });
   const resolve = useMutation({
     mutationFn: () =>
       supabaseServices.marketplace.resolveIncident(projectId, {
@@ -1967,6 +2016,26 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   Abrir detalle
                                 </Button>
 
+                                {canFinishAdmin &&
+                                ["accepted", "en_route", "pickup", "in_progress"].includes(job.status) ? (
+                                  <Button
+                                    className="w-full"
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={adminFinishMutation.isPending}
+                                    onClick={() => {
+                                      setAdminFinish({
+                                        jobId: job.jobId,
+                                        idempotencyKey: crypto.randomUUID(),
+                                      });
+                                      setAdminFinishReason("");
+                                      setAdminFinishError(null);
+                                    }}
+                                  >
+                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    Finalizar carrera
+                                  </Button>
+                                ) : null}
                                 {job.isTest && canManageMarketplace ? (
                                   <Button
                                     className="w-full"
@@ -3288,6 +3357,71 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={Boolean(adminFinish)}
+        onOpenChange={(open) => {
+          if (!open && !adminFinishMutation.isPending) {
+            setAdminFinish(null);
+            setAdminFinishReason("");
+            setAdminFinishError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finalizar carrera desde Admin</DialogTitle>
+            <DialogDescription>
+              Utiliza esta operación únicamente cuando hayas confirmado que
+              el servicio terminó. El cierre quedará registrado y se aplicará
+              la liquidación correspondiente una sola vez.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="marketplace-admin-finish-reason">
+              Motivo del cierre administrativo
+            </Label>
+            <Textarea
+              id="marketplace-admin-finish-reason"
+              value={adminFinishReason}
+              maxLength={1000}
+              rows={4}
+              disabled={adminFinishMutation.isPending}
+              onChange={(event) => setAdminFinishReason(event.target.value)}
+              placeholder="Explica por qué Administración confirma el cierre"
+            />
+            <p className="text-xs text-muted-foreground">
+              Debes escribir al menos 8 caracteres. La operación no puede
+              deshacerse desde este formulario.
+            </p>
+          </div>
+
+          {adminFinishError ? (
+            <p role="alert" className="text-sm text-rose-300">
+              {adminFinishError}
+            </p>
+          ) : null}
+
+          <Button
+            className="w-full"
+            variant="destructive"
+            disabled={
+              !canFinishAdmin ||
+              !adminFinish ||
+              adminFinishReason.trim().length < 8 ||
+              adminFinishMutation.isPending
+            }
+            onClick={() => adminFinishMutation.mutate()}
+          >
+            {adminFinishMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="mr-2 h-4 w-4" />
+            )}
+            Confirmar cierre y liquidación
+          </Button>
+        </DialogContent>
+      </Dialog>
       <Dialog open={Boolean(incident)} onOpenChange={() => setIncident(null)}>
         <DialogContent>
           <DialogHeader>

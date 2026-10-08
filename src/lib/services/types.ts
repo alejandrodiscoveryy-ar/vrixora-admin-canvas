@@ -1493,6 +1493,14 @@ export interface MarketplaceAdminService {
     projectId: string,
     filters?: { resolved?: boolean; limit?: number; cursor?: MarketplaceCursor | null },
   ): Promise<MarketplacePage<MarketplaceIncident>>;
+  finishJob(
+    projectId: string,
+    input: {
+      jobId: string;
+      reason: string;
+      idempotencyKey: string;
+    },
+  ): Promise<void>;
   resolveIncident(
     projectId: string,
     input: {
