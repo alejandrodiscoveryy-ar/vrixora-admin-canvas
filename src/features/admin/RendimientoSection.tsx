@@ -342,34 +342,43 @@ export default function RendimientoSection({
           className="pointer-events-none absolute -right-12 -top-16 h-64 w-[42%] object-contain object-right opacity-[0.085] mix-blend-screen"
         />
 
-        <div className="relative z-10 mb-3 flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.10] text-cyan-200 shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
-            <BarChart3 className="h-4 w-4" />
-          </div>
+        <div className="relative z-10 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.10] text-cyan-200 shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
+                <BarChart3 className="h-4 w-4" />
+              </div>
 
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
-              Analítica
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                  Analítica
+                </p>
+                <h2 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                  Rendimiento y evolución
+                </h2>
+              </div>
+            </div>
+
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+              Uso, captación y operación en el período seleccionado.
             </p>
-            <h2 className="text-base font-semibold tracking-tight text-foreground">
-              Rendimiento y evolución
-            </h2>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center xl:justify-end">
+            <AdminPeriodSelector
+              value={period}
+              range={dateRange}
+              onChange={(nextPeriod, nextRange) => {
+                setPeriod(nextPeriod);
+                setDateRange(nextRange);
+              }}
+            />
+
+            <GrainSelect value={grain} onChange={setGrain} />
           </div>
         </div>
 
-        <div className="relative z-10 space-y-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <AdminPeriodSelector
-            value={period}
-            range={dateRange}
-            onChange={(nextPeriod, nextRange) => {
-              setPeriod(nextPeriod);
-              setDateRange(nextRange);
-            }}
-          />
-
-          <GrainSelect value={grain} onChange={setGrain} />
-        </div>
+        <div className="relative z-10 mt-3">
         <MobileFiltersPanel
           activeFilters={activeFilterCount}
           onClear={() => {
