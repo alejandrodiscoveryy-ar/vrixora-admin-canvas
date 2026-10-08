@@ -66,7 +66,7 @@ export const ADMIN_PROJECT_TABS = [
   },
   {
     slug: "",
-    label: "Resumen",
+    label: "Panel general",
     icon: Gauge,
     permission: "project.view",
   },
@@ -90,7 +90,7 @@ export const ADMIN_PROJECT_TABS = [
   },
   {
     slug: "rendimiento",
-    label: "Rendimiento",
+    label: "Analítica",
     icon: BarChart3,
     permission: "analytics.view",
   },

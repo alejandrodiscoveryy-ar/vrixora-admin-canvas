@@ -1469,7 +1469,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             className="shrink-0 gap-2 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.025] px-3.5 py-2.5 text-xs text-cyan-300/80 shadow-none transition-all hover:border-cyan-400/35 hover:bg-cyan-500/[0.07] hover:text-cyan-100 sm:text-sm data-[state=active]:border-cyan-400/60 data-[state=active]:bg-cyan-500/[0.16] data-[state=active]:text-cyan-50 data-[state=active]:shadow-[0_10px_30px_-18px_rgba(34,211,238,0.75)]"
           >
             <Eye className="h-4 w-4" />
-            Resumen
+            Pulso
           </TabsTrigger>
 
           <TabsTrigger
