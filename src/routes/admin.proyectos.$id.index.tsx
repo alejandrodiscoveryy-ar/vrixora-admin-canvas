@@ -148,14 +148,24 @@ function ResumenPage() {
   const rangeLabel = `${formatDateShort(range.start)} - ${formatDateShort(range.end)}`;
 
   return (
-    <div className="space-y-3.5 md:space-y-4">
-      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.075] via-background/72 to-emerald-500/[0.035] px-4 py-3.5 shadow-[0_22px_64px_-46px_rgba(34,211,238,0.75)] backdrop-blur-xl sm:px-5">
-        <img
-          src="/admin-premium/overview.svg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute right-0 top-1/2 hidden h-44 w-[34%] -translate-y-1/2 object-cover object-right opacity-[0.09] mix-blend-screen lg:block"
-        />
+    <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.85)] sm:p-3">
+      <img
+        src="/admin-premium/overview.svg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-[0.16] mix-blend-screen"
+      />
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/68 via-background/84 to-background/95" />
+
+      <div className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
+
+      <div className="pointer-events-none absolute -bottom-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-violet-500/[0.055] blur-3xl" />
+
+      <div className="pointer-events-none absolute left-[28%] top-[36%] h-72 w-72 rounded-full bg-emerald-400/[0.025] blur-3xl" />
+
+      <div className="relative z-10 space-y-3.5 md:space-y-4">
+      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.095] via-background/58 to-emerald-500/[0.055] px-4 py-3.5 shadow-[0_22px_64px_-44px_rgba(34,211,238,0.82)] backdrop-blur-xl sm:px-5">
 
         <div className="pointer-events-none absolute -left-20 -top-24 h-48 w-48 rounded-full bg-cyan-400/[0.06] blur-3xl" />
 
@@ -525,6 +535,7 @@ function ResumenPage() {
           ) : null}
         </div>
       </section>
+      </div>
     </div>
   );
 }
