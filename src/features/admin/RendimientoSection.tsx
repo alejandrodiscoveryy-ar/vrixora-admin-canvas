@@ -320,9 +320,45 @@ export default function RendimientoSection({
   }
 
   return (
-    <div className="space-y-4 md:space-y-5">
-      <section className="space-y-3 rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-orange-500/[0.025] p-3 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.82)] sm:p-3">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/72 via-background/87 to-background/96" />
+
+      <img
+        src="/admin-premium/analytics.svg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-10 top-6 h-[36rem] w-[70%] object-contain object-right-top opacity-[0.13] mix-blend-screen"
+      />
+
+      <div className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-violet-500/[0.055] blur-3xl" />
+
+      <div className="relative z-10 space-y-3.5 md:space-y-4">
+      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.09] via-background/60 to-violet-500/[0.055] p-3 shadow-[0_22px_64px_-46px_rgba(34,211,238,0.78)] backdrop-blur-xl">
+        <img
+          src="/admin-premium/analytics.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 -top-16 h-64 w-[42%] object-contain object-right opacity-[0.085] mix-blend-screen"
+        />
+
+        <div className="relative z-10 mb-3 flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.10] text-cyan-200 shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
+            <BarChart3 className="h-4 w-4" />
+          </div>
+
+          <div>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
+              Analítica
+            </p>
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
+              Rendimiento y evolución
+            </h2>
+          </div>
+        </div>
+
+        <div className="relative z-10 space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <AdminPeriodSelector
             value={period}
             range={dateRange}
@@ -383,6 +419,7 @@ export default function RendimientoSection({
             />
           </div>
         </MobileFiltersPanel>
+        </div>
       </section>
 
       {isMobile ? (
@@ -396,8 +433,17 @@ export default function RendimientoSection({
         title="Usuarios app"
         description="Registro, acceso y retorno de usuarios"
         module="rendimiento"
+        className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(34,211,238,0.72)]"
+        headerClassName="relative z-10 px-4 py-3 sm:px-4"
+        contentClassName="p-3 sm:p-4"
       >
-        <KpiGrid columns={4} density="compact">
+        <img
+          src="/admin-premium/customers.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 top-4 h-52 w-[48%] object-contain object-right opacity-[0.08] mix-blend-screen"
+        />
+        <KpiGrid columns={4} density="compact" className="relative z-10">
           <MetricCard
             label="Registros nuevos"
             value={currentTotals.newUsers}
@@ -446,9 +492,18 @@ export default function RendimientoSection({
         title="Captación comercial"
         description="Conversión de personas interesadas a usuarios registrados"
         module="comercial"
+        className="relative isolate border-violet-400/16 bg-gradient-to-br from-violet-500/[0.05] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(139,92,246,0.78)]"
+        headerClassName="relative z-10 px-4 py-3 sm:px-4"
+        contentClassName="p-3 sm:p-4"
       >
+        <img
+          src="/admin-premium/acquisition.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 top-2 h-56 w-[52%] object-contain object-right opacity-[0.095] mix-blend-screen"
+        />
         {canViewCommercial ? (
-          <KpiGrid columns={5} density="compact">
+          <KpiGrid columns={5} density="compact" className="relative z-10">
             <MetricCard
               label="Leads"
               value={periodLeads.length}
@@ -499,6 +554,7 @@ export default function RendimientoSection({
             title="Sin acceso a Comercial"
             description="No tienes permisos para consultar la captación comercial."
             module="comercial"
+            className="relative z-10 min-h-[120px] py-3"
           />
         )}
       </SectionCard>
@@ -507,9 +563,18 @@ export default function RendimientoSection({
         title="Marketplace actual"
         description="Estado operativo en este momento"
         module="rendimiento"
+        className="relative isolate border-emerald-400/14 bg-gradient-to-br from-emerald-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(52,211,153,0.72)]"
+        headerClassName="relative z-10 px-4 py-3 sm:px-4"
+        contentClassName="p-3 sm:p-4"
       >
+        <img
+          src="/admin-premium/operations.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-14 top-2 h-56 w-[52%] object-contain object-right opacity-[0.09] mix-blend-screen"
+        />
         {canViewMarketplace ? (
-          <KpiGrid columns={4} density="compact">
+          <KpiGrid columns={4} density="compact" className="relative z-10">
             <MetricCard
               label="Conductores activos"
               value={overview?.driversActive ?? 0}
@@ -556,18 +621,28 @@ export default function RendimientoSection({
             title="Sin acceso a Marketplace"
             description="No tienes permisos para consultar la operación."
             module="rendimiento"
+            className="relative z-10 min-h-[120px] py-3"
           />
         )}
       </SectionCard>
 
-      <section className="grid gap-4 xl:grid-cols-2">
+      <section className="grid gap-3 xl:grid-cols-2">
         <SectionCard
           title="Registros y accesos"
           description="Evolución de altas y accesos a la aplicación"
           module="rendimiento"
+          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.04] via-surface-1 to-background/55"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
+          contentClassName="p-3 sm:p-4"
         >
+          <img
+            src="/admin-premium/analytics.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 bottom-0 h-[90%] w-[58%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+          />
           {chartRows.length ? (
-            <div className="h-64 w-full md:h-80">
+            <div className="relative z-10 h-56 w-full md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chartRows}
@@ -619,6 +694,7 @@ export default function RendimientoSection({
               title="Sin datos de usuarios"
               description="No hay registros o accesos para el período seleccionado."
               module="rendimiento"
+              className="relative z-10 min-h-[132px] py-4"
             />
           )}
         </SectionCard>
@@ -627,9 +703,18 @@ export default function RendimientoSection({
           title="Fuentes de captación"
           description="Origen de los leads del período seleccionado"
           module="comercial"
+          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
+          contentClassName="p-3 sm:p-4"
         >
+          <img
+            src="/admin-premium/acquisition.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-14 bottom-0 h-[92%] w-[60%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+          />
           {canViewCommercial && sourceDistribution.length ? (
-            <div className="h-64 w-full md:h-80">
+            <div className="relative z-10 h-56 w-full md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={sourceDistribution}
@@ -678,10 +763,12 @@ export default function RendimientoSection({
               title="Sin datos de captación"
               description="No hay fuentes comerciales para el período y filtros seleccionados."
               module="comercial"
+              className="relative z-10 min-h-[132px] py-4"
             />
           )}
         </SectionCard>
       </section>
+      </div>
     </div>
   );
 }
