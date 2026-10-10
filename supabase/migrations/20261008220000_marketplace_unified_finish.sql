@@ -420,7 +420,22 @@ begin
   if j.test_deleted_at is not null then raise exception 'JOB_NOT_AVAILABLE' using errcode='22023'; end if;
   -- This path now requires the actor's rating; old APKs cannot bypass it.
   if target_action='complete_service' then
-    return app_private.finish_marketplace_job_core(target_job_id,'driver',actor,null,null,target_idempotency_key);
+    -- APK legacy: asks for service completion before displaying its rating sheet.
+    -- This is a non-mutating preflight, not a financial or status completion.
+    -- Only the subsequent saved rating can settle and charge the job.
+    if j.status='in_progress' then
+      if exists (
+        select 1 from public.job_events e
+        where e.project_id=pid and e.operation_idempotency_key=target_idempotency_key
+      ) then
+        raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION'
+          using errcode='22023';
+      end if;
+      return j;
+    end if;
+    return app_private.finish_marketplace_job_core(
+      target_job_id,'driver',actor,null,null,target_idempotency_key
+    );
   end if;
   select * into e from public.job_events where project_id=pid and operation_idempotency_key=target_idempotency_key;
   if found then

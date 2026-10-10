@@ -189,6 +189,40 @@ def tests():
     assert total == 30, total
     print("PASS: final wallet ledger contains exactly four 7.50 debits")
 
+    # Published driver APK calls complete_service before its rating modal.
+    # That preflight must not alter money, job state, or event history.
+    legacy = create_job(11)
+    with connect() as c:
+        c.execute("update public.jobs set status='in_progress' where id=%s", (legacy,))
+    with connect(CUSTOMER) as c:
+        expect_error(
+            lambda: c.execute(
+                "select status from public.advance_my_marketplace_job(%s,'complete_service',%s)",
+                (legacy, uuid.uuid4()),
+            ).fetchone(),
+            "JOB_NOT_ASSIGNED_TO_ACTOR",
+        )
+    legacy_key = uuid.uuid4()
+    with connect(DRIVER) as c:
+        result = one(
+            c,
+            "select status from public.advance_my_marketplace_job(%s,'complete_service',%s)",
+            (legacy, legacy_key),
+        )
+        assert result == 'in_progress', result
+        replay = one(
+            c,
+            "select status from public.advance_my_marketplace_job(%s,'complete_service',%s)",
+            (legacy, legacy_key),
+        )
+        assert replay == 'in_progress', replay
+    assert facts(legacy) == ('in_progress', 0, 0, 0, 0), facts(legacy)
+    driver_rate(legacy)
+    assert facts(legacy) == ('settled', 1, 0, 1, 1), facts(legacy)
+    customer_rate(legacy)
+    assert facts(legacy) == ('settled', 1, 1, 1, 1), facts(legacy)
+    print("PASS: legacy driver preflight is non-mutating; rating settles exactly once")
+
 
 if __name__ == "__main__":
     setup()
