@@ -223,6 +223,29 @@ def tests():
     assert facts(legacy) == ('settled', 1, 1, 1, 1), facts(legacy)
     print("PASS: legacy driver preflight is non-mutating; rating settles exactly once")
 
+    # A legacy local fare can be classified only by its assigned driver.
+    verify_job = create_job(12)
+    with connect(DRIVER) as c:
+        verified = c.execute(
+            "select job_id,status,is_test,is_deleted from "
+            "public.list_my_marketplace_income_verification(%s::uuid[])",
+            ([verify_job],),
+        ).fetchall()
+        assert verified == [(verify_job, "en_route", False, False)], verified
+        expect_error(
+            lambda: c.execute(
+                "select * from public.list_my_marketplace_income_verification(%s::uuid[])",
+                ([uuid.uuid4() for _ in range(51)],),
+            ).fetchall(),
+            "INVALID_INCOME_VERIFICATION_BATCH",
+        )
+    with connect(CUSTOMER) as c:
+        assert c.execute(
+            "select * from public.list_my_marketplace_income_verification(%s::uuid[])",
+            ([verify_job],),
+        ).fetchall() == []
+    print("PASS: income verification is driver-private, read-only, limited to 50")
+
 
 if __name__ == "__main__":
     setup()

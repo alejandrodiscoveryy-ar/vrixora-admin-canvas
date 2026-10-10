@@ -701,3 +701,27 @@ end;
 $function$;
 revoke all on function public.list_marketplace_customer_history(uuid,text,integer,timestamptz,uuid) from public,anon,authenticated;
 grant execute on function public.list_marketplace_customer_history(uuid,text,integer,timestamptz,uuid) to service_role;
+
+-- Solo lectura, lotes limitados, exclusivamente carreras propias del conductor.
+-- Los registros locales heredados nunca se modifican desde esta funcion.
+create or replace function public.list_my_marketplace_income_verification(target_job_ids uuid[])
+returns table(job_id uuid,status text,is_test boolean,is_deleted boolean)
+language plpgsql stable security definer set search_path='' as $function$
+begin
+  if auth.uid() is null then
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501';
+  end if;
+  if target_job_ids is null or cardinality(target_job_ids) not between 1 and 50 then
+    raise exception 'INVALID_INCOME_VERIFICATION_BATCH' using errcode='22023';
+  end if;
+  return query
+    select j.id,j.status,j.is_test,(j.test_deleted_at is not null)
+    from public.jobs j
+    join public.projects p on p.id=j.project_id
+    where p.slug='tuktuk-control'
+      and j.assigned_driver_user_id=auth.uid()
+      and j.id=any(target_job_ids);
+end;
+$function$;
+revoke all on function public.list_my_marketplace_income_verification(uuid[]) from public,anon,authenticated;
+grant execute on function public.list_my_marketplace_income_verification(uuid[]) to authenticated;
