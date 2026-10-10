@@ -72,13 +72,13 @@ def create_job(number, mode="wallet_commission", deleted=False):
 
 def driver_rate(job, key=None):
     with connect(DRIVER) as c:
-        return one(c, "select job_id from public.create_my_marketplace_customer_rating(%s,5,null,%s)",
+        return one(c, "select job_id from public.create_my_marketplace_customer_rating(%s,5::smallint,null,%s)",
                    (job, key or uuid.uuid4()))
 
 
 def customer_rate(job, key=None):
     with connect() as c:
-        return one(c, "select job_id from public.create_marketplace_customer_rating(%s,%s,%s,5,null,%s)",
+        return one(c, "select job_id from public.create_marketplace_customer_rating(%s,%s,%s,5::smallint,null,%s)",
                    (SESSION, SESSION_TOKEN, job, key or uuid.uuid4()))
 
 
