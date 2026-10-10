@@ -425,8 +425,8 @@ begin
     -- Only the subsequent saved rating can settle and charge the job.
     if j.status='in_progress' then
       if exists (
-        select 1 from public.job_events e
-        where e.project_id=pid and e.operation_idempotency_key=target_idempotency_key
+        select 1 from public.job_events as preflight_event
+        where preflight_event.project_id=pid and preflight_event.operation_idempotency_key=target_idempotency_key
       ) then
         raise exception 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION'
           using errcode='22023';
