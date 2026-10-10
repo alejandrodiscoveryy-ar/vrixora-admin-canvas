@@ -8,6 +8,7 @@ const rateLimitCategory: Record<string, string> = {
   create_request: "request",
   publish: "publish",
   get_job: "read",
+  history: "read",
   cancel: "cancel",
   finish: "cancel",
   get_rating: "read",
@@ -78,7 +79,7 @@ Deno.serve(async (request) => {
       const sign = async (id: string | null) => { const asset = id ? byId.get(id) : null; if (!asset || asset.storage_bucket !== "marketplace-media") return null; const { data, error } = await supabase.storage.from(asset.storage_bucket).createSignedUrl(asset.storage_path, 900); if (error) throw error; return data.signedUrl; };
       return json({ data: { driver_photo_signed_url: await sign(job.driver_photo_asset_id), vehicle_photo_signed_url: await sign(job.vehicle_main_photo_asset_id), expires_at: new Date(Date.now() + 900000).toISOString() } });
     }
-    const rpc = ({ start_session: "start_marketplace_customer_session", services: "list_marketplace_customer_services", create_request: "create_marketplace_customer_request", publish: "publish_marketplace_customer_job_v2", get_job: "get_marketplace_customer_job", cancel: "cancel_marketplace_customer_job", finish: "finish_marketplace_customer_job", get_rating: "get_marketplace_customer_rating", create_rating: "create_marketplace_customer_rating" } as Record<string, string>)[operation];
+    const rpc = ({ start_session: "start_marketplace_customer_session", services: "list_marketplace_customer_services", create_request: "create_marketplace_customer_request", publish: "publish_marketplace_customer_job_v2", get_job: "get_marketplace_customer_job", history: "list_marketplace_customer_history", cancel: "cancel_marketplace_customer_job", finish: "finish_marketplace_customer_job", get_rating: "get_marketplace_customer_rating", create_rating: "create_marketplace_customer_rating" } as Record<string, string>)[operation];
     if (!rpc) throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
     const { data, error } = await supabase.rpc(rpc, params); if (error) throw error;
     return json({ data });
