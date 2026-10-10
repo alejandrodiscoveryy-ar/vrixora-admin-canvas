@@ -1,0 +1,42 @@
+name: Marketplace financial source controls - isolated
+on:
+  push:
+    branches:
+      - feat/ride-unified-flow-20261008
+    paths:
+      - '.github/workflows/marketplace-financial-sources-isolated.yml'
+      - 'supabase/verification/marketplace_settlement_sources_fixture.sql'
+      - 'supabase/verification/marketplace_settlement_sources_integration.py'
+      - 'supabase/verification/marketplace_settlement_fixture.sql'
+      - 'supabase/verification/marketplace_settlement_integration.py'
+      - 'supabase/migrations/20260919130000_tuktuk_marketplace_reservation_sources_v10.sql'
+      - 'supabase/migrations/20261008220000_marketplace_unified_finish.sql'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-financial-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: marketplace_sources_disposable_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketplace_sources_disposable_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'psycopg[binary]==3.2.10'
+      - name: Run R10 source classifier plus unified finish against disposable PostgreSQL
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/marketplace_sources_disposable_ci
+        run: python supabase/verification/marketplace_settlement_sources_integration.py
