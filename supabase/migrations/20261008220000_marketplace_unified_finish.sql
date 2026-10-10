@@ -24,7 +24,6 @@ declare
   r public.commission_reservations%rowtype;
   prior_event public.job_events%rowtype;
   original_status text;
-  scheduled_at timestamptz;
   prior_balance numeric;
   ledger_id uuid;
   clean_reason text := nullif(btrim(target_reason), '');
@@ -111,21 +110,6 @@ begin
   select * into a from public.job_assignments
    where project_id=pid and job_id=j.id for update;
   if not found then raise exception 'JOB_ASSIGNMENT_NOT_FOUND' using errcode='P0002'; end if;
-  -- Minimal server-side guard against accidental/immediate finishing.
-  -- It is not proof of actual arrival; GPS/route evidence remains separate.
-  if target_actor_kind<>'admin' then
-    select sr.scheduled_for into scheduled_at
-      from public.service_requests sr
-     where sr.project_id=j.project_id and sr.id=j.service_request_id;
-    if not found then
-      raise exception 'SERVICE_REQUEST_NOT_FOUND' using errcode='P0002';
-    end if;
-    if now() < greatest(a.accepted_at,coalesce(scheduled_at,a.accepted_at))
-               + interval '60 seconds' then
-      raise exception 'FINISH_TOO_EARLY' using errcode='22023';
-    end if;
-  end if;
-
   if a.driver_user_id is distinct from j.assigned_driver_user_id
     or a.vehicle_id is distinct from j.assigned_vehicle_id
     or a.completed_at is not null
@@ -237,6 +221,7 @@ begin
           and ir.job_id=other.id
         where other.project_id=pid
           and other.id<>j.id
+          and other.test_deleted_at is null
           and other.assigned_driver_user_id=a.driver_user_id
           and other.assigned_vehicle_id=a.vehicle_id
           and (
@@ -336,4 +321,66 @@ grant execute on function public.finish_marketplace_customer_job(uuid,text,uuid,
 revoke all on function public.admin_finish_marketplace_job(uuid,text,uuid)
   from public,anon;
 grant execute on function public.admin_finish_marketplace_job(uuid,text,uuid)
+  to authenticated;
+
+-- Read-only, bounded recovery feed. Creation-date history cannot recover an
+-- old booking that settles later without repeatedly scanning every page.
+create index if not exists jobs_driver_income_changes_idx
+  on public.jobs(project_id,assigned_driver_user_id,updated_at,id)
+  where status='settled';
+
+create or replace function public.list_my_marketplace_income_changes(
+  target_limit integer default 50,
+  target_after_updated_at timestamptz default null,
+  target_after_job_id uuid default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  actor uuid := auth.uid();
+  pid uuid;
+  result jsonb;
+begin
+  if actor is null then
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501';
+  end if;
+  if (target_after_updated_at is null) <> (target_after_job_id is null) then
+    raise exception 'INVALID_PAGINATION_CURSOR' using errcode='22023';
+  end if;
+  select id into pid from public.projects where slug='tuktuk-control';
+  select coalesce(jsonb_agg(page.payload order by page.updated_at,page.id),'[]'::jsonb)
+    into result
+    from (
+      select j.id,j.updated_at,jsonb_build_object(
+        'job_id',j.id,'status',j.status,'is_test',j.is_test,
+        'final_price',j.final_price,'currency',j.currency,
+        'vehicle_id',a.vehicle_id,'vehicle_name',v.name,
+        'vehicle_registration',v.registration,'billing_mode',a.billing_mode,
+        'completed_at',a.completed_at,'created_at',j.created_at,
+        'updated_at',j.updated_at,
+        'distance_km',case
+          when (j.pricing_breakdown->>'distance_km') ~ '^[0-9]+([.][0-9]+)?$'
+          then (j.pricing_breakdown->>'distance_km')::numeric end
+      ) as payload
+      from public.jobs j
+      join public.job_assignments a on a.project_id=j.project_id
+        and a.job_id=j.id and a.driver_user_id=actor
+      join public.vehicles v on v.project_id=j.project_id and v.id=a.vehicle_id
+      where j.project_id=pid and j.assigned_driver_user_id=actor
+        and j.status='settled'
+        and (target_after_updated_at is null or (j.updated_at,j.id) >
+             (target_after_updated_at,target_after_job_id))
+      order by j.updated_at,j.id
+      limit least(greatest(coalesce(target_limit,50),1),50)
+    ) page;
+  return result;
+end;
+$function$;
+
+revoke all on function public.list_my_marketplace_income_changes(integer,timestamptz,uuid)
+  from public,anon;
+grant execute on function public.list_my_marketplace_income_changes(integer,timestamptz,uuid)
   to authenticated;
