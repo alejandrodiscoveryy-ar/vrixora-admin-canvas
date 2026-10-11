@@ -418,3 +418,6 @@ enabled = true
 
 [functions.marketplace-map-admin-gateway]
 verify_jwt = true
+
+[functions.send-push-notifications]
+verify_jwt = false

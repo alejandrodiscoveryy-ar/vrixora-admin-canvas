@@ -11,10 +11,10 @@ for (const root of [admin, conductor, cliente]) {
   equal(execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: fileURLToPath(root), encoding: "utf8" }).trim(),
     "codex/eltoque-shared-push-20261011");
 }
-const folder = "flutter_app/supabase/functions/send-push-notifications/";
+const folder = "supabase/functions/send-push-notifications/";
 const snapshot = "docs/audits/eltoque-shared-push-20261011/production-v16/";
-equal(await text(conductor, folder + "core.ts"), await text(admin, snapshot + "core.ts.txt"));
-let source = await text(conductor, folder + "index.ts");
+equal(await text(admin, folder + "core.ts"), await text(admin, snapshot + "core.ts.txt"));
+let source = await text(admin, folder + "index.ts");
 source = source.replace('import { customerPayload, processCustomerQueue } from "./customer.ts";\n', "");
 source = source.replace('type PushContent = Pick<OutboxRow, "id" | "kind" | "notification_date" | "title" | "body" | "data">;\n', "");
 source = source.replaceAll("row: PushContent", "row: OutboxRow");

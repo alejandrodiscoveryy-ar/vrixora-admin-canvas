@@ -39,7 +39,7 @@ impide duplicar la misma entrega. docs/sql/VERIFY_customer_eltoque_shared.sql
 contiene consultas sin tokens ni comandos cron. El rollback solo retira el
 trigger: conserva tablas, datos y función privada.
 
-## Emisor Conductor: baseline v16 y ampliación mínima
+## Emisor compartido en Admin: baseline v16 y ampliación mínima
 
 Antes de editar se recuperó otra vez el servicio vivo: v16 y mismo hash.
 Se concilió el archivo GitHub con v16 preservando new_subscription, target_audience,
@@ -63,9 +63,7 @@ si no se llegó a enviar por falta de tiempo, se devuelve el intento consumido
 por claim. Errores Cliente persistidos son categorías, sin respuesta FCM cruda.
 
 No se crea ninguna identidad auth.users ni se escribe Cliente en
-notification_outbox/push_device_tokens. El mantenimiento del emisor permanece
-en Conductor; trasladarlo a Admin se propone como fase separada, con propiedad
-y despliegue coordinados, nunca con dos copias operativas concurrentes.
+notification_outbox/push_device_tokens. El mantenimiento del emisor queda centralizado en Admin, en supabase/functions/send-push-notifications. Se copió únicamente el servicio y sus pruebas del trabajo local; Conductor y 79919fd no se modifican ni se publican. La futura activación sustituirá el bundle del mismo servicio existente.
 
 ## Cliente: registro independiente y consentimiento
 
@@ -148,7 +146,7 @@ No ejecutar worktree prune/remove ni migraciones remotas durante esta auditoría
 
 Después de revisión independiente, el propietario decidirá expresamente una
 fase de staging/activación: registro, emisor compartido, trigger y dispositivo
-real. Este paquete no autoriza merge, push, despliegue ni migración remota.
+real. La corrección final autoriza push solo de las ramas de desarrollo Admin y Cliente. No autoriza merge, despliegue ni migración remota.
 
 Referencias técnicas revisadas:
 [changelog Supabase](https://supabase.com/changelog) y

@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "jsr:@std/assert@1.0.14": "./test_support/assert.ts",
+    "npm:@supabase/server@1.5.2": "./test_support/server.ts"
+  },
+  "lock": false
+}
