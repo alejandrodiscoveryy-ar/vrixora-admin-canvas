@@ -1,0 +1,61 @@
+{
+  "project_id": "vvxvnywzgtqhlaqpxyqh",
+  "function_slug": "send-push-notifications",
+  "version": 16,
+  "verify_jwt": false,
+  "ezbr_sha256": "d1063eb8221095415ee7278c3cb0aef8d79000c5ea85efde2180b0361246b786",
+  "cron": [
+    {
+      "name": "tuktuk-push-dispatch",
+      "active": true,
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "history": 126,
+  "trigger": 0,
+  "migration": [
+    {
+      "name": "tuktuk_cliente_eltoque_schema_preactivation_20261011",
+      "version": "20261011141714"
+    }
+  ],
+  "deliveries": 0,
+  "subscriptions": 0,
+  "functions": [
+    {
+      "slug": "send-push-notifications",
+      "version": 16,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "firebase-env-names",
+      "version": 7,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "referral-redirect",
+      "version": 7,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "marketplace-customer-gateway",
+      "version": 10,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "marketplace-map-gateway",
+      "version": 13,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "marketplace-map-admin-gateway",
+      "version": 17,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "marketplace-driver-google-avatar",
+      "version": 2,
+      "status": "ACTIVE"
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # Integración elTOQUE compartida — preflight detenido
 
+Registro histórico del primer preflight. El propietario autorizó continuar;
+el estado vigente y el paquete de auditoría están en [IMPLEMENTATION.md](IMPLEMENTATION.md)
+y [RESULTS.md](RESULTS.md).
+
 Fecha: 2026-10-11. Estado: NO IMPLEMENTADO; pruebas NO_PROBADAS.
 
 ## Alcance autorizado
