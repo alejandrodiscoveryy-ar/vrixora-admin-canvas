@@ -183,6 +183,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
   }
+  let requestOperation: string | null = null;
   try {
     const url = Deno.env.get("SUPABASE_URL"),
       key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -192,6 +193,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       throw Error("MAP_GATEWAY_CONFIGURATION_MISSING");
     }
     const body = await request.json(), operation = body?.operation;
+    requestOperation = typeof operation === "string" ? operation : null;
     if (
       ![
         "geocode",
@@ -519,6 +521,15 @@ export async function handleRequest(request: Request): Promise<Response> {
     const message = error instanceof Error
       ? error.message
       : "MAP_GATEWAY_FAILED";
+
+    // TUKTUK Cliente V8: structured domain error for an unknown session.
+    // The client rejects the JSON error, starts a NEW verified session,
+    // and requires another explicit tap before any job can be created.
+    // Keep all other operations and HTTP error statuses unchanged.
+    if (requestOperation === "create_request" &&
+        message === "CUSTOMER_SESSION_NOT_FOUND") {
+      return reply({ error: message }, 200);
+    }
 
     const status = message === "AUTHENTICATION_REQUIRED"
       ? 401
