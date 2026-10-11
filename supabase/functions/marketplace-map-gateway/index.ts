@@ -515,6 +515,12 @@ export async function handleRequest(request: Request): Promise<Response> {
       delete params.target_vehicle_category_code;
     }
     const { data, error } = await db.rpc(requestRpc, params);
+    // PostgREST returns error objects, not always Error instances.
+    // Preserve the existing V8 recovery envelope for this exact error only.
+    // Do not create a job or bypass session authentication.
+    if (error?.message === "CUSTOMER_SESSION_NOT_FOUND") {
+      return reply({ error: "CUSTOMER_SESSION_NOT_FOUND" }, 200);
+    }
     if (error) throw error;
     return reply({ data });
   } catch (error) {
