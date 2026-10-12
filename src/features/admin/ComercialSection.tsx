@@ -97,7 +97,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
-  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas">("captacion");
+  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas">("ofertas");
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
     queryFn: async () => {
@@ -260,7 +260,17 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     }));
   }, [activeLeads]);
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="relative isolate overflow-hidden rounded-[30px] border border-violet-400/[0.14] bg-background/85 p-3 shadow-[0_36px_110px_-74px_rgba(139,92,246,0.75)] sm:p-5 lg:p-6">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.065] via-background/80 to-cyan-500/[0.04]" />
+      <img
+        src={showOffers ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 top-10 h-[36rem] w-[65%] object-contain object-right-top opacity-[0.085] mix-blend-screen"
+      />
+      <div className="pointer-events-none absolute -right-32 -top-36 h-[26rem] w-[26rem] rounded-full bg-violet-500/[0.07] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-28 h-[25rem] w-[25rem] rounded-full bg-cyan-400/[0.06] blur-3xl" />
+      <div className="relative z-10 space-y-6 md:space-y-8">
       <ModuleHeader
         title="Comercial"
         description="Captación, campañas, seguimiento comercial y ofertas TukTuk."
@@ -282,37 +292,67 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       />
 
       <nav
-        aria-label="Áreas de Comercial"
-        className="flex flex-wrap items-center gap-2 rounded-[22px] border border-border/55 bg-background/45 p-2 shadow-[0_16px_48px_-35px_rgba(0,0,0,0.8)]"
+        aria-label="Ãreas de Comercial"
+        className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/20 bg-gradient-to-r from-violet-500/[0.085] via-background/90 to-cyan-500/[0.055] p-2.5 shadow-[0_20px_64px_-48px_rgba(139,92,246,0.75)] backdrop-blur-xl"
       >
-        <Button
-          type="button"
-          variant={!showOffers ? "default" : "outline"}
-          onClick={() => setCommercialView("captacion")}
-          className="gap-2 rounded-xl"
-          aria-pressed={!showOffers}
-        >
-          <Megaphone className="h-4 w-4" />
-          Captación y campañas
-        </Button>
-        {isTuktukProject && (
-          <Button
-            type="button"
-            variant={showOffers ? "default" : "outline"}
-            onClick={() => setCommercialView("ofertas")}
-            className="gap-2 rounded-xl"
-            aria-pressed={showOffers}
-          >
-            <Gift className="h-4 w-4" />
-            Ofertas TukTuk
-          </Button>
-        )}
+        <img
+          src={showOffers ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 -top-16 h-56 w-[40%] object-contain object-right opacity-[0.07] mix-blend-screen"
+        />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {isTuktukProject && (
+              <Button
+                type="button"
+                variant={showOffers ? "default" : "outline"}
+                onClick={() => setCommercialView("ofertas")}
+                className="gap-2 rounded-xl"
+                aria-pressed={showOffers}
+              >
+                <Gift className="h-4 w-4" />
+                Ofertas TukTuk
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant={!showOffers ? "default" : "outline"}
+              onClick={() => setCommercialView("captacion")}
+              className="gap-2 rounded-xl"
+              aria-pressed={!showOffers}
+            >
+              <Megaphone className="h-4 w-4" />
+              CaptaciÃ³n y campaÃ±as
+            </Button>
+          </div>
+          <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+            {showOffers
+              ? "DiseÃ±a beneficios comerciales y conserva el control sobre su activaciÃ³n."
+              : "Organiza la captaciÃ³n, las campaÃ±as y el seguimiento de nuevos usuarios."}
+          </p>
+        </div>
       </nav>
 
       {showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} />
       ) : (
-        <>
+        <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 shadow-[0_28px_86px_-62px_rgba(139,92,246,0.8)] sm:p-5">
+          <img
+            src="/admin-premium/acquisition.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-10 top-2 h-[28rem] w-[60%] object-contain object-right-top opacity-[0.08] mix-blend-screen"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/70" />
+          <div className="relative z-10 space-y-6">
+            <div className="rounded-[22px] border border-violet-400/20 bg-background/75 px-4 py-4 shadow-[0_18px_55px_-44px_rgba(139,92,246,0.7)] backdrop-blur-md sm:px-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial Â· CaptaciÃ³n</p>
+              <h2 className="mt-1 text-lg font-semibold text-foreground">CaptaciÃ³n y seguimiento</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                Sigue cada contacto desde el primer interÃ©s hasta su registro en TukTuk.
+              </p>
+            </div>
           {/* 4 KPI Principales */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
@@ -606,7 +646,8 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               </TableBody>
             </Table>
           </AdminDataTableShell>
-        </>
+          </div>
+        </section>
       )}
 
       {/* Existing modals for editing/history/campaigns */}
@@ -644,6 +685,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         projectId={projectId}
         onRefresh={refresh}
       />
+      </div>
     </div>
   );
 }
