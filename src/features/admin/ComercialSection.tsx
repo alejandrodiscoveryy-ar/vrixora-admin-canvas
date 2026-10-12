@@ -51,7 +51,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
@@ -260,47 +260,22 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     }));
   }, [activeLeads]);
   return (
-    <div className="relative isolate overflow-hidden rounded-[30px] border border-violet-400/[0.14] bg-background/85 p-3 shadow-[0_36px_110px_-74px_rgba(139,92,246,0.75)] sm:p-5 lg:p-6">
+    <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.16] bg-gradient-to-br from-violet-500/[0.045] via-background/85 to-cyan-500/[0.025] p-3 shadow-[0_28px_80px_-55px_rgba(139,92,246,0.68)] sm:p-4 lg:p-5">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.065] via-background/80 to-cyan-500/[0.04]" />
       <img
         src={showOffers ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute -right-16 top-10 h-[36rem] w-[65%] object-contain object-right-top opacity-[0.085] mix-blend-screen"
+        className="pointer-events-none absolute -right-8 top-20 hidden h-[24rem] w-[38%] object-contain object-right-top opacity-[0.045] mix-blend-screen lg:block"
       />
       <div className="pointer-events-none absolute -right-32 -top-36 h-[26rem] w-[26rem] rounded-full bg-violet-500/[0.07] blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-28 h-[25rem] w-[25rem] rounded-full bg-cyan-400/[0.06] blur-3xl" />
-      <div className="relative z-10 space-y-6 md:space-y-8">
-      <ModuleHeader
-        title="Comercial"
-        description="Captación, campañas, seguimiento comercial y ofertas TukTuk."
-        icon={Megaphone}
-        module="comercial"
-        actions={
-          canManage && !showOffers ? (
-            <div className="flex gap-2.5">
-              <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
-                Nueva campaña
-              </Button>
-              <Button size="sm" onClick={() => setEditing({ ...EMPTY })}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo lead
-              </Button>
-            </div>
-          ) : undefined
-        }
-      />
-
+      <div className="relative z-10 space-y-4 md:space-y-5">
       <nav
-        aria-label="Ãreas de Comercial"
-        className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/20 bg-gradient-to-r from-violet-500/[0.085] via-background/90 to-cyan-500/[0.055] p-2.5 shadow-[0_20px_64px_-48px_rgba(139,92,246,0.75)] backdrop-blur-xl"
+        aria-label="Áreas de Comercial"
+        className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.07] via-background/85 to-cyan-500/[0.025] px-3 py-3 shadow-[0_18px_54px_-42px_rgba(139,92,246,0.75)] backdrop-blur-xl sm:px-4"
       >
-        <img
-          src={showOffers ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-12 -top-16 h-56 w-[40%] object-contain object-right opacity-[0.07] mix-blend-screen"
-        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/75 via-cyan-400/30 to-transparent" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             {isTuktukProject && (
@@ -308,7 +283,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 type="button"
                 variant={showOffers ? "default" : "outline"}
                 onClick={() => setCommercialView("ofertas")}
-                className="gap-2 rounded-xl"
+                className="gap-2 rounded-xl font-semibold"
                 aria-pressed={showOffers}
               >
                 <Gift className="h-4 w-4" />
@@ -319,18 +294,24 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               type="button"
               variant={!showOffers ? "default" : "outline"}
               onClick={() => setCommercialView("captacion")}
-              className="gap-2 rounded-xl"
+              className="gap-2 rounded-xl font-semibold"
               aria-pressed={!showOffers}
             >
               <Megaphone className="h-4 w-4" />
-              CaptaciÃ³n y campaÃ±as
+              Captación y campañas
             </Button>
           </div>
-          <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-            {showOffers
-              ? "DiseÃ±a beneficios comerciales y conserva el control sobre su activaciÃ³n."
-              : "Organiza la captaciÃ³n, las campaÃ±as y el seguimiento de nuevos usuarios."}
-          </p>
+          {canManage && !showOffers && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
+                Nueva campaña
+              </Button>
+              <Button size="sm" onClick={() => setEditing({ ...EMPTY })}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo lead
+              </Button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -347,10 +328,10 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/70" />
           <div className="relative z-10 space-y-6">
             <div className="rounded-[22px] border border-violet-400/20 bg-background/75 px-4 py-4 shadow-[0_18px_55px_-44px_rgba(139,92,246,0.7)] backdrop-blur-md sm:px-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial Â· CaptaciÃ³n</p>
-              <h2 className="mt-1 text-lg font-semibold text-foreground">CaptaciÃ³n y seguimiento</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Captación</p>
+              <h2 className="mt-1 text-lg font-semibold text-foreground">Captación y seguimiento</h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                Sigue cada contacto desde el primer interÃ©s hasta su registro en TukTuk.
+                Sigue cada contacto desde el primer interés hasta su registro en TukTuk.
               </p>
             </div>
           {/* 4 KPI Principales */}
