@@ -291,7 +291,16 @@ export default function MarketplaceOffersPanel({
 
   return (
     <section className="space-y-5">
-      <div className="relative overflow-hidden rounded-[28px] border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.12] via-background to-cyan-500/[0.06] p-5 shadow-[0_24px_70px_-45px_rgba(139,92,246,0.85)] sm:p-6">
+      <div className="relative isolate overflow-hidden rounded-[28px] border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.11] via-background/95 to-cyan-500/[0.055] p-5 shadow-[0_28px_85px_-52px_rgba(139,92,246,0.8)] sm:p-6">
+        <img
+          src="/admin-premium/economy.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-14 -top-14 h-[23rem] w-[53%] object-contain object-right opacity-[0.12] mix-blend-screen"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/80 via-background/75 to-background/55" />
+        <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-violet-500/[0.10] blur-3xl" />
+        <div className="relative z-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-400/10 text-violet-200">
@@ -329,12 +338,13 @@ export default function MarketplaceOffersPanel({
             { title: "Programables", value: count.forthcoming, icon: CalendarDays },
             { title: "Archivadas", value: count.archived, icon: Archive },
           ].map(({ title, value, icon: Icon }) => (
-            <div key={title} className="rounded-2xl border border-border/50 bg-background/45 p-4">
+            <div key={title} className="rounded-2xl border border-violet-400/[0.13] bg-background/80 p-4 shadow-[0_14px_36px_-29px_rgba(139,92,246,0.55)] backdrop-blur-lg">
               <Icon className="h-4 w-4 text-cyan-300" />
               <div className="mt-2 text-2xl font-semibold">{value}</div>
               <div className="text-xs text-muted-foreground">{title}</div>
             </div>
           ))}
+        </div>
         </div>
       </div>
 
@@ -349,12 +359,20 @@ export default function MarketplaceOffersPanel({
 
       {editing && canEdit && (
         <form
-          className="space-y-5 rounded-[26px] border border-violet-400/25 bg-background/70 p-5 sm:p-6"
+          className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/25 bg-gradient-to-br from-background/95 via-background/95 to-violet-500/[0.05] p-5 shadow-[0_26px_80px_-55px_rgba(139,92,246,0.7)] sm:p-6"
           onSubmit={(event) => {
             event.preventDefault();
             save.mutate();
           }}
         >
+          <img
+            src="/admin-premium/economy.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 top-0 h-[30rem] w-[52%] object-contain object-right-top opacity-[0.075] mix-blend-screen"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/35 via-background/45 to-background/70" />
+          <div className="relative z-10 space-y-5">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold">
               {form.id ? "Editar campaña" : "Crear campaña"}
@@ -659,6 +677,7 @@ export default function MarketplaceOffersPanel({
               {form.id ? "Guardar cambios" : "Guardar borrador"}
             </Button>
           </div>
+          </div>
         </form>
       )}
 
@@ -674,7 +693,7 @@ export default function MarketplaceOffersPanel({
           {errorMessage(campaignQuery.error)}
         </div>
       ) : campaigns.length === 0 ? (
-        <div className="flex flex-col items-center rounded-[24px] border border-dashed border-border/70 bg-background/40 px-6 py-12 text-center">
+        <div className="relative flex flex-col items-center overflow-hidden rounded-[24px] border border-dashed border-violet-400/20 bg-gradient-to-br from-background/85 to-violet-500/[0.04] px-6 py-12 text-center shadow-[0_20px_65px_-50px_rgba(139,92,246,0.65)]">
           <Gift className="h-10 w-10 text-violet-300" />
           <h3 className="mt-3 font-semibold">Todavía no hay ofertas preparadas</h3>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -689,7 +708,7 @@ export default function MarketplaceOffersPanel({
             return (
               <article
                 key={item.id}
-                className="rounded-[24px] border border-border/60 bg-background/65 p-5 shadow-[0_20px_60px_-48px_rgba(0,0,0,0.9)]"
+                className="rounded-[24px] border border-violet-400/[0.16] bg-gradient-to-br from-background/95 via-background/90 to-violet-500/[0.04] p-5 shadow-[0_24px_68px_-52px_rgba(139,92,246,0.66)] backdrop-blur-lg"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
