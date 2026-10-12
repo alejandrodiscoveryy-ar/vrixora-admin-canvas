@@ -22,6 +22,7 @@ import {
 } from "@/lib/services";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
+import { getSupabaseClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -97,6 +98,22 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
   const [commercialView, setCommercialView] = useState<"captacion" | "ofertas">("captacion");
+  const projectIdentity = useQuery({
+    queryKey: ["commercial-project-identity", projectId],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient()
+        .from("projects")
+        .select("slug, owner_id")
+        .eq("id", projectId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: Boolean(projectId),
+  });
+  const isTuktukProject = projectIdentity.data?.slug === "tuktuk-control";
+  const showOffers = isTuktukProject && commercialView === "ofertas";
+  const canEditOffers = canManage && isTuktukProject && projectIdentity.data?.owner_id === user?.id;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [source, setSource] = useState("all");
@@ -149,9 +166,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const contactedLeads = activeLeads.filter(
     (lead) =>
       Boolean(lead.lastInteractionAt) ||
-      ["contacted", "interested", "trial", "ready_to_charge", "customer"].includes(
-        lead.status,
-      ),
+      ["contacted", "interested", "trial", "ready_to_charge", "customer"].includes(lead.status),
   ).length;
 
   const interestedLeads = activeLeads.filter((lead) =>
@@ -163,9 +178,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   ).length;
 
   const registrationConversionRate =
-    activeLeads.length > 0
-      ? Math.round((registeredLeads / activeLeads.length) * 100)
-      : 0;
+    activeLeads.length > 0 ? Math.round((registeredLeads / activeLeads.length) * 100) : 0;
 
   const funnelSteps = [
     {
@@ -226,10 +239,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     return Array.from(map.entries()).map(([campaignName, data]) => ({
       campaign: campaignName,
       ...data,
-      conversion:
-        data.leads > 0
-          ? Math.round((data.registered / data.leads) * 100)
-          : 0,
+      conversion: data.leads > 0 ? Math.round((data.registered / data.leads) * 100) : 0,
     }));
   }, [activeLeads]);
   return (
@@ -240,7 +250,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         icon={Megaphone}
         module="comercial"
         actions={
-          canManage && commercialView === "captacion" ? (
+          canManage && !showOffers ? (
             <div className="flex gap-2.5">
               <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
                 Nueva campaña
@@ -254,325 +264,331 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         }
       />
 
-      <nav aria-label="Áreas de Comercial" className="flex flex-wrap items-center gap-2 rounded-[22px] border border-border/55 bg-background/45 p-2 shadow-[0_16px_48px_-35px_rgba(0,0,0,0.8)]">
+      <nav
+        aria-label="Áreas de Comercial"
+        className="flex flex-wrap items-center gap-2 rounded-[22px] border border-border/55 bg-background/45 p-2 shadow-[0_16px_48px_-35px_rgba(0,0,0,0.8)]"
+      >
         <Button
           type="button"
-          variant={commercialView === "captacion" ? "default" : "outline"}
+          variant={!showOffers ? "default" : "outline"}
           onClick={() => setCommercialView("captacion")}
           className="gap-2 rounded-xl"
-          aria-pressed={commercialView === "captacion"}
+          aria-pressed={!showOffers}
         >
           <Megaphone className="h-4 w-4" />
           Captación y campañas
         </Button>
-        <Button
-          type="button"
-          variant={commercialView === "ofertas" ? "default" : "outline"}
-          onClick={() => setCommercialView("ofertas")}
-          className="gap-2 rounded-xl"
-          aria-pressed={commercialView === "ofertas"}
-        >
-          <Gift className="h-4 w-4" />
-          Ofertas TukTuk
-        </Button>
+        {isTuktukProject && (
+          <Button
+            type="button"
+            variant={showOffers ? "default" : "outline"}
+            onClick={() => setCommercialView("ofertas")}
+            className="gap-2 rounded-xl"
+            aria-pressed={showOffers}
+          >
+            <Gift className="h-4 w-4" />
+            Ofertas TukTuk
+          </Button>
+        )}
       </nav>
 
-      {commercialView === "ofertas" ? (
-        <MarketplaceOffersPanel projectId={projectId} canEdit={canManage} />
+      {showOffers ? (
+        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} />
       ) : (
         <>
-      {/* 4 KPI Principales */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          label="Leads"
-          value={activeLeads.length}
-          description="Personas captadas"
-          icon={Megaphone}
-          module="comercial"
-        />
-        <MetricCard
-          label="Contactados"
-          value={contactedLeads}
-          description="Con interacción comercial"
-          icon={History}
-          module="comercial"
-        />
-        <MetricCard
-          label="Registrados"
-          value={registeredLeads}
-          description="Convertidos en usuarios"
-          icon={UsersRound}
-          semanticState="success"
-        />
-        <MetricCard
-          label="Conversión"
-          value={`${registrationConversionRate}%`}
-          description="Lead a usuario registrado"
-          icon={Layers}
-          semanticState="info"
-        />
-      </div>
-      {/* Embudo Comercial */}
-      <SectionCard title="Embudo comercial" module="comercial">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {funnelSteps.map((step, idx) => {
-            const firstCount = funnelSteps[0].count;
-            const pct = firstCount > 0 ? Math.round((step.count / firstCount) * 100) : 0;
-            return (
-              <div
-                key={step.label}
-                className="relative rounded-2xl border border-border/70 bg-card/60 p-4 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {step.label}
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {pct}%
-                    </span>
-                  </div>
-                  <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">
-                    {step.count}
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{step.desc}</p>
-                </div>
-                {idx < funnelSteps.length - 1 ? (
-                  <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm">
-                    <ArrowRight className="h-3 w-3" />
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      </SectionCard>
-
-      {/* Origen / Fuentes & Campañas */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Distribución por fuente" module="comercial">
-          {sourceDistribution.length > 0 ? (
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sourceDistribution}
-                  margin={{ left: -15, right: 10, top: 10, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                  <XAxis
-                    dataKey="source"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-                  <YAxis
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-                  <Tooltip {...adminChartTooltipProps} />
-                  <Bar dataKey="count" fill="var(--module-comercial)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState
+          {/* 4 KPI Principales */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              label="Leads"
+              value={activeLeads.length}
+              description="Personas captadas"
               icon={Megaphone}
-              title="Sin datos de fuentes"
-              description="No hay fuentes registradas para los leads actuales."
               module="comercial"
             />
-          )}
-        </SectionCard>
-
-        <SectionCard title="Rendimiento de campañas" module="comercial">
-          {campaignSummary.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Campaña</TableHead>
-                    <TableHead className="text-right">Leads</TableHead>
-                    <TableHead className="text-right">Registrados</TableHead>
-                    <TableHead className="text-right">Conv.</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {campaignSummary.map((c) => (
-                    <TableRow key={c.campaign}>
-                      <TableCell className="font-medium truncate max-w-[140px]">
-                        {c.campaign}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">{c.leads}</TableCell>
-                      <TableCell className="text-right font-mono">{c.registered}</TableCell>
-                      <TableCell className="text-right font-mono text-emerald-400">
-                        {c.conversion}%
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <EmptyState
+            <MetricCard
+              label="Contactados"
+              value={contactedLeads}
+              description="Con interacción comercial"
+              icon={History}
+              module="comercial"
+            />
+            <MetricCard
+              label="Registrados"
+              value={registeredLeads}
+              description="Convertidos en usuarios"
+              icon={UsersRound}
+              semanticState="success"
+            />
+            <MetricCard
+              label="Conversión"
+              value={`${registrationConversionRate}%`}
+              description="Lead a usuario registrado"
               icon={Layers}
-              title="Sin campañas activas"
-              description="No se registran campañas asociadas a leads en este proyecto."
-              module="comercial"
+              semanticState="info"
             />
-          )}
-        </SectionCard>
-      </div>
-
-      {/* Tabla de Leads con FilterToolbar & AdminDataTableShell */}
-      <AdminDataTableShell
-        title="Leads y seguimiento"
-        description="Listado completo y filtros de seguimiento comercial."
-        actions={
-          <FilterToolbar
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Buscar por nombre, teléfono o email..."
-            showReset={true}
-            onReset={() => {
-              setSearch("");
-              setStatus("all");
-              setSource("all");
-              setCampaign("all");
-              setResponsible("all");
-            }}
-          >
-            <Filter
-              value={status}
-              onChange={setStatus}
-              values={STATUSES}
-              label="Estado"
-              format={(value) => labelStatus(value as CommercialLeadStatus)}
-            />
-            <Filter
-              value={source}
-              onChange={setSource}
-              values={SOURCES}
-              label="Fuente"
-              format={(value) => sourceLabel(value as CommercialSource)}
-            />
-            <Filter
-              value={campaign}
-              onChange={setCampaign}
-              values={campaignNames}
-              label="Campaña"
-            />
-            <Filter
-              value={responsible}
-              onChange={setResponsible}
-              values={responsibleNames}
-              label="Responsable"
-            />
-          </FilterToolbar>
-        }
-        isEmpty={rows.length === 0}
-        emptyState={
-          <EmptyState
-            icon={Megaphone}
-            title="Todavía no tienes leads"
-            description="Comienza creando tu primer lead comercial para realizar seguimiento y conversión."
-            module="comercial"
-            action={
-              canManage ? (
-                <Button onClick={() => setEditing({ ...EMPTY })}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Crear lead
-                </Button>
-              ) : undefined
-            }
-          />
-        }
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Contacto</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Fuente / Campaña</TableHead>
-              <TableHead>Responsable</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((lead) => (
-              <TableRow key={lead.id} className="group hover:bg-muted/40 transition-colors">
-                <TableCell className="font-medium text-foreground">
-                  <div>{lead.name}</div>
-                  {lead.referralCode ? (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      Ref: {lead.referralCode}
-                    </span>
-                  ) : null}
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  <div>{lead.phone}</div>
-                  <div className="truncate max-w-[160px]">{lead.email || "—"}</div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {labelStatus(lead.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  <span>{sourceLabel(lead.source)}</span>
-                  {lead.campaign ? (
-                    <span className="block text-[10px]">Campaña: {lead.campaign}</span>
-                  ) : null}
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {lead.responsibleName ?? "Sin asignar"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => setHistoryLead(lead)}
-                      title="Historial"
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                    {canManage && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          setEditing({
-                            name: lead.name,
-                            phone: lead.phone,
-                            email: lead.email ?? "",
-                            source: lead.source,
-                            medium: lead.medium ?? "",
-                            campaign: lead.campaign ?? "",
-                            referralCode: lead.referralCode ?? "",
-                            status: lead.status,
-                            notes: lead.notes ?? "",
-                            nextActionAt: lead.nextActionAt ? lead.nextActionAt.slice(0, 16) : "",
-                          })
-                        }
-                        title="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
+          </div>
+          {/* Embudo Comercial */}
+          <SectionCard title="Embudo comercial" module="comercial">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {funnelSteps.map((step, idx) => {
+                const firstCount = funnelSteps[0].count;
+                const pct = firstCount > 0 ? Math.round((step.count / firstCount) * 100) : 0;
+                return (
+                  <div
+                    key={step.label}
+                    className="relative rounded-2xl border border-border/70 bg-card/60 p-4 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {step.label}
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {pct}%
+                        </span>
+                      </div>
+                      <p className="mt-2 text-2xl font-extrabold font-mono text-foreground">
+                        {step.count}
+                      </p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">{step.desc}</p>
+                    </div>
+                    {idx < funnelSteps.length - 1 ? (
+                      <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm">
+                        <ArrowRight className="h-3 w-3" />
+                      </div>
+                    ) : null}
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </AdminDataTableShell>
+                );
+              })}
+            </div>
+          </SectionCard>
 
+          {/* Origen / Fuentes & Campañas */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <SectionCard title="Distribución por fuente" module="comercial">
+              {sourceDistribution.length > 0 ? (
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={sourceDistribution}
+                      margin={{ left: -15, right: 10, top: 10, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                      <XAxis
+                        dataKey="source"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        stroke="var(--muted-foreground)"
+                      />
+                      <YAxis
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        stroke="var(--muted-foreground)"
+                      />
+                      <Tooltip {...adminChartTooltipProps} />
+                      <Bar dataKey="count" fill="var(--module-comercial)" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Megaphone}
+                  title="Sin datos de fuentes"
+                  description="No hay fuentes registradas para los leads actuales."
+                  module="comercial"
+                />
+              )}
+            </SectionCard>
+
+            <SectionCard title="Rendimiento de campañas" module="comercial">
+              {campaignSummary.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Campaña</TableHead>
+                        <TableHead className="text-right">Leads</TableHead>
+                        <TableHead className="text-right">Registrados</TableHead>
+                        <TableHead className="text-right">Conv.</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {campaignSummary.map((c) => (
+                        <TableRow key={c.campaign}>
+                          <TableCell className="font-medium truncate max-w-[140px]">
+                            {c.campaign}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{c.leads}</TableCell>
+                          <TableCell className="text-right font-mono">{c.registered}</TableCell>
+                          <TableCell className="text-right font-mono text-emerald-400">
+                            {c.conversion}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Layers}
+                  title="Sin campañas activas"
+                  description="No se registran campañas asociadas a leads en este proyecto."
+                  module="comercial"
+                />
+              )}
+            </SectionCard>
+          </div>
+
+          {/* Tabla de Leads con FilterToolbar & AdminDataTableShell */}
+          <AdminDataTableShell
+            title="Leads y seguimiento"
+            description="Listado completo y filtros de seguimiento comercial."
+            actions={
+              <FilterToolbar
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar por nombre, teléfono o email..."
+                showReset={true}
+                onReset={() => {
+                  setSearch("");
+                  setStatus("all");
+                  setSource("all");
+                  setCampaign("all");
+                  setResponsible("all");
+                }}
+              >
+                <Filter
+                  value={status}
+                  onChange={setStatus}
+                  values={STATUSES}
+                  label="Estado"
+                  format={(value) => labelStatus(value as CommercialLeadStatus)}
+                />
+                <Filter
+                  value={source}
+                  onChange={setSource}
+                  values={SOURCES}
+                  label="Fuente"
+                  format={(value) => sourceLabel(value as CommercialSource)}
+                />
+                <Filter
+                  value={campaign}
+                  onChange={setCampaign}
+                  values={campaignNames}
+                  label="Campaña"
+                />
+                <Filter
+                  value={responsible}
+                  onChange={setResponsible}
+                  values={responsibleNames}
+                  label="Responsable"
+                />
+              </FilterToolbar>
+            }
+            isEmpty={rows.length === 0}
+            emptyState={
+              <EmptyState
+                icon={Megaphone}
+                title="Todavía no tienes leads"
+                description="Comienza creando tu primer lead comercial para realizar seguimiento y conversión."
+                module="comercial"
+                action={
+                  canManage ? (
+                    <Button onClick={() => setEditing({ ...EMPTY })}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Crear lead
+                    </Button>
+                  ) : undefined
+                }
+              />
+            }
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Contacto</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fuente / Campaña</TableHead>
+                  <TableHead>Responsable</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((lead) => (
+                  <TableRow key={lead.id} className="group hover:bg-muted/40 transition-colors">
+                    <TableCell className="font-medium text-foreground">
+                      <div>{lead.name}</div>
+                      {lead.referralCode ? (
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          Ref: {lead.referralCode}
+                        </span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <div>{lead.phone}</div>
+                      <div className="truncate max-w-[160px]">{lead.email || "—"}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {labelStatus(lead.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <span>{sourceLabel(lead.source)}</span>
+                      {lead.campaign ? (
+                        <span className="block text-[10px]">Campaña: {lead.campaign}</span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {lead.responsibleName ?? "Sin asignar"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => setHistoryLead(lead)}
+                          title="Historial"
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() =>
+                              setEditing({
+                                name: lead.name,
+                                phone: lead.phone,
+                                email: lead.email ?? "",
+                                source: lead.source,
+                                medium: lead.medium ?? "",
+                                campaign: lead.campaign ?? "",
+                                referralCode: lead.referralCode ?? "",
+                                status: lead.status,
+                                notes: lead.notes ?? "",
+                                nextActionAt: lead.nextActionAt
+                                  ? lead.nextActionAt.slice(0, 16)
+                                  : "",
+                              })
+                            }
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </AdminDataTableShell>
         </>
       )}
 
