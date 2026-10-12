@@ -290,46 +290,45 @@ export default function MarketplaceOffersPanel({
   };
 
   return (
-    <section className="space-y-5">
-      <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.22] bg-gradient-to-br from-violet-500/[0.075] via-background/75 to-cyan-500/[0.03] p-4 shadow-[0_25px_75px_-48px_rgba(139,92,246,0.68)] backdrop-blur-xl sm:p-5">
+    <section className="space-y-6">
+      <div className="relative isolate min-h-[235px] overflow-hidden rounded-[28px] border border-violet-400/40 bg-gradient-to-br from-violet-500/[0.21] via-[#100e23] to-cyan-500/[0.12] p-5 shadow-[0_30px_90px_-48px_rgba(139,92,246,0.78)] sm:p-7">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
         <img
-          src="/admin-premium/economy.svg"
+          src="/admin-premium/comercial-ofertas-hero.svg"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute -right-12 top-0 hidden h-[19rem] w-[36%] object-contain object-right opacity-[0.10] mix-blend-screen md:block"
+          className="pointer-events-none absolute -right-2 -top-10 hidden h-[23rem] w-[48%] max-w-[520px] object-contain object-right opacity-80 md:block"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/76 via-background/78 to-background/65" />
-        <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-violet-500/[0.10] blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0b0b19]/90 via-[#0d0d1e]/65 to-transparent" />
+        <div className="pointer-events-none absolute -right-24 -top-28 h-[25rem] w-[25rem] rounded-full bg-violet-500/[0.23] blur-3xl" />
         <div className="relative z-10">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-400/10 text-violet-200">
+        <div className="flex flex-wrap items-start justify-between gap-5 pb-1">
+          <div className="flex max-w-[680px] items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-300/45 bg-violet-400/20 text-violet-100 shadow-[0_0_36px_-13px_rgba(167,139,250,0.8)]">
               <Gift className="h-6 w-6" />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
                 TukTuk · Comercial
               </p>
-              <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground sm:text-2xl">Campañas y ofertas</h2>
-              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-foreground/70">
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Campañas y ofertas</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-200/90">
                 Diseña promociones con fechas, beneficiarios, límites y condiciones. Cada campaña
                 conserva su propia configuración.
               </p>
             </div>
           </div>
           {canEdit && (
-            <Button onClick={() => open()} className="gap-2">
+            <Button onClick={() => open()} className="min-h-11 gap-2 rounded-xl bg-cyan-400 px-5 font-bold text-[#06131d] shadow-[0_10px_36px_-14px_rgba(34,211,238,0.95)] hover:bg-cyan-300">
               <Plus className="h-4 w-4" /> Nueva oferta
             </Button>
           )}
         </div>
-        <div className="mt-5 flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-100">
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-300/35 bg-[#2b210d]/80 px-4 py-3 text-sm leading-6 text-amber-100 shadow-inner shadow-amber-400/[0.04]">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            <strong>Modo seguro de preparación.</strong> Las campañas de este módulo se guardan como
-            borradores y todavía no se aplican a carreras. La promoción heredada de incorporación de
-            TukTuk se mantiene sin cambios hasta integrar y validar el motor financiero.
+            <strong>Catálogo en preparación.</strong> Estas ofertas se guardan como borradores: no se
+            aplican a las carreras ni cambian las comisiones. La promoción actual de incorporación sigue vigente.
           </span>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-4">
@@ -339,11 +338,11 @@ export default function MarketplaceOffersPanel({
             { title: "Programables", value: count.forthcoming, icon: CalendarDays },
             { title: "Archivadas", value: count.archived, icon: Archive },
           ].map(({ title, value, icon: Icon }) => (
-            <div key={title} className="relative overflow-hidden rounded-2xl border border-violet-400/[0.18] bg-gradient-to-br from-violet-500/[0.055] via-background/90 to-cyan-500/[0.025] p-4 shadow-[0_18px_48px_-37px_rgba(139,92,246,0.6)] backdrop-blur-lg">
+            <div key={title} className="relative overflow-hidden rounded-[20px] border border-violet-400/30 bg-gradient-to-br from-[#22183d] via-[#131529] to-[#0b1724] p-5 shadow-[0_20px_50px_-30px_rgba(111,80,209,0.62)]">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/55 via-cyan-400/20 to-transparent" />
-              <Icon className="h-4 w-4 text-cyan-300" />
-              <div className="mt-2 font-mono text-3xl font-bold tracking-tight text-foreground">{value}</div>
-              <div className="mt-1 text-sm font-medium text-foreground/70">{title}</div>
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-400/10"><Icon className="h-4 w-4 text-cyan-200" /></span>
+              <div className="mt-3 font-mono text-4xl font-black tracking-tight text-white">{value}</div>
+              <div className="mt-1 text-sm font-semibold text-slate-200">{title}</div>
             </div>
           ))}
         </div>
@@ -361,29 +360,37 @@ export default function MarketplaceOffersPanel({
 
       {editing && canEdit && (
         <form
-          className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/25 bg-gradient-to-br from-background/95 via-background/95 to-violet-500/[0.05] p-5 shadow-[0_26px_80px_-55px_rgba(139,92,246,0.7)] sm:p-6"
+          className="relative isolate overflow-hidden rounded-[28px] border border-violet-400/35 bg-gradient-to-br from-[#171229] via-[#0c1122] to-[#0b1724] p-4 shadow-[0_30px_90px_-48px_rgba(139,92,246,0.65)] sm:p-7"
           onSubmit={(event) => {
             event.preventDefault();
             save.mutate();
           }}
         >
           <img
-            src="/admin-premium/economy.svg"
+            src="/admin-premium/comercial-ofertas-hero.svg"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute -right-16 top-0 h-[30rem] w-[52%] object-contain object-right-top opacity-[0.075] mix-blend-screen"
+            className="pointer-events-none absolute -right-8 -top-6 hidden h-[24rem] w-[37%] object-contain object-right-top opacity-35 md:block"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/35 via-background/45 to-background/70" />
-          <div className="relative z-10 space-y-5">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold">
-              {form.id ? "Editar campaña" : "Crear campaña"}
-            </h3>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/35 via-background/20 to-background/65" />
+          <div className="relative z-10 space-y-5 [&_label]:text-[13px] [&_label]:font-semibold [&_label]:text-slate-200 [&_input]:min-h-11 [&_textarea]:bg-[#0b0e1d]/90">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-300/20 pb-5">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.20em] text-cyan-300">Configuración de la oferta</p>
+              <h3 className="mt-1 text-2xl font-extrabold tracking-tight text-white">
+                {form.id ? "Editar campaña" : "Crear campaña"}
+              </h3>
+              <p className="mt-1 text-sm text-slate-300">Define el beneficio en bloques claros. Los cambios seguirán siendo borradores.</p>
+            </div>
             <Button type="button" variant="outline" onClick={() => setEditing(false)}>
               Cerrar
             </Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 rounded-[22px] border border-violet-400/25 bg-[#080c1b]/85 p-4 shadow-inner shadow-violet-500/[0.05] md:grid-cols-2 sm:p-5">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-3 md:col-span-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">01</span>
+              <div><p className="text-base font-bold text-white">Identidad y vigencia</p><p className="text-xs text-slate-400">Nombre, tipo de promoción y fechas de captación.</p></div>
+            </div>
             <div>
               <Label htmlFor="offer-name">Nombre comercial</Label>
               <Input
@@ -443,6 +450,10 @@ export default function MarketplaceOffersPanel({
                 onChange={(e) => change("closesAt", e.target.value)}
                 required
               />
+            </div>
+            <div className="flex items-center gap-3 border-b border-white/10 pb-3 pt-2 md:col-span-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">02</span>
+              <div><p className="text-base font-bold text-white">Beneficio y destinatarios</p><p className="text-xs text-slate-400">A quién se dirige, cuándo comienza y cuánto dura.</p></div>
             </div>
             <div>
               <Label htmlFor="offer-audience">Beneficiarios</Label>
@@ -555,9 +566,9 @@ export default function MarketplaceOffersPanel({
               </div>
             )}
           </div>
-          <div className="rounded-2xl border border-border/55 bg-background/35 p-4">
+          <div className="rounded-[22px] border border-cyan-400/25 bg-[#08111d]/90 p-4 shadow-[0_20px_55px_-43px_rgba(34,211,238,0.28)] sm:p-5">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <Users className="h-4 w-4 text-violet-300" /> Segmentación y límites avanzados
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">03</span><Users className="h-5 w-5 text-cyan-200" /> <span className="text-base font-bold text-white">Segmentación y límites avanzados</span>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
@@ -658,8 +669,12 @@ export default function MarketplaceOffersPanel({
               </div>
             </div>
           </div>
-          <div>
-            <Label htmlFor="offer-terms">Condiciones y notas internas</Label>
+          <div className="rounded-[22px] border border-violet-400/25 bg-[#0b0e1f]/90 p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">04</span>
+              <span className="text-base font-bold text-white">Condiciones y notas internas</span>
+            </div>
+            <Label htmlFor="offer-terms">Condiciones de la campaña</Label>
             <Textarea
               id="offer-terms"
               value={form.terms}
@@ -669,12 +684,12 @@ export default function MarketplaceOffersPanel({
               placeholder="Requisitos, control presupuestario, excepciones y autorización."
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-300/30 bg-[#0e281f]/75 p-4 shadow-inner shadow-emerald-400/5">
             <div className="flex items-center gap-2 text-sm">
               <ShieldCheck className="h-4 w-4 text-emerald-300" /> Guarda sin afectar las comisiones
               reales.
             </div>
-            <Button disabled={save.isPending} type="submit" className="gap-2">
+            <Button disabled={save.isPending} type="submit" className="min-h-11 gap-2 rounded-xl bg-cyan-400 px-6 font-bold text-[#071219] hover:bg-cyan-300">
               {save.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {form.id ? "Guardar cambios" : "Guardar borrador"}
             </Button>
@@ -710,26 +725,34 @@ export default function MarketplaceOffersPanel({
             return (
               <article
                 key={item.id}
-                className="group relative isolate overflow-hidden rounded-[24px] border border-violet-400/[0.22] bg-gradient-to-br from-violet-500/[0.065] via-background/85 to-cyan-500/[0.025] p-5 shadow-[0_24px_72px_-49px_rgba(139,92,246,0.72)] backdrop-blur-lg transition-colors hover:border-violet-400/35 sm:p-6"
+                className="group relative isolate overflow-hidden rounded-[26px] border border-violet-400/35 bg-gradient-to-br from-[#211637] via-[#0d1123] to-[#071c25] p-5 shadow-[0_28px_80px_-45px_rgba(139,92,246,0.62)] transition-colors hover:border-cyan-300/45 sm:p-7"
               >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
                 <img
-                  src="/admin-premium/economy.svg"
+                  src="/admin-premium/comercial-ofertas-hero.svg"
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none absolute -right-10 top-2 hidden h-52 w-[32%] object-contain object-right opacity-[0.07] mix-blend-screen md:block"
+                  className="pointer-events-none absolute -right-12 -top-4 hidden h-72 w-[38%] object-contain object-right opacity-45 md:block"
                 />
                 <div className="relative z-10">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-5">
                   <div>
                     <p className="text-xs font-semibold text-violet-300">
                       {offer?.name ?? item.kind}
                     </p>
-                    <h3 className="mt-1 text-lg font-semibold">{item.name}</h3>
+                    <h3 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">{item.name}</h3>
                   </div>
-                  <span className="rounded-full border border-amber-300/30 bg-amber-400/[0.07] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-200">
-                    {item.status === "archived" ? "Archivada" : "Borrador"}
-                  </span>
+                  <div className="flex flex-col items-end gap-3">
+                    <span className="rounded-full border border-amber-300/40 bg-amber-400/[0.12] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-100">
+                      {item.status === "archived" ? "Archivada" : "Borrador"}
+                    </span>
+                    {item.benefit_duration_days != null && (
+                      <div className="rounded-2xl border border-cyan-300/30 bg-[#062736]/80 px-5 py-3 text-right shadow-[0_16px_45px_-28px_rgba(34,211,238,0.7)]">
+                        <div className="font-mono text-3xl font-black leading-none text-cyan-200 sm:text-4xl">{item.benefit_duration_days}<span className="ml-1 text-sm font-bold">DÍAS</span></div>
+                        <p className="mt-1 text-xs font-medium text-cyan-100/80">Beneficio promocional</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-foreground/70">
                   {item.description || offer?.helper}
@@ -744,7 +767,7 @@ export default function MarketplaceOffersPanel({
                     {audiences.find((audience) => audience.value === item.audience)?.text ?? "Beneficiarios definidos"}
                   </span>
                 </div>
-                <div className={campaigns.length === 1 ? "mt-5 grid grid-cols-2 gap-x-6 gap-y-3 text-[13px] leading-relaxed text-foreground/70 lg:grid-cols-4" : "mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] leading-relaxed text-foreground/70"}>
+                <div className={campaigns.length === 1 ? "mt-6 grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2 lg:grid-cols-4" : "mt-6 grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2"}>
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />{" "}
                     {displayDate(item.begins_at)}
@@ -770,7 +793,7 @@ export default function MarketplaceOffersPanel({
                       : "Sin presupuesto definido"}
                   </div>
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/50 pt-4">
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-violet-300/20 pt-5">
                   <span className="text-xs text-muted-foreground">
                     Versión {item.revision} · No activada
                   </span>
