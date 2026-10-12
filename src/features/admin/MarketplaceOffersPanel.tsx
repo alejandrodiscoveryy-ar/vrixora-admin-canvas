@@ -291,16 +291,16 @@ export default function MarketplaceOffersPanel({
 
   return (
     <section className="space-y-6">
-      <div className="relative isolate min-h-[235px] overflow-hidden rounded-[28px] border border-violet-400/40 bg-gradient-to-br from-violet-500/[0.21] via-[#100e23] to-cyan-500/[0.12] p-5 shadow-[0_30px_90px_-48px_rgba(139,92,246,0.78)] sm:p-7">
+      <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-300/25 bg-gradient-to-br from-[#17152b] via-[#0e162b] to-[#0b2030] p-5 shadow-[0_24px_70px_-45px_rgba(107,70,208,0.65)] sm:p-6">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
         <img
           src="/admin-premium/comercial-ofertas-hero.svg"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute -right-2 -top-10 hidden h-[23rem] w-[48%] max-w-[520px] object-contain object-right opacity-80 md:block"
+          className="pointer-events-none absolute -right-6 -top-8 hidden h-[19rem] w-[43%] max-w-[440px] object-contain object-right opacity-90 lg:block"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0b0b19]/90 via-[#0d0d1e]/65 to-transparent" />
-        <div className="pointer-events-none absolute -right-24 -top-28 h-[25rem] w-[25rem] rounded-full bg-violet-500/[0.23] blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#101327]/95 via-[#0d1728]/90 via-60% to-[#0b1b31]/20" />
+        <div className="pointer-events-none absolute -right-28 -top-32 h-[24rem] w-[24rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
         <div className="relative z-10">
         <div className="flex flex-wrap items-start justify-between gap-5 pb-1">
           <div className="flex max-w-[680px] items-start gap-4">
@@ -311,8 +311,8 @@ export default function MarketplaceOffersPanel({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
                 TukTuk · Comercial
               </p>
-              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Campañas y ofertas</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-200/90">
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">Campañas y ofertas</h2>
+              <p className="mt-2 max-w-lg text-sm leading-6 text-slate-200/85">
                 Diseña promociones con fechas, beneficiarios, límites y condiciones. Cada campaña
                 conserva su propia configuración.
               </p>
@@ -331,23 +331,22 @@ export default function MarketplaceOffersPanel({
             aplican a las carreras ni cambian las comisiones. La promoción actual de incorporación sigue vigente.
           </span>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { title: "Campañas", value: count.total, icon: Gift },
-            { title: "Borradores", value: count.drafts, icon: BadgePercent },
-            { title: "Programables", value: count.forthcoming, icon: CalendarDays },
-            { title: "Archivadas", value: count.archived, icon: Archive },
-          ].map(({ title, value, icon: Icon }) => (
-            <div key={title} className="relative overflow-hidden rounded-[20px] border border-violet-400/30 bg-gradient-to-br from-[#22183d] via-[#131529] to-[#0b1724] p-5 shadow-[0_20px_50px_-30px_rgba(111,80,209,0.62)]">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/55 via-cyan-400/20 to-transparent" />
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-400/10"><Icon className="h-4 w-4 text-cyan-200" /></span>
-              <div className="mt-3 font-mono text-4xl font-black tracking-tight text-white">{value}</div>
+            { title: "Campañas", value: count.total, icon: Gift, card: "border-violet-400/30 from-[#271b41] via-[#15172a] to-[#101525]", accent: "text-violet-200 bg-violet-400/15 border-violet-300/20" },
+            { title: "Borradores", value: count.drafts, icon: BadgePercent, card: "border-cyan-400/25 from-[#11354a] via-[#121e30] to-[#0b1828]", accent: "text-cyan-200 bg-cyan-400/10 border-cyan-300/20" },
+            { title: "Programables", value: count.forthcoming, icon: CalendarDays, card: "border-blue-400/25 from-[#1c294b] via-[#141c31] to-[#0b1828]", accent: "text-blue-200 bg-blue-400/10 border-blue-300/20" },
+            { title: "Archivadas", value: count.archived, icon: Archive, card: "border-amber-400/20 from-[#2c2431] via-[#171923] to-[#0e1927]", accent: "text-amber-200 bg-amber-400/10 border-amber-300/20" },
+          ].map(({ title, value, icon: Icon, card, accent }) => (
+            <div key={title} className={`relative overflow-hidden rounded-[20px] border bg-gradient-to-br p-4 shadow-[0_18px_48px_-34px_rgba(15,11,40,0.75)] ${card}`}>
+              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border ${accent}`}><Icon className="h-4 w-4" /></span>
+              <div className="mt-2 font-mono text-3xl font-bold tracking-tight text-white">{value}</div>
               <div className="mt-1 text-sm font-semibold text-slate-200">{title}</div>
             </div>
           ))}
         </div>
-        </div>
-      </div>
 
       {message && (
         <p
@@ -360,7 +359,7 @@ export default function MarketplaceOffersPanel({
 
       {editing && canEdit && (
         <form
-          className="relative isolate overflow-hidden rounded-[28px] border border-violet-400/35 bg-gradient-to-br from-[#171229] via-[#0c1122] to-[#0b1724] p-4 shadow-[0_30px_90px_-48px_rgba(139,92,246,0.65)] sm:p-7"
+          className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/25 bg-gradient-to-br from-[#17142a] via-[#101627] to-[#0a1d29] p-4 shadow-[0_24px_72px_-48px_rgba(139,92,246,0.44)] sm:p-6"
           onSubmit={(event) => {
             event.preventDefault();
             save.mutate();
@@ -370,9 +369,9 @@ export default function MarketplaceOffersPanel({
             src="/admin-premium/comercial-ofertas-hero.svg"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute -right-8 -top-6 hidden h-[24rem] w-[37%] object-contain object-right-top opacity-35 md:block"
+            className="pointer-events-none absolute -right-8 top-2 hidden h-[21rem] w-[36%] object-contain object-right-top opacity-20 lg:block"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/35 via-background/20 to-background/65" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#11142b]/25 via-[#0e1425]/50 to-[#0a1724]/65" />
           <div className="relative z-10 space-y-5 [&_label]:text-[13px] [&_label]:font-semibold [&_label]:text-slate-200 [&_input]:min-h-11 [&_textarea]:bg-[#0b0e1d]/90">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-300/20 pb-5">
             <div>
@@ -725,14 +724,14 @@ export default function MarketplaceOffersPanel({
             return (
               <article
                 key={item.id}
-                className="group relative isolate overflow-hidden rounded-[26px] border border-violet-400/35 bg-gradient-to-br from-[#211637] via-[#0d1123] to-[#071c25] p-5 shadow-[0_28px_80px_-45px_rgba(139,92,246,0.62)] transition-colors hover:border-cyan-300/45 sm:p-7"
+                className="group relative isolate overflow-hidden rounded-[26px] border border-violet-400/30 bg-gradient-to-br from-[#201838] via-[#111626] to-[#0c212b] p-5 shadow-[0_24px_70px_-45px_rgba(111,89,201,0.5)] transition-colors hover:border-cyan-300/45 sm:p-6"
               >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
                 <img
                   src="/admin-premium/comercial-ofertas-hero.svg"
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none absolute -right-12 -top-4 hidden h-72 w-[38%] object-contain object-right opacity-45 md:block"
+                  className="pointer-events-none absolute -right-10 top-1 hidden h-64 w-[33%] object-contain object-right opacity-20 lg:block"
                 />
                 <div className="relative z-10">
                 <div className="flex flex-wrap items-start justify-between gap-5">
@@ -767,7 +766,7 @@ export default function MarketplaceOffersPanel({
                     {audiences.find((audience) => audience.value === item.audience)?.text ?? "Beneficiarios definidos"}
                   </span>
                 </div>
-                <div className={campaigns.length === 1 ? "mt-6 grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2 lg:grid-cols-4" : "mt-6 grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2"}>
+                <div className={campaigns.length === 1 ? "mt-4 grid gap-3 rounded-2xl border border-white/10 bg-[#081526]/65 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2 lg:grid-cols-4" : "mt-6 grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2"}>
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />{" "}
                     {displayDate(item.begins_at)}
