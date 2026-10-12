@@ -113,7 +113,24 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   });
   const isTuktukProject = projectIdentity.data?.slug === "tuktuk-control";
   const showOffers = isTuktukProject && commercialView === "ofertas";
-  const canEditOffers = canManage && isTuktukProject && projectIdentity.data?.owner_id === user?.id;
+  const adminMembership = useQuery({
+    queryKey: ["commercial-admin-membership", projectId, user?.id],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient()
+        .from("project_members")
+        .select("role")
+        .eq("project_id", projectId)
+        .eq("user_id", user?.id ?? "")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.role === "admin";
+    },
+    enabled: Boolean(user?.id && isTuktukProject),
+  });
+  const canEditOffers =
+    canManage &&
+    isTuktukProject &&
+    (projectIdentity.data?.owner_id === user?.id || adminMembership.data === true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [source, setSource] = useState("all");
