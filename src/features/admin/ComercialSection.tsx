@@ -316,7 +316,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       </nav>
 
       {showOffers ? (
-        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={canEditOffers && permissions.includes("settings.manage")} />
+        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
       ) : (
         <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 shadow-[0_28px_86px_-62px_rgba(139,92,246,0.8)] sm:p-5">
           <img

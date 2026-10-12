@@ -1028,7 +1028,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [createTopupKey, setCreateTopupKey] = useState(() => crypto.randomUUID());
-  const [commission, setCommission] = useState("");
   const [testModeEnabled, setTestModeEnabled] = useState(false);
   const [testDriverUserId, setTestDriverUserId] = useState("");
   const [testForceCommission, setTestForceCommission] = useState(false);
@@ -1184,12 +1183,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     enabled: tab === "incidencias",
   });
 
-  const settings = useQuery({
-    queryKey: ["marketplace-commercial-settings", projectId],
-    queryFn: () => supabaseServices.marketplace.commercialSettings(projectId),
-    enabled: tab === "configuracion" && canSettings,
-  });
-
   const testMode = useQuery({
     queryKey: ["marketplace-test-mode", projectId],
     queryFn: () => supabaseServices.marketplace.testMode(projectId),
@@ -1257,12 +1250,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
     return () => window.clearTimeout(timer);
   }, [customerSearchInput]);
-
-  useEffect(() => {
-    if (settings.data) {
-      setCommission(String(settings.data.commissionRate * 100));
-    }
-  }, [settings.data]);
 
   useEffect(() => {
     if (testMode.data) {
@@ -1414,18 +1401,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
       setError(errorText(mutationError));
       void invalidate("marketplace-topups", "marketplace-overview");
     },
-  });
-
-  const save = useMutation({
-    mutationFn: () =>
-      supabaseServices.marketplace.updateCommercialSettings(projectId, {
-        commissionRate: Number(commission) / 100,
-      }),
-    onSuccess: () => {
-      setError(null);
-      void invalidate("marketplace-commercial-settings", "marketplace-overview");
-    },
-    onError: (mutationError) => setError(errorText(mutationError)),
   });
 
   const saveTestMode = useMutation({
@@ -2889,91 +2864,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canSettings ? (
           <TabsContent value="configuracion" className="mt-3">
             <div className="grid gap-4 xl:grid-cols-2">
-              <section className="relative overflow-hidden rounded-[28px] border border-amber-400/40 bg-gradient-to-br from-amber-500/[0.13] via-background/92 to-background/80 shadow-[0_28px_85px_-42px_rgba(245,158,11,0.95)]">
-                <img
-                  src="/admin-premium/economy.svg"
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-3 top-7 h-36 w-48 object-contain object-right opacity-[0.16] mix-blend-screen"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/15 to-amber-500/[0.035]" />
-                <div className="flex items-center gap-3 border-b border-amber-500/15 bg-amber-500/[0.025] px-5 py-5 sm:px-6">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/35 bg-amber-400/[0.11] text-amber-300 shadow-[0_0_26px_-10px_rgba(251,191,36,0.9)]">
-                    <CircleDollarSign className="h-4.5 w-4.5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300">
-                      Economía
-                    </p>
-                    <h3 className="mt-0.5 text-lg font-semibold text-foreground">
-                      Configuración comercial
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-5">
-                  {settings.isLoading ? (
-                    <LoadingState />
-                  ) : settings.isError ? (
-                    <p className="text-sm text-rose-300">
-                      No se pudo cargar la configuración comercial.
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-2">
-                        <MiniMetric
-                          labelText="Moneda"
-                          value={settings.data?.walletCurrency ?? "CUP"}
-                        />
-                        <MiniMetric labelText="Días generales" value="Ver Comercial" />
-                        <MiniMetric
-                          labelText="Comisión"
-                          value={settings.data ? `${settings.data.commissionRate * 100} %` : "—"}
-                        />
-                      </div>
-
-                      <div className="flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                        <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
-                          <p>
-                            Regla comercial v{settings.data?.promotionRuleVersion ?? "—"}. Durante
-                            la promoción no se cobra la comisión habitual. Al finalizar, se aplica
-                            automáticamente la comisión configurada.
-                          </p>
-                          <p>Última actualización: {formatDate(settings.data?.updatedAt)}.</p>
-                        </div>
-                      </div>
-
-                      {canManageSettings ? (
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="marketplace-commission">Comisión Marketplace</Label>
-                            <div className="relative mt-1.5">
-                              <Input
-                                id="marketplace-commission"
-                                type="number" min="0.01" max="100" step="0.01"
-                                className="pr-12"
-                                value={commission}
-                                onChange={(event) => setCommission(event.target.value)}
-                              />
-                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">%</span>
-                            </div>
-                          </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">Los días gratuitos generales se gestionan exclusivamente desde Comercial → Ofertas TukTuk. El modo de prueba permanece en Trabajo.</p>
-                          <Button
-                            className="w-full"
-                            disabled={save.isPending || Number(commission) <= 0 || Number(commission) > 100}
-                            onClick={() => save.mutate()}
-                          >
-                            {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                            Guardar comisión Marketplace
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              </section>
               <section className="relative overflow-hidden rounded-[28px] border border-violet-400/40 bg-gradient-to-br from-violet-500/[0.13] via-background/92 to-background/80 shadow-[0_28px_85px_-42px_rgba(139,92,246,0.95)]">
                 <img
                   src="/admin-premium/test-lab.svg"
@@ -3069,21 +2959,13 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           value={testDriver?.displayName ?? testMode.data?.targetDriverDisplayName ?? "—"}
                         />
                         <MiniMetric
-                          labelText="Comisión"
-                          value={
-                            settings.data
-                              ? `${(settings.data.commissionRate * 100).toLocaleString("es")} %`
-                              : "—"
-                          }
-                        />
-                        <MiniMetric
                           labelText="Saldo disponible"
                           value={
                             testDriver?.walletAvailableBalance == null
                               ? "—"
                               : formatAmount(
                                   testDriver.walletAvailableBalance,
-                                  settings.data?.walletCurrency ?? "CUP",
+                                  "CUP",
                                 )
                           }
                         />

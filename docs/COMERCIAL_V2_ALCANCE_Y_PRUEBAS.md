@@ -2,8 +2,8 @@
 
 ## Alcance y límites
 
-- Gestión de bienvenida en **Comercial → Ofertas TukTuk**: interruptor, 1–365 días cuando está habilitada, historial y permisos `settings.view/manage`.
-- **Trabajo → Configuración**: se elimina solamente la edición de los días generales; **modo de prueba** y **búsqueda de conductores** permanecen intactos. La comisión mantiene su formulario sin poder sobrescribir la duración.
+- Gestión general en **Comercial → Ofertas TukTuk**: interruptor, 1–365 días cuando está habilitada, edición de comisión Marketplace, historial y permisos `settings.view/manage`.
+- **Trabajo → Configuración**: se retira el bloque de configuración comercial (días y comisión); **modo de prueba** y **búsqueda de conductores** permanecen operativos y en el mismo lugar.
 - Se conserva el 10 % de comisión y **no se activa** ninguna de las ofertas de catálogo (siguen siendo borradores). La compatibilidad/acumulación de campañas adicionales corresponde a otro bloque controlado de Comercial V2, con motor transaccional y pruebas.
 - Política inicial `promotion_enabled=true`: duración vigente y beneficios ya concedidos permanecen exactamente iguales.
 - Al deshabilitar, un nuevo conductor elegible se incorpora con un **registro de activación idempotente de 0 días**. Así se conserva la activación de perfil y vehículo y la creación de billetera sin conceder períodos gratuitos ni requerir una actualización de las aplicaciones cliente/conductor.
@@ -16,7 +16,7 @@
 2. Validar el build y la revisión de cambios. La migración debe probarse en un entorno aislado con una réplica estructural de PostgreSQL.
 3. Aplicar la migración verificada mediante el registro de migraciones de Supabase, **antes del despliegue web**. Su default `true` no altera el comportamiento.
 4. Verificar RPC con `settings.view` y `settings.manage` y rechazos al intentar modificar sin permisos; comprobar auditabilidad, idempotencia y cero días.
-5. Integrar el PR y desplegar Admin. Confirmar que Comercial carga la política de 10 días y que Trabajo conserva su modo de prueba/búsqueda, sin editor de días.
+5. Integrar el PR y desplegar Admin. Confirmar que Comercial carga la política de 10 días y que Trabajo conserva su modo de prueba/búsqueda, sin edición de días ni comisión.
 6. Dejar el interruptor activado hasta la decisión comercial expresa del propietario.
 
 ## Pruebas mínimas

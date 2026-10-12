@@ -34,6 +34,7 @@ export default function MarketplaceWelcomePolicyPanel({
   const client = useQueryClient();
   const [enabled, setEnabled] = useState(true);
   const [days, setDays] = useState("10");
+  const [commission, setCommission] = useState("10");
   const [status, setStatus] = useState("");
 
   const policy = useQuery({
@@ -68,11 +69,35 @@ export default function MarketplaceWelcomePolicyPanel({
     if (!policy.data) return;
     setEnabled(policy.data.enabled);
     setDays(String(policy.data.duration_days));
+    setCommission(String(Number((policy.data.commission_rate * 100).toFixed(4))));
   }, [policy.data]);
 
   const validDays = Number.isInteger(Number(days)) && Number(days) >= 1 && Number(days) <= 365;
   const changed = policy.data != null &&
     (enabled !== policy.data.enabled || Number(days) !== policy.data.duration_days);
+
+  const validCommission = commission.trim() !== "" && Number.isFinite(Number(commission)) && Number(commission) > 0 && Number(commission) <= 100;
+  const commissionChanged = policy.data != null && Math.abs(Number(commission) / 100 - policy.data.commission_rate) > 0.000001;
+
+  const saveCommission = useMutation({
+    mutationFn: async () => {
+      if (!canEdit || !validCommission) throw new Error("No tienes permiso o la comisión no es válida.");
+      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_commission_only", {
+        target_project_id: projectId,
+        target_commission_rate: Number(commission) / 100,
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setStatus("Comisión Marketplace guardada correctamente.");
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["marketplace-welcome-policy", projectId] }),
+        client.invalidateQueries({ queryKey: ["marketplace-commercial-settings", projectId] }),
+        client.invalidateQueries({ queryKey: ["marketplace-overview", projectId] }),
+      ]);
+    },
+    onError: (error: Error) => setStatus(`No se pudo guardar la comisión: ${error.message}`),
+  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -109,7 +134,7 @@ export default function MarketplaceWelcomePolicyPanel({
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-300/30 bg-emerald-400/15 text-emerald-200"><Sparkles className="h-6 w-6" /></span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">Política general de bienvenida</p>
-              <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">Días gratuitos de incorporación</h2>
+              <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">Días gratuitos y comisión Marketplace</h2>
             </div>
           </div>
           <span className="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">Independiente de las ofertas</span>
@@ -123,7 +148,7 @@ export default function MarketplaceWelcomePolicyPanel({
           </p>
         ) : (
           <>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_220px]">
               <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-300/20 bg-[#071a1d]/65 px-4 py-4">
                 <div>
                   <Label htmlFor="welcome-enabled" className="text-base font-semibold text-white">Beneficio general activo</Label>
@@ -138,12 +163,25 @@ export default function MarketplaceWelcomePolicyPanel({
                   <span className="font-semibold text-cyan-200">días</span>
                 </div>
               </div>
+              <div className="rounded-2xl border border-cyan-300/20 bg-[#071826]/70 px-4 py-3">
+                <Label htmlFor="welcome-commission" className="text-sm font-semibold text-slate-200">Comisión Marketplace</Label>
+                <div className="mt-2 flex items-center gap-3">
+                  <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} className="w-28 border-cyan-300/25 bg-[#0a202b] text-xl font-bold text-white" />
+                  <span className="font-semibold text-cyan-200">%</span>
+                </div>
+                <p className="mt-2 text-xs text-slate-300">Comisión habitual. Durante los días gratuitos no se cobra.</p>
+                {canEdit && (
+                  <Button className="mt-3 w-full bg-cyan-400 font-bold text-[#04212d] hover:bg-cyan-300" disabled={!validCommission || !commissionChanged || saveCommission.isPending} onClick={() => { setStatus(""); saveCommission.mutate(); }}>
+                    {saveCommission.isPending ? "Guardando comisión…" : "Guardar comisión"}
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
               <p className="max-w-2xl text-xs leading-relaxed text-slate-300">
                 <CalendarDays className="mr-1 inline-block h-4 w-4 text-emerald-300" />
                 {enabled ? `${days} días para cada nueva incorporación válida.` : "Sin días gratuitos generales para las nuevas altas."}
-                {" "}Comisión habitual: {(policy.data?.commission_rate ?? 0.1) * 100} %. Las campañas de Ofertas siguen en borrador y no se aplican automáticamente.
+                {" "}Las campañas de Ofertas siguen en borrador y no se aplican automáticamente.
               </p>
               {canEdit && <Button disabled={!validDays || !changed || save.isPending} onClick={() => { setStatus(""); save.mutate(); }} className="gap-2 bg-emerald-400 font-bold text-[#05251e] hover:bg-emerald-300"><ShieldCheck className="h-4 w-4" />{save.isPending ? "Guardando…" : "Guardar política general"}</Button>}
             </div>
