@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Gift,
   History,
   Megaphone,
   Pencil,
@@ -50,6 +51,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -94,6 +96,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
+  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas">("captacion");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [source, setSource] = useState("all");
@@ -233,11 +236,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     <div className="space-y-6 md:space-y-8">
       <ModuleHeader
         title="Comercial"
-        description="Captación, campañas, fuentes y seguimiento de personas interesadas."
+        description="Captación, campañas, seguimiento comercial y ofertas TukTuk."
         icon={Megaphone}
         module="comercial"
         actions={
-          canManage ? (
+          canManage && commercialView === "captacion" ? (
             <div className="flex gap-2.5">
               <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
                 Nueva campaña
@@ -251,6 +254,33 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         }
       />
 
+      <nav aria-label="Áreas de Comercial" className="flex flex-wrap items-center gap-2 rounded-[22px] border border-border/55 bg-background/45 p-2 shadow-[0_16px_48px_-35px_rgba(0,0,0,0.8)]">
+        <Button
+          type="button"
+          variant={commercialView === "captacion" ? "default" : "outline"}
+          onClick={() => setCommercialView("captacion")}
+          className="gap-2 rounded-xl"
+          aria-pressed={commercialView === "captacion"}
+        >
+          <Megaphone className="h-4 w-4" />
+          Captación y campañas
+        </Button>
+        <Button
+          type="button"
+          variant={commercialView === "ofertas" ? "default" : "outline"}
+          onClick={() => setCommercialView("ofertas")}
+          className="gap-2 rounded-xl"
+          aria-pressed={commercialView === "ofertas"}
+        >
+          <Gift className="h-4 w-4" />
+          Ofertas TukTuk
+        </Button>
+      </nav>
+
+      {commercialView === "ofertas" ? (
+        <MarketplaceOffersPanel projectId={projectId} canEdit={canManage} />
+      ) : (
+        <>
       {/* 4 KPI Principales */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -542,6 +572,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           </TableBody>
         </Table>
       </AdminDataTableShell>
+
+        </>
+      )}
 
       {/* Existing modals for editing/history/campaigns */}
       {/* (Kept fully intact to preserve business logic and mutations) */}
