@@ -291,14 +291,15 @@ export default function MarketplaceOffersPanel({
 
   return (
     <section className="space-y-5">
-      <div className="relative isolate overflow-hidden rounded-[28px] border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.11] via-background/95 to-cyan-500/[0.055] p-5 shadow-[0_28px_85px_-52px_rgba(139,92,246,0.8)] sm:p-6">
+      <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.22] bg-gradient-to-br from-violet-500/[0.075] via-background/75 to-cyan-500/[0.03] p-4 shadow-[0_25px_75px_-48px_rgba(139,92,246,0.68)] backdrop-blur-xl sm:p-5">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
         <img
           src="/admin-premium/economy.svg"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute -right-14 -top-14 h-[23rem] w-[53%] object-contain object-right opacity-[0.12] mix-blend-screen"
+          className="pointer-events-none absolute -right-12 top-0 hidden h-[19rem] w-[36%] object-contain object-right opacity-[0.10] mix-blend-screen md:block"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/80 via-background/75 to-background/55" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/76 via-background/78 to-background/65" />
         <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-violet-500/[0.10] blur-3xl" />
         <div className="relative z-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -310,8 +311,8 @@ export default function MarketplaceOffersPanel({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
                 TukTuk · Comercial
               </p>
-              <h2 className="mt-1 text-xl font-bold text-foreground">Campañas y ofertas</h2>
-              <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground sm:text-2xl">Campañas y ofertas</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-foreground/70">
                 Diseña promociones con fechas, beneficiarios, límites y condiciones. Cada campaña
                 conserva su propia configuración.
               </p>
@@ -338,10 +339,11 @@ export default function MarketplaceOffersPanel({
             { title: "Programables", value: count.forthcoming, icon: CalendarDays },
             { title: "Archivadas", value: count.archived, icon: Archive },
           ].map(({ title, value, icon: Icon }) => (
-            <div key={title} className="rounded-2xl border border-violet-400/[0.13] bg-background/80 p-4 shadow-[0_14px_36px_-29px_rgba(139,92,246,0.55)] backdrop-blur-lg">
+            <div key={title} className="relative overflow-hidden rounded-2xl border border-violet-400/[0.18] bg-gradient-to-br from-violet-500/[0.055] via-background/90 to-cyan-500/[0.025] p-4 shadow-[0_18px_48px_-37px_rgba(139,92,246,0.6)] backdrop-blur-lg">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/55 via-cyan-400/20 to-transparent" />
               <Icon className="h-4 w-4 text-cyan-300" />
-              <div className="mt-2 text-2xl font-semibold">{value}</div>
-              <div className="text-xs text-muted-foreground">{title}</div>
+              <div className="mt-2 font-mono text-3xl font-bold tracking-tight text-foreground">{value}</div>
+              <div className="mt-1 text-sm font-medium text-foreground/70">{title}</div>
             </div>
           ))}
         </div>
@@ -702,14 +704,22 @@ export default function MarketplaceOffersPanel({
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className={campaigns.length === 1 ? "grid gap-4" : "grid gap-4 xl:grid-cols-2"}>
           {campaigns.map((item) => {
             const offer = kinds.find((kind) => kind.value === item.kind);
             return (
               <article
                 key={item.id}
-                className="rounded-[24px] border border-violet-400/[0.16] bg-gradient-to-br from-background/95 via-background/90 to-violet-500/[0.04] p-5 shadow-[0_24px_68px_-52px_rgba(139,92,246,0.66)] backdrop-blur-lg"
+                className="group relative isolate overflow-hidden rounded-[24px] border border-violet-400/[0.22] bg-gradient-to-br from-violet-500/[0.065] via-background/85 to-cyan-500/[0.025] p-5 shadow-[0_24px_72px_-49px_rgba(139,92,246,0.72)] backdrop-blur-lg transition-colors hover:border-violet-400/35 sm:p-6"
               >
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
+                <img
+                  src="/admin-premium/economy.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-10 top-2 hidden h-52 w-[32%] object-contain object-right opacity-[0.07] mix-blend-screen md:block"
+                />
+                <div className="relative z-10">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold text-violet-300">
@@ -721,10 +731,20 @@ export default function MarketplaceOffersPanel({
                     {item.status === "archived" ? "Archivada" : "Borrador"}
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-foreground/70">
                   {item.description || offer?.helper}
                 </p>
-                <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {item.benefit_duration_days != null && (
+                    <span className="rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] px-3 py-1.5 text-xs font-semibold text-cyan-100">
+                      {item.benefit_duration_days} días de beneficio
+                    </span>
+                  )}
+                  <span className="rounded-xl border border-violet-400/20 bg-violet-500/[0.07] px-3 py-1.5 text-xs font-medium text-violet-100">
+                    {audiences.find((audience) => audience.value === item.audience)?.text ?? "Beneficiarios definidos"}
+                  </span>
+                </div>
+                <div className={campaigns.length === 1 ? "mt-5 grid grid-cols-2 gap-x-6 gap-y-3 text-[13px] leading-relaxed text-foreground/70 lg:grid-cols-4" : "mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] leading-relaxed text-foreground/70"}>
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />{" "}
                     {displayDate(item.begins_at)}
@@ -775,6 +795,7 @@ export default function MarketplaceOffersPanel({
                       </>
                     )}
                   </div>
+                </div>
                 </div>
               </article>
             );
