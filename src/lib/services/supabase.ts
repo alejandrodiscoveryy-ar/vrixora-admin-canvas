@@ -3097,9 +3097,8 @@ export const supabaseServices: AdminServices = {
     },
     async updateCommercialSettings(projectId, input) {
       await requireOnline("Actualizar configuración comercial");
-      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_commercial_settings", {
+      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_commission_only", {
         target_project_id: projectId,
-        target_promotion_duration_days: input.promotionDurationDays,
         target_commission_rate: input.commissionRate,
       });
       throwIfError(error);

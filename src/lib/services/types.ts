@@ -1533,7 +1533,7 @@ export interface MarketplaceAdminService {
   ): Promise<void>;
   updateCommercialSettings(
     projectId: string,
-    input: { promotionDurationDays: number; commissionRate: number },
+    input: { commissionRate: number },
   ): Promise<void>;
   testMode(projectId: string): Promise<MarketplaceTestMode>;
   setTestMode(
