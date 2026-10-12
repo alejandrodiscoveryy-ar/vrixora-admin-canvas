@@ -1028,7 +1028,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [createTopupKey, setCreateTopupKey] = useState(() => crypto.randomUUID());
-  const [promotionDays, setPromotionDays] = useState("");
   const [commission, setCommission] = useState("");
   const [testModeEnabled, setTestModeEnabled] = useState(false);
   const [testDriverUserId, setTestDriverUserId] = useState("");
@@ -1261,7 +1260,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   useEffect(() => {
     if (settings.data) {
-      setPromotionDays(String(settings.data.promotionDurationDays));
       setCommission(String(settings.data.commissionRate * 100));
     }
   }, [settings.data]);
@@ -1421,7 +1419,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const save = useMutation({
     mutationFn: () =>
       supabaseServices.marketplace.updateCommercialSettings(projectId, {
-        promotionDurationDays: Number(promotionDays),
         commissionRate: Number(commission) / 100,
       }),
     onSuccess: () => {
@@ -2928,12 +2925,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           labelText="Moneda"
                           value={settings.data?.walletCurrency ?? "CUP"}
                         />
-                        <MiniMetric
-                          labelText="Promoción"
-                          value={
-                            settings.data ? `${settings.data.promotionDurationDays} días` : "—"
-                          }
-                        />
+                        <MiniMetric labelText="Días generales" value="Ver Comercial" />
                         <MiniMetric
                           labelText="Comisión"
                           value={settings.data ? `${settings.data.commissionRate * 100} %` : "—"}
@@ -2953,69 +2945,30 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       </div>
 
                       {canManageSettings ? (
-                        <>
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <Label htmlFor="marketplace-promotion-days">
-                                Duración de la promoción
-                              </Label>
-                              <div className="relative mt-1.5">
-                                <Input
-                                  id="marketplace-promotion-days"
-                                  type="number"
-                                  min="1"
-                                  max="365"
-                                  step="1"
-                                  className="pr-14"
-                                  value={promotionDays}
-                                  onChange={(event) => setPromotionDays(event.target.value)}
-                                />
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                                  días
-                                </span>
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="marketplace-commission">Comisión Marketplace</Label>
-                              <div className="relative mt-1.5">
-                                <Input
-                                  id="marketplace-commission"
-                                  type="number"
-                                  min="0.01"
-                                  max="100"
-                                  step="0.01"
-                                  className="pr-12"
-                                  value={commission}
-                                  onChange={(event) => setCommission(event.target.value)}
-                                />
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                                  %
-                                </span>
-                              </div>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="marketplace-commission">Comisión Marketplace</Label>
+                            <div className="relative mt-1.5">
+                              <Input
+                                id="marketplace-commission"
+                                type="number" min="0.01" max="100" step="0.01"
+                                className="pr-12"
+                                value={commission}
+                                onChange={(event) => setCommission(event.target.value)}
+                              />
+                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">%</span>
                             </div>
                           </div>
-
+                          <p className="text-xs leading-relaxed text-muted-foreground">Los días gratuitos generales se gestionan exclusivamente desde Comercial → Ofertas TukTuk. El modo de prueba permanece en Trabajo.</p>
                           <Button
                             className="w-full"
-                            disabled={
-                              save.isPending ||
-                              !Number.isInteger(Number(promotionDays)) ||
-                              Number(promotionDays) < 1 ||
-                              Number(promotionDays) > 365 ||
-                              Number(commission) <= 0 ||
-                              Number(commission) > 100
-                            }
+                            disabled={save.isPending || Number(commission) <= 0 || Number(commission) > 100}
                             onClick={() => save.mutate()}
                           >
-                            {save.isPending ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <ShieldCheck className="mr-2 h-4 w-4" />
-                            )}
-                            Guardar configuración comercial
+                            {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                            Guardar comisión Marketplace
                           </Button>
-                        </>
+                        </div>
                       ) : null}
                     </div>
                   )}
