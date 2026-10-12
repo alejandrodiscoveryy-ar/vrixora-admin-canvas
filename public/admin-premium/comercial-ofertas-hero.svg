@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 500" fill="none" aria-hidden="true">
+  <defs>
+    <radialGradient id="aura"><stop stop-color="#835AF4" stop-opacity=".52"/><stop offset="1" stop-color="#835AF4" stop-opacity="0"/></radialGradient>
+    <linearGradient id="card" x1="240" y1="95" x2="675" y2="390" gradientUnits="userSpaceOnUse"><stop stop-color="#6245B2"/><stop offset=".55" stop-color="#2C3971"/><stop offset="1" stop-color="#13617E"/></linearGradient>
+    <linearGradient id="gift" x1="285" y1="240" x2="520" y2="445" gradientUnits="userSpaceOnUse"><stop stop-color="#A787FF"/><stop offset="1" stop-color="#4E42A8"/></linearGradient>
+    <linearGradient id="glow" x1="480" y1="130" x2="660" y2="360" gradientUnits="userSpaceOnUse"><stop stop-color="#DBCDFF"/><stop offset="1" stop-color="#7AEAF4"/></linearGradient>
+    <filter id="shadow" x="-45%" y="-45%" width="190%" height="200%"><feDropShadow dx="0" dy="25" stdDeviation="27" flood-color="#070E29" flood-opacity=".85"/></filter>
+    <filter id="mist" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="31"/></filter>
+  </defs>
+  <ellipse cx="535" cy="254" rx="270" ry="213" fill="url(#aura)"/>
+  <ellipse cx="630" cy="305" rx="155" ry="96" fill="#37DCEC" opacity=".11" filter="url(#mist)"/>
+  <g filter="url(#shadow)" transform="rotate(-9 486 247)">
+    <rect x="278" y="91" width="406" height="290" rx="36" fill="url(#card)"/>
+    <rect x="295" y="108" width="372" height="256" rx="27" fill="#0C163A" fill-opacity=".42"/>
+    <rect x="323" y="137" width="151" height="12" rx="6" fill="#E9DFFF" opacity=".73"/>
+    <rect x="323" y="162" width="99" height="9" rx="4.5" fill="#CFC6F9" opacity=".38"/>
+    <path d="M329 312c59-59 111 11 173-67 31-39 64-40 106-89" stroke="#74EAF2" stroke-opacity=".78" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="330" cy="311" r="13" fill="#D9C6FF"/><circle cx="499" cy="246" r="13" fill="#9DEEF4"/><circle cx="606" cy="157" r="13" fill="#9DEEF4"/>
+    <rect x="534" y="284" width="96" height="53" rx="17" fill="#35AFCB" fill-opacity=".40"/>
+    <path d="M555 312h53" stroke="#CCFCFF" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="177" y="260" width="186" height="170" rx="32" fill="url(#gift)"/>
+    <rect x="193" y="290" width="154" height="123" rx="18" fill="#352974" fill-opacity=".47"/>
+    <rect x="163" y="252" width="215" height="52" rx="17" fill="#9B78ED"/>
+    <path d="M269 260v146M186 278h167" stroke="#EEE5FF" stroke-width="13" stroke-linecap="round"/>
+    <path d="M269 252c-46-8-67-33-51-55 17-24 46-7 51 29 7-37 37-52 52-29 15 24-9 49-52 55Z" fill="#7152C2" stroke="#E9DEFF" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+  <g filter="url(#shadow)">
+    <circle cx="672" cy="128" r="70" fill="#134C68"/>
+    <circle cx="672" cy="128" r="57" fill="#1D6C85"/>
+    <circle cx="650" cy="106" r="9" fill="#D3FBFF"/>
+    <circle cx="693" cy="149" r="9" fill="#D3FBFF"/>
+    <path d="m702 98-58 62" stroke="#D3FBFF" stroke-width="13" stroke-linecap="round"/>
+  </g>
+  <g fill="#A994FF"><circle cx="182" cy="119" r="7"/><circle cx="743" cy="347" r="6"/><circle cx="516" cy="450" r="5"/></g>
+  <g fill="#84E8F3"><circle cx="750" cy="221" r="6"/><circle cx="418" cy="65" r="5"/></g>
+</svg>
