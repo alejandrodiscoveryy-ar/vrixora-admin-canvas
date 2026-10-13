@@ -40,6 +40,7 @@ import type {
   MarketplaceDriver,
   MarketplaceDriver360,
   MarketplaceDriverFinancial360,
+  MarketplaceDriverRecordPage,
   MarketplaceJob,
   MarketplaceJobDetail,
   MarketplaceCustomer,
@@ -2130,6 +2131,46 @@ export const supabaseServices: AdminServices = {
         },
         incidents: Number(root.incidents ?? 0),
       } satisfies MarketplaceDriver360;
+    },
+    async getDriverRecord(projectId, driverUserId, page = {}) {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_driver_record", {
+        target_project_id: projectId,
+        target_driver_user_id: driverUserId,
+        target_limit: page.limit ?? 10,
+        target_before_created_at: page.cursor?.at ?? null,
+        target_before_job_id: page.cursor?.id ?? null,
+      });
+      throwIfError(error);
+      const root = (data ?? {}) as Record<string, unknown>;
+      const summary = (root.summary ?? {}) as Record<string, unknown>;
+      const rows = Array.isArray(root.items) ? root.items as Record<string, unknown>[] : [];
+      const cursor = root.next_cursor as Record<string, unknown> | null;
+      return {
+        summary: {
+          services: Number(summary.services ?? 0),
+          completed: Number(summary.completed ?? 0),
+          active: Number(summary.active ?? 0),
+          incidents: Number(summary.incidents ?? 0),
+          cancelled: Number(summary.cancelled ?? 0),
+          testServices: Number(summary.test_services ?? 0),
+          ratingCount: Number(summary.rating_count ?? 0),
+          ratingAverage: summary.rating_average == null ? null : Number(summary.rating_average),
+        },
+        items: rows.map((item) => ({
+          jobId: String(item.job_id),
+          createdAt: String(item.created_at),
+          status: String(item.status),
+          serviceCode: String(item.service_code),
+          finalPrice: Number(item.final_price ?? 0),
+          currency: String(item.currency ?? "CUP"),
+          isTest: Boolean(item.is_test),
+          originText: item.origin_text ? String(item.origin_text) : null,
+          destinationText: item.destination_text ? String(item.destination_text) : null,
+          ratingStars: item.rating_stars == null ? null : Number(item.rating_stars),
+        })),
+        nextCursor: cursor?.at && cursor?.id
+          ? { at: String(cursor.at), id: String(cursor.id) } : null,
+      } satisfies MarketplaceDriverRecordPage;
     },
     async getDriverFinancial360(projectId, driverUserId) {
       const { data, error } = await getSupabaseClient().rpc(
