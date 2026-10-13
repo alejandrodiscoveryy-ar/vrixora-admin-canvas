@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgePercent, Gift, ShieldCheck } from "lucide-react";
+import { BadgePercent, ChevronDown, ChevronUp, Gift, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,9 +197,17 @@ export default function MarketplaceWelcomePolicyPanel({
 
                 <div className="rounded-2xl border border-emerald-300/20 bg-[#06191b]/65 px-4 py-3.5 sm:px-5">
                   <Label htmlFor="welcome-days" className="text-base font-semibold text-emerald-100">Beneficio de bienvenida</Label>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} aria-label="Cantidad de días gratuitos" className="h-[96px] w-[158px] rounded-xl border-0 bg-transparent px-1 py-0 text-center text-[62px] font-black leading-none tabular-nums tracking-tight text-white shadow-none md:text-[72px] focus-visible:ring-2 focus-visible:ring-emerald-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
+                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} aria-label="Cantidad de días gratuitos" className="h-[96px] w-[145px] rounded-xl border-0 bg-transparent px-1 py-0 text-center text-[62px] font-black leading-none tabular-nums tracking-tight text-white shadow-none md:text-[72px] focus-visible:ring-2 focus-visible:ring-emerald-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                     <span className="text-[28px] font-extrabold leading-tight tracking-wide text-emerald-100 md:text-[32px]">DÍAS</span>
+                    <div className="flex flex-col gap-1.5" role="group" aria-label="Ajustar días gratuitos">
+                      <button type="button" aria-label="Aumentar días gratuitos en uno" title="Aumentar 1 día" disabled={!canEdit || save.isPending || Number(days) >= 365} onClick={() => setDays(String(Math.min(365, Math.max(1, Math.trunc(Number(days)) || 1) + 1)))} className="flex h-11 w-12 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-300/10 text-emerald-100 transition-colors hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35">
+                        <ChevronUp aria-hidden="true" className="h-6 w-6" />
+                      </button>
+                      <button type="button" aria-label="Disminuir días gratuitos en uno" title="Disminuir 1 día" disabled={!canEdit || save.isPending || Number(days) <= 1} onClick={() => setDays(String(Math.max(1, (Math.trunc(Number(days)) || 1) - 1)))} className="flex h-11 w-12 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-300/10 text-emerald-100 transition-colors hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35">
+                        <ChevronDown aria-hidden="true" className="h-6 w-6" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm font-medium text-emerald-100/80">Gratuitos para nuevos conductores</p>
                 </div>
@@ -242,32 +250,34 @@ export default function MarketplaceWelcomePolicyPanel({
                 </div>
 
                 <div className="rounded-2xl border border-cyan-300/20 bg-[#061622]/70 px-4 py-3.5 sm:px-5">
-                  <p className="text-base font-semibold text-cyan-100">Cobro actual por carrera</p>
-                  {chargePolicy.isSuccess ? (
-                    <div className="mt-1 flex flex-wrap items-baseline gap-x-2" aria-live="polite">
-                      <span className="text-[62px] font-black leading-none tabular-nums tracking-tight text-white md:text-[72px]">
-                        {chargePolicy.data.enabled ? Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es") : "0"}
-                      </span>
-                      <span className="text-[30px] font-extrabold text-cyan-100 md:text-[36px]">%</span>
-                      <span className="text-sm font-semibold text-cyan-200">
-                        {chargePolicy.data.enabled ? "Comisión vigente" : "Sin comisión"}
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-300">{chargePolicy.isLoading ? "Consultando cobro vigente…" : "Estado del cobro no disponible"}</p>
-                  )}
-                  <div className="mt-3 border-t border-cyan-300/20 pt-3">
-                    <Label htmlFor="welcome-commission" className="text-sm font-semibold text-cyan-100">Porcentaje configurado</Label>
-                    <div className="mt-1 flex flex-wrap items-center gap-2.5">
-                      <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} aria-label="Porcentaje de comisión configurado" className="h-[62px] w-[128px] rounded-xl border-cyan-300/35 bg-[#061622]/95 text-center text-[34px] font-extrabold leading-none tabular-nums tracking-tight text-white shadow-inner shadow-black/20 md:text-[38px] focus-visible:ring-cyan-300/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                      <span className="text-[26px] font-extrabold text-cyan-100">%</span>
-                      <span className="max-w-44 text-sm leading-5 text-slate-300">Se aplicará cuando el cobro esté activo.</span>
+                  <Label htmlFor="welcome-commission" className="text-base font-semibold text-cyan-100">Comisión por carrera</Label>
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
+                    <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} aria-label="Porcentaje de comisión por carrera" className="h-[96px] w-[145px] rounded-xl border-0 bg-transparent px-1 py-0 text-center text-[62px] font-black leading-none tabular-nums tracking-tight text-white shadow-none md:text-[72px] focus-visible:ring-2 focus-visible:ring-cyan-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                    <span className="text-[30px] font-extrabold leading-tight text-cyan-100 md:text-[36px]">%</span>
+                    <div className="flex flex-col gap-1.5" role="group" aria-label="Ajustar porcentaje de comisión">
+                      <button type="button" aria-label="Aumentar comisión un punto porcentual" title="Aumentar 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) >= 100} onClick={() => setCommission(String(Number(Math.min(100, Number(commission) + 1).toFixed(2))))} className="flex h-11 w-12 items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-cyan-100 transition-colors hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35">
+                        <ChevronUp aria-hidden="true" className="h-6 w-6" />
+                      </button>
+                      <button type="button" aria-label="Disminuir comisión un punto porcentual" title="Disminuir 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) <= 0.01} onClick={() => setCommission(String(Number(Math.max(0.01, Number(commission) - 1).toFixed(2))))} className="flex h-11 w-12 items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-cyan-100 transition-colors hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35">
+                        <ChevronDown aria-hidden="true" className="h-6 w-6" />
+                      </button>
                     </div>
                   </div>
+                  <p className="text-sm font-medium leading-5 text-cyan-100/80">
+                    {chargePolicy.isLoading
+                      ? "Consultando el cobro…"
+                      : chargePolicy.isError
+                        ? "No se pudo consultar el cobro."
+                        : chargeChanged
+                          ? "Cambio del interruptor pendiente de guardar."
+                          : chargePolicy.data?.enabled
+                            ? "Cobro activo, excepto durante beneficios gratuitos."
+                            : "Sin cobro: el porcentaje queda listo para reactivarse."}
+                  </p>
                 </div>
 
                 <div className="mt-auto border-t border-cyan-300/15 pt-3">
-                  <p className="text-xs leading-5 text-slate-300">El cobro desactivado no afecta las carreras ya aceptadas.</p>
+                  <p className="text-xs leading-5 text-slate-300">Las carreras anteriores conservan sus condiciones de liquidación.</p>
                   {canEdit && (
                     <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                       <Button size="sm" disabled={!validCommission || !commissionChanged || saveCommission.isPending} onClick={() => { setStatus(""); saveCommission.mutate(); }} className="min-h-10 rounded-xl border border-cyan-300/35 bg-[#0b3041] px-3 font-semibold text-cyan-100 hover:bg-[#104359] disabled:opacity-50">
