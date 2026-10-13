@@ -1107,6 +1107,33 @@ export interface MarketplaceDriver360 {
   incidents: number;
 }
 
+export interface MarketplaceDriverRecordSummary {
+  services: number;
+  completed: number;
+  active: number;
+  incidents: number;
+  cancelled: number;
+  testServices: number;
+  ratingCount: number;
+  ratingAverage: number | null;
+}
+export interface MarketplaceDriverRecordItem {
+  jobId: string;
+  createdAt: string;
+  status: string;
+  serviceCode: string;
+  finalPrice: number;
+  currency: string;
+  isTest: boolean;
+  originText: string | null;
+  destinationText: string | null;
+  ratingStars: number | null;
+}
+export interface MarketplaceDriverRecordPage {
+  summary: MarketplaceDriverRecordSummary;
+  items: MarketplaceDriverRecordItem[];
+  nextCursor: MarketplaceCursor | null;
+}
 export interface MarketplaceDriverFinancial360 {
   wallet: {
     realBalance: number;
@@ -1440,6 +1467,11 @@ export interface MarketplaceAdminService {
     page?: { limit?: number; cursor?: MarketplaceCursor | null },
   ): Promise<MarketplacePage<MarketplaceDriver>>;
   getDriver360(projectId: string, driverUserId: string): Promise<MarketplaceDriver360>;
+  getDriverRecord(
+    projectId: string,
+    driverUserId: string,
+    page?: { limit?: number; cursor?: MarketplaceCursor | null },
+  ): Promise<MarketplaceDriverRecordPage>;
   getDriverFinancial360(
     projectId: string,
     driverUserId: string,

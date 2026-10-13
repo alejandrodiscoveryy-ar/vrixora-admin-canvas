@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
+import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 import {
   getMarketplaceOperationalMap,
@@ -461,206 +462,6 @@ function CustomerSummaryMetric({
         {labelText}
       </p>
       <p className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">{value}</p>
-    </div>
-  );
-}
-
-function Driver360Detail({
-  detail,
-  financial,
-  canSeeFinancial,
-  financialLoading,
-  media,
-}: {
-  detail: MarketplaceDriver360;
-  financial: MarketplaceDriverFinancial360 | null;
-  canSeeFinancial: boolean;
-  financialLoading: boolean;
-  media: MarketplaceDirectoryDriverMedia | null;
-}) {
-  const displayName = detail.account?.displayName || "Conductor";
-  const currency =
-    financial?.topups[0]?.currency ??
-    financial?.documents[0]?.currency ??
-    financial?.referralCredits[0]?.currency ??
-    "CUP";
-  const availableBalance = financial
-    ? financial.wallet.realAvailableBalance + financial.wallet.promotionalAvailableBalance
-    : 0;
-  const referralCreditTotal =
-    financial?.referralCredits.reduce((sum, item) => sum + item.amount, 0) ?? 0;
-
-  return (
-    <div className="space-y-5 sm:space-y-6">
-      <section className="rounded-[28px] border border-cyan-500/25 bg-gradient-to-br from-cyan-500/[0.10] via-background/80 to-emerald-500/[0.06] p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-cyan-400/25 bg-cyan-500/[0.08] text-cyan-200">
-              <UserRound className="h-7 w-7" />
-              {media?.avatarUrl ? (
-                <img src={media.avatarUrl} alt={`Foto de ${displayName}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-              ) : null}
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200">
-                Conductor Marketplace
-              </span>
-              <StatusBadge status={detail.driver.status} />
-            </div>
-            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-              {displayName}
-            </h3>
-            </div>
-          </div>
-          <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground">
-            <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />
-            Alta {formatDate(detail.driver.activatedAt ?? detail.driver.createdAt)}
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <MiniMetric labelText="Teléfono" value={detail.account?.phone ?? "Sin teléfono"} />
-          <MiniMetric labelText="Correo" value={detail.account?.email ?? "Sin correo"} />
-        </div>
-      </section>
-
-      <section>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
-          Operación
-        </p>
-        <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
-          Actividad del conductor
-        </h4>
-        <div className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-3">
-          <CustomerSummaryMetric icon={BriefcaseBusiness} labelText="Trabajos" value={detail.jobsSummary.total} accent="cyan" />
-          <CustomerSummaryMetric icon={CheckCircle2} labelText="Completados" value={detail.jobsSummary.completedOrSettled} accent="emerald" />
-          <CustomerSummaryMetric icon={Clock3} labelText="Activos" value={detail.jobsSummary.active} accent="violet" />
-          <CustomerSummaryMetric icon={AlertCircle} labelText="Incidencias" value={detail.incidents} accent="rose" />
-          <CustomerSummaryMetric
-            icon={Star}
-            labelText="Valoración"
-            value={detail.ratings.count ? `${detail.ratings.average.toFixed(1)} / 5 · ${detail.ratings.count}` : "Sin valoraciones"}
-            accent="amber"
-          />
-          <CustomerSummaryMetric icon={Users} labelText="Referidos premiados" value={detail.referral.rewardedCount} accent="cyan" />
-        </div>
-      </section>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <section className="rounded-[22px] border border-border/60 bg-background/45 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300">Promoción</p>
-          {detail.promotion ? (
-            <div className="mt-3 space-y-2 text-sm">
-              <p className="font-medium text-foreground">
-                {detail.promotion.durationDaysSnapshot} días · regla v{detail.promotion.ruleVersionSnapshot}
-              </p>
-              <p className="text-muted-foreground">Inicio: {formatDate(detail.promotion.startedAt)}</p>
-              <p className="text-muted-foreground">Fin: {formatDate(detail.promotion.endsAt)}</p>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">Sin promoción registrada.</p>
-          )}
-        </section>
-
-        <section className="rounded-[22px] border border-border/60 bg-background/45 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-300">Referidos</p>
-          <div className="mt-3 space-y-2 text-sm">
-            <p className="font-medium text-foreground">Código: {detail.referral.code ?? "Sin código"}</p>
-            <p className="text-muted-foreground">Referidos: {detail.referral.referredCount}</p>
-            <p className="text-muted-foreground">Premiados: {detail.referral.rewardedCount}</p>
-          </div>
-        </section>
-      </div>
-
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Vehículos</p>
-        {detail.vehicles.length ? (
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {detail.vehicles.map((item) => (
-              <div key={item.vehicle.id} className="rounded-2xl border border-border/55 bg-background/60 p-4">
-                <div className="relative mb-3 flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan-400/20 bg-cyan-500/[0.06] text-cyan-300">
-                  <CarFront className="h-6 w-6" />
-                  {media?.vehiclePhotos[item.vehicle.id] ? (
-                    <img src={media.vehiclePhotos[item.vehicle.id]} alt={`Foto de ${item.vehicle.name || "vehículo"}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                  ) : null}
-                </div>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-foreground">{item.vehicle.name || "Vehículo"}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {[item.vehicle.brand, item.vehicle.model, item.vehicle.year].filter(Boolean).join(" · ") || "Sin datos de marca/modelo"}
-                    </p>
-                  </div>
-                  <StatusBadge status={item.vehicle.marketplaceStatus} />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {item.vehicle.categoryCode ? (
-                    <span className="rounded-lg border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
-                      {label(item.vehicle.categoryCode)}
-                    </span>
-                  ) : null}
-                  {item.assignment ? (
-                    <span className="rounded-lg border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
-                      {item.assignment.isAvailable ? "Disponible" : "No disponible"}
-                    </span>
-                  ) : null}
-                </div>
-                {item.services.length ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {item.services.map((service) => (
-                      <ServiceBadge key={service} service={service} />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-3 text-sm text-muted-foreground">Sin vehículos asociados.</p>
-        )}
-      </section>
-
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">Finanzas</p>
-        {!canSeeFinancial ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Tu rol no tiene permiso para consultar la información financiera del conductor.
-          </p>
-        ) : financialLoading ? (
-          <div className="mt-3"><LoadingState /></div>
-        ) : financial ? (
-          <>
-            <div className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-4">
-              <CustomerSummaryMetric icon={Wallet} labelText="Saldo real" value={formatAmount(financial.wallet.realBalance, currency)} accent="emerald" />
-              <CustomerSummaryMetric icon={WalletCards} labelText="Promocional" value={formatAmount(financial.wallet.promotionalBalance, currency)} accent="violet" />
-              <CustomerSummaryMetric icon={CircleDollarSign} labelText="Disponible" value={formatAmount(availableBalance, currency)} accent="cyan" />
-              <CustomerSummaryMetric icon={Banknote} labelText="Comisiones" value={formatAmount(financial.commissionTotal, currency)} accent="amber" />
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <MiniMetric labelText="Recargas" value={financial.topups.length} />
-              <MiniMetric labelText="Comprobantes" value={financial.documents.length} />
-              <MiniMetric labelText="Créditos por referidos" value={formatAmount(referralCreditTotal, currency)} />
-            </div>
-            {financial.topups.length ? (
-              <div className="mt-4 space-y-2">
-                <p className="text-xs font-semibold text-foreground">Últimas recargas</p>
-                {financial.topups.slice(0, 5).map((topup) => (
-                  <div key={topup.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/55 bg-background/55 px-3 py-2.5">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{formatAmount(topup.amount, topup.currency)}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(topup.requestedAt)} · {topup.method}</p>
-                    </div>
-                    <StatusBadge status={topup.status} />
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <p className="mt-3 text-sm text-muted-foreground">No se pudo cargar la información financiera.</p>
-        )}
-      </section>
     </div>
   );
 }
@@ -1480,6 +1281,13 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     staleTime: 10 * 60_000,
     refetchInterval: 10 * 60_000,
     refetchIntervalInBackground: false,
+    retry: 1,
+  });
+  const selectedDriverMedia = useQuery({
+    queryKey: ["marketplace-driver-360-media", projectId, driver360Id],
+    queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, [driver360Id!]),
+    enabled: Boolean(driver360Id),
+    staleTime: 5 * 60_000,
     retry: 1,
   });
   const customerRows = rows(customers);
@@ -3097,7 +2905,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           if (!open) setDriver360Id(null);
         }}
       >
-        <DialogContent className="max-h-[94vh] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
           <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
             <DialogHeader className="text-left">
               <div className="mb-1 flex items-center gap-2">
@@ -3119,12 +2927,16 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             {driver360.isLoading ? (
               <LoadingState />
             ) : driver360.data ? (
-              <Driver360Detail
+              <MarketplaceDriver360Record
+                projectId={projectId}
+                driverUserId={driver360Id!}
                 detail={driver360.data}
                 financial={driverFinancial360.data ?? null}
                 canSeeFinancial={canManagePayments}
                 financialLoading={driverFinancial360.isLoading}
-                media={driverMedia.data?.[driver360Id ?? ""] ?? null}
+                media={selectedDriverMedia.data?.[driver360Id ?? ""] ?? driverMedia.data?.[driver360Id ?? ""] ?? null}
+                isAvailable={driverRows.find((item) => item.userId === driver360Id)?.isAvailable ?? null}
+                onOpenJob={(id) => { setDriver360Id(null); setJobId(id); }}
               />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
