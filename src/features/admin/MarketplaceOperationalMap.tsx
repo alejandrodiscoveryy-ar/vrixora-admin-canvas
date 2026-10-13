@@ -505,7 +505,7 @@ const driverInitials = (name: string | null) => {
 
 function DriverAvatar({ name, url }: { name: string | null; url: string | null }) {
   return (
-    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background shadow-sm">
+    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background shadow-sm">
       <div className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
         {driverInitials(name)}
       </div>
@@ -2460,16 +2460,16 @@ export default function MarketplaceOperationalMap({
                 </button>
               </div>
 
-              <div className="mt-3 max-h-[46vh] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
+              <div className="mt-2.5 max-h-[46vh] space-y-1.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
                 {filteredDrivers.length ? (
                   filteredDrivers.map((driver) => {
                     const hasLastPosition = driverCoordinate(driver) != null;
                     return (
                       <div
                         key={driver.driverUserId}
-                        className="rounded-xl border border-white/10 bg-background/38 px-3 py-2.5 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                        className="rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
                       >
-                        <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex min-w-0 items-start gap-2">
                           <DriverAvatar
                             name={driver.driverDisplayName}
                             url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
@@ -2477,7 +2477,7 @@ export default function MarketplaceOperationalMap({
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="min-w-0 text-sm font-semibold leading-tight text-foreground">
+                              <p title={driver.driverDisplayName || "Conductor"} className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground">
                                 {driver.driverDisplayName || "Conductor"}
                               </p>
 
@@ -2497,7 +2497,7 @@ export default function MarketplaceOperationalMap({
                               />
                             </div>
 
-                            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
                               <VehicleModeIcon
                                 code={driver.vehicleCategoryCode}
                                 className="h-3.5 w-3.5 shrink-0 text-orange-300"
@@ -2511,17 +2511,17 @@ export default function MarketplaceOperationalMap({
                               </span>
                             </div>
 
-                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               {driver.activeJobId ? (
-                                <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-cyan-200">
                                   En servicio · {statusLabel(driver.activeJobStatus)}
                                 </span>
                               ) : driver.acceptingJobs ? (
-                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
+                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
                                   {driver.isAvailable ? "Trabajando · disponible" : "Trabajando"}
                                 </span>
                               ) : (
-                                <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                                   Descansando
                                 </span>
                               )}
