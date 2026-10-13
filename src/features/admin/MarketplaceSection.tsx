@@ -2159,27 +2159,40 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           </p>
                         </div>
 
-                        {canManageMarketplace ? (
+                        <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
                           <Button
+                            type="button"
                             size="sm"
                             variant="outline"
-                            className={`w-full lg:w-auto ${
-                              item.status === "suspended"
-                                ? "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-200 hover:bg-emerald-500/[0.12] hover:text-emerald-100"
-                                : "border-rose-500/20 bg-rose-500/[0.035] text-rose-200 hover:bg-rose-500/[0.08] hover:text-rose-100"
-                            }`}
-                            onClick={() =>
-                              setDriver({
-                                id: item.userId,
-                                suspended: item.status !== "suspended",
-                              })
-                            }
+                            className="w-full border-cyan-400/25 bg-cyan-500/[0.075] text-cyan-100 hover:bg-cyan-500/[0.13] hover:text-cyan-50 sm:w-auto"
+                            onClick={() => setDriver360Id(item.userId)}
+                            aria-label={`Abrir ficha 360 de ${item.displayName}`}
                           >
-                            {item.status === "suspended"
-                              ? "Reactivar"
-                              : "Suspender"}
+                            <Eye className="mr-1.5 h-4 w-4" />
+                            Ficha 360
                           </Button>
-                        ) : null}
+                          {canManageMarketplace ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={`w-full lg:w-auto ${
+                                item.status === "suspended"
+                                  ? "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-200 hover:bg-emerald-500/[0.12] hover:text-emerald-100"
+                                  : "border-rose-500/20 bg-rose-500/[0.035] text-rose-200 hover:bg-rose-500/[0.08] hover:text-rose-100"
+                              }`}
+                              onClick={() =>
+                                setDriver({
+                                  id: item.userId,
+                                  suspended: item.status !== "suspended",
+                                })
+                              }
+                            >
+                              {item.status === "suspended"
+                                ? "Reactivar"
+                                : "Suspender"}
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
                     </article>
                   ))}
