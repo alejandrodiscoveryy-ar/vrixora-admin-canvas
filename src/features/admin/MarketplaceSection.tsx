@@ -55,6 +55,8 @@ import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatc
 import {
   getMarketplaceOperationalMap,
   getMarketplaceOperationalMapConfig,
+  getMarketplaceDirectoryDriverMedia,
+  type MarketplaceDirectoryDriverMedia,
 } from "@/lib/marketplace-map";
 
 const PAGE_SIZE = 25;
@@ -468,11 +470,13 @@ function Driver360Detail({
   financial,
   canSeeFinancial,
   financialLoading,
+  media,
 }: {
   detail: MarketplaceDriver360;
   financial: MarketplaceDriverFinancial360 | null;
   canSeeFinancial: boolean;
   financialLoading: boolean;
+  media: MarketplaceDirectoryDriverMedia | null;
 }) {
   const displayName = detail.account?.displayName || "Conductor";
   const currency =
@@ -490,8 +494,15 @@ function Driver360Detail({
     <div className="space-y-5 sm:space-y-6">
       <section className="rounded-[28px] border border-cyan-500/25 bg-gradient-to-br from-cyan-500/[0.10] via-background/80 to-emerald-500/[0.06] p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-cyan-400/25 bg-cyan-500/[0.08] text-cyan-200">
+              <UserRound className="h-7 w-7" />
+              {media?.avatarUrl ? (
+                <img src={media.avatarUrl} alt={`Foto de ${displayName}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              ) : null}
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200">
                 Conductor Marketplace
               </span>
@@ -500,6 +511,7 @@ function Driver360Detail({
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {displayName}
             </h3>
+            </div>
           </div>
           <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground">
             <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />
@@ -567,6 +579,12 @@ function Driver360Detail({
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {detail.vehicles.map((item) => (
               <div key={item.vehicle.id} className="rounded-2xl border border-border/55 bg-background/60 p-4">
+                <div className="relative mb-3 flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan-400/20 bg-cyan-500/[0.06] text-cyan-300">
+                  <CarFront className="h-6 w-6" />
+                  {media?.vehiclePhotos[item.vehicle.id] ? (
+                    <img src={media.vehiclePhotos[item.vehicle.id]} alt={`Foto de ${item.vehicle.name || "vehículo"}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  ) : null}
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-foreground">{item.vehicle.name || "Vehículo"}</p>
@@ -1454,6 +1472,16 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   const jobRows = rows(jobs);
   const driverRows = rows(drivers);
+  const driverMediaIds = driverRows.map((row) => row.userId);
+  const driverMedia = useQuery({
+    queryKey: ["marketplace-driver-directory-media", projectId, driverMediaIds],
+    queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, driverMediaIds),
+    enabled: tab === "conductores" && driverMediaIds.length > 0,
+    staleTime: 10 * 60_000,
+    refetchInterval: 10 * 60_000,
+    refetchIntervalInBackground: false,
+    retry: 1,
+  });
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
@@ -2105,8 +2133,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       <div className="relative grid gap-3 lg:grid-cols-[minmax(220px,1.15fr)_minmax(190px,0.8fr)_minmax(220px,1fr)_auto] lg:items-center">
                         <div className="min-w-0">
                           <div className="flex items-start gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
+                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
                               <Users className="h-5 w-5" />
+                              {driverMedia.data?.[item.userId]?.avatarUrl ? (
+                                <img src={driverMedia.data?.[item.userId]?.avatarUrl ?? undefined} alt={`Foto de ${item.displayName}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                              ) : null}
                             </div>
 
                             <div className="min-w-0">
@@ -2152,7 +2183,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           </p>
 
                           <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
-                            <CarFront className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                            <span className="relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/15 bg-cyan-500/[0.04] text-cyan-300">
+                              <CarFront className="h-4 w-4" />
+                              {driverMedia.data?.[item.userId]?.vehiclePhotos[item.vehicleId ?? ""] ? (
+                                <img src={driverMedia.data?.[item.userId]?.vehiclePhotos[item.vehicleId ?? ""] ?? undefined} alt={`Foto del vehículo ${item.vehicleName ?? ""}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                              ) : null}
+                            </span>
                             <span className="truncate">
                               {item.vehicleName ?? "Sin vehículo"}
                             </span>
@@ -3088,6 +3124,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 financial={driverFinancial360.data ?? null}
                 canSeeFinancial={canManagePayments}
                 financialLoading={driverFinancial360.isLoading}
+                media={driverMedia.data?.[driver360Id ?? ""] ?? null}
               />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
