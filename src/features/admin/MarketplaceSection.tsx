@@ -281,6 +281,7 @@ function PremiumPanel({
   tone = "emerald",
   action,
   backgroundImage,
+  headerless = false,
   children,
 }: {
   title: string;
@@ -289,12 +290,27 @@ function PremiumPanel({
   tone?: PanelTone;
   action?: ReactNode;
   backgroundImage?: string;
+  headerless?: boolean;
   children: ReactNode;
 }) {
   const visual = panelVisuals[tone];
 
-  return (
-    <section className={`relative overflow-hidden rounded-2xl border shadow-sm ${visual.card}`}>
+  // La pestaÃ±a ya identifica la secciÃ³n; presentar los datos sin repetir una cabecera grande.
+  // Los controles de filtro y las acciones se conservan en una barra compacta.
+  if (headerless) {
+    return (
+      <section aria-label={title} className="min-w-0">
+        {action ? (
+          <div className="mb-3 flex min-w-0 flex-wrap items-center justify-end gap-2">
+            {action}
+          </div>
+        ) : null}
+        <div className="min-w-0">{children}</div>
+      </section>
+    );
+  }
+
+  return (    <section className={`relative overflow-hidden rounded-2xl border shadow-sm ${visual.card}`}>
       {backgroundImage ? (
         <>
           <img
@@ -1403,6 +1419,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsList>
 <TabsContent value="resumen">
           <PremiumPanel
+              headerless
             title="Pulso operativo"
             description="Visión general del estado actual del Marketplace"
             icon={Eye}
@@ -1906,6 +1923,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         ) : null}
 <TabsContent value="conductores">
           <PremiumPanel
+              headerless
             title="Conductores"
             description={
               drivers.isLoading
@@ -2050,6 +2068,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canCustomers ? (
           <TabsContent value="clientes">
             <PremiumPanel
+              headerless
               title="Clientes"
               description={
                 customers.isLoading
@@ -2259,37 +2278,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canPayments ? (
           <>
             <TabsContent value="billeteras" className="mt-3">
-          <section className="relative overflow-hidden rounded-[26px] border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.065] via-background/60 to-background/40 shadow-[0_28px_80px_-52px_rgba(245,158,11,0.95)]">
-            <img
-              src="/admin-premium/wallets.svg"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-0 hidden h-52 w-[38%] object-cover object-right opacity-[0.11] mix-blend-screen sm:block xl:h-60 xl:w-[42%] xl:opacity-[0.16]"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/18 to-amber-500/[0.025]" />
-            <div className="relative z-[1] flex flex-col gap-3 border-b border-amber-400/15 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/[0.09] text-amber-300">
-                  <Wallet className="h-4.5 w-4.5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300">
-                    Finanzas del conductor
-                  </p>
-                  <h3 className="mt-0.5 text-lg font-semibold text-foreground">Billeteras</h3>
-                </div>
-              </div>
+          <section aria-label="Billeteras" className="min-w-0">
 
-              <div className="rounded-xl border border-border/55 bg-background/50 px-3 py-2 text-sm">
-                {wallets.isLoading
-                  ? "Consultando..."
-                  : `${walletRows.length} ${
-                      walletRows.length === 1 ? "billetera visible" : "billeteras visibles"
-                    }`}
-              </div>
-            </div>
-
-            <div className="relative z-[1] p-3 sm:p-4">
+            <div className="min-w-0">
               {wallets.isLoading ? (
                 <LoadingState />
               ) : !walletRows.length ? (
@@ -2402,6 +2393,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
 <TabsContent value="recargas">
               <PremiumPanel
+              headerless
                 title="Recargas"
                 description={
                   topups.isLoading
@@ -2617,6 +2609,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
         <TabsContent value="incidencias">
           <PremiumPanel
+              headerless
             title="Incidencias"
             description={
               incidents.isLoading
