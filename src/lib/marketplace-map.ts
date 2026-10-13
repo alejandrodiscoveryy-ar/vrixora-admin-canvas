@@ -504,10 +504,13 @@ export async function getMarketplaceDirectoryDriverMedia(
   return Object.fromEntries(drivers.map((item) => {
     const driver = record(item);
     const vehicles = Array.isArray(driver.vehicles) ? driver.vehicles as unknown[] : [];
-    const vehiclePhotos = Object.fromEntries(vehicles.map((item) => {
+    const vehiclePhotos: Record<string, string> = {};
+    for (const item of vehicles) {
       const vehicle = record(item);
-      return [String(vehicle.vehicle_id ?? ""), nullableString(vehicle.photo_url)] as const;
-    }).filter(([id, url]) => Boolean(id) && Boolean(url)));
+      const vehicleId = String(vehicle.vehicle_id ?? "").trim();
+      const photoUrl = nullableString(vehicle.photo_url);
+      if (vehicleId && photoUrl) vehiclePhotos[vehicleId] = photoUrl;
+    }
     return [String(driver.driver_user_id ?? ""), {
       avatarUrl: nullableString(driver.avatar_url),
       vehiclePhotos,
