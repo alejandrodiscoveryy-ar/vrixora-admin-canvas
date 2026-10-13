@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgePercent, CalendarDays, Gift, History, ShieldCheck } from "lucide-react";
+import { BadgePercent, Gift, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,14 +14,6 @@ type WelcomePolicy = {
   commission_rate: number;
   updated_at: string;
 };
-type WelcomeChange = {
-  changed_at: string;
-  prior_enabled: boolean;
-  prior_days: number;
-  new_enabled: boolean;
-  new_days: number;
-};
-
 export default function MarketplaceWelcomePolicyPanel({
   projectId,
   canView,
@@ -64,36 +56,6 @@ export default function MarketplaceWelcomePolicyPanel({
       const row = (data as { enabled: boolean; rate: number; updated_at: string }[] | null)?.[0];
       if (!row) throw new Error("No se pudo consultar el cobro de comisiones.");
       return row;
-    },
-  });
-
-  const chargeHistory = useQuery({
-    queryKey: ["marketplace-commission-policy-events", projectId],
-    enabled: canView && chargePolicy.isSuccess,
-    queryFn: async () => {
-      const { data, error } = await getSupabaseClient().rpc(
-        "admin_list_marketplace_commission_policy_events", { target_project_id: projectId },
-      );
-      if (error) throw error;
-      return (data ?? []) as {
-        changed_at: string;
-        previous_enabled: boolean;
-        new_enabled: boolean;
-        rate_snapshot: number;
-      }[];
-    },
-  });
-
-  const history = useQuery({
-    queryKey: ["marketplace-welcome-history", projectId],
-    enabled: canView && policy.isSuccess,
-    queryFn: async () => {
-      const { data, error } = await getSupabaseClient().rpc(
-        "admin_list_marketplace_welcome_policy_events",
-        { target_project_id: projectId },
-      );
-      if (error) throw error;
-      return (data ?? []) as WelcomeChange[];
     },
   });
 
@@ -199,7 +161,7 @@ export default function MarketplaceWelcomePolicyPanel({
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">TukTuk · Comercial</p>
               <h2 className="mt-0.5 text-xl font-extrabold tracking-tight text-white sm:text-2xl">Política comercial general</h2>
-              <p className="mt-0.5 text-xs text-slate-300 sm:text-sm">Dos controles independientes para beneficios y comisiones.</p>
+              <p className="mt-0.5 text-xs text-slate-300 sm:text-sm">Configura la bienvenida y las comisiones desde un solo lugar.</p>
             </div>
           </div>
           <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-3 py-1 text-xs font-semibold text-cyan-100">Independiente de las ofertas</span>
@@ -245,7 +207,7 @@ export default function MarketplaceWelcomePolicyPanel({
                 </div>
 
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-emerald-300/15 pt-3">
-                  <p className="max-w-[21rem] text-xs leading-5 text-slate-300">Los conductores que ya recibieron el beneficio conservan sus días.</p>
+                  <p className="max-w-[21rem] text-xs leading-5 text-slate-300">Los beneficios concedidos anteriormente se conservan.</p>
                   {canEdit && (
                     <Button size="sm" disabled={!validDays || !changed || save.isPending} onClick={() => { setStatus(""); save.mutate(); }} className="min-h-10 shrink-0 rounded-xl bg-emerald-400 px-4 font-bold text-[#05251e] hover:bg-emerald-300 disabled:opacity-50">
                       {save.isPending ? "Guardando…" : "Guardar bienvenida"}
@@ -287,13 +249,20 @@ export default function MarketplaceWelcomePolicyPanel({
                     <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} className="h-[66px] w-28 rounded-xl border-cyan-300/35 bg-[#061622]/95 text-center text-[38px] font-extrabold leading-none tabular-nums tracking-tight text-white shadow-inner shadow-black/20 focus-visible:ring-cyan-300/60" />
                     <div>
                       <span className="block text-2xl font-extrabold text-cyan-100">%</span>
-                      <span className="block text-xs text-slate-300">comisión configurada</span>
+                      <span className="block text-xs text-slate-300">porcentaje configurado</span>
+                      {chargePolicy.isSuccess && (
+                        <span className={`mt-1 block text-xs font-bold ${chargePolicy.data.enabled ? "text-cyan-200" : "text-amber-200"}`}>
+                          {chargePolicy.data.enabled
+                            ? `Cobro vigente: ${Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es")} %`
+                            : "Cobro vigente: 0 %"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-auto border-t border-cyan-300/15 pt-3">
-                  <p className="text-xs leading-5 text-slate-300">Con el cobro apagado, las nuevas carreras no generan comisión. Las anteriores conservan su liquidación.</p>
+                  <p className="text-xs leading-5 text-slate-300">El cobro desactivado no afecta las carreras ya aceptadas.</p>
                   {canEdit && (
                     <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                       <Button size="sm" disabled={!validCommission || !commissionChanged || saveCommission.isPending} onClick={() => { setStatus(""); saveCommission.mutate(); }} className="min-h-10 rounded-xl border border-cyan-300/35 bg-[#0b3041] px-3 font-semibold text-cyan-100 hover:bg-[#104359] disabled:opacity-50">
@@ -319,40 +288,33 @@ export default function MarketplaceWelcomePolicyPanel({
           </div>
         )}
 
-        <div className="flex flex-wrap items-start gap-2 rounded-xl border border-white/10 bg-[#071725]/55 px-3 py-2.5 text-xs leading-5 text-slate-300">
-          <ShieldCheck aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-          <p>Los beneficios y cobros ya registrados se respetan. Las campañas de Ofertas siguen en borrador y no se aplican automáticamente.</p>
-        </div>
-        {status && <p role="status" className="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-100">{status}</p>}
-
-        {((chargeHistory.data?.length ?? 0) > 0 || (history.data?.length ?? 0) > 0) && (
-          <div className="grid gap-3 md:grid-cols-2">
-            {(history.data?.length ?? 0) > 0 && (
-              <details className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-                <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-emerald-100"><CalendarDays aria-hidden="true" className="h-4 w-4" /> Historial de bienvenida</summary>
-                <div className="mt-3 space-y-2 text-xs text-slate-300">
-                  {history.data?.map((event, index) => (
-                    <p key={`${event.changed_at}-${index}`} className="border-t border-white/10 pt-2">
-                      {new Date(event.changed_at).toLocaleString("es")}: {event.prior_enabled ? `${event.prior_days} días activos` : "Desactivado"} → {event.new_enabled ? `${event.new_days} días activos` : "Desactivado"}
-                    </p>
-                  ))}
-                </div>
-              </details>
-            )}
-            {(chargeHistory.data?.length ?? 0) > 0 && (
-              <details className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-                <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-cyan-100"><History aria-hidden="true" className="h-4 w-4" /> Historial de cobro</summary>
-                <div className="mt-3 space-y-2 text-xs text-slate-300">
-                  {chargeHistory.data?.map((entry, index) => (
-                    <p key={`${entry.changed_at}-${index}`} className="border-t border-white/10 pt-2">
-                      {new Date(entry.changed_at).toLocaleString("es")}: {entry.previous_enabled ? "Cobro activo" : "Cobro apagado"} → {entry.new_enabled ? "Cobro activo" : "Cobro apagado"} · {Number(entry.rate_snapshot) * 100} % configurado
-                    </p>
-                  ))}
-                </div>
-              </details>
-            )}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-300/20 bg-[#071725]/80 px-4 py-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
+            <div className="min-w-0 space-y-1">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-200">Estrategia vigente</p>
+              {policy.data ? (
+                <p className="text-sm font-medium leading-6 text-white">
+                  {policy.data.enabled ? `Bienvenida: ${policy.data.duration_days} días` : "Bienvenida desactivada"}
+                  <span className="px-2 text-slate-500" aria-hidden="true">·</span>
+                  {chargePolicy.isLoading
+                    ? "Consultando cobros…"
+                    : chargePolicy.isError
+                      ? "No se pudo consultar el estado de cobro"
+                      : chargePolicy.data?.enabled
+                        ? `Comisiones activas: ${Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es")} %`
+                        : `Comisiones suspendidas: 0 % efectivo (${Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es")} % configurado)`}
+                </p>
+              ) : (
+                <p className="text-sm text-slate-300">Consultando estrategia…</p>
+              )}
+              {status && <p role="status" className="text-xs font-semibold text-emerald-200">{status}</p>}
+            </div>
           </div>
-        )}
+          {(changed || commissionChanged || chargeChanged) && (
+            <span className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-3 py-1.5 text-xs font-semibold text-amber-100">Cambios sin guardar</span>
+          )}
+        </div>
       </div>
     </section>
   );
