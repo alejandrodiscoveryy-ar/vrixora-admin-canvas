@@ -515,6 +515,7 @@ Deno.serve(async (request: Request) => {
         "operational_map_config",
         "operational_route_geometry",
         "operational_driver_avatars",
+        "driver_directory_media",
       ].includes(operation)
     ) {
       throw new Error("MAP_ADMIN_OPERATION_INVALID");
@@ -523,6 +524,74 @@ Deno.serve(async (request: Request) => {
     const projectId = String(body?.project_id ?? "").trim();
     if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
 
+    if (operation === "driver_directory_media") {
+      const requested = body?.driver_user_ids;
+      if (!Array.isArray(requested) || requested.length === 0 || requested.length > 25) {
+        throw new Error("DRIVER_MEDIA_REQUEST_INVALID");
+      }
+      const driverIds = Array.from(new Set(requested.map((id: unknown) => String(id ?? "").trim())));
+      if (driverIds.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
+        throw new Error("DRIVER_MEDIA_ID_INVALID");
+      }
+
+      // The authenticated RPC checks marketplace.view and that every driver belongs to this project.
+      // Never trust arbitrary client-supplied asset paths or use the service role before the check.
+      const details = await Promise.all(driverIds.map(async (driverUserId) => {
+        const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
+          target_project_id: projectId,
+          target_driver_user_id: driverUserId,
+        });
+        if (error) throw error;
+        const root = asRecord(data);
+        return {
+          driverUserId,
+          driver: asRecord(root.driver),
+          account: asRecord(root.account),
+          vehicles: (Array.isArray(root.vehicles) ? root.vehicles : []).map((entry: unknown) =>
+            asRecord(asRecord(entry).vehicle)
+          ),
+        };
+      }));
+
+      const mediaIds = Array.from(new Set(details.flatMap((entry) => [
+        entry.driver.photo_asset_id,
+        ...entry.vehicles.map((vehicle) => vehicle.main_photo_asset_id),
+      ].filter((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id)))));
+      let assets: Array<{ id: string; storage_bucket: string; storage_path: string }> = [];
+      if (mediaIds.length) {
+        const { data, error } = await serviceClient.from("media_assets")
+          .select("id,storage_bucket,storage_path")
+          .eq("project_id", projectId)
+          .eq("status", "available")
+          .eq("storage_bucket", "marketplace-media")
+          .in("id", mediaIds);
+        if (error) throw error;
+        assets = data ?? [];
+      }
+
+      const signed = await Promise.all(assets.map(async (asset) => {
+        const { data, error } = await serviceClient.storage
+          .from("marketplace-media").createSignedUrl(asset.storage_path, 900);
+        return [asset.id, !error && data?.signedUrl ? data.signedUrl : null] as const;
+      }));
+      const signedById = new Map(signed);
+      const drivers = details.map((entry) => {
+        const uploaded = signedById.get(String(entry.driver.photo_asset_id ?? "")) ?? null;
+        const google = typeof entry.account.avatar_url === "string" && entry.account.avatar_url.trim()
+          ? entry.account.avatar_url.trim() : null;
+        return {
+          driver_user_id: entry.driverUserId,
+          avatar_url: uploaded ?? google,
+          avatar_source: uploaded ? "driver_photo" : google ? "google" : null,
+          vehicles: entry.vehicles.map((vehicle) => ({
+            vehicle_id: String(vehicle.id ?? ""),
+            photo_url: signedById.get(String(vehicle.main_photo_asset_id ?? "")) ?? null,
+          })),
+        };
+      });
+      const payload = { drivers, expires_at: new Date(Date.now() + 900_000).toISOString() };
+      return reply({ ...payload, data: payload });
+    }
     if (operation === "operational_driver_avatars") {
       const { data: operationalData, error: operationalError } = await userClient.rpc(
         "admin_get_marketplace_operational_map",

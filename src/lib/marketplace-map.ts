@@ -483,6 +483,37 @@ export async function getMarketplaceOperationalDriverAvatars(
   );
 }
 
+export interface MarketplaceDirectoryDriverMedia {
+  avatarUrl: string | null;
+  vehiclePhotos: Record<string, string>;
+}
+
+export async function getMarketplaceDirectoryDriverMedia(
+  projectId: string,
+  driverUserIds: string[],
+): Promise<Record<string, MarketplaceDirectoryDriverMedia>> {
+  if (driverUserIds.length === 0) return {};
+  const { data, error } = await getSupabaseClient().functions.invoke(
+    "marketplace-map-admin-gateway",
+    { body: { operation: "driver_directory_media", project_id: projectId, driver_user_ids: driverUserIds } },
+  );
+  if (error) throw new Error(error.message);
+  const root = record(data);
+  const payload = record(root.data);
+  const drivers = Array.isArray(payload.drivers) ? payload.drivers as unknown[] : [];
+  return Object.fromEntries(drivers.map((item) => {
+    const driver = record(item);
+    const vehicles = Array.isArray(driver.vehicles) ? driver.vehicles as unknown[] : [];
+    const vehiclePhotos = Object.fromEntries(vehicles.map((item) => {
+      const vehicle = record(item);
+      return [String(vehicle.vehicle_id ?? ""), nullableString(vehicle.photo_url)] as const;
+    }).filter(([id, url]) => Boolean(id) && Boolean(url)));
+    return [String(driver.driver_user_id ?? ""), {
+      avatarUrl: nullableString(driver.avatar_url),
+      vehiclePhotos,
+    } satisfies MarketplaceDirectoryDriverMedia];
+  }));
+}
 export async function getMarketplaceOperationalStaticMap(
   projectId: string,
   options: { showRoutes?: boolean } = {},
