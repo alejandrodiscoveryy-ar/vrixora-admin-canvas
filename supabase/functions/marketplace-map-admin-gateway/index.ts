@@ -198,42 +198,30 @@ function operationalRoutesFromData(
 
     if (originLat == null || originLon == null) continue;
 
-    if (
-      pickupStatuses.has(status) &&
-      assignedDriverUserId
-    ) {
-      const assignedDriver = drivers
-        .map(asRecord)
-        .find((driver) => {
-          if (String(driver.driver_user_id ?? "") !== assignedDriverUserId) {
-            return false;
-          }
+    if (pickupStatuses.has(status) && assignedDriverUserId) {
+      const assignedDriver = drivers.map(asRecord).find((driver) => {
+        if (String(driver.driver_user_id ?? "") !== assignedDriverUserId) {
+          return false;
+        }
 
-          if (
-            assignedVehicleId &&
-            String(driver.vehicle_id ?? "") !== assignedVehicleId
-          ) {
-            return false;
-          }
+        if (assignedVehicleId && String(driver.vehicle_id ?? "") !== assignedVehicleId) {
+          return false;
+        }
 
-          return true;
-        });
+        return true;
+      });
 
       if (assignedDriver) {
         const locationFresh = assignedDriver.location_fresh === true;
 
         const driverLat = validCoordinate(
-          locationFresh
-            ? assignedDriver.latitude
-            : assignedDriver.last_latitude,
+          locationFresh ? assignedDriver.latitude : assignedDriver.last_latitude,
           -90,
           90,
         );
 
         const driverLon = validCoordinate(
-          locationFresh
-            ? assignedDriver.longitude
-            : assignedDriver.last_longitude,
+          locationFresh ? assignedDriver.longitude : assignedDriver.last_longitude,
           -180,
           180,
         );
@@ -397,10 +385,8 @@ async function operationalStaticMap(
       for (const result of results) {
         if (!result) continue;
 
-        const routeColor =
-          result.segment === "pickup" ? "f97316" : "22d3ee";
-        const routeOverlay =
-          `path-4+${routeColor}-0.85(${encodeURIComponent(result.polyline)})`;
+        const routeColor = result.segment === "pickup" ? "f97316" : "22d3ee";
+        const routeOverlay = `path-4+${routeColor}-0.85(${encodeURIComponent(result.polyline)})`;
         const candidate = [...routeOverlays, routeOverlay, ...pointOverlays].join(",");
 
         if (candidate.length > 6500) break;
@@ -516,6 +502,7 @@ Deno.serve(async (request: Request) => {
         "operational_route_geometry",
         "operational_driver_avatars",
         "driver_directory_media",
+        "test_lab_create_v3",
       ].includes(operation)
     ) {
       throw new Error("MAP_ADMIN_OPERATION_INVALID");
@@ -529,37 +516,48 @@ Deno.serve(async (request: Request) => {
       if (!Array.isArray(requested) || requested.length === 0 || requested.length > 25) {
         throw new Error("DRIVER_MEDIA_REQUEST_INVALID");
       }
-      const driverIds = Array.from(new Set(requested.map((id: unknown) => String(id ?? "").trim())));
+      const driverIds = Array.from(
+        new Set(requested.map((id: unknown) => String(id ?? "").trim())),
+      );
       if (driverIds.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
         throw new Error("DRIVER_MEDIA_ID_INVALID");
       }
 
       // The authenticated RPC checks marketplace.view and that every driver belongs to this project.
       // Never trust arbitrary client-supplied asset paths or use the service role before the check.
-      const details = await Promise.all(driverIds.map(async (driverUserId) => {
-        const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
-          target_project_id: projectId,
-          target_driver_user_id: driverUserId,
-        });
-        if (error) throw error;
-        const root = asRecord(data);
-        return {
-          driverUserId,
-          driver: asRecord(root.driver),
-          account: asRecord(root.account),
-          vehicles: (Array.isArray(root.vehicles) ? root.vehicles : []).map((entry: unknown) =>
-            asRecord(asRecord(entry).vehicle)
-          ),
-        };
-      }));
+      const details = await Promise.all(
+        driverIds.map(async (driverUserId) => {
+          const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
+            target_project_id: projectId,
+            target_driver_user_id: driverUserId,
+          });
+          if (error) throw error;
+          const root = asRecord(data);
+          return {
+            driverUserId,
+            driver: asRecord(root.driver),
+            account: asRecord(root.account),
+            vehicles: (Array.isArray(root.vehicles) ? root.vehicles : []).map((entry: unknown) =>
+              asRecord(asRecord(entry).vehicle),
+            ),
+          };
+        }),
+      );
 
-      const mediaIds = Array.from(new Set(details.flatMap((entry) => [
-        entry.driver.photo_asset_id,
-        ...entry.vehicles.map((vehicle) => vehicle.main_photo_asset_id),
-      ].filter((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id)))));
+      const mediaIds = Array.from(
+        new Set(
+          details.flatMap((entry) =>
+            [
+              entry.driver.photo_asset_id,
+              ...entry.vehicles.map((vehicle) => vehicle.main_photo_asset_id),
+            ].filter((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id)),
+          ),
+        ),
+      );
       let assets: Array<{ id: string; storage_bucket: string; storage_path: string }> = [];
       if (mediaIds.length) {
-        const { data, error } = await serviceClient.from("media_assets")
+        const { data, error } = await serviceClient
+          .from("media_assets")
           .select("id,storage_bucket,storage_path")
           .eq("project_id", projectId)
           .eq("status", "available")
@@ -569,16 +567,21 @@ Deno.serve(async (request: Request) => {
         assets = data ?? [];
       }
 
-      const signed = await Promise.all(assets.map(async (asset) => {
-        const { data, error } = await serviceClient.storage
-          .from("marketplace-media").createSignedUrl(asset.storage_path, 900);
-        return [asset.id, !error && data?.signedUrl ? data.signedUrl : null] as const;
-      }));
+      const signed = await Promise.all(
+        assets.map(async (asset) => {
+          const { data, error } = await serviceClient.storage
+            .from("marketplace-media")
+            .createSignedUrl(asset.storage_path, 900);
+          return [asset.id, !error && data?.signedUrl ? data.signedUrl : null] as const;
+        }),
+      );
       const signedById = new Map(signed);
       const drivers = details.map((entry) => {
         const uploaded = signedById.get(String(entry.driver.photo_asset_id ?? "")) ?? null;
-        const google = typeof entry.account.avatar_url === "string" && entry.account.avatar_url.trim()
-          ? entry.account.avatar_url.trim() : null;
+        const google =
+          typeof entry.account.avatar_url === "string" && entry.account.avatar_url.trim()
+            ? entry.account.avatar_url.trim()
+            : null;
         return {
           driver_user_id: entry.driverUserId,
           avatar_url: uploaded ?? google,
@@ -656,9 +659,7 @@ Deno.serve(async (request: Request) => {
         mediaAssets = data ?? [];
       }
 
-      const detailByUserId = new Map(
-        driverDetails.map((item) => [item.driverUserId, item]),
-      );
+      const detailByUserId = new Map(driverDetails.map((item) => [item.driverUserId, item]));
       const assetById = new Map(mediaAssets.map((row: any) => [String(row.id), row]));
 
       const drivers = await Promise.all(
@@ -811,6 +812,125 @@ Deno.serve(async (request: Request) => {
       return reply({ ...payload, data: payload });
     }
 
+    if (operation === "test_lab_create_v3") {
+      // Reutilizamos exactamente el gateway administrativo autenticado; nada se publica
+      // antes de verificar Mapbox y el RPC transaccional del laboratorio.
+      const { data: audience, error: audienceError } = await userClient.rpc(
+        "admin_get_marketplace_test_audience",
+        { target_project_id: projectId },
+      );
+      if (audienceError) throw audienceError;
+      const requested = body?.target_driver_user_ids;
+      if (!Array.isArray(requested) || requested.length < 1 || requested.length > 30) {
+        throw new Error("TEST_LAB_V3_RECIPIENTS_INVALID");
+      }
+      const drivers = Array.from(new Set(requested.map((v: unknown) => String(v ?? "").trim())));
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (drivers.some((v) => !uuidPattern.test(v)))
+        throw new Error("TEST_LAB_V3_DRIVER_ID_INVALID");
+      const authorizedIds = new Set(
+        (Array.isArray(audience) ? audience : []).map((row: any) =>
+          String(row?.driver_user_id ?? ""),
+        ),
+      );
+      if (drivers.some((v) => !authorizedIds.has(v)))
+        throw new Error("TEST_LAB_V3_RECIPIENT_UNAUTHORIZED");
+
+      const point = (raw: any) => {
+        const lat = Number(raw?.lat),
+          lon = Number(raw?.lon);
+        if (
+          !Number.isFinite(lat) ||
+          !Number.isFinite(lon) ||
+          lat < 18 ||
+          lat > 24.5 ||
+          lon < -85.5 ||
+          lon > -73
+        ) {
+          throw new Error("TEST_LAB_V3_COORDINATES_INVALID");
+        }
+        return { lat, lon };
+      };
+      const origin = point(body?.target_origin_point);
+      const destination = point(body?.target_destination_point);
+      const serviceCode = String(body?.target_service_code ?? "");
+      const vehicleCategory = String(body?.target_vehicle_category_code ?? "").trim() || null;
+      const originText = String(body?.target_origin_text ?? "").trim();
+      const destinationText = String(body?.target_destination_text ?? "").trim();
+      const priceMode = String(body?.target_price_mode ?? "auto");
+      const expectedPrice = Number(body?.target_expected_price);
+      const key = String(body?.target_idempotency_key ?? "");
+      if (
+        !uuidPattern.test(key) ||
+        !["passenger", "cargo", "courier", "tourism"].includes(serviceCode) ||
+        !["auto", "manual"].includes(priceMode) ||
+        !originText ||
+        !destinationText ||
+        originText.length > 180 ||
+        destinationText.length > 180 ||
+        !Number.isFinite(expectedPrice) ||
+        expectedPrice <= 0 ||
+        expectedPrice > 100000 ||
+        (origin.lat === destination.lat && origin.lon === destination.lon)
+      ) {
+        throw new Error("TEST_LAB_V3_INPUT_INVALID");
+      }
+      const mapbox = await resolveOperationalRoutingCredential(serviceClient, projectId);
+      if (!mapbox) throw new Error("MAPBOX_ROUTING_CREDENTIAL_MISSING");
+      const coords = `${origin.lon},${origin.lat};${destination.lon},${destination.lat}`;
+      const params = new URLSearchParams({
+        geometries: "geojson",
+        overview: "full",
+        steps: "false",
+        access_token: mapbox,
+      });
+      const upstream = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?${params}`,
+        { signal: AbortSignal.timeout(10000) },
+      );
+      if (!upstream.ok) throw new Error(`TEST_LAB_MAPBOX_HTTP_${upstream.status}`);
+      const data = await upstream.json();
+      const first = data?.routes?.[0];
+      const distanceKm = Number(first?.distance) / 1000;
+      const durationSeconds = Math.round(Number(first?.duration));
+      if (
+        !Number.isFinite(distanceKm) ||
+        distanceKm <= 0 ||
+        distanceKm > 5000 ||
+        !Number.isFinite(durationSeconds) ||
+        durationSeconds <= 0
+      ) {
+        throw new Error("TEST_LAB_V3_NO_VALID_ROUTE");
+      }
+      const { data: created, error: createError } = await userClient.rpc(
+        "admin_create_marketplace_test_job_v3",
+        {
+          target_project_id: projectId,
+          target_idempotency_key: key,
+          target_driver_user_ids: drivers,
+          target_service_code: serviceCode,
+          target_vehicle_category_code: vehicleCategory,
+          target_origin_text: originText,
+          target_destination_text: destinationText,
+          target_origin_point: origin,
+          target_destination_point: destination,
+          target_distance_km: distanceKm,
+          target_route_duration_seconds: durationSeconds,
+          target_price_mode: priceMode,
+          target_expected_price: expectedPrice,
+          target_notes: typeof body?.target_notes === "string" ? body.target_notes : null,
+          target_force_wallet_commission: body?.target_force_wallet_commission === true,
+        },
+      );
+      if (createError) throw createError;
+      const payload = {
+        ...asRecord(created),
+        mapbox_distance_km: distanceKm,
+        mapbox_duration_seconds: durationSeconds,
+      };
+      return reply({ ...payload, data: payload });
+    }
+
     if (operation === "operational_static_map") {
       const { data: operationalData, error: operationalError } = await userClient.rpc(
         "admin_get_marketplace_operational_map",
@@ -861,17 +981,11 @@ Deno.serve(async (request: Request) => {
       );
 
       const selectedRoute = routeJobId
-        ? (
-            rendered.renderedRoutes.find(
-              (route) =>
-                route.jobId === routeJobId &&
-                route.segment === "trip",
-            ) ??
-            rendered.renderedRoutes.find(
-              (route) => route.jobId === routeJobId,
-            ) ??
-            null
-          )
+        ? (rendered.renderedRoutes.find(
+            (route) => route.jobId === routeJobId && route.segment === "trip",
+          ) ??
+          rendered.renderedRoutes.find((route) => route.jobId === routeJobId) ??
+          null)
         : null;
 
       const payload = {
