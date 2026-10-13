@@ -35,6 +35,7 @@ export default function MarketplaceWelcomePolicyPanel({
   const [enabled, setEnabled] = useState(true);
   const [days, setDays] = useState("10");
   const [commission, setCommission] = useState("10");
+  const [chargeEnabled, setChargeEnabled] = useState(true);
   const [status, setStatus] = useState("");
 
   const policy = useQuery({
@@ -49,6 +50,37 @@ export default function MarketplaceWelcomePolicyPanel({
       const row = (data as WelcomePolicy[] | null)?.[0];
       if (!row) throw new Error("La política de bienvenida no está disponible.");
       return row;
+    },
+  });
+
+  const chargePolicy = useQuery({
+    queryKey: ["marketplace-commission-policy", projectId],
+    enabled: canView,
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_commission_policy", { target_project_id: projectId },
+      );
+      if (error) throw error;
+      const row = (data as { enabled: boolean; rate: number; updated_at: string }[] | null)?.[0];
+      if (!row) throw new Error("No se pudo consultar el cobro de comisiones.");
+      return row;
+    },
+  });
+
+  const chargeHistory = useQuery({
+    queryKey: ["marketplace-commission-policy-events", projectId],
+    enabled: canView && chargePolicy.isSuccess,
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_commission_policy_events", { target_project_id: projectId },
+      );
+      if (error) throw error;
+      return (data ?? []) as {
+        changed_at: string;
+        previous_enabled: boolean;
+        new_enabled: boolean;
+        rate_snapshot: number;
+      }[];
     },
   });
 
@@ -71,6 +103,36 @@ export default function MarketplaceWelcomePolicyPanel({
     setDays(String(policy.data.duration_days));
     setCommission(String(Number((policy.data.commission_rate * 100).toFixed(4))));
   }, [policy.data]);
+
+  useEffect(() => {
+    if (chargePolicy.data) setChargeEnabled(chargePolicy.data.enabled);
+  }, [chargePolicy.data]);
+
+  const chargeChanged = chargePolicy.data != null && chargeEnabled !== chargePolicy.data.enabled;
+
+  const saveChargePolicy = useMutation({
+    mutationFn: async () => {
+      if (!canEdit || !chargeChanged) throw new Error("Sin permisos o sin cambios.");
+      const { error } = await getSupabaseClient().rpc(
+        "admin_set_marketplace_commission_enabled", {
+          target_project_id: projectId,
+          target_enabled: chargeEnabled,
+        },
+      );
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setStatus(chargeEnabled
+        ? "Cobro de comisiones activado para las nuevas aceptaciones."
+        : "Cobro desactivado: los conductores pueden aceptar sin saldo para comisiones.");
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["marketplace-commission-policy", projectId] }),
+        client.invalidateQueries({ queryKey: ["marketplace-commission-policy-events", projectId] }),
+        client.invalidateQueries({ queryKey: ["marketplace-overview", projectId] }),
+      ]);
+    },
+    onError: (error: Error) => setStatus(`No se pudo cambiar el cobro: ${error.message}`),
+  });
 
   const validDays = Number.isInteger(Number(days)) && Number(days) >= 1 && Number(days) <= 365;
   const changed = policy.data != null &&
@@ -177,6 +239,45 @@ export default function MarketplaceWelcomePolicyPanel({
                 )}
               </div>
             </div>
+            <div className="rounded-2xl border border-amber-300/25 bg-[#1b211e]/80 p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="commission-charge-switch" className="text-base font-bold text-white">Cobrar comisiones Marketplace</Label>
+                  <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
+                    Control general independiente de los días gratuitos. Apagado: las nuevas carreras no reservan ni descuentan comisión y pueden aceptarse sin saldo. Las carreras ya aceptadas conservan su liquidación.
+                  </p>
+                </div>
+                {chargePolicy.isLoading ? (
+                  <p className="text-xs text-slate-300">Consultando el cobro…</p>
+                ) : chargePolicy.isError ? (
+                  <p role="alert" className="text-sm text-amber-200">No se pudo leer la política de cobro. No se ha cambiado.</p>
+                ) : (
+                  <div className="flex flex-col items-end gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-bold ${chargeEnabled ? "text-emerald-200" : "text-amber-200"}`}>
+                        {chargeEnabled ? "Cobro activo" : "Sin comisiones"}
+                      </span>
+                      <Switch id="commission-charge-switch" checked={chargeEnabled}
+                        disabled={!canEdit || saveChargePolicy.isPending}
+                        onCheckedChange={setChargeEnabled} />
+                    </div>
+                    {canEdit && (
+                      <Button size="sm" disabled={!chargeChanged || saveChargePolicy.isPending}
+                        onClick={() => {
+                          const msg = chargeEnabled
+                            ? "Se empezará a cobrar la comisión configurada en las próximas aceptaciones. ¿Continuar?"
+                            : "Las nuevas aceptaciones serán libres de comisión y no requerirán saldo para ella. ¿Continuar?";
+                          if (!window.confirm(msg)) return;
+                          setStatus("");
+                          saveChargePolicy.mutate();
+                        }}>
+                        {saveChargePolicy.isPending ? "Guardando…" : "Guardar política de cobro"}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
               <p className="max-w-2xl text-xs leading-relaxed text-slate-300">
                 <CalendarDays className="mr-1 inline-block h-4 w-4 text-emerald-300" />
@@ -187,6 +288,18 @@ export default function MarketplaceWelcomePolicyPanel({
             </div>
             {status && <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-slate-100">{status}</p>}
           </>
+        )}
+        {(chargeHistory.data?.length ?? 0) > 0 && (
+          <details className="rounded-xl border border-amber-300/20 bg-black/15 p-4">
+            <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-amber-100"><History className="h-4 w-4" />Historial de cobro de comisiones</summary>
+            <div className="mt-3 space-y-2 text-xs text-slate-300">
+              {chargeHistory.data?.map((entry, index) => (
+                <p key={`${entry.changed_at}-${index}`} className="border-b border-white/10 pb-2">
+                  {new Date(entry.changed_at).toLocaleString("es")}: {entry.previous_enabled ? "Cobro activo" : "Cobro apagado"} → {entry.new_enabled ? "Cobro activo" : "Cobro apagado"} · {Number(entry.rate_snapshot) * 100} % configurado
+                </p>
+              ))}
+            </div>
+          </details>
         )}
         {(history.data?.length ?? 0) > 0 && (
           <details className="rounded-xl border border-white/10 bg-black/15 p-4">
