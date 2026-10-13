@@ -186,7 +186,7 @@ export default function MarketplaceWelcomePolicyPanel({
                     </span>
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">01 · Bienvenida</p>
-                      <h3 className="text-lg font-bold text-white">Días gratuitos</h3>
+                      <h3 className="text-xl font-bold text-white">Días gratuitos</h3>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#081c1b]/80 px-3 py-2">
@@ -195,15 +195,13 @@ export default function MarketplaceWelcomePolicyPanel({
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="welcome-days" className="text-sm font-semibold text-emerald-100">Duración del beneficio</Label>
-                  <div className="mt-2 flex items-center gap-3">
-                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} className="h-[66px] w-28 rounded-xl border-emerald-300/35 bg-[#06191b]/95 text-center text-[38px] font-extrabold leading-none tabular-nums tracking-tight text-white shadow-inner shadow-black/20 focus-visible:ring-emerald-300/60" />
-                    <div>
-                      <span className="block text-xl font-bold text-emerald-100">días</span>
-                      <span className="block text-xs text-slate-300">para nuevas altas</span>
-                    </div>
+                <div className="rounded-2xl border border-emerald-300/20 bg-[#06191b]/65 px-4 py-3.5 sm:px-5">
+                  <Label htmlFor="welcome-days" className="text-base font-semibold text-emerald-100">Beneficio de bienvenida</Label>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} aria-label="Cantidad de días gratuitos" className="h-[96px] w-[158px] rounded-xl border-0 bg-transparent px-1 py-0 text-center text-[62px] font-black leading-none tabular-nums tracking-tight text-white shadow-none md:text-[72px] focus-visible:ring-2 focus-visible:ring-emerald-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                    <span className="text-[28px] font-extrabold leading-tight tracking-wide text-emerald-100 md:text-[32px]">DÍAS</span>
                   </div>
+                  <p className="text-sm font-medium text-emerald-100/80">Gratuitos para nuevos conductores</p>
                 </div>
 
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-emerald-300/15 pt-3">
@@ -228,7 +226,7 @@ export default function MarketplaceWelcomePolicyPanel({
                     </span>
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">02 · Facturación</p>
-                      <h3 className="text-lg font-bold text-white">Comisiones Marketplace</h3>
+                      <h3 className="text-xl font-bold text-white">Comisiones Marketplace</h3>
                     </div>
                   </div>
                   {chargePolicy.isLoading ? (
@@ -243,20 +241,27 @@ export default function MarketplaceWelcomePolicyPanel({
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="welcome-commission" className="text-sm font-semibold text-cyan-100">Porcentaje por carrera</Label>
-                  <div className="mt-2 flex items-center gap-3">
-                    <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} className="h-[66px] w-28 rounded-xl border-cyan-300/35 bg-[#061622]/95 text-center text-[38px] font-extrabold leading-none tabular-nums tracking-tight text-white shadow-inner shadow-black/20 focus-visible:ring-cyan-300/60" />
-                    <div>
-                      <span className="block text-2xl font-extrabold text-cyan-100">%</span>
-                      <span className="block text-xs text-slate-300">porcentaje configurado</span>
-                      {chargePolicy.isSuccess && (
-                        <span className={`mt-1 block text-xs font-bold ${chargePolicy.data.enabled ? "text-cyan-200" : "text-amber-200"}`}>
-                          {chargePolicy.data.enabled
-                            ? `Cobro vigente: ${Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es")} %`
-                            : "Cobro vigente: 0 %"}
-                        </span>
-                      )}
+                <div className="rounded-2xl border border-cyan-300/20 bg-[#061622]/70 px-4 py-3.5 sm:px-5">
+                  <p className="text-base font-semibold text-cyan-100">Cobro actual por carrera</p>
+                  {chargePolicy.isSuccess ? (
+                    <div className="mt-1 flex flex-wrap items-baseline gap-x-2" aria-live="polite">
+                      <span className="text-[62px] font-black leading-none tabular-nums tracking-tight text-white md:text-[72px]">
+                        {chargePolicy.data.enabled ? Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es") : "0"}
+                      </span>
+                      <span className="text-[30px] font-extrabold text-cyan-100 md:text-[36px]">%</span>
+                      <span className="text-sm font-semibold text-cyan-200">
+                        {chargePolicy.data.enabled ? "Comisión vigente" : "Sin comisión"}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-300">{chargePolicy.isLoading ? "Consultando cobro vigente…" : "Estado del cobro no disponible"}</p>
+                  )}
+                  <div className="mt-3 border-t border-cyan-300/20 pt-3">
+                    <Label htmlFor="welcome-commission" className="text-sm font-semibold text-cyan-100">Porcentaje configurado</Label>
+                    <div className="mt-1 flex flex-wrap items-center gap-2.5">
+                      <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} aria-label="Porcentaje de comisión configurado" className="h-[62px] w-[128px] rounded-xl border-cyan-300/35 bg-[#061622]/95 text-center text-[34px] font-extrabold leading-none tabular-nums tracking-tight text-white shadow-inner shadow-black/20 md:text-[38px] focus-visible:ring-cyan-300/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                      <span className="text-[26px] font-extrabold text-cyan-100">%</span>
+                      <span className="max-w-44 text-sm leading-5 text-slate-300">Se aplicará cuando el cobro esté activo.</span>
                     </div>
                   </div>
                 </div>
@@ -294,7 +299,7 @@ export default function MarketplaceWelcomePolicyPanel({
             <div className="min-w-0 space-y-1">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-200">Estrategia vigente</p>
               {policy.data ? (
-                <p className="text-sm font-medium leading-6 text-white">
+                <p className="text-base font-semibold leading-6 text-white">
                   {policy.data.enabled ? `Bienvenida: ${policy.data.duration_days} días` : "Bienvenida desactivada"}
                   <span className="px-2 text-slate-500" aria-hidden="true">·</span>
                   {chargePolicy.isLoading
