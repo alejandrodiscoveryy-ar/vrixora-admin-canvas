@@ -91,6 +91,7 @@ const vehicleCategoryLabel = (code: string | null) =>
   "Modalidad s/d";
 
 type OperationalPinKind = "driver" | "customer" | "destination";
+type OperationalAgendaTab = "drivers" | "services" | "clients";
 
 function operationalPinIconSvg(
   kind: OperationalPinKind,
@@ -801,9 +802,10 @@ export default function MarketplaceOperationalMap({
 }) {
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
   const [expanded, setExpanded] = useState(false);
-  const [driversPanelOpen, setDriversPanelOpen] = useState(true);
-  const [servicesPanelOpen, setServicesPanelOpen] = useState(true);
-  const panelOpen = driversPanelOpen || servicesPanelOpen;
+  // Agenda de cristal: sin pestaña activa se muestra la leyenda.
+  const [agendaTab, setAgendaTab] = useState<OperationalAgendaTab | null>(null);
+  const [agendaCollapsed, setAgendaCollapsed] = useState(false);
+  const panelOpen = !agendaCollapsed;
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [customerDetailsJobId, setCustomerDetailsJobId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -1439,6 +1441,8 @@ export default function MarketplaceOperationalMap({
               event.stopPropagation();
               setSelectedJobId(driver.activeJobId);
               setCustomerDetailsJobId(driver.activeJobId);
+              setAgendaTab("services");
+              setAgendaCollapsed(false);
             }
           : null;
       }
@@ -1551,6 +1555,8 @@ export default function MarketplaceOperationalMap({
         event.stopPropagation();
         setSelectedJobId(job.jobId);
         setCustomerDetailsJobId(job.jobId);
+        setAgendaTab("services");
+        setAgendaCollapsed(false);
       };
 
       element.onmouseenter = () => {
@@ -1795,6 +1801,8 @@ export default function MarketplaceOperationalMap({
       if (jobId) {
         setSelectedJobId(jobId);
         setCustomerDetailsJobId(jobId);
+        setAgendaTab("services");
+        setAgendaCollapsed(false);
       }
     };
 
@@ -1853,7 +1861,7 @@ export default function MarketplaceOperationalMap({
             top: expanded ? 70 : 50,
             bottom: expanded ? 70 : 50,
             left: expanded ? 70 : 50,
-            right: panelOpen && map.getContainer().clientWidth >= 800 ? 380 : expanded ? 70 : 50,
+            right: panelOpen && map.getContainer().clientWidth >= 900 ? 440 : expanded ? 70 : 50,
           },
           maxZoom: 15,
           duration: 550,
@@ -1889,6 +1897,14 @@ export default function MarketplaceOperationalMap({
 
   const data = operational.data;
   const operationalJobs = data.jobs;
+  const incidentCount = operationalJobs.filter((job) => job.status === "incident").length;
+  const prioritizedJobs = [...operationalJobs].sort(
+    (a, b) => Number(b.status === "incident") - Number(a.status === "incident"),
+  );
+  // Solo clientes vinculados a servicios activos. Nunca inventar un directorio general.
+  const customerJobs = [...new Map(
+    operationalJobs.map((job) => [job.customerId || `service:${job.jobId}`, job] as const),
+  ).values()];
   const liveAt = formatTime(data.serverTime);
   const rootClass = expanded
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
@@ -2006,38 +2022,14 @@ export default function MarketplaceOperationalMap({
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
-              <Button size="sm" variant="outline" onClick={() => {
-                const showBoth = !panelOpen;
-                setDriversPanelOpen(showBoth);
-                setServicesPanelOpen(showBoth);
-              }}>
-                {panelOpen ? (
-                  <PanelRightClose className="mr-2 h-3.5 w-3.5" />
-                ) : (
-                  <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
-                )}
-                {panelOpen ? "Ocultar ambos" : "Mostrar ambos"}
-              </Button>
-
               <Button
                 size="sm"
                 variant="outline"
-                aria-pressed={driversPanelOpen}
-                onClick={() => setDriversPanelOpen((visible) => !visible)}
-                title={driversPanelOpen ? "Ocultar Conductores" : "Mostrar Conductores"}
+                aria-pressed={panelOpen}
+                onClick={() => setAgendaCollapsed((collapsed) => !collapsed)}
               >
-                <Users className="mr-1.5 h-3.5 w-3.5" />
-                Conductores
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                aria-pressed={servicesPanelOpen}
-                onClick={() => setServicesPanelOpen((visible) => !visible)}
-                title={servicesPanelOpen ? "Ocultar Servicios activos" : "Mostrar Servicios activos"}
-              >
-                <Route className="mr-1.5 h-3.5 w-3.5" />
-                Servicios
+                {panelOpen ? <PanelRightClose className="mr-2 h-3.5 w-3.5" /> : <PanelRightOpen className="mr-2 h-3.5 w-3.5" />}
+                {panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
               </Button>
 
               <Button
@@ -2163,15 +2155,65 @@ export default function MarketplaceOperationalMap({
                 </p>
               </div>
             )}
-            {panelOpen ? (
-              <aside
-                aria-label="Paneles flotantes de Conductores y Servicios activos"
-                className="pointer-events-none absolute inset-y-3 right-3 z-30 flex min-h-0 w-[min(340px,calc(100%-1.5rem))] flex-col gap-2.5"
-              >
-                {driversPanelOpen ? (
+            <div
+              className="pointer-events-none absolute inset-y-3 right-3 z-30 flex min-h-0 items-stretch"
+              style={{ width: panelOpen ? "min(420px, calc(100% - 24px))" : "44px" }}
+            >
+              {panelOpen ? (
+                <aside
+                  aria-label="Agenda operativa de cristal"
+                  className="pointer-events-auto flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-l-[22px] border border-r-0 border-white/20 bg-slate-950/[0.82] shadow-[0_18px_55px_rgba(0,0,0,0.38)] backdrop-blur-[5px]"
+                >
+                  {agendaTab === null ? (
+                    <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4" aria-label="Leyenda del mapa">
+                      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                        <MapPin className="h-4 w-4 text-cyan-300" />
+                        <h4 className="text-sm font-semibold text-foreground">Leyenda del mapa</h4>
+                      </div>
+                      <p className="mt-3 text-xs leading-relaxed text-slate-300">Selecciona una pestaña para consultar la operación. Los símbolos y rutas siguen visibles sobre el mapa.</p>
+              <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <OperationalPinLegend
+                    kind="driver"
+                    vehicleCategoryCode="tricycle"
+                  />
+                  <span>Conductor con señal reciente</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <OperationalPinLegend
+                    kind="driver"
+                    stale
+                    vehicleCategoryCode="tricycle"
+                  />
+                  <span>Última ubicación conocida</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <OperationalPinLegend kind="customer" />
+                  <span>Cliente</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <OperationalPinLegend kind="destination" />
+                  <span>Destino</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-7 border-t-2 border-dashed border-cyan-400" />
+                  <span>Chofer → cliente</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-7 border-t-2 border-yellow-400" />
+                  <span>Cliente → destino</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                  <span>Incidencia</span>
+                </div>
+              </div>
+                    </section>
+                  ) : null}
+                {agendaTab === "drivers" ? (
                   <section
                     aria-label="Conductores"
-                    className={`pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-[20px] border border-orange-400/25 bg-slate-950/[0.81] shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-[5px] ${servicesPanelOpen ? "flex-[0.9_1_0%]" : "flex-1"}`}
+                    className={`flex min-h-0 flex-1 flex-col overflow-hidden`}
                   >
                     <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
                       <div className="flex min-w-0 items-center gap-2">
@@ -2179,7 +2221,7 @@ export default function MarketplaceOperationalMap({
                         <h4 className="text-xs font-semibold text-foreground">Conductores</h4>
                         <span className="rounded-full bg-orange-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-orange-200">{data.drivers.length}</span>
                       </div>
-                      <button type="button" onClick={() => setDriversPanelOpen(false)} aria-label="Ocultar Conductores" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Ocultar</button>
+                      <button type="button" onClick={() => setAgendaTab(null)} aria-label="Volver a la leyenda desde Conductores" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Leyenda</button>
                     </div>
                     <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -2326,10 +2368,10 @@ export default function MarketplaceOperationalMap({
                     </div>
                   </section>
                 ) : null}
-                {servicesPanelOpen ? (
+                {agendaTab === "services" ? (
                   <section
                     aria-label="Servicios activos"
-                    className={`pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-[20px] border border-cyan-400/25 bg-slate-950/[0.81] shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-[5px] ${driversPanelOpen ? "flex-[1.1_1_0%]" : "flex-1"}`}
+                    className={`flex min-h-0 flex-1 flex-col overflow-hidden`}
                   >
                     <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
                       <div className="flex min-w-0 items-center gap-2">
@@ -2337,12 +2379,18 @@ export default function MarketplaceOperationalMap({
                         <h4 className="text-xs font-semibold text-foreground">Servicios activos</h4>
                         <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-cyan-200">{operationalJobs.length}</span>
                       </div>
-                      <button type="button" onClick={() => setServicesPanelOpen(false)} aria-label="Ocultar Servicios activos" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Ocultar</button>
+                      <button type="button" onClick={() => setAgendaTab(null)} aria-label="Volver a la leyenda desde Servicios" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Leyenda</button>
                     </div>
                     <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-2.5 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+                      {incidentCount > 0 ? (
+                        <div className="flex items-center gap-2 rounded-xl border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-200" role="status">
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                          {incidentCount} {incidentCount === 1 ? "incidencia requiere" : "incidencias requieren"} atención
+                        </div>
+                      ) : null}
               <div className="mt-3 space-y-2">
                 {operationalJobs.length ? (
-                  operationalJobs.slice(0, 12).map((job) => {
+                  prioritizedJobs.slice(0, 12).map((job) => {
                     const selected = job.jobId === selectedJobId;
                     return (
                       <button
@@ -2614,51 +2662,78 @@ export default function MarketplaceOperationalMap({
                 </p>
               </section>
             ) : null}
-                      <details className="rounded-xl border border-white/10 bg-white/[0.035] p-2 text-xs text-slate-200">
-                        <summary className="cursor-pointer select-none font-semibold">Leyenda del mapa</summary>
-              <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend
-                    kind="driver"
-                    vehicleCategoryCode="tricycle"
-                  />
-                  <span>Conductor con señal reciente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend
-                    kind="driver"
-                    stale
-                    vehicleCategoryCode="tricycle"
-                  />
-                  <span>Última ubicación conocida</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend kind="customer" />
-                  <span>Cliente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend kind="destination" />
-                  <span>Destino</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-7 border-t-2 border-dashed border-cyan-400" />
-                  <span>Chofer → cliente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-7 border-t-2 border-yellow-400" />
-                  <span>Cliente → destino</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                  <span>Incidencia</span>
-                </div>
-              </div>
-                      </details>
+
                     </div>
                   </section>
                 ) : null}
-              </aside>
-            ) : null}
+                {agendaTab === "clients" ? (
+                  <section aria-label="Clientes de servicios activos" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <UserRound className="h-4 w-4 text-emerald-300" />
+                        <h4 className="text-xs font-semibold text-foreground">Clientes</h4>
+                        <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-emerald-200">{customerJobs.length}</span>
+                      </div>
+                      <button type="button" onClick={() => setAgendaTab(null)} aria-label="Volver a la leyenda desde Clientes" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Leyenda</button>
+                    </div>
+                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+                      <p className="text-[11px] text-slate-300">Clientes vinculados a servicios activos, no directorio general.</p>
+                      {customerJobs.length ? customerJobs.map((job) => (
+                        <div key={job.customerId || job.jobId} className="rounded-xl border border-white/15 bg-white/[0.035] p-3">
+                          <div className="flex items-start gap-2">
+                            <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-foreground">{job.customerDisplayName || "Cliente"}</p>
+                              <p className="mt-1 text-[11px] text-slate-300">{job.serviceCode} · {statusLabel(job.status)}</p>
+                              <p className="mt-1 line-clamp-2 text-[11px] text-slate-300">{job.originText} → {job.destinationText}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <button type="button" className="rounded-lg border border-cyan-400/25 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/10" onClick={() => {
+                              setSelectedJobId(job.jobId);
+                              setCustomerDetailsJobId(job.jobId);
+                              setAgendaTab("services");
+                              focusJob(job);
+                            }}>Ver servicio</button>
+                            <button type="button" className="rounded-lg border border-emerald-400/25 px-2.5 py-1.5 text-xs font-semibold text-emerald-200 enabled:hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-40" disabled={!canViewCustomers || !job.customerId || !onOpenCustomer} onClick={() => {
+                              if(job.customerId) { setExpanded(false); onOpenCustomer?.(job.customerId); }
+                            }}>Cliente 360</button>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="rounded-xl border border-dashed border-white/15 p-4 text-xs text-slate-300">No hay clientes vinculados a servicios activos.</p>
+                      )}
+                    </div>
+                  </section>
+                ) : null}
+                </aside>
+              ) : null}
+              <nav aria-label="Pestañas laterales de la agenda" className="pointer-events-auto flex w-11 shrink-0 flex-col items-stretch gap-1 overflow-y-auto rounded-r-xl bg-slate-950/70 py-3 [scrollbar-width:none]">
+                {([
+                  { id: "drivers" as const, title: "Conductores", icon: <Users className="h-4 w-4" /> },
+                  { id: "services" as const, title: "Servicios", icon: <Route className="h-4 w-4" /> },
+                  { id: "clients" as const, title: "Clientes", icon: <UserRound className="h-4 w-4" /> },
+                ]).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    aria-pressed={panelOpen && agendaTab === tab.id}
+                    aria-label={`Abrir ${tab.title} en la agenda`}
+                    title={tab.title}
+                    onClick={() => {
+                      const current = agendaTab === tab.id && panelOpen;
+                      setAgendaCollapsed(false);
+                      setAgendaTab(current ? null : tab.id);
+                    }}
+                    className={`relative flex min-h-[92px] shrink-0 flex-col items-center justify-center gap-1 rounded-r-lg border border-l-0 px-1.5 py-2 text-slate-100 transition-colors ${panelOpen && agendaTab === tab.id ? "border-cyan-300/55 bg-cyan-800/80 text-white shadow-sm" : "border-white/15 bg-slate-800/95 hover:bg-slate-700"}`}
+                  >
+                    {tab.icon}
+                    <span className="[writing-mode:vertical-rl] text-[11px] font-semibold tracking-[0.04em]">{tab.title}</span>
+                    {tab.id === "services" && incidentCount > 0 ? <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white" aria-label={`${incidentCount} incidencias activas`}>{incidentCount}</span> : null}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
         </section>
       </div>
