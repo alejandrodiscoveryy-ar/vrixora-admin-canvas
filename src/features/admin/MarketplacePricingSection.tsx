@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+
 import {
   Bike,
   Boxes,
   CarFront,
   DollarSign,
-  ExternalLink,
   Package,
   Pencil,
   RefreshCw,
@@ -35,6 +34,7 @@ import {
 } from "@/lib/services";
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
 import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
+import MarketplacePricingMapV3, { type PricingRouteScenario } from "@/features/admin/MarketplacePricingMapV3";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
 type PricingFieldKey =
@@ -247,7 +247,7 @@ function Metric({
   cupValue: string;
 }) {
   return (
-    <div className="min-w-0 rounded-xl border border-border/60 bg-background/55 px-3 py-2.5">
+    <div className="tuktuk-v3-metric min-w-0 rounded-xl border border-slate-500/50 px-3 py-2.5">
       <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </p>
@@ -281,6 +281,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   const [selectedService, setSelectedService] = useState<ServiceCode>("passenger");
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [draft, setDraft] = useState<MarketplacePricingTariffInput | null>(null);
+  const [pricingRouteScenario, setPricingRouteScenario] = useState<PricingRouteScenario | null>(null);
   const [adjustmentDraft, setAdjustmentDraft] = useState<{
     item: MarketplacePricingAdjustment;
     value: number;
@@ -343,79 +344,33 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   };
 
   return (
-    <div className="space-y-6">
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm">
-        <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <DollarSign className="h-5 w-5" />
+    <div className="tuktuk-pricing-v3-sheet space-y-4">
+      <div className="flex justify-end">
+        <aside aria-label="Tasa USD CUP automatica, solo informativa" className="tuktuk-v3-rate w-full rounded-2xl border border-slate-500/50 px-4 py-3 text-sm shadow-lg sm:w-auto sm:min-w-[300px]">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-cyan-300" />
+              <span className="text-xs font-semibold text-slate-200">Tasa USD/CUP Â· API</span>
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold text-foreground">Tasa USD/CUP vigente</h3>
-                {!exchange.isLoading && !exchange.isError ? (
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-500">
-                    Disponible
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Conversión de referencia. Las tarifas maestras permanecen en USD.
-              </p>
-            </div>
+            <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">AutomÃ¡tica</span>
           </div>
-
-          <Button asChild variant="outline" size="sm" className="shrink-0">
-            <Link
-              to="/admin/proyectos/$id/$section"
-              params={{ id: projectId, section: "integraciones" }}
-            >
-              Gestionar tasa <ExternalLink className="ml-2 h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-
-        <div className="border-t border-border/60 bg-background/35 px-5 py-3">
           {exchange.isLoading ? (
-            <p className="text-sm text-muted-foreground">Consultando tasa vigente…</p>
+            <p className="mt-2 text-xs text-slate-300">Consultando tasa vigenteâ€¦</p>
           ) : exchange.isError ? (
-            <p className="text-sm text-destructive">
-              No se pudo consultar la tasa. Las tarifas siguen expresadas en USD.
-            </p>
+            <p className="mt-2 text-xs text-rose-300">Tasa temporalmente no disponible</p>
           ) : (
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
-              <div>
-                <span className="text-muted-foreground">Cambio</span>
-                <strong className="ml-2 text-sm text-foreground">
-                  1 USD = {rate.toLocaleString("es-CU")} CUP
-                </strong>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Fuente</span>
-                <span className="ml-2 font-medium text-foreground">
-                  {exchange.data?.rateSource ?? "—"}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Estado</span>
-                <span className="ml-2 font-medium text-foreground">
-                  {exchange.data?.lastAutoSyncStatus ?? "—"}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Actualizada</span>
-                <span className="ml-2 font-medium text-foreground">
-                  {exchange.data?.rateUpdatedAt
-                    ? new Date(exchange.data.rateUpdatedAt).toLocaleString("es-CU")
-                    : "—"}
-                </span>
-              </div>
-            </div>
+            <>
+              <p className="mt-1 text-right text-xl font-bold tabular-nums text-white">1 USD = {rate.toLocaleString("es-CU")} CUP</p>
+              <p className="mt-1 text-right text-[11px] text-slate-300">
+                {exchange.data?.rateSource ?? "Fuente automÃ¡tica"} Â· {exchange.data?.rateUpdatedAt
+                  ? new Date(exchange.data.rateUpdatedAt).toLocaleString("es-CU")
+                  : "sin fecha de actualizaciÃ³n"}
+              </p>
+            </>
           )}
-        </div>
+        </aside>
       </div>
-
-      <div className="rounded-2xl border border-border/70 bg-card/55 p-2 shadow-sm">
+      <div className="tuktuk-v3-tabs rounded-2xl border border-slate-500/45 p-2 shadow-sm">
         <div className="grid grid-cols-3 gap-2">
           {serviceOptions.map((service) => {
             const active = selectedService === service.code;
@@ -471,12 +426,34 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         </div>
       </div>
 
-      <MarketplacePricingLaboratoryV2
+      <MarketplacePricingMapV3
+        projectId={projectId}
         serviceCode={selectedService}
         tariffs={tariffs.data ?? []}
-        exchangeRate={rate}
+        canManage={canManage}
+        onScenarioChange={setPricingRouteScenario}
+        onEditTariff={(vehicleCategoryCode) => {
+          if (!canManage) return;
+          const tariff = tariffs.data?.find((item) =>
+            item.serviceCode === selectedService && item.vehicleCategoryCode === vehicleCategoryCode
+          ) ?? null;
+          openTariff(selectedService, vehicleCategoryCode, tariff);
+        }}
       />
+      <details className="tuktuk-v3-secondary rounded-xl border border-slate-500/45 px-3 py-2">
+        <summary className="cursor-pointer text-xs text-muted-foreground">Distancia manual · alternativa de respaldo</summary>
+        <div className="mt-3">
+          <MarketplacePricingLaboratoryV2
+            serviceCode={selectedService}
+            tariffs={tariffs.data ?? []}
+            exchangeRate={rate}
+          />
+        </div>
+      </details>
 
+      <details className="tuktuk-v3-secondary rounded-xl border border-slate-500/45 px-3 py-3">
+        <summary className="cursor-pointer text-xs font-semibold text-slate-200">Ver fichas completas de tarifas y reglas especiales</summary>
+        <div className="mt-3">
       {tariffs.isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando tarifas…</p>
       ) : (
@@ -508,7 +485,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             return (
               <div
                 key={`${selectedService}:${vehicleCategoryCode}`}
-                className={`group relative overflow-hidden rounded-2xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedVisual.card}`}
+                className={`tuktuk-v3-full-tariff group relative overflow-hidden rounded-2xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedVisual.card}`}
               >
                 <div className={`h-1 bg-gradient-to-r ${selectedVisual.strip}`} />
 
@@ -561,7 +538,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                     </div>
                   ) : (
                     <>
-                      <div className={`mt-5 rounded-xl border p-4 ${selectedVisual.pricePanel}`}>
+                      <div className={`tuktuk-v3-price-km mt-5 rounded-xl border p-4 ${selectedVisual.pricePanel}`}>
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                           <Route className={`h-3.5 w-3.5 ${selectedVisual.text}`} />
                           Precio por kilómetro
@@ -599,7 +576,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                       {selectedService === "passenger" &&
                       vehicleCategoryCode === "light_car" &&
                       airport ? (
-                        <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] p-3">
+                        <div className="tuktuk-v3-special mt-3 rounded-xl border border-amber-500/35 p-3">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
@@ -681,6 +658,9 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         </div>
       )}
 
+        </div>
+      </details>
+
       <Dialog
         open={Boolean(editing && draft)}
         onOpenChange={(open) => {
@@ -691,7 +671,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         }}
       >
         {editing && draft ? (
-          <DialogContent className="sm:max-w-3xl">
+          <DialogContent className="tuktuk-v3-editor sm:max-w-3xl">
             <DialogHeader className="pr-8">
               <div className="flex items-center gap-2">
                 <span
@@ -717,6 +697,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                     <Label>{label} (USD)</Label>
 
                     <Input
+                      className="tuktuk-v3-field h-12 border-slate-400/65 bg-slate-800/90 px-3 text-base font-semibold text-white focus-visible:border-cyan-300 focus-visible:ring-cyan-400/70"
                       type="number"
                       min={key === "basePriceUsd" || key === "minimumPriceUsd" ? 0.0001 : 0}
                       step="0.0001"
@@ -740,6 +721,36 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               )}
             </div>
 
+            {pricingRouteScenario && pricingRouteScenario.serviceCode === editing.serviceCode && (() => {
+              const quote = pricingRouteScenario.quotes[editing.vehicleCategoryCode];
+              const rateSnapshot = Number(quote?.exchange_rate_snapshot);
+              const increment = Number(quote?.pricing_breakdown?.rounding_increment ?? 100);
+              const currentCup = Number(quote?.recommended_price);
+              const hasSurcharges = Boolean(quote?.pricing_breakdown?.adjustments?.length);
+              const km = pricingRouteScenario.distanceKm;
+              const projectedUsd = Math.max(
+                draft.minimumPriceUsd,
+                draft.basePriceUsd + draft.perKmPriceUsd * km,
+              );
+              const validPreview = Number.isFinite(projectedUsd) && projectedUsd > 0 &&
+                Number.isFinite(rateSnapshot) && rateSnapshot > 0 &&
+                Number.isFinite(increment) && increment > 0 && Number.isFinite(currentCup);
+              const projectedCup = validPreview ? Math.ceil(projectedUsd * rateSnapshot / increment) * increment : null;
+              return (
+                <div className="tuktuk-v3-impact mb-3 rounded-xl border border-cyan-400/45 p-3">
+                  <p className="mb-2 text-xs font-semibold text-cyan-200">Impacto sobre la ruta · {km.toFixed(2)} km</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><p className="text-xs text-slate-300">Tarifa publicada</p><p className="text-xl font-bold tabular-nums text-foreground">{Number.isFinite(currentCup) ? `${currentCup.toLocaleString("es-CU")} CUP` : "—"}</p></div>
+                    <div><p className="text-xs text-slate-300">Propuesta estructural</p><p className="text-xl font-bold tabular-nums text-foreground">{projectedCup == null ? "—" : `${projectedCup.toLocaleString("es-CU")} CUP`}</p></div>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-300">
+                    {hasSurcharges
+                      ? "Hay recargos activos en esta ruta: la propuesta mostrada excluye esos recargos y NO equivale a una cotización final."
+                      : "Estimación de base, mínimo y kilómetros con la tasa automática de la cotización. No publica cambios."}
+                  </p>
+                </div>
+              );
+            })()}
             <DialogFooter className="border-t border-border/60 pt-4">
               <Button
                 type="button"
@@ -769,7 +780,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 ) : (
                   <DollarSign className="mr-2 h-4 w-4" />
                 )}
-                Guardar tarifa
+                Publicar tarifa
               </Button>
             </DialogFooter>
           </DialogContent>
