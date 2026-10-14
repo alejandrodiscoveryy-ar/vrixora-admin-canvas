@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MapPin, Route, RefreshCw, Pencil, Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import "./MarketplacePricingMapV3.css";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { MarketplacePricingTariff } from "@/lib/services";
 import MarketplaceTestRouteMap, { type TestPoint } from "./MarketplaceTestRouteMap";
@@ -138,7 +139,7 @@ export default function MarketplacePricingMapV3({
   }, [origin?.lat, origin?.lon, destination?.lat, destination?.lon, serviceCode, tariffFingerprint]);
 
   return (
-    <section aria-label="Simulador cartográfico de tarifas" className="rounded-2xl border border-slate-500/35 bg-slate-900/55 p-3 shadow-sm sm:p-4">
+    <section aria-label="Simulador cartográfico de tarifas" className="tuktuk-price-map-v3 rounded-2xl border border-slate-400/45 p-3 shadow-lg sm:p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-base font-semibold text-foreground">Mapa de tarifas</h3>
@@ -148,12 +149,12 @@ export default function MarketplacePricingMapV3({
       </div>
       <div className="mb-3 grid gap-2 sm:grid-cols-2">
         <Button variant={picking === "origin" ? "default" : "outline"} type="button" onClick={() => setPicking("origin")}
-          className="h-11 justify-start border-slate-500/60 bg-slate-800/70 text-left text-sm text-foreground hover:bg-slate-700/70">
+          className="tuktuk-price-map-v3-point h-11 justify-start border-slate-400/65 text-left text-sm text-white hover:border-cyan-300">
           <MapPin className="mr-2 h-4 w-4 text-emerald-400" />
           {origin ? `Salida: ${origin.label}` : "1. Marcar salida en el mapa"}
         </Button>
         <Button variant={picking === "destination" ? "default" : "outline"} type="button" onClick={() => setPicking("destination")}
-          className="h-11 justify-start border-slate-500/60 bg-slate-800/70 text-left text-sm text-foreground hover:bg-slate-700/70">
+          className="tuktuk-price-map-v3-point h-11 justify-start border-slate-400/65 text-left text-sm text-white hover:border-cyan-300">
           <MapPin className="mr-2 h-4 w-4 text-cyan-400" />
           {destination ? `Destino: ${destination.label}` : "2. Marcar destino en el mapa"}
         </Button>
@@ -163,7 +164,7 @@ export default function MarketplacePricingMapV3({
         origin={origin} destination={destination}
         route={routePoints} picking={picking} onPick={selectPoint}
       />
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-slate-600/45 bg-slate-800/65 px-3 py-2.5 text-sm">
+      <div className="tuktuk-price-map-v3-stats mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-slate-400/50 px-3 py-3 text-sm text-white">
         <span className="flex items-center gap-1.5"><Route className="h-4 w-4" /> {scenario ? `${scenario.distanceKm.toFixed(2)} km` : "— km"}</span>
         <span className="flex items-center gap-1.5"><Clock3 className="h-4 w-4" /> {scenario ? `${Math.ceil(scenario.durationSeconds / 60)} min` : "— min"}</span>
         {loading && <span className="flex items-center gap-1.5 text-cyan-300"><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Recalculando…</span>}
@@ -179,8 +180,8 @@ export default function MarketplacePricingMapV3({
               <button key={tariff.vehicleCategoryCode} type="button"
                 disabled={!canManage || !available}
                 onClick={() => onEditTariff(tariff.vehicleCategoryCode)}
-                className="group rounded-xl border border-slate-500/45 bg-slate-800/85 p-3 text-left transition hover:border-cyan-400/70 hover:bg-slate-700/85 disabled:cursor-default disabled:opacity-65">
-                <span className="text-xs font-semibold text-slate-300">{names[tariff.vehicleCategoryCode] ?? tariff.vehicleCategoryCode}</span>
+                className="tuktuk-price-map-v3-price group rounded-xl border border-slate-400/50 p-3 text-left transition hover:border-cyan-300 disabled:cursor-default disabled:opacity-65">
+                <span className="text-xs font-semibold text-slate-200">{names[tariff.vehicleCategoryCode] ?? tariff.vehicleCategoryCode}</span>
                 <div className="mt-1 text-2xl font-bold tabular-nums text-white">
                   {available ? `${price.toLocaleString("es-CU")} CUP` : "Sin cotización"}
                 </div>

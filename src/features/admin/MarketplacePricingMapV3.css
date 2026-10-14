@@ -1,0 +1,50 @@
+/* Precios V3: capas marmoleadas discretas, sin ocultar datos ni dibujar rutas artificiales. */
+.tuktuk-pricing-v3-sheet .tuktuk-v3-rate,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-tabs,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-secondary,
+.tuktuk-price-map-v3,
+.tuktuk-v3-editor,
+.tuktuk-v3-impact {
+  background-image: radial-gradient(ellipse at 12% -28%, rgba(125, 211, 252, .10), transparent 58%),
+    linear-gradient(135deg, #1d2a3a 0%, #111c2c 48%, #182537 100%);
+  box-shadow: inset 0 1px 0 rgba(226, 232, 240, .10), 0 10px 26px rgba(0, 0, 0, .15);
+}
+/* Tambien mantienen capas propias las fichas y metricas originales al desplegarlas. */
+.tuktuk-pricing-v3-sheet .tuktuk-v3-full-tariff {
+  background-image: linear-gradient(155deg, #21334a 0%, #141f30 46%, #1b2a3e 100%);
+  border-color: rgba(148, 163, 184, .45);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 6px 20px rgba(0,0,0,.20);
+}
+.tuktuk-pricing-v3-sheet .tuktuk-v3-metric,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-price-km,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-special {
+  background-image: linear-gradient(145deg, rgba(57,75,98,.85), rgba(23,37,54,.91));
+  box-shadow: inset 0 1px 0 rgba(226,232,240,.12), inset 0 -1px 0 rgba(0,0,0,.16);
+}
+.tuktuk-pricing-v3-sheet .tuktuk-v3-special {
+  border-color: rgba(251,191,36,.50);
+}
+.tuktuk-pricing-v3-sheet .tuktuk-v3-rate { box-shadow: inset 0 1px 0 rgba(226,232,240,.10), 0 4px 14px rgba(0,0,0,.18); }
+.tuktuk-price-map-v3 .tuktuk-price-map-v3-point,
+.tuktuk-price-map-v3 .tuktuk-price-map-v3-stats,
+.tuktuk-price-map-v3 .tuktuk-price-map-v3-price {
+  background-image: linear-gradient(145deg, rgba(53, 71, 94, .92), rgba(24, 38, 56, .97) 60%, rgba(43, 60, 80, .9));
+  box-shadow: inset 0 1px 0 rgba(226,232,240,.10), inset 0 -1px 0 rgba(0,0,0,.12), 0 3px 10px rgba(0,0,0,.13);
+}
+.tuktuk-price-map-v3 .tuktuk-price-map-v3-price:hover,
+.tuktuk-price-map-v3 .tuktuk-price-map-v3-price:focus-visible {
+  background-image: linear-gradient(145deg, #314966, #233b56 70%, #294664);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 0 2px rgba(103,232,249,.25);
+}
+.tuktuk-price-map-v3 [role="application"] { height: 350px !important; }
+.tuktuk-price-map-v3 .mapboxgl-canvas { outline: none; }
+.tuktuk-price-map-v3 .mapboxgl-control-container { color: #fff; }
+.tuktuk-v3-editor .tuktuk-v3-field {
+  box-shadow: inset 0 2px 7px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.07);
+}
+@media (min-width: 1024px) {
+  .tuktuk-price-map-v3 [role="application"] { height: 450px !important; }
+}
+@media (max-width: 639px) {
+  .tuktuk-price-map-v3 [role="application"] { height: 300px !important; }
+}

@@ -31,3 +31,20 @@ test("escenario se invalida al mover pines o cambiar tarifas", () => {
   assert.match(map, /setScenario\(null\)/);
   assert.match(map, /tariffFingerprint/);
 });
+
+test("V3 marmoleado: tasa API informativa compacta, mapa protagonista y fichas plegadas", () => {
+  const css = readFileSync(new URL("../src/features/admin/MarketplacePricingMapV3.css", import.meta.url), "utf8");
+  assert.match(section, /tuktuk-v3-rate/);
+  assert.match(section, /Tasa USD\/CUP Â· API/);
+  assert.doesNotMatch(section, /Gestionar tasa|Configurar tasa/);
+  assert.match(map, /MarketplacePricingMapV3.css/);
+  assert.match(map, /tuktuk-price-map-v3/);
+  assert.match(css, /height: 450px/);
+  assert.match(section, /Ver fichas completas de tarifas y reglas especiales/);
+  assert.match(section, /tuktuk-v3-full-tariff/);
+  assert.match(section, /tuktuk-v3-metric/);
+  assert.match(section, /tuktuk-v3-editor/);
+  assert.match(section, /tuktuk-v3-field/);
+  assert.match(section, /tuktuk-v3-impact/);
+  assert.match(map, /onEditTariff\(tariff\.vehicleCategoryCode\)/);
+});
