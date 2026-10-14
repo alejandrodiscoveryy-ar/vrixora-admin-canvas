@@ -271,12 +271,14 @@ function operationalPinSvg({
   key,
   selected = false,
   stale = false,
+  legend = false,
   vehicleCategoryCode = null,
 }: {
   kind: OperationalPinKind;
   key: string;
   selected?: boolean;
   stale?: boolean;
+  legend?: boolean;
   vehicleCategoryCode?: string | null;
 }) {
   const colors =
@@ -304,10 +306,14 @@ function operationalPinSvg({
   const markerOpacity =
     kind === "driver" && stale ? "0.62" : "1";
 
+  // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
+  const pinWidth = legend ? 48 : selected ? 38 : 32;
+  const pinHeight = legend ? 60 : selected ? 48 : 40;
+
   return `
     <svg
-      width="48"
-      height="60"
+      width="${pinWidth}"
+      height="${pinHeight}"
       viewBox="0 0 48 60"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
@@ -427,6 +433,7 @@ function OperationalPinLegend({
     kind,
     key: `legend-${kind}-${stale ? "stale" : "fresh"}`,
     stale,
+    legend: true,
     vehicleCategoryCode,
   });
 
@@ -1379,7 +1386,7 @@ export default function MarketplaceOperationalMap({
           pin.style.width = "48px";
           pin.style.height = "60px";
           pin.style.display = "flex";
-          pin.style.alignItems = "center";
+          pin.style.alignItems = "flex-end";
           pin.style.justifyContent = "center";
 
           element.append(pin);
@@ -1478,9 +1485,9 @@ export default function MarketplaceOperationalMap({
 
         const caption = document.createElement("div");
         caption.dataset.role = "caption";
-        caption.style.padding = "3px 8px";
+        caption.style.padding = "2px 6px";
         caption.style.borderRadius = "9999px";
-        caption.style.fontSize = "10px";
+        caption.style.fontSize = "9px";
         caption.style.fontWeight = "800";
         caption.style.lineHeight = "1";
         caption.style.color = "#f8fafc";
@@ -1494,7 +1501,7 @@ export default function MarketplaceOperationalMap({
         bubble.style.width = "48px";
         bubble.style.height = "60px";
         bubble.style.display = "flex";
-        bubble.style.alignItems = "center";
+        bubble.style.alignItems = "flex-end";
         bubble.style.justifyContent = "center";
 
         element.append(caption, bubble);
@@ -1525,6 +1532,9 @@ export default function MarketplaceOperationalMap({
       const selected = job.jobId === selectedJobId;
 
       caption.textContent = isPickup ? "Cliente" : "Destino";
+      // El color y el simbolo identifican el punto sin saturar el mapa.
+      // La etiqueta reaparece cuando el servicio es seleccionado.
+      caption.style.display = selected ? "block" : "none";
 
       bubble.innerHTML = operationalPinSvg({
         kind: isPickup ? "customer" : "destination",
