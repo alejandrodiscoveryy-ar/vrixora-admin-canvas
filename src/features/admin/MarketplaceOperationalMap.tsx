@@ -667,7 +667,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
         "line-join": "round",
       },
       paint: {
-        "line-color": "#f97316",
+        "line-color": "#22d3ee",
         "line-width": 4,
         "line-opacity": 0.88,
         "line-dasharray": [2.2, 1.7],
@@ -690,7 +690,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
         "line-join": "round",
       },
       paint: {
-        "line-color": "#fb923c",
+        "line-color": "#67e8f9",
         "line-width": 6,
         "line-opacity": 1,
         "line-dasharray": [2.2, 1.6],
@@ -713,7 +713,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
         "line-join": "round",
       },
       paint: {
-        "line-color": "#22c55e",
+        "line-color": "#facc15",
         "line-width": 5,
         "line-opacity": 0.88,
       },
@@ -735,7 +735,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
         "line-join": "round",
       },
       paint: {
-        "line-color": "#4ade80",
+        "line-color": "#fde047",
         "line-width": 7,
         "line-opacity": 1,
       },
@@ -801,7 +801,9 @@ export default function MarketplaceOperationalMap({
 }) {
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
   const [expanded, setExpanded] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [driversPanelOpen, setDriversPanelOpen] = useState(true);
+  const [servicesPanelOpen, setServicesPanelOpen] = useState(true);
+  const panelOpen = driversPanelOpen || servicesPanelOpen;
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [customerDetailsJobId, setCustomerDetailsJobId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -1182,7 +1184,7 @@ export default function MarketplaceOperationalMap({
 
       map.addControl(
         new mapboxgl.NavigationControl({ showCompass: true }),
-        "bottom-right",
+        "bottom-left",
       );
 
       map.addControl(
@@ -1847,13 +1849,18 @@ export default function MarketplaceOperationalMap({
 
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, {
-          padding: expanded ? 90 : 60,
+          padding: {
+            top: expanded ? 70 : 50,
+            bottom: expanded ? 70 : 50,
+            left: expanded ? 70 : 50,
+            right: panelOpen && map.getContainer().clientWidth >= 800 ? 380 : expanded ? 70 : 50,
+          },
           maxZoom: 15,
           duration: 550,
         });
       }
     },
-    [expanded, operational.data?.drivers, routes.data],
+    [expanded, panelOpen, operational.data?.drivers, routes.data],
   );
 
   useEffect(() => {
@@ -1963,17 +1970,7 @@ export default function MarketplaceOperationalMap({
   return (
     <div className={rootClass}>
 
-      <div
-        className={`grid gap-4 ${
-          expanded
-            ? panelOpen
-              ? "h-full grid-cols-[minmax(0,1fr)_300px]"
-              : "h-full grid-cols-1"
-            : panelOpen
-              ? "items-start xl:grid-cols-[minmax(0,1fr)_284px]"
-              : "items-start grid-cols-1"
-        }`}
-      >
+      <div className={expanded ? "h-full min-w-0" : "min-w-0"}>
         <section
           className={`flex min-h-0 flex-col overflow-hidden rounded-[26px] border border-border/60 bg-background/35 ${
             expanded ? "h-full" : "self-start"
@@ -2009,13 +2006,38 @@ export default function MarketplaceOperationalMap({
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
-              <Button size="sm" variant="outline" onClick={() => setPanelOpen((value) => !value)}>
+              <Button size="sm" variant="outline" onClick={() => {
+                const showBoth = !panelOpen;
+                setDriversPanelOpen(showBoth);
+                setServicesPanelOpen(showBoth);
+              }}>
                 {panelOpen ? (
                   <PanelRightClose className="mr-2 h-3.5 w-3.5" />
                 ) : (
                   <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
                 )}
-                {panelOpen ? "Ocultar panel" : "Mostrar panel"}
+                {panelOpen ? "Ocultar ambos" : "Mostrar ambos"}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                aria-pressed={driversPanelOpen}
+                onClick={() => setDriversPanelOpen((visible) => !visible)}
+                title={driversPanelOpen ? "Ocultar Conductores" : "Mostrar Conductores"}
+              >
+                <Users className="mr-1.5 h-3.5 w-3.5" />
+                Conductores
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                aria-pressed={servicesPanelOpen}
+                onClick={() => setServicesPanelOpen((visible) => !visible)}
+                title={servicesPanelOpen ? "Ocultar Servicios activos" : "Mostrar Servicios activos"}
+              >
+                <Route className="mr-1.5 h-3.5 w-3.5" />
+                Servicios
               </Button>
 
               <Button
@@ -2141,17 +2163,250 @@ export default function MarketplaceOperationalMap({
                 </p>
               </div>
             )}
-          </div>
-        </section>
+            {panelOpen ? (
+              <aside
+                aria-label="Paneles flotantes de Conductores y Servicios activos"
+                className="pointer-events-none absolute inset-y-3 right-3 z-30 flex min-h-0 w-[min(340px,calc(100%-1.5rem))] flex-col gap-2.5"
+              >
+                {driversPanelOpen ? (
+                  <section
+                    aria-label="Conductores"
+                    className={`pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-[20px] border border-orange-400/25 bg-slate-950/[0.81] shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-[5px] ${servicesPanelOpen ? "flex-[0.9_1_0%]" : "flex-1"}`}
+                  >
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Users className="h-4 w-4 text-orange-300" />
+                        <h4 className="text-xs font-semibold text-foreground">Conductores</h4>
+                        <span className="rounded-full bg-orange-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-orange-200">{data.drivers.length}</span>
+                      </div>
+                      <button type="button" onClick={() => setDriversPanelOpen(false)} aria-label="Ocultar Conductores" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Ocultar</button>
+                    </div>
+                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  aria-pressed={driverListMode === "working"}
+                  onClick={() => setDriverListMode("working")}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    driverListMode === "working"
+                      ? "border-emerald-400/45 bg-emerald-500/[0.11] shadow-[0_10px_28px_-20px_rgba(52,211,153,0.8)]"
+                      : "border-emerald-500/15 bg-emerald-500/[0.035] hover:border-emerald-400/30"
+                  }`}
+                >
+                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
+                    Trabajando
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">
+                    {data.summary.workingDrivers}
+                  </p>
+                </button>
 
-        {panelOpen ? (
-          <aside
-            className={`space-y-2.5 bg-transparent ${
-              expanded ? "min-h-0 overflow-y-auto pr-1" : ""
-            }`}
-          >
+                <button
+                  type="button"
+                  aria-pressed={driverListMode === "resting"}
+                  onClick={() => setDriverListMode("resting")}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    driverListMode === "resting"
+                      ? "border-slate-400/40 bg-slate-500/[0.12] shadow-[0_10px_28px_-20px_rgba(148,163,184,0.55)]"
+                      : "border-white/10 bg-background/35 hover:border-white/20"
+                  }`}
+                >
+                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Descansando
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">
+                    {data.summary.inactiveDrivers}
+                  </p>
+                </button>
+              </div>
+
+              <div className="mt-2.5 space-y-1.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
+                {filteredDrivers.length ? (
+                  filteredDrivers.map((driver) => {
+                    const hasLastPosition = driverCoordinate(driver) != null;
+                    return (
+                      <div
+                        key={driver.driverUserId}
+                        className="rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                      >
+                        <div className="flex min-w-0 items-start gap-2">
+                          <DriverAvatar
+                            name={driver.driverDisplayName}
+                            url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
+                          />
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p title={driver.driverDisplayName || "Conductor"} className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground">
+                                {driver.driverDisplayName || "Conductor"}
+                              </p>
+
+                              <span
+                                className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                                  driver.locationFresh
+                                    ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.75)]"
+                                    : hasLastPosition
+                                      ? "bg-amber-400"
+                                      : "bg-muted-foreground/40"
+                                }`}
+                                title={
+                                  driver.locationFresh
+                                    ? "Ubicación en línea"
+                                    : signalAgeLabel(driver.capturedAt, data.serverTime)
+                                }
+                              />
+                            </div>
+
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                              <VehicleModeIcon
+                                code={driver.vehicleCategoryCode}
+                                className="h-3.5 w-3.5 shrink-0 text-orange-300"
+                              />
+                              <span className="font-medium text-orange-200">
+                                {vehicleCategoryLabel(driver.vehicleCategoryCode)}
+                              </span>
+                              <span className="text-muted-foreground/60">·</span>
+                              <span className="min-w-0 break-words">
+                                {driver.vehicleName || driver.vehicleId}
+                              </span>
+                            </div>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              {driver.activeJobId ? (
+                                <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                  En servicio · {statusLabel(driver.activeJobStatus)}
+                                </span>
+                              ) : driver.acceptingJobs ? (
+                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
+                                  {driver.isAvailable ? "Trabajando · disponible" : "Trabajando"}
+                                </span>
+                              ) : (
+                                <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  Descansando
+                                </span>
+                              )}
+
+                              {!driver.locationFresh ? (
+                                <span
+                                  className={`text-[10px] ${
+                                    hasLastPosition ? "text-amber-300" : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {signalAgeLabel(driver.capturedAt, data.serverTime)}
+                                </span>
+                              ) : null}
+                              <button
+                                type="button"
+                                disabled={!hasLastPosition}
+                                className="rounded-md border border-orange-400/20 px-1.5 py-0.5 text-[10px] text-orange-200 enabled:hover:bg-orange-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                onClick={() => {
+                                  const coordinate = driverCoordinate(driver);
+                                  const liveMap = mapRef.current;
+                                  if (coordinate && liveMap) {
+                                    liveMap.easeTo({ center: coordinate, zoom: Math.max(13, liveMap.getZoom()), duration: 450 });
+                                  }
+                                }}
+                              >
+                                Ver en mapa
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {driverListMode === "working"
+                      ? "No hay conductores trabajando."
+                      : "No hay conductores descansando."}
+                  </p>
+                )}
+              </div>
+                    </div>
+                  </section>
+                ) : null}
+                {servicesPanelOpen ? (
+                  <section
+                    aria-label="Servicios activos"
+                    className={`pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-[20px] border border-cyan-400/25 bg-slate-950/[0.81] shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-[5px] ${driversPanelOpen ? "flex-[1.1_1_0%]" : "flex-1"}`}
+                  >
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Route className="h-4 w-4 text-yellow-300" />
+                        <h4 className="text-xs font-semibold text-foreground">Servicios activos</h4>
+                        <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-cyan-200">{operationalJobs.length}</span>
+                      </div>
+                      <button type="button" onClick={() => setServicesPanelOpen(false)} aria-label="Ocultar Servicios activos" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Ocultar</button>
+                    </div>
+                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-2.5 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+              <div className="mt-3 space-y-2">
+                {operationalJobs.length ? (
+                  operationalJobs.slice(0, 12).map((job) => {
+                    const selected = job.jobId === selectedJobId;
+                    return (
+                      <button
+                        type="button"
+                        key={job.jobId}
+                        onClick={() => {
+                          setSelectedJobId(job.jobId);
+                          setCustomerDetailsJobId(job.jobId);
+                          focusJob(job);
+                        }}
+                        className={`w-full rounded-2xl border p-3 text-left transition ${
+                          selected
+                            ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
+                            : "border-white/10 bg-background/20 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
+                              job.status === "incident"
+                                ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
+                                : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                            }`}
+                          >
+                            {statusLabel(job.status)}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                              {job.serviceCode}
+                            </span>
+                            <VehicleModeBadge code={job.vehicleCategoryCode} />
+                          </div>
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-foreground">
+                          {job.customerDisplayName || "Cliente"}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {job.originText} → {job.destinationText}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
+                            {formatDistance(job.estimatedDistanceKm)}
+                          </span>
+                          <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
+                            {formatDuration(job.routeDurationSeconds)}
+                          </span>
+                        </div>
+                        {job.driverDisplayName ? (
+                          <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Navigation className="h-3.5 w-3.5 text-orange-300" />
+                            {job.driverDisplayName}
+                          </p>
+                        ) : null}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-border/55 p-4 text-sm text-muted-foreground">
+                    No hay servicios activos ahora.
+                  </p>
+                )}
+              </div>
             {selectedJob && customerDetailsJobId === selectedJob.jobId ? (
-              <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/45 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+              <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/22 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
@@ -2249,7 +2504,7 @@ export default function MarketplaceOperationalMap({
                 ) : null}
 
                 <div className="mt-2.5 grid grid-cols-2 gap-2">
-                  <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.05] p-2.5">
+                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-orange-300">
                       Chofer → cliente
                     </p>
@@ -2266,7 +2521,7 @@ export default function MarketplaceOperationalMap({
                   </div>
 
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-emerald-300">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-yellow-300">
                       Cliente → destino
                     </p>
 
@@ -2347,220 +2602,6 @@ export default function MarketplaceOperationalMap({
                 </div>
               </section>
             ) : null}
-
-            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Route className="h-4 w-4 text-cyan-300" />
-                  <h4 className="text-sm font-semibold text-foreground">Servicios activos</h4>
-                </div>
-                <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-2.5 py-1 text-sm font-semibold text-cyan-200">
-                  {operationalJobs.length}
-                </span>
-              </div>
-
-              <div className="mt-3 space-y-2">
-                {operationalJobs.length ? (
-                  operationalJobs.slice(0, 12).map((job) => {
-                    const selected = job.jobId === selectedJobId;
-                    return (
-                      <button
-                        type="button"
-                        key={job.jobId}
-                        onClick={() => {
-                          setSelectedJobId(job.jobId);
-                          setCustomerDetailsJobId(job.jobId);
-                          focusJob(job);
-                        }}
-                        className={`w-full rounded-2xl border p-3 text-left transition ${
-                          selected
-                            ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
-                            : "border-white/10 bg-background/40 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
-                              job.status === "incident"
-                                ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
-                                : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
-                            }`}
-                          >
-                            {statusLabel(job.status)}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                              {job.serviceCode}
-                            </span>
-                            <VehicleModeBadge code={job.vehicleCategoryCode} />
-                          </div>
-                        </div>
-                        <p className="mt-2 text-sm font-semibold text-foreground">
-                          {job.customerDisplayName || "Cliente"}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {job.originText} → {job.destinationText}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
-                            {formatDistance(job.estimatedDistanceKm)}
-                          </span>
-                          <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
-                            {formatDuration(job.routeDurationSeconds)}
-                          </span>
-                        </div>
-                        {job.driverDisplayName ? (
-                          <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Navigation className="h-3.5 w-3.5 text-orange-300" />
-                            {job.driverDisplayName}
-                          </p>
-                        ) : null}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <p className="rounded-2xl border border-dashed border-border/55 p-4 text-sm text-muted-foreground">
-                    No hay servicios activos ahora.
-                  </p>
-                )}
-              </div>
-            </section>
-
-            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-orange-300" />
-                <h4 className="text-sm font-semibold text-foreground">Conductores</h4>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  aria-pressed={driverListMode === "working"}
-                  onClick={() => setDriverListMode("working")}
-                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                    driverListMode === "working"
-                      ? "border-emerald-400/45 bg-emerald-500/[0.11] shadow-[0_10px_28px_-20px_rgba(52,211,153,0.8)]"
-                      : "border-emerald-500/15 bg-emerald-500/[0.035] hover:border-emerald-400/30"
-                  }`}
-                >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
-                    Trabajando
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-foreground">
-                    {data.summary.workingDrivers}
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  aria-pressed={driverListMode === "resting"}
-                  onClick={() => setDriverListMode("resting")}
-                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                    driverListMode === "resting"
-                      ? "border-slate-400/40 bg-slate-500/[0.12] shadow-[0_10px_28px_-20px_rgba(148,163,184,0.55)]"
-                      : "border-white/10 bg-background/35 hover:border-white/20"
-                  }`}
-                >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Descansando
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-foreground">
-                    {data.summary.inactiveDrivers}
-                  </p>
-                </button>
-              </div>
-
-              <div className="mt-2.5 max-h-[46vh] space-y-1.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
-                {filteredDrivers.length ? (
-                  filteredDrivers.map((driver) => {
-                    const hasLastPosition = driverCoordinate(driver) != null;
-                    return (
-                      <div
-                        key={driver.driverUserId}
-                        className="rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
-                      >
-                        <div className="flex min-w-0 items-start gap-2">
-                          <DriverAvatar
-                            name={driver.driverDisplayName}
-                            url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <p title={driver.driverDisplayName || "Conductor"} className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground">
-                                {driver.driverDisplayName || "Conductor"}
-                              </p>
-
-                              <span
-                                className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
-                                  driver.locationFresh
-                                    ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.75)]"
-                                    : hasLastPosition
-                                      ? "bg-amber-400"
-                                      : "bg-muted-foreground/40"
-                                }`}
-                                title={
-                                  driver.locationFresh
-                                    ? "Ubicación en línea"
-                                    : signalAgeLabel(driver.capturedAt, data.serverTime)
-                                }
-                              />
-                            </div>
-
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
-                              <VehicleModeIcon
-                                code={driver.vehicleCategoryCode}
-                                className="h-3.5 w-3.5 shrink-0 text-orange-300"
-                              />
-                              <span className="font-medium text-orange-200">
-                                {vehicleCategoryLabel(driver.vehicleCategoryCode)}
-                              </span>
-                              <span className="text-muted-foreground/60">·</span>
-                              <span className="min-w-0 break-words">
-                                {driver.vehicleName || driver.vehicleId}
-                              </span>
-                            </div>
-
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              {driver.activeJobId ? (
-                                <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-cyan-200">
-                                  En servicio · {statusLabel(driver.activeJobStatus)}
-                                </span>
-                              ) : driver.acceptingJobs ? (
-                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
-                                  {driver.isAvailable ? "Trabajando · disponible" : "Trabajando"}
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  Descansando
-                                </span>
-                              )}
-
-                              {!driver.locationFresh ? (
-                                <span
-                                  className={`text-[10px] ${
-                                    hasLastPosition ? "text-amber-300" : "text-muted-foreground"
-                                  }`}
-                                >
-                                  {signalAgeLabel(driver.capturedAt, data.serverTime)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {driverListMode === "working"
-                      ? "No hay conductores trabajando."
-                      : "No hay conductores descansando."}
-                  </p>
-                )}
-              </div>
-            </section>
-
             {selectedJob?.status === "incident" ? (
               <section className="rounded-[24px] border border-red-500/25 bg-red-500/[0.05] p-4">
                 <div className="flex items-center gap-2 text-red-300">
@@ -2573,12 +2614,8 @@ export default function MarketplaceOperationalMap({
                 </p>
               </section>
             ) : null}
-
-            <section className="rounded-[20px] border border-white/10 bg-background/38 p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-cyan-300" />
-                <h4 className="text-sm font-semibold text-foreground">Leyenda</h4>
-              </div>
+                      <details className="rounded-xl border border-white/10 bg-white/[0.035] p-2 text-xs text-slate-200">
+                        <summary className="cursor-pointer select-none font-semibold">Leyenda del mapa</summary>
               <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <OperationalPinLegend
@@ -2604,11 +2641,11 @@ export default function MarketplaceOperationalMap({
                   <span>Destino</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-7 border-t-2 border-dashed border-orange-500" />
+                  <span className="w-7 border-t-2 border-dashed border-cyan-400" />
                   <span>Chofer → cliente</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-7 border-t-2 border-emerald-400" />
+                  <span className="w-7 border-t-2 border-yellow-400" />
                   <span>Cliente → destino</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2616,9 +2653,14 @@ export default function MarketplaceOperationalMap({
                   <span>Incidencia</span>
                 </div>
               </div>
-            </section>
-          </aside>
-        ) : null}
+                      </details>
+                    </div>
+                  </section>
+                ) : null}
+              </aside>
+            ) : null}
+          </div>
+        </section>
       </div>
     </div>
   );
