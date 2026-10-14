@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 const code = readFileSync(new URL("../src/features/admin/MarketplacePricingLaboratoryV2.tsx", import.meta.url), "utf8");
 const screen = readFileSync(new URL("../src/features/admin/MarketplacePricingSection.tsx", import.meta.url), "utf8");
 
-test("lab only calls read-only v2 pricing preview", () => {
-  assert.match(code, /\.rpc\("preview_marketplace_customer_quote_v2",/);
+test("lab calls permission-checked read-only admin pricing preview", () => {
+  assert.match(code, /\.rpc\("admin_preview_marketplace_quote_lab_v2",/);
   assert.doesNotMatch(code, /admin_publish_marketplace_pricing_tariff|savePricingTariff|insert\(|update\(|delete\(/);
 });
 test("lab compares real active tariffs for selected service", () => {

@@ -178,7 +178,7 @@ export default function MarketplacePricingLaboratoryV2({
       const all = await Promise.all(serviceTariffs.map(async (tariff): Promise<QuoteResult> => {
         const name = labels[tariff.vehicleCategoryCode] ?? tariff.vehicleCategoryCode;
         try {
-          const { data, error: rpcError } = await getSupabaseClient().rpc("preview_marketplace_customer_quote_v2", {
+          const { data, error: rpcError } = await getSupabaseClient().rpc("admin_preview_marketplace_quote_lab_v2", {
             target_service_code: serviceCode,
             target_vehicle_category_code: tariff.vehicleCategoryCode,
             target_passenger_count: serviceCode === "passenger" ? count : 1,
