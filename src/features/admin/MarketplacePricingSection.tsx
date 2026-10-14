@@ -34,6 +34,7 @@ import {
   type MarketplacePricingTariffInput,
 } from "@/lib/services";
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
+import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
 type PricingFieldKey =
@@ -469,6 +470,12 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           </span>
         </div>
       </div>
+
+      <MarketplacePricingLaboratoryV2
+        serviceCode={selectedService}
+        tariffs={tariffs.data ?? []}
+        exchangeRate={rate}
+      />
 
       {tariffs.isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando tarifas…</p>
