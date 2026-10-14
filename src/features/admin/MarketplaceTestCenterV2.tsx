@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
 import MarketplaceTestRouteMap, { type TestPoint } from "./MarketplaceTestRouteMap";
+import "./MarketplaceTestCenterPremium.css";
 
 interface TestQuote {
   key: string;
@@ -494,8 +495,8 @@ export default function MarketplaceTestCenterV2({
 
   const loading = current.isPending || drivers.isPending || audience.isPending;
   return (
-    <section className="min-w-0 space-y-4 xl:col-span-2" aria-label="Centro de pruebas">
-      <div className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-500/[0.08] via-background/80 to-cyan-500/[0.055] px-4 py-3 sm:px-5">
+    <section className="tt-lab-v4 min-w-0 space-y-3 xl:col-span-2" aria-label="Centro de pruebas">
+      <div className="tt-lab-v4-header relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-500/[0.08] via-background/80 to-cyan-500/[0.055] px-4 py-3 sm:px-5">
         <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-400/10">
@@ -567,8 +568,8 @@ export default function MarketplaceTestCenterV2({
       ) : null}
       {!loading && !current.isError && !drivers.isError && !audience.isError ? (
         <>
-          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)]">
-            <section className="min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
+          <div className="tt-lab-v4-workspace grid min-w-0 gap-3">
+            <section className="tt-lab-v4-drivers min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Users className="h-4 w-4 text-cyan-300" />
@@ -674,12 +675,12 @@ export default function MarketplaceTestCenterV2({
                 </Button>
               </div>
             </section>
-            <section className="min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
+            <section className="tt-lab-v4-create min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
               <h4 className="text-sm font-semibold text-foreground">Crear carrera de prueba</h4>
               <p className="mt-1 text-xs text-muted-foreground">
                 Un único servicio. El primero en aceptarlo queda asignado.
               </p>
-              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <div className="tt-lab-v4-fields mt-3 grid gap-2.5 sm:grid-cols-2">
                 <label className="space-y-1 text-xs text-muted-foreground">
                   Destinatarios
                   <select
@@ -866,7 +867,7 @@ export default function MarketplaceTestCenterV2({
                       className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
                     />
                   ) : (
-                    <div className="flex h-10 items-center rounded-lg border border-cyan-400/20 bg-cyan-400/[0.035] px-3 text-base font-semibold tabular-nums text-foreground">
+                    <div className="tt-lab-v4-price flex h-10 items-center rounded-lg border border-cyan-400/20 bg-cyan-400/[0.035] px-3 text-base font-semibold tabular-nums text-foreground">
                       {validQuote?.recommendedPrice != null
                         ? `${validQuote.recommendedPrice.toLocaleString("es")} CUP`
                         : "Calcula la ruta"}
@@ -884,7 +885,7 @@ export default function MarketplaceTestCenterV2({
                   />
                 </label>
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="tt-lab-v4-route mt-3 space-y-2">
                 <MarketplaceTestRouteMap
                   projectId={projectId}
                   origin={originPoint}
@@ -941,7 +942,7 @@ export default function MarketplaceTestCenterV2({
                   </p>
                 )}
               </div>
-              <label className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
+              <label className="tt-lab-v4-risk mt-3 flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
                 <span>Probar comisión real (puede afectar el saldo del conductor)</span>
                 <Switch
                   checked={forceRealCommission}
@@ -950,7 +951,7 @@ export default function MarketplaceTestCenterV2({
                   aria-label="Probar comisión real"
                 />
               </label>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="tt-lab-v4-actions mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] text-muted-foreground">
                   {dirty
                     ? "Guarda los cambios del grupo antes del envío."
@@ -978,7 +979,7 @@ export default function MarketplaceTestCenterV2({
                 <button
                   type="button"
                   onClick={() => onOpenJob(successJobId)}
-                  className="mt-3 flex items-center gap-2 text-xs text-emerald-300 underline"
+                  className="tt-lab-v4-success mt-3 flex items-center gap-2 text-xs text-emerald-300 underline"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Carrera creada. Ver detalle.
@@ -987,7 +988,7 @@ export default function MarketplaceTestCenterV2({
             </section>
           </div>
           <section
-            className="min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4"
+            className="tt-lab-v4-history min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4"
             aria-label="Historial de pruebas"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
