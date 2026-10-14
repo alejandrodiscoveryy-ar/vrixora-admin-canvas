@@ -25,3 +25,13 @@ test("lab is inserted into current Marketplace tariffs without publishing", () =
   assert.match(screen, /<MarketplacePricingLaboratoryV2/);
   assert.match(screen, /tariffs=\{tariffs\.data \?\? \[\]\}/);
 });
+
+test("lab invalidates quotations after changing published tariff or exchange", () => {
+  assert.match(code, /const tariffFingerprint =/);
+  assert.match(code, /tariffFingerprint, exchangeRate/);
+  assert.match(screen, /exchangeRate=\{rate\}/);
+});
+test("lab validates calendar date and Cuba DST round trip", () => {
+  assert.match(code, /const normalized =/);
+  assert.match(code, /if \(normalized !== value\) return null/);
+});

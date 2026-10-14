@@ -474,6 +474,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
       <MarketplacePricingLaboratoryV2
         serviceCode={selectedService}
         tariffs={tariffs.data ?? []}
+        exchangeRate={rate}
       />
 
       {tariffs.isLoading ? (

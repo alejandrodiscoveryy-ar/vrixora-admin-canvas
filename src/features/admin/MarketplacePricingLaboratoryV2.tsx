@@ -80,6 +80,19 @@ function havanaDateTimeToIso(value: string): string | null {
     actual = nominal - offsetMinutes * 60_000;
   }
   if (!Number.isFinite(actual)) return null;
+  // Validar fecha civil y horario de Cuba: evita 30 de febrero y horas que no existen al cambiar DST.
+  const localParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Havana",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(actual));
+  const local = (kind: string) => localParts.find((part) => part.type === kind)?.value ?? "";
+  const normalized = `${local("year")}-${local("month")}-${local("day")}T${local("hour")}:${local("minute")}`;
+  if (normalized !== value) return null;
   return new Date(actual).toISOString();
 }
 
@@ -92,9 +105,11 @@ const money = (value: number, currency: "USD" | "CUP") =>
 export default function MarketplacePricingLaboratoryV2({
   serviceCode,
   tariffs,
+  exchangeRate,
 }: {
   serviceCode: ServiceCode;
   tariffs: MarketplacePricingTariff[];
+  exchangeRate: number;
 }) {
   const [distance, setDistance] = useState("5");
   const [passengers, setPassengers] = useState("1");
@@ -110,6 +125,20 @@ export default function MarketplacePricingLaboratoryV2({
     () => tariffs.filter((tariff) => tariff.serviceCode === serviceCode),
     [tariffs, serviceCode],
   );
+  // La simulación previa deja de mostrarse si se publica una nueva tarifa en esta pantalla.
+  const tariffFingerprint = serviceTariffs
+    .map((tariff) => [
+      tariff.serviceCode,
+      tariff.vehicleCategoryCode,
+      tariff.updatedAt,
+      tariff.basePriceUsd,
+      tariff.minimumPriceUsd,
+      tariff.perKmPriceUsd,
+      tariff.perExtraPassengerPriceUsd,
+      tariff.perStopPriceUsd,
+    ].join("|"))
+    .sort()
+    .join(";");
 
   useEffect(() => {
     requestSerial.current += 1;
@@ -117,7 +146,7 @@ export default function MarketplacePricingLaboratoryV2({
     setResults([]);
     setError(null);
     setScenario(null);
-  }, [serviceCode, distance, passengers, stops, cubaTime]);
+  }, [serviceCode, distance, passengers, stops, cubaTime, tariffFingerprint, exchangeRate]);
 
   const run = async () => {
     const km = Number(distance);
