@@ -1,0 +1,33 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFileSync } from "node:fs";
+const map = readFileSync(new URL("../src/features/admin/MarketplacePricingMapV3.tsx", import.meta.url), "utf8");
+const section = readFileSync(new URL("../src/features/admin/MarketplacePricingSection.tsx", import.meta.url), "utf8");
+test("V3 reutiliza mapa operativo con origen y destino", () => {
+  assert.match(map, /MarketplaceTestRouteMap/);
+  assert.match(map, /origin=\{origin\} destination=\{destination\}/);
+  assert.match(map, /operation: "route_quote"/);
+  assert.match(map, /setPicking\("destination"\)/);
+});
+test("V3 solo muestra cotizaciones del servidor y no crea carreras", () => {
+  assert.match(map, /passenger_by_category/);
+  assert.match(map, /admin_preview_marketplace_quote_lab_v2/);
+  assert.doesNotMatch(map, /create_request|create_marketplace_customer_request|savePricingTariff|\.insert\(|\.update\(/);
+});
+test("cada modalidad abre el editor existente, no un formulario duplicado", () => {
+  assert.match(map, /onEditTariff\(tariff\.vehicleCategoryCode\)/);
+  assert.match(section, /<MarketplacePricingMapV3/);
+  assert.match(section, /openTariff\(selectedService, vehicleCategoryCode, tariff\)/);
+  assert.equal((section.match(/<Dialog\s/g) ?? []).length, 2);
+});
+test("la tasa es visual y la previsualizacion usa snapshot oficial", () => {
+  assert.doesNotMatch(map, /setExchangeRate|setRate\(|rate_mode|rate_config/);
+  assert.match(section, /exchange_rate_snapshot/);
+  assert.match(section, /rounding_increment/);
+  assert.match(section, /Publicar tarifa/);
+});
+test("escenario se invalida al mover pines o cambiar tarifas", () => {
+  assert.match(map, /requestRef\.current/);
+  assert.match(map, /setScenario\(null\)/);
+  assert.match(map, /tariffFingerprint/);
+});

@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+
 import {
   Bike,
   Boxes,
   CarFront,
   DollarSign,
-  ExternalLink,
   Package,
   Pencil,
   RefreshCw,
@@ -35,6 +34,7 @@ import {
 } from "@/lib/services";
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
 import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
+import MarketplacePricingMapV3, { type PricingRouteScenario } from "@/features/admin/MarketplacePricingMapV3";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
 type PricingFieldKey =
@@ -281,6 +281,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   const [selectedService, setSelectedService] = useState<ServiceCode>("passenger");
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [draft, setDraft] = useState<MarketplacePricingTariffInput | null>(null);
+  const [pricingRouteScenario, setPricingRouteScenario] = useState<PricingRouteScenario | null>(null);
   const [adjustmentDraft, setAdjustmentDraft] = useState<{
     item: MarketplacePricingAdjustment;
     value: number;
@@ -365,14 +366,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             </div>
           </div>
 
-          <Button asChild variant="outline" size="sm" className="shrink-0">
-            <Link
-              to="/admin/proyectos/$id/$section"
-              params={{ id: projectId, section: "integraciones" }}
-            >
-              Gestionar tasa <ExternalLink className="ml-2 h-3.5 w-3.5" />
-            </Link>
-          </Button>
+
         </div>
 
         <div className="border-t border-border/60 bg-background/35 px-5 py-3">
@@ -471,11 +465,30 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         </div>
       </div>
 
-      <MarketplacePricingLaboratoryV2
+      <MarketplacePricingMapV3
+        projectId={projectId}
         serviceCode={selectedService}
         tariffs={tariffs.data ?? []}
-        exchangeRate={rate}
+        canManage={canManage}
+        onScenarioChange={setPricingRouteScenario}
+        onEditTariff={(vehicleCategoryCode) => {
+          if (!canManage) return;
+          const tariff = tariffs.data?.find((item) =>
+            item.serviceCode === selectedService && item.vehicleCategoryCode === vehicleCategoryCode
+          ) ?? null;
+          openTariff(selectedService, vehicleCategoryCode, tariff);
+        }}
       />
+      <details className="rounded-xl border border-border/50 bg-card/30 px-3 py-2">
+        <summary className="cursor-pointer text-xs text-muted-foreground">Distancia manual · alternativa de respaldo</summary>
+        <div className="mt-3">
+          <MarketplacePricingLaboratoryV2
+            serviceCode={selectedService}
+            tariffs={tariffs.data ?? []}
+            exchangeRate={rate}
+          />
+        </div>
+      </details>
 
       {tariffs.isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando tarifas…</p>
@@ -717,6 +730,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                     <Label>{label} (USD)</Label>
 
                     <Input
+                      className="h-11 border-slate-500/65 bg-slate-800/65 px-3 text-base font-semibold text-foreground focus-visible:ring-cyan-500/70"
                       type="number"
                       min={key === "basePriceUsd" || key === "minimumPriceUsd" ? 0.0001 : 0}
                       step="0.0001"
@@ -740,6 +754,36 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               )}
             </div>
 
+            {pricingRouteScenario && pricingRouteScenario.serviceCode === editing.serviceCode && (() => {
+              const quote = pricingRouteScenario.quotes[editing.vehicleCategoryCode];
+              const rateSnapshot = Number(quote?.exchange_rate_snapshot);
+              const increment = Number(quote?.pricing_breakdown?.rounding_increment ?? 100);
+              const currentCup = Number(quote?.recommended_price);
+              const hasSurcharges = Boolean(quote?.pricing_breakdown?.adjustments?.length);
+              const km = pricingRouteScenario.distanceKm;
+              const projectedUsd = Math.max(
+                draft.minimumPriceUsd,
+                draft.basePriceUsd + draft.perKmPriceUsd * km,
+              );
+              const validPreview = Number.isFinite(projectedUsd) && projectedUsd > 0 &&
+                Number.isFinite(rateSnapshot) && rateSnapshot > 0 &&
+                Number.isFinite(increment) && increment > 0 && Number.isFinite(currentCup);
+              const projectedCup = validPreview ? Math.ceil(projectedUsd * rateSnapshot / increment) * increment : null;
+              return (
+                <div className="mb-3 rounded-xl border border-cyan-500/30 bg-slate-800/70 p-3">
+                  <p className="mb-2 text-xs font-semibold text-cyan-200">Impacto sobre la ruta · {km.toFixed(2)} km</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><p className="text-xs text-slate-300">Tarifa publicada</p><p className="text-xl font-bold tabular-nums text-foreground">{Number.isFinite(currentCup) ? `${currentCup.toLocaleString("es-CU")} CUP` : "—"}</p></div>
+                    <div><p className="text-xs text-slate-300">Propuesta estructural</p><p className="text-xl font-bold tabular-nums text-foreground">{projectedCup == null ? "—" : `${projectedCup.toLocaleString("es-CU")} CUP`}</p></div>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-300">
+                    {hasSurcharges
+                      ? "Hay recargos activos en esta ruta: la propuesta mostrada excluye esos recargos y NO equivale a una cotización final."
+                      : "Estimación de base, mínimo y kilómetros con la tasa automática de la cotización. No publica cambios."}
+                  </p>
+                </div>
+              );
+            })()}
             <DialogFooter className="border-t border-border/60 pt-4">
               <Button
                 type="button"
@@ -769,7 +813,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 ) : (
                   <DollarSign className="mr-2 h-4 w-4" />
                 )}
-                Guardar tarifa
+                Publicar tarifa
               </Button>
             </DialogFooter>
           </DialogContent>
