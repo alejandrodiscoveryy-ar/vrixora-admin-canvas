@@ -109,7 +109,8 @@ function payloadData(row: PushContent) {
 }
 
 async function sendFcm(account: ServiceAccount, accessToken: string, row: PushContent, device: DeviceToken): Promise<FcmResult> {
-  const message = buildFcmMessage(device.platform, device.token, row.title, row.body, payloadData(row));
+  // La categoría de la fila validada controla el canal, no row.data.kind.
+  const message = buildFcmMessage(device.platform, device.token, row.title, row.body, payloadData(row), row.kind);
   try {
     const response = await fetch(
       `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(account.project_id)}/messages:send`,

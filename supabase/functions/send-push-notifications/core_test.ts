@@ -112,17 +112,35 @@ Deno.test("maximum retry count is terminal", () => {
   assertEquals(retryDelaySeconds(MAX_ATTEMPTS), 480);
 });
 
-Deno.test("Android payload retains notification channel", () => {
-  const message = buildFcmMessage("android", "token", "Title", "Body", { kind: "app_announcement" });
-  assert("android" in message);
-  assert("notification" in message);
+Deno.test("Android new job selects TukTuk 14 notification channel", () => {
+  const message = buildFcmMessage("android", "token", "Title", "Body", { kind: "marketplace_job_available" }, "marketplace_job_available");
+  const android = message.android as { priority: string; notification: { channel_id: string } };
+  assertEquals(android.notification.channel_id, "tuktuk_nuevas_carreras_v1");
+  assertEquals(android.priority, "high");
+  assertEquals(message.notification, { title: "Title", body: "Body" });
+});
+
+Deno.test("Android other notifications retain general channel", () => {
+  for (const kind of ["daily_exchange_rate", "app_announcement", "app_update", "new_subscription"]) {
+    const message = buildFcmMessage("android", "token", "Title", "Body", { kind }, kind);
+    const android = message.android as { notification: { channel_id: string } };
+    assertEquals(android.notification.channel_id, "tuktuk_general");
+  }
+});
+
+Deno.test("Android channel is driven by trusted outbox kind rather than payload data", () => {
+  const message = buildFcmMessage("android", "token", "Title", "Body", { kind: "marketplace_job_available" }, "app_announcement");
+  const android = message.android as { notification: { channel_id: string } };
+  assertEquals(android.notification.channel_id, "tuktuk_general");
 });
 
 Deno.test("Web payload uses webpush without Android notification fields", () => {
-  const message = buildFcmMessage("web", "token", "Title", "Body", { kind: "daily_exchange_rate" });
-  assert("webpush" in message);
-  assertEquals("android" in message, false);
-  assertEquals("notification" in message, false);
+  for (const kind of ["daily_exchange_rate", "marketplace_job_available"]) {
+    const message = buildFcmMessage("web", "token", "Title", "Body", { kind }, kind);
+    assert("webpush" in message);
+    assertEquals("android" in message, false);
+    assertEquals("notification" in message, false);
+  }
 });
 
 Deno.test("concurrency pool never exceeds its configured size", async () => {
