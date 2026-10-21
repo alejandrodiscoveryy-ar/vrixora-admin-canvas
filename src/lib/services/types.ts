@@ -1400,6 +1400,11 @@ export type MarketplaceDispatchSettingsInput = Omit<
   "updatedAt" | "updatedBy"
 >;
 
+export interface MarketplaceModalityVisibility {
+  serviceCode: string;
+  vehicleCategoryCode: string;
+  isPublished: boolean;
+}
 export interface MarketplacePricingTariff {
   serviceCode: string;
   serviceName: string;
@@ -1574,6 +1579,8 @@ export interface MarketplaceAdminService {
   ): Promise<MarketplaceTestMode>;
   deleteTestJob(projectId: string, input: { jobId: string; reason: string }): Promise<void>;
   deleteAllTestJobs(projectId: string, reason: string): Promise<number>;
+  listModalityVisibility(projectId: string): Promise<MarketplaceModalityVisibility[]>;
+  setModalityVisibility(projectId: string, input: MarketplaceModalityVisibility): Promise<void>;
   listPricingTariffs(projectId: string): Promise<MarketplacePricingTariff[]>;
   savePricingTariff(projectId: string, input: MarketplacePricingTariffInput): Promise<void>;
   listPricingAdjustments(projectId: string): Promise<MarketplacePricingAdjustment[]>;

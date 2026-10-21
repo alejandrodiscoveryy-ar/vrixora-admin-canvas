@@ -98,6 +98,7 @@ export type {
   MarketplaceDispatchSettingsInput,
   MarketplaceIncident,
   MarketplaceIncidentResolution,
+  MarketplaceModalityVisibility,
   MarketplacePricingTariff,
   MarketplacePricingTariffInput,
   MarketplacePricingAdjustment,

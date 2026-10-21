@@ -3144,6 +3144,27 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
     },
+    async listModalityVisibility(projectId) {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_marketplace_modality_visibility", { target_project_id: projectId });
+      throwIfError(error);
+      return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+        serviceCode: String(row.service_code),
+        vehicleCategoryCode: String(row.vehicle_category_code),
+        isPublished: row.is_published === true,
+      }));
+    },
+    async setModalityVisibility(projectId, input) {
+      await requireOnline("Cambiar publicaciÃ³n de modalidad");
+      const { error } = await getSupabaseClient().rpc(
+        "admin_set_marketplace_modality_visibility", {
+          target_project_id: projectId,
+          target_service_code: input.serviceCode,
+          target_vehicle_category_code: input.vehicleCategoryCode,
+          target_is_published: input.isPublished,
+        });
+      throwIfError(error);
+    },
     async listPricingTariffs(projectId) {
       const { data, error } = await getSupabaseClient().rpc(
         "admin_get_marketplace_pricing_dashboard",
