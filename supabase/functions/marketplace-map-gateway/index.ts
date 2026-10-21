@@ -405,6 +405,15 @@ export async function handleRequest(request: Request): Promise<Response> {
       });
     }
 
+    const { data: publishedRows, error: publishedError } = await db.rpc(
+      "list_marketplace_published_modalities", { target_project_slug: projectSlug });
+    if (publishedError || !Array.isArray(publishedRows)) {
+      throw Error("MODALITY_CATALOG_UNAVAILABLE");
+    }
+    const allowed = (service: string, category: string) =>
+      publishedRows.some((row: any) => row.service_code === service && row.vehicle_category_code === category);
+    const serviceAllowed = (service: string) =>
+      publishedRows.some((row: any) => row.service_code === service);
     const origin = point(body.origin), destination = point(body.destination);
     if (operation === "route_quote" || operation === "price_quote") {
       const route = operation === "route_quote"
@@ -422,6 +431,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       const passengerByCategory: Record<string, unknown> = {};
 
       for (const categoryCode of passengerCategories) {
+        if (!allowed("passenger", categoryCode)) continue;
         const { data, error } = await db.rpc(
           "preview_marketplace_customer_quote_v3",
           {
@@ -440,13 +450,14 @@ export async function handleRequest(request: Request): Promise<Response> {
       }
 
       prices.passenger_by_category = passengerByCategory;
-      if (passengerCategories.includes(vehicleCategory as any)) {
+      if (passengerCategories.includes(vehicleCategory as any) && allowed("passenger",vehicleCategory)) {
         prices.passenger = passengerByCategory[vehicleCategory];
       } else {
         prices.passenger = null;
       }
 
       for (const code of ["courier", "cargo"]) {
+        if (!serviceAllowed(code)) { prices[code] = null; continue; }
         const { data, error } = await db.rpc(
           "preview_marketplace_customer_quote",
           {
@@ -499,6 +510,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       },
     };
     const serviceCode = String(params.target_service_code ?? "").trim();
+    if (!serviceAllowed(serviceCode)) throw Error("MODALITY_NOT_PUBLISHED");
     let requestRpc = "create_marketplace_customer_request";
     if (serviceCode === "passenger") {
       const vehicleCategory = String(params.target_vehicle_category_code ?? "")
@@ -510,6 +522,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       ) {
         throw Error("PASSENGER_VEHICLE_CATEGORY_REQUIRED");
       }
+      if (!allowed("passenger", vehicleCategory)) throw Error("MODALITY_NOT_PUBLISHED");
       requestRpc = "create_marketplace_customer_request_v2";
     } else {
       delete params.target_vehicle_category_code;

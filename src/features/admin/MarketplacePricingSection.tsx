@@ -267,6 +267,22 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
     queryFn: () => supabaseServices.marketplace.listPricingTariffs(projectId),
   });
 
+  const publication = useQuery({
+    queryKey: ["marketplace-modality-visibility", projectId],
+    queryFn: () => supabaseServices.marketplace.listModalityVisibility(projectId),
+    retry: 1,
+  });
+
+  const visibility = useMutation({
+    mutationFn: (input: { serviceCode: string; vehicleCategoryCode: string; isPublished: boolean }) =>
+      supabaseServices.marketplace.setModalityVisibility(projectId, input),
+    onSuccess: (_, input) => {
+      toast.success(input.isPublished ? "Modalidad publicada." : "Modalidad oculta para clientes.");
+      void client.invalidateQueries({ queryKey: ["marketplace-modality-visibility", projectId] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  });
+
   const adjustments = useQuery({
     queryKey: ["marketplace-pricing-adjustments", projectId],
     queryFn: () => supabaseServices.marketplace.listPricingAdjustments(projectId),
@@ -296,7 +312,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           draft!.serviceCode === "passenger" ? draft!.perExtraPassengerPriceUsd : 0,
       }),
     onSuccess: () => {
-      toast.success("Nueva tarifa publicada.");
+      toast.success("Tarifa guardada. La visibilidad no ha cambiado.");
       setEditing(null);
       setDraft(null);
       void client.invalidateQueries({
@@ -467,6 +483,9 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               ) ?? null;
 
             const vehicleVisual = vehicleVisuals[vehicleCategoryCode] ?? vehicleVisuals.other;
+            const published = publication.data?.find((item) =>
+              item.serviceCode === selectedService && item.vehicleCategoryCode === vehicleCategoryCode
+            )?.isPublished ?? false;
 
             const secondaryMetrics =
               selectedService === "passenger"
@@ -507,6 +526,22 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                       </div>
                     </div>
 
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className={`text-[10px] font-semibold ${published ? "text-emerald-400" : "text-amber-400"}`}>
+                        {publication.isLoading ? "Comprobando" : publication.isError ? "Sin conexiÃ³n" : published ? "Publicada" : "No publicada"}
+                      </span>
+                      {canManage ? (
+                        <Switch
+                          aria-label={`Publicar ${categoryLabel(vehicleCategoryCode)} en ${serviceLabel(selectedService)}`}
+                          checked={published}
+                          disabled={!tariff || !publication.isSuccess || visibility.isPending}
+                          onCheckedChange={(isPublished) => {
+                            if (!isPublished && !window.confirm(`Â¿Ocultar ${categoryLabel(vehicleCategoryCode)} para los clientes de ${serviceLabel(selectedService)}? Se conservarÃ¡ su tarifa.`)) return;
+                            visibility.mutate({ serviceCode: selectedService, vehicleCategoryCode, isPublished });
+                          }}
+                        />
+                      ) : null}
+                    </div>
                     {canManage ? (
                       <Button
                         size="icon"
@@ -780,7 +815,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 ) : (
                   <DollarSign className="mr-2 h-4 w-4" />
                 )}
-                Publicar tarifa
+                Guardar tarifa
               </Button>
             </DialogFooter>
           </DialogContent>
