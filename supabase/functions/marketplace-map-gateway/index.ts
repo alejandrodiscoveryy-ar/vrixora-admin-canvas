@@ -456,11 +456,27 @@ export async function handleRequest(request: Request): Promise<Response> {
         prices.passenger = null;
       }
 
+      const currentService = String(extras.service_code ?? "").trim();
+      const cargoCategories = ["light_car", "bicitaxi", "tricycle", "motorcycle", "van", "truck", "other"];
       for (const code of ["courier", "cargo"]) {
         if (!serviceAllowed(code)) { prices[code] = null; continue; }
-        const { data, error } = await db.rpc(
-          "preview_marketplace_customer_quote",
-          {
+        if (currentService === code) {
+          if (!allowed(code, vehicleCategory)) { prices[code] = null; continue; }
+          const { data, error } = await db.rpc("preview_marketplace_customer_quote_v3", {
+            target_service_code: code,
+            target_vehicle_category_code: vehicleCategory,
+            target_passenger_count: null,
+            target_distance_km: route.distance_km,
+            target_stop_count: extras.stop_count ?? 0,
+            target_destination_lat: destination.lat,
+            target_destination_lon: destination.lon,
+            target_scheduled_for: extras.scheduled_for ?? null,
+          });
+          if (error) throw error;
+          prices[code] = data;
+        } else if (!currentService && cargoCategories.every((category) => allowed(code, category))) {
+          // Compatibilidad con webapps anteriores, solo si ninguna ficha esta oculta.
+          const { data, error } = await db.rpc("preview_marketplace_customer_quote", {
             target_service_code: code,
             target_passenger_count: null,
             target_cargo_weight_kg: extras.cargo_weight_kg ?? null,
@@ -470,10 +486,12 @@ export async function handleRequest(request: Request): Promise<Response> {
             target_load_help: extras.load_help === true,
             target_unload_help: extras.unload_help === true,
             target_urgent: extras.urgent === true,
-          },
-        );
-        if (error) throw error;
-        prices[code] = data;
+          });
+          if (error) throw error;
+          prices[code] = data;
+        } else {
+          prices[code] = null;
+        }
       }
       return reply({
         data: {
@@ -511,21 +529,26 @@ export async function handleRequest(request: Request): Promise<Response> {
     };
     const serviceCode = String(params.target_service_code ?? "").trim();
     if (!serviceAllowed(serviceCode)) throw Error("MODALITY_NOT_PUBLISHED");
+    const vehicleCategory = String(params.target_vehicle_category_code ?? "").trim();
     let requestRpc = "create_marketplace_customer_request";
     if (serviceCode === "passenger") {
-      const vehicleCategory = String(params.target_vehicle_category_code ?? "")
-        .trim();
-      if (
-        !["motorcycle", "bicitaxi", "tricycle", "light_car"].includes(
-          vehicleCategory,
-        )
-      ) {
+      if (!["motorcycle", "bicitaxi", "tricycle", "light_car"].includes(vehicleCategory)) {
         throw Error("PASSENGER_VEHICLE_CATEGORY_REQUIRED");
       }
-      if (!allowed("passenger", vehicleCategory)) throw Error("MODALITY_NOT_PUBLISHED");
+      if (!allowed(serviceCode, vehicleCategory)) throw Error("MODALITY_NOT_PUBLISHED");
       requestRpc = "create_marketplace_customer_request_v2";
-    } else {
-      delete params.target_vehicle_category_code;
+    } else if (serviceCode === "cargo" || serviceCode === "courier") {
+      if (vehicleCategory) {
+        if (!allowed(serviceCode, vehicleCategory)) throw Error("MODALITY_NOT_PUBLISHED");
+        requestRpc = "create_marketplace_customer_request_v2";
+      } else {
+        // Clientes antiguos sin categoria: bloquear si hay modalidades ocultas.
+        const known = ["light_car", "bicitaxi", "tricycle", "motorcycle", "van", "truck", "other"];
+        if (!known.every((category) => allowed(serviceCode, category))) {
+          throw Error("VEHICLE_CATEGORY_REQUIRED");
+        }
+        delete params.target_vehicle_category_code;
+      }
     }
     const { data, error } = await db.rpc(requestRpc, params);
     // PostgREST returns error objects, not always Error instances.
