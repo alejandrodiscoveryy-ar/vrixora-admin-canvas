@@ -60,7 +60,8 @@ Deno.test("dispatcher: six operative events preserve payload and default admin/c
     for (const message of messages) {
       equal(message.token, message.data.kind === "new_subscription" ? "synthetic-admin" : "synthetic-client");
       equal(message.notification, { title: message.data.kind, body: "synthetic-body" });
-      equal(message.android.notification.channel_id, "tuktuk_general");
+      equal(message.android.notification.channel_id,
+        message.data.kind === "marketplace_job_available" ? "tuktuk_nuevas_carreras_v1" : "tuktuk_general");
     }
   } finally { globalThis.fetch = originalFetch; }
 });

@@ -95,13 +95,21 @@ export function buildFcmMessage(
   title: string,
   body: string,
   data: Record<string, string>,
+  notificationKind: string,
 ): Record<string, unknown> {
   const message: Record<string, unknown> = { token, data };
   if (platform === "web") {
     message.webpush = { headers: { Urgency: "high" } };
   } else {
     message.notification = { title, body };
-    message.android = { priority: "high", notification: { channel_id: "tuktuk_general" } };
+    message.android = {
+      priority: "high",
+      notification: {
+        channel_id: notificationKind === "marketplace_job_available"
+          ? "tuktuk_nuevas_carreras_v1"
+          : "tuktuk_general",
+      },
+    };
   }
   return message;
 }
