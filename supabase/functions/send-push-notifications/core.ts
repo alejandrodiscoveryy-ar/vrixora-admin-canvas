@@ -101,7 +101,10 @@ export function buildFcmMessage(
     message.webpush = { headers: { Urgency: "high" } };
   } else {
     message.notification = { title, body };
-    message.android = { priority: "high", notification: { channel_id: "tuktuk_general" } };
+    const channelId = data.kind === "marketplace_job_available"
+      ? "tuktuk_nuevas_carreras_v1"
+      : "tuktuk_general";
+    message.android = { priority: "high", notification: { channel_id: channelId } };
   }
   return message;
 }

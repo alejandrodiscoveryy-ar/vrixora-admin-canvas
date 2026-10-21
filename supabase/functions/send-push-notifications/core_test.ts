@@ -142,3 +142,15 @@ Deno.test("malformed optional worker controls are rejected", async () => {
   await assertRejects(async () => parseWorkerOptions({ concurrency: 21 }));
   await assertRejects(async () => parseWorkerOptions({ time_budget_ms: 999 }));
 });
+
+Deno.test("New Android jobs use the official TukTuk sound channel", () => {
+  const msg = buildFcmMessage("android", "test", "Title", "Body", {kind: "marketplace_job_available"});
+  assertEquals((msg.android as {notification: {channel_id: string}}).notification.channel_id, "tuktuk_nuevas_carreras_v1");
+});
+
+Deno.test("Other Android and web events keep their channels", () => {
+  const android = buildFcmMessage("android", "test", "Title", "Body", {kind: "app_announcement"});
+  assertEquals((android.android as {notification: {channel_id: string}}).notification.channel_id, "tuktuk_general");
+  const web = buildFcmMessage("web", "test", "Title", "Body", {kind: "marketplace_job_available"});
+  assertEquals("android" in web, false);
+});
