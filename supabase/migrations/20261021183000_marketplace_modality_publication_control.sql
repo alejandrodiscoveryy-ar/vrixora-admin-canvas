@@ -37,7 +37,7 @@ create or replace function public.admin_set_marketplace_modality_visibility(
 ) returns void language plpgsql security definer set search_path = '' as $$
 declare actor uuid;
 begin
-  actor := app_private.require_project_permission(target_project_id, 'marketplace.manage');
+  actor := app_private.require_project_permission(target_project_id, 'marketplace.pricing.manage');
   if target_is_published is null or target_service_code not in ('passenger','cargo','courier') then
     raise exception 'MODALITY_PUBLICATION_INVALID' using errcode='22023';
   end if;
