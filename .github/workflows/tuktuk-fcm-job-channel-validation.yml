@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/send-push-notifications/**'
+      - 'public/sw.js'
+      - 'src/lib/admin-push.ts'
+      - 'src/features/admin/AdminOperationalAlerts.tsx'
+      - 'tests/admin_windows_delivery_regression.test.mjs'
       - '.github/workflows/tuktuk-fcm-job-channel-validation.yml'
 
 permissions:
@@ -26,3 +30,11 @@ jobs:
         run: |
           deno check --config deno.test.json core.ts index.ts core_test.ts dispatcher_test.ts customer_test.ts
           deno test --config deno.test.json --allow-env core_test.ts dispatcher_test.ts customer_test.ts
+      - name: Setup Node for Windows push regression tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify web push delivery code without production access
+        run: |
+          node --check public/sw.js
+          node --test tests/admin_windows_delivery_regression.test.mjs

@@ -28,3 +28,9 @@ test('An operator can distinguish permission from active worker and run a local 
   assert.match(panel, /checkAdminPushWorker/);
   assert.match(panel, /showNotification\("PRUEBA LOCAL/);
 });
+
+test('A refreshed worker activates for existing Admin tabs without stale cache', () => {
+  assert.match(sw, /const CACHE_VERSION = "v4"/);
+  assert.match(sw, /\.then\(\(\) => self\.skipWaiting\(\)\)/);
+  assert.doesNotMatch(sw, /if \(!self\.registration\.active\) self\.skipWaiting/);
+});

@@ -1,5 +1,5 @@
 // VRIXORA PWA cache + dedicated, authenticated-admin FCM push notifications.
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
 const ADMIN_PUSH_KINDS = new Set([
   "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job",
@@ -12,8 +12,11 @@ const ESSENTIAL_ASSETS = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(APP_CACHE).then((cache) => cache.addAll(ESSENTIAL_ASSETS)));
-  if (!self.registration.active) self.skipWaiting();
+  // Ensure the reviewed worker replaces the old handler even if Admin stays open.
+  // Never activate a new worker unless its offline assets were cached successfully.
+  event.waitUntil(caches.open(APP_CACHE)
+    .then((cache) => cache.addAll(ESSENTIAL_ASSETS))
+    .then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (event) => {
   event.waitUntil(caches.keys().then((keys) =>
