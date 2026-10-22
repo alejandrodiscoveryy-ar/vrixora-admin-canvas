@@ -35,6 +35,9 @@ const ALLOWED_KINDS = [
   "app_update",
   "new_subscription",
   "marketplace_job_available",
+  "admin_marketplace_new_job",
+  "admin_marketplace_new_driver",
+  "admin_marketplace_pending_job",
 ];
 const AUTH_HEADER = "x-tuktuk-dispatch-secret";
 
@@ -162,6 +165,12 @@ export default {
     } catch {
       return Response.json({ error: "Could not authenticate with Firebase" }, { status: 502 });
     }
+
+    // Enqueue escalations using the existing push dispatcher; no parallel cron.
+    const { error: pendingAlarmError } = await admin.rpc("enqueue_admin_marketplace_pending_alerts", {
+      target_project_id: PROJECT_ID,
+    });
+    if (pendingAlarmError) console.warn("Admin pending-job alarm enqueue failed:", pendingAlarmError.code);
 
     const summary = {
       claimed: 0,
