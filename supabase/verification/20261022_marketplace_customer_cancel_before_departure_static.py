@@ -1,6 +1,6 @@
 from pathlib import Path
 
-p = Path("supabase/migrations/20261022170000_marketplace_customer_cancel_before_departure.sql")
+p = Path("supabase/migrations/20261022175058_marketplace_customer_cancel_before_departure_20261022.sql")
 s = p.read_text(encoding="utf-8")
 assert "CUSTOMER_CANCEL_FUNCTION_MISSING" in s
 assert "CUSTOMER_CANCEL_EXPECTED_FRAGMENT_MISSING_OR_DUPLICATED" in s

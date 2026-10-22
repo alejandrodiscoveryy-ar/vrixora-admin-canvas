@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'supabase/migrations/20261022170000_marketplace_customer_cancel_before_departure.sql'
+      - 'supabase/migrations/20261022175058_marketplace_customer_cancel_before_departure_20261022.sql'
       - 'supabase/verification/20261022_marketplace_customer_cancel_before_departure_static.py'
       - '.github/workflows/marketplace-customer-cancel-preflight.yml'
 permissions:
