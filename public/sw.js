@@ -1,6 +1,10 @@
 // VRIXORA PWA cache + dedicated, authenticated-admin FCM push notifications.
 const CACHE_VERSION = "v3";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
+const ADMIN_PUSH_KINDS = new Set([
+  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job",
+]);
+let firebaseMessagingReady = false;
 const ESSENTIAL_ASSETS = [
   "/offline.html", "/manifest.webmanifest", "/favicon.png", "/apple-touch-icon.png",
   "/icon-192.png", "/icon-512.png", "/icon-maskable-192.png", "/icon-maskable-512.png",
@@ -18,6 +22,11 @@ self.addEventListener("activate", (event) => {
 });
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+  if (event.data?.type === "VRIXORA_FCM_DIAGNOSTIC") {
+    event.ports?.[0]?.postMessage({
+      type: "VRIXORA_FCM_DIAGNOSTIC", firebaseReady: firebaseMessagingReady,
+    });
+  }
 });
 
 function safeTarget(raw) {
@@ -30,8 +39,14 @@ function safeTarget(raw) {
 
 // Registered BEFORE Firebase to avoid its default click handler stealing navigation.
 self.addEventListener("notificationclick", (event) => {
+  // Resolve FCM's automatic notification link ourselves: this listener is
+  // registered before Firebase's own click listener and must not open two tabs.
+  event.stopImmediatePropagation();
   event.notification.close();
-  const destination = safeTarget(event.notification.data?.url);
+  const fcmData = event.notification.data?.FCM_MSG;
+  const destination = safeTarget(
+    event.notification.data?.url || fcmData?.data?.url || fcmData?.fcmOptions?.link,
+  );
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     const existing = windows.find((item) => new URL(item.url).origin === self.location.origin);
@@ -47,7 +62,24 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("push", (event) => {
   let payload;
   try { payload = event.data?.json?.() || {}; } catch { return; }
-  if (payload.from || payload.fcmMessageId || payload.data?.kind) return;
+  const data = payload.data || {};
+  if (ADMIN_PUSH_KINDS.has(data.kind)) {
+    // Firebase itself displays webpush.notification in the background. Only
+    // display a fallback when the Firebase compat SDK failed to initialize.
+    if (firebaseMessagingReady) return;
+    const notification = payload.notification || {};
+    event.waitUntil(self.registration.showNotification(
+      notification.title || data.title || "VRIXORA: alerta operativa", {
+        body: notification.body || data.body || "Hay una operacion que requiere atencion.",
+        icon: "/icon-192.png", badge: "/favicon.png",
+        tag: `vrixora:${data.kind}:${data.job_id || data.driver_id || data.notification_id || 'admin'}`,
+        requireInteraction: data.kind !== "admin_marketplace_new_driver",
+        data: { url: safeTarget(data.url) },
+      },
+    ));
+    return;
+  }
+  if (payload.from || payload.fcmMessageId || data.kind) return;
   const title = typeof payload.title === "string" ? payload.title : "VRIXORA Admin";
   const iconUrl = typeof payload.iconUrl === "string" ? payload.iconUrl : "";
   event.waitUntil(self.registration.showNotification(title, {
@@ -73,7 +105,10 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
-  if (!['admin_marketplace_new_job', 'admin_marketplace_new_driver', 'admin_marketplace_pending_job'].includes(data.kind)) return;
+  if (!ADMIN_PUSH_KINDS.has(data.kind)) return;
+  // FCM already displays an incoming webpush.notification. Display manually
+  // only for legacy/data-only pushes, preventing two Windows alerts.
+  if (payload.notification) return;
   const projectId = data.project_id || "";
   const fallback = `/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`;
   return self.registration.showNotification(data.title || "Vrixora: alerta operativa", {
@@ -85,6 +120,7 @@ messaging.onBackgroundMessage((payload) => {
     data: { url: safeTarget(data.url || fallback) },
   });
 });
+firebaseMessagingReady = true;
 } catch (error) {
   // Offline PWA should still install even if Firebase CDN is temporarily unavailable.
   console.warn("Background push unavailable; offline shell stays active", error);

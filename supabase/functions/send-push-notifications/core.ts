@@ -8,6 +8,9 @@ export const MAX_CONCURRENCY = 20;
 export const DEFAULT_TIME_BUDGET_MS = 45_000;
 export const MAX_TIME_BUDGET_MS = 50_000;
 export const MAX_ATTEMPTS = 5;
+const ADMIN_WEB_PUSH_KINDS = new Set([
+  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job",
+]);
 
 export type WorkerOptions = {
   limit: number;
@@ -99,7 +102,22 @@ export function buildFcmMessage(
 ): Record<string, unknown> {
   const message: Record<string, unknown> = { token, data };
   if (platform === "web") {
-    message.webpush = { headers: { Urgency: "high" } };
+    const adminAlert = ADMIN_WEB_PUSH_KINDS.has(notificationKind);
+    // Never change Conductor or Cliente push envelopes. Only Admin uses a
+    // visible webpush.notification so the Firebase SDK can present it in Windows.
+    message.webpush = adminAlert ? {
+      headers: { Urgency: "high" },
+      notification: {
+        title, body,
+        icon: "https://admin.vrixora.com/icon-192.png",
+        badge: "https://admin.vrixora.com/favicon.png",
+        tag: `vrixora:${notificationKind}:${data.job_id ?? data.driver_id ?? data.notification_id ?? "admin"}`,
+        requireInteraction: notificationKind !== "admin_marketplace_new_driver",
+      },
+      fcm_options: {
+        link: "https://admin.vrixora.com/admin/proyectos/dfb41cea-a812-46f2-b511-7a60bd3d78af/trabajos",
+      },
+    } : { headers: { Urgency: "high" } };
   } else {
     message.notification = { title, body };
     message.android = {

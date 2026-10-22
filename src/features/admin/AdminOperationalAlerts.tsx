@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BellRing, BriefcaseBusiness, UserRoundPlus, Volume2, VolumeX, MonitorCheck, MonitorOff } from "lucide-react";
 import { supabaseServices } from "@/lib/services";
 import {
-  listenAdminPush, registerAdminPush, unregisterAdminPush, savedAdminPushToken,
+  listenAdminPush, registerAdminPush, unregisterAdminPush, savedAdminPushToken, checkAdminPushWorker,
   type AdminPushEvent,
 } from "@/lib/admin-push";
 
@@ -55,6 +55,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState("");
+  const [pushDiagnostic, setPushDiagnostic] = useState("");
   const soundRef = useRef<AudioContext | null>(null);
   const storageKey = `vrixora:operational-alert-known:v2:${projectId}:${userId}`;
 
@@ -179,6 +180,46 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
 
   useEffect(() => () => { if (soundRef.current) void soundRef.current.close().catch(() => undefined); soundRef.current = null; }, []);
 
+  useEffect(() => {
+    const onPresentationError = (event: Event) => {
+      const message = (event as CustomEvent<string>).detail || "Error desconocido";
+      setPushError(`El navegador no pudo presentar el aviso: ${message}`);
+    };
+    window.addEventListener("vrixora:push-presentation-error", onPresentationError);
+    return () => window.removeEventListener("vrixora:push-presentation-error", onPresentationError);
+  }, []);
+
+  useEffect(() => {
+    if (!pushEnabled) { setPushDiagnostic(""); return; }
+    let canceled = false;
+    void checkAdminPushWorker().then((ready) => {
+      if (!canceled) setPushDiagnostic(ready
+        ? "Firebase cargado en el navegador. La recepcion efectiva debe probarse."
+        : "Firebase no se inicializo en el servicio local; el modo de respaldo esta disponible.");
+    }).catch((error) => {
+      if (!canceled) setPushError(error instanceof Error ? error.message : String(error));
+    });
+    return () => { canceled = true; };
+  }, [pushEnabled]);
+
+  async function testLocalWindowsNotification() {
+    setPushError("");
+    try {
+      if (!("Notification" in window) || Notification.permission !== "granted") {
+        throw new Error("Las notificaciones del navegador no tienen permiso.");
+      }
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification("PRUEBA LOCAL Â· Vrixora Administracion", {
+        body: "Aviso local de Windows. No se crea ninguna carrera.",
+        icon: "/icon-192.png", badge: "/favicon.png",
+        tag: `vrixora:local-test:${Date.now()}`,
+      });
+      setPushDiagnostic("Aviso local solicitado; comprueba si Windows lo muestra. Esto no prueba el envio remoto.");
+    } catch (error) {
+      setPushError(`Error al mostrar aviso local: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   async function toggleSound() {
     if (soundEnabled) {
       setSoundEnabled(false);
@@ -238,10 +279,13 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             {soundEnabled ? "Silenciar" : "Activar sonido"}
           </button>
+          {pushEnabled && <button type="button" onClick={() => void testLocalWindowsNotification()}
+            className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-accent">Probar aviso local</button>}
           {alerts.length > 0 && <button type="button" onClick={() => setAlerts([])} className="rounded-lg border border-border px-2.5 py-1.5 text-xs hover:bg-accent">Marcar revisadas</button>}
         </div>
       </div>
       {pushError && <p role="alert" className="mt-2 text-xs text-amber-500">{pushError}</p>}
+      {pushDiagnostic && <p role="status" className="mt-2 text-xs text-cyan-300">{pushDiagnostic}</p>}
       {soundError && <p role="alert" className="mt-2 text-xs text-amber-500">{soundError}</p>}
       {pending.length > 0 && <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-500/5 p-2.5">
         <p className="text-xs font-semibold text-rose-300">Carreras que esperan conductor: {pending.length}</p>
