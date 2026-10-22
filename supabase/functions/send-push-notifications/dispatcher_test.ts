@@ -11,6 +11,7 @@ Deno.env.set("FIREBASE_SERVICE_ACCOUNT_JSON", JSON.stringify({ project_id: "synt
   client_email: "synthetic@example.invalid", private_key: "-----BEGIN PRIVATE KEY-----\n" + encoded + "\n-----END PRIVATE KEY-----" }));
 Deno.env.set("TUKTUK_PUSH_DISPATCH_SECRET", "synthetic-dispatch-secret");
 const kinds = ["daily_exchange_rate", "exchange_rate_update", "app_announcement", "app_update", "new_subscription", "marketplace_job_available"];
+const allowedKinds = [...kinds, "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job"];
 const originalFetch = globalThis.fetch;
 function setup(events = kinds) {
   const db = new FakeAdmin(), messages: Record<string, any>[] = [], order: string[] = [];
@@ -27,7 +28,7 @@ function setup(events = kinds) {
   db.onRpc = (name, args) => {
     order.push(name);
     if (name === "claim_push_notification_batch") {
-      equal(args.allowed_kinds, kinds);
+      equal(args.allowed_kinds, allowedKinds);
       equal(args.lease_seconds, 300); equal(args.max_attempts, 5);
       return { data: claimed ? [] : (claimed = true, db.tables.notification_outbox.map(row => ({ ...row }))), error: null };
     }
