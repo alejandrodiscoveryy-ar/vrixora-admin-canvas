@@ -1,0 +1,17 @@
+name: Verificar cancelacion cliente antes de salida
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261022175058_marketplace_customer_cancel_before_departure_20261022.sql'
+      - 'supabase/verification/20261022_marketplace_customer_cancel_before_departure_static.py'
+      - '.github/workflows/marketplace-customer-cancel-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Verify static migration contract
+        run: python3 supabase/verification/20261022_marketplace_customer_cancel_before_departure_static.py
