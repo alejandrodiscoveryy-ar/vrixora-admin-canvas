@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectAccess, useProjectPermissions } from "@/hooks/useProjects";
 import { Loader2 } from "lucide-react";
+import { AdminOperationalAlerts } from "@/features/admin/AdminOperationalAlerts";
 
 export const Route = createFileRoute("/admin/proyectos/$id")({
   head: () => ({
@@ -40,6 +41,9 @@ function ProjectLayout() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {permissions.includes("marketplace.view") && (
+        <AdminOperationalAlerts projectId={id} userId={user.id} />
+      )}
       <Outlet />
     </div>
   );
