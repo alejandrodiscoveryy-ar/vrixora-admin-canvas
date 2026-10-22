@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "./supabase";
+import { savedAdminPushToken, unregisterAdminPush } from "./admin-push";
 import type { AuthSession } from "@supabase/supabase-js";
 
 type AuthCtx = {
@@ -93,6 +94,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true);
+      // Revocar el dispositivo antes de cerrar la sesion administrativa.
+      if (savedAdminPushToken()) await unregisterAdminPush();
       const client = getSupabaseClient();
       const { error } = await client.auth.signOut();
       if (error) throw error;
