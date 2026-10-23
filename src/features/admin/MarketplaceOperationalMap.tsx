@@ -91,6 +91,20 @@ const vehicleCategoryLabel = (code: string | null) =>
   "Modalidad s/d";
 
 type OperationalPinKind = "driver" | "customer" | "destination";
+// A clear difference between service, availability and old GPS is crucial in dispatch.
+type DriverPinState = "available" | "busy" | "stale" | "unavailable";
+function driverPinState(driver: MarketplaceOperationalDriver): DriverPinState {
+  if (!driver.locationFresh) return "stale";
+  if (driver.activeJobId) return "busy";
+  if (driver.isAvailable && driver.acceptingJobs) return "available";
+  return "unavailable";
+}
+const driverPinStateLabel: Record<DriverPinState, string> = {
+  available: "Disponible",
+  busy: "En servicio",
+  stale: "Ultima posicion conocida, no confirmar disponibilidad",
+  unavailable: "No disponible para nuevas carreras",
+};
 type OperationalAgendaTab = "drivers" | "services" | "clients";
 
 function operationalPinIconSvg(
@@ -128,15 +142,17 @@ function operationalPinIconSvg(
     `;
   }
 
+  // Deterministic vector icon; no OS-dependent emoji glyphs in map markers.
   if (vehicleCategoryCode === "tricycle") {
     return `
-      <text
-        x="24"
-        y="26.5"
-        text-anchor="middle"
-        font-size="16"
-        font-family="Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif"
-      >🛺</text>
+      <path d="M19 15.8h10l3.2 5.4V26H15.8v-4.8l3.2-5.4Z"
+        fill="none" stroke="#1e293b" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M19.5 16.6h9l1.5 5.6h-12l1.5-5.6Z"
+        fill="#cbd5e1" stroke="#1e293b" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M24 17.6V22m-5.5 1.5h11" fill="none" stroke="#1e293b" stroke-width="1.3"/>
+      <circle cx="17.5" cy="27.2" r="2.1" fill="#1e293b"/>
+      <circle cx="30.5" cy="27.2" r="2.1" fill="#1e293b"/>
+      <circle cx="24" cy="29.3" r="1.7" fill="#1e293b"/>
     `;
   }
 
@@ -205,8 +221,7 @@ function operationalPinIconSvg(
   }
 
   if (
-    vehicleCategoryCode === "light_car" ||
-    vehicleCategoryCode === "van"
+    vehicleCategoryCode === "light_car"
   ) {
     return `
       <path
@@ -224,6 +239,18 @@ function operationalPinIconSvg(
       />
       <circle cx="19" cy="28.2" r="1.7" fill="#1e293b"/>
       <circle cx="29" cy="28.2" r="1.7" fill="#1e293b"/>
+    `;
+  }
+
+  if (vehicleCategoryCode === "van") {
+    return `
+      <rect x="16" y="16" width="16" height="11.3" rx="2"
+        fill="none" stroke="#1e293b" stroke-width="1.7"/>
+      <path d="M18 18.2h5v4.3h-5zm6.7 0h5.2v4.3h-5.2z"
+        fill="#cbd5e1" stroke="#1e293b" stroke-width="1"/>
+      <path d="M16.5 24.9h15" stroke="#1e293b" stroke-width="1.1"/>
+      <circle cx="19.5" cy="28" r="1.8" fill="#1e293b"/>
+      <circle cx="28.5" cy="28" r="1.8" fill="#1e293b"/>
     `;
   }
 
@@ -274,6 +301,7 @@ function operationalPinSvg({
   stale = false,
   legend = false,
   vehicleCategoryCode = null,
+  driverState = "unavailable",
 }: {
   kind: OperationalPinKind;
   key: string;
@@ -281,12 +309,17 @@ function operationalPinSvg({
   stale?: boolean;
   legend?: boolean;
   vehicleCategoryCode?: string | null;
+  driverState?: DriverPinState;
 }) {
   const colors =
     kind === "driver"
-      ? stale
-        ? ["#b58a6a", "#85533b", "#60392b", "#35231e"]
-        : ["#ffd19a", "#ff6b00", "#e24a00", "#922c05"]
+      ? stale || driverState === "stale"
+        ? ["#ffe2a3", "#b98233", "#96602b", "#633819"]
+        : driverState === "available"
+          ? ["#bafcd7", "#22c55e", "#15803d", "#166534"]
+          : driverState === "busy"
+            ? ["#bae6fd", "#0284c7", "#0369a1", "#075985"]
+            : ["#e2e8f0", "#64748b", "#475569", "#334155"]
       : kind === "customer"
         ? ["#9bf2b7", "#22c55e", "#15803d", "#14532d"]
         : ["#fecaca", "#ef4444", "#b91c1c", "#7f1d1d"];
@@ -308,8 +341,8 @@ function operationalPinSvg({
     kind === "driver" && stale ? "0.62" : "1";
 
   // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
-  const pinWidth = legend ? 48 : selected ? 38 : 32;
-  const pinHeight = legend ? 60 : selected ? 48 : 40;
+  const pinWidth = legend ? 48 : kind === "driver" ? selected ? 43 : 38 : selected ? 38 : 32;
+  const pinHeight = legend ? 60 : kind === "driver" ? selected ? 54 : 48 : selected ? 48 : 40;
 
   return `
     <svg
@@ -416,7 +449,9 @@ function operationalPinSvg({
         opacity="0.72"
       />
 
-      ${operationalPinIconSvg(kind, vehicleCategoryCode)}
+      <g transform="${kind === "driver" ? "translate(24 22) scale(1.08) translate(-24 -22)" : ""}">
+        ${operationalPinIconSvg(kind, vehicleCategoryCode)}
+      </g>
     </svg>
   `;
 }
@@ -425,10 +460,12 @@ function OperationalPinLegend({
   kind,
   stale = false,
   vehicleCategoryCode = null,
+  driverState = "unavailable",
 }: {
   kind: OperationalPinKind;
   stale?: boolean;
   vehicleCategoryCode?: string | null;
+  driverState?: DriverPinState;
 }) {
   const markup = operationalPinSvg({
     kind,
@@ -436,6 +473,7 @@ function OperationalPinLegend({
     stale,
     legend: true,
     vehicleCategoryCode,
+    driverState,
   });
 
   return (
@@ -1419,6 +1457,7 @@ export default function MarketplaceOperationalMap({
           key: driver.driverUserId,
           selected: Boolean(driver.activeJobId),
           stale: !driver.locationFresh,
+          driverState: driverPinState(driver),
           vehicleCategoryCode: driver.vehicleCategoryCode,
         });
 
@@ -1427,12 +1466,12 @@ export default function MarketplaceOperationalMap({
           "aria-label",
           `${vehicleCategoryLabel(driver.vehicleCategoryCode)} - ${
             driver.driverDisplayName ?? "Conductor"
-          }`,
+          } - ${driverPinStateLabel[driverPinState(driver)]}`,
         );
 
         element.title = `${driver.driverDisplayName ?? "Conductor"} - ${vehicleCategoryLabel(
           driver.vehicleCategoryCode,
-        )}`;
+        )} - ${driverPinStateLabel[driverPinState(driver)]}`;
 
         element.style.cursor = driver.activeJobId ? "pointer" : "default";
 
@@ -2176,8 +2215,17 @@ export default function MarketplaceOperationalMap({
                   <OperationalPinLegend
                     kind="driver"
                     vehicleCategoryCode="tricycle"
+                    driverState="available"
                   />
-                  <span>Conductor con señal reciente</span>
+                  <span>Conductor disponible (verde)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <OperationalPinLegend
+                    kind="driver"
+                    vehicleCategoryCode="tricycle"
+                    driverState="busy"
+                  />
+                  <span>Conductor en servicio (azul)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <OperationalPinLegend
@@ -2185,7 +2233,7 @@ export default function MarketplaceOperationalMap({
                     stale
                     vehicleCategoryCode="tricycle"
                   />
-                  <span>Última ubicación conocida</span>
+                  <span>Última ubicación conocida (ámbar, no disponible)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <OperationalPinLegend kind="customer" />
