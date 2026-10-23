@@ -52,7 +52,13 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
   const [alerts, setAlerts] = useState<OperationalAlert[]>([]);
   const [pending, setPending] = useState<PendingJob[]>([]);
   const [online, setOnline] = useState<boolean | null>(null);
+  // Persist the operator's audio preference per user, not per temporary browser session.
+  const soundPreferenceKey = `vrixora:operational-sound-enabled:v1:${userId}`;
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundPreferred, setSoundPreferred] = useState(() => {
+    try { return typeof window !== "undefined" && localStorage.getItem(soundPreferenceKey) === "enabled"; }
+    catch { return false; }
+  });
   const [soundError, setSoundError] = useState("");
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -60,6 +66,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
   const [pushDiagnostic, setPushDiagnostic] = useState("");
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const soundRef = useRef<AudioContext | null>(null);
+  const soundPreferredRef = useRef(soundPreferred);
   const storageKey = `vrixora:operational-alert-known:v2:${projectId}:${userId}`;
 
   // The manager stays mounted while the menu is closed: polling, sound and FCM continue.
@@ -67,11 +74,72 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     setPortalTarget(document.getElementById("vrixora-admin-operational-alarm-slot"));
   }, []);
 
+  // A saved preference remains enabled. Chrome may require a fresh user gesture
+  // after reload; any normal interaction in Admin retries its audio context.
+  const activateSound = useCallback((playConfirmation = false) => {
+    if (!soundPreferredRef.current) return;
+    try {
+      let context = soundRef.current;
+      if (!context || context.state === "closed") {
+        context = new AudioContext();
+        soundRef.current = context;
+        const activeContext = context;
+        activeContext.onstatechange = () => {
+          if (soundRef.current === activeContext) {
+            setSoundEnabled(activeContext.state === "running");
+          }
+        };
+      }
+      const activeContext = context;
+      const reportState = () => {
+        if (!soundPreferredRef.current || soundRef.current !== activeContext) return;
+        const running = activeContext.state === "running";
+        setSoundEnabled(running);
+        if (running) {
+          setSoundError("");
+          if (playConfirmation) tone(activeContext, "job");
+        }
+      };
+      if (activeContext.state === "running") { reportState(); return; }
+      void activeContext.resume().then(reportState).catch(() => {
+        if (!soundPreferredRef.current || soundRef.current !== activeContext) return;
+        setSoundEnabled(false);
+        setSoundError("Chrome bloqueó el audio. Haz clic en Vrixora para reactivarlo.");
+      });
+    } catch {
+      setSoundEnabled(false);
+      setSoundError("No fue posible activar el sonido en este navegador.");
+    }
+  }, []);
+
+  useEffect(() => {
+    const retryOnInteraction = () => {
+      if (soundPreferredRef.current && soundRef.current?.state !== "running") activateSound();
+    };
+    const retryWhenVisible = () => { if (!document.hidden) retryOnInteraction(); };
+    window.addEventListener("pointerdown", retryOnInteraction, true);
+    window.addEventListener("keydown", retryOnInteraction, true);
+    window.addEventListener("focus", retryOnInteraction);
+    document.addEventListener("visibilitychange", retryWhenVisible);
+    retryOnInteraction();
+    return () => {
+      window.removeEventListener("pointerdown", retryOnInteraction, true);
+      window.removeEventListener("keydown", retryOnInteraction, true);
+      window.removeEventListener("focus", retryOnInteraction);
+      document.removeEventListener("visibilitychange", retryWhenVisible);
+      const context = soundRef.current;
+      soundRef.current = null;
+      if (context) {
+        context.onstatechange = null;
+        void context.close().catch(() => undefined);
+      }
+    };
+  }, [activateSound]);
+
   const ring = useCallback((kind: AlertKind) => {
     const context = soundRef.current;
-    if (!context) return;
-    if (context.state === "running") tone(context, kind);
-    else void context.resume().then(() => tone(context, kind)).catch(() => undefined);
+    // Never queue an old alarm to play late when Chrome eventually unlocks audio.
+    if (context?.state === "running") tone(context, kind);
   }, []);
 
   const appendAlerts = useCallback((found: OperationalAlert[]) => {
@@ -186,8 +254,6 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     return () => { disposed = true; unsubscribe?.(); };
   }, [projectId, storageKey, appendAlerts, pushEnabled]);
 
-  useEffect(() => () => { if (soundRef.current) void soundRef.current.close().catch(() => undefined); soundRef.current = null; }, []);
-
   useEffect(() => {
     const onPresentationError = (event: Event) => {
       const message = (event as CustomEvent<string>).detail || "Error desconocido";
@@ -210,32 +276,32 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     return () => { canceled = true; };
   }, [pushEnabled]);
 
-  async function toggleSound() {
-    if (soundEnabled) {
+  function toggleSound() {
+    if (soundPreferredRef.current) {
+      soundPreferredRef.current = false;
+      setSoundPreferred(false);
       setSoundEnabled(false);
+      setSoundError("");
+      try { localStorage.setItem(soundPreferenceKey, "disabled"); } catch { /* optional */ }
       const context = soundRef.current;
       soundRef.current = null;
-      if (context) await context.close().catch(() => undefined);
+      if (context) {
+        context.onstatechange = null;
+        void context.close().catch(() => undefined);
+      }
       return;
     }
-    try {
-      const context = new AudioContext();
-      soundRef.current = context;
-      await context.resume();
-      if (context.state !== "running") throw new Error("Audio bloqueado");
-      setSoundEnabled(true);
-      setSoundError("");
-      tone(context, "job");
-    } catch {
-      setSoundEnabled(false);
-      setSoundError("El navegador no permitió el sonido. Revisa los permisos y el volumen del equipo.");
-    }
+    soundPreferredRef.current = true;
+    setSoundPreferred(true);
+    try { localStorage.setItem(soundPreferenceKey, "enabled"); } catch { /* optional */ }
+    // Called directly from a click, so Chrome can unlock the audio immediately.
+    activateSound(true);
   }
   async function toggleWindowsPush() {
     if (pushBusy) return;
     setPushBusy(true); setPushError("");
     // One deliberate click can unlock both foreground audio and OS notifications.
-    if (!pushEnabled && !soundEnabled) void toggleSound();
+    if (!pushEnabled && !soundPreferredRef.current) toggleSound();
     try {
       if (pushEnabled) { await unregisterAdminPush(); setPushEnabled(false); }
       else { await registerAdminPush(); setPushEnabled(true); }
@@ -282,7 +348,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
           </button>
           <button type="button" onClick={() => void toggleSound()} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent">
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            {soundEnabled ? "Silenciar" : "Activar sonido"}
+            {soundPreferred ? soundEnabled ? "Silenciar" : "Sonido pendiente · desactivar" : "Activar sonido"}
           </button>
           {alerts.length > 0 && <button type="button" onClick={() => setAlerts([])} className="rounded-lg border border-border px-2.5 py-1.5 text-xs hover:bg-accent">Marcar revisadas</button>}
         </div>
@@ -290,6 +356,9 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
       {pushError && <p role="alert" className="mt-2 text-xs text-amber-500">{pushError}</p>}
       {pushDiagnostic && <p role="status" className="mt-2 text-xs text-cyan-300">{pushDiagnostic}</p>}
       {soundError && <p role="alert" className="mt-2 text-xs text-amber-500">{soundError}</p>}
+      {soundPreferred && !soundEnabled && <p role="status" className="mt-2 text-xs text-amber-300">
+        Sonido recordado, pendiente de que Chrome lo permita. Basta con hacer clic normalmente en Vrixora.
+      </p>}
       {pending.length > 0 && <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-500/5 p-2.5">
         <p className="text-xs font-semibold text-rose-300">Carreras que esperan conductor: {pending.length}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{pending[0].label}</p>

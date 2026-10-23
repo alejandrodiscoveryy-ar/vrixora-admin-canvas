@@ -56,3 +56,19 @@ test('operational alert tone is stronger while melody and durations remain uncha
   assert.match(tone, /\[784, 988, 784\]/);
   assert.match(tone, /oscillator\.stop\(at \+ 0\.15\)/);
 });
+
+test('Operator sound setting survives reload and does not mislabel blocked audio', () => {
+  assert.match(panel, /vrixora:operational-sound-enabled:v1:\$\{userId\}/);
+  assert.match(panel, /localStorage\.getItem\(soundPreferenceKey\)/);
+  assert.match(panel, /localStorage\.setItem\(soundPreferenceKey, "enabled"\)/);
+  assert.match(panel, /localStorage\.setItem\(soundPreferenceKey, "disabled"\)/);
+  assert.match(panel, /window\.addEventListener\("pointerdown", retryOnInteraction, true\)/);
+  assert.match(panel, /window\.addEventListener\("keydown", retryOnInteraction, true\)/);
+  assert.match(panel, /window\.removeEventListener\("pointerdown", retryOnInteraction, true\)/);
+  assert.match(panel, /window\.removeEventListener\("keydown", retryOnInteraction, true\)/);
+  assert.match(panel, /soundPreferred \? soundEnabled \? "Silenciar" : "Sonido pendiente/);
+  assert.match(panel, /if \(context\?\.state === "running"\) tone\(context, kind\)/);
+  assert.doesNotMatch(panel, /else void context\.resume\(\)\.then\(\(\) => tone/);
+  assert.match(panel, /context\.onstatechange = null/);
+  assert.match(panel, /if \(!pushEnabled && !soundPreferredRef\.current\) toggleSound\(\)/);
+});
