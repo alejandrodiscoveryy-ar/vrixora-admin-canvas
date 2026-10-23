@@ -645,6 +645,8 @@ function TopBar({
       ) : null}
 
       <div className="ml-auto flex items-center gap-3">
+        {/* Operations badge is securely mounted by the authorized project layout. */}
+        <span id="vrixora-admin-operational-alarm-slot" className="inline-flex shrink-0 items-center" />
         <ThemeToggle />
         <div className="hidden items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-3 py-1.5 sm:flex">
           <Avatar className="h-8 w-8 border border-primary/20">
