@@ -5,6 +5,8 @@ const core = readFileSync('supabase/functions/send-push-notifications/core.ts', 
 const sw = readFileSync('public/sw.js','utf8');
 const push = readFileSync('src/lib/admin-push.ts','utf8');
 const panel = readFileSync('src/features/admin/AdminOperationalAlerts.tsx','utf8');
+const header = readFileSync('src/routes/admin.tsx','utf8');
+const projectLayout = readFileSync('src/routes/admin.proyectos.$id.tsx','utf8');
 
 test('Only admin web messages have an OS-displayed notification and safe link', () => {
   assert.match(core, /const adminAlert = ADMIN_WEB_PUSH_KINDS\.has\(notificationKind\)/);
@@ -20,13 +22,20 @@ test('FCM background notification is not displayed twice, fallback remains avail
   assert.match(sw, /ADMIN_PUSH_KINDS\.has\(data\.kind\)/);
   assert.match(sw, /self\.registration\.showNotification/);
 });
-test('An operator can distinguish permission from active worker and run a local test', () => {
+test('An operator can distinguish permission and active worker without redundant local button', () => {
   assert.match(sw, /VRIXORA_FCM_DIAGNOSTIC/);
   assert.match(push, /export async function checkAdminPushWorker/);
   assert.match(push, /vrixora:push-presentation-error/);
-  assert.match(panel, /Probar aviso local/);
   assert.match(panel, /checkAdminPushWorker/);
-  assert.match(panel, /showNotification\("PRUEBA LOCAL/);
+  assert.doesNotMatch(panel, /Probar aviso local|testLocalWindowsNotification/);
+});
+test('Alarm center lives in header bell without losing authenticated project protection', () => {
+  assert.match(header, /id="vrixora-admin-operational-alarm-slot"/);
+  assert.match(projectLayout, /permissions\.includes\("marketplace\.view"\)/);
+  assert.match(panel, /createPortal\(/);
+  assert.match(panel, /<PopoverTrigger asChild>/);
+  assert.match(panel, /<PopoverContent/);
+  assert.match(panel, /setInterval\(\(\) => void check\(\), POLL_INTERVAL_MS\)/);
 });
 
 test('A refreshed worker activates for existing Admin tabs without stale cache', () => {

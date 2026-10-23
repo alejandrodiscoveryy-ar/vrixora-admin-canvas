@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { BellRing, BriefcaseBusiness, UserRoundPlus, Volume2, VolumeX, MonitorCheck, MonitorOff } from "lucide-react";
 import { supabaseServices } from "@/lib/services";
 import {
@@ -56,8 +58,14 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState("");
   const [pushDiagnostic, setPushDiagnostic] = useState("");
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const soundRef = useRef<AudioContext | null>(null);
   const storageKey = `vrixora:operational-alert-known:v2:${projectId}:${userId}`;
+
+  // The manager stays mounted while the menu is closed: polling, sound and FCM continue.
+  useEffect(() => {
+    setPortalTarget(document.getElementById("vrixora-admin-operational-alarm-slot"));
+  }, []);
 
   const ring = useCallback((kind: AlertKind) => {
     const context = soundRef.current;
@@ -202,24 +210,6 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     return () => { canceled = true; };
   }, [pushEnabled]);
 
-  async function testLocalWindowsNotification() {
-    setPushError("");
-    try {
-      if (!("Notification" in window) || Notification.permission !== "granted") {
-        throw new Error("Las notificaciones del navegador no tienen permiso.");
-      }
-      const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification("PRUEBA LOCAL Â· Vrixora Administracion", {
-        body: "Aviso local de Windows. No se crea ninguna carrera.",
-        icon: "/icon-192.png", badge: "/favicon.png",
-        tag: `vrixora:local-test:${Date.now()}`,
-      });
-      setPushDiagnostic("Aviso local solicitado; comprueba si Windows lo muestra. Esto no prueba el envio remoto.");
-    } catch (error) {
-      setPushError(`Error al mostrar aviso local: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
   async function toggleSound() {
     if (soundEnabled) {
       setSoundEnabled(false);
@@ -254,8 +244,23 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     } finally { setPushBusy(false); }
   }
 
-  return (
-    <section className="rounded-2xl border border-cyan-400/25 bg-background/85 px-3 py-3 shadow-sm" aria-label="Alarmas operativas de TukTuk">
+  // The bell is in the permanent top header; the panel opens only when requested.
+  const badgeCount = Math.max(alerts.length, pending.length);
+  return portalTarget ? createPortal(
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button"
+          aria-label={`Abrir alarmas operativas${pending.length ? ` (${pending.length} carreras pendientes)` : badgeCount ? ` (${badgeCount} avisos)` : ""}`}
+          title="Alarmas operativas"
+          className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 text-cyan-300 transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+          <BellRing className="h-4 w-4" aria-hidden="true" />
+          {badgeCount > 0 && <span className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold text-white ${pending.length ? "bg-rose-600" : "bg-amber-600"}`}>{badgeCount > 9 ? "9+" : badgeCount}</span>}
+          {online === false && badgeCount === 0 && <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-rose-500" aria-label="Sin conexión" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={10}
+        className="z-50 max-h-[min(78vh,680px)] w-[min(92vw,480px)] overflow-y-auto rounded-2xl border-cyan-400/30 bg-background p-4 text-foreground shadow-xl">
+        <section className="min-w-0" aria-label="Alarmas operativas de TukTuk">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <BellRing className="h-5 w-5 shrink-0 text-cyan-400" aria-hidden="true" />
@@ -279,8 +284,6 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             {soundEnabled ? "Silenciar" : "Activar sonido"}
           </button>
-          {pushEnabled && <button type="button" onClick={() => void testLocalWindowsNotification()}
-            className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-accent">Probar aviso local</button>}
           {alerts.length > 0 && <button type="button" onClick={() => setAlerts([])} className="rounded-lg border border-border px-2.5 py-1.5 text-xs hover:bg-accent">Marcar revisadas</button>}
         </div>
       </div>
@@ -309,6 +312,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
         El tono de la página requiere activar sonido. Los avisos Windows requieren autorización del navegador y pueden llegar con la web cerrada;
         el sonido del sistema depende de Windows, del navegador y de No molestar.
       </p>
-    </section>
-  );
+        </section>
+      </PopoverContent>
+    </Popover>, portalTarget) : null;
 }
