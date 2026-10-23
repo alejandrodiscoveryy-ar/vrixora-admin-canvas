@@ -90,6 +90,31 @@ export function savedAdminPushToken() {
   try { return localStorage.getItem(TOKEN_STORAGE); } catch { return null; }
 }
 
+/** Verify the active service worker is the new push-capable build. */
+export async function checkAdminPushWorker(): Promise<boolean> {
+  if (!await adminPushSupported()) throw new Error("El navegador no soporta Firebase web push.");
+  const registration = await navigator.serviceWorker.ready;
+  const worker = registration.active;
+  if (!worker) throw new Error("No hay servicio de notificaciones activo.");
+  return await new Promise<boolean>((resolve, reject) => {
+    const channel = new MessageChannel();
+    const timer = window.setTimeout(() => {
+      channel.port1.close();
+      reject(new Error("El servicio de notificaciones no responde al diagnostico."));
+    }, 4000);
+    channel.port1.onmessage = (event) => {
+      window.clearTimeout(timer);
+      channel.port1.close();
+      if (event.data?.type !== "VRIXORA_FCM_DIAGNOSTIC") {
+        reject(new Error("El servicio de notificaciones no es la version esperada."));
+      } else {
+        resolve(event.data.firebaseReady === true);
+      }
+    };
+    worker.postMessage({ type: "VRIXORA_FCM_DIAGNOSTIC" }, [channel.port2]);
+  });
+}
+
 /** Called only after an authenticated project screen has mounted. */
 export async function listenAdminPush(projectId: string, handle: (event: AdminPushEvent) => void) {
   if (!await adminPushSupported() || Notification.permission !== "granted") return () => {};
@@ -116,6 +141,11 @@ export async function listenAdminPush(projectId: string, handle: (event: AdminPu
       tag: `vrixora:${kind}:${event.job_id ?? event.driver_id ?? "admin"}`,
       requireInteraction: kind !== "admin_marketplace_new_driver",
       data: { url: event.url },
-    })).catch(() => undefined);
+    })).catch((error) => {
+      // Do not disguise an OS-notification failure as a successful delivery.
+      window.dispatchEvent(new CustomEvent("vrixora:push-presentation-error", {
+        detail: error instanceof Error ? error.message : String(error),
+      }));
+    });
   });
 }
