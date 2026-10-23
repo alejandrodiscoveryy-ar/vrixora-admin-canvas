@@ -10,13 +10,11 @@ import {
   Menu,
   Monitor,
   Moon,
-  ShieldCheck,
   Sun,
   type LucideIcon,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -114,7 +112,6 @@ function AdminChrome() {
             user={user}
             onMenuOpen={() => setMobileDrawerOpen(true)}
             project={currentProject ?? null}
-            section={currentSection}
           />
           <main
             className={`min-w-0 flex-1 px-3 py-4 sm:px-4 md:px-6 md:py-6 ${
@@ -560,12 +557,10 @@ function MobileDrawer({
 function TopBar({
   user,
   project,
-  section,
   onMenuOpen,
 }: {
   user: NonNullable<ReturnType<typeof useSupabaseAuth>["user"]>;
   project: Awaited<ReturnType<typeof useProject>>["data"] | null;
-  section: string;
   onMenuOpen: () => void;
 }) {
   const navigate = useNavigate();
@@ -584,7 +579,7 @@ function TopBar({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-border/70 bg-background px-3 py-2 backdrop-blur-none sm:px-4 md:bg-background/86 md:px-6 md:backdrop-blur-xl lg:px-8">
+    <header className="sticky top-0 z-30 flex min-h-12 items-center gap-2 border-b border-border/70 bg-background px-3 py-1 backdrop-blur-none sm:px-4 md:bg-background/86 md:px-6 md:backdrop-blur-xl lg:px-8">
       <Button
         variant="ghost"
         size="icon"
@@ -614,35 +609,6 @@ function TopBar({
           </span>
         </div>
       </Link>
-
-      <div className="hidden min-w-0 items-center gap-2 text-xs text-muted-foreground lg:flex">
-        <ShieldCheck className="h-4 w-4 text-primary" />
-        <span>Administración segura</span>
-        {project ? <span className="text-border">/</span> : null}
-        {project ? (
-          <>
-            {project.iconUrl ? (
-              <img
-                src={projectIconVariantUrl(project.iconUrl, "pwa-192.png")}
-                alt=""
-                className="h-5 w-5 rounded-md object-contain"
-              />
-            ) : null}
-            <span className="truncate text-foreground">{project.name}</span>
-          </>
-        ) : null}
-        {project ? (
-          <Badge variant={project.status === "active" ? "default" : "secondary"} className="ml-1">
-            {project.status === "active" ? "Proyecto activo" : project.status}
-          </Badge>
-        ) : null}
-      </div>
-
-      {section ? (
-        <div className="hidden rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[11px] text-muted-foreground lg:inline-flex">
-          {section}
-        </div>
-      ) : null}
 
       <div className="ml-auto flex items-center gap-3">
         {/* Operations badge is securely mounted by the authorized project layout. */}
