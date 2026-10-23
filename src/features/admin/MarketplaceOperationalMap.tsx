@@ -105,6 +105,8 @@ const driverPinStateLabel: Record<DriverPinState, string> = {
   stale: "Ultima posicion conocida, no confirmar disponibilidad",
   unavailable: "No disponible para nuevas carreras",
 };
+type MapViewMode = "operations" | "coverage";
+type CoverageFilter = "all" | "available" | "busy" | "stale" | "resting";
 type OperationalAgendaTab = "drivers" | "services" | "clients";
 
 function operationalPinIconSvg(
@@ -338,11 +340,11 @@ function operationalPinSvg({
     : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
 
   const markerOpacity =
-    kind === "driver" && stale ? "0.62" : "1";
+    kind === "driver" && stale ? "0.90" : "1";
 
   // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
-  const pinWidth = legend ? 48 : kind === "driver" ? selected ? 43 : 38 : selected ? 38 : 32;
-  const pinHeight = legend ? 60 : kind === "driver" ? selected ? 54 : 48 : selected ? 48 : 40;
+  const pinWidth = legend ? 48 : kind === "driver" ? selected ? 45 : 40 : selected ? 38 : 32;
+  const pinHeight = legend ? 60 : kind === "driver" ? selected ? 56 : 50 : selected ? 48 : 40;
 
   return `
     <svg
@@ -449,7 +451,7 @@ function operationalPinSvg({
         opacity="0.72"
       />
 
-      <g transform="${kind === "driver" ? "translate(24 22) scale(1.08) translate(-24 -22)" : ""}">
+      <g transform="${kind === "driver" ? "translate(24 22) scale(1.20) translate(-24 -22)" : ""}">
         ${operationalPinIconSvg(kind, vehicleCategoryCode)}
       </g>
     </svg>
@@ -839,10 +841,13 @@ export default function MarketplaceOperationalMap({
   onOpenJob?: (jobId: string) => void;
 }) {
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
+  // V3: conservar Operaciones como vista inicial; Cobertura es opcional.
+  const [mapViewMode, setMapViewMode] = useState<MapViewMode>("operations");
+  const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
   const [expanded, setExpanded] = useState(false);
   // Agenda de cristal: sin pestaña activa se muestra la leyenda.
   const [agendaTab, setAgendaTab] = useState<OperationalAgendaTab | null>(null);
-  const [agendaCollapsed, setAgendaCollapsed] = useState(false);
+  const [agendaCollapsed, setAgendaCollapsed] = useState(true);
   const panelOpen = !agendaCollapsed;
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [customerDetailsJobId, setCustomerDetailsJobId] = useState<string | null>(null);
@@ -859,6 +864,7 @@ export default function MarketplaceOperationalMap({
   const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const jobMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const jobHoverPopupRef = useRef<mapboxgl.Popup | null>(null);
+  const coverageClusterMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const mapInitRetryRef = useRef(0);
 
   const operational = useQuery({
@@ -892,6 +898,25 @@ export default function MarketplaceOperationalMap({
           : !driver.acceptingJobs && !driver.activeJobId,
       ),
     [driverListMode, operational.data?.drivers],
+  );
+
+  const coverageDrivers = useMemo(() => {
+    const all = operational.data?.drivers ?? [];
+    return all.filter((driver) => {
+      if (coverageFilter === "available") return driverPinState(driver) === "available";
+      if (coverageFilter === "busy") return Boolean(driver.activeJobId);
+      if (coverageFilter === "stale") return !driver.locationFresh;
+      if (coverageFilter === "resting") return !driver.acceptingJobs && !driver.activeJobId;
+      return true;
+    });
+  }, [operational.data?.drivers, coverageFilter]);
+  const coverageDriverIds = useMemo(
+    () => new Set(coverageDrivers.map((driver) => driver.driverUserId)),
+    [coverageDrivers],
+  );
+  const coverageLocated = useMemo(
+    () => coverageDrivers.filter((driver) => driverCoordinate(driver) != null).length,
+    [coverageDrivers],
   );
 
   const routeKey = useMemo(() => {
@@ -929,7 +954,7 @@ export default function MarketplaceOperationalMap({
   const routes = useQuery({
     queryKey: ["marketplace-operational-routes-live", projectId, routeKey],
     queryFn: () => getMarketplaceOperationalRoutes(projectId),
-    enabled: Boolean(routeKey),
+    enabled: Boolean(routeKey) && mapViewMode === "operations",
     staleTime: 4_000,
     retry: 1,
   });
@@ -1326,6 +1351,8 @@ export default function MarketplaceOperationalMap({
 
       jobHoverPopupRef.current?.remove();
       jobHoverPopupRef.current = null;
+      for (const marker of coverageClusterMarkersRef.current) marker.remove();
+      coverageClusterMarkersRef.current = [];
 
       if (map) {
         map.off("style.load", prepareStyle);
@@ -1404,9 +1431,10 @@ export default function MarketplaceOperationalMap({
     const markers = driverMarkersRef.current;
     const visible = new Set<string>();
 
-    if (layers.drivers) {
+    if (layers.drivers || mapViewMode === "coverage") {
       for (const driver of operational.data?.drivers ?? []) {
-        if (!driver.acceptingJobs && !driver.activeJobId) continue;
+        if (mapViewMode === "operations" && !driver.acceptingJobs && !driver.activeJobId) continue;
+        if (mapViewMode === "coverage" && !coverageDriverIds.has(driver.driverUserId)) continue;
 
         const coordinate = driverCoordinate(driver);
         if (!coordinate) continue;
@@ -1473,7 +1501,7 @@ export default function MarketplaceOperationalMap({
           driver.vehicleCategoryCode,
         )} - ${driverPinStateLabel[driverPinState(driver)]}`;
 
-        element.style.cursor = driver.activeJobId ? "pointer" : "default";
+        element.style.cursor = driver.activeJobId || mapViewMode === "coverage" ? "pointer" : "default";
 
         element.onclick = driver.activeJobId
           ? (event) => {
@@ -1483,7 +1511,14 @@ export default function MarketplaceOperationalMap({
               setAgendaTab("services");
               setAgendaCollapsed(false);
             }
-          : null;
+          : mapViewMode === "coverage"
+            ? (event) => {
+                event.stopPropagation();
+                setAgendaTab("drivers");
+                setDriverListMode(driver.acceptingJobs ? "working" : "resting");
+                setAgendaCollapsed(false);
+              }
+            : null;
       }
     }
 
@@ -1493,7 +1528,76 @@ export default function MarketplaceOperationalMap({
         markers.delete(driverUserId);
       }
     }
-  }, [operational.data?.drivers, layers.drivers, mapLoaded]);
+  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+    const markers = driverMarkersRef.current;
+    const clearClusters = () => {
+      for (const marker of coverageClusterMarkersRef.current) marker.remove();
+      coverageClusterMarkersRef.current = [];
+    };
+
+    const regroup = () => {
+      clearClusters();
+      for (const marker of markers.values()) {
+        marker.getElement().style.visibility = "visible";
+      }
+      if (mapViewMode !== "coverage") return;
+
+      // Cuadricula en pixeles de pantalla. La agrupacion se recalcula al mover el mapa.
+      const zoom = map.getZoom();
+      const cell = zoom < 11 ? 64 : 76;
+      const buckets = new Map<string, Array<{ id: string; point: Coordinate }>>();
+      for (const driver of coverageDrivers) {
+        const point = driverCoordinate(driver);
+        if (!point || !markers.has(driver.driverUserId)) continue;
+        const projected = map.project(point);
+        const key = zoom >= 14.5
+          ? driver.driverUserId
+          : `${Math.floor(projected.x / cell)}:${Math.floor(projected.y / cell)}`;
+        const members = buckets.get(key) ?? [];
+        members.push({ id: driver.driverUserId, point });
+        buckets.set(key, members);
+      }
+
+      for (const members of buckets.values()) {
+        if (members.length === 1) continue;
+        for (const item of members) {
+          const marker = markers.get(item.id);
+          if (marker) marker.getElement().style.visibility = "hidden";
+        }
+        const center: Coordinate = [
+          members.reduce((sum, item) => sum + item.point[0], 0) / members.length,
+          members.reduce((sum, item) => sum + item.point[1], 0) / members.length,
+        ];
+        const bubble = document.createElement("button");
+        bubble.type = "button";
+        bubble.textContent = String(members.length);
+        bubble.title = `${members.length} conductores en esta zona. Acercar mapa`;
+        bubble.setAttribute("aria-label", bubble.title);
+        bubble.style.cssText = "width:46px;height:46px;min-width:46px;min-height:46px;border-radius:50%;border:3px solid #67e8f9;background:#075985;color:white;box-shadow:0 4px 18px #020617bb;display:grid;place-items:center;font-size:15px;font-weight:800;cursor:pointer";
+        bubble.onclick = (event) => {
+          event.stopPropagation();
+          const bounds = new mapboxgl.LngLatBounds();
+          for (const item of members) bounds.extend(item.point);
+          map.fitBounds(bounds, { padding: 110, duration: 450, maxZoom: 15 });
+        };
+        const cluster = new mapboxgl.Marker({ element: bubble, anchor: "center" })
+          .setLngLat(center).addTo(map);
+        coverageClusterMarkersRef.current.push(cluster);
+      }
+    };
+
+    regroup();
+    map.on("moveend", regroup);
+    return () => {
+      map.off("moveend", regroup);
+      clearClusters();
+      for (const marker of markers.values()) marker.getElement().style.visibility = "visible";
+    };
+  }, [coverageDrivers, mapViewMode, mapLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1507,8 +1611,8 @@ export default function MarketplaceOperationalMap({
       kind: "pickup" | "destination",
       coordinate: Coordinate | null,
     ) => {
-      const layerVisible =
-        kind === "pickup" ? layers.pickups : layers.destinations;
+      const layerVisible = mapViewMode === "operations" &&
+        (kind === "pickup" ? layers.pickups : layers.destinations);
 
       if (!layerVisible || !coordinate) return;
 
@@ -1683,6 +1787,7 @@ export default function MarketplaceOperationalMap({
     layers.destinations,
     mapLoaded,
     selectedJobId,
+    mapViewMode,
   ]);
   const pointFeatures = useMemo(() => {
     const data = operational.data;
@@ -1816,14 +1921,14 @@ export default function MarketplaceOperationalMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !map.isStyleLoaded()) return;
-    setLayerVisibility(map, MAP_LAYERS.driversFresh, layers.drivers);
-    setLayerVisibility(map, MAP_LAYERS.driversStale, layers.drivers);
-    setLayerVisibility(map, MAP_LAYERS.routesPickup, layers.routes);
-    setLayerVisibility(map, MAP_LAYERS.routesPickupSelected, layers.routes);
-    setLayerVisibility(map, MAP_LAYERS.routes, layers.routes);
-    setLayerVisibility(map, MAP_LAYERS.routesSelected, layers.routes);
-    setLayerVisibility(map, MAP_LAYERS.incidents, layers.incidents);
-  }, [layers, pointFeatures, routeFeatures, mapLoaded]);
+    setLayerVisibility(map, MAP_LAYERS.driversFresh, mapViewMode === "operations" && layers.drivers);
+    setLayerVisibility(map, MAP_LAYERS.driversStale, mapViewMode === "operations" && layers.drivers);
+    setLayerVisibility(map, MAP_LAYERS.routesPickup, mapViewMode === "operations" && layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.routesPickupSelected, mapViewMode === "operations" && layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.routes, mapViewMode === "operations" && layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.routesSelected, mapViewMode === "operations" && layers.routes);
+    setLayerVisibility(map, MAP_LAYERS.incidents, mapViewMode === "operations" && layers.incidents);
+  }, [layers, pointFeatures, routeFeatures, mapLoaded, mapViewMode]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2105,7 +2210,19 @@ export default function MarketplaceOperationalMap({
               expanded ? "min-h-0 flex-1" : "min-h-[320px] flex-none"
             }`}
           >
-            <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/35 p-2 shadow-[0_18px_48px_-22px_rgba(0,0,0,0.95)] backdrop-blur-xl">
+            <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-5rem)] flex-col items-start gap-2">
+              <div className="flex items-center gap-1 rounded-2xl border border-white/20 bg-slate-950/85 p-1 shadow-lg backdrop-blur-xl" role="group" aria-label="Modo del mapa">
+                {([['operations', 'Operaciones'], ['coverage', 'Cobertura']] as const).map(([mode, label]) => (
+                  <button key={mode} type="button" aria-pressed={mapViewMode === mode}
+                    onClick={() => setMapViewMode(mode)}
+                    className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${mapViewMode === mode ? "bg-cyan-600 text-white" : "text-slate-200 hover:bg-white/10"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {mapViewMode === "operations" ? (
+                <div className="flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl">
+
               {layerButton(
                 "drivers",
                 "Conductores",
@@ -2135,6 +2252,20 @@ export default function MarketplaceOperationalMap({
                 "Incidencias",
                 "bg-red-500",
                 "border-red-400/30 bg-red-500/20 text-red-100",
+              )}
+
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-1.5 rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl" role="group" aria-label="Filtros de cobertura">
+                  {([['all','Todos'], ['available','Disponibles'], ['busy','En servicio'], ['stale','Sin señal'], ['resting','Descansando']] as const).map(([filter, label]) => (
+                    <button key={filter} type="button" aria-pressed={coverageFilter === filter}
+                      onClick={() => setCoverageFilter(filter)}
+                      className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold ${coverageFilter === filter ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"}`}>
+                      {label}
+                    </button>
+                  ))}
+                  <span className="px-2 text-[10px] text-slate-300">Con posición: {coverageLocated}/{coverageDrivers.length}</span>
+                </div>
               )}
             </div>
 
