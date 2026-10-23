@@ -2552,10 +2552,12 @@ export default function MarketplaceOperationalMap({
                       <button
                         type="button"
                         key={job.jobId}
+                        aria-expanded={selected && customerDetailsJobId === job.jobId}
                         onClick={() => {
+                          const opening = customerDetailsJobId !== job.jobId;
                           setSelectedJobId(job.jobId);
-                          setCustomerDetailsJobId(job.jobId);
-                          focusJob(job);
+                          setCustomerDetailsJobId(opening ? job.jobId : null);
+                          if (opening) focusJob(job);
                         }}
                         className={`w-full rounded-2xl border p-3 text-left transition ${
                           selected
@@ -2611,6 +2613,16 @@ export default function MarketplaceOperationalMap({
               </div>
             {selectedJob && customerDetailsJobId === selectedJob.jobId ? (
               <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/22 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+                <div className="mb-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setCustomerDetailsJobId(null)}
+                    aria-label="Plegar ficha del servicio"
+                    className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
+                  >
+                    Plegar ficha
+                  </button>
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
