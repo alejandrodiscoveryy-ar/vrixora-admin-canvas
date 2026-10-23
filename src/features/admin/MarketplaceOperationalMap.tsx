@@ -1632,19 +1632,6 @@ export default function MarketplaceOperationalMap({
         element.style.cursor = "pointer";
         element.style.userSelect = "none";
 
-        const caption = document.createElement("div");
-        caption.dataset.role = "caption";
-        caption.style.padding = "2px 6px";
-        caption.style.borderRadius = "9999px";
-        caption.style.fontSize = "9px";
-        caption.style.fontWeight = "800";
-        caption.style.lineHeight = "1";
-        caption.style.color = "#f8fafc";
-        caption.style.background = "rgba(15,23,42,0.92)";
-        caption.style.border = "1px solid rgba(255,255,255,0.18)";
-        caption.style.boxShadow = "0 6px 18px rgba(0,0,0,0.28)";
-        caption.style.whiteSpace = "nowrap";
-
         const bubble = document.createElement("div");
         bubble.dataset.role = "bubble";
         bubble.style.width = "48px";
@@ -1653,7 +1640,7 @@ export default function MarketplaceOperationalMap({
         bubble.style.alignItems = "flex-end";
         bubble.style.justifyContent = "center";
 
-        element.append(caption, bubble);
+        element.append(bubble);
 
         marker = new mapboxgl.Marker({
           element,
@@ -1668,22 +1655,15 @@ export default function MarketplaceOperationalMap({
       marker.setLngLat(coordinate);
 
       const element = marker.getElement();
-      const caption = element.querySelector<HTMLElement>(
-        '[data-role="caption"]',
-      );
+
       const bubble = element.querySelector<HTMLElement>(
         '[data-role="bubble"]',
       );
 
-      if (!caption || !bubble) return;
+      if (!bubble) return;
 
       const isPickup = kind === "pickup";
       const selected = job.jobId === selectedJobId;
-
-      caption.textContent = isPickup ? "Cliente" : "Destino";
-      // El color y el simbolo identifican el punto sin saturar el mapa.
-      // La etiqueta reaparece cuando el servicio es seleccionado.
-      caption.style.display = selected ? "block" : "none";
 
       bubble.innerHTML = operationalPinSvg({
         kind: isPickup ? "customer" : "destination",
@@ -1691,9 +1671,6 @@ export default function MarketplaceOperationalMap({
         selected,
       });
 
-      caption.style.borderColor = isPickup
-        ? "rgba(34,197,94,0.60)"
-        : "rgba(239,68,68,0.60)";
       element.onclick = (event) => {
         event.stopPropagation();
         setSelectedJobId(job.jobId);
