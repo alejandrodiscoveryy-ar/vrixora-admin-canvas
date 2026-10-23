@@ -34,3 +34,16 @@ test('A refreshed worker activates for existing Admin tabs without stale cache',
   assert.match(sw, /\.then\(\(\) => self\.skipWaiting\(\)\)/);
   assert.doesNotMatch(sw, /if \(!self\.registration\.active\) self\.skipWaiting/);
 });
+
+test('operational alert tone is stronger while melody and durations remain unchanged', () => {
+  const start = panel.indexOf('function tone(');
+  const end = panel.indexOf('function dateLabel(');
+  assert.ok(start >= 0 && end > start, 'The expected tone function must exist');
+  const tone = panel.slice(start, end);
+  assert.match(tone, /exponentialRampToValueAtTime\(0\.28, at \+ 0\.025\)/);
+  assert.doesNotMatch(tone, /exponentialRampToValueAtTime\(0\.085, at \+ 0\.025\)/);
+  assert.match(tone, /\[523, 659\]/);
+  assert.match(tone, /\[659, 659, 784, 659\]/);
+  assert.match(tone, /\[784, 988, 784\]/);
+  assert.match(tone, /oscillator\.stop\(at \+ 0\.15\)/);
+});

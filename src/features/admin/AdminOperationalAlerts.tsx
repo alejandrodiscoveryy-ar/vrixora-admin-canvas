@@ -25,7 +25,7 @@ function tone(context: AudioContext, kind: AlertKind) {
     oscillator.type = "sine";
     oscillator.frequency.value = frequency;
     gain.gain.setValueAtTime(0.0001, at);
-    gain.gain.exponentialRampToValueAtTime(0.085, at + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.28, at + 0.025);
     gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.145);
     oscillator.connect(gain);
     gain.connect(context.destination);
