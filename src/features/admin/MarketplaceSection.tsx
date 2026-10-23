@@ -1427,7 +1427,63 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             tone="emerald"
             backgroundImage="/admin-premium/overview.svg"
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+            <div data-pulso-v2="20261023" className="space-y-4">
+              <section aria-label="Pulso operativo" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-background/80 to-emerald-500/[0.04] p-4 shadow-[0_16px_44px_-32px_rgba(6,182,212,0.45)] sm:p-5">
+                <img src="/admin-premium/overview.svg" alt="" aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 z-0 h-full w-[65%] object-cover object-right opacity-[0.12] dark:mix-blend-screen sm:w-[45%]" />
+                <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-background/45 via-background/20 to-transparent" />
+                <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300">Centro de control</p>
+                    <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">Pulso operativo</h3>
+                    <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">Estado actual del Marketplace. Prioriza lo que requiere atención antes de consultar el detalle.</p>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" disabled={overview.isFetching} onClick={() => void overview.refetch()}>
+                    <span>{overview.isFetching ? "Actualizando…" : "Actualizar datos"}</span>
+                  </Button>
+                </div>
+              </section>
+
+              <section aria-label="Requiere atención" className="relative isolate overflow-hidden rounded-[24px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.06] via-background/75 to-rose-500/[0.025] p-4 sm:p-5">
+                <img src="/admin-premium/operations.svg" alt="" aria-hidden="true" className="pointer-events-none absolute right-0 top-0 z-0 h-full w-[45%] object-cover object-right opacity-[0.07] dark:mix-blend-screen" />
+                <div className="relative z-10">
+                  <div className="mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-300" />
+                    <h4 className="text-sm font-semibold text-foreground">Requiere atención</h4>
+                  </div>
+                  {overview.isLoading ? (
+                    <p className="text-xs text-muted-foreground">Consultando pendientes…</p>
+                  ) : overview.isError ? (
+                    <p role="status" className="text-xs text-rose-300">No se pudieron consultar los pendientes. Actualiza los datos para reintentar.</p>
+                  ) : (overview.data?.jobsIncidentOpen ?? 0) === 0 && (!canPayments || (overview.data?.pendingTopups ?? 0) === 0) && (overview.data?.jobsPublished ?? 0) === 0 ? (
+                    <p className="text-xs text-muted-foreground">No hay incidencias abiertas, recargas pendientes visibles ni trabajos publicados en estos indicadores.</p>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {(overview.data?.jobsIncidentOpen ?? 0) > 0 ? (
+                        <button type="button" onClick={() => handleTabChange("incidencias")} className="flex items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-background/65 px-3 py-3 text-left text-xs text-foreground transition hover:border-rose-400/55">
+                          <span>Incidencias abiertas</span><strong className="font-mono text-base text-rose-300">{overview.data?.jobsIncidentOpen ?? 0}</strong>
+                        </button>
+                      ) : null}
+                      {canPayments && (overview.data?.pendingTopups ?? 0) > 0 ? (
+                        <button type="button" onClick={() => handleTabChange("recargas")} className="flex items-center justify-between gap-3 rounded-xl border border-amber-400/25 bg-background/65 px-3 py-3 text-left text-xs text-foreground transition hover:border-amber-400/55">
+                          <span>Recargas pendientes</span><strong className="font-mono text-base text-amber-300">{overview.data?.pendingTopups ?? 0}</strong>
+                        </button>
+                      ) : null}
+                      {(overview.data?.jobsPublished ?? 0) > 0 ? (
+                        <button type="button" onClick={() => handleTabChange("trabajos")} className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-background/65 px-3 py-3 text-left text-xs text-foreground transition hover:border-cyan-400/55">
+                          <span>Trabajos publicados</span><strong className="font-mono text-base text-cyan-300">{overview.data?.jobsPublished ?? 0}</strong>
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <div className="flex items-center justify-between gap-3 px-1">
+                <h4 className="text-sm font-semibold text-foreground">Indicadores del Marketplace</h4>
+                <span className="text-[11px] text-muted-foreground">Valores del resumen actual</span>
+              </div>
+<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 {
                   label: "Conductores",
@@ -1583,6 +1639,22 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   </div>
                 </article>
               ) : null}
+            </div>
+
+              <section aria-label="Accesos rápidos" className="relative isolate overflow-hidden rounded-[24px] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] via-background/75 to-cyan-500/[0.025] p-4 sm:p-5">
+                <img src="/admin-premium/shortcuts.svg" alt="" aria-hidden="true" className="pointer-events-none absolute right-0 top-0 z-0 h-full w-[42%] object-cover object-right opacity-[0.08] dark:mix-blend-screen" />
+                <div className="relative z-10">
+                  <h4 className="text-sm font-semibold text-foreground">Acciones rápidas</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">Abre directamente el módulo que necesitas revisar.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleTabChange("conductores")}>Conductores</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleTabChange("trabajos")}>Trabajos</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleTabChange("mapa")}>Mapa</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleTabChange("incidencias")}>Incidencias</Button>
+                    {canPayments ? <Button type="button" size="sm" variant="outline" onClick={() => handleTabChange("recargas")}>Recargas</Button> : null}
+                  </div>
+                </div>
+              </section>
             </div>
           </PremiumPanel>
         </TabsContent>
