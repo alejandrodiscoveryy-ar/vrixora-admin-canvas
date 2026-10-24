@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { ADMIN_PROJECT_TABS, type AdminProjectNavItem } from "@/lib/admin-navigation";
+import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -195,6 +195,10 @@ function ProjectNavItem({
     [],
   );
 
+  const workspaceView = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).vista,
+  });
+
   const projectBasePath = `/admin/proyectos/${project.id}`;
 
   return (
@@ -251,6 +255,42 @@ function ProjectNavItem({
         <div className="ml-4 pl-3 border-l border-border/60 space-y-1 my-1">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
+
+            // Areas de Trabajos: mismo panel, URL navegable y sin barra horizontal.
+            if (tab.slug === "trabajos") {
+              const groupActive = isActiveProject && currentSection === "trabajos";
+              return (
+                <div key="trabajos" className="space-y-1">
+                  <details className="group/workspace" open={groupActive || undefined}>
+                    <summary className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all [&::-webkit-details-marker]:hidden ${groupActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">Trabajos</span>
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open/workspace:rotate-90" />
+                    </summary>
+                    <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas de Trabajos">
+                      {MARKETPLACE_WORKSPACE_VIEWS.filter((view) => permissions.includes(view.permission)).map((view) => {
+                        const ViewIcon = view.icon;
+                        const viewActive = groupActive && (workspaceView === view.slug || (!workspaceView && view.slug === "resumen"));
+                        return (
+                          <Link
+                            key={view.slug}
+                            to="/admin/proyectos/$id/$section"
+                            params={{ id: project.id, section: "trabajos" }}
+                            search={{ vista: view.slug }}
+                            onClick={closeDrawer}
+                            aria-current={viewActive ? "page" : undefined}
+                            className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${viewActive ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+                          >
+                            <ViewIcon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{view.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </details>
+                </div>
+              );
+            }
 
             if ("children" in tab) {
               const groupActive = tab.children.some((child) => {
