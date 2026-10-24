@@ -1,14 +1,20 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  AlertTriangle,
   BarChart3,
   BriefcaseBusiness,
+  Eye,
   Gauge,
+  MapPin,
   Megaphone,
   PlugZap,
   ScrollText,
   Settings2,
   ShieldCheck,
   Tags,
+  UserRound,
+  Wallet,
+  WalletCards,
   Users,
 } from "lucide-react";
 
@@ -55,6 +61,18 @@ const administrationChildren = [
     icon: PlugZap,
     permission: "settings.view",
   },
+] satisfies Array<AdminProjectTab>;
+
+export const MARKETPLACE_WORKSPACE_VIEWS = [
+  { slug: "resumen", label: "Pulso", icon: Eye, permission: "marketplace.view" },
+  { slug: "trabajos", label: "Operaciones", icon: BriefcaseBusiness, permission: "marketplace.view" },
+  { slug: "mapa", label: "Mapa", icon: MapPin, permission: "marketplace.view" },
+  { slug: "conductores", label: "Conductores", icon: Users, permission: "marketplace.view" },
+  { slug: "clientes", label: "Clientes", icon: UserRound, permission: "customers.view" },
+  { slug: "billeteras", label: "Billeteras", icon: Wallet, permission: "payments.view" },
+  { slug: "recargas", label: "Recargas", icon: WalletCards, permission: "payments.view" },
+  { slug: "incidencias", label: "Incidencias", icon: AlertTriangle, permission: "marketplace.view" },
+  { slug: "configuracion", label: "Configuración", icon: ShieldCheck, permission: "settings.view" },
 ] satisfies Array<AdminProjectTab>;
 
 export const ADMIN_PROJECT_TABS = [
