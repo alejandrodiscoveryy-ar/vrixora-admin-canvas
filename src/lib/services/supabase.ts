@@ -2052,8 +2052,12 @@ export const supabaseServices: AdminServices = {
       const jobsSummary = (root.jobs_summary ?? {}) as Record<string, unknown>;
       const referral = (root.referral ?? {}) as Record<string, unknown>;
       const ratings = (root.ratings ?? {}) as Record<string, unknown>;
+      // Los vehiculos con baja logica permanecen en Supabase, pero no en la ficha 360.
       const vehicles = Array.isArray(root.vehicles)
-        ? (root.vehicles as Record<string, unknown>[])
+        ? (root.vehicles as Record<string, unknown>[]).filter((row) => {
+            const vehicle = (row.vehicle ?? {}) as Record<string, unknown>;
+            return vehicle.deleted_at == null;
+          })
         : [];
 
       return {
