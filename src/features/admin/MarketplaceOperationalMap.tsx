@@ -865,15 +865,35 @@ export default function MarketplaceOperationalMap({
     retry: 1,
   });
 
-  const filteredDrivers = useMemo(
-    () =>
-      (operational.data?.drivers ?? []).filter((driver) =>
-        driverListMode === "working"
-          ? driver.acceptingJobs || Boolean(driver.activeJobId)
-          : !driver.acceptingJobs && !driver.activeJobId,
-      ),
-    [driverListMode, operational.data?.drivers],
-  );
+  const filteredDrivers = useMemo(() => {
+    const filtered = (operational.data?.drivers ?? []).filter((driver) =>
+      driverListMode === "working"
+        ? driver.acceptingJobs || Boolean(driver.activeJobId)
+        : !driver.acceptingJobs && !driver.activeJobId,
+    );
+    const lastSignalTime = (driver: MarketplaceOperationalDriver) => {
+      const timestamp = driver.capturedAt ? Date.parse(driver.capturedAt) : NaN;
+      return Number.isFinite(timestamp) ? timestamp : -1;
+    };
+
+    return filtered.sort((a, b) => {
+      if (driverListMode === "working") {
+        // Primero disponibles con ubicacion actual; no presentar senales antiguas como vigentes.
+        const priority = (driver: MarketplaceOperationalDriver) =>
+          driverPinState(driver) === "available" ? 0 : driver.locationFresh ? 1 : 2;
+        const difference = priority(a) - priority(b);
+        if (difference !== 0) return difference;
+      }
+
+      // Dentro de cada grupo, mas reciente primero. Sin senal, al final.
+      const recency = lastSignalTime(b) - lastSignalTime(a);
+      if (recency !== 0) return recency;
+      return (
+        (a.driverDisplayName ?? "").localeCompare(b.driverDisplayName ?? "", "es") ||
+        a.driverUserId.localeCompare(b.driverUserId)
+      );
+    });
+  }, [driverListMode, operational.data?.drivers]);
 
   const coverageDrivers = useMemo(() => {
     const all = operational.data?.drivers ?? [];
