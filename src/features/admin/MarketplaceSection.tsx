@@ -3201,7 +3201,7 @@ function JobDetail({ detail }: { detail: import("@/lib/services/types").Marketpl
                     Importe
                   </p>
                   <p className="mt-1.5 text-lg font-semibold tracking-tight text-foreground">
-                    {formatAmount(financial.amount, text(financial.currency))}
+                    {formatOperationPrice(financial.amount, text(financial.currency))}
                   </p>
                 </div>
               </div>
