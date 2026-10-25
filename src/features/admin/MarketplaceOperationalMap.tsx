@@ -847,6 +847,8 @@ export default function MarketplaceOperationalMap({
     refetchIntervalInBackground: false,
   });
 
+  const operationalReady = Boolean(operational.data);
+
   const mapConfig = useQuery({
     queryKey: ["marketplace-operational-map-config", projectId],
     queryFn: () => getMarketplaceOperationalMapConfig(projectId),
@@ -1024,7 +1026,7 @@ export default function MarketplaceOperationalMap({
       visualViewport?.removeEventListener("resize", measure);
       window.cancelAnimationFrame(frame);
     };
-  }, [expanded, panelOpen]);
+  }, [expanded, panelOpen, operationalReady]);
 
   useEffect(() => {
     const node = mapNodeRef.current;
@@ -1272,7 +1274,7 @@ export default function MarketplaceOperationalMap({
         }
       }
     };
-  }, [mapConfig.data, mapInitNonce]);
+  }, [mapConfig.data, mapInitNonce, operationalReady]);
   useEffect(() => {
     const map = mapRef.current;
     const node = mapNodeRef.current;
