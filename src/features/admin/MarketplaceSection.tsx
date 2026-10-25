@@ -1658,8 +1658,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 </span>
                               </div>
                               <p className="mt-1 truncate text-xs text-muted-foreground">
-                                {formatDate(job.createdAt)} Â·{" "}
-                                {job.customerDisplayName || "Sin nombre registrado"} Â·{" "}
+                                {formatDate(job.createdAt)} ·{" "}
+                                {job.customerDisplayName || "Sin nombre registrado"} ·{" "}
                                 {job.driverDisplayName || "Sin conductor asignado"}
                               </p>
                             </div>
