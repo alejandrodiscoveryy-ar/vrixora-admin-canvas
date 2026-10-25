@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 const map = readFileSync(new URL('../src/features/admin/MarketplaceOperationalMap.tsx', import.meta.url), 'utf8');
 const lib = readFileSync(new URL('../src/lib/marketplace-map.ts', import.meta.url), 'utf8');
-const sql = readFileSync(new URL('../supabase/migrations/20261025164300_marketplace_job_notification_recipients_admin.sql', import.meta.url), 'utf8');
+const sql = readFileSync(new URL('../supabase/migrations/20261025230302_marketplace_job_notification_recipients_admin.sql', import.meta.url), 'utf8');
 test('Muestra destinatarios reales en la carrera', () => {
   assert.ok(map.includes('Conductores notificados'));
   assert.ok(map.includes('jobRecipients.data.map'));
