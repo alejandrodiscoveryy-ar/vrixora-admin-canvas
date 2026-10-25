@@ -1910,7 +1910,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       <div className="relative grid gap-3 lg:grid-cols-[minmax(220px,1.15fr)_minmax(190px,0.8fr)_minmax(220px,1fr)_auto] lg:items-center">
                         <div className="min-w-0">
                           <div className="flex items-start gap-3">
-                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
+                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
                               <Users className="h-5 w-5" />
                               {driverMedia.data?.[item.userId]?.avatarUrl ? (
                                 <img
