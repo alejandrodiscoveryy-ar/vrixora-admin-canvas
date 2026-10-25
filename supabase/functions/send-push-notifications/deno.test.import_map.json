@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "npm:@supabase/server@1.5.2": "./test_support/with_supabase_test_stub.ts"
+  }
+}

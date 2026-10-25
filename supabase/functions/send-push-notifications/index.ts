@@ -189,6 +189,62 @@ export default {
         await releaseForRetry(admin, row, "Worker execution time budget reached");
         return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
       }
+      // Antes de enviar un aviso original o recordatorio, verificar estado REAL.
+      if (row.kind === "marketplace_job_available") {
+        const jobId = typeof row.data?.job_id === "string" ? row.data.job_id : null;
+        if (!jobId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(jobId)) {
+          await finishRow(admin, row, "skipped", "Missing/invalid marketplace job id");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+        const { data: liveJob, error: liveJobError } = await admin.from("jobs")
+          .select("status,assigned_driver_user_id,expires_at,test_deleted_at")
+          .eq("project_id", row.project_id).eq("id", jobId).maybeSingle();
+        if (liveJobError) {
+          await releaseForRetry(admin, row, "Could not verify current marketplace job status");
+          return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
+        }
+        const expires = liveJob?.expires_at ? Date.parse(liveJob.expires_at) : Number.POSITIVE_INFINITY;
+        if (!liveJob || liveJob.status !== "published" || liveJob.assigned_driver_user_id ||
+            liveJob.test_deleted_at || Number.isNaN(expires) || expires <= Date.now()) {
+          await finishRow(admin, row, "skipped", "Marketplace job no longer available");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+        const { data: assignment, error: assignmentError } = await admin.from("job_assignments")
+          .select("id").eq("project_id", row.project_id).eq("job_id", jobId).maybeSingle();
+        if (assignmentError) {
+          await releaseForRetry(admin, row, "Could not verify marketplace job assignments");
+          return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
+        }
+        if (assignment) {
+          await finishRow(admin, row, "skipped", "Marketplace job already assigned");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+        if (row.data?.reminder_index !== undefined) {
+          const index = Number(row.data.reminder_index);
+          const validUntil = typeof row.data.reminder_expires_at === "string"
+            ? Date.parse(row.data.reminder_expires_at) : Number.NaN;
+          if (!Number.isInteger(index) || index < 1 || index > 5 ||
+              !Number.isFinite(validUntil) || Date.now() >= validUntil) {
+            await finishRow(admin, row, "skipped", "Marketplace job reminder expired");
+            return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+          }
+          const { data: eligible, error: eligibleError } = await admin.rpc(
+            "marketplace_reminder_recipient_eligible", {
+              target_project_id: row.project_id,
+              target_job_id: jobId,
+              target_driver_user_id: row.user_id,
+            },
+          );
+          if (eligibleError) {
+            await releaseForRetry(admin, row, "Could not verify current driver eligibility");
+            return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
+          }
+          if (eligible !== true) {
+            await finishRow(admin, row, "skipped", "Marketplace reminder recipient no longer eligible");
+            return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+          }
+        }
+      }
       const targetPlatform = typeof row.data?.target_platform === "string" ? row.data.target_platform : null;
       const requestedAudience = typeof row.data?.target_audience === "string" ? row.data.target_audience : null;
       const targetAudience = requestedAudience === "admin" || requestedAudience === "client"
