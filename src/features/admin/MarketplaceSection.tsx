@@ -159,12 +159,40 @@ const formatOperationPrice = (value: unknown, currency = "CUP") => {
   if (!Number.isFinite(amount)) return `${text(value)} ${currency}`;
 
   return `${amount.toLocaleString("es-ES", {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
     maximumFractionDigits: 2,
     useGrouping: true,
   })} ${currency}`;
 };
 
+const operationRowClasses = (status: string | null) => {
+  if (["completed", "settled", "confirmed", "reconciled"].includes(status ?? "")) {
+    return "border-emerald-500/45 border-l-4 border-l-emerald-400 bg-emerald-500/[0.10] hover:bg-emerald-500/[0.15]";
+  }
+
+  if (
+    [
+      "cancelled",
+      "cancelled_by_customer",
+      "cancelled_by_driver",
+      "expired",
+      "rejected",
+      "incident",
+    ].includes(status ?? "")
+  ) {
+    return "border-rose-500/45 border-l-4 border-l-rose-400 bg-rose-500/[0.10] hover:bg-rose-500/[0.15]";
+  }
+
+  if (
+    ["requested", "published", "accepted", "en_route", "pickup", "in_progress", "active"].includes(
+      status ?? "",
+    )
+  ) {
+    return "border-amber-500/45 border-l-4 border-l-amber-400 bg-amber-500/[0.10] hover:bg-amber-500/[0.15]";
+  }
+
+  return "border-border/60 border-l-4 border-l-border bg-background/60 hover:bg-muted/30";
+};
 const formatDate = (value: unknown) => {
   if (!value) return "—";
   const parsed = new Date(String(value));
@@ -1586,22 +1614,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-3 xl:grid-cols-2">
+                  <div className="space-y-2">
                     {jobRows.map((job) => (
                       <article
                         key={job.jobId}
-                        className={`group relative min-w-0 overflow-hidden rounded-2xl border p-3 transition-colors sm:p-4 ${expandedOperationId === job.jobId ? "xl:col-span-2" : ""} ${
-                          job.isTest
-                            ? "border-violet-500/25 bg-gradient-to-br from-violet-500/[0.08] via-background/60 to-background/45 hover:border-violet-400/40"
-                            : "border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.065] via-background/60 to-cyan-500/[0.025] hover:border-emerald-400/35"
-                        }`}
+                        className={`group relative min-w-0 overflow-hidden rounded-xl border px-3 py-2 transition-colors sm:px-4 sm:py-2.5 ${operationRowClasses(job.status)}`}
                       >
-                        <div
-                          className={`pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full blur-3xl ${
-                            job.isTest ? "bg-violet-500/10" : "bg-emerald-500/10"
-                          }`}
-                        />
-
                         <button
                           type="button"
                           aria-expanded={expandedOperationId === job.jobId}
@@ -1611,10 +1629,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               current === job.jobId ? null : job.jobId,
                             )
                           }
-                          className="relative flex w-full min-w-0 flex-col gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:flex-row sm:items-center sm:justify-between"
+                          className="relative flex w-full min-w-0 flex-col gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 lg:flex-row lg:items-center lg:justify-between"
                         >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1.5 lg:flex-row lg:items-center lg:gap-4">
+                            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                               <StatusBadge status={job.status} />
                               <ServiceBadge service={job.serviceCode} />
                               {job.isTest ? (
@@ -1622,42 +1640,34 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   PRUEBA
                                 </span>
                               ) : null}
-                              <span className="text-xs text-muted-foreground sm:ml-auto">
-                                {formatDate(job.createdAt)}
-                              </span>
                             </div>
-                            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-foreground">
-                              <span
-                                className="max-w-[45%] truncate font-medium"
-                                title={text(job.originText)}
-                              >
-                                {text(job.originText)}
-                              </span>
-                              <ArrowRight
-                                className="h-3.5 w-3.5 shrink-0 text-cyan-300"
-                                aria-hidden="true"
-                              />
-                              <span
-                                className="max-w-[45%] truncate font-medium"
-                                title={text(job.destinationText)}
-                              >
-                                {text(job.destinationText)}
-                              </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+                                <span className="min-w-0 truncate" title={text(job.originText)}>
+                                  {text(job.originText)}
+                                </span>
+                                <ArrowRight
+                                  className="h-3.5 w-3.5 shrink-0 text-cyan-300"
+                                  aria-hidden="true"
+                                />
+                                <span
+                                  className="min-w-0 truncate"
+                                  title={text(job.destinationText)}
+                                >
+                                  {text(job.destinationText)}
+                                </span>
+                              </div>
+                              <p className="mt-1 truncate text-xs text-muted-foreground">
+                                {formatDate(job.createdAt)} ·{" "}
+                                {job.customerDisplayName || "Sin nombre registrado"} ·{" "}
+                                {job.driverDisplayName || "Sin conductor asignado"}
+                              </p>
                             </div>
-                            <p className="mt-1 truncate text-xs text-muted-foreground">
-                              {job.customerDisplayName || "Sin nombre registrado"} ·{" "}
-                              {job.driverDisplayName || "Sin conductor asignado"}
-                            </p>
                           </div>
-                          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/40 pt-2 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-                            <div className="min-w-0">
-                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                Precio final
-                              </span>
-                              <span className="block whitespace-nowrap text-base font-semibold tabular-nums text-foreground">
-                                {formatOperationPrice(job.finalPrice, job.currency)}
-                              </span>
-                            </div>
+                          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/40 pt-2 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+                            <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
+                              {formatOperationPrice(job.finalPrice, job.currency)}
+                            </span>
                             <ChevronDown
                               className={`h-4 w-4 shrink-0 text-cyan-300 transition-transform ${expandedOperationId === job.jobId ? "rotate-180" : ""}`}
                               aria-hidden="true"
@@ -1753,15 +1763,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 </div>
                               </div>
 
-                              <aside className="shrink-0 rounded-2xl border border-border/55 bg-background/55 p-4 lg:w-[220px]">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
-                                  Precio final
-                                </p>
-                                <p className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">
-                                  {formatOperationPrice(job.finalPrice, job.currency)}
-                                </p>
-
-                                <div className="mt-4 space-y-2 border-t border-border/50 pt-4 text-xs text-muted-foreground">
+                              <aside className="shrink-0 rounded-xl border border-border/55 bg-background/55 p-3 lg:w-[200px]">
+                                <div className="space-y-2 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
                                     <span>Programado</span>
                                     <span className="text-right font-medium text-foreground">
