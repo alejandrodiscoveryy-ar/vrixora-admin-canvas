@@ -14,6 +14,10 @@ create table if not exists public.project_marketplace_job_reminder_settings (
 );
 
 alter table public.project_marketplace_job_reminder_settings enable row level security;
+-- Consulta periódica de avisos iniciales; evita escanear historiales de otros eventos.
+create index if not exists notification_outbox_marketplace_initial_sent_idx
+  on public.notification_outbox (project_id, sent_at desc)
+  where kind='marketplace_job_available' and delivery_status='sent';
 revoke all on table public.project_marketplace_job_reminder_settings from PUBLIC, anon, authenticated;
 
 -- Parametros predeterminados, sin activacion automatica.
@@ -95,7 +99,10 @@ begin
          else 'Ultimo recordatorio: hay una carrera disponible.' end,
     jsonb_build_object(
       'event_type','marketplace_job_available', 'job_id',j.id,
-      'reminder_index',stage.n
+      'reminder_index',stage.n,
+      'reminder_expires_at', initial.sent_at + make_interval(
+        secs=>stage.n*cfg.interval_seconds + least(45,cfg.interval_seconds - 1)
+      )
     )
   from public.notification_outbox initial
   join public.jobs j
@@ -108,7 +115,14 @@ begin
     and initial.delivery_status='sent' and initial.sent_at is not null
     and initial.dedupe_key='marketplace-job:' || j.id::text
     and cfg.activated_at is not null and initial.sent_at >= cfg.activated_at
+    and initial.sent_at >= clock_timestamp() - make_interval(
+      secs=>cfg.max_reminders*cfg.interval_seconds + 45
+    )
     and j.status='published' and j.assigned_driver_user_id is null
+    and not exists (
+      select 1 from public.job_assignments ja
+      where ja.project_id=j.project_id and ja.job_id=j.id
+    )
     and not j.is_test and j.test_deleted_at is null
     and (j.expires_at is null or j.expires_at > clock_timestamp())
     and clock_timestamp() >= initial.sent_at + make_interval(secs=>stage.n*cfg.interval_seconds)
@@ -162,6 +176,43 @@ begin
   return inserted_rows;
 end;
 $function$;
+
+-- Verificación de elegibilidad en el momento REAL del envío.
+-- Sólo el worker service_role puede invocar esta comprobación.
+create or replace function public.marketplace_reminder_recipient_eligible(
+  target_project_id uuid, target_job_id uuid, target_driver_user_id uuid
+)
+returns boolean language sql stable security definer set search_path = '' as $function$
+  select exists (
+    select 1
+    from public.jobs j
+    join public.driver_vehicle_assignments a on a.project_id=j.project_id
+      and a.driver_user_id=target_driver_user_id
+    where j.project_id=target_project_id
+      and j.id=target_job_id
+      and j.status='published'
+      and j.assigned_driver_user_id is null
+      and not j.is_test
+      and j.test_deleted_at is null
+      and (j.expires_at is null or j.expires_at>clock_timestamp())
+      and not exists (
+        select 1 from public.job_assignments ja
+        where ja.project_id=j.project_id and ja.job_id=j.id
+      )
+      and app_private.marketplace_driver_can_receive_job(
+        j.project_id,a.driver_user_id,a.vehicle_id,j.id
+      )
+      and exists (
+        select 1 from app_private.marketplace_dispatch_candidate_state(
+          j.project_id,a.driver_user_id,a.vehicle_id,j.id
+        ) c where c.allowed
+      )
+  );
+$function$;
+revoke all on function public.marketplace_reminder_recipient_eligible(uuid,uuid,uuid)
+  from PUBLIC, anon, authenticated;
+grant execute on function public.marketplace_reminder_recipient_eligible(uuid,uuid,uuid)
+  to service_role;
 
 revoke all on function app_private.enqueue_marketplace_job_reminders() from PUBLIC, anon, authenticated;
 

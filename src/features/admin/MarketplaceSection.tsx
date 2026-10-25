@@ -56,6 +56,7 @@ import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMa
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
+import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
 import {
   getMarketplaceOperationalMap,
   getMarketplaceOperationalMapConfig,
@@ -2663,6 +2664,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               />
 
               <MarketplaceDispatchSettingsCard
+                projectId={projectId}
+                canManage={canManageSettings}
+              />
+              <MarketplaceJobReminderSettingsCard
                 projectId={projectId}
                 canManage={canManageSettings}
               />

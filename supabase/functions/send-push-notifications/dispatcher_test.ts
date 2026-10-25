@@ -172,3 +172,36 @@ Deno.test("dispatcher: fallo de lectura de carrera deja aviso pendiente para rei
     equal(db.tables.notification_outbox[0].delivery_status, "pending");
   } finally { globalThis.fetch = originalFetch; }
 });
+Deno.test("dispatcher: carrera con asignacion deja de notificar aunque figure publicada", async () => {
+  const { db, messages } = setup(["marketplace_job_available"]);
+  db.tables.job_assignments = [{
+    id: "fake-acceptance", project_id: db.tables.jobs[0].project_id,
+    job_id: db.tables.jobs[0].id,
+  }];
+  try {
+    const summary = await (await run(db)).json();
+    equal(summary.skipped, 1); equal(messages.length, 0);
+  } finally { globalThis.fetch = originalFetch; }
+});
+Deno.test("dispatcher: recordatorio vencido nunca se envia", async () => {
+  const { db, messages } = setup(["marketplace_job_available"]);
+  db.tables.notification_outbox[0].data.reminder_index = 1;
+  db.tables.notification_outbox[0].data.reminder_expires_at = new Date(Date.now() - 60_000).toISOString();
+  try {
+    const summary = await (await run(db)).json();
+    equal(summary.skipped, 1); equal(messages.length, 0);
+  } finally { globalThis.fetch = originalFetch; }
+});
+Deno.test("dispatcher: solo recordatorio vigente y conductor elegible genera FCM", async () => {
+  const { db, messages } = setup(["marketplace_job_available"]);
+  db.tables.notification_outbox[0].data.reminder_index = 1;
+  db.tables.notification_outbox[0].data.reminder_expires_at = new Date(Date.now() + 30_000).toISOString();
+  const original = db.onRpc;
+  db.onRpc = (name, args) => name === "marketplace_reminder_recipient_eligible"
+    ? { data: true, error: null } : original(name, args);
+  try {
+    const summary = await (await run(db)).json();
+    equal(summary.sent, 1); equal(messages.length, 1);
+    equal(messages[0].android.notification.channel_id, "tuktuk_nuevas_carreras_v1");
+  } finally { globalThis.fetch = originalFetch; }
+});

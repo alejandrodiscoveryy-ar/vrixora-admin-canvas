@@ -27,3 +27,16 @@ test('reminders: guardia de carrera cerrada antes del FCM y canal actual', () =>
   assert.match(worker, /const \{ data: liveJob, error: liveJobError \}/);
   assert.match(core, /tuktuk_nuevas_carreras_v1/);
 });
+test('reminders: elegibilidad antes de FCM, vencimiento, asignacion y control en Admin', () => {
+  const component = readFileSync(new URL('../src/features/admin/MarketplaceJobReminderSettingsCard.tsx', import.meta.url), 'utf8');
+  const section = readFileSync(new URL('../src/features/admin/MarketplaceSection.tsx', import.meta.url), 'utf8');
+  assert.match(sql, /marketplace_reminder_recipient_eligible/);
+  assert.match(sql, /notification_outbox_marketplace_initial_sent_idx/);
+  assert.match(sql, /public.job_assignments ja/);
+  assert.match(sql, /reminder_expires_at/);
+  assert.match(worker, /Marketplace job reminder expired/);
+  assert.match(worker, /Marketplace reminder recipient no longer eligible/);
+  assert.match(worker, /Marketplace job already assigned/);
+  assert.match(section, /<MarketplaceJobReminderSettingsCard/);
+  assert.match(component, /admin_set_marketplace_job_reminder_settings/);
+});
