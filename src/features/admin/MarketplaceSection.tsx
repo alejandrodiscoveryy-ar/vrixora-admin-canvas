@@ -152,6 +152,19 @@ const formatAmount = (value: unknown, currency = "CUP") => {
   })} ${currency}`;
 };
 
+// Formato exclusivamente visual: no modifica precios almacenados.
+const formatOperationPrice = (value: unknown, currency = "CUP") => {
+  if (value == null || value === "") return `— ${currency}`;
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return `${text(value)} ${currency}`;
+
+  return `${amount.toLocaleString("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  })} ${currency}`;
+};
+
 const formatDate = (value: unknown) => {
   if (!value) return "—";
   const parsed = new Date(String(value));
@@ -304,16 +317,15 @@ function PremiumPanel({
     return (
       <section aria-label={title} className="min-w-0">
         {action ? (
-          <div className="mb-3 flex min-w-0 flex-wrap items-center justify-end gap-2">
-            {action}
-          </div>
+          <div className="mb-3 flex min-w-0 flex-wrap items-center justify-end gap-2">{action}</div>
         ) : null}
         <div className="min-w-0">{children}</div>
       </section>
     );
   }
 
-  return (    <section className={`relative overflow-hidden rounded-2xl border shadow-sm ${visual.card}`}>
+  return (
+    <section className={`relative overflow-hidden rounded-2xl border shadow-sm ${visual.card}`}>
       {backgroundImage ? (
         <>
           <img
@@ -474,13 +486,17 @@ function CustomerSummaryMetric({
 
   return (
     <div className="group rounded-2xl border border-border/60 bg-background/55 p-3.5 shadow-sm transition hover:border-violet-500/20 hover:bg-background/70 sm:p-4">
-      <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${accentClasses}`}>
+      <div
+        className={`flex h-8 w-8 items-center justify-center rounded-xl border ${accentClasses}`}
+      >
         <Icon className="h-4 w-4" />
       </div>
       <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.11em] text-muted-foreground">
         {labelText}
       </p>
-      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">{value}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+        {value}
+      </p>
     </div>
   );
 }
@@ -499,9 +515,7 @@ function Customer360Detail({
   onLoadMore: () => void;
 }) {
   const km = (value: number | null) =>
-    value == null
-      ? "\u2014"
-      : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
+    value == null ? "\u2014" : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -538,7 +552,9 @@ function Customer360Detail({
                 <Phone className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">WhatsApp</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  WhatsApp
+                </p>
                 <p className="mt-0.5 truncate text-sm font-medium text-foreground">
                   {detail.customer.whatsappPhone}
                 </p>
@@ -550,7 +566,9 @@ function Customer360Detail({
                 <Mail className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Correo</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  Correo
+                </p>
                 <p className="mt-0.5 truncate text-sm font-medium text-foreground">
                   {detail.customer.email ?? "Sin correo registrado"}
                 </p>
@@ -837,11 +855,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [incidentState, setIncidentState] = useState("open");
   const [customerSearchInput, setCustomerSearchInput] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
-  const [customerSort, setCustomerSort] = useState<"points_desc" | "recent">(
-    "points_desc",
-  );
+  const [customerSort, setCustomerSort] = useState<"points_desc" | "recent">("points_desc");
 
   const [jobId, setJobId] = useState<string | null>(null);
+  const [expandedOperationId, setExpandedOperationId] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [driver, setDriver] = useState<{
     id: string;
@@ -949,12 +966,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   });
 
   const customers = useInfiniteQuery({
-    queryKey: [
-      "marketplace-customers",
-      projectId,
-      customerSearch,
-      customerSort,
-    ],
+    queryKey: ["marketplace-customers", projectId, customerSearch, customerSort],
     queryFn: ({ pageParam }) =>
       supabaseServices.marketplace.listCustomers(projectId, {
         search: customerSearch || undefined,
@@ -1123,11 +1135,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   const adminFinishMutation = useMutation({
     mutationFn: async () => {
-      if (
-        !canFinishAdmin ||
-        !adminFinish ||
-        adminFinishReason.trim().length < 8
-      ) {
+      if (!canFinishAdmin || !adminFinish || adminFinishReason.trim().length < 8) {
         throw new Error("ADMIN_FINISH_REASON_REQUIRED");
       }
 
@@ -1208,11 +1216,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
   const confirm = useMutation({
     mutationFn: () =>
-      supabaseServices.marketplace.confirmTopup(
-        projectId,
-        topup!.id,
-        topup!.confirmationKey,
-      ),
+      supabaseServices.marketplace.confirmTopup(projectId, topup!.id, topup!.confirmationKey),
     onSuccess: () => {
       setError(null);
       setTopup(null);
@@ -1342,9 +1346,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   return (
     <div className="space-y-5 sm:space-y-6">
       <Tabs value={tab}>
-<TabsContent value="resumen">
+        <TabsContent value="resumen">
           <PremiumPanel
-              headerless
+            headerless
             title="Pulso operativo"
             description="Visión general del estado actual del Marketplace"
             icon={Eye}
@@ -1360,8 +1364,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: Users,
                   shell:
                     "border-cyan-400/18 bg-gradient-to-br from-cyan-500/[0.075] via-background/62 to-background/45",
-                  icon:
-                    "border-cyan-400/20 bg-cyan-500/[0.09] text-cyan-300",
+                  icon: "border-cyan-400/20 bg-cyan-500/[0.09] text-cyan-300",
                   glow: "bg-cyan-400/[0.07]",
                 },
                 {
@@ -1371,8 +1374,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: Users,
                   shell:
                     "border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.075] via-background/62 to-background/45",
-                  icon:
-                    "border-emerald-400/20 bg-emerald-500/[0.09] text-emerald-300",
+                  icon: "border-emerald-400/20 bg-emerald-500/[0.09] text-emerald-300",
                   glow: "bg-emerald-400/[0.07]",
                 },
                 {
@@ -1382,8 +1384,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: BriefcaseBusiness,
                   shell:
                     "border-violet-400/18 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-background/45",
-                  icon:
-                    "border-violet-400/20 bg-violet-500/[0.09] text-violet-300",
+                  icon: "border-violet-400/20 bg-violet-500/[0.09] text-violet-300",
                   glow: "bg-violet-400/[0.07]",
                 },
                 {
@@ -1393,8 +1394,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: WalletCards,
                   shell:
                     "border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-background/45",
-                  icon:
-                    "border-amber-400/20 bg-amber-500/[0.08] text-amber-300",
+                  icon: "border-amber-400/20 bg-amber-500/[0.08] text-amber-300",
                   glow: "bg-amber-400/[0.06]",
                 },
                 {
@@ -1404,8 +1404,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: BriefcaseBusiness,
                   shell:
                     "border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.065] via-background/62 to-cyan-500/[0.02]",
-                  icon:
-                    "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300",
+                  icon: "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300",
                   glow: "bg-emerald-400/[0.06]",
                 },
                 {
@@ -1415,8 +1414,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: BriefcaseBusiness,
                   shell:
                     "border-cyan-400/18 bg-gradient-to-br from-cyan-500/[0.065] via-background/62 to-violet-500/[0.02]",
-                  icon:
-                    "border-cyan-400/20 bg-cyan-500/[0.08] text-cyan-300",
+                  icon: "border-cyan-400/20 bg-cyan-500/[0.08] text-cyan-300",
                   glow: "bg-cyan-400/[0.06]",
                 },
                 {
@@ -1426,62 +1424,50 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   Icon: AlertTriangle,
                   shell:
                     "border-rose-400/18 bg-gradient-to-br from-rose-500/[0.07] via-background/62 to-background/45",
-                  icon:
-                    "border-rose-400/20 bg-rose-500/[0.08] text-rose-300",
+                  icon: "border-rose-400/20 bg-rose-500/[0.08] text-rose-300",
                   glow: "bg-rose-400/[0.06]",
                 },
-              ].map(
-                ({
-                  label: metricLabel,
-                  eyebrow,
-                  value,
-                  Icon,
-                  shell,
-                  icon,
-                  glow,
-                }) => (
-                  <article
-                    key={metricLabel}
-                    className={`group relative min-h-[128px] overflow-hidden rounded-[22px] border p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${shell}`}
-                  >
-                    <div
-                      className={`pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl ${glow}`}
-                    />
+              ].map(({ label: metricLabel, eyebrow, value, Icon, shell, icon, glow }) => (
+                <article
+                  key={metricLabel}
+                  className={`group relative min-h-[128px] overflow-hidden rounded-[22px] border p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${shell}`}
+                >
+                  <div
+                    className={`pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl ${glow}`}
+                  />
 
-                    <div className="relative">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            {eyebrow}
-                          </p>
-                          <p className="mt-1.5 text-xs font-semibold text-foreground/80">
-                            {metricLabel}
-                          </p>
-                        </div>
-
-                        <div
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${icon}`}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </div>
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {eyebrow}
+                        </p>
+                        <p className="mt-1.5 text-xs font-semibold text-foreground/80">
+                          {metricLabel}
+                        </p>
                       </div>
 
-                      <div className="mt-5">
-                        {overview.isLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                        ) : (
-                          <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
-                            {Number(value ?? 0)}
-                          </p>
-                        )}
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${icon}`}
+                      >
+                        <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                  </article>
-                ),
-              )}
 
-              {!overview.isLoading &&
-              overview.data?.pendingTopups !== null ? (
+                    <div className="mt-5">
+                      {overview.isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : (
+                        <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
+                          {Number(value ?? 0)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+
+              {!overview.isLoading && overview.data?.pendingTopups !== null ? (
                 <article className="group relative min-h-[128px] overflow-hidden rounded-[22px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5">
                   <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-amber-400/[0.06] blur-3xl" />
 
@@ -1554,11 +1540,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:justify-end">
-                  <FilterSelect
-                    labelText="Estado"
-                    value={status}
-                    onChange={setStatus}
-                  >
+                  <FilterSelect labelText="Estado" value={status} onChange={setStatus}>
                     <option value="">Todos los estados</option>
                     {statusOptions.map((item) => (
                       <option key={item} value={item}>
@@ -1567,23 +1549,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     ))}
                   </FilterSelect>
 
-                  <FilterSelect
-                    labelText="Servicio"
-                    value={service}
-                    onChange={setService}
-                  >
+                  <FilterSelect labelText="Servicio" value={service} onChange={setService}>
                     <option value="">Todos los servicios</option>
-                    {[...new Set([
-                      ...services,
-                      "passenger",
-                      "cargo",
-                      "courier",
-                      "tourism",
-                    ])].map((item) => (
-                      <option key={item} value={item}>
-                        {label(item)}
-                      </option>
-                    ))}
+                    {[...new Set([...services, "passenger", "cargo", "courier", "tourism"])].map(
+                      (item) => (
+                        <option key={item} value={item}>
+                          {label(item)}
+                        </option>
+                      ),
+                    )}
                   </FilterSelect>
                 </div>
               </div>
@@ -1598,9 +1572,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       <BriefcaseBusiness className="h-5 w-5" />
                     </div>
 
-                    <p className="mt-4 font-semibold text-foreground">
-                      No hay trabajos
-                    </p>
+                    <p className="mt-4 font-semibold text-foreground">No hay trabajos</p>
 
                     <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
                       No existen operaciones que coincidan con los filtros seleccionados.
@@ -1614,11 +1586,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 </div>
               ) : (
                 <>
-                  <div className="space-y-3">
+                  <div className="grid gap-3 xl:grid-cols-2">
                     {jobRows.map((job) => (
                       <article
                         key={job.jobId}
-                        className={`group relative overflow-hidden rounded-[26px] border p-4 shadow-[0_18px_52px_-40px_rgba(0,0,0,0.85)] transition duration-200 hover:-translate-y-0.5 sm:p-5 ${
+                        className={`group relative min-w-0 overflow-hidden rounded-2xl border p-3 transition-colors sm:p-4 ${expandedOperationId === job.jobId ? "xl:col-span-2" : ""} ${
                           job.isTest
                             ? "border-violet-500/25 bg-gradient-to-br from-violet-500/[0.08] via-background/60 to-background/45 hover:border-violet-400/40"
                             : "border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.065] via-background/60 to-cyan-500/[0.025] hover:border-emerald-400/35"
@@ -1630,198 +1602,255 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           }`}
                         />
 
-                        <div className="relative">
-                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <StatusBadge status={job.status} />
-                                <ServiceBadge service={job.serviceCode} />
-
-                                {job.isTest ? (
-                                  <span className="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.11em] text-violet-300">
-                                    PRUEBA
-                                  </span>
-                                ) : null}
-
-                                <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">
-                                  {formatDate(job.createdAt)}
+                        <button
+                          type="button"
+                          aria-expanded={expandedOperationId === job.jobId}
+                          aria-controls={`operation-content-${job.jobId}`}
+                          onClick={() =>
+                            setExpandedOperationId((current) =>
+                              current === job.jobId ? null : job.jobId,
+                            )
+                          }
+                          className="relative flex w-full min-w-0 flex-col gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusBadge status={job.status} />
+                              <ServiceBadge service={job.serviceCode} />
+                              {job.isTest ? (
+                                <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                                  PRUEBA
                                 </span>
-                              </div>
-
-                              <div className="mt-5 rounded-2xl border border-border/55 bg-background/50 p-4">
-                                <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
-                                  <div className="flex min-w-0 items-start gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
-                                      <MapPin className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                        Origen
-                                      </p>
-                                      <p className="mt-1.5 font-medium leading-snug text-foreground">
-                                        {text(job.originText)}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="hidden items-center gap-1 md:flex">
-                                    <div className="h-px w-7 bg-border/70" />
-                                    <Route className="h-4 w-4 text-cyan-300" />
-                                    <div className="h-px w-7 bg-border/70" />
-                                  </div>
-
-                                  <div className="flex min-w-0 items-start gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
-                                      <ArrowRight className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                        Destino
-                                      </p>
-                                      <p className="mt-1.5 font-medium leading-snug text-foreground">
-                                        {text(job.destinationText)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
-                                      <UserRound className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-                                        Cliente
-                                      </p>
-                                      <p className="mt-1 truncate text-sm font-semibold text-foreground">
-                                        {job.customerDisplayName || "Sin nombre registrado"}
-                                      </p>
-                                      {job.customerWhatsappPhone ? (
-                                        <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                          <Phone className="h-3.5 w-3.5" />
-                                          {job.customerWhatsappPhone}
-                                        </p>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/15 bg-amber-500/[0.05] text-amber-300">
-                                      <CarFront className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-                                        Conductor
-                                      </p>
-                                      <p className="mt-1 truncate text-sm font-semibold text-foreground">
-                                        {job.driverDisplayName || "Sin conductor asignado"}
-                                      </p>
-                                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                                        {job.vehicleName || "Sin vehículo asignado"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                              ) : null}
+                              <span className="text-xs text-muted-foreground sm:ml-auto">
+                                {formatDate(job.createdAt)}
+                              </span>
                             </div>
-
-                            <aside className="shrink-0 rounded-2xl border border-border/55 bg-background/55 p-4 lg:w-[220px]">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
+                            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-foreground">
+                              <span
+                                className="max-w-[45%] truncate font-medium"
+                                title={text(job.originText)}
+                              >
+                                {text(job.originText)}
+                              </span>
+                              <ArrowRight
+                                className="h-3.5 w-3.5 shrink-0 text-cyan-300"
+                                aria-hidden="true"
+                              />
+                              <span
+                                className="max-w-[45%] truncate font-medium"
+                                title={text(job.destinationText)}
+                              >
+                                {text(job.destinationText)}
+                              </span>
+                            </div>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                              {job.customerDisplayName || "Sin nombre registrado"} ·{" "}
+                              {job.driverDisplayName || "Sin conductor asignado"}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/40 pt-2 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                            <div className="min-w-0">
+                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                                 Precio final
-                              </p>
-                              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">
-                                {formatAmount(job.finalPrice, job.currency)}
-                              </p>
+                              </span>
+                              <span className="block whitespace-nowrap text-base font-semibold tabular-nums text-foreground">
+                                {formatOperationPrice(job.finalPrice, job.currency)}
+                              </span>
+                            </div>
+                            <ChevronDown
+                              className={`h-4 w-4 shrink-0 text-cyan-300 transition-transform ${expandedOperationId === job.jobId ? "rotate-180" : ""}`}
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </button>
+                        {expandedOperationId === job.jobId ? (
+                          <div
+                            id={`operation-content-${job.jobId}`}
+                            className="relative mt-3 border-t border-border/50 pt-4"
+                          >
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="rounded-2xl border border-border/55 bg-background/50 p-4">
+                                  <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
+                                    <div className="flex min-w-0 items-start gap-3">
+                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+                                        <MapPin className="h-4 w-4" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                          Origen
+                                        </p>
+                                        <p className="mt-1.5 font-medium leading-snug text-foreground">
+                                          {text(job.originText)}
+                                        </p>
+                                      </div>
+                                    </div>
 
-                              <div className="mt-4 space-y-2 border-t border-border/50 pt-4 text-xs text-muted-foreground">
-                                <div className="flex items-center justify-between gap-3">
-                                  <span>Programado</span>
-                                  <span className="text-right font-medium text-foreground">
-                                    {formatDate(job.scheduledFor)}
-                                  </span>
+                                    <div className="hidden items-center gap-1 md:flex">
+                                      <div className="h-px w-7 bg-border/70" />
+                                      <Route className="h-4 w-4 text-cyan-300" />
+                                      <div className="h-px w-7 bg-border/70" />
+                                    </div>
+
+                                    <div className="flex min-w-0 items-start gap-3">
+                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
+                                        <ArrowRight className="h-4 w-4" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                          Destino
+                                        </p>
+                                        <p className="mt-1.5 font-medium leading-snug text-foreground">
+                                          {text(job.destinationText)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                {job.commissionAmountSnapshot != null ? (
+
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                  <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
+                                        <UserRound className="h-4 w-4" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                                          Cliente
+                                        </p>
+                                        <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                                          {job.customerDisplayName || "Sin nombre registrado"}
+                                        </p>
+                                        {job.customerWhatsappPhone ? (
+                                          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                            <Phone className="h-3.5 w-3.5" />
+                                            {job.customerWhatsappPhone}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/15 bg-amber-500/[0.05] text-amber-300">
+                                        <CarFront className="h-4 w-4" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                                          Conductor
+                                        </p>
+                                        <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                                          {job.driverDisplayName || "Sin conductor asignado"}
+                                        </p>
+                                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                                          {job.vehicleName || "Sin vehículo asignado"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <aside className="shrink-0 rounded-2xl border border-border/55 bg-background/55 p-4 lg:w-[220px]">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
+                                  Precio final
+                                </p>
+                                <p className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">
+                                  {formatOperationPrice(job.finalPrice, job.currency)}
+                                </p>
+
+                                <div className="mt-4 space-y-2 border-t border-border/50 pt-4 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
-                                    <span>Comisión</span>
-                                    <span className="font-medium text-foreground">
-                                      {formatAmount(job.commissionAmountSnapshot, job.currency)}
+                                    <span>Programado</span>
+                                    <span className="text-right font-medium text-foreground">
+                                      {formatDate(job.scheduledFor)}
                                     </span>
                                   </div>
-                                ) : null}
-                              </div>
+                                  {job.commissionAmountSnapshot != null ? (
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span>Comisión</span>
+                                      <span className="font-medium text-foreground">
+                                        {formatOperationPrice(
+                                          job.commissionAmountSnapshot,
+                                          job.currency,
+                                        )}
+                                      </span>
+                                    </div>
+                                  ) : null}
+                                </div>
 
-                              <div className="mt-4 grid gap-2">
-                                <Button
-                                  className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-100 hover:bg-emerald-500/[0.12]"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setJobId(job.jobId)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Abrir detalle
-                                </Button>
-
-                                {canFinishAdmin &&
-                                ["accepted", "en_route", "pickup", "in_progress"].includes(job.status) ? (
+                                <div className="mt-4 grid gap-2">
                                   <Button
-                                    className="w-full"
+                                    className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-100 hover:bg-emerald-500/[0.12]"
                                     size="sm"
                                     variant="outline"
-                                    disabled={adminFinishMutation.isPending}
-                                    onClick={() => {
-                                      setAdminFinish({
-                                        jobId: job.jobId,
-                                        idempotencyKey: crypto.randomUUID(),
-                                      });
-                                      setAdminFinishReason("");
-                                      setAdminFinishError(null);
-                                    }}
+                                    onClick={() => setJobId(job.jobId)}
                                   >
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                    Finalizar carrera
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    Abrir detalle
                                   </Button>
-                                ) : null}
-                                {job.isTest && canManageMarketplace ? (
-                                  <Button
-                                    className="w-full"
-                                    size="sm"
-                                    variant="destructive"
-                                    disabled={deleteTestJob.isPending}
-                                    onClick={() => {
-                                      const why = window.prompt(
-                                        "Motivo de eliminación de esta carrera de prueba:",
-                                        "Prueba operativa",
-                                      );
 
-                                      if (!why?.trim()) return;
+                                  {canFinishAdmin &&
+                                  ["accepted", "en_route", "pickup", "in_progress"].includes(
+                                    job.status,
+                                  ) ? (
+                                    <Button
+                                      className="w-full"
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={adminFinishMutation.isPending}
+                                      onClick={() => {
+                                        setAdminFinish({
+                                          jobId: job.jobId,
+                                          idempotencyKey: crypto.randomUUID(),
+                                        });
+                                        setAdminFinishReason("");
+                                        setAdminFinishError(null);
+                                      }}
+                                    >
+                                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                                      Finalizar carrera
+                                    </Button>
+                                  ) : null}
+                                  {job.isTest && canManageMarketplace ? (
+                                    <Button
+                                      className="w-full"
+                                      size="sm"
+                                      variant="destructive"
+                                      disabled={deleteTestJob.isPending}
+                                      onClick={() => {
+                                        const why = window.prompt(
+                                          "Motivo de eliminación de esta carrera de prueba:",
+                                          "Prueba operativa",
+                                        );
 
-                                      if (
-                                        !window.confirm(
-                                          "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
-                                        )
-                                      ) {
-                                        return;
-                                      }
+                                        if (!why?.trim()) return;
 
-                                      deleteTestJob.mutate({
-                                        jobId: job.jobId,
-                                        reason: why.trim(),
-                                      });
-                                    }}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Eliminar prueba
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </aside>
+                                        if (
+                                          !window.confirm(
+                                            "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
+                                          )
+                                        ) {
+                                          return;
+                                        }
+
+                                        deleteTestJob.mutate({
+                                          jobId: job.jobId,
+                                          reason: why.trim(),
+                                        });
+                                      }}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Eliminar prueba
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              </aside>
+                            </div>
                           </div>
-                        </div>
+                        ) : null}
                       </article>
                     ))}
                   </div>
@@ -1833,11 +1862,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
         </TabsContent>
         {mapVisited ? (
-          <TabsContent
-            value="mapa"
-            forceMount
-            className="mt-3 data-[state=inactive]:hidden"
-          >
+          <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
             <MarketplaceOperationalMap
               projectId={projectId}
               canViewCustomers={canCustomers}
@@ -1846,17 +1871,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             />
           </TabsContent>
         ) : null}
-<TabsContent value="conductores">
+        <TabsContent value="conductores">
           <PremiumPanel
-              headerless
+            headerless
             title="Conductores"
             description={
               drivers.isLoading
                 ? "Consultando conductores…"
                 : `${driverRows.length} ${
-                    driverRows.length === 1
-                      ? "conductor mostrado"
-                      : "conductores mostrados"
+                    driverRows.length === 1 ? "conductor mostrado" : "conductores mostrados"
                   }`
             }
             icon={Users}
@@ -1887,7 +1910,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
                               <Users className="h-5 w-5" />
                               {driverMedia.data?.[item.userId]?.avatarUrl ? (
-                                <img src={driverMedia.data?.[item.userId]?.avatarUrl ?? undefined} alt={`Foto de ${item.displayName}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                <img
+                                  src={driverMedia.data?.[item.userId]?.avatarUrl ?? undefined}
+                                  alt={`Foto de ${item.displayName}`}
+                                  className="absolute inset-0 h-full w-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
                               ) : null}
                             </div>
 
@@ -1906,9 +1936,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                       : "border-border/70 bg-muted/35 text-muted-foreground"
                                   }`}
                                 >
-                                  {item.isAvailable
-                                    ? "Disponible"
-                                    : "No disponible"}
+                                  {item.isAvailable ? "Disponible" : "No disponible"}
                                 </span>
                               </div>
                             </div>
@@ -1922,9 +1950,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                           <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
                             <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
-                            <span className="truncate">
-                              {item.phone ?? "Sin WhatsApp"}
-                            </span>
+                            <span className="truncate">{item.phone ?? "Sin WhatsApp"}</span>
                           </p>
                         </div>
 
@@ -1936,13 +1962,24 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
                             <span className="relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/15 bg-cyan-500/[0.04] text-cyan-300">
                               <CarFront className="h-4 w-4" />
-                              {driverMedia.data?.[item.userId]?.vehiclePhotos[item.vehicleId ?? ""] ? (
-                                <img src={driverMedia.data?.[item.userId]?.vehiclePhotos[item.vehicleId ?? ""] ?? undefined} alt={`Foto del vehículo ${item.vehicleName ?? ""}`} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                              {driverMedia.data?.[item.userId]?.vehiclePhotos[
+                                item.vehicleId ?? ""
+                              ] ? (
+                                <img
+                                  src={
+                                    driverMedia.data?.[item.userId]?.vehiclePhotos[
+                                      item.vehicleId ?? ""
+                                    ] ?? undefined
+                                  }
+                                  alt={`Foto del vehículo ${item.vehicleName ?? ""}`}
+                                  className="absolute inset-0 h-full w-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
                               ) : null}
                             </span>
-                            <span className="truncate">
-                              {item.vehicleName ?? "Sin vehículo"}
-                            </span>
+                            <span className="truncate">{item.vehicleName ?? "Sin vehículo"}</span>
                           </p>
                         </div>
 
@@ -1974,9 +2011,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 })
                               }
                             >
-                              {item.status === "suspended"
-                                ? "Reactivar"
-                                : "Suspender"}
+                              {item.status === "suspended" ? "Reactivar" : "Suspender"}
                             </Button>
                           ) : null}
                         </div>
@@ -1999,9 +2034,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 customers.isLoading
                   ? "Consultando clientes…"
                   : `${customerRows.length} ${
-                      customerRows.length === 1
-                        ? "cliente mostrado"
-                        : "clientes mostrados"
+                      customerRows.length === 1 ? "cliente mostrado" : "clientes mostrados"
                     }`
               }
               icon={UserRound}
@@ -2013,9 +2046,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300" />
                     <Input
                       value={customerSearchInput}
-                      onChange={(event) =>
-                        setCustomerSearchInput(event.target.value)
-                      }
+                      onChange={(event) => setCustomerSearchInput(event.target.value)}
                       placeholder="Buscar nombre o WhatsApp"
                       className="h-9 rounded-xl border-violet-400/20 bg-black/20 pl-9 shadow-inner shadow-violet-500/[0.04] focus-visible:border-violet-400/40"
                     />
@@ -2055,11 +2086,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 <LoadingState />
               ) : !customerRows.length ? (
                 <EmptyMarketplaceState
-                  title={
-                    customerSearch
-                      ? "No encontramos clientes"
-                      : "No hay clientes"
-                  }
+                  title={customerSearch ? "No encontramos clientes" : "No hay clientes"}
                   description={
                     customerSearch
                       ? "Prueba con otro nombre o número de WhatsApp."
@@ -2086,9 +2113,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <button
                           key={customer.customerId}
                           type="button"
-                          onClick={() =>
-                            setCustomerId(customer.customerId)
-                          }
+                          onClick={() => setCustomerId(customer.customerId)}
                           className="group relative w-full px-4 py-3.5 text-left transition duration-200 hover:bg-gradient-to-r hover:from-violet-500/[0.085] hover:via-violet-500/[0.035] hover:to-cyan-500/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/50"
                         >
                           <div className="hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 lg:grid">
@@ -2117,17 +2142,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </div>
                             </div>
 
-                            <p className="font-semibold text-foreground">
-                              {customer.jobsTotal}
-                            </p>
+                            <p className="font-semibold text-foreground">{customer.jobsTotal}</p>
 
-                            <p className="font-semibold text-cyan-200">
-                              {customer.jobsActive}
-                            </p>
+                            <p className="font-semibold text-cyan-200">{customer.jobsActive}</p>
 
-                            <p className="font-semibold text-emerald-200">
-                              {customer.jobsSettled}
-                            </p>
+                            <p className="font-semibold text-emerald-200">{customer.jobsSettled}</p>
 
                             <p className="text-xs text-muted-foreground">
                               {customer.lastJobAt
@@ -2166,18 +2185,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             </div>
 
                             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                              <MiniMetric
-                                labelText="Trabajos"
-                                value={customer.jobsTotal}
-                              />
-                              <MiniMetric
-                                labelText="Activos"
-                                value={customer.jobsActive}
-                              />
-                              <MiniMetric
-                                labelText="Liquidados"
-                                value={customer.jobsSettled}
-                              />
+                              <MiniMetric labelText="Trabajos" value={customer.jobsTotal} />
+                              <MiniMetric labelText="Activos" value={customer.jobsActive} />
+                              <MiniMetric labelText="Liquidados" value={customer.jobsSettled} />
                               <MiniMetric
                                 labelText="Última actividad"
                                 value={
@@ -2203,122 +2213,126 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canPayments ? (
           <>
             <TabsContent value="billeteras" className="mt-3">
-          <section aria-label="Billeteras" className="min-w-0">
+              <section aria-label="Billeteras" className="min-w-0">
+                <div className="min-w-0">
+                  {wallets.isLoading ? (
+                    <LoadingState />
+                  ) : !walletRows.length ? (
+                    <EmptyMarketplaceState
+                      title="No hay billeteras"
+                      description="No existen billeteras disponibles para mostrar."
+                      icon={Wallet}
+                    />
+                  ) : (
+                    <>
+                      <div className="space-y-2.5">
+                        {walletRows.map((wallet) => {
+                          const reserved =
+                            Number(wallet.realReservedBalance) +
+                            Number(wallet.promotionalReservedBalance);
 
-            <div className="min-w-0">
-              {wallets.isLoading ? (
-                <LoadingState />
-              ) : !walletRows.length ? (
-                <EmptyMarketplaceState
-                  title="No hay billeteras"
-                  description="No existen billeteras disponibles para mostrar."
-                  icon={Wallet}
-                />
-              ) : (
-                <>
-                  <div className="space-y-2.5">
-                    {walletRows.map((wallet) => {
-                      const reserved =
-                        Number(wallet.realReservedBalance) +
-                        Number(wallet.promotionalReservedBalance);
+                          return (
+                            <article
+                              key={wallet.userId}
+                              className="group relative overflow-hidden rounded-[20px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3.5 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4"
+                            >
+                              <img
+                                src="/admin-premium/wallets.svg"
+                                alt=""
+                                aria-hidden="true"
+                                className="pointer-events-none absolute right-0 top-1/2 hidden h-[115%] w-48 -translate-y-1/2 object-cover object-right opacity-[0.035] mix-blend-screen sm:block xl:w-56 xl:opacity-[0.045]"
+                              />
+                              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-amber-400/[0.03] blur-3xl" />
 
-                      return (
-                        <article
-                          key={wallet.userId}
-                          className="group relative overflow-hidden rounded-[20px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3.5 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4"
-                        >
-                          <img
-                            src="/admin-premium/wallets.svg"
-                            alt=""
-                            aria-hidden="true"
-                            className="pointer-events-none absolute right-0 top-1/2 hidden h-[115%] w-48 -translate-y-1/2 object-cover object-right opacity-[0.035] mix-blend-screen sm:block xl:w-56 xl:opacity-[0.045]"
-                          />
-                          <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-amber-400/[0.03] blur-3xl" />
+                              <div className="relative grid gap-3 lg:grid-cols-[minmax(200px,0.9fr)_minmax(0,3.1fr)] lg:items-center">
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                    Conductor
+                                  </p>
+                                  <p className="mt-1 truncate font-semibold text-foreground">
+                                    {wallet.driverDisplayName}
+                                  </p>
+                                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                    {wallet.driverPhone || "Sin teléfono registrado"}
+                                  </p>
+                                  <div className="mt-2">
+                                    <span
+                                      className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${
+                                        wallet.initialDepositConfirmed
+                                          ? "border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300"
+                                          : "border-amber-500/20 bg-amber-500/[0.07] text-amber-300"
+                                      }`}
+                                    >
+                                      {wallet.initialDepositConfirmed
+                                        ? "DEPÓSITO INICIAL OK"
+                                        : "DEPÓSITO INICIAL PENDIENTE"}
+                                    </span>
+                                  </div>
+                                </div>
 
-                          <div className="relative grid gap-3 lg:grid-cols-[minmax(200px,0.9fr)_minmax(0,3.1fr)] lg:items-center">
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                Conductor
-                              </p>
-                              <p className="mt-1 truncate font-semibold text-foreground">
-                                {wallet.driverDisplayName}
-                              </p>
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {wallet.driverPhone || "Sin teléfono registrado"}
-                              </p>
-                              <div className="mt-2">
-                                <span
-                                  className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${
-                                    wallet.initialDepositConfirmed
-                                      ? "border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300"
-                                      : "border-amber-500/20 bg-amber-500/[0.07] text-amber-300"
-                                  }`}
-                                >
-                                  {wallet.initialDepositConfirmed
-                                    ? "DEPÓSITO INICIAL OK"
-                                    : "DEPÓSITO INICIAL PENDIENTE"}
-                                </span>
+                                <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
+                                  <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5">
+                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                      Total
+                                    </p>
+                                    <p className="mt-1 text-lg font-semibold text-foreground">
+                                      {formatAmount(wallet.totalBalance, wallet.currency)}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-3 py-2.5">
+                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                      Disponible
+                                    </p>
+                                    <p className="mt-1 text-lg font-semibold text-foreground">
+                                      {formatAmount(wallet.availableBalance, wallet.currency)}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-2.5">
+                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                      Promocional
+                                    </p>
+                                    <p className="mt-1 font-semibold text-foreground">
+                                      {formatAmount(wallet.promotionalBalance, wallet.currency)}
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                      Disp.{" "}
+                                      {formatAmount(
+                                        wallet.promotionalAvailableBalance,
+                                        wallet.currency,
+                                      )}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.035] px-3 py-2.5">
+                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                      Reservado
+                                    </p>
+                                    <p className="mt-1 font-semibold text-foreground">
+                                      {formatAmount(reserved, wallet.currency)}
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                      Real{" "}
+                                      {formatAmount(wallet.realReservedBalance, wallet.currency)}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            </article>
+                          );
+                        })}
+                      </div>
 
-                            <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
-                              <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5">
-                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                Total
-                              </p>
-                              <p className="mt-1 text-lg font-semibold text-foreground">
-                                {formatAmount(wallet.totalBalance, wallet.currency)}
-                              </p>
-                            </div>
-
-                            <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-3 py-2.5">
-                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                Disponible
-                              </p>
-                              <p className="mt-1 text-lg font-semibold text-foreground">
-                                {formatAmount(wallet.availableBalance, wallet.currency)}
-                              </p>
-                            </div>
-
-                            <div className="rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-2.5">
-                              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                Promocional
-                              </p>
-                              <p className="mt-1 font-semibold text-foreground">
-                                {formatAmount(wallet.promotionalBalance, wallet.currency)}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                Disp. {formatAmount(wallet.promotionalAvailableBalance, wallet.currency)}
-                              </p>
-                            </div>
-
-                              <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.035] px-3 py-2.5">
-                                <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                  Reservado
-                                </p>
-                                <p className="mt-1 font-semibold text-foreground">
-                                  {formatAmount(reserved, wallet.currency)}
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                  Real {formatAmount(wallet.realReservedBalance, wallet.currency)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-
-                  <PaginationButton query={wallets} />
-                </>
-              )}
-            </div>
-          </section>
-        </TabsContent>
-<TabsContent value="recargas">
+                      <PaginationButton query={wallets} />
+                    </>
+                  )}
+                </div>
+              </section>
+            </TabsContent>
+            <TabsContent value="recargas">
               <PremiumPanel
-              headerless
+                headerless
                 title="Recargas"
                 description={
                   topups.isLoading
@@ -2430,8 +2444,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                                   {item.notes ? (
                                     <p className="text-muted-foreground">
-                                      Notas:{" "}
-                                      <span className="text-foreground">{item.notes}</span>
+                                      Notas: <span className="text-foreground">{item.notes}</span>
                                     </p>
                                   ) : null}
 
@@ -2534,7 +2547,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
         <TabsContent value="incidencias">
           <PremiumPanel
-              headerless
+            headerless
             title="Incidencias"
             description={
               incidents.isLoading
@@ -2639,14 +2652,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         {canSettings ? (
           <TabsContent value="configuracion" className="mt-3">
             <div className="grid gap-4 xl:grid-cols-2">
-              <MarketplaceTestCenterV2 projectId={projectId} canManage={canManageSettings && canManageMarketplace} canManagePayments={canManagePayments} onOpenJob={setJobId} />
+              <MarketplaceTestCenterV2
+                projectId={projectId}
+                canManage={canManageSettings && canManageMarketplace}
+                canManagePayments={canManagePayments}
+                onOpenJob={setJobId}
+              />
 
               <MarketplaceDispatchSettingsCard
                 projectId={projectId}
                 canManage={canManageSettings}
               />
             </div>
-          </TabsContent>        ) : null}
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       {error ? (
@@ -2675,7 +2694,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 Ficha 360 del conductor
               </DialogTitle>
               <DialogDescription className="max-w-2xl">
-                Perfil, vehículo, promoción, actividad, referidos, valoraciones y situación financiera.
+                Perfil, vehículo, promoción, actividad, referidos, valoraciones y situación
+                financiera.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -2691,9 +2711,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 financial={driverFinancial360.data ?? null}
                 canSeeFinancial={canManagePayments}
                 financialLoading={driverFinancial360.isLoading}
-                media={selectedDriverMedia.data?.[driver360Id ?? ""] ?? driverMedia.data?.[driver360Id ?? ""] ?? null}
-                isAvailable={driverRows.find((item) => item.userId === driver360Id)?.isAvailable ?? null}
-                onOpenJob={(id) => { setDriver360Id(null); setJobId(id); }}
+                media={
+                  selectedDriverMedia.data?.[driver360Id ?? ""] ??
+                  driverMedia.data?.[driver360Id ?? ""] ??
+                  null
+                }
+                isAvailable={
+                  driverRows.find((item) => item.userId === driver360Id)?.isAvailable ?? null
+                }
+                onOpenJob={(id) => {
+                  setDriver360Id(null);
+                  setJobId(id);
+                }}
               />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
@@ -2825,9 +2854,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           <DialogHeader>
             <DialogTitle>Finalizar carrera desde Admin</DialogTitle>
             <DialogDescription>
-              Utiliza esta operación únicamente cuando hayas confirmado que
-              el servicio terminó. El cierre quedará registrado y se aplicará
-              la liquidación correspondiente una sola vez.
+              Utiliza esta operación únicamente cuando hayas confirmado que el servicio terminó. El
+              cierre quedará registrado y se aplicará la liquidación correspondiente una sola vez.
             </DialogDescription>
           </DialogHeader>
 
@@ -2845,8 +2873,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               placeholder="Explica por qué Administración confirma el cierre"
             />
             <p className="text-xs text-muted-foreground">
-              Debes escribir al menos 8 caracteres. La operación no puede
-              deshacerse desde este formulario.
+              Debes escribir al menos 8 caracteres. La operación no puede deshacerse desde este
+              formulario.
             </p>
           </div>
 
@@ -2963,13 +2991,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             <Label htmlFor="topup-method">Método de pago</Label>
 
             {paymentMethods.isLoading ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Cargando métodos de pago…
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">Cargando métodos de pago…</p>
             ) : paymentMethods.isError ? (
               <div className="mt-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-sm text-amber-200">
-                No se pudo cargar el catálogo de métodos de pago. La recarga no se
-                registrará hasta resolver el permiso del catálogo.
+                No se pudo cargar el catálogo de métodos de pago. La recarga no se registrará hasta
+                resolver el permiso del catálogo.
               </div>
             ) : (
               <select
@@ -3051,8 +3077,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           <DialogHeader>
             <DialogTitle>Gestionar recarga de {topup?.driver}</DialogTitle>
             <DialogDescription>
-              Confirmar acredita la billetera una sola vez. Para rechazar debes indicar
-              el motivo.
+              Confirmar acredita la billetera una sola vez. Para rechazar debes indicar el motivo.
             </DialogDescription>
           </DialogHeader>
 
@@ -3082,7 +3107,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
@@ -3177,7 +3201,7 @@ function JobDetail({ detail }: { detail: import("@/lib/services/types").Marketpl
                     Importe
                   </p>
                   <p className="mt-1.5 text-lg font-semibold tracking-tight text-foreground">
-                    {formatAmount(financial.amount, text(financial.currency))}
+                    {formatOperationPrice(financial.amount, text(financial.currency))}
                   </p>
                 </div>
               </div>
@@ -3289,9 +3313,7 @@ function JobDetail({ detail }: { detail: import("@/lib/services/types").Marketpl
               >
                 <span className="absolute -left-[18px] top-5 h-3 w-3 rounded-full border-2 border-background bg-cyan-400 shadow-[0_0_0_3px_rgba(34,211,238,0.10)]" />
                 <p className="text-xs text-muted-foreground">{formatDate(event.created_at)}</p>
-                <p className="mt-1.5 font-medium text-foreground">
-                  {text(event.action)}
-                </p>
+                <p className="mt-1.5 font-medium text-foreground">{text(event.action)}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span className="rounded-lg border border-border/55 bg-background/55 px-2.5 py-1.5">
                     {label(text(event.from_status))}
