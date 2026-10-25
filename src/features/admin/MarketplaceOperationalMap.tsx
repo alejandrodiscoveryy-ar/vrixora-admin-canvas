@@ -32,6 +32,7 @@ import { supabaseServices } from "@/lib/services";
 import {
   getMarketplaceOperationalDriverAvatars,
   getMarketplaceOperationalMap,
+  getMarketplaceJobNotificationRecipients,
   getMarketplaceOperationalMapConfig,
   getMarketplaceOperationalRoutes,
   getMarketplaceOperationalStaticMap,
@@ -961,6 +962,16 @@ export default function MarketplaceOperationalMap({
     () => operational.data?.jobs.find((job) => job.jobId === customerDetailsJobId) ?? null,
     [operational.data?.jobs, customerDetailsJobId],
   );
+
+  // Los destinatarios se consultan aparte para no ralentizar el mapa.
+  const jobRecipients = useQuery({
+    queryKey: ["marketplace-job-notification-recipients", projectId, selectedJobId],
+    queryFn: () => getMarketplaceJobNotificationRecipients(projectId, selectedJobId!),
+    enabled: Boolean(panelOpen && agendaTab === "services" && selectedJob && customerDetailsJobId === selectedJobId),
+    refetchInterval: selectedJob?.status === "published" ? 5_000 : false,
+    refetchIntervalInBackground: false,
+    retry: 1,
+  });
 
   const selectedCustomer = useQuery({
     queryKey: ["marketplace-map-customer-360", projectId, customerDetailsJob?.customerId],
@@ -2711,6 +2722,45 @@ export default function MarketplaceOperationalMap({
                                       : "Mostrando última ubicación conocida"
                                     : "Sin ubicación disponible del conductor"
                                   : "Todavía sin conductor asignado"}
+                              </p>
+                            </div>
+
+                            <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] px-3 py-2.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
+                                  Conductores notificados
+                                </p>
+                                {jobRecipients.data ? (
+                                  <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                    {jobRecipients.data.length}
+                                  </span>
+                                ) : null}
+                              </div>
+                              {jobRecipients.isError ? (
+                                <p className="mt-2 text-[11px] text-amber-300">No se pudo consultar el registro de notificaciones.</p>
+                              ) : jobRecipients.isPending ? (
+                                <p className="mt-2 text-[11px] text-muted-foreground">Consultando destinatarios…</p>
+                              ) : jobRecipients.data.length === 0 ? (
+                                <p className="mt-2 text-[11px] text-muted-foreground">Aún no hay notificaciones registradas para esta carrera.</p>
+                              ) : (
+                                <ul className="mt-2 max-h-44 space-y-1.5 overflow-y-auto pr-1">
+                                  {jobRecipients.data.map((recipient) => (
+                                    <li key={recipient.driverUserId} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-background/35 px-2.5 py-2">
+                                      <span className="min-w-0 truncate text-[11px] font-medium text-foreground">
+                                        {recipient.driverDisplayName}
+                                        {selectedJob.driverUserId === recipient.driverUserId ? (
+                                          <strong className="ml-1.5 font-semibold text-emerald-300">(Aceptó)</strong>
+                                        ) : null}
+                                      </span>
+                                      <span className="shrink-0 text-[10px] font-medium text-cyan-200">
+                                        {recipient.deliveryStatus === "sent" ? "Despachada" : recipient.deliveryStatus === "failed" ? "Error" : recipient.deliveryStatus === "processing" ? "Procesando" : "En cola"}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                                «Despachada» indica procesamiento por el sistema push, no confirma recepción en el teléfono.
                               </p>
                             </div>
 

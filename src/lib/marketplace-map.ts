@@ -321,6 +321,32 @@ export interface MarketplaceOperationalJob {
   updatedAt: string;
 }
 
+export interface MarketplaceJobNotificationRecipient {
+  driverUserId: string;
+  driverDisplayName: string;
+  deliveryStatus: string;
+}
+
+export async function getMarketplaceJobNotificationRecipients(
+  projectId: string,
+  jobId: string,
+): Promise<MarketplaceJobNotificationRecipient[]> {
+  const { data, error } = await getSupabaseClient().rpc(
+    "admin_get_marketplace_job_notification_recipients",
+    { target_project_id: projectId, target_job_id: jobId },
+  );
+  if (error) throw new Error(error.message);
+  if (!Array.isArray(data)) return [];
+  return data.map((item) => {
+    const row = record(item);
+    return {
+      driverUserId: String(row.driver_user_id ?? ""),
+      driverDisplayName: String(row.driver_display_name ?? "Conductor sin nombre"),
+      deliveryStatus: String(row.delivery_status ?? "pending"),
+    };
+  });
+}
+
 export interface MarketplaceOperationalMapData {
   serverTime: string;
   freshnessSeconds: number;
