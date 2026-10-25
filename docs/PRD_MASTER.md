@@ -4,8 +4,8 @@
 **Empresa:** VRIXORA Solutions
 **Producto administrativo:** Centro de Control de VRIXORA
 **Primera aplicación gestionada:** TukTuk Control
-**Versión del documento:** 2.0
-**Fecha:** 4 de octubre de 2026
+**Versión del documento:** 2.1
+**Fecha:** 25 de octubre de 2026
 **Estado:** Producto en evolución con componentes en producción; el modelo comercial TUKTUK 2.0 es el objetivo aprobado y permanece pendiente de implementación y verificación completa
 **Eslogan:** Aplicaciones inteligentes para negocios inteligentes
 
@@ -18,6 +18,7 @@
 | 1.2 | 15 de septiembre de 2026 | Regla oficial de referidos de TukTuk Marketplace: crédito de 100 CUP en billetera por referido válido, sin días promocionales ni impacto en TukTuk Control | Owner |
 | 1.3 | 16 de septiembre de 2026 | Regla oficial de calificación Customer → Driver de TukTuk Marketplace | Owner |
 | 2.0 | 4 de octubre de 2026 | Nuevo modelo comercial TUKTUK: Control y Estadísticas permanentes; alta diferenciada de conductor; promoción configurable; continuidad por billetera; recargas y referidos; comisión por trabajo; facturación por recarga confirmada; Conductor 360; retirada de licencias y planes de TUKTUK | Owner |
+| 2.1 | 25 de octubre de 2026 | Recordatorios de carreras reales sin asignar a conductores ya notificados: 60 s y hasta tres repeticiones, interrupcion automatica y parametros administrativos | Owner |
 
 ---
 
@@ -90,6 +91,8 @@ Quien decide prestar servicios necesita:
 - utilizar recompensas de referidos;
 - comprender la comisión aplicable;
 - mantener historial de trabajos, valoraciones, incidencias y movimientos.
+
+**Recordatorios de carreras disponibles (aprobado el 25/10/2026):** cuando una carrera real continue publicada y sin asignar, los conductores inicialmente notificados podran recibir hasta tres recordatorios, separados por 60 segundos desde el primer aviso. Deben cesar al aceptarse, cancelarse, vencer o perder el conductor la elegibilidad. Los intervalos, cantidad y activacion tendran controles administrativos; no se enviaran avisos retrospectivos al habilitar la funcion. La implementacion exige confirmar FCM/Android, permisos, pruebas de regresion y despliegue autorizado. Estado: en preparacion; no publicada.
 
 ## 3.3. Problemas de VRIXORA
 

@@ -17,9 +17,13 @@ function setup(events = kinds) {
   const db = new FakeAdmin(), messages: Record<string, any>[] = [], order: string[] = [];
   db.tables.notification_outbox = events.map((kind, index) => ({
     id: index + 1, project_id: "dfb41cea-a812-46f2-b511-7a60bd3d78af", user_id: "synthetic-user",
-    kind, notification_date: "2026-10-11", title: kind, body: "synthetic-body", data: {},
+    kind, notification_date: "2026-10-11", title: kind, body: "synthetic-body", data: kind === "marketplace_job_available" ? { job_id: "12345678-1234-4123-8123-123456789012" } : {},
     claim_id: "claim-" + index, attempt_count: 1, delivery_status: "processing",
   }));
+  db.tables.jobs = [{
+    id: "12345678-1234-4123-8123-123456789012", project_id: "dfb41cea-a812-46f2-b511-7a60bd3d78af",
+    status: "published", assigned_driver_user_id: null, expires_at: null, test_deleted_at: null,
+  }];
   db.tables.push_device_tokens = ["admin", "client"].map(scope => ({
     id: scope, token: "synthetic-" + scope, platform: "android", user_id: "synthetic-user",
     project_id: "dfb41cea-a812-46f2-b511-7a60bd3d78af", enabled: true, app_scope: scope,
@@ -145,5 +149,26 @@ Deno.test("dispatcher: Cliente failure cannot fail completed Conductor delivery"
   };
   try { const result = await run(db); equal(result.status, 200);
     const summary = await result.json(); equal(summary.sent, 1); equal(summary.customer.unavailable, true);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+Deno.test("dispatcher: no enviar recordatorio de carrera aceptada o cancelada", async () => {
+  for (const status of ["cancelled_by_customer", "accepted"]) {
+    const { db, messages } = setup(["marketplace_job_available"]);
+    db.tables.jobs[0].status = status;
+    try {
+      const summary = await (await run(db)).json();
+      equal(summary.skipped, 1); equal(messages.length, 0);
+      equal(db.tables.notification_outbox[0].delivery_status, "skipped");
+    } finally { globalThis.fetch = originalFetch; }
+  }
+});
+Deno.test("dispatcher: fallo de lectura de carrera deja aviso pendiente para reintento", async () => {
+  const { db, messages } = setup(["marketplace_job_available"]);
+  db.failures.add("jobs");
+  try {
+    const summary = await (await run(db)).json();
+    equal(summary.failed, 1); equal(messages.length, 0);
+    equal(db.tables.notification_outbox[0].delivery_status, "pending");
   } finally { globalThis.fetch = originalFetch; }
 });

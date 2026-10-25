@@ -189,6 +189,27 @@ export default {
         await releaseForRetry(admin, row, "Worker execution time budget reached");
         return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
       }
+      // Antes de enviar un aviso original o recordatorio, verificar estado REAL.
+      if (row.kind === "marketplace_job_available") {
+        const jobId = typeof row.data?.job_id === "string" ? row.data.job_id : null;
+        if (!jobId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(jobId)) {
+          await finishRow(admin, row, "skipped", "Missing/invalid marketplace job id");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+        const { data: liveJob, error: liveJobError } = await admin.from("jobs")
+          .select("status,assigned_driver_user_id,expires_at,test_deleted_at")
+          .eq("project_id", row.project_id).eq("id", jobId).maybeSingle();
+        if (liveJobError) {
+          await releaseForRetry(admin, row, "Could not verify current marketplace job status");
+          return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
+        }
+        const expires = liveJob?.expires_at ? Date.parse(liveJob.expires_at) : Number.POSITIVE_INFINITY;
+        if (!liveJob || liveJob.status !== "published" || liveJob.assigned_driver_user_id ||
+            liveJob.test_deleted_at || Number.isNaN(expires) || expires <= Date.now()) {
+          await finishRow(admin, row, "skipped", "Marketplace job no longer available");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+      }
       const targetPlatform = typeof row.data?.target_platform === "string" ? row.data.target_platform : null;
       const requestedAudience = typeof row.data?.target_audience === "string" ? row.data.target_audience : null;
       const targetAudience = requestedAudience === "admin" || requestedAudience === "client"
