@@ -222,9 +222,7 @@ function operationalPinIconSvg(
     `;
   }
 
-  if (
-    vehicleCategoryCode === "light_car"
-  ) {
+  if (vehicleCategoryCode === "light_car") {
     return `
       <path
         d="M16 23.8l2.3-6.1h11.4l2.3 6.1v4H16v-4Z"
@@ -326,8 +324,7 @@ function operationalPinSvg({
         ? ["#9bf2b7", "#22c55e", "#15803d", "#14532d"]
         : ["#fecaca", "#ef4444", "#b91c1c", "#7f1d1d"];
 
-  const safeKey =
-    key.replace(/[^a-zA-Z0-9_-]/g, "").slice(-30) || "marker";
+  const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, "").slice(-30) || "marker";
 
   const bodyId = `pin-body-${kind}-${safeKey}`;
   const innerId = `pin-inner-${kind}-${safeKey}`;
@@ -339,12 +336,11 @@ function operationalPinSvg({
     ? "drop-shadow(0 0 5px rgba(255,255,255,0.68)) drop-shadow(0 9px 8px rgba(0,0,0,0.45))"
     : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
 
-  const markerOpacity =
-    kind === "driver" && stale ? "0.90" : "1";
+  const markerOpacity = kind === "driver" && stale ? "0.90" : "1";
 
   // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
-  const pinWidth = legend ? 48 : kind === "driver" ? selected ? 45 : 40 : selected ? 38 : 32;
-  const pinHeight = legend ? 60 : kind === "driver" ? selected ? 56 : 50 : selected ? 48 : 40;
+  const pinWidth = legend ? 48 : kind === "driver" ? (selected ? 45 : 40) : selected ? 38 : 32;
+  const pinHeight = legend ? 60 : kind === "driver" ? (selected ? 56 : 50) : selected ? 48 : 40;
 
   return `
     <svg
@@ -667,15 +663,8 @@ function jobCoordinate(job: MarketplaceOperationalJob, kind: "origin" | "destina
   return lon == null || lat == null ? null : ([lon, lat] satisfies Coordinate);
 }
 
-function coordinatesAlmostEqual(
-  first: Coordinate,
-  second: Coordinate,
-  tolerance = 0.000005,
-) {
-  return (
-    Math.abs(first[0] - second[0]) <= tolerance &&
-    Math.abs(first[1] - second[1]) <= tolerance
-  );
+function coordinatesAlmostEqual(first: Coordinate, second: Coordinate, tolerance = 0.000005) {
+  return Math.abs(first[0] - second[0]) <= tolerance && Math.abs(first[1] - second[1]) <= tolerance;
 }
 
 function addOperationalLayers(map: mapboxgl.Map) {
@@ -698,11 +687,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
       id: MAP_LAYERS.routesPickup,
       type: "line",
       source: MAP_SOURCE_ROUTES,
-      filter: [
-        "all",
-        ["!=", ["get", "selected"], true],
-        ["==", ["get", "segment"], "pickup"],
-      ],
+      filter: ["all", ["!=", ["get", "selected"], true], ["==", ["get", "segment"], "pickup"]],
       layout: {
         "line-cap": "round",
         "line-join": "round",
@@ -721,11 +706,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
       id: MAP_LAYERS.routesPickupSelected,
       type: "line",
       source: MAP_SOURCE_ROUTES,
-      filter: [
-        "all",
-        ["==", ["get", "selected"], true],
-        ["==", ["get", "segment"], "pickup"],
-      ],
+      filter: ["all", ["==", ["get", "selected"], true], ["==", ["get", "segment"], "pickup"]],
       layout: {
         "line-cap": "round",
         "line-join": "round",
@@ -744,11 +725,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
       id: MAP_LAYERS.routes,
       type: "line",
       source: MAP_SOURCE_ROUTES,
-      filter: [
-        "all",
-        ["!=", ["get", "selected"], true],
-        ["==", ["get", "segment"], "trip"],
-      ],
+      filter: ["all", ["!=", ["get", "selected"], true], ["==", ["get", "segment"], "trip"]],
       layout: {
         "line-cap": "round",
         "line-join": "round",
@@ -766,11 +743,7 @@ function addOperationalLayers(map: mapboxgl.Map) {
       id: MAP_LAYERS.routesSelected,
       type: "line",
       source: MAP_SOURCE_ROUTES,
-      filter: [
-        "all",
-        ["==", ["get", "selected"], true],
-        ["==", ["get", "segment"], "trip"],
-      ],
+      filter: ["all", ["==", ["get", "selected"], true], ["==", ["get", "segment"], "trip"]],
       layout: {
         "line-cap": "round",
         "line-join": "round",
@@ -855,9 +828,7 @@ export default function MarketplaceOperationalMap({
   const [mapInitNonce, setMapInitNonce] = useState(0);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const [mapViewportHeight, setMapViewportHeight] = useState<number | null>(null);
-  const [driverListMode, setDriverListMode] = useState<"working" | "resting">(
-    "working",
-  );
+  const [driverListMode, setDriverListMode] = useState<"working" | "resting">("working");
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -866,6 +837,8 @@ export default function MarketplaceOperationalMap({
   const jobHoverPopupRef = useRef<mapboxgl.Popup | null>(null);
   const coverageClusterMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const mapInitRetryRef = useRef(0);
+  const lastFocusedJobIdRef = useRef<string | null>(null);
+  const featureSignatureRef = useRef({ points: "", routes: "" });
 
   const operational = useQuery({
     queryKey: ["marketplace-operational-map-live", projectId],
@@ -919,21 +892,12 @@ export default function MarketplaceOperationalMap({
     [coverageDrivers],
   );
 
+  // Cambios GPS no deben crear nuevas consultas/caches de geometria de Mapbox cada 5 s.
   const routeKey = useMemo(() => {
     const jobs = operational.data?.jobs ?? [];
-    const drivers = operational.data?.drivers ?? [];
-
     return jobs
-      .map((job) => {
-        const driver = drivers.find(
-          (item) =>
-            item.driverUserId === job.driverUserId &&
-            (!job.vehicleId || item.vehicleId === job.vehicleId),
-        );
-
-        const driverPoint = driver ? driverCoordinate(driver) : null;
-
-        return [
+      .map((job) =>
+        [
           job.jobId,
           job.status,
           job.driverUserId ?? "x",
@@ -942,20 +906,20 @@ export default function MarketplaceOperationalMap({
           job.originLon ?? "x",
           job.destinationLat ?? "x",
           job.destinationLon ?? "x",
-          driverPoint?.[0] ?? "x",
-          driverPoint?.[1] ?? "x",
-          driver?.capturedAt ?? "x",
-        ].join(":");
-      })
+        ].join(":"),
+      )
       .sort()
       .join("|");
-  }, [operational.data?.drivers, operational.data?.jobs]);
+  }, [operational.data?.jobs]);
 
   const routes = useQuery({
     queryKey: ["marketplace-operational-routes-live", projectId, routeKey],
     queryFn: () => getMarketplaceOperationalRoutes(projectId),
-    enabled: Boolean(routeKey) && mapViewMode === "operations",
-    staleTime: 4_000,
+    // Primero mostrar el mapa. Rutas en segundo plano, sin competir con los tiles.
+    enabled: Boolean(routeKey) && mapLoaded && mapViewMode === "operations" && layers.routes,
+    staleTime: 25_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
     retry: 1,
   });
 
@@ -972,27 +936,15 @@ export default function MarketplaceOperationalMap({
   );
 
   const customerDetailsJob = useMemo(
-    () =>
-      operational.data?.jobs.find(
-        (job) => job.jobId === customerDetailsJobId,
-      ) ?? null,
+    () => operational.data?.jobs.find((job) => job.jobId === customerDetailsJobId) ?? null,
     [operational.data?.jobs, customerDetailsJobId],
   );
 
   const selectedCustomer = useQuery({
-    queryKey: [
-      "marketplace-map-customer-360",
-      projectId,
-      customerDetailsJob?.customerId,
-    ],
+    queryKey: ["marketplace-map-customer-360", projectId, customerDetailsJob?.customerId],
     queryFn: () =>
-      supabaseServices.marketplace.getCustomer360(
-        projectId,
-        customerDetailsJob!.customerId!,
-      ),
-    enabled:
-      canViewCustomers &&
-      Boolean(customerDetailsJob?.customerId),
+      supabaseServices.marketplace.getCustomer360(projectId, customerDetailsJob!.customerId!),
+    enabled: canViewCustomers && Boolean(customerDetailsJob?.customerId),
     staleTime: 60_000,
     retry: 1,
   });
@@ -1050,9 +1002,7 @@ export default function MarketplaceOperationalMap({
         const available = Math.floor(visibleHeight - Math.max(mapTop, 0) - 12);
         const nextHeight = Math.max(320, available);
 
-        setMapViewportHeight((previous) =>
-          previous === nextHeight ? previous : nextHeight,
-        );
+        setMapViewportHeight((previous) => (previous === nextHeight ? previous : nextHeight));
       });
     };
 
@@ -1092,22 +1042,14 @@ export default function MarketplaceOperationalMap({
     let ready = false;
 
     const settleMap = () => {
-      if (
-        disposed ||
-        !map ||
-        mapRef.current !== map
-      ) {
+      if (disposed || !map || mapRef.current !== map) {
         return;
       }
 
       window.cancelAnimationFrame(resizeFrame);
 
       resizeFrame = window.requestAnimationFrame(() => {
-        if (
-          disposed ||
-          !map ||
-          mapRef.current !== map
-        ) {
+        if (disposed || !map || mapRef.current !== map) {
           return;
         }
 
@@ -1115,11 +1057,7 @@ export default function MarketplaceOperationalMap({
         map.triggerRepaint();
 
         window.requestAnimationFrame(() => {
-          if (
-            !disposed &&
-            map &&
-            mapRef.current === map
-          ) {
+          if (!disposed && map && mapRef.current === map) {
             map.resize();
             map.triggerRepaint();
           }
@@ -1132,11 +1070,7 @@ export default function MarketplaceOperationalMap({
     let lastMapError: string | null = null;
 
     const prepareStyle = () => {
-      if (
-        disposed ||
-        !map ||
-        mapRef.current !== map
-      ) {
+      if (disposed || !map || mapRef.current !== map) {
         return;
       }
 
@@ -1149,13 +1083,7 @@ export default function MarketplaceOperationalMap({
     };
 
     const markReady = () => {
-      if (
-        ready ||
-        disposed ||
-        !map ||
-        mapRef.current !== map ||
-        !map.isStyleLoaded()
-      ) {
+      if (ready || disposed || !map || mapRef.current !== map || !map.isStyleLoaded()) {
         return;
       }
 
@@ -1166,11 +1094,7 @@ export default function MarketplaceOperationalMap({
       setMapLoadError(null);
 
       window.requestAnimationFrame(() => {
-        if (
-          !disposed &&
-          map &&
-          mapRef.current === map
-        ) {
+        if (!disposed && map && mapRef.current === map) {
           map.resize();
           map.triggerRepaint();
           setMapLoaded(true);
@@ -1179,13 +1103,7 @@ export default function MarketplaceOperationalMap({
     };
 
     const revealOnFirstRender = () => {
-      if (
-        ready ||
-        firstRenderArmed ||
-        disposed ||
-        !map ||
-        mapRef.current !== map
-      ) {
+      if (ready || firstRenderArmed || disposed || !map || mapRef.current !== map) {
         return;
       }
 
@@ -1207,10 +1125,7 @@ export default function MarketplaceOperationalMap({
     };
 
     const initialize = () => {
-      if (
-        disposed ||
-        mapRef.current
-      ) {
+      if (disposed || mapRef.current) {
         return;
       }
 
@@ -1247,15 +1162,9 @@ export default function MarketplaceOperationalMap({
       setMapLoaded(false);
       setMapLoadError(null);
 
-      map.addControl(
-        new mapboxgl.NavigationControl({ showCompass: true }),
-        "bottom-left",
-      );
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), "bottom-left");
 
-      map.addControl(
-        new mapboxgl.AttributionControl({ compact: true }),
-        "bottom-left",
-      );
+      map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
 
       map.on("style.load", prepareStyle);
       map.on("load", revealOnFirstRender);
@@ -1269,12 +1178,7 @@ export default function MarketplaceOperationalMap({
       }
 
       watchdog = window.setTimeout(() => {
-        if (
-          disposed ||
-          !map ||
-          mapRef.current !== map ||
-          ready
-        ) {
+        if (disposed || !map || mapRef.current !== map || ready) {
           return;
         }
 
@@ -1305,7 +1209,7 @@ export default function MarketplaceOperationalMap({
             ? `Mapbox no pudo completar la carga: ${lastMapError}`
             : "El mapa no completó su carga inicial.",
         );
-      }, 4500);
+      }, 12_000);
     };
 
     const observer = new ResizeObserver(() => {
@@ -1338,6 +1242,8 @@ export default function MarketplaceOperationalMap({
       window.clearTimeout(watchdog);
 
       setMapLoaded(false);
+      lastFocusedJobIdRef.current = null;
+      featureSignatureRef.current = { points: "", routes: "" };
 
       for (const marker of driverMarkersRef.current.values()) {
         marker.remove();
@@ -1366,10 +1272,7 @@ export default function MarketplaceOperationalMap({
         }
       }
     };
-  }, [
-    mapConfig.data,
-    mapInitNonce,
-  ]);
+  }, [mapConfig.data, mapInitNonce]);
   useEffect(() => {
     const map = mapRef.current;
     const node = mapNodeRef.current;
@@ -1471,23 +1374,34 @@ export default function MarketplaceOperationalMap({
           markers.set(driver.driverUserId, marker);
         }
 
-        marker.setLngLat(coordinate);
+        const previousPosition = marker.getLngLat();
+        if (previousPosition.lng !== coordinate[0] || previousPosition.lat !== coordinate[1]) {
+          marker.setLngLat(coordinate);
+        }
 
         const element = marker.getElement();
-        const pin = element.querySelector<HTMLElement>(
-          '[data-role="driver-pin"]',
-        );
+        const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
 
         if (!pin) continue;
 
-        pin.innerHTML = operationalPinSvg({
-          kind: "driver",
-          key: driver.driverUserId,
-          selected: Boolean(driver.activeJobId),
-          stale: !driver.locationFresh,
-          driverState: driverPinState(driver),
-          vehicleCategoryCode: driver.vehicleCategoryCode,
-        });
+        // El DOM de los pines se conserva cuando solo llegan datos iguales del sondeo.
+        const visualKey = [
+          driver.activeJobId ? "busy" : "idle",
+          driver.locationFresh ? "fresh" : "stale",
+          driverPinState(driver),
+          driver.vehicleCategoryCode ?? "",
+        ].join(":");
+        if (pin.dataset.visualKey !== visualKey) {
+          pin.innerHTML = operationalPinSvg({
+            kind: "driver",
+            key: driver.driverUserId,
+            selected: Boolean(driver.activeJobId),
+            stale: !driver.locationFresh,
+            driverState: driverPinState(driver),
+            vehicleCategoryCode: driver.vehicleCategoryCode,
+          });
+          pin.dataset.visualKey = visualKey;
+        }
 
         element.setAttribute("role", "img");
         element.setAttribute(
@@ -1501,7 +1415,8 @@ export default function MarketplaceOperationalMap({
           driver.vehicleCategoryCode,
         )} - ${driverPinStateLabel[driverPinState(driver)]}`;
 
-        element.style.cursor = driver.activeJobId || mapViewMode === "coverage" ? "pointer" : "default";
+        element.style.cursor =
+          driver.activeJobId || mapViewMode === "coverage" ? "pointer" : "default";
 
         element.onclick = driver.activeJobId
           ? (event) => {
@@ -1554,9 +1469,10 @@ export default function MarketplaceOperationalMap({
         const point = driverCoordinate(driver);
         if (!point || !markers.has(driver.driverUserId)) continue;
         const projected = map.project(point);
-        const key = zoom >= 14.5
-          ? driver.driverUserId
-          : `${Math.floor(projected.x / cell)}:${Math.floor(projected.y / cell)}`;
+        const key =
+          zoom >= 14.5
+            ? driver.driverUserId
+            : `${Math.floor(projected.x / cell)}:${Math.floor(projected.y / cell)}`;
         const members = buckets.get(key) ?? [];
         members.push({ id: driver.driverUserId, point });
         buckets.set(key, members);
@@ -1577,7 +1493,8 @@ export default function MarketplaceOperationalMap({
         bubble.textContent = String(members.length);
         bubble.title = `${members.length} conductores en esta zona. Acercar mapa`;
         bubble.setAttribute("aria-label", bubble.title);
-        bubble.style.cssText = "width:46px;height:46px;min-width:46px;min-height:46px;border-radius:50%;border:3px solid #67e8f9;background:#075985;color:white;box-shadow:0 4px 18px #020617bb;display:grid;place-items:center;font-size:15px;font-weight:800;cursor:pointer";
+        bubble.style.cssText =
+          "width:46px;height:46px;min-width:46px;min-height:46px;border-radius:50%;border:3px solid #67e8f9;background:#075985;color:white;box-shadow:0 4px 18px #020617bb;display:grid;place-items:center;font-size:15px;font-weight:800;cursor:pointer";
         bubble.onclick = (event) => {
           event.stopPropagation();
           const bounds = new mapboxgl.LngLatBounds();
@@ -1585,7 +1502,8 @@ export default function MarketplaceOperationalMap({
           map.fitBounds(bounds, { padding: 110, duration: 450, maxZoom: 15 });
         };
         const cluster = new mapboxgl.Marker({ element: bubble, anchor: "center" })
-          .setLngLat(center).addTo(map);
+          .setLngLat(center)
+          .addTo(map);
         coverageClusterMarkersRef.current.push(cluster);
       }
     };
@@ -1611,8 +1529,8 @@ export default function MarketplaceOperationalMap({
       kind: "pickup" | "destination",
       coordinate: Coordinate | null,
     ) => {
-      const layerVisible = mapViewMode === "operations" &&
-        (kind === "pickup" ? layers.pickups : layers.destinations);
+      const layerVisible =
+        mapViewMode === "operations" && (kind === "pickup" ? layers.pickups : layers.destinations);
 
       if (!layerVisible || !coordinate) return;
 
@@ -1652,24 +1570,28 @@ export default function MarketplaceOperationalMap({
         markers.set(key, marker);
       }
 
-      marker.setLngLat(coordinate);
+      const previousPosition = marker.getLngLat();
+      if (previousPosition.lng !== coordinate[0] || previousPosition.lat !== coordinate[1]) {
+        marker.setLngLat(coordinate);
+      }
 
       const element = marker.getElement();
 
-      const bubble = element.querySelector<HTMLElement>(
-        '[data-role="bubble"]',
-      );
+      const bubble = element.querySelector<HTMLElement>('[data-role="bubble"]');
 
       if (!bubble) return;
 
       const isPickup = kind === "pickup";
       const selected = job.jobId === selectedJobId;
 
-      bubble.innerHTML = operationalPinSvg({
-        kind: isPickup ? "customer" : "destination",
-        key,
-        selected,
-      });
+      if (bubble.dataset.selected !== String(selected)) {
+        bubble.innerHTML = operationalPinSvg({
+          kind: isPickup ? "customer" : "destination",
+          key,
+          selected,
+        });
+        bubble.dataset.selected = String(selected);
+      }
 
       element.onclick = (event) => {
         event.stopPropagation();
@@ -1695,17 +1617,13 @@ export default function MarketplaceOperationalMap({
         content.style.maxWidth = "270px";
 
         const title = document.createElement("div");
-        title.textContent = isPickup
-          ? job.customerDisplayName || "Cliente"
-          : "Destino";
+        title.textContent = isPickup ? job.customerDisplayName || "Cliente" : "Destino";
         title.style.fontSize = "12px";
         title.style.fontWeight = "800";
         title.style.color = "#f8fafc";
 
         const detail = document.createElement("div");
-        detail.textContent = isPickup
-          ? job.originText
-          : job.destinationText;
+        detail.textContent = isPickup ? job.originText : job.destinationText;
         detail.style.marginTop = "4px";
         detail.style.fontSize = "10px";
         detail.style.lineHeight = "1.35";
@@ -1713,23 +1631,16 @@ export default function MarketplaceOperationalMap({
 
         content.append(title, detail);
 
-        popup
-          .setLngLat(coordinate)
-          .setDOMContent(content)
-          .addTo(map);
+        popup.setLngLat(coordinate).setDOMContent(content).addTo(map);
 
-        const popupContent = popup
-          .getElement()
-          .querySelector(".mapboxgl-popup-content");
+        const popupContent = popup.getElement().querySelector(".mapboxgl-popup-content");
 
         if (popupContent instanceof HTMLElement) {
           popupContent.style.background = "rgba(15,23,42,0.97)";
-          popupContent.style.border =
-            "1px solid rgba(148,163,184,0.30)";
+          popupContent.style.border = "1px solid rgba(148,163,184,0.30)";
           popupContent.style.borderRadius = "12px";
           popupContent.style.padding = "10px 12px";
-          popupContent.style.boxShadow =
-            "0 14px 32px rgba(0,0,0,0.40)";
+          popupContent.style.boxShadow = "0 14px 32px rgba(0,0,0,0.40)";
         }
       };
 
@@ -1739,17 +1650,9 @@ export default function MarketplaceOperationalMap({
     };
 
     for (const job of operational.data?.jobs ?? []) {
-      renderMarker(
-        job,
-        "pickup",
-        jobCoordinate(job, "origin"),
-      );
+      renderMarker(job, "pickup", jobCoordinate(job, "origin"));
 
-      renderMarker(
-        job,
-        "destination",
-        jobCoordinate(job, "destination"),
-      );
+      renderMarker(job, "destination", jobCoordinate(job, "destination"));
     }
 
     for (const [key, marker] of markers.entries()) {
@@ -1810,19 +1713,29 @@ export default function MarketplaceOperationalMap({
     return features;
   }, [operational.data, selectedJobId]);
 
+  // Evitar decodificar polilineas de Mapbox con cada actualizacion del GPS.
+  const decodedRoutes = useMemo(
+    () =>
+      (routes.data ?? []).map((route) => ({
+        ...route,
+        coordinates: decodePolyline(route.polyline),
+      })),
+    [routes.data],
+  );
+
   const routeFeatures = useMemo(() => {
     const jobs = operational.data?.jobs ?? [];
     const drivers = operational.data?.drivers ?? [];
 
     const activeJobIds = new Set(jobs.map((job) => job.jobId));
 
-    return (routes.data ?? []).flatMap((route) => {
+    return decodedRoutes.flatMap((route) => {
       if (!activeJobIds.has(route.jobId)) return [];
 
       const job = jobs.find((item) => item.jobId === route.jobId);
       if (!job) return [];
 
-      const coordinates = decodePolyline(route.polyline);
+      const coordinates = route.coordinates;
       if (coordinates.length < 2) return [];
 
       let startAnchor: Coordinate | null = null;
@@ -1844,19 +1757,13 @@ export default function MarketplaceOperationalMap({
 
       const anchoredCoordinates = [...coordinates];
 
-      if (
-        startAnchor &&
-        !coordinatesAlmostEqual(startAnchor, anchoredCoordinates[0])
-      ) {
+      if (startAnchor && !coordinatesAlmostEqual(startAnchor, anchoredCoordinates[0])) {
         anchoredCoordinates.unshift(startAnchor);
       }
 
       if (
         endAnchor &&
-        !coordinatesAlmostEqual(
-          endAnchor,
-          anchoredCoordinates[anchoredCoordinates.length - 1],
-        )
+        !coordinatesAlmostEqual(endAnchor, anchoredCoordinates[anchoredCoordinates.length - 1])
       ) {
         anchoredCoordinates.push(endAnchor);
       }
@@ -1876,12 +1783,7 @@ export default function MarketplaceOperationalMap({
         },
       ];
     });
-  }, [
-    operational.data?.drivers,
-    operational.data?.jobs,
-    routes.data,
-    selectedJobId,
-  ]);
+  }, [operational.data?.drivers, operational.data?.jobs, decodedRoutes, selectedJobId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1889,31 +1791,55 @@ export default function MarketplaceOperationalMap({
     addOperationalLayers(map);
 
     const pointsSource = map.getSource(MAP_SOURCE_POINTS) as mapboxgl.GeoJSONSource | undefined;
-    pointsSource?.setData({ type: "FeatureCollection", features: pointFeatures } as never);
+    const pointsData = { type: "FeatureCollection", features: pointFeatures };
+    const pointsSignature = JSON.stringify(pointsData);
+    if (pointsSource && featureSignatureRef.current.points !== pointsSignature) {
+      pointsSource.setData(pointsData as never);
+      featureSignatureRef.current.points = pointsSignature;
+    }
 
     const routeSource = map.getSource(MAP_SOURCE_ROUTES) as mapboxgl.GeoJSONSource | undefined;
-    routeSource?.setData({ type: "FeatureCollection", features: routeFeatures } as never);
+    const routesData = { type: "FeatureCollection", features: routeFeatures };
+    const routesSignature = JSON.stringify(routesData);
+    if (routeSource && featureSignatureRef.current.routes !== routesSignature) {
+      routeSource.setData(routesData as never);
+      featureSignatureRef.current.routes = routesSignature;
+    }
   }, [pointFeatures, routeFeatures, mapConfig.data, mapLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !map.isStyleLoaded()) return;
-    setLayerVisibility(map, MAP_LAYERS.driversFresh, mapViewMode === "operations" && layers.drivers);
-    setLayerVisibility(map, MAP_LAYERS.driversStale, mapViewMode === "operations" && layers.drivers);
+    setLayerVisibility(
+      map,
+      MAP_LAYERS.driversFresh,
+      mapViewMode === "operations" && layers.drivers,
+    );
+    setLayerVisibility(
+      map,
+      MAP_LAYERS.driversStale,
+      mapViewMode === "operations" && layers.drivers,
+    );
     setLayerVisibility(map, MAP_LAYERS.routesPickup, mapViewMode === "operations" && layers.routes);
-    setLayerVisibility(map, MAP_LAYERS.routesPickupSelected, mapViewMode === "operations" && layers.routes);
+    setLayerVisibility(
+      map,
+      MAP_LAYERS.routesPickupSelected,
+      mapViewMode === "operations" && layers.routes,
+    );
     setLayerVisibility(map, MAP_LAYERS.routes, mapViewMode === "operations" && layers.routes);
-    setLayerVisibility(map, MAP_LAYERS.routesSelected, mapViewMode === "operations" && layers.routes);
+    setLayerVisibility(
+      map,
+      MAP_LAYERS.routesSelected,
+      mapViewMode === "operations" && layers.routes,
+    );
     setLayerVisibility(map, MAP_LAYERS.incidents, mapViewMode === "operations" && layers.incidents);
-  }, [layers, pointFeatures, routeFeatures, mapLoaded, mapViewMode]);
+  }, [layers, mapLoaded, mapViewMode]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !map.isStyleLoaded()) return;
 
-    const interactiveLayers = [
-      MAP_LAYERS.incidents,
-    ];
+    const interactiveLayers = [MAP_LAYERS.incidents];
 
     const selectPoint = (event: mapboxgl.MapLayerMouseEvent) => {
       const rawJobId = event.features?.[0]?.properties?.jobId;
@@ -1955,6 +1881,8 @@ export default function MarketplaceOperationalMap({
       const map = mapRef.current;
       if (!map || !job) return;
 
+      // No devolver el mapa al centro en cada actualizacion periodica de datos.
+      lastFocusedJobIdRef.current = job.jobId;
       const bounds = new mapboxgl.LngLatBounds();
       const origin = jobCoordinate(job, "origin");
       const destination = jobCoordinate(job, "destination");
@@ -1967,8 +1895,7 @@ export default function MarketplaceOperationalMap({
       const driverPoint = driver ? driverCoordinate(driver) : null;
       if (driverPoint) bounds.extend(driverPoint);
 
-      const jobRoutes =
-        routes.data?.filter((item) => item.jobId === job.jobId) ?? [];
+      const jobRoutes = routes.data?.filter((item) => item.jobId === job.jobId) ?? [];
 
       for (const route of jobRoutes) {
         for (const coordinate of decodePolyline(route.polyline)) {
@@ -1993,8 +1920,9 @@ export default function MarketplaceOperationalMap({
   );
 
   useEffect(() => {
+    if (!mapLoaded || !selectedJob || lastFocusedJobIdRef.current === selectedJob.jobId) return;
     focusJob(selectedJob);
-  }, [selectedJob, focusJob]);
+  }, [selectedJob, focusJob, mapLoaded]);
 
   if (operational.isLoading) {
     return (
@@ -2023,9 +1951,11 @@ export default function MarketplaceOperationalMap({
     (a, b) => Number(b.status === "incident") - Number(a.status === "incident"),
   );
   // Solo clientes vinculados a servicios activos. Nunca inventar un directorio general.
-  const customerJobs = [...new Map(
-    operationalJobs.map((job) => [job.customerId || `service:${job.jobId}`, job] as const),
-  ).values()];
+  const customerJobs = [
+    ...new Map(
+      operationalJobs.map((job) => [job.customerId || `service:${job.jobId}`, job] as const),
+    ).values(),
+  ];
   const liveAt = formatTime(data.serverTime);
   const rootClass = expanded
     ? "fixed inset-0 z-[100] overflow-hidden bg-background p-3 sm:p-4"
@@ -2033,41 +1963,29 @@ export default function MarketplaceOperationalMap({
 
   const customer = selectedCustomer.data?.customer ?? null;
   const customerPhone = customer?.whatsappPhone ?? null;
-  const whatsappUrl = customerPhone
-    ? `https://wa.me/${customerPhone.replace(/\D/g, "")}`
+  const whatsappUrl = customerPhone ? `https://wa.me/${customerPhone.replace(/\D/g, "")}` : null;
+
+  const selectedDriver = selectedJob?.driverUserId
+    ? (data.drivers.find(
+        (driver) =>
+          driver.driverUserId === selectedJob.driverUserId &&
+          (!selectedJob.vehicleId || driver.vehicleId === selectedJob.vehicleId),
+      ) ?? null)
     : null;
 
-  const selectedDriver =
-    selectedJob?.driverUserId
-      ? data.drivers.find(
-          (driver) =>
-            driver.driverUserId === selectedJob.driverUserId &&
-            (!selectedJob.vehicleId ||
-              driver.vehicleId === selectedJob.vehicleId),
-        ) ?? null
-      : null;
+  const selectedDriverPoint = selectedDriver ? driverCoordinate(selectedDriver) : null;
 
-  const selectedDriverPoint = selectedDriver
-    ? driverCoordinate(selectedDriver)
+  const selectedPickupRoute = selectedJob
+    ? (routes.data?.find(
+        (route) => route.jobId === selectedJob.jobId && route.segment === "pickup",
+      ) ?? null)
     : null;
 
-  const selectedPickupRoute =
-    selectedJob
-      ? routes.data?.find(
-          (route) =>
-            route.jobId === selectedJob.jobId &&
-            route.segment === "pickup",
-        ) ?? null
-      : null;
-
-  const selectedTripRoute =
-    selectedJob
-      ? routes.data?.find(
-          (route) =>
-            route.jobId === selectedJob.jobId &&
-            route.segment === "trip",
-        ) ?? null
-      : null;
+  const selectedTripRoute = selectedJob
+    ? (routes.data?.find(
+        (route) => route.jobId === selectedJob.jobId && route.segment === "trip",
+      ) ?? null)
+    : null;
 
   const selectedPhase = !selectedJob
     ? null
@@ -2083,12 +2001,7 @@ export default function MarketplaceOperationalMap({
             ? "Servicio con incidencia activa"
             : statusLabel(selectedJob.status);
 
-  const layerButton = (
-    key: LayerKey,
-    label: string,
-    dotClass: string,
-    activeClass: string,
-  ) => (
+  const layerButton = (key: LayerKey, label: string, dotClass: string, activeClass: string) => (
     <button
       type="button"
       aria-pressed={layers[key]}
@@ -2106,7 +2019,6 @@ export default function MarketplaceOperationalMap({
 
   return (
     <div className={rootClass}>
-
       <div className={expanded ? "h-full min-w-0" : "min-w-0"}>
         <section
           className={`flex min-h-0 flex-col overflow-hidden rounded-[26px] border border-border/60 bg-background/35 ${
@@ -2127,9 +2039,7 @@ export default function MarketplaceOperationalMap({
 
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1.5 text-[10px] text-emerald-200">
                 Con señal
-                <strong className="text-foreground">
-                  {data.summary.driversWithFreshLocation}
-                </strong>
+                <strong className="text-foreground">{data.summary.driversWithFreshLocation}</strong>
               </span>
 
               <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-2.5 py-1.5 text-[10px] text-cyan-200">
@@ -2149,7 +2059,11 @@ export default function MarketplaceOperationalMap({
                 aria-pressed={panelOpen}
                 onClick={() => setAgendaCollapsed((collapsed) => !collapsed)}
               >
-                {panelOpen ? <PanelRightClose className="mr-2 h-3.5 w-3.5" /> : <PanelRightOpen className="mr-2 h-3.5 w-3.5" />}
+                {panelOpen ? (
+                  <PanelRightClose className="mr-2 h-3.5 w-3.5" />
+                ) : (
+                  <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
+                )}
                 {panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
               </Button>
 
@@ -2188,70 +2102,96 @@ export default function MarketplaceOperationalMap({
             }`}
           >
             <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-5rem)] flex-col items-start gap-2">
-              <div className="flex items-center gap-1 rounded-2xl border border-white/20 bg-slate-950/85 p-1 shadow-lg backdrop-blur-xl" role="group" aria-label="Modo del mapa">
-                {([['operations', 'Operaciones'], ['coverage', 'Cobertura']] as const).map(([mode, label]) => (
-                  <button key={mode} type="button" aria-pressed={mapViewMode === mode}
+              <div
+                className="flex items-center gap-1 rounded-2xl border border-white/20 bg-slate-950/85 p-1 shadow-lg backdrop-blur-xl"
+                role="group"
+                aria-label="Modo del mapa"
+              >
+                {(
+                  [
+                    ["operations", "Operaciones"],
+                    ["coverage", "Cobertura"],
+                  ] as const
+                ).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={mapViewMode === mode}
                     onClick={() => setMapViewMode(mode)}
-                    className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${mapViewMode === mode ? "bg-cyan-600 text-white" : "text-slate-200 hover:bg-white/10"}`}>
+                    className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${mapViewMode === mode ? "bg-cyan-600 text-white" : "text-slate-200 hover:bg-white/10"}`}
+                  >
                     {label}
                   </button>
                 ))}
               </div>
               {mapViewMode === "operations" ? (
                 <div className="flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl">
-
-              {layerButton(
-                "drivers",
-                "Conductores",
-                "bg-orange-500",
-                "border-orange-400/30 bg-orange-500/20 text-orange-100",
-              )}
-              {layerButton(
-                "pickups",
-                "Clientes",
-                "bg-emerald-500",
-                "border-emerald-400/30 bg-emerald-500/20 text-emerald-100",
-              )}
-              {layerButton(
-                "destinations",
-                "Destinos",
-                "bg-red-500",
-                "border-red-400/30 bg-red-500/20 text-red-100",
-              )}
-              {layerButton(
-                "routes",
-                "Rutas",
-                "bg-cyan-600",
-                "border-sky-400/30 bg-sky-500/20 text-sky-100",
-              )}
-              {layerButton(
-                "incidents",
-                "Incidencias",
-                "bg-red-500",
-                "border-red-400/30 bg-red-500/20 text-red-100",
-              )}
-
+                  {layerButton(
+                    "drivers",
+                    "Conductores",
+                    "bg-orange-500",
+                    "border-orange-400/30 bg-orange-500/20 text-orange-100",
+                  )}
+                  {layerButton(
+                    "pickups",
+                    "Clientes",
+                    "bg-emerald-500",
+                    "border-emerald-400/30 bg-emerald-500/20 text-emerald-100",
+                  )}
+                  {layerButton(
+                    "destinations",
+                    "Destinos",
+                    "bg-red-500",
+                    "border-red-400/30 bg-red-500/20 text-red-100",
+                  )}
+                  {layerButton(
+                    "routes",
+                    "Rutas",
+                    "bg-cyan-600",
+                    "border-sky-400/30 bg-sky-500/20 text-sky-100",
+                  )}
+                  {layerButton(
+                    "incidents",
+                    "Incidencias",
+                    "bg-red-500",
+                    "border-red-400/30 bg-red-500/20 text-red-100",
+                  )}
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-1.5 rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl" role="group" aria-label="Filtros de cobertura">
-                  {([['all','Todos'], ['available','Disponibles'], ['busy','En servicio'], ['stale','Sin señal'], ['resting','Descansando']] as const).map(([filter, label]) => (
-                    <button key={filter} type="button" aria-pressed={coverageFilter === filter}
+                <div
+                  className="flex flex-wrap items-center gap-1.5 rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl"
+                  role="group"
+                  aria-label="Filtros de cobertura"
+                >
+                  {(
+                    [
+                      ["all", "Todos"],
+                      ["available", "Disponibles"],
+                      ["busy", "En servicio"],
+                      ["stale", "Sin señal"],
+                      ["resting", "Descansando"],
+                    ] as const
+                  ).map(([filter, label]) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      aria-pressed={coverageFilter === filter}
                       onClick={() => setCoverageFilter(filter)}
-                      className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold ${coverageFilter === filter ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"}`}>
+                      className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold ${coverageFilter === filter ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"}`}
+                    >
                       {label}
                     </button>
                   ))}
-                  <span className="px-2 text-[10px] text-slate-300">Con posición: {coverageLocated}/{coverageDrivers.length}</span>
+                  <span className="px-2 text-[10px] text-slate-300">
+                    Con posición: {coverageLocated}/{coverageDrivers.length}
+                  </span>
                 </div>
               )}
             </div>
 
             {mapConfig.data ? (
               <>
-                <div
-                  ref={mapNodeRef}
-                  className="absolute inset-0 h-full w-full"
-                />
+                <div ref={mapNodeRef} className="absolute inset-0 h-full w-full" />
 
                 {!mapLoaded && mapLoadError ? (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/78 px-6 text-center backdrop-blur-sm">
@@ -2312,576 +2252,669 @@ export default function MarketplaceOperationalMap({
                   className="pointer-events-auto flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-l-[22px] border border-r-0 border-white/20 bg-slate-950/[0.82] shadow-[0_18px_55px_rgba(0,0,0,0.38)] backdrop-blur-[5px]"
                 >
                   {agendaTab === null ? (
-                    <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4" aria-label="Leyenda del mapa">
+                    <section
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4"
+                      aria-label="Leyenda del mapa"
+                    >
                       <div className="flex items-center gap-2 border-b border-white/10 pb-3">
                         <MapPin className="h-4 w-4 text-cyan-300" />
                         <h4 className="text-sm font-semibold text-foreground">Leyenda del mapa</h4>
                       </div>
-                      <p className="mt-3 text-xs leading-relaxed text-slate-300">Selecciona una pestaña para consultar la operación. Los símbolos y rutas siguen visibles sobre el mapa.</p>
-              <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend
-                    kind="driver"
-                    vehicleCategoryCode="tricycle"
-                    driverState="available"
-                  />
-                  <span>Conductor disponible (verde)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend
-                    kind="driver"
-                    vehicleCategoryCode="tricycle"
-                    driverState="busy"
-                  />
-                  <span>Conductor en servicio (azul)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend
-                    kind="driver"
-                    stale
-                    vehicleCategoryCode="tricycle"
-                  />
-                  <span>Última ubicación conocida (ámbar, no disponible)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend kind="customer" />
-                  <span>Cliente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <OperationalPinLegend kind="destination" />
-                  <span>Destino</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-7 border-t-2 border-dashed border-cyan-400" />
-                  <span>Chofer → cliente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-7 border-t-2 border-yellow-400" />
-                  <span>Cliente → destino</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                  <span>Incidencia</span>
-                </div>
-              </div>
+                      <p className="mt-3 text-xs leading-relaxed text-slate-300">
+                        Selecciona una pestaña para consultar la operación. Los símbolos y rutas
+                        siguen visibles sobre el mapa.
+                      </p>
+                      <div className="mt-3 space-y-2.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <OperationalPinLegend
+                            kind="driver"
+                            vehicleCategoryCode="tricycle"
+                            driverState="available"
+                          />
+                          <span>Conductor disponible (verde)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <OperationalPinLegend
+                            kind="driver"
+                            vehicleCategoryCode="tricycle"
+                            driverState="busy"
+                          />
+                          <span>Conductor en servicio (azul)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <OperationalPinLegend
+                            kind="driver"
+                            stale
+                            vehicleCategoryCode="tricycle"
+                          />
+                          <span>Última ubicación conocida (ámbar, no disponible)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <OperationalPinLegend kind="customer" />
+                          <span>Cliente</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <OperationalPinLegend kind="destination" />
+                          <span>Destino</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 border-t-2 border-dashed border-cyan-400" />
+                          <span>Chofer → cliente</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 border-t-2 border-yellow-400" />
+                          <span>Cliente → destino</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                          <span>Incidencia</span>
+                        </div>
+                      </div>
                     </section>
                   ) : null}
-                {agendaTab === "drivers" ? (
-                  <section
-                    aria-label="Conductores"
-                    className={`flex min-h-0 flex-1 flex-col overflow-hidden`}
-                  >
-                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Users className="h-4 w-4 text-orange-300" />
-                        <h4 className="text-xs font-semibold text-foreground">Conductores</h4>
-                        <span className="rounded-full bg-orange-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-orange-200">{data.drivers.length}</span>
+                  {agendaTab === "drivers" ? (
+                    <section
+                      aria-label="Conductores"
+                      className={`flex min-h-0 flex-1 flex-col overflow-hidden`}
+                    >
+                      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Users className="h-4 w-4 text-orange-300" />
+                          <h4 className="text-xs font-semibold text-foreground">Conductores</h4>
+                          <span className="rounded-full bg-orange-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-orange-200">
+                            {data.drivers.length}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAgendaTab(null)}
+                          aria-label="Volver a la leyenda desde Conductores"
+                          className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10"
+                        >
+                          Leyenda
+                        </button>
                       </div>
-                      <button type="button" onClick={() => setAgendaTab(null)} aria-label="Volver a la leyenda desde Conductores" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Leyenda</button>
-                    </div>
-                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  aria-pressed={driverListMode === "working"}
-                  onClick={() => setDriverListMode("working")}
-                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                    driverListMode === "working"
-                      ? "border-emerald-400/45 bg-emerald-500/[0.11] shadow-[0_10px_28px_-20px_rgba(52,211,153,0.8)]"
-                      : "border-emerald-500/15 bg-emerald-500/[0.035] hover:border-emerald-400/30"
-                  }`}
-                >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
-                    Trabajando
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-foreground">
-                    {data.summary.workingDrivers}
-                  </p>
-                </button>
+                      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            aria-pressed={driverListMode === "working"}
+                            onClick={() => setDriverListMode("working")}
+                            className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                              driverListMode === "working"
+                                ? "border-emerald-400/45 bg-emerald-500/[0.11] shadow-[0_10px_28px_-20px_rgba(52,211,153,0.8)]"
+                                : "border-emerald-500/15 bg-emerald-500/[0.035] hover:border-emerald-400/30"
+                            }`}
+                          >
+                            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
+                              Trabajando
+                            </p>
+                            <p className="mt-1 text-xl font-semibold text-foreground">
+                              {data.summary.workingDrivers}
+                            </p>
+                          </button>
 
-                <button
-                  type="button"
-                  aria-pressed={driverListMode === "resting"}
-                  onClick={() => setDriverListMode("resting")}
-                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                    driverListMode === "resting"
-                      ? "border-slate-400/40 bg-slate-500/[0.12] shadow-[0_10px_28px_-20px_rgba(148,163,184,0.55)]"
-                      : "border-white/10 bg-background/35 hover:border-white/20"
-                  }`}
-                >
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Descansando
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-foreground">
-                    {data.summary.inactiveDrivers}
-                  </p>
-                </button>
-              </div>
+                          <button
+                            type="button"
+                            aria-pressed={driverListMode === "resting"}
+                            onClick={() => setDriverListMode("resting")}
+                            className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                              driverListMode === "resting"
+                                ? "border-slate-400/40 bg-slate-500/[0.12] shadow-[0_10px_28px_-20px_rgba(148,163,184,0.55)]"
+                                : "border-white/10 bg-background/35 hover:border-white/20"
+                            }`}
+                          >
+                            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                              Descansando
+                            </p>
+                            <p className="mt-1 text-xl font-semibold text-foreground">
+                              {data.summary.inactiveDrivers}
+                            </p>
+                          </button>
+                        </div>
 
-              <div className="mt-2.5 space-y-1.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
-                {filteredDrivers.length ? (
-                  filteredDrivers.map((driver) => {
-                    const hasLastPosition = driverCoordinate(driver) != null;
-                    return (
-                      <div
-                        key={driver.driverUserId}
-                        className="rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
-                      >
-                        <div className="flex min-w-0 items-start gap-2">
-                          <DriverAvatar
-                            name={driver.driverDisplayName}
-                            url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
-                          />
+                        <div className="mt-2.5 space-y-1.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
+                          {filteredDrivers.length ? (
+                            filteredDrivers.map((driver) => {
+                              const hasLastPosition = driverCoordinate(driver) != null;
+                              return (
+                                <div
+                                  key={driver.driverUserId}
+                                  className="rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                                >
+                                  <div className="flex min-w-0 items-start gap-2">
+                                    <DriverAvatar
+                                      name={driver.driverDisplayName}
+                                      url={
+                                        driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null
+                                      }
+                                    />
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <p title={driver.driverDisplayName || "Conductor"} className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground">
-                                {driver.driverDisplayName || "Conductor"}
-                              </p>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <p
+                                          title={driver.driverDisplayName || "Conductor"}
+                                          className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground"
+                                        >
+                                          {driver.driverDisplayName || "Conductor"}
+                                        </p>
 
-                              <span
-                                className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
-                                  driver.locationFresh
-                                    ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.75)]"
-                                    : hasLastPosition
-                                      ? "bg-amber-400"
-                                      : "bg-muted-foreground/40"
-                                }`}
-                                title={
-                                  driver.locationFresh
-                                    ? "Ubicación en línea"
-                                    : signalAgeLabel(driver.capturedAt, data.serverTime)
-                                }
-                              />
-                            </div>
+                                        <span
+                                          className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                                            driver.locationFresh
+                                              ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.75)]"
+                                              : hasLastPosition
+                                                ? "bg-amber-400"
+                                                : "bg-muted-foreground/40"
+                                          }`}
+                                          title={
+                                            driver.locationFresh
+                                              ? "Ubicación en línea"
+                                              : signalAgeLabel(driver.capturedAt, data.serverTime)
+                                          }
+                                        />
+                                      </div>
 
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
-                              <VehicleModeIcon
-                                code={driver.vehicleCategoryCode}
-                                className="h-3.5 w-3.5 shrink-0 text-orange-300"
-                              />
-                              <span className="font-medium text-orange-200">
-                                {vehicleCategoryLabel(driver.vehicleCategoryCode)}
-                              </span>
-                              <span className="text-muted-foreground/60">·</span>
-                              <span className="min-w-0 break-words">
-                                {driver.vehicleName || driver.vehicleId}
-                              </span>
-                            </div>
+                                      <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                                        <VehicleModeIcon
+                                          code={driver.vehicleCategoryCode}
+                                          className="h-3.5 w-3.5 shrink-0 text-orange-300"
+                                        />
+                                        <span className="font-medium text-orange-200">
+                                          {vehicleCategoryLabel(driver.vehicleCategoryCode)}
+                                        </span>
+                                        <span className="text-muted-foreground/60">·</span>
+                                        <span className="min-w-0 break-words">
+                                          {driver.vehicleName || driver.vehicleId}
+                                        </span>
+                                      </div>
 
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              {driver.activeJobId ? (
-                                <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-cyan-200">
-                                  En servicio · {statusLabel(driver.activeJobStatus)}
-                                </span>
-                              ) : driver.acceptingJobs ? (
-                                <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
-                                  {driver.isAvailable ? "Trabajando · disponible" : "Trabajando"}
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  Descansando
-                                </span>
-                              )}
+                                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                        {driver.activeJobId ? (
+                                          <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                            En servicio · {statusLabel(driver.activeJobStatus)}
+                                          </span>
+                                        ) : driver.acceptingJobs ? (
+                                          <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
+                                            {driver.isAvailable
+                                              ? "Trabajando · disponible"
+                                              : "Trabajando"}
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                            Descansando
+                                          </span>
+                                        )}
 
-                              {!driver.locationFresh ? (
-                                <span
-                                  className={`text-[10px] ${
-                                    hasLastPosition ? "text-amber-300" : "text-muted-foreground"
+                                        {!driver.locationFresh ? (
+                                          <span
+                                            className={`text-[10px] ${
+                                              hasLastPosition
+                                                ? "text-amber-300"
+                                                : "text-muted-foreground"
+                                            }`}
+                                          >
+                                            {signalAgeLabel(driver.capturedAt, data.serverTime)}
+                                          </span>
+                                        ) : null}
+                                        <button
+                                          type="button"
+                                          disabled={!hasLastPosition}
+                                          className="rounded-md border border-orange-400/20 px-1.5 py-0.5 text-[10px] text-orange-200 enabled:hover:bg-orange-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                          onClick={() => {
+                                            const coordinate = driverCoordinate(driver);
+                                            const liveMap = mapRef.current;
+                                            if (coordinate && liveMap) {
+                                              liveMap.easeTo({
+                                                center: coordinate,
+                                                zoom: Math.max(13, liveMap.getZoom()),
+                                                duration: 450,
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          Ver en mapa
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              {driverListMode === "working"
+                                ? "No hay conductores trabajando."
+                                : "No hay conductores descansando."}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+                  ) : null}
+                  {agendaTab === "services" ? (
+                    <section
+                      aria-label="Servicios activos"
+                      className={`flex min-h-0 flex-1 flex-col overflow-hidden`}
+                    >
+                      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Route className="h-4 w-4 text-yellow-300" />
+                          <h4 className="text-xs font-semibold text-foreground">
+                            Servicios activos
+                          </h4>
+                          <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-cyan-200">
+                            {operationalJobs.length}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAgendaTab(null)}
+                          aria-label="Volver a la leyenda desde Servicios"
+                          className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10"
+                        >
+                          Leyenda
+                        </button>
+                      </div>
+                      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-2.5 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+                        {incidentCount > 0 ? (
+                          <div
+                            className="flex items-center gap-2 rounded-xl border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-200"
+                            role="status"
+                          >
+                            <AlertTriangle className="h-4 w-4 shrink-0" />
+                            {incidentCount}{" "}
+                            {incidentCount === 1 ? "incidencia requiere" : "incidencias requieren"}{" "}
+                            atención
+                          </div>
+                        ) : null}
+                        <div className="mt-3 space-y-2">
+                          {operationalJobs.length ? (
+                            prioritizedJobs.slice(0, 12).map((job) => {
+                              const selected = job.jobId === selectedJobId;
+                              return (
+                                <button
+                                  type="button"
+                                  key={job.jobId}
+                                  aria-expanded={selected && customerDetailsJobId === job.jobId}
+                                  onClick={() => {
+                                    const opening = customerDetailsJobId !== job.jobId;
+                                    setSelectedJobId(job.jobId);
+                                    setCustomerDetailsJobId(opening ? job.jobId : null);
+                                    if (opening) focusJob(job);
+                                  }}
+                                  className={`w-full rounded-2xl border p-3 text-left transition ${
+                                    selected
+                                      ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
+                                      : "border-white/10 bg-background/20 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
                                   }`}
                                 >
-                                  {signalAgeLabel(driver.capturedAt, data.serverTime)}
-                                </span>
-                              ) : null}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span
+                                      className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
+                                        job.status === "incident"
+                                          ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
+                                          : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                                      }`}
+                                    >
+                                      {statusLabel(job.status)}
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                                        {job.serviceCode}
+                                      </span>
+                                      <VehicleModeBadge code={job.vehicleCategoryCode} />
+                                    </div>
+                                  </div>
+                                  <p className="mt-2 text-sm font-semibold text-foreground">
+                                    {job.customerDisplayName || "Cliente"}
+                                  </p>
+                                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                    {job.originText} → {job.destinationText}
+                                  </p>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
+                                      {formatDistance(job.estimatedDistanceKm)}
+                                    </span>
+                                    <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
+                                      {formatDuration(job.routeDurationSeconds)}
+                                    </span>
+                                  </div>
+                                  {job.driverDisplayName ? (
+                                    <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                      <Navigation className="h-3.5 w-3.5 text-orange-300" />
+                                      {job.driverDisplayName}
+                                    </p>
+                                  ) : null}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <p className="rounded-2xl border border-dashed border-border/55 p-4 text-sm text-muted-foreground">
+                              No hay servicios activos ahora.
+                            </p>
+                          )}
+                        </div>
+                        {selectedJob && customerDetailsJobId === selectedJob.jobId ? (
+                          <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/22 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+                            <div className="mb-2 flex justify-end">
                               <button
                                 type="button"
-                                disabled={!hasLastPosition}
-                                className="rounded-md border border-orange-400/20 px-1.5 py-0.5 text-[10px] text-orange-200 enabled:hover:bg-orange-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                onClick={() => setCustomerDetailsJobId(null)}
+                                aria-label="Plegar ficha del servicio"
+                                className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
+                              >
+                                Plegar ficha
+                              </button>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 items-start gap-2.5">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
+                                  <UserRound className="h-4 w-4" />
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-300">
+                                    Cliente del servicio
+                                  </p>
+
+                                  <h4 className="mt-0.5 truncate text-sm font-semibold text-foreground">
+                                    {customer?.displayName ||
+                                      selectedJob.customerDisplayName ||
+                                      "Cliente"}
+                                  </h4>
+
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {selectedCustomer.isLoading
+                                      ? "Consultando contacto…"
+                                      : customerPhone || "Contacto no disponible"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span
+                                className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${
+                                  selectedJob.status === "incident"
+                                    ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
+                                    : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                                }`}
+                              >
+                                {statusLabel(selectedJob.status)}
+                              </span>
+                            </div>
+
+                            <div className="mt-3 rounded-xl border border-white/10 bg-background/40 p-2.5">
+                              <div className="flex items-start gap-2">
+                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
+                                <p className="text-xs leading-relaxed text-muted-foreground">
+                                  {selectedJob.originText}
+                                </p>
+                              </div>
+
+                              <div className="mt-1.5 flex items-start gap-2">
+                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
+                                <p className="text-xs leading-relaxed text-muted-foreground">
+                                  {selectedJob.destinationText}
+                                </p>
+                              </div>
+
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2 py-1 text-[10px] font-medium text-cyan-200">
+                                  {formatDistance(selectedJob.estimatedDistanceKm)}
+                                </span>
+
+                                <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2 py-1 text-[10px] font-medium text-violet-200">
+                                  {formatDuration(selectedJob.routeDurationSeconds)}
+                                </span>
+
+                                <VehicleModeBadge code={selectedJob.vehicleCategoryCode} />
+                              </div>
+                            </div>
+
+                            <div className="mt-2.5 rounded-xl border border-orange-500/15 bg-orange-500/[0.04] px-3 py-2">
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-orange-300">
+                                Conductor
+                              </p>
+
+                              <p className="mt-1 truncate text-xs font-medium text-foreground">
+                                {selectedJob.driverDisplayName || "Pendiente de asignación"}
+                                {selectedJob.vehicleName ? ` · ${selectedJob.vehicleName}` : ""}
+                              </p>
+
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                {selectedJob.driverUserId
+                                  ? selectedDriverPoint
+                                    ? selectedDriver?.locationFresh
+                                      ? "Ubicación en vivo"
+                                      : "Mostrando última ubicación conocida"
+                                    : "Sin ubicación disponible del conductor"
+                                  : "Todavía sin conductor asignado"}
+                              </p>
+                            </div>
+
+                            {selectedPhase ? (
+                              <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-white/10 bg-background/35 px-3 py-2">
+                                <Clock3 className="h-3.5 w-3.5 shrink-0 text-violet-300" />
+                                <span className="text-[11px] font-medium text-foreground">
+                                  {selectedPhase}
+                                </span>
+                              </div>
+                            ) : null}
+
+                            <div className="mt-2.5 grid grid-cols-2 gap-2">
+                              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
+                                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-orange-300">
+                                  Chofer → cliente
+                                </p>
+
+                                <p className="mt-1 text-[11px] font-medium text-foreground">
+                                  {selectedPickupRoute
+                                    ? `${formatDistance(selectedPickupRoute.distanceKm)} · ${formatDuration(
+                                        selectedPickupRoute.durationSeconds,
+                                      )}`
+                                    : selectedJob.driverUserId
+                                      ? "Pendiente de GPS"
+                                      : "Pendiente de conductor"}
+                                </p>
+                              </div>
+
+                              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5">
+                                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-yellow-300">
+                                  Cliente → destino
+                                </p>
+
+                                <p className="mt-1 text-[11px] font-medium text-foreground">
+                                  {selectedTripRoute
+                                    ? `${formatDistance(selectedTripRoute.distanceKm)} · ${formatDuration(
+                                        selectedTripRoute.durationSeconds,
+                                      )}`
+                                    : `${formatDistance(selectedJob.estimatedDistanceKm)} · ${formatDuration(
+                                        selectedJob.routeDurationSeconds,
+                                      )}`}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!whatsappUrl}
                                 onClick={() => {
-                                  const coordinate = driverCoordinate(driver);
-                                  const liveMap = mapRef.current;
-                                  if (coordinate && liveMap) {
-                                    liveMap.easeTo({ center: coordinate, zoom: Math.max(13, liveMap.getZoom()), duration: 450 });
+                                  if (whatsappUrl) {
+                                    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
                                   }
                                 }}
                               >
-                                Ver en mapa
-                              </button>
+                                <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                                WhatsApp
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!customerPhone}
+                                onClick={() => {
+                                  if (customerPhone && navigator.clipboard) {
+                                    void navigator.clipboard.writeText(customerPhone);
+                                  }
+                                }}
+                              >
+                                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                                Copiar
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={
+                                  !canViewCustomers || !selectedJob.customerId || !onOpenCustomer
+                                }
+                                onClick={() => {
+                                  if (selectedJob.customerId) {
+                                    setExpanded(false);
+                                    onOpenCustomer?.(selectedJob.customerId);
+                                  }
+                                }}
+                              >
+                                Cliente 360
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!onOpenJob}
+                                onClick={() => {
+                                  setExpanded(false);
+                                  onOpenJob?.(selectedJob.jobId);
+                                }}
+                              >
+                                Ver servicio
+                              </Button>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {driverListMode === "working"
-                      ? "No hay conductores trabajando."
-                      : "No hay conductores descansando."}
-                  </p>
-                )}
-              </div>
-                    </div>
-                  </section>
-                ) : null}
-                {agendaTab === "services" ? (
-                  <section
-                    aria-label="Servicios activos"
-                    className={`flex min-h-0 flex-1 flex-col overflow-hidden`}
-                  >
-                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Route className="h-4 w-4 text-yellow-300" />
-                        <h4 className="text-xs font-semibold text-foreground">Servicios activos</h4>
-                        <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-cyan-200">{operationalJobs.length}</span>
-                      </div>
-                      <button type="button" onClick={() => setAgendaTab(null)} aria-label="Volver a la leyenda desde Servicios" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Leyenda</button>
-                    </div>
-                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-2.5 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
-                      {incidentCount > 0 ? (
-                        <div className="flex items-center gap-2 rounded-xl border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-200" role="status">
-                          <AlertTriangle className="h-4 w-4 shrink-0" />
-                          {incidentCount} {incidentCount === 1 ? "incidencia requiere" : "incidencias requieren"} atención
-                        </div>
-                      ) : null}
-              <div className="mt-3 space-y-2">
-                {operationalJobs.length ? (
-                  prioritizedJobs.slice(0, 12).map((job) => {
-                    const selected = job.jobId === selectedJobId;
-                    return (
-                      <button
-                        type="button"
-                        key={job.jobId}
-                        aria-expanded={selected && customerDetailsJobId === job.jobId}
-                        onClick={() => {
-                          const opening = customerDetailsJobId !== job.jobId;
-                          setSelectedJobId(job.jobId);
-                          setCustomerDetailsJobId(opening ? job.jobId : null);
-                          if (opening) focusJob(job);
-                        }}
-                        className={`w-full rounded-2xl border p-3 text-left transition ${
-                          selected
-                            ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
-                            : "border-white/10 bg-background/20 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
-                              job.status === "incident"
-                                ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
-                                : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
-                            }`}
-                          >
-                            {statusLabel(job.status)}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                              {job.serviceCode}
-                            </span>
-                            <VehicleModeBadge code={job.vehicleCategoryCode} />
-                          </div>
-                        </div>
-                        <p className="mt-2 text-sm font-semibold text-foreground">
-                          {job.customerDisplayName || "Cliente"}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {job.originText} → {job.destinationText}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-cyan-200">
-                            {formatDistance(job.estimatedDistanceKm)}
-                          </span>
-                          <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2.5 py-1 text-[11px] font-medium text-violet-200">
-                            {formatDuration(job.routeDurationSeconds)}
-                          </span>
-                        </div>
-                        {job.driverDisplayName ? (
-                          <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Navigation className="h-3.5 w-3.5 text-orange-300" />
-                            {job.driverDisplayName}
-                          </p>
+                          </section>
                         ) : null}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <p className="rounded-2xl border border-dashed border-border/55 p-4 text-sm text-muted-foreground">
-                    No hay servicios activos ahora.
-                  </p>
-                )}
-              </div>
-            {selectedJob && customerDetailsJobId === selectedJob.jobId ? (
-              <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/22 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-                <div className="mb-2 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setCustomerDetailsJobId(null)}
-                    aria-label="Plegar ficha del servicio"
-                    className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
-                  >
-                    Plegar ficha
-                  </button>
-                </div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
-                      <UserRound className="h-4 w-4" />
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-300">
-                        Cliente del servicio
-                      </p>
-
-                      <h4 className="mt-0.5 truncate text-sm font-semibold text-foreground">
-                        {customer?.displayName ||
-                          selectedJob.customerDisplayName ||
-                          "Cliente"}
-                      </h4>
-
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {selectedCustomer.isLoading
-                          ? "Consultando contacto…"
-                          : customerPhone || "Contacto no disponible"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${
-                      selectedJob.status === "incident"
-                        ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
-                        : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
-                    }`}
-                  >
-                    {statusLabel(selectedJob.status)}
-                  </span>
-                </div>
-
-                <div className="mt-3 rounded-xl border border-white/10 bg-background/40 p-2.5">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      {selectedJob.originText}
-                    </p>
-                  </div>
-
-                  <div className="mt-1.5 flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      {selectedJob.destinationText}
-                    </p>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2 py-1 text-[10px] font-medium text-cyan-200">
-                      {formatDistance(selectedJob.estimatedDistanceKm)}
-                    </span>
-
-                    <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2 py-1 text-[10px] font-medium text-violet-200">
-                      {formatDuration(selectedJob.routeDurationSeconds)}
-                    </span>
-
-                    <VehicleModeBadge code={selectedJob.vehicleCategoryCode} />
-                  </div>
-                </div>
-
-                <div className="mt-2.5 rounded-xl border border-orange-500/15 bg-orange-500/[0.04] px-3 py-2">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-orange-300">
-                    Conductor
-                  </p>
-
-                  <p className="mt-1 truncate text-xs font-medium text-foreground">
-                    {selectedJob.driverDisplayName || "Pendiente de asignación"}
-                    {selectedJob.vehicleName
-                      ? ` · ${selectedJob.vehicleName}`
-                      : ""}
-                  </p>
-
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    {selectedJob.driverUserId
-                      ? selectedDriverPoint
-                        ? selectedDriver?.locationFresh
-                          ? "Ubicación en vivo"
-                          : "Mostrando última ubicación conocida"
-                        : "Sin ubicación disponible del conductor"
-                      : "Todavía sin conductor asignado"}
-                  </p>
-                </div>
-
-                {selectedPhase ? (
-                  <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-white/10 bg-background/35 px-3 py-2">
-                    <Clock3 className="h-3.5 w-3.5 shrink-0 text-violet-300" />
-                    <span className="text-[11px] font-medium text-foreground">
-                      {selectedPhase}
-                    </span>
-                  </div>
-                ) : null}
-
-                <div className="mt-2.5 grid grid-cols-2 gap-2">
-                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-orange-300">
-                      Chofer → cliente
-                    </p>
-
-                    <p className="mt-1 text-[11px] font-medium text-foreground">
-                      {selectedPickupRoute
-                        ? `${formatDistance(selectedPickupRoute.distanceKm)} · ${formatDuration(
-                            selectedPickupRoute.durationSeconds,
-                          )}`
-                        : selectedJob.driverUserId
-                          ? "Pendiente de GPS"
-                          : "Pendiente de conductor"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-yellow-300">
-                      Cliente → destino
-                    </p>
-
-                    <p className="mt-1 text-[11px] font-medium text-foreground">
-                      {selectedTripRoute
-                        ? `${formatDistance(selectedTripRoute.distanceKm)} · ${formatDuration(
-                            selectedTripRoute.durationSeconds,
-                          )}`
-                        : `${formatDistance(selectedJob.estimatedDistanceKm)} · ${formatDuration(
-                            selectedJob.routeDurationSeconds,
-                          )}`}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!whatsappUrl}
-                    onClick={() => {
-                      if (whatsappUrl) {
-                        window.open(
-                          whatsappUrl,
-                          "_blank",
-                          "noopener,noreferrer",
-                        );
-                      }
-                    }}
-                  >
-                    <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                    WhatsApp
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!customerPhone}
-                    onClick={() => {
-                      if (customerPhone && navigator.clipboard) {
-                        void navigator.clipboard.writeText(customerPhone);
-                      }
-                    }}
-                  >
-                    <Copy className="mr-1.5 h-3.5 w-3.5" />
-                    Copiar
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={
-                      !canViewCustomers ||
-                      !selectedJob.customerId ||
-                      !onOpenCustomer
-                    }
-                    onClick={() => {
-                      if (selectedJob.customerId) {
-                        setExpanded(false);
-                        onOpenCustomer?.(selectedJob.customerId);
-                      }
-                    }}
-                  >
-                    Cliente 360
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!onOpenJob}
-                    onClick={() => {
-                      setExpanded(false);
-                      onOpenJob?.(selectedJob.jobId);
-                    }}
-                  >
-                    Ver servicio
-                  </Button>
-                </div>
-              </section>
-            ) : null}
-            {selectedJob?.status === "incident" ? (
-              <section className="rounded-[24px] border border-red-500/25 bg-red-500/[0.05] p-4">
-                <div className="flex items-center gap-2 text-red-300">
-                  <AlertTriangle className="h-4 w-4" />
-                  <h4 className="font-semibold">Incidencia activa</h4>
-                </div>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  El servicio seleccionado tiene una incidencia sin resolver y permanece visible en
-                  el centro de operaciones.
-                </p>
-              </section>
-            ) : null}
-
-                    </div>
-                  </section>
-                ) : null}
-                {agendaTab === "clients" ? (
-                  <section aria-label="Clientes de servicios activos" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <UserRound className="h-4 w-4 text-emerald-300" />
-                        <h4 className="text-xs font-semibold text-foreground">Clientes</h4>
-                        <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-emerald-200">{customerJobs.length}</span>
-                      </div>
-                      <button type="button" onClick={() => setAgendaTab(null)} aria-label="Volver a la leyenda desde Clientes" className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10">Leyenda</button>
-                    </div>
-                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
-                      <p className="text-[11px] text-slate-300">Clientes vinculados a servicios activos, no directorio general.</p>
-                      {customerJobs.length ? customerJobs.map((job) => (
-                        <div key={job.customerId || job.jobId} className="rounded-xl border border-white/15 bg-white/[0.035] p-3">
-                          <div className="flex items-start gap-2">
-                            <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-foreground">{job.customerDisplayName || "Cliente"}</p>
-                              <p className="mt-1 text-[11px] text-slate-300">{job.serviceCode} · {statusLabel(job.status)}</p>
-                              <p className="mt-1 line-clamp-2 text-[11px] text-slate-300">{job.originText} → {job.destinationText}</p>
+                        {selectedJob?.status === "incident" ? (
+                          <section className="rounded-[24px] border border-red-500/25 bg-red-500/[0.05] p-4">
+                            <div className="flex items-center gap-2 text-red-300">
+                              <AlertTriangle className="h-4 w-4" />
+                              <h4 className="font-semibold">Incidencia activa</h4>
                             </div>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <button type="button" className="rounded-lg border border-cyan-400/25 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/10" onClick={() => {
-                              setSelectedJobId(job.jobId);
-                              setCustomerDetailsJobId(job.jobId);
-                              setAgendaTab("services");
-                              focusJob(job);
-                            }}>Ver servicio</button>
-                            <button type="button" className="rounded-lg border border-emerald-400/25 px-2.5 py-1.5 text-xs font-semibold text-emerald-200 enabled:hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-40" disabled={!canViewCustomers || !job.customerId || !onOpenCustomer} onClick={() => {
-                              if(job.customerId) { setExpanded(false); onOpenCustomer?.(job.customerId); }
-                            }}>Cliente 360</button>
-                          </div>
+                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                              El servicio seleccionado tiene una incidencia sin resolver y permanece
+                              visible en el centro de operaciones.
+                            </p>
+                          </section>
+                        ) : null}
+                      </div>
+                    </section>
+                  ) : null}
+                  {agendaTab === "clients" ? (
+                    <section
+                      aria-label="Clientes de servicios activos"
+                      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                    >
+                      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <UserRound className="h-4 w-4 text-emerald-300" />
+                          <h4 className="text-xs font-semibold text-foreground">Clientes</h4>
+                          <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-emerald-200">
+                            {customerJobs.length}
+                          </span>
                         </div>
-                      )) : (
-                        <p className="rounded-xl border border-dashed border-white/15 p-4 text-xs text-slate-300">No hay clientes vinculados a servicios activos.</p>
-                      )}
-                    </div>
-                  </section>
-                ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setAgendaTab(null)}
+                          aria-label="Volver a la leyenda desde Clientes"
+                          className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/10"
+                        >
+                          Leyenda
+                        </button>
+                      </div>
+                      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+                        <p className="text-[11px] text-slate-300">
+                          Clientes vinculados a servicios activos, no directorio general.
+                        </p>
+                        {customerJobs.length ? (
+                          customerJobs.map((job) => (
+                            <div
+                              key={job.customerId || job.jobId}
+                              className="rounded-xl border border-white/15 bg-white/[0.035] p-3"
+                            >
+                              <div className="flex items-start gap-2">
+                                <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-semibold text-foreground">
+                                    {job.customerDisplayName || "Cliente"}
+                                  </p>
+                                  <p className="mt-1 text-[11px] text-slate-300">
+                                    {job.serviceCode} · {statusLabel(job.status)}
+                                  </p>
+                                  <p className="mt-1 line-clamp-2 text-[11px] text-slate-300">
+                                    {job.originText} → {job.destinationText}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-cyan-400/25 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/10"
+                                  onClick={() => {
+                                    setSelectedJobId(job.jobId);
+                                    setCustomerDetailsJobId(job.jobId);
+                                    setAgendaTab("services");
+                                    focusJob(job);
+                                  }}
+                                >
+                                  Ver servicio
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-emerald-400/25 px-2.5 py-1.5 text-xs font-semibold text-emerald-200 enabled:hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                  disabled={!canViewCustomers || !job.customerId || !onOpenCustomer}
+                                  onClick={() => {
+                                    if (job.customerId) {
+                                      setExpanded(false);
+                                      onOpenCustomer?.(job.customerId);
+                                    }
+                                  }}
+                                >
+                                  Cliente 360
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="rounded-xl border border-dashed border-white/15 p-4 text-xs text-slate-300">
+                            No hay clientes vinculados a servicios activos.
+                          </p>
+                        )}
+                      </div>
+                    </section>
+                  ) : null}
                 </aside>
               ) : null}
-              <nav aria-label="Pestañas laterales de la agenda" className="pointer-events-auto flex w-11 shrink-0 flex-col items-stretch gap-1 overflow-y-auto rounded-r-xl bg-slate-950/70 py-3 [scrollbar-width:none]">
-                {([
-                  { id: "drivers" as const, title: "Conductores", icon: <Users className="h-4 w-4" /> },
-                  { id: "services" as const, title: "Servicios", icon: <Route className="h-4 w-4" /> },
-                  { id: "clients" as const, title: "Clientes", icon: <UserRound className="h-4 w-4" /> },
-                ]).map((tab) => (
+              <nav
+                aria-label="Pestañas laterales de la agenda"
+                className="pointer-events-auto flex w-11 shrink-0 flex-col items-stretch gap-1 overflow-y-auto rounded-r-xl bg-slate-950/70 py-3 [scrollbar-width:none]"
+              >
+                {[
+                  {
+                    id: "drivers" as const,
+                    title: "Conductores",
+                    icon: <Users className="h-4 w-4" />,
+                  },
+                  {
+                    id: "services" as const,
+                    title: "Servicios",
+                    icon: <Route className="h-4 w-4" />,
+                  },
+                  {
+                    id: "clients" as const,
+                    title: "Clientes",
+                    icon: <UserRound className="h-4 w-4" />,
+                  },
+                ].map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
@@ -2896,8 +2929,17 @@ export default function MarketplaceOperationalMap({
                     className={`relative flex min-h-[92px] shrink-0 flex-col items-center justify-center gap-1 rounded-r-lg border border-l-0 px-1.5 py-2 text-slate-100 transition-colors ${panelOpen && agendaTab === tab.id ? "border-cyan-300/55 bg-cyan-800/80 text-white shadow-sm" : "border-white/15 bg-slate-800/95 hover:bg-slate-700"}`}
                   >
                     {tab.icon}
-                    <span className="[writing-mode:vertical-rl] text-[11px] font-semibold tracking-[0.04em]">{tab.title}</span>
-                    {tab.id === "services" && incidentCount > 0 ? <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white" aria-label={`${incidentCount} incidencias activas`}>{incidentCount}</span> : null}
+                    <span className="[writing-mode:vertical-rl] text-[11px] font-semibold tracking-[0.04em]">
+                      {tab.title}
+                    </span>
+                    {tab.id === "services" && incidentCount > 0 ? (
+                      <span
+                        className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                        aria-label={`${incidentCount} incidencias activas`}
+                      >
+                        {incidentCount}
+                      </span>
+                    ) : null}
                   </button>
                 ))}
               </nav>
