@@ -24,7 +24,7 @@ type OutboxRow = {
   claim_id: string;
   attempt_count: number;
 };
-type DeviceToken = { id: string; token: string; platform: "android" | "ios" | "web" };
+type DeviceToken = { id: string; token: string; platform: "android" | "ios" | "web"; job_alert_channel_version?: number };
 type PushContent = Pick<OutboxRow, "id" | "kind" | "notification_date" | "title" | "body" | "data">;
 
 const PROJECT_ID = "dfb41cea-a812-46f2-b511-7a60bd3d78af";
@@ -113,7 +113,7 @@ function payloadData(row: PushContent) {
 
 async function sendFcm(account: ServiceAccount, accessToken: string, row: PushContent, device: DeviceToken): Promise<FcmResult> {
   // La categoría de la fila validada controla el canal, no row.data.kind.
-  const message = buildFcmMessage(device.platform, device.token, row.title, row.body, payloadData(row), row.kind);
+  const message = buildFcmMessage(device.platform, device.token, row.title, row.body, payloadData(row), row.kind, device.job_alert_channel_version);
   try {
     const response = await fetch(
       `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(account.project_id)}/messages:send`,
@@ -252,7 +252,7 @@ export default {
         : row.kind === "new_subscription"
           ? "admin"
           : "client";
-      let deviceQuery = admin.from("push_device_tokens").select("id,token,platform")
+      let deviceQuery = admin.from("push_device_tokens").select("id,token,platform,job_alert_channel_version")
         .eq("project_id", row.project_id).eq("user_id", row.user_id).eq("enabled", true)
         .eq("app_scope", targetAudience);
       if (targetPlatform) deviceQuery = deviceQuery.eq("platform", targetPlatform);
