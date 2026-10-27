@@ -69,6 +69,55 @@ Deno.serve(async (request) => {
       delete params.target_details.estimated_distance_km;
       delete params.target_vehicle_category_code;
     }
+    if (operation === "get_job") {
+      // La RPC valida session_id/token y propiedad de ESTA carrera antes de acceder al GPS.
+      const { data: jobs, error: jobError } = await supabase.rpc("get_marketplace_customer_job", params);
+      if (jobError) throw jobError;
+      if (!Array.isArray(jobs) || jobs.length === 0) return json({ data: jobs ?? [] });
+      const job = jobs[0] as Record<string, unknown>;
+      const safeJob: Record<string, unknown> = { ...job };
+      const gpsAllowed = ["accepted", "en_route", "pickup", "in_progress"].includes(String(job.status));
+      if (gpsAllowed && typeof params.target_job_id === "string") {
+        // El service_role no se facilita al navegador. Sin SELECT directo a ubicaciones.
+        const { data: assignment, error: assignmentError } = await supabase.from("jobs")
+          .select("assigned_driver_user_id,assigned_vehicle_id")
+          .eq("project_id", project.id)
+          .eq("id", params.target_job_id)
+          .is("test_deleted_at", null)
+          .maybeSingle();
+        if (assignmentError) throw assignmentError;
+        if (assignment?.assigned_driver_user_id && assignment?.assigned_vehicle_id) {
+          const { data: location, error: locationError } = await supabase.from("marketplace_driver_locations")
+            .select("latitude,longitude,accuracy_m,speed_mps,heading_degrees,captured_at")
+            .eq("project_id", project.id)
+            .eq("driver_user_id", assignment.assigned_driver_user_id)
+            .eq("vehicle_id", assignment.assigned_vehicle_id)
+            .maybeSingle();
+          // Un error GPS nunca debe impedir leer el servicio o contactar al conductor.
+          if (!locationError && location) {
+            const lat = Number(location.latitude);
+            const lon = Number(location.longitude);
+            const accuracy = location.accuracy_m == null ? null : Number(location.accuracy_m);
+            const speed = location.speed_mps == null ? null : Number(location.speed_mps);
+            const capturedAt = String(location.captured_at ?? "");
+            const ageMs = Date.now() - Date.parse(capturedAt);
+            if (Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+                Number.isFinite(lon) && lon >= -180 && lon <= 180 &&
+                Number.isFinite(ageMs) && ageMs >= -15000 && ageMs <= 120000) {
+              safeJob.driver_location = {
+                latitude: lat,
+                longitude: lon,
+                accuracy_m: accuracy != null && Number.isFinite(accuracy) ? accuracy : null,
+                speed_mps: speed != null && Number.isFinite(speed) ? speed : null,
+                captured_at: capturedAt,
+                fresh: ageMs <= 60000,
+              };
+            }
+          }
+        }
+      }
+      return json({ data: [safeJob, ...jobs.slice(1)] });
+    }
     if (operation === "media") {
       const { data: jobs, error } = await supabase.rpc("get_marketplace_customer_job", params); if (error || !jobs?.[0]) throw error || new Error("JOB_NOT_FOUND");
       const job = jobs[0]; if (!job.driver_photo_asset_id && !job.vehicle_main_photo_asset_id) throw new Error("ASSIGNED_MEDIA_NOT_AVAILABLE");
