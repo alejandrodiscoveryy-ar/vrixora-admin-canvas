@@ -160,3 +160,23 @@ Deno.test("malformed optional worker controls are rejected", async () => {
   await assertRejects(async () => parseWorkerOptions({ concurrency: 21 }));
   await assertRejects(async () => parseWorkerOptions({ time_budget_ms: 999 }));
 });
+
+Deno.test("new driver tokens receive official job channel V2", () => {
+  const message = buildFcmMessage("android", "token", "Title", "Body", {}, "marketplace_job_available", 2);
+  const android = message.android as { notification: { channel_id: string } };
+  assertEquals(android.notification.channel_id, "tuktuk_nuevas_carreras_v2");
+});
+
+Deno.test("legacy and unknown device capabilities always retain V1", () => {
+  for (const version of [0, 1, 3]) {
+    const message = buildFcmMessage("android", "token", "Title", "Body", {}, "marketplace_job_available", version);
+    const android = message.android as { notification: { channel_id: string } };
+    assertEquals(android.notification.channel_id, "tuktuk_nuevas_carreras_v1");
+  }
+});
+
+Deno.test("unrelated push kinds never switch to the new channel", () => {
+  const message = buildFcmMessage("android", "token", "Title", "Body", {}, "app_announcement", 2);
+  const android = message.android as { notification: { channel_id: string } };
+  assertEquals(android.notification.channel_id, "tuktuk_general");
+});

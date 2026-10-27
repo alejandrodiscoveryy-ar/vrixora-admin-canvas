@@ -99,6 +99,7 @@ export function buildFcmMessage(
   body: string,
   data: Record<string, string>,
   notificationKind: string,
+  jobChannelVersion: number = 1,
 ): Record<string, unknown> {
   const message: Record<string, unknown> = { token, data };
   if (platform === "web") {
@@ -124,7 +125,7 @@ export function buildFcmMessage(
       priority: "high",
       notification: {
         channel_id: notificationKind === "marketplace_job_available"
-          ? "tuktuk_nuevas_carreras_v1"
+          ? (jobChannelVersion === 2 ? "tuktuk_nuevas_carreras_v2" : "tuktuk_nuevas_carreras_v1")
           : "tuktuk_general",
       },
     };
