@@ -85,7 +85,7 @@ Deno.serve(async (request) => {
           .eq("id", params.target_job_id)
           .is("test_deleted_at", null)
           .maybeSingle();
-        if (assignmentError) throw assignmentError;
+        if (assignmentError) { /* GPS opcional: conservar respuesta del servicio */ }
         if (assignment?.assigned_driver_user_id && assignment?.assigned_vehicle_id) {
           const { data: location, error: locationError } = await supabase.from("marketplace_driver_locations")
             .select("latitude,longitude,accuracy_m,speed_mps,heading_degrees,captured_at")
