@@ -1,5 +1,5 @@
--- TUKTUK Ficha 360 Premium: migration proposed for review only, NOT DEPLOYED.
--- Production deployment requires separate authorization.
+-- TUKTUK Ficha 360 Premium: SQL aplicado en Supabase el 2026-10-28.
+-- Migracion registrada: 20261028173537_admin_driver_360_premium_v1_20261028.
 create or replace function public.admin_get_marketplace_driver_management_v1(
   target_project_id uuid, target_driver_user_id uuid
 ) returns jsonb language plpgsql stable security definer set search_path = '' as $function$
@@ -26,7 +26,7 @@ begin
   where project_id = target_project_id and user_id = target_driver_user_id;
   if not found then raise exception 'DRIVER_NOT_FOUND' using errcode = 'P0002'; end if;
   select * into p from public.profiles where id = target_driver_user_id;
-  select vv, a.is_active into v, active_assignment
+  select vv.* into v
   from public.vehicles vv
   join public.driver_vehicle_assignments a
     on a.project_id = vv.project_id and a.vehicle_id = vv.id
@@ -34,6 +34,11 @@ begin
   where vv.project_id = target_project_id and vv.deleted_at is null
   order by a.is_active desc, vv.created_at desc, vv.id limit 1;
   selected_vehicle_id := v.id;
+  select coalesce(a.is_active,false) into active_assignment
+  from public.driver_vehicle_assignments a
+  where a.project_id = target_project_id and a.driver_user_id = target_driver_user_id
+    and a.vehicle_id = selected_vehicle_id limit 1;
+  active_assignment := coalesce(active_assignment,false);
 
   checks := jsonb_build_array(
     jsonb_build_object('key','not_suspended','label','Conductor sin suspensión','ok',d.status <> 'suspended' and d.suspended_at is null),

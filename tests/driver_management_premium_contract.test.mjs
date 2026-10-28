@@ -49,3 +49,12 @@ test("Ficha 360: variables SQL no ambiguas y requisitos no aplicables", () => {
   assert.match(panel, /applicable !== false/);
   assert.match(panel, /No aplica/);
 });
+test("La migracion de la ficha 360 reproduce el SQL corregido", () => {
+  const source = file("docs/drafts/driver_management_v1.sql");
+  const migration = file("supabase/migrations/20261028173537_admin_driver_360_premium_v1_20261028.sql");
+  assert.equal(migration, source);
+  assert.match(source, /select vv\.\* into v/);
+  assert.match(source, /select coalesce\(a\.is_active,false\) into active_assignment/);
+  assert.match(source, /active_assignment := coalesce\(active_assignment,false\)/);
+  assert.doesNotMatch(source, /select vv, a\.is_active into v, active_assignment/);
+});
