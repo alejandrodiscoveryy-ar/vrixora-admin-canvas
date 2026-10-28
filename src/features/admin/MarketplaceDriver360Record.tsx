@@ -157,6 +157,7 @@ export default function MarketplaceDriver360Record({
   canManageDriver,
   isAvailable,
   onOpenJob,
+  onChangeSuspension,
 }: {
   projectId: string;
   driverUserId: string;
@@ -168,6 +169,7 @@ export default function MarketplaceDriver360Record({
   canManageDriver: boolean;
   isAvailable: boolean | null;
   onOpenJob: (jobId: string) => void;
+  onChangeSuspension: (suspend: boolean) => void;
 }) {
   const record = useInfiniteQuery({
     queryKey: ["marketplace-driver-360-record", projectId, driverUserId],
@@ -240,21 +242,16 @@ export default function MarketplaceDriver360Record({
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
             {whatsApp ? (
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" asChild>
-                  <a className="border-emerald-500/30 text-emerald-200" href={whatsApp.web} target="_blank" rel="noopener noreferrer">
-                    WhatsApp
-                  </a>
-                </Button>
+              <Button size="sm" variant="outline" asChild>
                 <a
-                  className="text-xs text-emerald-300 underline"
+                  className="border-emerald-500/30 text-emerald-200"
+                  href={whatsApp.web}
                   target="_blank"
                   rel="noopener noreferrer"
-                  href={whatsApp.web}
                 >
-                  Web
+                  WhatsApp
                 </a>
-              </div>
+              </Button>
             ) : null}
             {contactPhone ? (
               <Button size="sm" variant="outline" asChild>
@@ -285,12 +282,106 @@ export default function MarketplaceDriver360Record({
         ) : null}
       </section>
 
+      <section
+        aria-label="Información del vehículo"
+        className="rounded-[20px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.055] via-background/85 to-background/80 p-4 sm:p-5"
+      >
+        <div className="flex items-center gap-2">
+          <CarFront className="h-4 w-4 text-cyan-300" />
+          <h3 className="text-base font-semibold text-foreground">Información del vehículo</h3>
+        </div>
+        {detail.vehicles.length ? (
+          <div className="mt-3 space-y-4">
+            {detail.vehicles.map((item) => (
+              <div
+                key={item.vehicle.id}
+                className="grid min-w-0 gap-4 rounded-2xl border border-cyan-400/10 bg-background/45 p-3 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:items-start"
+              >
+                <div className="min-w-0">
+                  <ImageWithFallback
+                    variant="vehicle"
+                    url={media?.vehiclePhotos[item.vehicle.id]}
+                    alt={`Vehículo ${item.vehicle.name}`}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="min-w-0 break-words text-sm font-semibold text-foreground">
+                      {text(item.vehicle.name, "Vehículo")}
+                    </p>
+                    {item.assignment?.isActive ? (
+                      <span className="text-xs text-emerald-300">Principal</span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 break-words text-xs text-muted-foreground">
+                    {[item.vehicle.brand, item.vehicle.model, item.vehicle.year]
+                      .filter(Boolean)
+                      .join(" · ") || "Sin marca o modelo registrados"}
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <Fact label="Categoría" value={text(item.vehicle.categoryCode)} />
+                    <Fact
+                      label="Estado"
+                      value={statusText(item.vehicle.marketplaceStatus ?? "incomplete")}
+                    />
+                    {item.vehicle.registration ? (
+                      <Fact label="Matrícula" value={item.vehicle.registration} />
+                    ) : null}
+                    {item.assignment ? (
+                      <Fact
+                        label="Disponibilidad"
+                        value={item.assignment.isAvailable ? "Disponible" : "No disponible"}
+                      />
+                    ) : null}
+                  </div>
+                  {item.services.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {item.services.map((service) => (
+                        <span
+                          key={service}
+                          className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-2 py-1 text-[11px] text-cyan-100"
+                        >
+                          {serviceText(service)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">Sin vehículos asociados.</p>
+        )}
+      </section>
+
       {canManageDriver ? (
         <MarketplaceDriverManagementPanel
           projectId={projectId}
           driverUserId={driverUserId}
           onOpenJob={onOpenJob}
         />
+      ) : null}
+
+      {canManageDriver ? (
+        <section
+          aria-label="Acciones administrativas sensibles"
+          className="flex flex-col gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p className="text-sm font-semibold text-foreground">Acciones administrativas</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Cambiar el estado del conductor requiere una confirmación independiente.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant={detail.driver.status === "suspended" ? "outline" : "destructive"}
+            onClick={() => onChangeSuspension(detail.driver.status !== "suspended")}
+          >
+            {detail.driver.status === "suspended" ? "Reactivar conductor" : "Suspender conductor"}
+          </Button>
+        </section>
       ) : null}
 
       <section aria-label="Récord profesional" className="space-y-2.5">
@@ -455,69 +546,6 @@ export default function MarketplaceDriver360Record({
         </section>
 
         <aside className="min-w-0 space-y-3" aria-label="Datos del expediente">
-          <section className="rounded-[20px] border border-border/60 bg-background/40 p-3.5 sm:p-4">
-            <div className="flex items-center gap-2">
-              <CarFront className="h-4 w-4 text-cyan-300" />
-              <h3 className="text-sm font-semibold text-foreground">Vehículos y servicios</h3>
-            </div>
-            {detail.vehicles.length ? (
-              <div className="mt-3 space-y-4">
-                {detail.vehicles.map((item) => (
-                  <div key={item.vehicle.id} className="min-w-0">
-                    <ImageWithFallback
-                      variant="vehicle"
-                      url={media?.vehiclePhotos[item.vehicle.id]}
-                      alt={`Vehículo ${item.vehicle.name}`}
-                    />
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="min-w-0 break-words text-sm font-semibold text-foreground">
-                        {text(item.vehicle.name, "Vehículo")}
-                      </p>
-                      {item.assignment?.isActive ? (
-                        <span className="text-xs text-emerald-300">Principal</span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 break-words text-xs text-muted-foreground">
-                      {[item.vehicle.brand, item.vehicle.model, item.vehicle.year]
-                        .filter(Boolean)
-                        .join(" · ") || "Sin marca o modelo registrados"}
-                    </p>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <Fact label="Categoría" value={text(item.vehicle.categoryCode)} />
-                      <Fact
-                        label="Estado"
-                        value={statusText(item.vehicle.marketplaceStatus ?? "incomplete")}
-                      />
-                      {item.vehicle.registration ? (
-                        <Fact label="Matrícula" value={item.vehicle.registration} />
-                      ) : null}
-                      {item.assignment ? (
-                        <Fact
-                          label="Disponibilidad"
-                          value={item.assignment.isAvailable ? "Disponible" : "No disponible"}
-                        />
-                      ) : null}
-                    </div>
-                    {item.services.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {item.services.map((service) => (
-                          <span
-                            key={service}
-                            className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-2 py-1 text-[11px] text-cyan-100"
-                          >
-                            {serviceText(service)}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">Sin vehículos asociados.</p>
-            )}
-          </section>
-
           <section className="rounded-[20px] border border-border/60 bg-background/40 p-3.5 sm:p-4">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-emerald-300" />

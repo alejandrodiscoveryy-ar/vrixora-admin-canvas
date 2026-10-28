@@ -1907,9 +1907,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                       key={item.userId}
                       className="group relative overflow-hidden rounded-[22px] border border-cyan-400/14 bg-gradient-to-r from-cyan-500/[0.055] via-background/60 to-emerald-500/[0.025] px-4 py-3.5 shadow-[0_18px_50px_-40px_rgba(34,211,238,0.9)] transition duration-200 hover:border-cyan-400/26 hover:from-cyan-500/[0.075] hover:to-emerald-500/[0.04]"
                     >
+                      <button
+                        type="button"
+                        className="absolute inset-0 z-10 cursor-pointer rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                        onClick={() => setDriver360Id(item.userId)}
+                        aria-label={`Abrir ficha 360 de ${item.displayName}`}
+                      />
                       <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-cyan-400/[0.035] blur-3xl" />
 
-                      <div className="relative grid gap-3 lg:grid-cols-[minmax(220px,1.15fr)_minmax(190px,0.8fr)_minmax(220px,1fr)_auto] lg:items-center">
+                      <div className="pointer-events-none relative grid gap-3 lg:grid-cols-[minmax(220px,1.15fr)_minmax(190px,0.8fr)_minmax(220px,1fr)_auto] lg:items-center">
                         <div className="min-w-0">
                           <div className="flex items-start gap-3">
                             <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
@@ -1988,64 +1994,23 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="w-full border-cyan-400/25 bg-cyan-500/[0.075] text-cyan-100 hover:bg-cyan-500/[0.13] hover:text-cyan-50 sm:w-auto"
-                            onClick={() => setDriver360Id(item.userId)}
-                            aria-label={`Abrir ficha 360 de ${item.displayName}`}
-                          >
-                            <Eye className="mr-1.5 h-4 w-4" />
-                            Ficha 360
-                          </Button>
+                        <div className="pointer-events-none relative z-20 flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
                           {driverWhatsAppLinks(item.phone) ? (
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                asChild
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-200"
-                              >
-                                <a
-                                  href={driverWhatsAppLinks(item.phone)!.web}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  aria-label={`Abrir WhatsApp Web con ${item.displayName}`}
-                                >
-                                  WhatsApp
-                                </a>
-                              </Button>
-                              <a
-                                className="text-[11px] text-emerald-300 underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                href={driverWhatsAppLinks(item.phone)!.web}
-                                title="Alternativa si no está instalada la aplicación"
-                              >
-                                Web
-                              </a>
-                            </div>
-                          ) : null}
-                          {canManageMarketplace ? (
                             <Button
+                              asChild
+                              type="button"
                               size="sm"
                               variant="outline"
-                              className={`w-full lg:w-auto ${
-                                item.status === "suspended"
-                                  ? "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-200 hover:bg-emerald-500/[0.12] hover:text-emerald-100"
-                                  : "border-rose-500/20 bg-rose-500/[0.035] text-rose-200 hover:bg-rose-500/[0.08] hover:text-rose-100"
-                              }`}
-                              onClick={() =>
-                                setDriver({
-                                  id: item.userId,
-                                  suspended: item.status !== "suspended",
-                                })
-                              }
+                              className="pointer-events-auto w-full border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-200 sm:w-auto"
                             >
-                              {item.status === "suspended" ? "Reactivar" : "Suspender"}
+                              <a
+                                href={driverWhatsAppLinks(item.phone)!.web}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Abrir WhatsApp Web con ${item.displayName}`}
+                              >
+                                WhatsApp
+                              </a>
                             </Button>
                           ) : null}
                         </div>
@@ -2761,6 +2726,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 onOpenJob={(id) => {
                   setDriver360Id(null);
                   setJobId(id);
+                }}
+                onChangeSuspension={(suspended) => {
+                  if (!driver360Id) return;
+                  setReason("");
+                  setDriver({ id: driver360Id, suspended });
+                  setDriver360Id(null);
                 }}
               />
             ) : (
