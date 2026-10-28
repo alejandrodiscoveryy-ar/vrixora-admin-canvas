@@ -2011,6 +2011,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               >
                                 <a
                                   href={driverWhatsAppLinks(item.phone)!.web}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   aria-label={`Abrir WhatsApp Web con ${item.displayName}`}
                                 >
                                   WhatsApp

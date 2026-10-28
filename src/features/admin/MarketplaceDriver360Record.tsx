@@ -242,7 +242,7 @@ export default function MarketplaceDriver360Record({
             {whatsApp ? (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" asChild>
-                  <a className="border-emerald-500/30 text-emerald-200" href={whatsApp.web}>
+                  <a className="border-emerald-500/30 text-emerald-200" href={whatsApp.web} target="_blank" rel="noopener noreferrer">
                     WhatsApp
                   </a>
                 </Button>

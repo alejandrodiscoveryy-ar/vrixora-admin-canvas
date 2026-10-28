@@ -13,6 +13,8 @@ test("WhatsApp Desktop y alternativa web sin pre-envío", () => {
   const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
   assert.match(list, /driverWhatsAppLinks\(item\.phone\)/);
   assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
+  assert.match(list, /href=\{driverWhatsAppLinks\(item\.phone\)!\.web\}\s+target="_blank"/);
+  assert.match(record, /href=\{whatsApp\.web\}\s+target="_blank"/);
 });
 
 test("Ficha 360 muestra requisitos, documentos seguros e historial", () => {
