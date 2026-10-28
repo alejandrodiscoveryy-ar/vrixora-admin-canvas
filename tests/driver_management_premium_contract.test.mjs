@@ -53,10 +53,31 @@ test("Ficha 360: variables SQL no ambiguas y requisitos no aplicables", () => {
 });
 test("La migracion de la ficha 360 reproduce el SQL corregido", () => {
   const source = file("docs/drafts/driver_management_v1.sql");
-  const migration = file("supabase/migrations/20261028173537_admin_driver_360_premium_v1_20261028.sql");
+  const migration = file(
+    "supabase/migrations/20261028173537_admin_driver_360_premium_v1_20261028.sql",
+  );
   assert.equal(migration, source);
   assert.match(source, /select vv\.\* into v/);
   assert.match(source, /select coalesce\(a\.is_active,false\) into active_assignment/);
   assert.match(source, /active_assignment := coalesce\(active_assignment,false\)/);
   assert.doesNotMatch(source, /select vv, a\.is_active into v, active_assignment/);
+});
+
+test("UX directorio de conductores: fila 360, WhatsApp único y suspensión separada", () => {
+  const list = file("src/features/admin/MarketplaceSection.tsx");
+  const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
+  const row = list.split("{driverRows.map((item) => (")[1]?.split("</article>")[0] ?? "";
+  assert.match(row, /className="absolute inset-0 z-10 cursor-pointer/);
+  assert.match(row, /onClick=\{\(\) => setDriver360Id\(item\.userId\)\}/);
+  assert.equal((row.match(/WhatsApp\s*<\/a>/g) ?? []).length, 1);
+  assert.doesNotMatch(row, /setDriver\(\{/);
+  assert.match(record, /onChangeSuspension\(detail\.driver\.status !== "suspended"\)/);
+  const conductor = record.indexOf("Expediente del conductor");
+  const vehicle = record.indexOf('aria-label="Información del vehículo"');
+  const management = record.indexOf("<MarketplaceDriverManagementPanel");
+  const history = record.indexOf('aria-label="Récord profesional"');
+  assert.ok(conductor >= 0 && vehicle > conductor && management > vehicle && history > management);
+  assert.equal((record.match(/aria-label="Información del vehículo"/g) ?? []).length, 1);
+  assert.ok(record.includes("sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]"));
+  assert.match(record, /aria-label="Acciones administrativas sensibles"/);
 });
