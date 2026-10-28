@@ -440,7 +440,7 @@ export default function MarketplaceDriverManagementPanel({
                 }
               >
                 {item.label}
-                {item.applicable === false ? " Â· No aplica" : ""}
+                {item.applicable === false ? " - No aplica" : ""}
               </span>
             </div>
           ))}

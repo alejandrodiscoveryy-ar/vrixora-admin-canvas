@@ -53,7 +53,7 @@ begin
       select 1 from public.media_assets a where a.project_id=target_project_id and a.id=d.identity_back_asset_id
       and a.owner_user_id=target_driver_user_id and a.asset_kind='identity_back'
       and a.storage_bucket='marketplace-identity' and a.status='available')),
-    jsonb_build_object('key','active_vehicle','label','Vehículo operativo asociado','ok',coalesce(active_assignment,false) and vehicle_id is not null and v.marketplace_status <> 'suspended'),
+    jsonb_build_object('key','active_vehicle','label','Vehículo operativo asociado','ok',coalesce(active_assignment,false) and selected_vehicle_id is not null and v.marketplace_status <> 'suspended'),
     jsonb_build_object('key','category','label','Categoría del vehículo','ok',coalesce(nullif(btrim(v.category_code),'') is not null,false)),
     jsonb_build_object('key','propulsion','label','Propulsión del vehículo','ok',coalesce(nullif(btrim(v.propulsion_code),'') is not null,false)),
     jsonb_build_object('key','brand','label','Marca del vehículo','ok',coalesce(nullif(btrim(v.brand),'') is not null,false)),
