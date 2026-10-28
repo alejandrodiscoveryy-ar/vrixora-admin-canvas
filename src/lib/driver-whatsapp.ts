@@ -8,6 +8,6 @@ export function driverWhatsAppLinks(phone: string | null | undefined) {
   if (!/^[1-9]\d{7,14}$/.test(digits)) return null;
   return {
     desktop: `whatsapp://send?phone=${digits}`,
-    web: `https://wa.me/${digits}`,
+    web: `https://web.whatsapp.com/send?phone=${digits}`,
   };
 }
