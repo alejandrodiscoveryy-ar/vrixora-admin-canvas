@@ -247,3 +247,60 @@
     grid-template-areas: "title title" "helper helper" "fields route" "advanced route" "actions route" "result route";
   }
 }
+
+/* V6: controles compactos, independientes de la altura del mapa. */
+.tt-lab-v4 .tt-lab-v4-create {
+  grid-template-areas: "title" "helper" "controls" "route";
+  align-items: start;
+}
+
+.tt-lab-v4-create > .tt-lab-v5-controls {
+  grid-area: controls;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  align-self: start;
+}
+
+.tt-lab-v4 .tt-lab-v5-controls .tt-lab-v4-actions,
+.tt-lab-v4 .tt-lab-v5-controls .tt-lab-v4-advanced,
+.tt-lab-v4 .tt-lab-v5-controls .tt-lab-v4-success {
+  margin-top: 0;
+}
+
+.tt-lab-v4 .tt-lab-v5-summary > div:first-child {
+  padding: 10px 12px;
+  border-color: rgba(36, 197, 209, 0.26);
+  background: rgba(8, 39, 50, 0.36);
+}
+
+.tt-lab-v4 .tt-lab-v5-controls .tt-lab-v4-actions button {
+  min-height: 44px;
+}
+
+@media (min-width: 1050px) {
+  .tt-lab-v4 .tt-lab-v4-create {
+    grid-template-areas:
+      "title title"
+      "helper helper"
+      "controls route";
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    column-gap: 22px;
+  }
+
+  .tt-lab-v4 .tt-lab-v4-route {
+    margin-top: 12px;
+  }
+
+  .tt-lab-v4 .tt-lab-v4-route [role="application"] {
+    height: clamp(320px, 28vw, 420px);
+  }
+}
+
+@media (min-width: 1050px) and (max-width: 1220px) {
+  .tt-lab-v4 .tt-lab-v4-create {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.06fr);
+    column-gap: 14px;
+  }
+}

@@ -28,7 +28,7 @@ interface TestQuote {
   recommendedPrice: number | null;
   exchangeRate: number | null;
 }
-interface GeocodeSuggestion extends TestPoint {}
+type GeocodeSuggestion = TestPoint;
 interface AudienceDriver {
   driver_user_id: string;
   display_name: string;
@@ -743,186 +743,377 @@ export default function MarketplaceTestCenterV2({
                 Marca el origen y después el destino en el mapa; la ruta y la tarifa se calculan
                 solas.
               </p>
-              <div className="tt-lab-v4-fields mt-3 grid gap-2.5 sm:grid-cols-2">
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Destinatarios
-                  <select
-                    value={recipientMode}
-                    onChange={(e) => setRecipientMode(e.target.value as "individual" | "group")}
-                    className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
-                  >
-                    <option value="individual">Un conductor</option>
-                    <option value="group">Todo el grupo</option>
-                  </select>
-                </label>
-                {recipientMode === "individual" ? (
-                  selected.length === 1 ? (
-                    <div
-                      className="flex h-10 items-center self-end rounded-lg border border-border/60 px-3 text-sm text-foreground"
-                      title="Conductor autorizado seleccionado automáticamente"
+              <div className="tt-lab-v5-controls min-w-0">
+                <div className="tt-lab-v4-fields mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Destinatarios
+                    <select
+                      value={recipientMode}
+                      onChange={(e) => setRecipientMode(e.target.value as "individual" | "group")}
+                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
                     >
-                      {selected[0].displayName}
-                    </div>
-                  ) : (
-                    <label className="space-y-1 text-xs text-muted-foreground">
-                      Conductor
-                      <select
-                        value={individualId}
-                        onChange={(e) => setIndividualId(e.target.value)}
-                        className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                      <option value="individual">Un conductor</option>
+                      <option value="group">Todo el grupo</option>
+                    </select>
+                  </label>
+                  {recipientMode === "individual" ? (
+                    selected.length === 1 ? (
+                      <div
+                        className="flex h-10 items-center self-end rounded-lg border border-border/60 px-3 text-sm text-foreground"
+                        title="Conductor autorizado seleccionado automáticamente"
                       >
-                        <option value="">Seleccionar…</option>
-                        {selected.map((d) => (
-                          <option key={d.userId} value={d.userId}>
-                            {d.displayName}
-                          </option>
+                        {selected[0].displayName}
+                      </div>
+                    ) : (
+                      <label className="space-y-1 text-xs text-muted-foreground">
+                        Conductor
+                        <select
+                          value={individualId}
+                          onChange={(e) => setIndividualId(e.target.value)}
+                          className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                        >
+                          <option value="">Seleccionar…</option>
+                          {selected.map((d) => (
+                            <option key={d.userId} value={d.userId}>
+                              {d.displayName}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )
+                  ) : (
+                    <div className="self-end rounded-lg border border-cyan-400/20 px-3 py-3 text-xs text-cyan-200">
+                      {allowed.length} conductores del grupo
+                    </div>
+                  )}
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Servicio
+                    <select
+                      value={serviceCode}
+                      onChange={(e) => setServiceCode(e.target.value)}
+                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                    >
+                      {["passenger", "cargo", "courier", "tourism"].map((s) => (
+                        <option key={s} value={s}>
+                          {labelFor(s)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    Tipo de vehículo (opcional)
+                    <select
+                      value={vehicleCategory}
+                      onChange={(e) => setVehicleCategory(e.target.value)}
+                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                    >
+                      <option value="">Cualquier compatible</option>
+                      {[
+                        "motorcycle",
+                        "tricycle",
+                        "light_car",
+                        "bicitaxi",
+                        "bicycle",
+                        "van",
+                        "truck",
+                        "other",
+                      ].map((s) => (
+                        <option key={s} value={s}>
+                          {labelFor(s)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="relative space-y-1 text-xs text-muted-foreground">
+                    <span>Origen</span>
+                    <div className="flex gap-1.5">
+                      <input
+                        value={origin}
+                        onChange={(e) => {
+                          reverseGeocodeVersion.current.origin++;
+                          setOrigin(e.target.value);
+                          setOriginPoint(null);
+                          setPicking("origin");
+                        }}
+                        maxLength={180}
+                        placeholder="Calle y número de recogida"
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={picking === "origin" ? "default" : "outline"}
+                        className="h-10 px-3"
+                        onClick={() => setPicking(picking === "origin" ? null : "origin")}
+                        title="Marcar origen en el mapa"
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {originSuggestions.length > 0 && (
+                      <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl">
+                        {originSuggestions.map((item, i) => (
+                          <button
+                            key={`${i}-${item.lat}`}
+                            type="button"
+                            onClick={() => {
+                              reverseGeocodeVersion.current.origin++;
+                              setOriginPoint(item);
+                              setOrigin(item.label);
+                              setOriginSuggestions([]);
+                              setPicking(destinationPoint ? null : "destination");
+                            }}
+                            className="block w-full rounded-lg px-2 py-2 text-left text-xs text-foreground hover:bg-muted/40"
+                          >
+                            {item.label}
+                          </button>
                         ))}
-                      </select>
-                    </label>
-                  )
-                ) : (
-                  <div className="self-end rounded-lg border border-cyan-400/20 px-3 py-3 text-xs text-cyan-200">
-                    {allowed.length} conductores del grupo
+                      </div>
+                    )}
+                    {originPoint && (
+                      <p className="text-[11px] text-emerald-300">
+                        Ubicación geográfica confirmada
+                      </p>
+                    )}
+                  </div>
+                  <div className="relative space-y-1 text-xs text-muted-foreground">
+                    <span>Destino</span>
+                    <div className="flex gap-1.5">
+                      <input
+                        value={destination}
+                        onChange={(e) => {
+                          reverseGeocodeVersion.current.destination++;
+                          setDestination(e.target.value);
+                          setDestinationPoint(null);
+                          setPicking("destination");
+                        }}
+                        maxLength={180}
+                        placeholder="Calle y número de llegada"
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={picking === "destination" ? "default" : "outline"}
+                        className="h-10 px-3"
+                        onClick={() => setPicking(picking === "destination" ? null : "destination")}
+                        title="Marcar destino en el mapa"
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {destinationSuggestions.length > 0 && (
+                      <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl">
+                        {destinationSuggestions.map((item, i) => (
+                          <button
+                            key={`${i}-${item.lat}`}
+                            type="button"
+                            onClick={() => {
+                              reverseGeocodeVersion.current.destination++;
+                              setDestinationPoint(item);
+                              setDestination(item.label);
+                              setDestinationSuggestions([]);
+                              setPicking(null);
+                            }}
+                            className="block w-full rounded-lg px-2 py-2 text-left text-xs text-foreground hover:bg-muted/40"
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {destinationPoint && (
+                      <p className="text-[11px] text-emerald-300">
+                        Ubicación geográfica confirmada
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="tt-lab-v5-summary space-y-2">
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.08] p-3"
+                    aria-live="polite"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+                      <span>
+                        Distancia{" "}
+                        <strong className="ml-1 text-sm text-foreground">
+                          {validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}
+                        </strong>
+                      </span>
+                      <span>
+                        Tiempo{" "}
+                        <strong className="ml-1 text-sm text-foreground">
+                          {validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}
+                        </strong>
+                      </span>
+                      <span>
+                        Precio{" "}
+                        <strong className="ml-1 text-lg font-semibold text-cyan-100">
+                          {validQuote && Number.isFinite(selectedPrice)
+                            ? `${selectedPrice.toLocaleString("es-CU")} CUP`
+                            : "—"}
+                        </strong>
+                      </span>
+                      <span>
+                        {priceMode === "auto" ? "Tarifa oficial" : "Precio manual de prueba"}
+                      </span>
+                    </div>
+                    {routeLoading && (
+                      <span role="status" className="text-xs font-semibold text-cyan-200">
+                        Calculando ruta y tarifa…
+                      </span>
+                    )}
+                    {routeError && originPoint && destinationPoint && canUseAuto && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setRouteRetry((v) => v + 1)}
+                      >
+                        Reintentar
+                      </Button>
+                    )}
+                    {!originPoint && (
+                      <span className="text-xs text-cyan-200">1. Marca el origen</span>
+                    )}
+                    {originPoint && !destinationPoint && (
+                      <span className="text-xs text-cyan-200">2. Marca el destino</span>
+                    )}
+                  </div>
+                  {routeError && (
+                    <p
+                      role="alert"
+                      className="rounded-lg border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-xs text-rose-200"
+                    >
+                      {routeError}
+                    </p>
+                  )}
+                  {validQuote && priceMode === "auto" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Precio del mismo motor que utiliza Cliente. El servidor lo volverá a calcular
+                      al enviar.
+                    </p>
+                  )}
+                </div>
+                {!successJobId && (
+                  <div className="tt-lab-v4-actions mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      {dirty
+                        ? "Guarda los cambios del grupo antes del envío."
+                        : forceRealCommission
+                          ? "Ensayo financiero con doble confirmación."
+                          : "Prueba georreferenciada · sin comisión real."}
+                    </p>
+                    <Button
+                      disabled={
+                        !canManage ||
+                        !configured ||
+                        dirty ||
+                        send.isPending ||
+                        Boolean(successJobId) ||
+                        routeLoading ||
+                        allowed.length === 0 ||
+                        !validQuote ||
+                        (priceMode === "auto" && validQuote.recommendedPrice == null)
+                      }
+                      onClick={() => send.mutate()}
+                    >
+                      <Send className="mr-1.5 h-4 w-4" />
+                      {send.isPending ? "Enviando…" : "Enviar carrera de prueba"}
+                    </Button>
                   </div>
                 )}
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Servicio
-                  <select
-                    value={serviceCode}
-                    onChange={(e) => setServiceCode(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
-                  >
-                    {["passenger", "cargo", "courier", "tourism"].map((s) => (
-                      <option key={s} value={s}>
-                        {labelFor(s)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Tipo de vehículo (opcional)
-                  <select
-                    value={vehicleCategory}
-                    onChange={(e) => setVehicleCategory(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
-                  >
-                    <option value="">Cualquier compatible</option>
-                    {[
-                      "motorcycle",
-                      "tricycle",
-                      "light_car",
-                      "bicitaxi",
-                      "bicycle",
-                      "van",
-                      "truck",
-                      "other",
-                    ].map((s) => (
-                      <option key={s} value={s}>
-                        {labelFor(s)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="relative space-y-1 text-xs text-muted-foreground">
-                  <span>Origen</span>
-                  <div className="flex gap-1.5">
-                    <input
-                      value={origin}
-                      onChange={(e) => {
+                {successJobId ? (
+                  <div className="tt-lab-v4-success mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onOpenJob(successJobId)}
+                      className="flex items-center gap-2 text-xs text-emerald-300 underline"
+                    >
+                      <CheckCircle2 className="h-4 w-4" /> Carrera creada. Ver detalle.
+                    </button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
                         reverseGeocodeVersion.current.origin++;
-                        setOrigin(e.target.value);
-                        setOriginPoint(null);
-                        setPicking("origin");
-                      }}
-                      maxLength={180}
-                      placeholder="Calle y número de recogida"
-                      className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={picking === "origin" ? "default" : "outline"}
-                      className="h-10 px-3"
-                      onClick={() => setPicking(picking === "origin" ? null : "origin")}
-                      title="Marcar origen en el mapa"
-                    >
-                      <MapPin className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {originSuggestions.length > 0 && (
-                    <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl">
-                      {originSuggestions.map((item, i) => (
-                        <button
-                          key={`${i}-${item.lat}`}
-                          type="button"
-                          onClick={() => {
-                            reverseGeocodeVersion.current.origin++;
-                            setOriginPoint(item);
-                            setOrigin(item.label);
-                            setOriginSuggestions([]);
-                            setPicking(destinationPoint ? null : "destination");
-                          }}
-                          className="block w-full rounded-lg px-2 py-2 text-left text-xs text-foreground hover:bg-muted/40"
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {originPoint && (
-                    <p className="text-[11px] text-emerald-300">Ubicación geográfica confirmada</p>
-                  )}
-                </div>
-                <div className="relative space-y-1 text-xs text-muted-foreground">
-                  <span>Destino</span>
-                  <div className="flex gap-1.5">
-                    <input
-                      value={destination}
-                      onChange={(e) => {
                         reverseGeocodeVersion.current.destination++;
-                        setDestination(e.target.value);
+                        setOrigin("");
+                        setDestination("");
+                        setOriginPoint(null);
                         setDestinationPoint(null);
-                        setPicking("destination");
+                        setOriginSuggestions([]);
+                        setDestinationSuggestions([]);
+                        setRouteQuote(null);
+                        setRouteError(null);
+                        setPicking("origin");
+                        setSuccessJobId(null);
+                        setNotes("");
+                        setPriceMode("auto");
+                        setForceRealCommission(false);
                       }}
-                      maxLength={180}
-                      placeholder="Calle y número de llegada"
-                      className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={picking === "destination" ? "default" : "outline"}
-                      className="h-10 px-3"
-                      onClick={() => setPicking(picking === "destination" ? null : "destination")}
-                      title="Marcar destino en el mapa"
                     >
-                      <MapPin className="h-4 w-4" />
+                      Nueva prueba
                     </Button>
                   </div>
-                  {destinationSuggestions.length > 0 && (
-                    <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl">
-                      {destinationSuggestions.map((item, i) => (
-                        <button
-                          key={`${i}-${item.lat}`}
-                          type="button"
-                          onClick={() => {
-                            reverseGeocodeVersion.current.destination++;
-                            setDestinationPoint(item);
-                            setDestination(item.label);
-                            setDestinationSuggestions([]);
-                            setPicking(null);
-                          }}
-                          className="block w-full rounded-lg px-2 py-2 text-left text-xs text-foreground hover:bg-muted/40"
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {destinationPoint && (
-                    <p className="text-[11px] text-emerald-300">Ubicación geográfica confirmada</p>
-                  )}
-                </div>
+                ) : null}
+                <details className="tt-lab-v4-advanced mt-3 rounded-xl border border-border/55 bg-background/40">
+                  <summary className="cursor-pointer px-3 py-3 text-xs font-semibold text-muted-foreground">
+                    Opciones avanzadas · precio manual, observaciones y comisión
+                  </summary>
+                  <div className="grid gap-3 border-t border-border/40 p-3 sm:grid-cols-2">
+                    <label className="space-y-1 text-xs text-muted-foreground">
+                      <span>Precio de carrera</span>
+                      <select
+                        value={priceMode}
+                        onChange={(e) => setPriceMode(e.target.value as "auto" | "manual")}
+                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                      >
+                        <option value="auto">Automático · tarifa oficial</option>
+                        <option value="manual">Manual · solo prueba</option>
+                      </select>
+                    </label>
+                    {priceMode === "manual" ? (
+                      <label className="space-y-1 text-xs text-muted-foreground">
+                        <span>Importe manual (CUP)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100000"
+                          step="1"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                        />
+                      </label>
+                    ) : (
+                      <p className="self-center text-xs text-muted-foreground">
+                        El importe oficial se muestra en el resumen del recorrido.
+                      </p>
+                    )}
+                    <label className="space-y-1 text-xs text-muted-foreground">
+                      <span>Observaciones (opcional)</span>
+                      <input
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        maxLength={1000}
+                        placeholder="Añadir nota de prueba"
+                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                      />
+                    </label>
+                    <label className="tt-lab-v4-risk flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
+                      <span>Comisión real (puede afectar el saldo del conductor)</span>
+                      <Switch
+                        checked={forceRealCommission}
+                        disabled={!canManage || !canManagePayments}
+                        onCheckedChange={setForceRealCommission}
+                        aria-label="Probar comisión real"
+                      />
+                    </label>
+                  </div>
+                </details>
               </div>
               <div className="tt-lab-v4-route mt-3 space-y-2">
                 <MarketplaceTestRouteMap
@@ -935,188 +1126,7 @@ export default function MarketplaceTestCenterV2({
                     void pickFromMap(kind, lat, lon);
                   }}
                 />
-                <div
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.08] p-3"
-                  aria-live="polite"
-                >
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                    <span>
-                      Distancia{" "}
-                      <strong className="ml-1 text-sm text-foreground">
-                        {validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}
-                      </strong>
-                    </span>
-                    <span>
-                      Tiempo{" "}
-                      <strong className="ml-1 text-sm text-foreground">
-                        {validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}
-                      </strong>
-                    </span>
-                    <span>
-                      Precio{" "}
-                      <strong className="ml-1 text-lg font-semibold text-cyan-100">
-                        {validQuote && Number.isFinite(selectedPrice)
-                          ? `${selectedPrice.toLocaleString("es-CU")} CUP`
-                          : "—"}
-                      </strong>
-                    </span>
-                    <span>
-                      {priceMode === "auto" ? "Tarifa oficial" : "Precio manual de prueba"}
-                    </span>
-                  </div>
-                  {routeLoading && (
-                    <span role="status" className="text-xs font-semibold text-cyan-200">
-                      Calculando ruta y tarifa…
-                    </span>
-                  )}
-                  {routeError && originPoint && destinationPoint && canUseAuto && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setRouteRetry((v) => v + 1)}
-                    >
-                      Reintentar
-                    </Button>
-                  )}
-                  {!originPoint && (
-                    <span className="text-xs text-cyan-200">1. Marca el origen</span>
-                  )}
-                  {originPoint && !destinationPoint && (
-                    <span className="text-xs text-cyan-200">2. Marca el destino</span>
-                  )}
-                </div>
-                {routeError && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-xs text-rose-200"
-                  >
-                    {routeError}
-                  </p>
-                )}
-                {validQuote && priceMode === "auto" && (
-                  <p className="text-[11px] text-muted-foreground">
-                    Precio del mismo motor que utiliza Cliente. El servidor lo volverá a calcular al
-                    enviar.
-                  </p>
-                )}
               </div>
-              <details className="tt-lab-v4-advanced mt-3 rounded-xl border border-border/55 bg-background/40">
-                <summary className="cursor-pointer px-3 py-3 text-xs font-semibold text-muted-foreground">
-                  Opciones avanzadas · precio manual, observaciones y comisión
-                </summary>
-                <div className="grid gap-3 border-t border-border/40 p-3 sm:grid-cols-2">
-                  <label className="space-y-1 text-xs text-muted-foreground">
-                    <span>Precio de carrera</span>
-                    <select
-                      value={priceMode}
-                      onChange={(e) => setPriceMode(e.target.value as "auto" | "manual")}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                    >
-                      <option value="auto">Automático · tarifa oficial</option>
-                      <option value="manual">Manual · solo prueba</option>
-                    </select>
-                  </label>
-                  {priceMode === "manual" ? (
-                    <label className="space-y-1 text-xs text-muted-foreground">
-                      <span>Importe manual (CUP)</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="100000"
-                        step="1"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                      />
-                    </label>
-                  ) : (
-                    <p className="self-center text-xs text-muted-foreground">
-                      El importe oficial se muestra junto al mapa.
-                    </p>
-                  )}
-                  <label className="space-y-1 text-xs text-muted-foreground">
-                    <span>Observaciones (opcional)</span>
-                    <input
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      maxLength={1000}
-                      placeholder="Añadir nota de prueba"
-                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                    />
-                  </label>
-                  <label className="tt-lab-v4-risk flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
-                    <span>Comisión real (puede afectar el saldo del conductor)</span>
-                    <Switch
-                      checked={forceRealCommission}
-                      disabled={!canManage || !canManagePayments}
-                      onCheckedChange={setForceRealCommission}
-                      aria-label="Probar comisión real"
-                    />
-                  </label>
-                </div>
-              </details>
-              <div className="tt-lab-v4-actions mt-3 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] text-muted-foreground">
-                  {dirty
-                    ? "Guarda los cambios del grupo antes del envío."
-                    : forceRealCommission
-                      ? "Ensayo financiero con doble confirmación."
-                      : "Prueba georreferenciada · sin comisión real."}
-                </p>
-                <Button
-                  disabled={
-                    !canManage ||
-                    !configured ||
-                    dirty ||
-                    send.isPending ||
-                    Boolean(successJobId) ||
-                    routeLoading ||
-                    allowed.length === 0 ||
-                    !validQuote ||
-                    (priceMode === "auto" && validQuote.recommendedPrice == null)
-                  }
-                  onClick={() => send.mutate()}
-                >
-                  <Send className="mr-1.5 h-4 w-4" />
-                  {send.isPending ? "Enviando…" : "Enviar carrera de prueba"}
-                </Button>
-              </div>
-              {successJobId ? (
-                <div className="tt-lab-v4-success mt-3 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onOpenJob(successJobId)}
-                    className="flex items-center gap-2 text-xs text-emerald-300 underline"
-                  >
-                    <CheckCircle2 className="h-4 w-4" /> Carrera creada. Ver detalle.
-                  </button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      reverseGeocodeVersion.current.origin++;
-                      reverseGeocodeVersion.current.destination++;
-                      setOrigin("");
-                      setDestination("");
-                      setOriginPoint(null);
-                      setDestinationPoint(null);
-                      setOriginSuggestions([]);
-                      setDestinationSuggestions([]);
-                      setRouteQuote(null);
-                      setRouteError(null);
-                      setPicking("origin");
-                      setSuccessJobId(null);
-                      setNotes("");
-                      setPriceMode("auto");
-                      setForceRealCommission(false);
-                    }}
-                  >
-                    Nueva prueba
-                  </Button>
-                </div>
-              ) : null}
             </section>
           </div>
           <section
