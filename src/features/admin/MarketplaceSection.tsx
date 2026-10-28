@@ -2010,8 +2010,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 className="border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-200"
                               >
                                 <a
-                                  href={driverWhatsAppLinks(item.phone)!.desktop}
-                                  aria-label={`Abrir WhatsApp de escritorio con ${item.displayName}`}
+                                  href={driverWhatsAppLinks(item.phone)!.web}
+                                  aria-label={`Abrir WhatsApp Web con ${item.displayName}`}
                                 >
                                   WhatsApp
                                 </a>

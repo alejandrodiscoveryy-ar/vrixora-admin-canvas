@@ -7,7 +7,7 @@ const file = (path) => readFileSync(new URL(path, root), "utf8");
 test("WhatsApp Desktop y alternativa web sin pre-envío", () => {
   const code = file("src/lib/driver-whatsapp.ts");
   assert.match(code, /whatsapp:\/\/send\?phone=/);
-  assert.match(code, /https:\/\/wa\.me\//);
+  assert.match(code, /https:\/\/web\.whatsapp\.com\/send\?phone=/);
   assert.doesNotMatch(code, /text=|window\.open/);
   const list = file("src/features/admin/MarketplaceSection.tsx");
   const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
