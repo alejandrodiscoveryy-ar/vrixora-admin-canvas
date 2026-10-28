@@ -438,6 +438,7 @@ export default function MarketplaceTestCenterV2({
   });
   const send = useMutation({
     mutationFn: async () => {
+      if (successJobId) throw new Error("Pulsa Nueva prueba antes de enviar otra carrera.");
       if (!configured || dirty)
         throw new Error("Guarda primero el grupo de conductores y el modo de prueba.");
       if (allowed.length < 1) throw new Error("Selecciona el destinatario de esta carrera.");
@@ -1069,6 +1070,7 @@ export default function MarketplaceTestCenterV2({
                     !configured ||
                     dirty ||
                     send.isPending ||
+                    Boolean(successJobId) ||
                     routeLoading ||
                     allowed.length === 0 ||
                     !validQuote ||
