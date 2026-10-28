@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
@@ -116,7 +116,9 @@ export default function MarketplaceTestCenterV2({
   const [priceMode, setPriceMode] = useState<"auto" | "manual">("auto");
   const [originPoint, setOriginPoint] = useState<TestPoint | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<TestPoint | null>(null);
-  const [picking, setPicking] = useState<"origin" | "destination" | null>(null);
+  const [picking, setPicking] = useState<"origin" | "destination" | null>("origin");
+  const [routeRetry, setRouteRetry] = useState(0);
+  const reverseGeocodeVersion = useRef({ origin: 0, destination: 0 });
   const [originSuggestions, setOriginSuggestions] = useState<GeocodeSuggestion[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<GeocodeSuggestion[]>([]);
   const [routeQuote, setRouteQuote] = useState<TestQuote | null>(null);
@@ -281,88 +283,120 @@ export default function MarketplaceTestCenterV2({
     };
   }, [destination, destinationPoint]);
   async function pickFromMap(kind: "origin" | "destination", lat: number, lon: number) {
-    setPicking(null);
+    // El punto se coloca inmediatamente: nunca esperamos a la geocodificación inversa.
+    const version = ++reverseGeocodeVersion.current[kind];
     const fallback = `Punto ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-    let label = fallback;
+    const point = { lat, lon, label: fallback };
+    if (kind === "origin") {
+      setOriginPoint(point);
+      setOrigin(fallback);
+      setPicking(destinationPoint ? null : "destination");
+    } else {
+      setDestinationPoint(point);
+      setDestination(fallback);
+      setPicking(null);
+    }
     try {
       const { data, error } = await getSupabaseClient().functions.invoke(
         "marketplace-map-gateway",
         { body: { operation: "reverse_geocode", point: { lat, lon } } },
       );
-      if (!error && typeof data?.data?.label === "string") label = data.data.label;
+      // Descartar respuestas de selecciones anteriores o textos ya modificados.
+      if (reverseGeocodeVersion.current[kind] !== version) return;
+      const label = !error && typeof data?.data?.label === "string" ? data.data.label : null;
+      if (!label) return;
+      if (kind === "origin") setOrigin(label);
+      else setDestination(label);
     } catch {
-      /* El pin sigue siendo preciso, aunque Mapbox no devuelva un nombre. */
-    }
-    const point = { lat, lon, label };
-    if (kind === "origin") {
-      setOriginPoint(point);
-      setOrigin(label);
-    } else {
-      setDestinationPoint(point);
-      setDestination(label);
+      // El marcador y la ruta siguen siendo válidos aunque no haya nombre de calle.
     }
   }
-  async function calculateRoute() {
+  // Una sola cotización por combinación de puntos/servicio, con pausa breve para arrastres.
+  // Se descartan las respuestas antiguas y el gateway Admin verifica el precio al enviar.
+  useEffect(() => {
+    setRouteQuote(null);
+    setRouteError(null);
     if (!originPoint || !destinationPoint) {
-      setRouteError("Selecciona origen y destino entre las sugerencias o en el mapa.");
+      setRouteLoading(false);
       return;
     }
     if (!canUseAuto && priceMode === "auto") {
+      setRouteLoading(false);
       setRouteError(
-        "Esta combinación no tiene cotización automática. Cambia a Precio manual de prueba.",
+        "Esta combinación no tiene tarifa oficial automática. Usa Precio manual en Opciones avanzadas.",
       );
       return;
     }
-    setRouteError(null);
-    setRouteLoading(true);
-    setRouteQuote(null);
+    let cancelled = false;
     const key = routeKey;
-    try {
-      const { data, error } = await getSupabaseClient().functions.invoke(
-        "marketplace-map-gateway",
-        {
-          body: {
-            operation: "route_quote",
-            origin: { lat: originPoint.lat, lon: originPoint.lon },
-            destination: { lat: destinationPoint.lat, lon: destinationPoint.lon },
-            pricing: { vehicle_category_code: vehicleCategory, passenger_count: 1, stop_count: 0 },
-          },
-        },
-      );
-      if (error) throw error;
-      if (data?.error) throw Error(String(data.error));
-      const root = data?.data;
-      const priced =
-        serviceCode === "passenger"
-          ? root?.prices?.passenger_by_category?.[vehicleCategory]
-          : root?.prices?.[serviceCode];
-      const suggested = Number(priced?.recommended_price);
-      const distance = Number(root?.distance_km),
-        duration = Number(root?.duration_seconds);
-      if (
-        !Number.isFinite(distance) ||
-        distance <= 0 ||
-        !Number.isFinite(duration) ||
-        duration <= 0
-      )
-        throw Error("ROUTE_QUOTE_INVALID");
-      // Un cambio mientras se calculaba no autoriza reutilizar la cotización antigua.
-      setRouteQuote({
-        key,
-        distanceKm: distance,
-        durationSeconds: duration,
-        routePoints: Array.isArray(root?.route_points) ? root.route_points : [],
-        recommendedPrice: Number.isFinite(suggested) && suggested > 0 ? suggested : null,
-        exchangeRate: Number.isFinite(Number(priced?.exchange_rate_snapshot))
-          ? Number(priced.exchange_rate_snapshot)
-          : null,
-      });
-    } catch (reason) {
-      setRouteError(errorMessage(reason));
-    } finally {
-      setRouteLoading(false);
-    }
-  }
+    setRouteLoading(true);
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const { data, error } = await getSupabaseClient().functions.invoke(
+            "marketplace-map-gateway",
+            {
+              body: {
+                operation: "route_quote",
+                origin: { lat: originPoint.lat, lon: originPoint.lon },
+                destination: { lat: destinationPoint.lat, lon: destinationPoint.lon },
+                pricing: {
+                  vehicle_category_code: vehicleCategory,
+                  passenger_count: 1,
+                  stop_count: 0,
+                },
+              },
+            },
+          );
+          if (cancelled) return;
+          if (error) throw error;
+          if (data?.error) throw Error(String(data.error));
+          const root = data?.data;
+          const priced =
+            serviceCode === "passenger"
+              ? root?.prices?.passenger_by_category?.[vehicleCategory]
+              : root?.prices?.[serviceCode];
+          const suggested = Number(priced?.recommended_price);
+          const distance = Number(root?.distance_km);
+          const duration = Number(root?.duration_seconds);
+          if (
+            !Number.isFinite(distance) ||
+            distance <= 0 ||
+            !Number.isFinite(duration) ||
+            duration <= 0
+          )
+            throw Error("ROUTE_QUOTE_INVALID");
+          setRouteQuote({
+            key,
+            distanceKm: distance,
+            durationSeconds: duration,
+            routePoints: Array.isArray(root?.route_points) ? root.route_points : [],
+            recommendedPrice: Number.isFinite(suggested) && suggested > 0 ? suggested : null,
+            exchangeRate: Number.isFinite(Number(priced?.exchange_rate_snapshot))
+              ? Number(priced.exchange_rate_snapshot)
+              : null,
+          });
+        } catch (reason) {
+          if (!cancelled) setRouteError(errorMessage(reason));
+        } finally {
+          if (!cancelled) setRouteLoading(false);
+        }
+      })();
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    originPoint,
+    destinationPoint,
+    serviceCode,
+    vehicleCategory,
+    priceMode,
+    canUseAuto,
+    routeKey,
+    routeRetry,
+  ]);
 
   const activeCount = (history.data?.items ?? []).filter((job) =>
     ["published", "accepted", "en_route", "pickup", "in_progress"].includes(job.status),
@@ -404,6 +438,7 @@ export default function MarketplaceTestCenterV2({
   });
   const send = useMutation({
     mutationFn: async () => {
+      if (successJobId) throw new Error("Pulsa Nueva prueba antes de enviar otra carrera.");
       if (!configured || dirty)
         throw new Error("Guarda primero el grupo de conductores y el modo de prueba.");
       if (allowed.length < 1) throw new Error("Selecciona el destinatario de esta carrera.");
@@ -511,15 +546,33 @@ export default function MarketplaceTestCenterV2({
               </p>
             </div>
           </div>
-          <label className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/55 px-3 py-2 text-sm font-medium text-foreground">
-            {enabled ? "Activado" : "Desactivado"}
-            <Switch
-              checked={enabled}
-              disabled={!canManage || loading || save.isPending}
-              onCheckedChange={setEnabled}
-              aria-label="Activar modo de prueba"
-            />
-          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              aria-expanded={driversOpen}
+              aria-controls="test-drivers-settings"
+              onClick={() => setDriversOpen((v) => !v)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-background/55 px-3 py-2 text-xs font-semibold text-cyan-200"
+            >
+              <Users className="h-4 w-4" />
+              {selectedIds.length} conductor{selectedIds.length === 1 ? "" : "es"} autorizado
+              {selectedIds.length === 1 ? "" : "s"}
+              {driversOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
+            <label className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/55 px-3 py-2 text-sm font-medium text-foreground">
+              {enabled ? "Activado" : "Desactivado"}
+              <Switch
+                checked={enabled}
+                disabled={!canManage || loading || save.isPending}
+                onCheckedChange={setEnabled}
+                aria-label="Activar modo de prueba"
+              />
+            </label>
+          </div>
         </div>
         <div
           className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
@@ -569,116 +622,126 @@ export default function MarketplaceTestCenterV2({
       {!loading && !current.isError && !drivers.isError && !audience.isError ? (
         <>
           <div className="tt-lab-v4-workspace grid min-w-0 gap-3">
-            <section className="tt-lab-v4-drivers min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Users className="h-4 w-4 text-cyan-300" />
-                  Conductores autorizados
-                </h4>
-                <button
-                  type="button"
-                  aria-expanded={driversOpen}
-                  aria-controls="test-driver-chooser"
-                  onClick={() => setDriversOpen((v) => !v)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.045] px-3 py-2 text-xs font-semibold text-cyan-200"
-                >
-                  {selectedIds.length} seleccionados{" "}
-                  {driversOpen ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Selecciona uno o varios conductores. El grupo se guarda antes de enviar.
-              </p>
-              {!driversOpen && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {selected.length ? (
-                    selected.slice(0, 3).map((d) => (
-                      <span
-                        key={d.userId}
-                        className="rounded-lg border border-border/55 bg-muted/20 px-2.5 py-1.5 text-xs text-foreground"
-                      >
-                        {d.displayName}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Sin selección</span>
-                  )}
-                  {selected.length > 3 && (
-                    <span className="text-xs text-muted-foreground">
-                      +{selected.length - 3} más
-                    </span>
-                  )}
+            {(driversOpen || dirty || !configured) && (
+              <section
+                id="test-drivers-settings"
+                className="tt-lab-v4-drivers min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Users className="h-4 w-4 text-cyan-300" />
+                    Conductores autorizados
+                  </h4>
+                  <button
+                    type="button"
+                    aria-expanded={driversOpen}
+                    aria-controls="test-driver-chooser"
+                    onClick={() => setDriversOpen((v) => !v)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.045] px-3 py-2 text-xs font-semibold text-cyan-200"
+                  >
+                    {selectedIds.length} seleccionados{" "}
+                    {driversOpen ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
-              )}
-              {driversOpen && (
-                <div id="test-driver-chooser" className="mt-3">
-                  <label className="relative block">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <span className="sr-only">Buscar conductor</span>
-                    <input
-                      value={driverSearch}
-                      onChange={(e) => setDriverSearch(e.target.value)}
-                      placeholder="Buscar conductor…"
-                      className="h-10 w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 text-sm text-foreground"
-                    />
-                  </label>
-                  <div className="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
-                    {visibleDrivers.map((driver) => (
-                      <label
-                        key={driver.userId}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/50 px-3 py-2 text-sm hover:bg-muted/20"
-                      >
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-cyan-400"
-                          disabled={!canManage}
-                          checked={selectedIds.includes(driver.userId)}
-                          onChange={(event) =>
-                            setSelectedIds((ids) =>
-                              event.target.checked
-                                ? [...ids, driver.userId]
-                                : ids.filter((id) => id !== driver.userId),
-                            )
-                          }
-                        />
-                        <span className="min-w-0 flex-1 break-words text-foreground">
-                          {driver.displayName}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {driver.isAvailable ? "Disponible" : "No disponible"}
-                        </span>
-                      </label>
-                    ))}
-                    {!visibleDrivers.length ? (
-                      <p className="text-xs text-muted-foreground">
-                        No hay conductores que coincidan.
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              )}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-amber-200">
-                  Los cargos reales sólo se habilitan por carrera y con doble confirmación.
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Selecciona uno o varios conductores. El grupo se guarda antes de enviar.
                 </p>
-                <Button
-                  size="sm"
-                  disabled={!canManage || save.isPending || (enabled && selectedIds.length === 0)}
-                  onClick={() => save.mutate()}
-                >
-                  <ShieldCheck className="mr-1.5 h-4 w-4" />
-                  {save.isPending ? "Guardando…" : "Guardar grupo y modo"}
-                </Button>
-              </div>
-            </section>
+                {!driversOpen && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {selected.length ? (
+                      selected.slice(0, 3).map((d) => (
+                        <span
+                          key={d.userId}
+                          className="rounded-lg border border-border/55 bg-muted/20 px-2.5 py-1.5 text-xs text-foreground"
+                        >
+                          {d.displayName}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sin selección</span>
+                    )}
+                    {selected.length > 3 && (
+                      <span className="text-xs text-muted-foreground">
+                        +{selected.length - 3} más
+                      </span>
+                    )}
+                  </div>
+                )}
+                {driversOpen && (
+                  <div id="test-driver-chooser" className="mt-3">
+                    <label className="relative block">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <span className="sr-only">Buscar conductor</span>
+                      <input
+                        value={driverSearch}
+                        onChange={(e) => setDriverSearch(e.target.value)}
+                        placeholder="Buscar conductor…"
+                        className="h-10 w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 text-sm text-foreground"
+                      />
+                    </label>
+                    <div className="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
+                      {visibleDrivers.map((driver) => (
+                        <label
+                          key={driver.userId}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/50 px-3 py-2 text-sm hover:bg-muted/20"
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-cyan-400"
+                            disabled={!canManage}
+                            checked={selectedIds.includes(driver.userId)}
+                            onChange={(event) =>
+                              setSelectedIds((ids) =>
+                                event.target.checked
+                                  ? [...ids, driver.userId]
+                                  : ids.filter((id) => id !== driver.userId),
+                              )
+                            }
+                          />
+                          <span className="min-w-0 flex-1 break-words text-foreground">
+                            {driver.displayName}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {driver.isAvailable ? "Disponible" : "No disponible"}
+                          </span>
+                        </label>
+                      ))}
+                      {!visibleDrivers.length ? (
+                        <p className="text-xs text-muted-foreground">
+                          No hay conductores que coincidan.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-amber-200">
+                    Los cargos reales sólo se habilitan por carrera y con doble confirmación.
+                  </p>
+                  {(dirty || !configured) && (
+                    <Button
+                      size="sm"
+                      disabled={
+                        !canManage || save.isPending || (enabled && selectedIds.length === 0)
+                      }
+                      onClick={() => save.mutate()}
+                    >
+                      <ShieldCheck className="mr-1.5 h-4 w-4" />
+                      {save.isPending ? "Guardando…" : "Guardar configuración"}
+                    </Button>
+                  )}
+                </div>
+              </section>
+            )}
             <section className="tt-lab-v4-create min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
               <h4 className="text-sm font-semibold text-foreground">Crear carrera de prueba</h4>
               <p className="mt-1 text-xs text-muted-foreground">
-                Un único servicio. El primero en aceptarlo queda asignado.
+                Marca el origen y después el destino en el mapa; la ruta y la tarifa se calculan
+                solas.
               </p>
               <div className="tt-lab-v4-fields mt-3 grid gap-2.5 sm:grid-cols-2">
                 <label className="space-y-1 text-xs text-muted-foreground">
@@ -693,21 +756,30 @@ export default function MarketplaceTestCenterV2({
                   </select>
                 </label>
                 {recipientMode === "individual" ? (
-                  <label className="space-y-1 text-xs text-muted-foreground">
-                    Conductor
-                    <select
-                      value={individualId}
-                      onChange={(e) => setIndividualId(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                  selected.length === 1 ? (
+                    <div
+                      className="flex h-10 items-center self-end rounded-lg border border-border/60 px-3 text-sm text-foreground"
+                      title="Conductor autorizado seleccionado automáticamente"
                     >
-                      <option value="">Seleccionar…</option>
-                      {selected.map((d) => (
-                        <option key={d.userId} value={d.userId}>
-                          {d.displayName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      {selected[0].displayName}
+                    </div>
+                  ) : (
+                    <label className="space-y-1 text-xs text-muted-foreground">
+                      Conductor
+                      <select
+                        value={individualId}
+                        onChange={(e) => setIndividualId(e.target.value)}
+                        className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                      >
+                        <option value="">Seleccionar…</option>
+                        {selected.map((d) => (
+                          <option key={d.userId} value={d.userId}>
+                            {d.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )
                 ) : (
                   <div className="self-end rounded-lg border border-cyan-400/20 px-3 py-3 text-xs text-cyan-200">
                     {allowed.length} conductores del grupo
@@ -757,8 +829,10 @@ export default function MarketplaceTestCenterV2({
                     <input
                       value={origin}
                       onChange={(e) => {
+                        reverseGeocodeVersion.current.origin++;
                         setOrigin(e.target.value);
                         setOriginPoint(null);
+                        setPicking("origin");
                       }}
                       maxLength={180}
                       placeholder="Calle y número de recogida"
@@ -782,9 +856,11 @@ export default function MarketplaceTestCenterV2({
                           key={`${i}-${item.lat}`}
                           type="button"
                           onClick={() => {
+                            reverseGeocodeVersion.current.origin++;
                             setOriginPoint(item);
                             setOrigin(item.label);
                             setOriginSuggestions([]);
+                            setPicking(destinationPoint ? null : "destination");
                           }}
                           className="block w-full rounded-lg px-2 py-2 text-left text-xs text-foreground hover:bg-muted/40"
                         >
@@ -803,8 +879,10 @@ export default function MarketplaceTestCenterV2({
                     <input
                       value={destination}
                       onChange={(e) => {
+                        reverseGeocodeVersion.current.destination++;
                         setDestination(e.target.value);
                         setDestinationPoint(null);
+                        setPicking("destination");
                       }}
                       maxLength={180}
                       placeholder="Calle y número de llegada"
@@ -828,9 +906,11 @@ export default function MarketplaceTestCenterV2({
                           key={`${i}-${item.lat}`}
                           type="button"
                           onClick={() => {
+                            reverseGeocodeVersion.current.destination++;
                             setDestinationPoint(item);
                             setDestination(item.label);
                             setDestinationSuggestions([]);
+                            setPicking(null);
                           }}
                           className="block w-full rounded-lg px-2 py-2 text-left text-xs text-foreground hover:bg-muted/40"
                         >
@@ -843,47 +923,6 @@ export default function MarketplaceTestCenterV2({
                     <p className="text-[11px] text-emerald-300">Ubicación geográfica confirmada</p>
                   )}
                 </div>
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  <span>Precio de carrera</span>
-                  <select
-                    value={priceMode}
-                    onChange={(e) => setPriceMode(e.target.value as "auto" | "manual")}
-                    className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                  >
-                    <option value="auto">Automático · tarifa oficial</option>
-                    <option value="manual">Manual · solo prueba</option>
-                  </select>
-                </div>
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  <span>Importe (CUP)</span>
-                  {priceMode === "manual" ? (
-                    <input
-                      type="number"
-                      min="1"
-                      max="100000"
-                      step="1"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                    />
-                  ) : (
-                    <div className="tt-lab-v4-price flex h-10 items-center rounded-lg border border-cyan-400/20 bg-cyan-400/[0.035] px-3 text-base font-semibold tabular-nums text-foreground">
-                      {validQuote?.recommendedPrice != null
-                        ? `${validQuote.recommendedPrice.toLocaleString("es")} CUP`
-                        : "Calcula la ruta"}
-                    </div>
-                  )}
-                </div>
-                <label className="space-y-1 text-xs text-muted-foreground">
-                  Observaciones
-                  <input
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    maxLength={1000}
-                    placeholder="Opcional"
-                    className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-                  />
-                </label>
               </div>
               <div className="tt-lab-v4-route mt-3 space-y-2">
                 <MarketplaceTestRouteMap
@@ -896,8 +935,11 @@ export default function MarketplaceTestCenterV2({
                     void pickFromMap(kind, lat, lon);
                   }}
                 />
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 bg-muted/[0.08] p-3">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <div
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.08] p-3"
+                  aria-live="polite"
+                >
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
                     <span>
                       Distancia{" "}
                       <strong className="ml-1 text-sm text-foreground">
@@ -911,21 +953,38 @@ export default function MarketplaceTestCenterV2({
                       </strong>
                     </span>
                     <span>
-                      Tarifa{" "}
-                      <strong className="ml-1 text-sm text-foreground">
-                        {priceMode === "auto" ? "Oficial" : "Manual"}
+                      Precio{" "}
+                      <strong className="ml-1 text-lg font-semibold text-cyan-100">
+                        {validQuote && Number.isFinite(selectedPrice)
+                          ? `${selectedPrice.toLocaleString("es-CU")} CUP`
+                          : "—"}
                       </strong>
                     </span>
+                    <span>
+                      {priceMode === "auto" ? "Tarifa oficial" : "Precio manual de prueba"}
+                    </span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    type="button"
-                    disabled={routeLoading || !originPoint || !destinationPoint}
-                    onClick={() => void calculateRoute()}
-                  >
-                    {routeLoading ? "Calculando…" : "Calcular ruta y tarifa"}
-                  </Button>
+                  {routeLoading && (
+                    <span role="status" className="text-xs font-semibold text-cyan-200">
+                      Calculando ruta y tarifa…
+                    </span>
+                  )}
+                  {routeError && originPoint && destinationPoint && canUseAuto && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRouteRetry((v) => v + 1)}
+                    >
+                      Reintentar
+                    </Button>
+                  )}
+                  {!originPoint && (
+                    <span className="text-xs text-cyan-200">1. Marca el origen</span>
+                  )}
+                  {originPoint && !destinationPoint && (
+                    <span className="text-xs text-cyan-200">2. Marca el destino</span>
+                  )}
                 </div>
                 {routeError && (
                   <p
@@ -942,15 +1001,61 @@ export default function MarketplaceTestCenterV2({
                   </p>
                 )}
               </div>
-              <label className="tt-lab-v4-risk mt-3 flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
-                <span>Probar comisión real (puede afectar el saldo del conductor)</span>
-                <Switch
-                  checked={forceRealCommission}
-                  disabled={!canManage || !canManagePayments}
-                  onCheckedChange={setForceRealCommission}
-                  aria-label="Probar comisión real"
-                />
-              </label>
+              <details className="tt-lab-v4-advanced mt-3 rounded-xl border border-border/55 bg-background/40">
+                <summary className="cursor-pointer px-3 py-3 text-xs font-semibold text-muted-foreground">
+                  Opciones avanzadas · precio manual, observaciones y comisión
+                </summary>
+                <div className="grid gap-3 border-t border-border/40 p-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    <span>Precio de carrera</span>
+                    <select
+                      value={priceMode}
+                      onChange={(e) => setPriceMode(e.target.value as "auto" | "manual")}
+                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                    >
+                      <option value="auto">Automático · tarifa oficial</option>
+                      <option value="manual">Manual · solo prueba</option>
+                    </select>
+                  </label>
+                  {priceMode === "manual" ? (
+                    <label className="space-y-1 text-xs text-muted-foreground">
+                      <span>Importe manual (CUP)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100000"
+                        step="1"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                      />
+                    </label>
+                  ) : (
+                    <p className="self-center text-xs text-muted-foreground">
+                      El importe oficial se muestra junto al mapa.
+                    </p>
+                  )}
+                  <label className="space-y-1 text-xs text-muted-foreground">
+                    <span>Observaciones (opcional)</span>
+                    <input
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      maxLength={1000}
+                      placeholder="Añadir nota de prueba"
+                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                    />
+                  </label>
+                  <label className="tt-lab-v4-risk flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
+                    <span>Comisión real (puede afectar el saldo del conductor)</span>
+                    <Switch
+                      checked={forceRealCommission}
+                      disabled={!canManage || !canManagePayments}
+                      onCheckedChange={setForceRealCommission}
+                      aria-label="Probar comisión real"
+                    />
+                  </label>
+                </div>
+              </details>
               <div className="tt-lab-v4-actions mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] text-muted-foreground">
                   {dirty
@@ -965,6 +1070,8 @@ export default function MarketplaceTestCenterV2({
                     !configured ||
                     dirty ||
                     send.isPending ||
+                    Boolean(successJobId) ||
+                    routeLoading ||
                     allowed.length === 0 ||
                     !validQuote ||
                     (priceMode === "auto" && validQuote.recommendedPrice == null)
@@ -976,14 +1083,39 @@ export default function MarketplaceTestCenterV2({
                 </Button>
               </div>
               {successJobId ? (
-                <button
-                  type="button"
-                  onClick={() => onOpenJob(successJobId)}
-                  className="tt-lab-v4-success mt-3 flex items-center gap-2 text-xs text-emerald-300 underline"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Carrera creada. Ver detalle.
-                </button>
+                <div className="tt-lab-v4-success mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onOpenJob(successJobId)}
+                    className="flex items-center gap-2 text-xs text-emerald-300 underline"
+                  >
+                    <CheckCircle2 className="h-4 w-4" /> Carrera creada. Ver detalle.
+                  </button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      reverseGeocodeVersion.current.origin++;
+                      reverseGeocodeVersion.current.destination++;
+                      setOrigin("");
+                      setDestination("");
+                      setOriginPoint(null);
+                      setDestinationPoint(null);
+                      setOriginSuggestions([]);
+                      setDestinationSuggestions([]);
+                      setRouteQuote(null);
+                      setRouteError(null);
+                      setPicking("origin");
+                      setSuccessJobId(null);
+                      setNotes("");
+                      setPriceMode("auto");
+                      setForceRealCommission(false);
+                    }}
+                  >
+                    Nueva prueba
+                  </Button>
+                </div>
               ) : null}
             </section>
           </div>
