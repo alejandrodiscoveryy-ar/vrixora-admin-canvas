@@ -502,6 +502,7 @@ Deno.serve(async (request: Request) => {
         "operational_route_geometry",
         "operational_driver_avatars",
         "driver_directory_media",
+        "driver_document_signed_url",
         "test_lab_create_v3",
       ].includes(operation)
     ) {
@@ -511,6 +512,56 @@ Deno.serve(async (request: Request) => {
     const projectId = String(body?.project_id ?? "").trim();
     if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw new Error("PROJECT_ID_INVALID");
 
+    if (operation === "driver_document_signed_url") {
+      const driverUserId = String(body?.driver_user_id ?? "").trim();
+      const assetId = String(body?.asset_id ?? "").trim();
+      if (!/^[0-9a-f-]{36}$/i.test(driverUserId) || !/^[0-9a-f-]{36}$/i.test(assetId)) {
+        throw new Error("DRIVER_DOCUMENT_INPUT_INVALID");
+      }
+      // Authenticated RPC enforces marketplace.manage on the project. No arbitrary paths from clients.
+      const { data: management, error: managementError } = await userClient.rpc(
+        "admin_get_marketplace_driver_management_v1",
+        { target_project_id: projectId, target_driver_user_id: driverUserId },
+      );
+      if (managementError) throw managementError;
+      const assetList = Array.isArray(asRecord(management).document_assets)
+        ? (asRecord(management).document_assets as Array<Record<string, unknown>>)
+        : [];
+      const permitted = assetList.some((item) => String(item.id ?? "") === assetId);
+      if (!permitted) throw new Error("DRIVER_DOCUMENT_NOT_AUTHORIZED");
+      const { data: asset, error: assetError } = await serviceClient
+        .from("media_assets")
+        .select("id,owner_user_id,project_id,asset_kind,storage_bucket,storage_path,status")
+        .eq("id", assetId)
+        .eq("project_id", projectId)
+        .eq("owner_user_id", driverUserId)
+        .eq("status", "available")
+        .single();
+      if (assetError || !asset) throw new Error("DRIVER_DOCUMENT_NOT_FOUND");
+      const bucket = String(asset.storage_bucket);
+      const kind = String(asset.asset_kind);
+      if (
+        kind === "identity_front" || kind === "identity_back"
+          ? bucket !== "marketplace-identity"
+          : !(["driver_photo", "vehicle_photo"].includes(kind) && bucket === "marketplace-media")
+      ) {
+        throw new Error("DRIVER_DOCUMENT_KIND_INVALID");
+      }
+      const { data: signed, error: signError } = await serviceClient.storage
+        .from(bucket)
+        .createSignedUrl(asset.storage_path, 90);
+      if (signError || !signed?.signedUrl) throw new Error("DRIVER_DOCUMENT_SIGN_FAILED");
+      const { error: auditError } = await userClient.rpc(
+        "admin_log_marketplace_driver_document_access_v1",
+        {
+          target_project_id: projectId,
+          target_driver_user_id: driverUserId,
+          target_asset_id: assetId,
+        },
+      );
+      if (auditError) throw auditError;
+      return reply({ ok: true, data: { signed_url: signed.signedUrl, expires_in_seconds: 90 } });
+    }
     if (operation === "driver_directory_media") {
       const requested = body?.driver_user_ids;
       if (!Array.isArray(requested) || requested.length === 0 || requested.length > 25) {
