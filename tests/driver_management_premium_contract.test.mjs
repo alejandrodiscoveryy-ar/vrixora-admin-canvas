@@ -39,3 +39,13 @@ test("Backend valida permisos y segrega carreras de prueba", () => {
   assert.match(edge, /createSignedUrl\(asset\.storage_path, 90\)/);
   assert.match(edge, /admin_log_marketplace_driver_document_access_v1/);
 });
+
+test("Ficha 360: variables SQL no ambiguas y requisitos no aplicables", () => {
+  const sql = file("docs/drafts/driver_management_v1.sql");
+  const panel = file("src/features/admin/MarketplaceDriverManagementPanel.tsx");
+  assert.match(sql, /selected_vehicle_id/);
+  assert.doesNotMatch(sql, /vs\.vehicle_id=vehicle_id\b/);
+  assert.match(sql, /'applicable',d\.identity_docs_required/);
+  assert.match(panel, /applicable !== false/);
+  assert.match(panel, /No aplica/);
+});

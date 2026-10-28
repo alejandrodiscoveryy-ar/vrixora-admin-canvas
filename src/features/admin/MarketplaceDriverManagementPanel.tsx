@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, FileText, Pencil, ShieldCheck, XCircle } f
 import { Button } from "@/components/ui/button";
 import { getSupabaseClient } from "@/lib/supabase";
 
-type ChecklistItem = { key: string; label: string; ok: boolean };
+type ChecklistItem = { key: string; label: string; ok: boolean; applicable?: boolean };
 type DocumentItem = { id: string; kind: string; label: string };
 type Opportunity = {
   job_id: string;
@@ -235,8 +235,9 @@ export default function MarketplaceDriverManagementPanel({
     );
 
   const m = data.data;
-  const pending = m.checklist.filter((item) => !item.ok);
-  const completed = m.checklist.length - pending.length;
+  const applicable = m.checklist.filter((item) => item.applicable !== false);
+  const pending = applicable.filter((item) => !item.ok);
+  const completed = applicable.length - pending.length;
   const stats = m.notifications;
   const resolved = stats.accepted + stats.not_accepted;
   const acceptanceRate = resolved ? Math.round((stats.accepted / resolved) * 100) : null;
@@ -253,7 +254,7 @@ export default function MarketplaceDriverManagementPanel({
               Expediente administrativo
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Completados {completed} de {m.checklist.length} requisitos; la activación la determina
+              Completados {completed} de {applicable.length} requisitos; la activación la determina
               el servidor.
             </p>
           </div>
@@ -424,13 +425,22 @@ export default function MarketplaceDriverManagementPanel({
               key={item.key}
               className="flex items-start gap-2 rounded-lg border border-border/45 bg-background/30 px-3 py-2.5 text-xs"
             >
-              {item.ok ? (
+              {item.applicable === false ? (
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              ) : item.ok ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
               ) : (
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
               )}
-              <span className={item.ok ? "text-muted-foreground" : "font-semibold text-amber-100"}>
+              <span
+                className={
+                  item.applicable === false || item.ok
+                    ? "text-muted-foreground"
+                    : "font-semibold text-amber-100"
+                }
+              >
                 {item.label}
+                {item.applicable === false ? " Â· No aplica" : ""}
               </span>
             </div>
           ))}

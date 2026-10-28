@@ -8,7 +8,7 @@ declare
   p public.profiles%rowtype;
   v public.vehicles%rowtype;
   active_assignment boolean := false;
-  vehicle_id text;
+  selected_vehicle_id text;
   checks jsonb;
   assets jsonb;
   alerts jsonb;
@@ -33,7 +33,7 @@ begin
    and a.driver_user_id = target_driver_user_id
   where vv.project_id = target_project_id and vv.deleted_at is null
   order by a.is_active desc, vv.created_at desc, vv.id limit 1;
-  vehicle_id := v.id;
+  selected_vehicle_id := v.id;
 
   checks := jsonb_build_array(
     jsonb_build_object('key','not_suspended','label','Conductor sin suspensión','ok',d.status <> 'suspended' and d.suspended_at is null),
@@ -43,12 +43,13 @@ begin
       select 1 from public.media_assets a where a.project_id=target_project_id and a.id=d.photo_asset_id
       and a.owner_user_id=target_driver_user_id and a.asset_kind='driver_photo' and a.status='available')),
     jsonb_build_object('key','document_type','label','Carnet o licencia seleccionados',
+      'applicable',d.identity_docs_required and d.identity_document_type_required,
       'ok',not d.identity_docs_required or not d.identity_document_type_required or coalesce(d.identity_document_type in ('national_id','driver_license'),false)),
-    jsonb_build_object('key','identity_front','label','Documento: frente','ok',not d.identity_docs_required or exists(
+    jsonb_build_object('key','identity_front','label','Documento: frente','applicable',d.identity_docs_required,'ok',not d.identity_docs_required or exists(
       select 1 from public.media_assets a where a.project_id=target_project_id and a.id=d.identity_front_asset_id
       and a.owner_user_id=target_driver_user_id and a.asset_kind='identity_front'
       and a.storage_bucket='marketplace-identity' and a.status='available')),
-    jsonb_build_object('key','identity_back','label','Documento: dorso','ok',not d.identity_docs_required or exists(
+    jsonb_build_object('key','identity_back','label','Documento: dorso','applicable',d.identity_docs_required,'ok',not d.identity_docs_required or exists(
       select 1 from public.media_assets a where a.project_id=target_project_id and a.id=d.identity_back_asset_id
       and a.owner_user_id=target_driver_user_id and a.asset_kind='identity_back'
       and a.storage_bucket='marketplace-identity' and a.status='available')),
@@ -63,13 +64,19 @@ begin
     jsonb_build_object('key','service','label','Al menos una modalidad activa','ok',exists(
       select 1 from public.vehicle_services vs join public.service_types st
        on st.project_id=vs.project_id and st.code=vs.service_code and st.active
-       where vs.project_id=target_project_id and vs.vehicle_id=vehicle_id and vs.enabled)),
-    jsonb_build_object('key','passenger_capacity','label','Capacidad para pasajeros/turismo','ok',
+       where vs.project_id=target_project_id and vs.vehicle_id=selected_vehicle_id and vs.enabled)),
+    jsonb_build_object('key','passenger_capacity','label','Capacidad para pasajeros/turismo',
+       'applicable',exists(select 1 from public.vehicle_services vs where vs.project_id=target_project_id
+         and vs.vehicle_id=selected_vehicle_id and vs.enabled and vs.service_code in ('passenger','tourism')),
+       'ok',
        not exists(select 1 from public.vehicle_services vs where vs.project_id=target_project_id
-        and vs.vehicle_id=vehicle_id and vs.enabled and vs.service_code in ('passenger','tourism')) or coalesce(v.passenger_capacity,0)>0),
-    jsonb_build_object('key','cargo_capacity','label','Capacidad para carga','ok',
+        and vs.vehicle_id=selected_vehicle_id and vs.enabled and vs.service_code in ('passenger','tourism')) or coalesce(v.passenger_capacity,0)>0),
+    jsonb_build_object('key','cargo_capacity','label','Capacidad para carga',
+       'applicable',exists(select 1 from public.vehicle_services vs where vs.project_id=target_project_id
+         and vs.vehicle_id=selected_vehicle_id and vs.enabled and vs.service_code='cargo'),
+       'ok',
        not exists(select 1 from public.vehicle_services vs where vs.project_id=target_project_id
-        and vs.vehicle_id=vehicle_id and vs.enabled and vs.service_code='cargo') or greatest(
+        and vs.vehicle_id=selected_vehicle_id and vs.enabled and vs.service_code='cargo') or greatest(
        coalesce(v.cargo_capacity_kg,0),coalesce(v.cargo_volume_m3,0),coalesce(v.cargo_length_cm,0),
        coalesce(v.cargo_width_cm,0),coalesce(v.cargo_height_cm,0))>0)
   );
@@ -151,10 +158,10 @@ begin
   return jsonb_build_object(
     'audit_events',audit_log,
     'driver',jsonb_build_object('display_name',p.display_name,'phone',p.phone,
-      'status',d.status,'identity_type',d.identity_document_type,'vehicle_id',vehicle_id,
+      'status',d.status,'identity_type',d.identity_document_type,'vehicle_id',selected_vehicle_id,
       'vehicle_brand',v.brand,'vehicle_model',v.model,'registration',v.registration),
     'checklist',checks,
-    'onboarding_complete',coalesce(app_private.marketplace_onboarding_requirements_complete(target_driver_user_id,vehicle_id),false),
+    'onboarding_complete',coalesce(app_private.marketplace_onboarding_requirements_complete(target_driver_user_id,selected_vehicle_id),false),
     'document_assets',assets,
     'notifications',jsonb_build_object('total',coalesce(a_total,0),'accepted',coalesce(a_accepted,0),
        'not_accepted',coalesce(a_unaccepted,0),'pending',coalesce(a_open,0),
@@ -269,3 +276,8 @@ end;
 $function$;
 revoke all on function public.admin_log_marketplace_driver_document_access_v1(uuid,uuid,uuid) from public,anon;
 grant execute on function public.admin_log_marketplace_driver_document_access_v1(uuid,uuid,uuid) to authenticated;
+
+-- Ãndice de consulta; no modifica datos existentes.
+create index if not exists notification_outbox_driver_360_sent_idx
+  on public.notification_outbox (project_id,user_id,sent_at desc)
+  where kind='marketplace_job_available' and delivery_status='sent';
