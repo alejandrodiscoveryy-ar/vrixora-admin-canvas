@@ -54,6 +54,7 @@ import {
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
+import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
@@ -1999,6 +2000,33 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             <Eye className="mr-1.5 h-4 w-4" />
                             Ficha 360
                           </Button>
+                          {driverWhatsAppLinks(item.phone) ? (
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                asChild
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-200"
+                              >
+                                <a
+                                  href={driverWhatsAppLinks(item.phone)!.desktop}
+                                  aria-label={`Abrir WhatsApp de escritorio con ${item.displayName}`}
+                                >
+                                  WhatsApp
+                                </a>
+                              </Button>
+                              <a
+                                className="text-[11px] text-emerald-300 underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={driverWhatsAppLinks(item.phone)!.web}
+                                title="Alternativa si no está instalada la aplicación"
+                              >
+                                Web
+                              </a>
+                            </div>
+                          ) : null}
                           {canManageMarketplace ? (
                             <Button
                               size="sm"
@@ -2718,6 +2746,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 detail={driver360.data}
                 financial={driverFinancial360.data ?? null}
                 canSeeFinancial={canManagePayments}
+                canManageDriver={canManageMarketplace}
                 financialLoading={driverFinancial360.isLoading}
                 media={
                   selectedDriverMedia.data?.[driver360Id ?? ""] ??
