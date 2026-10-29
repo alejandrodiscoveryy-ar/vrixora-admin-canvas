@@ -15,6 +15,7 @@ import {
 } from "@/lib/services";
 
 import { SectionCard } from "@/components/admin/SectionCard";
+import AppReleaseSettingsCard from "./AppReleaseSettingsCard";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1238,6 +1239,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </div>
           </div>
         </SectionCard>
+      ) : null}
+
+      {activeSection === "application" ? (
+        <AppReleaseSettingsCard projectId={projectId} canManage={canManage} />
       ) : null}
 
     </div>
