@@ -124,23 +124,57 @@ jobs:
           echo "MAP_ASSET=$REL"
           echo "LOCAL_SHA256=$LOCAL_HASH"
 
-      - name: Deploy exact build to existing Admin Worker
+      - name: Upload exact build to existing Admin Worker
         shell: bash
         run: |
           set -euo pipefail
+          DEPLOY_LOG="$RUNNER_TEMP/vrixora-admin-wrangler-deploy.log"
           npx --yes wrangler@4.115.0 deploy \
             --config .output/server/wrangler.json \
-            --keep-vars
+            --keep-vars 2>&1 | tee "$DEPLOY_LOG"
 
-      - name: Verify production asset hash
+          VERSION_ID="$(sed -n 's/.*Current Version ID: \([0-9a-f-]\+\).*/\1/p' "$DEPLOY_LOG" | tail -n 1)"
+          test -n "$VERSION_ID"
+          echo "VERSION_ID=$VERSION_ID" >> "$GITHUB_ENV"
+          echo "ADMIN_UPLOADED_VERSION_ID=$VERSION_ID"
+
+      - name: Activate exact uploaded version at 100 percent
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsS -H "Cache-Control: no-cache" "${PUBLIC_URL}?release=${GITHUB_SHA}" >/dev/null
+          test -n "$VERSION_ID"
+          npx --yes wrangler@4.115.0 versions deploy \
+            "${VERSION_ID}@100%" \
+            --config .output/server/wrangler.json \
+            --name "$WORKER_NAME" \
+            --yes
+
+      - name: Verify public production asset hash with edge retries
+        shell: bash
+        run: |
+          set -euo pipefail
           REMOTE="$RUNNER_TEMP/vrixora-admin-asset.js"
-          curl -fsSL -H "Cache-Control: no-cache" "${PUBLIC_URL}${MAP_ASSET}?release=${GITHUB_SHA}" -o "$REMOTE"
-          REMOTE_HASH="$(sha256sum "$REMOTE" | awk '{print toupper($1)}')"
-          echo "REMOTE_SHA256=$REMOTE_HASH"
-          test "$REMOTE_HASH" = "$LOCAL_HASH"
-          grep -q "Mapa operativo" "$REMOTE"
-          echo "PRODUCTION_INTEGRITY=OK"
+          MAX_ATTEMPTS=24
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            cache_buster="${GITHUB_SHA}-${attempt}-$(date +%s)"
+            curl -fsS \
+              -H "Cache-Control: no-cache, no-store, max-age=0" \
+              "${PUBLIC_URL}?release=${cache_buster}" >/dev/null || true
+            if curl -fsSL \
+              -H "Cache-Control: no-cache, no-store, max-age=0" \
+              "${PUBLIC_URL}${MAP_ASSET}?release=${cache_buster}" -o "$REMOTE"; then
+              REMOTE_HASH="$(sha256sum "$REMOTE" | awk '{print toupper($1)}')"
+              echo "ADMIN_REMOTE_SHA256=$REMOTE_HASH"
+              if [ "$REMOTE_HASH" = "$LOCAL_HASH" ] && grep -q 'Mapa operativo' "$REMOTE"; then
+                echo 'PRODUCTION_INTEGRITY=OK'
+                exit 0
+              fi
+            fi
+            echo "ADMIN_PRODUCTION_VERIFY_ATTEMPT=${attempt}/${MAX_ATTEMPTS} NOT_YET_MATCHING"
+            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then sleep 5; fi
+          done
+          echo 'PRODUCTION_INTEGRITY=FAILED_AFTER_RETRIES'
+          echo "EXPECTED_HASH=$LOCAL_HASH"
+          echo "LAST_REMOTE_HASH=${REMOTE_HASH:-NOT_AVAILABLE}"
+          echo 'CHECK_ACTIVE_WORKER_CUSTOM_DOMAIN_ROUTE_AND_EDGE_CACHE'
+          exit 1
