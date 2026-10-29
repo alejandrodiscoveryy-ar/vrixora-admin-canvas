@@ -2728,7 +2728,7 @@ export default function MarketplaceOperationalMap({
                             <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] px-3 py-2.5">
                               <div className="flex items-center justify-between gap-2">
                                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
-                                  Conductores notificados
+                                  Conductores notificados / prueba
                                 </p>
                                 {jobRecipients.data ? (
                                   <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
@@ -2753,7 +2753,8 @@ export default function MarketplaceOperationalMap({
                                         ) : null}
                                       </span>
                                       <span className="shrink-0 text-[10px] font-medium text-cyan-200">
-                                        {recipient.deliveryStatus === "sent" ? "Despachada" : recipient.deliveryStatus === "failed" ? "Error" : recipient.deliveryStatus === "processing" ? "Procesando" : "En cola"}
+                                        {recipient.isTestRecipient ? "Simulado" : recipient.deliveryStatus === "sent" ? "Despachada" : recipient.deliveryStatus === "failed" ? "Error" : recipient.deliveryStatus === "processing" ? "Procesando" : "En cola"}
+                                        {recipient.distanceKm != null ? " · " + recipient.distanceKm.toFixed(2) + " km" : ""}
                                       </span>
                                     </li>
                                   ))}

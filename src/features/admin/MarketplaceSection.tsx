@@ -60,6 +60,7 @@ import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatc
 import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
 import {
   getMarketplaceOperationalMap,
+  getMarketplaceJobNotificationRecipients,
   getMarketplaceOperationalMapConfig,
   getMarketplaceDirectoryDriverMedia,
   type MarketplaceDirectoryDriverMedia,
@@ -1721,6 +1722,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   </div>
                                 </div>
 
+                                <JobNotificationReach projectId={projectId} jobId={job.jobId} compact />
+
                                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                                   <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
                                     <div className="flex items-start gap-3">
@@ -2809,7 +2812,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             {detail.isLoading ? (
               <LoadingState />
             ) : detail.data ? (
-              <JobDetail detail={detail.data} />
+              <JobDetail detail={detail.data} projectId={projectId} jobId={jobId!} />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
                 No se encontro el trabajo.
@@ -3121,7 +3124,118 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   );
 }
 
-function JobDetail({ detail }: { detail: import("@/lib/services/types").MarketplaceJobDetail }) {
+function JobNotificationReach({
+  projectId, jobId, assignedDriverId, compact = false,
+}: {
+  projectId: string;
+  jobId: string;
+  assignedDriverId?: string | null;
+  compact?: boolean;
+}) {
+  // Consulta solamente cuando se despliega la operacion o su ficha.
+  const recipients = useQuery({
+    queryKey: ["marketplace-job-notification-recipients", projectId, jobId],
+    queryFn: () => getMarketplaceJobNotificationRecipients(projectId, jobId),
+    staleTime: 15_000,
+  });
+
+  if (recipients.isPending) {
+    return <p className="mt-3 text-xs text-muted-foreground">Consultando alcance de la solicitud…</p>;
+  }
+  if (recipients.isError) {
+    return <p role="alert" className="mt-3 text-xs text-amber-300">No se pudo consultar el alcance de esta carrera.</p>;
+  }
+
+  const all = recipients.data;
+  const actual = all.filter((item) => !item.isTestRecipient);
+  const sent = actual.filter((item) => item.deliveryStatus === "sent").length;
+  const simulated = all.filter((item) => item.isTestRecipient).length;
+  const nearest = actual.reduce<number | null>((previous, item) =>
+    item.distanceKm == null ? previous : previous == null
+      ? item.distanceKm : Math.min(previous, item.distanceKm), null);
+  const kilometers = (value: number) =>
+    new Intl.NumberFormat("es-CU", { maximumFractionDigits: 2 }).format(value) + " km";
+  const order = [...all].sort((a, b) =>
+    (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+
+  if (compact) {
+    return (
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.035] px-3 py-2 text-xs">
+        <span className="font-semibold text-cyan-200">Alcance de la solicitud</span>
+        <span className="text-foreground">Destinatarios: <strong>{actual.length}</strong></span>
+        <span className="text-foreground">Avisos enviados: <strong>{sent}</strong></span>
+        {simulated > 0 ? <span className="text-violet-300">Prueba: {simulated} seleccionados</span> : null}
+        <span className="text-muted-foreground">Más cercano: {nearest == null ? "Sin dato histórico" : kilometers(nearest)}</span>
+      </div>
+    );
+  }
+
+  return (
+    <section className="rounded-[24px] border border-cyan-500/20 bg-cyan-500/[0.035] p-4 sm:p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Alcance de la solicitud</p>
+      <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">Conductores y distancias al aviso</h4>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-xl border border-border/55 bg-background/50 p-3">
+          <p className="text-[11px] text-muted-foreground">Destinatarios reales</p>
+          <p className="mt-1 text-xl font-bold text-foreground">{actual.length}</p>
+        </div>
+        <div className="rounded-xl border border-border/55 bg-background/50 p-3">
+          <p className="text-[11px] text-muted-foreground">Avisos enviados</p>
+          <p className="mt-1 text-xl font-bold text-emerald-300">{sent}</p>
+        </div>
+        <div className="rounded-xl border border-border/55 bg-background/50 p-3">
+          <p className="text-[11px] text-muted-foreground">Sin aceptación registrada</p>
+          <p className="mt-1 text-xl font-bold text-foreground">
+            {actual.filter((item) => item.driverUserId !== assignedDriverId).length}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border/55 bg-background/50 p-3">
+          <p className="text-[11px] text-muted-foreground">Distancia mínima conocida</p>
+          <p className="mt-1 text-lg font-semibold text-foreground">
+            {nearest == null ? "—" : kilometers(nearest)}
+          </p>
+        </div>
+      </div>
+      {simulated > 0 ? (
+        <p className="mt-3 text-xs text-violet-300">Simulador: {simulated} conductores seleccionados (no equivale a notificación enviada).</p>
+      ) : null}
+      {all.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">No constan destinatarios ni avisos para esta carrera.</p>
+      ) : (
+        <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto pr-1">
+          {order.map((item) => (
+            <div key={item.driverUserId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 bg-background/50 px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {item.driverDisplayName}
+                  {item.driverUserId === assignedDriverId ? <span className="ml-2 text-xs text-emerald-300">Aceptó</span> : null}
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {item.isTestRecipient ? "Seleccionado para prueba" : item.deliveryStatus === "sent" ? "Enviado por sistema push" :
+                    item.deliveryStatus === "failed" ? "Falló el envío" : "En cola / pendiente"}
+                  {!item.isTestRecipient && item.notificationCount > 1 ? " · " + item.notificationCount + " avisos registrados" : ""}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-semibold text-cyan-200">
+                {item.distanceKm == null ? "Sin distancia histórica" : kilometers(item.distanceKm)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+        Distancia aproximada en línea recta al generar un aviso, solo con GPS de hasta cinco minutos de antigüedad.
+        Los viajes anteriores no tienen distancia recuperable si no fue registrada. «Enviado» no confirma que se haya visto en el móvil.
+      </p>
+    </section>
+  );
+}
+
+function JobDetail({ detail, projectId, jobId }: {
+  detail: import("@/lib/services/types").MarketplaceJobDetail;
+  projectId: string;
+  jobId: string;
+}) {
   const { job, serviceRequest, assignment, customer, financial, timeline, incidentResolution } =
     detail;
 
@@ -3172,6 +3286,8 @@ function JobDetail({ detail }: { detail: import("@/lib/services/types").Marketpl
           </div>
         </div>
       </section>
+
+      <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
 
       <section>
         <div className="mb-3">
