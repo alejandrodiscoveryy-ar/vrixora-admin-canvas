@@ -51,11 +51,15 @@ begin
       from public.marketplace_modality_visibility m
       where m.project_id=target_project_id and not m.is_published),
     'active_job', exists(
-      select 1 from public.jobs j where j.project_id=target_project_id
+      select 1 from public.jobs j
+      left join public.marketplace_incident_resolutions r
+        on r.project_id=j.project_id and r.job_id=j.id
+      where j.project_id=target_project_id
       and j.assigned_vehicle_id=target_vehicle_id
       and j.assigned_driver_user_id=target_driver_user_id
       and j.test_deleted_at is null
-      and j.status in ('accepted','en_route','pickup','in_progress','completed','incident'))
+      and (j.status in ('accepted','en_route','pickup','in_progress','completed')
+        or (j.status='incident' and r.id is null)))
   );
 end;
 $function$;
@@ -99,11 +103,15 @@ begin
   if not found then raise exception 'VEHICLE_NOT_FOUND_OR_NOT_OWNED' using errcode='P0002'; end if;
 
   -- Bloqueo de cambios operativos mientras haya asignaciones vivas.
-  if exists(select 1 from public.jobs j where j.project_id=target_project_id
+  if exists(select 1 from public.jobs j
+      left join public.marketplace_incident_resolutions r
+        on r.project_id=j.project_id and r.job_id=j.id
+      where j.project_id=target_project_id
       and j.assigned_vehicle_id=target_vehicle_id
       and j.assigned_driver_user_id=target_driver_user_id
       and j.test_deleted_at is null
-      and j.status in ('accepted','en_route','pickup','in_progress','completed','incident')) then
+      and (j.status in ('accepted','en_route','pickup','in_progress','completed')
+        or (j.status='incident' and r.id is null))) then
     raise exception 'ACTIVE_JOB_BLOCKS_VEHICLE_EDIT' using errcode='23514';
   end if;
   if not exists(select 1 from public.vehicle_categories c where c.project_id=target_project_id

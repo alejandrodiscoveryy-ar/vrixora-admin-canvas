@@ -23,7 +23,11 @@ test("RPC sensible requiere permisos, propiedad y bloqueo de carreras vivas", ()
   assert.match(sql, /vv\.owner_user_id=target_driver_user_id and vv\.deleted_at is null/);
   assert.match(sql, /ACTIVE_JOB_BLOCKS_VEHICLE_EDIT/);
   assert.match(sql, /assigned_vehicle_id=target_vehicle_id/);
-  assert.match(sql, /'accepted','en_route','pickup','in_progress','completed','incident'/);
+  // Mantener bloqueadas carreras operativas y completadas pendientes de liquidacion.
+  // Las incidencias ya resueltas no deben bloquear la correccion de datos.
+  assert.equal((sql.match(/'accepted','en_route','pickup','in_progress','completed'/g) ?? []).length, 2);
+  assert.equal((sql.match(/j\.status='incident' and r\.id is null/g) ?? []).length, 2);
+  assert.equal((sql.match(/left join public\.marketplace_incident_resolutions r/g) ?? []).length, 2);
   assert.match(sql, /revoke all on function public\.admin_update_marketplace_driver_vehicle_full_v1/);
   assert.match(sql, /grant execute on function public\.admin_update_marketplace_driver_vehicle_full_v1/);
 });
@@ -45,7 +49,7 @@ test("evitar regresiones de foto, modo Trabajar, historial y caché", () => {
   assert.match(sql, /VEHICLE_WORKING_BLOCKS_EDIT/);
   assert.match(sql, /for update/);
   assert.match(sql, /j\.test_deleted_at is null/);
-  assert.match(sql, /'completed','incident'/);
+  assert.match(sql, /'in_progress','completed'/);
   assert.match(component, /!form\.photoId/);
   assert.match(component, /details\.data\?\.working/);
   assert.match(component, /marketplace-driver-directory-media/);
