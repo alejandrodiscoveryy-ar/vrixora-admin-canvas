@@ -3287,7 +3287,7 @@ function JobDetail({ detail, projectId, jobId }: {
         </div>
       </section>
 
-      <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={assignment?.driver_user_id} />
+      <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
 
       <section>
         <div className="mb-3">
