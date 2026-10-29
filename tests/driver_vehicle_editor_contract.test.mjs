@@ -5,7 +5,7 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 const component = read("src/features/admin/MarketplaceDriverVehicleEditor.tsx");
 const record = read("src/features/admin/MarketplaceDriver360Record.tsx");
-const sql = read("supabase/migrations/20261029160000_admin_driver_vehicle_full_editor.sql");
+const sql = read("supabase/migrations/20261029230547_admin_driver_vehicle_full_editor.sql");
 
 test("vehículo: edición completa visible desde su propia ficha", () => {
   assert.match(record, /<MarketplaceDriverVehicleEditor/);
