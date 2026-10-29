@@ -21,7 +21,8 @@ test("Ficha 360 muestra requisitos, documentos seguros e historial", () => {
   const component = file("src/features/admin/MarketplaceDriverManagementPanel.tsx");
   assert.match(component, /admin_get_marketplace_driver_management_v1/);
   assert.match(component, /admin_update_marketplace_driver_contact_v1/);
-  assert.match(component, /admin_update_marketplace_driver_vehicle_info_v1/);
+  const editor = file("src/features/admin/MarketplaceDriverVehicleEditor.tsx");
+  assert.match(editor, /admin_update_marketplace_driver_vehicle_full_v1/);
   assert.match(component, /driver_document_signed_url/);
   assert.match(component, /onboarding_complete/);
   assert.match(component, /not_accepted/);
@@ -78,6 +79,6 @@ test("UX directorio de conductores: fila 360, WhatsApp único y suspensión sepa
   const history = record.indexOf('aria-label="Récord profesional"');
   assert.ok(conductor >= 0 && vehicle > conductor && management > vehicle && history > management);
   assert.equal((record.match(/aria-label="Información del vehículo"/g) ?? []).length, 1);
-  assert.ok(record.includes("sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]"));
+  assert.ok(record.includes("sm:grid-cols-[minmax(0,190px)_minmax(0,1fr)]"));
   assert.match(record, /aria-label="Acciones administrativas sensibles"/);
 });

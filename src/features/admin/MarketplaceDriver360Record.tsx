@@ -22,6 +22,7 @@ import type { MarketplaceDirectoryDriverMedia } from "@/lib/marketplace-map";
 import { Button } from "@/components/ui/button";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceDriverManagementPanel from "@/features/admin/MarketplaceDriverManagementPanel";
+import MarketplaceDriverVehicleEditor from "@/features/admin/MarketplaceDriverVehicleEditor";
 
 const date = (value: string | null | undefined) => {
   if (!value) return "—";
@@ -205,10 +206,10 @@ export default function MarketplaceDriver360Record({
     detail.vehicles.find((entry) => entry.assignment?.isActive) ?? detail.vehicles[0];
 
   return (
-    <div className="min-w-0 space-y-4 sm:space-y-5">
+    <div className="min-w-0 space-y-3 sm:space-y-4">
       <section className="relative overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.11] via-background/90 to-emerald-400/[0.05] p-4 sm:p-5">
         <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-cyan-400/[0.08] blur-3xl" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center">
           <ImageWithFallback
             url={media?.avatarUrl}
             alt={`Imagen de perfil de ${displayName}`}
@@ -240,7 +241,7 @@ export default function MarketplaceDriver360Record({
               {" · "}Alta: {date(detail.driver.activatedAt ?? detail.driver.createdAt)}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 sm:justify-end">
+          <div className="flex flex-wrap gap-2 sm:ml-auto sm:self-center">
             {whatsApp ? (
               <Button size="sm" variant="outline" asChild>
                 <a
@@ -271,7 +272,7 @@ export default function MarketplaceDriver360Record({
             ) : null}
           </div>
         </div>
-        <div className="relative mt-4 grid gap-3 border-t border-cyan-400/10 pt-4 sm:grid-cols-2">
+        <div className="relative mt-3 grid gap-2 border-t border-cyan-400/10 pt-3 sm:grid-cols-2">
           <Fact label="Teléfono / WhatsApp" value={text(contactPhone)} />
           <Fact label="Correo" value={text(contactEmail)} />
         </div>
@@ -295,7 +296,7 @@ export default function MarketplaceDriver360Record({
             {detail.vehicles.map((item) => (
               <div
                 key={item.vehicle.id}
-                className="grid min-w-0 gap-4 rounded-2xl border border-cyan-400/10 bg-background/45 p-3 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:items-start"
+                className="grid min-w-0 gap-4 rounded-2xl border border-cyan-400/10 bg-background/45 p-3 sm:grid-cols-[minmax(0,190px)_minmax(0,1fr)] sm:items-start"
               >
                 <div className="min-w-0">
                   <ImageWithFallback
@@ -347,6 +348,13 @@ export default function MarketplaceDriver360Record({
                     </div>
                   ) : null}
                 </div>
+                {canManageDriver ? (
+                  <MarketplaceDriverVehicleEditor
+                    projectId={projectId}
+                    driverUserId={driverUserId}
+                    vehicleId={item.vehicle.id}
+                  />
+                ) : null}
               </div>
             ))}
           </div>
