@@ -325,6 +325,11 @@ export interface MarketplaceJobNotificationRecipient {
   driverUserId: string;
   driverDisplayName: string;
   deliveryStatus: string;
+  notificationCount: number;
+  firstNotificationAt: string | null;
+  distanceKm: number | null;
+  distanceGpsAt: string | null;
+  isTestRecipient: boolean;
 }
 
 export async function getMarketplaceJobNotificationRecipients(
@@ -343,6 +348,12 @@ export async function getMarketplaceJobNotificationRecipients(
       driverUserId: String(row.driver_user_id ?? ""),
       driverDisplayName: String(row.driver_display_name ?? "Conductor sin nombre"),
       deliveryStatus: String(row.delivery_status ?? "pending"),
+      notificationCount: Number(row.notification_count ?? 0),
+      firstNotificationAt: row.first_notification_at == null ? null : String(row.first_notification_at),
+      distanceKm: row.distance_km == null || !Number.isFinite(Number(row.distance_km))
+        ? null : Math.max(0, Number(row.distance_km)),
+      distanceGpsAt: row.distance_gps_at == null ? null : String(row.distance_gps_at),
+      isTestRecipient: row.is_test_recipient === true,
     };
   });
 }
