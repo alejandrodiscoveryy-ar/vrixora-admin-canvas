@@ -84,11 +84,6 @@ export default function MarketplaceDriverManagementPanel({
 }) {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
-  const [vehicleEditOpen, setVehicleEditOpen] = useState(false);
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [registration, setRegistration] = useState("");
-  const [vehicleReason, setVehicleReason] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [reason, setReason] = useState("");
@@ -110,37 +105,6 @@ export default function MarketplaceDriverManagementPanel({
     },
     retry: 1,
     staleTime: 20_000,
-  });
-
-  const saveVehicle = useMutation({
-    mutationFn: async (vehicleId: string) => {
-      const { error } = await getSupabaseClient().rpc(
-        "admin_update_marketplace_driver_vehicle_info_v1",
-        {
-          target_project_id: projectId,
-          target_driver_user_id: driverUserId,
-          target_vehicle_id: vehicleId,
-          target_brand: brand.trim(),
-          target_model: model.trim(),
-          target_registration: registration.trim(),
-          target_reason: vehicleReason.trim(),
-        },
-      );
-      if (error) throw error;
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["driver-management-360", projectId, driverUserId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["marketplace-driver-360", projectId, driverUserId],
-        }),
-        queryClient.invalidateQueries({ queryKey: ["marketplace-drivers", projectId] }),
-      ]);
-      setVehicleEditOpen(false);
-      setVehicleReason("");
-    },
   });
 
   const save = useMutation({
@@ -266,23 +230,6 @@ export default function MarketplaceDriverManagementPanel({
                 ? "Inscripción completa"
                 : `${pending.length} requisitos pendientes`}
             </span>
-            {m.driver.vehicle_id ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setBrand(m.driver.vehicle_brand ?? "");
-                  setModel(m.driver.vehicle_model ?? "");
-                  setRegistration(m.driver.registration ?? "");
-                  setVehicleReason("");
-                  setVehicleEditOpen((prev) => !prev);
-                }}
-              >
-                <Pencil className="mr-1.5 h-4 w-4" />
-                Editar vehículo
-              </Button>
-            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -354,72 +301,11 @@ export default function MarketplaceDriverManagementPanel({
             </div>
           </form>
         ) : null}
-        {vehicleEditOpen && m.driver.vehicle_id ? (
-          <form
-            className="mt-3 grid gap-3 rounded-xl border border-border/60 bg-background/45 p-4 sm:grid-cols-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              saveVehicle.mutate(m.driver.vehicle_id!);
-            }}
-          >
-            <label className="text-xs text-muted-foreground">
-              Marca
-              <input
-                required
-                minLength={2}
-                maxLength={100}
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              Modelo
-              <input
-                required
-                minLength={1}
-                maxLength={100}
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              Matrícula (opcional)
-              <input
-                maxLength={25}
-                value={registration}
-                onChange={(e) => setRegistration(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground sm:col-span-3">
-              Motivo de la corrección
-              <input
-                required
-                minLength={5}
-                maxLength={300}
-                value={vehicleReason}
-                onChange={(e) => setVehicleReason(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-              />
-            </label>
-            {saveVehicle.isError ? (
-              <p className="text-sm text-rose-200 sm:col-span-3" role="alert">
-                No se pudo editar este vehículo. Revisa los datos y permisos.
-              </p>
-            ) : null}
-            <div className="flex gap-2 sm:col-span-3">
-              <Button type="submit" disabled={saveVehicle.isPending}>
-                {saveVehicle.isPending ? "Guardando…" : "Guardar vehículo con auditoría"}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setVehicleEditOpen(false)}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        ) : null}
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <details className="mt-3 rounded-lg border border-border/55 bg-background/30 p-2.5">
+          <summary className="cursor-pointer text-sm font-medium text-foreground">
+            Ver requisitos de inscripción ({completed}/{applicable.length})
+          </summary>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {m.checklist.map((item) => (
             <div
               key={item.key}
@@ -444,7 +330,8 @@ export default function MarketplaceDriverManagementPanel({
               </span>
             </div>
           ))}
-        </div>
+          </div>
+        </details>
       </section>
 
       <section className="rounded-[20px] border border-border/60 bg-background/35 p-4 sm:p-5">
