@@ -41,11 +41,21 @@ begin
       from public.media_assets a where a.project_id=target_project_id
       and a.owner_user_id=target_driver_user_id and a.asset_kind='vehicle_photo'
       and a.storage_bucket='marketplace-media' and a.status='available'),
+    'working', exists(
+      select 1 from public.driver_vehicle_assignments a
+      where a.project_id=target_project_id and a.driver_user_id=target_driver_user_id
+        and a.vehicle_id=target_vehicle_id and a.accepting_jobs),
+    'unpublished_modalities', (select coalesce(jsonb_agg(
+        jsonb_build_object('service_code',m.service_code,'category_code',m.vehicle_category_code)),
+        '[]'::jsonb)
+      from public.marketplace_modality_visibility m
+      where m.project_id=target_project_id and not m.is_published),
     'active_job', exists(
       select 1 from public.jobs j where j.project_id=target_project_id
       and j.assigned_vehicle_id=target_vehicle_id
       and j.assigned_driver_user_id=target_driver_user_id
-      and j.status in ('accepted','en_route','pickup','in_progress','incident'))
+      and j.test_deleted_at is null
+      and j.status in ('accepted','en_route','pickup','in_progress','completed','incident'))
   );
 end;
 $function$;
@@ -69,9 +79,16 @@ declare
   old_services text[];
   why text := nullif(btrim(target_reason), '');
   category_change boolean;
+  is_working boolean;
 begin
   if auth.uid() is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
   perform app_private.require_project_permission(target_project_id, 'marketplace.manage');
+  -- Serializar con Trabajar/Descansar: ambos flujos bloquean la asignación.
+  select a.accepting_jobs into is_working from public.driver_vehicle_assignments a
+    where a.project_id=target_project_id and a.driver_user_id=target_driver_user_id
+      and a.vehicle_id=target_vehicle_id for update;
+  if not found then raise exception 'VEHICLE_ASSIGNMENT_NOT_FOUND' using errcode='P0002'; end if;
+  if is_working then raise exception 'VEHICLE_WORKING_BLOCKS_EDIT' using errcode='23514'; end if;
   select vv.* into old_vehicle from public.vehicles vv
     where vv.project_id=target_project_id and vv.id=target_vehicle_id
       and vv.owner_user_id=target_driver_user_id and vv.deleted_at is null
@@ -85,7 +102,8 @@ begin
   if exists(select 1 from public.jobs j where j.project_id=target_project_id
       and j.assigned_vehicle_id=target_vehicle_id
       and j.assigned_driver_user_id=target_driver_user_id
-      and j.status in ('accepted','en_route','pickup','in_progress','incident')) then
+      and j.test_deleted_at is null
+      and j.status in ('accepted','en_route','pickup','in_progress','completed','incident')) then
     raise exception 'ACTIVE_JOB_BLOCKS_VEHICLE_EDIT' using errcode='23514';
   end if;
   if not exists(select 1 from public.vehicle_categories c where c.project_id=target_project_id
@@ -106,11 +124,11 @@ begin
      or length(coalesce(why,'')) not between 5 and 300
      or (target_year is not null and target_year not between 1886 and 2200)
      or (target_passenger_capacity is not null and target_passenger_capacity < 0)
-     or (target_cargo_capacity_kg is not null and target_cargo_capacity_kg < 0)
-     or (target_cargo_volume_m3 is not null and target_cargo_volume_m3 < 0)
-     or (target_cargo_length_cm is not null and target_cargo_length_cm < 0)
-     or (target_cargo_width_cm is not null and target_cargo_width_cm < 0)
-     or (target_cargo_height_cm is not null and target_cargo_height_cm < 0) then
+     or (target_cargo_capacity_kg is not null and (target_cargo_capacity_kg < 0 or target_cargo_capacity_kg::text in ('NaN','Infinity','-Infinity')))
+     or (target_cargo_volume_m3 is not null and (target_cargo_volume_m3 < 0 or target_cargo_volume_m3::text in ('NaN','Infinity','-Infinity')))
+     or (target_cargo_length_cm is not null and (target_cargo_length_cm < 0 or target_cargo_length_cm::text in ('NaN','Infinity','-Infinity')))
+     or (target_cargo_width_cm is not null and (target_cargo_width_cm < 0 or target_cargo_width_cm::text in ('NaN','Infinity','-Infinity')))
+     or (target_cargo_height_cm is not null and (target_cargo_height_cm < 0 or target_cargo_height_cm::text in ('NaN','Infinity','-Infinity'))) then
     raise exception 'INVALID_VEHICLE_EDIT' using errcode='22023';
   end if;
   if cardinality(cleaned_services)=0
@@ -130,7 +148,11 @@ begin
   if 'cargo'=any(cleaned_services) and coalesce(target_cargo_capacity_kg,0)<=0 then
     raise exception 'CARGO_CAPACITY_REQUIRED' using errcode='22023';
   end if;
-  if target_main_photo_asset_id is not null and not exists (
+  -- No permitir retirar la foto que exige el alta operativa del conductor.
+  if target_main_photo_asset_id is null then
+    raise exception 'VEHICLE_PHOTO_REQUIRED' using errcode='22023';
+  end if;
+  if not exists (
     select 1 from public.media_assets m where m.project_id=target_project_id
       and m.id=target_main_photo_asset_id and m.owner_user_id=target_driver_user_id
       and m.asset_kind='vehicle_photo' and m.storage_bucket='marketplace-media'

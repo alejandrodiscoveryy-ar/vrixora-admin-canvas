@@ -33,6 +33,8 @@ type EditorPayload = {
   services: string[];
   photos: PhotoItem[];
   active_job: boolean;
+  working: boolean;
+  unpublished_modalities: Array<{ service_code: string; category_code: string }>;
 };
 type FormState = {
   category: string;
@@ -158,7 +160,8 @@ export default function MarketplaceDriverVehicleEditor({
         queryClient.invalidateQueries({ queryKey: ["driver-management-360", projectId, driverUserId] }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-drivers", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["driver-vehicle-editor", projectId, driverUserId, vehicleId] }),
-        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-media"] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-directory-media", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-360-media", projectId, driverUserId] }),
       ]);
       setOpen(false);
       setForm(null);
@@ -169,16 +172,30 @@ export default function MarketplaceDriverVehicleEditor({
     setForm((previous) => (previous ? { ...previous, ...patch } : previous));
   const originalCategory = details.data?.vehicle.category_code ?? "";
   const categoryChanged = Boolean(form && form.category !== originalCategory);
-  const hasInvalidNumbers = Boolean(form && [
-    form.year, form.passengers, form.cargoKg, form.cargoVolume,
-    form.cargoLength, form.cargoWidth, form.cargoHeight,
-  ].some((v) => v.trim() !== "" && !Number.isFinite(optionalNumber(v))));
+  const hasInvalidNumbers = Boolean(form && (
+    [form.year, form.passengers, form.cargoKg, form.cargoVolume,
+      form.cargoLength, form.cargoWidth, form.cargoHeight].some((v) => {
+      const n = optionalNumber(v);
+      return n !== null && (!Number.isFinite(n) || n < 0);
+    }) || [form.year, form.passengers].some((v) => {
+      const n = optionalNumber(v);
+      return n !== null && !Number.isInteger(n);
+    }) || (optionalNumber(form.year) !== null && (Number(form.year) < 1886 || Number(form.year) > 2200))
+  ));
+  const unpublishedForSelected = (details.data?.unpublished_modalities ?? []).filter((item) =>
+    item.category_code === form?.category && form?.services.includes(item.service_code)
+  );
   const saveDisabled = !form || save.isPending || Boolean(details.data?.active_job) ||
+    Boolean(details.data?.working) || !form.photoId ||
     !form.category || !form.propulsion || form.brand.trim().length < 2 ||
     `${form.brand.trim()} ${form.model.trim()}`.trim().length > 80 ||
     !form.model.trim() || form.services.length === 0 || form.reason.trim().length < 5 ||
     (form.category === "other" && !form.otherCategory.trim()) ||
-    (categoryChanged && !form.acknowledged) || hasInvalidNumbers;
+    (categoryChanged && !form.acknowledged) || hasInvalidNumbers ||
+    (form.category === "motorcycle" && optionalNumber(form.passengers) !== 1) ||
+    (form.services.some((service) => ["passenger", "tourism"].includes(service)) &&
+      (optionalNumber(form.passengers) ?? 0) < 1) ||
+    (form.services.includes("cargo") && (optionalNumber(form.cargoKg) ?? 0) <= 0);
 
   return (
     <div className="sm:col-span-2 min-w-0">
@@ -261,11 +278,16 @@ export default function MarketplaceDriverVehicleEditor({
                 </Field>
                 <Field label="Foto principal ya registrada">
                   <select className={inputClass} value={form.photoId} onChange={(e) => change({ photoId: e.target.value })}>
-                    <option value="">Sin foto</option>
+                    <option value="">Seleccionar foto obligatoria</option>
                     {details.data.photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.label}</option>)}
                   </select>
                 </Field>
               </div>
+              {unpublishedForSelected.length > 0 ? (
+                <p role="status" className="rounded-lg border border-amber-400/25 bg-amber-500/[0.07] px-3 py-2 text-xs text-amber-100">
+                  Hay modalidades no publicadas para esta categoría. Corregir el vehículo no las publica ni las habilita a clientes.
+                </p>
+              ) : null}
               <fieldset className="rounded-lg border border-border/60 p-3">
                 <legend className="px-1 text-xs font-semibold text-foreground">Servicios autorizados para el vehículo</legend>
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -287,9 +309,9 @@ export default function MarketplaceDriverVehicleEditor({
                   Confirmo la categoría real del vehículo y he revisado pasajeros, carga y servicios. La corrección puede cambiar las nuevas solicitudes que recibe el conductor; no modifica carreras anteriores.
                 </label>
               ) : null}
-              {details.data.active_job ? (
+              {details.data.active_job || details.data.working ? (
                 <div role="alert" className="flex gap-2 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] p-3 text-sm text-amber-100">
-                  <AlertTriangle className="h-4 w-4 shrink-0" /> La edición está bloqueada mientras exista una carrera activa asignada a este vehículo.
+                  <AlertTriangle className="h-4 w-4 shrink-0" /> La edición está bloqueada mientras el conductor esté en modo Trabajar o tenga una carrera activa o pendiente de cierre. Primero debe pasar a Descansar y finalizar las carreras.
                 </div>
               ) : null}
               <Field label="Motivo administrativo obligatorio (mínimo 5 caracteres)">

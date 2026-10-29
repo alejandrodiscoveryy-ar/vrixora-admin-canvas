@@ -23,7 +23,7 @@ test("RPC sensible requiere permisos, propiedad y bloqueo de carreras vivas", ()
   assert.match(sql, /vv\.owner_user_id=target_driver_user_id and vv\.deleted_at is null/);
   assert.match(sql, /ACTIVE_JOB_BLOCKS_VEHICLE_EDIT/);
   assert.match(sql, /assigned_vehicle_id=target_vehicle_id/);
-  assert.match(sql, /'accepted','en_route','pickup','in_progress','incident'/);
+  assert.match(sql, /'accepted','en_route','pickup','in_progress','completed','incident'/);
   assert.match(sql, /revoke all on function public\.admin_update_marketplace_driver_vehicle_full_v1/);
   assert.match(sql, /grant execute on function public\.admin_update_marketplace_driver_vehicle_full_v1/);
 });
@@ -37,4 +37,19 @@ test("corrección conserva historia y audita antes/después", () => {
   assert.match(sql, /CARGO_CAPACITY_REQUIRED/);
   assert.match(sql, /INVALID_VEHICLE_SERVICES/);
   assert.doesNotMatch(sql, /update public\.jobs|delete from public\.jobs/i);
+});
+
+
+test("evitar regresiones de foto, modo Trabajar, historial y caché", () => {
+  assert.match(sql, /VEHICLE_PHOTO_REQUIRED/);
+  assert.match(sql, /VEHICLE_WORKING_BLOCKS_EDIT/);
+  assert.match(sql, /for update/);
+  assert.match(sql, /j\.test_deleted_at is null/);
+  assert.match(sql, /'completed','incident'/);
+  assert.match(component, /!form\.photoId/);
+  assert.match(component, /details\.data\?\.working/);
+  assert.match(component, /marketplace-driver-directory-media/);
+  assert.match(component, /marketplace-driver-360-media/);
+  assert.match(sql, /unpublished_modalities/);
+  assert.match(component, /modalidades no publicadas/);
 });
