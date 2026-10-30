@@ -255,20 +255,40 @@ export default function MarketplaceCustomerCareWorkspace({
             </div>
           )}
 
-          <section className="overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.055] via-background/90 to-background p-4 shadow-xl sm:p-5" aria-label="Formulario de solicitud manual">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2"><Users className="h-4 w-4 text-cyan-300" /><h3 className="text-base font-semibold">Solicitud manual de carrera</h3></div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fase 1</span>
-            </div>
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5"><Label htmlFor="care-client-name">Nombre del cliente</Label>
-                  <Input id="care-client-name" placeholder="Nombre y apellido" value={clientName} maxLength={100} onChange={(event) => setClientName(event.target.value)} />
-                </div>
-                <div className="space-y-1.5"><Label htmlFor="care-client-phone">Teléfono del cliente</Label>
-                  <Input id="care-client-phone" type="tel" inputMode="tel" placeholder="+53 ..." value={clientPhone} maxLength={22} onChange={(event) => setClientPhone(event.target.value)} />
+          <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.12] via-background/95 to-indigo-500/[0.045] p-4 shadow-[0_24px_65px_-44px_rgba(139,92,246,0.65)] sm:p-5" aria-label="Identificación del cliente">
+            <Users aria-hidden="true" className="pointer-events-none absolute -right-8 top-8 h-40 w-40 text-violet-200/[0.07]" />
+            <div className="relative z-10 space-y-3">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="rounded-xl border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200"><Users className="h-5 w-5" /></span>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">02 · Identidad del cliente</p>
+                  <h3 className="text-base font-semibold">Identificar por teléfono</h3>
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="care-client-phone">Teléfono del cliente</Label>
+                <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+53 ..." value={clientPhone} maxLength={22} onChange={(event) => setClientPhone(event.target.value)} />
+                <p className="text-xs text-violet-200/80">Primero el teléfono: será la clave para vincular la ficha en Clientes.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="care-client-name">Nombre del cliente</Label>
+                <Input id="care-client-name" placeholder="Nombre y apellido (provisional)" value={clientName} maxLength={100} onChange={(event) => setClientName(event.target.value)} />
+              </div>
+              <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.06] px-3 py-3 text-xs">
+                <p className="font-semibold text-violet-100">La identidad principal se gestiona en Clientes.</p>
+                <p className="mt-1 text-muted-foreground">En esta fase no se buscan ni registran clientes. La consulta automática por teléfono se conectará en fase 2.</p>
+                <a href={`/admin/proyectos/${encodeURIComponent(projectId)}/trabajos?vista=clientes`} className="mt-2 inline-flex font-semibold text-violet-200 underline-offset-2 hover:underline">Abrir Clientes</a>
+              </div>
+            </div>
+          </section>
+          <section className="relative isolate overflow-hidden rounded-[26px] border border-teal-400/30 bg-gradient-to-br from-teal-500/[0.12] via-background/95 to-cyan-500/[0.035] p-4 shadow-[0_25px_70px_-45px_rgba(20,184,166,0.65)] sm:p-5" aria-label="Formulario de solicitud manual">
+            <Route aria-hidden="true" className="pointer-events-none absolute -right-10 top-10 h-44 w-44 -rotate-12 text-teal-200/[0.07]" />
+            <div className="relative z-10 mb-4 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2"><Users className="h-4 w-4 text-cyan-300" /><h3 className="text-base font-semibold">03 · Montar carrera</h3></div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fase 1</span>
+            </div>
+            <div className="relative z-10 space-y-4">
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label htmlFor="care-service">Tipo de servicio</Label>
                   <select id="care-service" value={service} onChange={(event) => setService(event.target.value as ServiceCode)}
