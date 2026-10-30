@@ -2688,24 +2688,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         }}
       >
         <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
-          <div className="sticky top-0 z-20 border-b border-cyan-400/10 bg-[#081218]/95 px-4 py-3 pr-14 backdrop-blur-xl sm:px-6 sm:py-4">
-            <DialogHeader className="text-left">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
-                  Perfil de conductor
-                </span>
-              </div>
-              <DialogTitle className="text-xl tracking-tight sm:text-2xl">
-                Ficha 360 del conductor
-              </DialogTitle>
-              <DialogDescription className="max-w-2xl">
-                Identidad, vehículo, trayectoria y gestión en un solo expediente.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Ficha 360 del conductor</DialogTitle>
+            <DialogDescription>Expediente completo del conductor</DialogDescription>
+          </DialogHeader>
 
-          <div className="p-4 sm:p-6">
+          <div className="p-4 pt-10 sm:p-6 sm:pt-10">
             {driver360.isLoading ? (
               <LoadingState />
             ) : driver360.data ? (
