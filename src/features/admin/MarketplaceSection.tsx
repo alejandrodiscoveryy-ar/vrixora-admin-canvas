@@ -2688,7 +2688,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         }}
       >
         <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
-          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
+          <div className="sticky top-0 z-20 border-b border-cyan-400/10 bg-[#081218]/95 px-4 py-3 pr-14 backdrop-blur-xl sm:px-6 sm:py-4">
             <DialogHeader className="text-left">
               <div className="mb-1 flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
@@ -2700,8 +2700,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 Ficha 360 del conductor
               </DialogTitle>
               <DialogDescription className="max-w-2xl">
-                Perfil, vehículo, promoción, actividad, referidos, valoraciones y situación
-                financiera.
+                Identidad, vehículo, trayectoria y gestión en un solo expediente.
               </DialogDescription>
             </DialogHeader>
           </div>

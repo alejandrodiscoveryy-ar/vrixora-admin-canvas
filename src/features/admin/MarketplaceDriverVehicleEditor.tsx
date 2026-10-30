@@ -2,6 +2,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ChevronDown, Pencil, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type CatalogItem = { code: string; name: string };
@@ -203,15 +210,22 @@ export default function MarketplaceDriverVehicleEditor({
         type="button"
         size="sm"
         variant="outline"
-        className="border-cyan-400/25"
+        className="border-cyan-400/30 bg-cyan-400/[0.04] text-cyan-100 hover:bg-cyan-400/10"
         aria-expanded={open}
         onClick={() => { setOpen((value) => !value); setForm(null); }}
       >
         <Pencil className="mr-1.5 h-4 w-4" /> Editar vehículo completo
         <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </Button>
+      <Dialog open={open} onOpenChange={(nextOpen) => { setOpen(nextOpen); if (!nextOpen) setForm(null); }}>
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[980px] overflow-y-auto border-cyan-400/25 bg-[#0b151b] p-4 shadow-[0_35px_100px_-35px_rgba(0,0,0,0.95)] sm:p-6">
+          <DialogHeader className="border-b border-cyan-400/15 pb-4 text-left">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300">TukTuk · Gestión de vehículos</p>
+            <DialogTitle className="text-xl font-bold text-white sm:text-2xl">Editar vehículo completo</DialogTitle>
+            <DialogDescription>Corrige categoría, capacidades y servicios. Los cambios requieren motivo administrativo y quedan auditados.</DialogDescription>
+          </DialogHeader>
       {open ? (
-        <div className="mt-3 rounded-xl border border-cyan-400/20 bg-background/70 p-3 sm:p-4">
+        <div className="mt-2 rounded-2xl border border-cyan-400/15 bg-[#101c21] p-3 sm:p-4">
           {details.isPending ? <p className="text-sm">Consultando ficha del vehículo…</p> : null}
           {details.isError ? (
             <p role="alert" className="text-sm text-amber-200">
@@ -223,7 +237,7 @@ export default function MarketplaceDriverVehicleEditor({
               className="space-y-4"
               onSubmit={(event) => { event.preventDefault(); if (!saveDisabled) save.mutate(form); }}
             >
-              <p className="text-sm font-semibold text-foreground">Corrección administrativa del vehículo</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300">Datos verificados del vehículo</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Field label="Categoría del vehículo">
                   <select className={inputClass} required value={form.category} onChange={(e) => {
@@ -251,6 +265,7 @@ export default function MarketplaceDriverVehicleEditor({
                 <Field label="Modelo">
                   <input className={inputClass} required maxLength={100} value={form.model} onChange={(e) => change({ model: e.target.value })} />
                 </Field>
+                <div className="col-span-full mt-1 border-t border-cyan-400/10 pt-3 text-xs font-semibold uppercase tracking-[0.11em] text-slate-400">Datos técnicos y capacidad</div>
                 <Field label="Año">
                   <input className={inputClass} type="number" min={1886} max={2200} step="1" value={form.year} onChange={(e) => change({ year: e.target.value })} />
                 </Field>
@@ -276,6 +291,7 @@ export default function MarketplaceDriverVehicleEditor({
                 <Field label="Carrocería">
                   <input className={inputClass} maxLength={160} value={form.bodyType} onChange={(e) => change({ bodyType: e.target.value })} />
                 </Field>
+                <div className="col-span-full mt-1 border-t border-cyan-400/10 pt-3 text-xs font-semibold uppercase tracking-[0.11em] text-slate-400">Documentación visual</div>
                 <Field label="Foto principal ya registrada">
                   <select className={inputClass} value={form.photoId} onChange={(e) => change({ photoId: e.target.value })}>
                     <option value="">Seleccionar foto obligatoria</option>
@@ -327,6 +343,8 @@ export default function MarketplaceDriverVehicleEditor({
           ) : null}
         </div>
       ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

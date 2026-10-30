@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   ArrowUpRight,
@@ -7,6 +8,8 @@ import {
   ChevronDown,
   Clock3,
   Mail,
+  LayoutDashboard,
+  FileText,
   Phone,
   ShieldCheck,
   UserRound,
@@ -147,6 +150,15 @@ function RecordMetric({
   );
 }
 
+type DriverTab = "overview" | "vehicle" | "management" | "activity" | "financial";
+const driverTabs = [
+  { id: "overview", label: "Resumen", icon: LayoutDashboard },
+  { id: "vehicle", label: "Vehículo", icon: CarFront },
+  { id: "management", label: "Expediente", icon: FileText },
+  { id: "activity", label: "Actividad", icon: Clock3 },
+  { id: "financial", label: "Finanzas", icon: Wallet },
+] as const;
+
 export default function MarketplaceDriver360Record({
   projectId,
   driverUserId,
@@ -172,6 +184,7 @@ export default function MarketplaceDriver360Record({
   onOpenJob: (jobId: string) => void;
   onChangeSuspension: (suspend: boolean) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<DriverTab>("overview");
   const record = useInfiniteQuery({
     queryKey: ["marketplace-driver-360-record", projectId, driverUserId],
     queryFn: ({ pageParam }) =>
@@ -206,9 +219,11 @@ export default function MarketplaceDriver360Record({
     detail.vehicles.find((entry) => entry.assignment?.isActive) ?? detail.vehicles[0];
 
   return (
-    <div className="min-w-0 space-y-3 sm:space-y-4">
-      <section className="relative overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.11] via-background/90 to-emerald-400/[0.05] p-4 sm:p-5">
-        <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-cyan-400/[0.08] blur-3xl" />
+    <div className="min-w-0 space-y-4 sm:space-y-5">
+      <section className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-[#123943] via-[#0b171e] to-[#0b161a] p-4 shadow-[0_12px_45px_-25px_rgba(34,211,238,0.35)] sm:p-6">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-9 -top-8 select-none text-[118px] font-black leading-none tracking-[-0.1em] text-cyan-200/[0.07] sm:right-2 sm:text-[158px]">360°</div>
+        <div className="pointer-events-none absolute -right-8 -top-16 h-48 w-48 rounded-full bg-cyan-400/[0.09] blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-emerald-400/[0.055] blur-3xl" />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center">
           <ImageWithFallback
             url={media?.avatarUrl}
@@ -283,6 +298,79 @@ export default function MarketplaceDriver360Record({
         ) : null}
       </section>
 
+
+      <nav aria-label="Secciones de la ficha 360" className="rounded-2xl border border-cyan-400/15 bg-[#0b1318]/90 p-1.5 shadow-inner shadow-black/20">
+        <div role="tablist" aria-label="Contenido del conductor" className="flex gap-1 overflow-x-auto pb-0.5">
+          {driverTabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              id={"driver-tab-" + id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              aria-controls="driver-360-current-panel"
+              onClick={() => setActiveTab(id)}
+              className={activeTab === id
+                ? "flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-4 text-sm font-semibold text-cyan-50 shadow-[0_0_18px_-8px_rgba(34,211,238,0.3)]"
+                : "flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-sm font-medium text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"}
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <div id="driver-360-current-panel" role="tabpanel" aria-labelledby={"driver-tab-" + activeTab} className="min-w-0 space-y-4">
+      {activeTab === "overview" ? (
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[1.2fr_1fr]">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.09] via-[#10191e] to-[#0b1418] p-4 sm:p-5">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-2 -top-3 select-none text-[95px] font-black leading-none text-cyan-200/[0.04]">TT</div>
+            <div className="relative flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300">Vehículo principal</p>
+                <h3 className="mt-1 text-lg font-semibold text-white">{text(mainVehicle?.vehicle.name, "Sin vehículo asociado")}</h3>
+              </div>
+              {mainVehicle?.assignment?.isActive ? (
+                <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-200">Principal</span>
+              ) : null}
+            </div>
+            {mainVehicle ? (
+              <div className="relative mt-3 grid min-w-0 gap-4 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-center">
+                <ImageWithFallback variant="vehicle" url={media?.vehiclePhotos[mainVehicle.vehicle.id]} alt="Fotografía del vehículo principal" />
+                <div className="min-w-0 space-y-2">
+                  <Fact label="Categoría" value={text(mainVehicle.vehicle.categoryCode)} />
+                  <Fact label="Marca y modelo" value={[mainVehicle.vehicle.brand, mainVehicle.vehicle.model].filter(Boolean).join(" · ") || "No registrados"} />
+                  <p className="text-xs text-slate-400">{mainVehicle.services.map(serviceText).join(" · ") || "Sin servicios activos"}</p>
+                </div>
+              </div>
+            ) : <p className="relative mt-4 text-sm text-slate-400">Este conductor aún no tiene un vehículo asociado.</p>}
+            <Button variant="outline" size="sm" className="relative mt-4 border-cyan-400/30 text-cyan-100" onClick={() => setActiveTab("vehicle")}>Ver ficha del vehículo <ArrowUpRight className="ml-1.5 h-4 w-4" /></Button>
+          </section>
+
+          <section className="rounded-[22px] border border-border/60 bg-[#10181d]/90 p-4 sm:p-5" aria-label="Indicadores esenciales del conductor">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300">Vista ejecutiva</p>
+                <h3 className="mt-1 text-lg font-semibold text-white">Actividad y reputación</h3>
+              </div>
+              <Button size="sm" variant="ghost" className="text-cyan-200" onClick={() => setActiveTab("activity")}>Detalle <ArrowUpRight className="ml-1 h-4 w-4" /></Button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <RecordMetric label="Carreras reales" value={summary?.services ?? "—"} />
+              <RecordMetric label="Completadas" value={summary?.completed ?? "—"} tone="emerald" />
+              <RecordMetric label="Valoración" value={rating} tone="amber" />
+              <RecordMetric label="Incidencias" value={summary?.incidents ?? "—"} />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-400/10 bg-black/15 px-3 py-3">
+              <span className="text-sm text-slate-300">Situación administrativa</span>
+              <Button size="sm" variant="outline" className="h-8 border-cyan-400/20" onClick={() => setActiveTab("management")}>Abrir expediente</Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {activeTab === "vehicle" ? (
       <section
         aria-label="Información del vehículo"
         className="rounded-[20px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.055] via-background/85 to-background/80 p-4 sm:p-5"
@@ -362,8 +450,9 @@ export default function MarketplaceDriver360Record({
           <p className="mt-3 text-sm text-muted-foreground">Sin vehículos asociados.</p>
         )}
       </section>
+      ) : null}
 
-      {canManageDriver ? (
+      {canManageDriver && activeTab === "management" ? (
         <MarketplaceDriverManagementPanel
           projectId={projectId}
           driverUserId={driverUserId}
@@ -371,7 +460,7 @@ export default function MarketplaceDriver360Record({
         />
       ) : null}
 
-      {canManageDriver ? (
+      {canManageDriver && activeTab === "management" ? (
         <section
           aria-label="Acciones administrativas sensibles"
           className="flex flex-col gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -392,6 +481,8 @@ export default function MarketplaceDriver360Record({
         </section>
       ) : null}
 
+      {activeTab === "activity" ? (
+        <>
       <section aria-label="Récord profesional" className="space-y-2.5">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -450,7 +541,7 @@ export default function MarketplaceDriver360Record({
         ) : null}
       </section>
 
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start">
+      <div className="min-w-0">
         <section
           className="min-w-0 rounded-[20px] border border-border/60 bg-background/35 p-3.5 sm:p-4"
           aria-label="Historial de servicios"
@@ -553,7 +644,13 @@ export default function MarketplaceDriver360Record({
           ) : null}
         </section>
 
-        <aside className="min-w-0 space-y-3" aria-label="Datos del expediente">
+      </div>
+        </>
+      ) : null}
+
+      {activeTab === "financial" ? (
+        <div className="min-w-0">
+        <aside className="grid min-w-0 gap-4 md:grid-cols-2" aria-label="Datos del expediente">
           <section className="rounded-[20px] border border-border/60 bg-background/40 p-3.5 sm:p-4">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-emerald-300" />
@@ -676,7 +773,9 @@ export default function MarketplaceDriver360Record({
           </section>
         </aside>
       </div>
+      ) : null}
 
+      {activeTab === "activity" ? (
       <div className="rounded-xl border border-border/50 bg-background/30 px-3 py-2.5 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-300" /> Registro administrativo de solo
@@ -686,6 +785,8 @@ export default function MarketplaceDriver360Record({
           Las pruebas eliminadas no forman parte del récord. Cada servicio conserva su detalle
           original.
         </p>
+      </div>
+      ) : null}
       </div>
     </div>
   );
