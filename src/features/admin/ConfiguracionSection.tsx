@@ -1066,6 +1066,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {activeSection === "communication" ? (
         <div className="space-y-3">
+          <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
           <SectionCard
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
@@ -1202,23 +1203,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           contentClassName={CONFIG_CONTENT_CLASS}
         >
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Versión mínima requerida</Label>
-              <Input
-                className={CONFIG_CONTROL_CLASS}
-                value={form.minimumVersion}
-                onChange={(event) => update("minimumVersion", event.target.value)}
-                disabled={!canManage}
-              />
-            </div>
-
-            <SettingToggle
-              title="Forzar actualización"
-              description="Obliga a los usuarios a actualizar cuando su versión no cumple la configuración."
-              checked={form.forceUpdate}
-              onCheckedChange={(checked) => update("forceUpdate", checked)}
-              disabled={!canManage}
-            />
 
             <SettingToggle
               title="Modo mantenimiento"
@@ -1241,9 +1225,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </SectionCard>
       ) : null}
 
-      {activeSection === "application" ? (
-        <AppReleaseSettingsCard projectId={projectId} canManage={canManage} />
-      ) : null}
+
 
     </div>
   );
