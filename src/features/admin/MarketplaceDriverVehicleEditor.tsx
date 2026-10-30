@@ -333,7 +333,7 @@ export default function MarketplaceDriverVehicleEditor({
               <Field label="Motivo administrativo obligatorio (mínimo 5 caracteres)">
                 <input className={inputClass} required minLength={5} maxLength={300} value={form.reason} onChange={(e) => change({ reason: e.target.value })} />
               </Field>
-              {save.isError ? <p role="alert" className="text-sm text-rose-200">No se pudo guardar. Comprueba los permisos, los servicios y si hay alguna carrera activa.</p> : null}
+              {save.isError ? <p role="alert" className="text-sm text-rose-200">No se pudo guardar: {save.error instanceof Error ? save.error.message : "Error inesperado al guardar."}</p> : null}
               <p className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4" /> La operación registra los valores anteriores, los nuevos y el motivo de la corrección.</p>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={saveDisabled}>{save.isPending ? "Guardando…" : "Guardar corrección auditada"}</Button>
