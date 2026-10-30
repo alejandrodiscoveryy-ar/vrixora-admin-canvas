@@ -8,8 +8,11 @@ alter table public.project_whatsapp_settings
   add column lite_hours_close time without time zone not null default time '20:00';
 
 -- Match the prior operational availability at migration time.
-update public.project_whatsapp_settings
-set lite_enabled=support_enabled;
+update public.project_whatsapp_settings as s
+set lite_enabled=s.support_enabled
+from public.projects as p
+where p.id=s.project_id
+  and p.slug='tuktuk-control';
 
 alter table public.project_whatsapp_settings
   add constraint lite_hours_days_valid check (
