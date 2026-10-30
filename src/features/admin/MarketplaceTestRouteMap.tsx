@@ -15,6 +15,8 @@ interface Props {
   route: Array<{ lat: number; lon: number }>;
   picking: "origin" | "destination" | null;
   onPick: (kind: "origin" | "destination", lat: number, lon: number) => void;
+  heightClassName?: string;
+  ariaLabel?: string;
 }
 const sourceId = "test-lab-route-source";
 const layerId = "test-lab-route-layer";
@@ -26,6 +28,8 @@ export default function MarketplaceTestRouteMap({
   route,
   picking,
   onPick,
+  heightClassName,
+  ariaLabel,
 }: Props) {
   const mount = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -159,9 +163,9 @@ export default function MarketplaceTestRouteMap({
     <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-slate-950/80">
       <div
         ref={mount}
-        className={`h-60 w-full sm:h-72 ${picking ? "cursor-crosshair" : ""}`}
+        className={`${heightClassName ?? "h-60 w-full sm:h-72"} ${picking ? "cursor-crosshair" : ""}`}
         role="application"
-        aria-label="Mapa de selección del recorrido de prueba"
+        aria-label={ariaLabel ?? "Mapa de selección del recorrido de prueba"}
       />
       {picking && (
         <div className="pointer-events-none absolute left-3 top-3 rounded-xl border border-cyan-300/40 bg-slate-950/90 px-3 py-2 text-xs font-semibold text-cyan-100">
