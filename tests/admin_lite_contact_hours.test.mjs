@@ -30,7 +30,10 @@ test('RPC de escritura exige permiso existente y conserva auditoria',()=>{
   assert.match(sql,/version=version\+1/);
 });
 test('tarjeta se muestra en Trabajos, con control real y dias',()=>{
-  assert.match(marketplace,/MarketplaceLiteContactCard/);
+  assert.match(marketplace,/MarketplaceCustomerCareWorkspace/);
+  assert.match(marketplace,/value="atencion"/);
+  const care = readFileSync('src/features/admin/MarketplaceCustomerCareWorkspace.tsx','utf8');
+  assert.match(care,/MarketplaceLiteContactCard/);
   assert.match(marketplace,/value="trabajos"/);
   assert.match(card,/admin_get_marketplace_lite_contact/);
   assert.match(card,/admin_update_marketplace_lite_contact/);

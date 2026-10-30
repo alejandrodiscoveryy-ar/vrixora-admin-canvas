@@ -6,6 +6,7 @@ import {
   Eye,
   Gauge,
   MapPin,
+  Headphones,
   Megaphone,
   PlugZap,
   ScrollText,
@@ -66,6 +67,7 @@ const administrationChildren = [
 export const MARKETPLACE_WORKSPACE_VIEWS = [
   { slug: "resumen", label: "Pulso", icon: Eye, permission: "marketplace.view" },
   { slug: "trabajos", label: "Operaciones", icon: BriefcaseBusiness, permission: "marketplace.view" },
+  { slug: "atencion", label: "Atención al cliente", icon: Headphones, permission: "marketplace.view" },
   { slug: "mapa", label: "Mapa", icon: MapPin, permission: "marketplace.view" },
   { slug: "conductores", label: "Conductores", icon: Users, permission: "marketplace.view" },
   { slug: "clientes", label: "Clientes", icon: UserRound, permission: "customers.view" },

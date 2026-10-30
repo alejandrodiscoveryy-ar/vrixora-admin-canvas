@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clock3, Loader2, MessageCircle, Save } from "lucide-react";
+import { Clock3, Headphones, Loader2, MessageCircle, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,10 +114,11 @@ export default function MarketplaceLiteContactCard({ projectId }: { projectId: s
   });
 
   return (
-    <section className="rounded-[24px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.065] via-background/90 to-background p-4 shadow-lg sm:p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <section className="relative isolate overflow-hidden rounded-[26px] border border-amber-400/30 bg-gradient-to-br from-amber-500/[0.12] via-orange-500/[0.055] to-background p-4 shadow-[0_25px_70px_-43px_rgba(245,158,11,0.62)] sm:p-5" aria-label="Canal de atención">
+      <Headphones aria-hidden="true" className="pointer-events-none absolute -right-9 top-6 h-44 w-44 -rotate-12 text-amber-200/[0.075]" />
+      <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <MessageCircle className="h-5 w-5 text-emerald-300" />
+          <MessageCircle className="h-5 w-5 text-amber-300" />
           <div>
             <h3 className="text-base font-semibold">Atención al cliente · TukTuk Lite</h3>
             <p className="text-xs text-muted-foreground">El mismo número operativo de soporte, sin duplicarlo.</p>
@@ -136,7 +137,7 @@ export default function MarketplaceLiteContactCard({ projectId }: { projectId: s
           <p role="alert" className="text-sm text-rose-300">Configuración de Lite no disponible. Comprueba que la migración esté aplicada.</p>
         ) : <Loader2 className="h-5 w-5 animate-spin" />
       ) : (
-        <div className="space-y-4">
+        <div className="relative z-10 space-y-4">
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div className="space-y-1.5">
               <Label htmlFor="lite-support-number">Teléfono para WhatsApp y SMS</Label>
@@ -172,7 +173,7 @@ export default function MarketplaceLiteContactCard({ projectId }: { projectId: s
                       <button key={day} type="button" aria-pressed={selected}
                         onClick={() => patch({ days: selected ? form.days.filter((n) => n !== day) : [...form.days, day] })}
                         className={selected
-                          ? "rounded-lg border border-emerald-400/50 bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-200"
+                          ? "rounded-lg border border-amber-400/50 bg-amber-400/15 px-3 py-2 text-xs font-semibold text-amber-100"
                           : "rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground"}>
                         {label}
                       </button>
