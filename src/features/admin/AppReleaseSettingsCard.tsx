@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, Smartphone, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useProject } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +35,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   hasUnsavedProjectChanges?: boolean;
 }) {
   const queryClient = useQueryClient();
-  const { data: project } = useProject(projectId);
   const projectSettings = useQuery({
     queryKey: ["project-settings", projectId],
     queryFn: () => supabaseServices.projects.settings(projectId),
@@ -84,46 +82,31 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!canManage || !project || hasUnsavedProjectChanges || !valid) {
-        throw new Error("Comprueba los permisos, campos y cambios pendientes.");
+      if (!canManage || hasUnsavedProjectChanges || !valid || projectSettings.isError) {
+        throw new Error("Comprueba tus permisos, los campos y otros cambios pendientes.");
       }
-      const settings = await supabaseServices.projects.settings(projectId);
-      const params = {
-        target_project_id: projectId, target_platform: "android",
+      // Un unico RPC: proyecto y version se guardan en una transaccion.
+      const { error } = await getSupabaseClient().rpc("admin_save_app_release_policy", {
+        target_project_id: projectId,
+        target_platform: "android",
+        target_enabled: enabled,
         target_latest_version: version.trim(),
         target_latest_build: Number.isSafeInteger(parsedBuild) ? parsedBuild : 0,
-        target_download_url: url.trim(), target_release_notes: notes.trim(),
-      };
-
-      // Desactivar primero el aviso para evitar bloqueos ante un fallo.
-      const pause = await getSupabaseClient().rpc("admin_set_app_release", {
-        ...params, target_enabled: false
+        target_download_url: url.trim(),
+        target_release_notes: notes.trim(),
+        target_mandatory: enabled && mode === "mandatory",
       });
-      if (pause.error) throw pause.error;
-
-      await supabaseServices.projects.update(projectId, {
-        ...settings,
-        name: project.name,
-        description: project.description,
-        forceUpdate: enabled && mode === "mandatory",
-        minimumVersion: enabled && mode === "mandatory"
-          ? version.trim()
-          : settings.minimumVersion,
-      });
-
-      const finish = await getSupabaseClient().rpc("admin_set_app_release", {
-        ...params, target_enabled: enabled
-      });
-      if (finish.error) throw finish.error;
+      if (error) throw error;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["app-release-settings", projectId] });
-      await queryClient.invalidateQueries({ queryKey: ["project-settings", projectId] });
-      toast.success("Versión Android guardada correctamente.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-release-settings", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-settings", projectId] }),
+      ]);
+      toast.success("Configuracion de actualizacion guardada.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
-
   return (
     <SectionCard
       title="Actualizaciones de TukTuk Conductor"
@@ -133,9 +116,9 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       headerClassName="px-4 py-2.5"
       contentClassName="p-0"
     >
-      {query.isLoading ? (
+      {query.isLoading || projectSettings.isLoading ? (
         <Loader2 className="h-5 w-5 animate-spin" />
-      ) : query.isError ? (
+      ) : query.isError || projectSettings.isError ? (
         <p role="alert" className="text-sm text-destructive">
           No se pudo cargar la configuración de versiones. Verifica que la migración de Supabase esté aplicada.
         </p>
@@ -206,7 +189,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                 if (enabled && mode === "mandatory" && !window.confirm("¿Confirmas la actualización obligatoria? Verifica que la nueva APK y su enlace funcionan correctamente.")) return;
                 save.mutate();
               }}
-              disabled={!canManage || hasUnsavedProjectChanges || !valid || save.isPending || projectSettings.isLoading}>
+              disabled={!canManage || hasUnsavedProjectChanges || !valid || save.isPending || projectSettings.isLoading || projectSettings.isError}>
               {save.isPending ? "Guardando..." : "Guardar versión Android"}
             </Button>
           </div>
