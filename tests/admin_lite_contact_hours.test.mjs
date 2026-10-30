@@ -10,7 +10,8 @@ test('conserva soporte existente y horario desactivado por defecto',()=>{
   assert.match(sql,/support_number=clean_number/);
   assert.match(sql,/lite_enabled=coalesce\(target_lite_enabled,false\)/);
   assert.doesNotMatch(sql,/\s+support_enabled=coalesce\(target_lite_enabled/);
-  assert.match(sql,/set lite_enabled=support_enabled/);
+  assert.match(sql,/set lite_enabled=s\.support_enabled/);
+  assert.match(sql,/p\.slug='tuktuk-control'/);
   assert.doesNotMatch(sql,/update public\.projects set whatsapp/);
 });
 test('consulta publica habilita solo dentro de horario de La Habana',()=>{
