@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'src/features/admin/MarketplaceSection.tsx'
+      - 'src/features/admin/MarketplaceConfigurationWorkspace.tsx'
       - 'src/lib/services/types.ts'
       - 'src/features/admin/MarketplaceTerritoryCatalog.tsx'
       - 'supabase/functions/marketplace-poi-admin-gateway/index.ts'
@@ -11,6 +12,7 @@ on:
       - 'scripts/territory/**'
       - '.github/workflows/tuktuk-poi-*.yml'
       - 'tests/marketplace_territorial_poi.test.mjs'
+      - 'tests/marketplace_config_territory_premium.test.mjs'
 permissions:
   contents: read
 jobs:
@@ -28,7 +30,7 @@ jobs:
       - name: Pruebas geograficas
         run: python tests/test_territory_geometry.py
       - name: Pruebas de contratos
-        run: node --test tests/marketplace_territorial_poi.test.mjs
+        run: node --test tests/marketplace_territorial_poi.test.mjs tests/marketplace_config_territory_premium.test.mjs
       - name: Setup Bun 1.4.2
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:

@@ -56,12 +56,12 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
-import MarketplaceTerritoryCatalog from "@/features/admin/MarketplaceTerritoryCatalog";
+import MarketplaceConfigurationWorkspace from "@/features/admin/MarketplaceConfigurationWorkspace";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
-import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
-import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
-import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
+
+
+
 import MarketplaceRadarReadinessCard from "@/features/admin/MarketplaceRadarReadinessCard";
 import MarketplaceCustomerCareWorkspace from "@/features/admin/MarketplaceCustomerCareWorkspace";
 import {
@@ -2004,10 +2004,6 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
         {mapVisited ? (
           <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
-            <MarketplaceTerritoryCatalog
-              projectId={projectId}
-              canManage={permissions.includes("marketplace.map.manage")}
-            />
             <MarketplaceOperationalMap
               projectId={projectId}
               canViewCustomers={canCustomers}
@@ -2790,23 +2786,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
         {canSettings ? (
           <TabsContent value="configuracion" className="mt-3">
-            <div className="grid gap-4 xl:grid-cols-2">
-              <MarketplaceTestCenterV2
-                projectId={projectId}
-                canManage={canManageSettings && canManageMarketplace}
-                canManagePayments={canManagePayments}
-                onOpenJob={setJobId}
-              />
-
-              <MarketplaceDispatchSettingsCard
-                projectId={projectId}
-                canManage={canManageSettings}
-              />
-              <MarketplaceJobReminderSettingsCard
-                projectId={projectId}
-                canManage={canManageSettings}
-              />
-            </div>
+            <MarketplaceConfigurationWorkspace
+              projectId={projectId}
+              canManageSettings={canManageSettings}
+              canManageMarketplace={canManageMarketplace}
+              canManagePayments={canManagePayments}
+              canManageTerritory={permissions.includes("marketplace.map.manage")}
+              onOpenJob={setJobId}
+            />
           </TabsContent>
         ) : null}
       </Tabs>
