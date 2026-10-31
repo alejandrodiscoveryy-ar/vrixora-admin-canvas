@@ -1,0 +1,30 @@
+name: Verificar Radar TukTuk - elegibilidad operativa
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/features/admin/MarketplaceRadarReadinessCard.tsx'
+      - 'tests/admin_marketplace_radar_readiness.test.mjs'
+      - 'supabase/migrations/20261031230453_radar_operational_eligibility_finance_off.sql'
+      - '.github/workflows/tuktuk-radar-operational-check.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Verificar contratos del radar
+        run: node --test tests/admin_marketplace_radar_readiness.test.mjs
+      - name: Preparar Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.2'
+      - name: Compilar Vrixora Admin
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_only_dummy
+        run: |
+          bun install --frozen-lockfile
+          bun run build
