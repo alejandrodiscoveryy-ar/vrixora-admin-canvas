@@ -25,6 +25,7 @@ export type ProjectPermission =
   | "commercial.manage"
   | "audit.view"
   | "marketplace.view"
+  | "marketplace.map.manage"
   | "marketplace.manage";
 
 export interface ProjectSettings {
