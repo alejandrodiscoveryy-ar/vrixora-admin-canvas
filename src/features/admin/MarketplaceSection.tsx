@@ -1888,7 +1888,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ["published", "accepted", "en_route", "pickup"]
                                     .includes(job.status) ? (
                                     <Button
-                                      className="w-full"
+                                      className="h-auto min-h-10 w-full whitespace-normal px-2 py-2 text-center text-xs leading-snug"
                                       size="sm"
                                       variant="destructive"
                                       disabled={assistedCancelMutation.isPending}
@@ -1903,8 +1903,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                         setAssistedCancelError(null);
                                       }}
                                     >
-                                      <AlertCircle className="mr-2 h-4 w-4" />
-                                      Cancelar por solicitud del cliente
+                                      <AlertCircle className="h-4 w-4 shrink-0" />
+                                      <span className="min-w-0 whitespace-normal break-words text-center">Cancelar por solicitud del cliente</span>
                                     </Button>
                                   ) : null}
                                   {canFinishAdmin &&
@@ -2975,15 +2975,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             </DialogTitle>
             <DialogDescription>
               Exclusivo para carreras creadas por asistencia.
-              La cancelaciÃ³n quedarÃ¡ registrada y se actualizarÃ¡
-              el estado de la carrera. Si existe una asignaciÃ³n,
-              se aplicarÃ¡n las reglas de liberaciÃ³n del conductor
-              y de la comisiÃ³n correspondiente.
+              La cancelación quedará registrada y actualizará el estado.
+              Si existe un conductor asignado, se aplicarán las reglas
+              de liberación y de comisión correspondientes.
             </DialogDescription>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground">
-            {assistedCancel?.customer} Â· Estado:
+            {assistedCancel?.customer} · Estado:
             {" "}{label(assistedCancel?.status ?? null)}
           </p>
 
@@ -3000,6 +2999,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             placeholder="El cliente ya no necesita el servicio"
             onChange={(e) => setAssistedCancelReason(e.target.value)}
           />
+
+          <p className="text-xs text-muted-foreground">
+            Motivo obligatorio. Mínimo 8 caracteres para confirmar.
+          </p>
 
           {assistedCancelError ? (
             <p role="alert" className="text-sm text-rose-300">
@@ -3019,15 +3022,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               if (!assistedCancel) return;
 
               if (window.confirm(
-                "Â¿Confirmar la CANCELACIÃ“N REAL de esta carrera por solicitud del cliente?"
+                "¿Confirmar la cancelación REAL de esta carrera por solicitud del cliente?"
               )) {
                 assistedCancelMutation.mutate();
               }
             }}
           >
             {assistedCancelMutation.isPending
-              ? "Cancelandoâ€¦"
-              : "Confirmar cancelaciÃ³n de carrera"}
+              ? "Cancelando..."
+              : "Confirmar cancelación de carrera"}
           </Button>
         </DialogContent>
       </Dialog>
