@@ -178,8 +178,10 @@ def check(response,action):
 
 def api(session,base,key,path,payload,timeout=80,params=None):
     url=base.rstrip('/')+'/rest/v1/'+path
-    headers={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json',
+    headers={'apikey':key,'Content-Type':'application/json',
              'Prefer':'return=representation' if '/rpc/' in path else 'resolution=merge-duplicates,return=minimal'}
+    if not key.startswith('sb_secret_'):
+        headers['Authorization'] = 'Bearer ' + key
     err=None
     for attempt in range(3):
         try:

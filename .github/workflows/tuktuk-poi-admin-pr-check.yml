@@ -7,7 +7,7 @@ on:
       - 'src/lib/services/types.ts'
       - 'src/features/admin/MarketplaceTerritoryCatalog.tsx'
       - 'supabase/functions/marketplace-poi-admin-gateway/index.ts'
-      - 'supabase/migrations/20261031210000_marketplace_territorial_poi_control.sql'
+      - 'supabase/migrations/20261031193538_marketplace_territorial_poi_control.sql'
       - 'scripts/territory/**'
       - '.github/workflows/tuktuk-poi-*.yml'
       - 'tests/marketplace_territorial_poi.test.mjs'

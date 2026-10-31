@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-const base = 'supabase/migrations/20261031210000_marketplace_territorial_poi_control.sql';
+const base = 'supabase/migrations/20261031193538_marketplace_territorial_poi_control.sql';
 const sql = readFileSync(base,'utf8');
 const fn = readFileSync('supabase/functions/marketplace-poi-admin-gateway/index.ts','utf8');
 const workflow = readFileSync('.github/workflows/tuktuk-poi-province-refresh.yml','utf8');

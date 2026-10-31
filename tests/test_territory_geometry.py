@@ -21,6 +21,25 @@ spec.loader.exec_module(module)
 
 
 class TestTerritory(unittest.TestCase):
+    def test_ambas_claves_supabase(self):
+        class FakeResponse:
+            status_code = 200
+            content = b'[]'
+            def json(self):
+                return []
+        class FakeSession:
+            headers = None
+            def post(self, url, headers, json, params, timeout):
+                self.headers = headers
+                return FakeResponse()
+        client = FakeSession()
+        module.api(client, 'https://example.supabase.co', 'sb_secret_test',
+                   'rpc/marketplace_poi_claim_refresh', {})
+        self.assertEqual(client.headers['apikey'], 'sb_secret_test')
+        self.assertNotIn('Authorization', client.headers)
+        module.api(client, 'https://example.supabase.co', 'legacy.jwt.key',
+                   'rpc/marketplace_poi_claim_refresh', {})
+        self.assertEqual(client.headers['Authorization'], 'Bearer legacy.jwt.key')
     def test_poligono_con_hueco(self):
         geometry = {'type': 'Polygon', 'coordinates': [
             [[0,0],[10,0],[10,10],[0,10],[0,0]],
