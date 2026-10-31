@@ -8,6 +8,7 @@ const workflow = readFileSync('.github/workflows/tuktuk-poi-province-refresh.yml
 const python = readFileSync('scripts/territory/refresh_province.py','utf8');
 const ui = readFileSync('src/features/admin/MarketplaceTerritoryCatalog.tsx','utf8');
 const section = readFileSync('src/features/admin/MarketplaceSection.tsx','utf8');
+const settingsWorkspace = readFileSync('src/features/admin/MarketplaceConfigurationWorkspace.tsx','utf8');
 
 test('se conservan los POI de La Habana y los datos quedan privados',()=>{
   assert.match(sql,/from public\.marketplace_havana_places where source = 'openstreetmap'/);
@@ -43,7 +44,8 @@ test('el worker usa Geofabrik verificado, sin Overpass ni permisos de usuario',(
   assert.match(workflow,/SUPABASE_SERVICE_ROLE_KEY/);
 });
 test('la administracion aparece en la vista mapa y no toca carreras ni claxon',()=>{
-  assert.match(section,/<MarketplaceTerritoryCatalog/);
+  assert.match(section, /<MarketplaceConfigurationWorkspace/);
+  assert.match(settingsWorkspace, /<MarketplaceTerritoryCatalog/);
   assert.match(ui,/Actualizar La Habana/);
   assert.match(ui,/Preparar provincia/);
   assert.match(ui,/No habilita carreras/);
