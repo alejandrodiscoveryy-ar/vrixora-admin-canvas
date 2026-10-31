@@ -2896,20 +2896,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </DialogContent>
       </Dialog>
       <Dialog open={Boolean(jobId)} onOpenChange={() => setJobId(null)}>
-        <DialogContent className="max-h-[94vh] overflow-y-auto border-emerald-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
           <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
             <DialogHeader className="text-left">
               <div className="mb-1 flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.75)]" />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-                  Operacion Marketplace
+                  TUKTUK / OPERACIONES
                 </span>
               </div>
               <DialogTitle className="text-xl tracking-tight sm:text-2xl">
-                Detalle del trabajo
+                Expediente de carrera
               </DialogTitle>
               <DialogDescription className="max-w-2xl">
-                Ruta, participantes, estado financiero y trazabilidad completa.
+                Información ejecutiva, cobertura del radar y trazabilidad del servicio.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -2918,7 +2918,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             {detail.isLoading ? (
               <LoadingState />
             ) : detail.data ? (
-              <JobDetail detail={detail.data} projectId={projectId} jobId={jobId!} />
+              <JobDetail key={jobId} detail={detail.data} projectId={projectId} jobId={jobId!} />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
                 No se encontro el trabajo.
@@ -3592,232 +3592,228 @@ function JobDetail({ detail, projectId, jobId }: {
   projectId: string;
   jobId: string;
 }) {
-  const { job, serviceRequest, assignment, customer, financial, timeline, incidentResolution } =
-    detail;
+  const { job, serviceRequest, assignment, customer, financial, timeline, incidentResolution } = detail;
+  const [activeTab, setActiveTab] = useState<"overview" | "radar" | "finance" | "history">("overview");
+  const state = text(job.status);
+  const hasDriver = Boolean(assignment?.driver_user_id);
+  const driverCode = typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null;
+  const vehicleCode = typeof assignment?.vehicle_id === "string" ? assignment.vehicle_id : null;
+  const customerPhone = typeof customer?.whatsapp_phone === "string" ? customer.whatsapp_phone.trim() : "";
+  const displayPrice = Number(financial?.amount ?? job.final_price);
+  const currency = text(financial?.currency ?? job.currency);
+  const readablePrice = Number.isFinite(displayPrice) && displayPrice > 0
+    ? formatOperationPrice(displayPrice, currency)
+    : "No disponible";
+  const closed = ["cancelled_by_customer", "cancelled_by_driver", "expired", "settled", "completed"].includes(state);
+  const tabs = [
+    { id: "overview", label: "Resumen ejecutivo", Icon: Eye },
+    { id: "radar", label: "Radar y cobertura", Icon: Radar },
+    { id: "finance", label: "Finanzas", Icon: WalletCards },
+    { id: "history", label: "Trazabilidad", Icon: Clock3 },
+  ] as const;
+  const sectionTitle = (eyebrow: string, title: string, description: string) => (
+    <div className="mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-cyan-300">{eyebrow}</p>
+      <h3 className="mt-1 text-lg font-bold tracking-tight text-white sm:text-xl">{title}</h3>
+      <p className="mt-1 text-xs leading-relaxed text-slate-400 sm:text-sm">{description}</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <section className="relative overflow-hidden rounded-[28px] border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.11] via-background/80 to-cyan-500/[0.07] p-5 shadow-[0_24px_70px_-42px_rgba(16,185,129,0.8)] sm:p-6">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-emerald-500/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-14 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
-
-        <div className="relative">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={text(job.status)} />
-            <ServiceBadge service={text(serviceRequest.service_code)} />
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-border/55 bg-background/55 p-4 backdrop-blur">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
-                    Origen
-                  </p>
-                  <p className="mt-1.5 font-medium leading-snug text-foreground">
-                    {text(serviceRequest.origin_text)}
-                  </p>
-                </div>
-              </div>
+    <div className="min-w-0 space-y-4 sm:space-y-5">
+      <section aria-label="Identidad de la carrera" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/25 bg-gradient-to-br from-[#123b43] via-[#101d23] to-[#0a141b] p-4 shadow-[0_20px_60px_-26px_rgba(22,190,202,0.32)] sm:p-6">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-3 -top-12 select-none text-[130px] font-black leading-none tracking-tighter text-cyan-200/[0.055] sm:text-[180px]">360°</div>
+        <div className="pointer-events-none absolute -left-20 -bottom-28 h-64 w-64 rounded-full bg-emerald-500/[0.11] blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-0 h-40 w-64 rounded-full bg-cyan-400/[0.08] blur-3xl" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/25 bg-cyan-400/[0.08] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.13em] text-cyan-200">
+                <BriefcaseBusiness className="h-3.5 w-3.5" /> Expediente de operación
+              </span>
+              <StatusBadge status={state} />
+              <ServiceBadge service={text(serviceRequest.service_code)} />
             </div>
-
-            <div className="rounded-2xl border border-border/55 bg-background/55 p-4 backdrop-blur">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
-                  <ArrowRight className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
-                    Destino
-                  </p>
-                  <p className="mt-1.5 font-medium leading-snug text-foreground">
-                    {text(serviceRequest.destination_text)}
-                  </p>
-                </div>
-              </div>
+            <h2 className="mt-4 max-w-2xl text-[23px] font-bold leading-tight tracking-tight text-white sm:text-[30px]">
+              Carrera <span className="text-cyan-200">#{jobId.slice(0,8).toUpperCase()}</span>
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
+              Control integral del servicio, la asignación, el alcance del radar y sus eventos.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />{formatDate(job.created_at)}</span>
+              <span className="inline-flex items-center gap-1.5"><Route className="h-3.5 w-3.5" />{label(text(serviceRequest.service_code))}</span>
+              <span className="font-mono text-[10px] text-slate-500" title={jobId}>ID {jobId.slice(0,13)}…</span>
             </div>
           </div>
+          <div className="relative w-full rounded-[20px] border border-emerald-300/20 bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm lg:w-60">
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-200/75">Valor de la carrera</p>
+            <p className="mt-2 break-words text-[25px] font-black leading-none tracking-tight text-white sm:text-[28px]">{readablePrice}</p>
+            <div className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-400">
+              {closed ? "Servicio con estado cerrado" : "Servicio bajo seguimiento operativo"}
+            </div>
+          </div>
+        </div>
+        <div className="relative mt-5 grid grid-cols-2 gap-2 border-t border-cyan-400/15 pt-4 md:grid-cols-4">
+          {[
+            { title: "Estado", value: label(state), icon: CheckCircle2 },
+            { title: "Conductor", value: hasDriver ? "Asignado" : "Sin asignar", icon: CarFront },
+            { title: "Eventos", value: String(timeline.length), icon: Clock3 },
+            { title: "Programación", value: serviceRequest.scheduled_for ? "Programada" : "Sin horario", icon: CalendarDays },
+          ].map(({title, value, icon: Icon}) => (
+            <div key={title} className="min-w-0 rounded-xl border border-white/10 bg-[#071217]/55 px-3 py-3">
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><Icon className="h-3.5 w-3.5 text-cyan-200" />{title}</div>
+              <div className="mt-1.5 break-words text-[15px] font-bold text-white">{value}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
-
-      <section>
-        <div className="mb-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-            Resumen
-          </p>
-          <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
-            Datos de la operacion
-          </h4>
+      <nav aria-label="Secciones del expediente de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30">
+        <div role="tablist" aria-label="Contenido de la carrera" className="flex gap-1 overflow-x-auto pb-0.5">
+          {tabs.map(({id,label:tabLabel,Icon}) => (
+            <button key={id} type="button" role="tab"
+              aria-selected={activeTab === id}
+              aria-controls="marketplace-job-premium-panel"
+              onClick={() => setActiveTab(id)}
+              className={activeTab === id
+                ? "flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-3.5 text-xs font-bold text-white shadow-[0_0_18px_-8px_rgba(34,211,238,0.38)] sm:text-sm"
+                : "flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-medium text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white sm:text-sm"}>
+              <Icon className="h-4 w-4" />{tabLabel}
+              {id === "history" ? <span className="rounded-full bg-white/10 px-1.5 text-[10px]">{timeline.length}</span> : null}
+            </button>
+          ))}
         </div>
+      </nav>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.06] text-violet-300">
-                <CalendarDays className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Programado
-                </p>
-                <p className="mt-1.5 font-semibold text-foreground">
-                  {formatDate(serviceRequest.scheduled_for)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {financial ? (
-            <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300">
-                  <Banknote className="h-4 w-4" />
+      <div id="marketplace-job-premium-panel" role="tabpanel" className="min-w-0 space-y-4">
+        {activeTab === "overview" ? (
+          <>
+            <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.08] via-[#101b22] to-[#0b151b] p-4 sm:p-5">
+              <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-10 h-36 w-36 rounded-full bg-cyan-400/[0.08] blur-3xl" />
+              {sectionTitle("01 / Recorrido", "Ruta del servicio", "Origen, destino y referencias operativas de la solicitud.")}
+              <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)] lg:items-stretch">
+                <div className="rounded-[18px] border border-emerald-400/20 bg-[#080f13]/65 p-4">
+                  <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-400/10"><MapPin className="h-4 w-4" /></span> 01 · Punto de recogida</p>
+                  <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.origin_text)}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Importe
-                  </p>
-                  <p className="mt-1.5 text-lg font-semibold tracking-tight text-foreground">
-                    {formatOperationPrice(financial.amount, text(financial.currency))}
-                  </p>
+                <div className="hidden items-center justify-center lg:flex"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10 text-cyan-200"><ArrowRight className="h-5 w-5" /></span></div>
+                <div className="rounded-[18px] border border-cyan-400/20 bg-[#080f13]/65 p-4">
+                  <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-cyan-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-cyan-400/10"><MapPin className="h-4 w-4" /></span> 02 · Destino</p>
+                  <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.destination_text)}</p>
                 </div>
               </div>
-            </div>
-          ) : null}
+            </section>
 
-          {customer ? (
-            <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] text-cyan-300">
-                  <UserRound className="h-4 w-4" />
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5">
+                {sectionTitle("02 / Participantes", "Cliente", "Información de contacto relacionada con esta carrera.")}
+                <div className="flex gap-3 rounded-2xl border border-cyan-400/15 bg-black/20 p-3.5">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-200"><UserRound className="h-5 w-5" /></span>
+                  <div className="min-w-0">
+                    <p className="break-words text-lg font-semibold text-white">{customer ? text(customer.display_name) : "Cliente no registrado"}</p>
+                    <p className="mt-1 text-sm text-slate-400">{customerPhone || "Teléfono no disponible"}</p>
+                    {customerPhone ? <a href={`tel:${customerPhone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-200 hover:underline"><Phone className="h-3.5 w-3.5" />Llamar al cliente</a> : null}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Cliente
-                  </p>
-                  <p className="mt-1.5 font-semibold text-foreground">
-                    {text(customer.display_name)}
-                  </p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Phone className="h-3.5 w-3.5" />
-                    {text(customer.whatsapp_phone)}
-                  </p>
+              </section>
+              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5">
+                {sectionTitle("03 / Asignación", "Conductor y vehículo", "Situación de la asignación vinculada al servicio.")}
+                <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-black/20 p-3.5">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-200"><CarFront className="h-5 w-5" /></span>
+                  <div className="min-w-0">
+                    <p className="text-lg font-semibold text-white">{hasDriver ? "Conductor asignado" : "Sin conductor asignado"}</p>
+                    {driverCode ? <p className="mt-1 break-all font-mono text-[11px] text-slate-400">ID conductor: {driverCode}</p> : <p className="mt-1 text-sm text-slate-400">No se ha registrado una asignación.</p>}
+                    {vehicleCode ? <p className="mt-1 break-all text-xs text-slate-400">Vehículo: {vehicleCode}</p> : null}
+                  </div>
                 </div>
+              </section>
+            </div>
+            <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_1.1fr]">
+              <section className="rounded-[23px] border border-border/50 bg-[#0e181e] p-4 sm:p-5">
+                {sectionTitle("04 / Programación", "Datos de servicio", "Agenda y condiciones básicas de la carrera.")}
+                <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-black/20 p-3.5">
+                  <CalendarDays className="mt-1 h-5 w-5 shrink-0 text-violet-300" />
+                  <div><p className="text-xs text-slate-400">Hora programada</p><p className="mt-1 text-sm font-semibold text-white">{formatDate(serviceRequest.scheduled_for)}</p></div>
+                </div>
+              </section>
+              <section className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0d181f] p-4 sm:p-5">
+                {sectionTitle("05 / Inteligencia operativa", "Cobertura del radar", "Consulta impactos por conductor y kilómetros registrados al aviso.")}
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3.5 py-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><Radar className="h-5 w-5 text-cyan-300" />Análisis de distribución</div>
+                  <Button type="button" size="sm" variant="outline" className="border-cyan-400/25 text-cyan-100" onClick={() => setActiveTab("radar")}>Explorar radar <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                </div>
+              </section>
+            </div>
+          </>
+        ) : null}
+
+        {activeTab === "radar" ? (
+          <section aria-label="Radar y alcance de la carrera" className="space-y-4">
+            <div className="rounded-[23px] border border-cyan-400/20 bg-gradient-to-br from-[#122b33] to-[#0b161b] p-4 sm:p-5">
+              {sectionTitle("Inteligencia operativa", "Radar y alcance real", "Ejecuciones, conductores impactados, distancias históricas y etapas de distribución.")}
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-300" />Las distancias proceden de registros históricos; nunca se sustituyen por el GPS actual.</div>
+            </div>
+            <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
+          </section>
+        ) : null}
+
+        {activeTab === "finance" ? (
+          <section className="space-y-4">
+            {sectionTitle("Estado económico", "Finanzas de la operación", "Importe contratado, comisión y situación registrada de la reserva.")}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[23px] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[0.10] via-[#142621] to-[#0b1718] p-5">
+                <Banknote className="mb-3 h-6 w-6 text-emerald-300" />
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/75">Importe de carrera</p>
+                <p className="mt-2 break-words text-3xl font-black tracking-tight text-white">{readablePrice}</p>
+                <p className="mt-3 text-xs text-slate-400">Precio registrado del servicio.</p>
+              </div>
+              <div className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0c181f] p-5">
+                <WalletCards className="mb-3 h-6 w-6 text-cyan-200" />
+                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200/75">Estado de comisión / reserva</p>
+                <p className="mt-2 text-xl font-bold text-white">{financial ? label(text(financial.reservation_status)) : "Sin información financiera"}</p>
+                <p className="mt-3 text-xs text-slate-400">No equivale a un cargo liquidado si todavía no consta en el sistema.</p>
               </div>
             </div>
-          ) : null}
-
-          {assignment ? (
-            <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/[0.06] text-amber-300">
-                  <CarFront className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Conductor / vehiculo
-                  </p>
-                  <p className="mt-1.5 break-all text-sm font-semibold text-foreground">
-                    {text(assignment.driver_user_id)}
-                  </p>
-                  <p className="mt-1 break-all text-xs text-muted-foreground">
-                    {text(assignment.vehicle_id)}
-                  </p>
-                </div>
+            {incidentResolution ? (
+              <div className="rounded-[22px] border border-rose-400/25 bg-rose-400/[0.06] p-4">
+                <p className="flex items-center gap-2 text-sm font-semibold text-rose-200"><AlertTriangle className="h-4 w-4" />Resolución de incidencia</p>
+                <p className="mt-2 font-medium text-white">{label(text(incidentResolution.resolution))}</p>
+                <p className="mt-1 text-sm text-slate-300">{text(incidentResolution.resolution_note)}</p>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </section>
+            ) : null}
+          </section>
+        ) : null}
 
-      {financial ? (
-        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/70 to-emerald-500/[0.035] p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300">
-              <CircleDollarSign className="h-4 w-4" />
+        {activeTab === "history" ? (
+          <section className="rounded-[24px] border border-cyan-400/15 bg-gradient-to-br from-[#0e1c22] to-[#0a141b] p-4 sm:p-6">
+            {sectionTitle("Auditoría del servicio", "Línea de tiempo", "Historial de cambios de estado, responsables y motivos registrados.")}
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-black/20 px-3.5 py-3">
+              <p className="text-sm text-slate-300">Eventos registrados</p><p className="text-2xl font-bold text-cyan-200">{timeline.length}</p>
             </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Estado financiero
-              </p>
-              <p className="mt-1 font-semibold text-foreground">
-                {label(text(financial.reservation_status))}
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {incidentResolution ? (
-        <section className="rounded-[22px] border border-rose-500/20 bg-gradient-to-br from-rose-500/[0.07] to-background/50 p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/[0.07] text-rose-300">
-              <AlertTriangle className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-300">
-                Resolucion de incidencia
-              </p>
-              <p className="mt-1.5 font-semibold text-foreground">
-                {label(text(incidentResolution.resolution))}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {text(incidentResolution.resolution_note)}
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
-            Trazabilidad
-          </p>
-          <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
-            Historial de estados
-          </h4>
-        </div>
-
-        {timeline.length ? (
-          <div className="relative mt-4 space-y-3 pl-5">
-            <div className="absolute bottom-3 left-[6px] top-3 w-px bg-gradient-to-b from-cyan-400/45 via-border/50 to-transparent" />
-
-            {timeline.map((event, index) => (
-              <div
-                key={String(event.event_id ?? index)}
-                className="relative rounded-2xl border border-border/60 bg-background/60 p-4"
-              >
-                <span className="absolute -left-[18px] top-5 h-3 w-3 rounded-full border-2 border-background bg-cyan-400 shadow-[0_0_0_3px_rgba(34,211,238,0.10)]" />
-                <p className="text-xs text-muted-foreground">{formatDate(event.created_at)}</p>
-                <p className="mt-1.5 font-medium text-foreground">{text(event.action)}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-lg border border-border/55 bg-background/55 px-2.5 py-1.5">
-                    {label(text(event.from_status))}
-                  </span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                  <span className="rounded-lg border border-border/55 bg-background/55 px-2.5 py-1.5">
-                    {label(text(event.to_status))}
-                  </span>
-                </div>
-                {event.reason ? (
-                  <p className="mt-2 text-xs text-muted-foreground">{text(event.reason)}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4">
-            <Clock3 className="h-5 w-5 text-cyan-300" />
-            <p className="text-sm text-muted-foreground">Sin eventos registrados.</p>
-          </div>
-        )}
-      </section>
+            {timeline.length ? (
+              <ol className="relative ml-2 space-y-3 border-l border-cyan-400/30 pl-6">
+                {timeline.map((event, index) => (
+                  <li key={String(event.event_id ?? index)} className="relative rounded-[18px] border border-border/50 bg-black/20 p-4">
+                    <span className="absolute -left-[32px] top-5 h-3.5 w-3.5 rounded-full border-[3px] border-[#112128] bg-cyan-300 shadow-[0_0_14px_2px_rgba(34,211,238,0.22)]" />
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-mono text-[11px] text-slate-400">{formatDate(event.created_at)}</p>
+                      {event.actor_kind ? <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-300">Actor: {text(event.actor_kind)}</span> : null}
+                    </div>
+                    <p className="mt-2 break-words text-sm font-bold text-white">{text(event.action)}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-slate-300">{label(text(event.from_status))}</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-cyan-300" />
+                      <span className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.08] px-2.5 py-1.5 font-semibold text-cyan-100">{label(text(event.to_status))}</span>
+                    </div>
+                    {event.reason ? <p className="mt-3 rounded-lg border border-amber-400/10 bg-amber-400/[0.035] p-2.5 text-xs leading-relaxed text-slate-300">Motivo: {text(event.reason)}</p> : null}
+                  </li>
+                ))}
+              </ol>
+            ) : <div className="rounded-xl border border-dashed border-border/50 p-5 text-sm text-slate-400">No constan eventos registrados.</div>}
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }
