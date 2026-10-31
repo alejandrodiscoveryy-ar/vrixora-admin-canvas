@@ -275,7 +275,53 @@ export default function MarketplaceCustomerCareWorkspace({
   const publish = useMutation({
     mutationFn: async () => {
       if (!customer || !originPoint || !destinationPoint || !validQuote || !canPublish) throw new Error("Completa y verifica los datos antes de publicar.");
+
+      const { data: verified, error: verifiedError } =
+        await getSupabaseClient().functions.invoke(
+          "marketplace-map-admin-gateway",
+          { body: {
+            operation: "care_route_verify_v1",
+            project_id: projectId,
+            target_service_code: service,
+            target_vehicle_category_code: vehicle,
+            target_origin_point: {
+              lat: originPoint.lat,
+              lon: originPoint.lon,
+            },
+            target_destination_point: {
+              lat: destinationPoint.lat,
+              lon: destinationPoint.lon,
+            },
+            target_cargo_weight_kg:
+              service === "cargo" ? weight : null,
+          } },
+        );
+
+      if (verifiedError || verified?.error)
+        throw verifiedError ??
+          new Error(String(verified.error));
+
+      const proofId = verified?.data?.verified_route_id;
+      const serverDistance = Number(verified?.data?.distance_km);
+      const serverDuration = Number(verified?.data?.duration_seconds);
+      const verifiedPrice = Number(verified?.data?.recommended_price);
+
+      if (typeof proofId !== "string" ||
+          !/^[0-9a-f-]{36}$/i.test(proofId) ||
+          !Number.isFinite(serverDistance) ||
+          serverDistance <= 0 ||
+          !Number.isFinite(serverDuration) ||
+          serverDuration <= 0 ||
+          !Number.isFinite(verifiedPrice) ||
+          verifiedPrice <= 0)
+        throw new Error("CARE_ROUTE_VERIFICATION_FAILED");
+
+      if (Math.round(verifiedPrice * 100) !==
+          Math.round(validQuote.recommendedPrice * 100))
+        throw new Error("CARE_PRICE_CHANGED");
+
       return rpc<Published>("admin_publish_marketplace_care_job", {
+        target_verified_route_id: proofId,
         target_project_id: projectId,
         target_customer_id: customer.id,
         target_idempotency_key: requestKey,
@@ -285,9 +331,9 @@ export default function MarketplaceCustomerCareWorkspace({
         target_destination_text: destination.trim(),
         target_origin_point: { lat: originPoint.lat, lon: originPoint.lon },
         target_destination_point: { lat: destinationPoint.lat, lon: destinationPoint.lon },
-        target_distance_km: validQuote.distanceKm,
-        target_route_duration_seconds: validQuote.durationSeconds,
-        target_expected_price: validQuote.recommendedPrice,
+        target_distance_km: serverDistance,
+        target_route_duration_seconds: serverDuration,
+        target_expected_price: verifiedPrice,
         target_notes: notes.trim() || null,
         target_cargo_weight_kg: service === "cargo" ? weight : null,
         target_contact_preference: preferredContact,

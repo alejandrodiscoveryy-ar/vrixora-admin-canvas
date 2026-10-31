@@ -17,7 +17,7 @@ test('pantalla conectada al listado y ficha 360 reales de Clientes', () => {
 test('publicacion no usa un laboratorio y comprueba la tarifa del servidor', () => {
   assert.match(care,/admin_publish_marketplace_care_job/);
   assert.match(care,/confirmPublish/);
-  assert.match(care,/target_expected_price: validQuote\.recommendedPrice/);
+  assert.match(care,/target_expected_price: verifiedPrice/);
   assert.match(care,/onOpenJob\(published\.job_id\)/);
   assert.doesNotMatch(care,/test_lab_create_v3|admin_create_marketplace_test_job/);
   assert.match(sql,/create_marketplace_customer_request_v2/);
@@ -47,4 +47,21 @@ test('servicios reales y carga con peso; sin turismo no soportado', () => {
   assert.match(care,/target_cargo_weight_kg/);
   assert.match(care,/pricing: \{ service_code: service/);
   assert.doesNotMatch(care,/value: "tourism"/);
+});
+
+const gateway = readFileSync(
+  'supabase/functions/marketplace-map-admin-gateway/index.ts','utf8'
+);
+
+test('carrera real exige ruta y precio certificados', () => {
+  assert.match(care,/operation: "care_route_verify_v1"/);
+  assert.match(care,/target_verified_route_id: proofId/);
+  assert.match(care,/target_expected_price: verifiedPrice/);
+  assert.match(sql,/marketplace_admin_care_verified_routes/);
+  assert.match(sql,/CARE_VERIFIED_ROUTE_MISMATCH/);
+  assert.match(sql,/consumed_at=now\(\)/);
+  assert.match(gateway,/operation === "care_route_verify_v1"/);
+  assert.match(gateway,/admin_assert_marketplace_care_publish_access/);
+  assert.match(gateway,/auth\.getUser\(\)/);
+  assert.match(gateway,/marketplace_admin_care_verified_routes/);
 });

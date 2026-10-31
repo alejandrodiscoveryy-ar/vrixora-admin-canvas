@@ -19,6 +19,65 @@ create table if not exists public.marketplace_admin_care_jobs (
 alter table public.marketplace_admin_care_jobs enable row level security;
 revoke all on public.marketplace_admin_care_jobs from public,anon,authenticated;
 
+create table if not exists public.marketplace_admin_care_verified_routes (
+ id uuid primary key default gen_random_uuid(),
+ project_id uuid not null references public.projects(id),
+ actor_user_id uuid not null,
+ service_code text not null,
+ vehicle_category_code text not null,
+ origin_point jsonb not null,
+ destination_point jsonb not null,
+ distance_km numeric not null check(distance_km>0 and distance_km<=500),
+ duration_seconds integer not null check(duration_seconds>0 and duration_seconds<=86400),
+ recommended_price numeric not null check(recommended_price>0 and recommended_price<=100000),
+ cargo_weight_kg numeric,
+ created_at timestamptz not null default now(),
+ expires_at timestamptz not null default (now()+interval '3 minutes'),
+ consumed_at timestamptz
+);
+
+alter table public.marketplace_admin_care_verified_routes
+ enable row level security;
+
+revoke all on public.marketplace_admin_care_verified_routes
+ from public,anon,authenticated;
+
+grant select,insert on public.marketplace_admin_care_verified_routes
+ to service_role;
+
+create or replace function
+ public.admin_assert_marketplace_care_publish_access(
+ target_project_id uuid
+) returns boolean language plpgsql security definer
+set search_path to '' as $fn$
+begin
+ perform app_private.require_project_permission(
+   target_project_id,'marketplace.manage');
+ perform app_private.require_project_permission(
+   target_project_id,'customers.view');
+
+ if not exists(
+   select 1 from public.projects p
+   where p.id=target_project_id
+     and p.slug='tuktuk-control'
+ ) then
+   raise exception 'CARE_PROJECT_INVALID'
+     using errcode='22023';
+ end if;
+
+ return true;
+end;
+$fn$;
+
+revoke all on function
+ public.admin_assert_marketplace_care_publish_access(uuid)
+ from public,anon,authenticated;
+
+grant execute on function
+ public.admin_assert_marketplace_care_publish_access(uuid)
+ to authenticated;
+
+
 create or replace function public.admin_lookup_marketplace_care_customer(
   target_project_id uuid,target_phone text
 ) returns jsonb language plpgsql security definer set search_path to '' as $fn$
@@ -102,7 +161,8 @@ create or replace function public.admin_publish_marketplace_care_job(
   target_expected_price numeric,
   target_notes text default null,
   target_cargo_weight_kg numeric default null,
-  target_contact_preference text default 'phone'
+  target_contact_preference text default 'phone',
+  target_verified_route_id uuid default null
 ) returns jsonb language plpgsql security definer set search_path to '' as $fn$
 declare
   v_actor uuid;
@@ -111,6 +171,7 @@ declare
   v_payload jsonb;
   v_digest text;
   v_previous public.marketplace_admin_care_jobs%rowtype;
+  v_proof public.marketplace_admin_care_verified_routes%rowtype;
   v_token text;
   v_token_hash text;
   v_session_id uuid;
@@ -212,6 +273,41 @@ begin
       'status',(select status from public.jobs where id=v_previous.job_id and project_id=target_project_id),
       'repeated',true);
   end if;
+
+  if target_verified_route_id is null then
+    raise exception 'CARE_VERIFIED_ROUTE_REQUIRED'
+      using errcode='42501';
+  end if;
+
+  select * into v_proof
+  from public.marketplace_admin_care_verified_routes q
+  where q.id=target_verified_route_id
+    and q.project_id=target_project_id
+  for update;
+
+  if not found or v_proof.consumed_at is not null
+    or v_proof.expires_at<=now() then
+    raise exception 'CARE_VERIFIED_ROUTE_EXPIRED'
+      using errcode='42501';
+  end if;
+
+  if v_proof.actor_user_id<>v_actor
+    or v_proof.service_code<>v_service
+    or v_proof.vehicle_category_code<>v_category
+    or v_proof.origin_point<>jsonb_build_object(
+      'lat',v_origin_lat,'lon',v_origin_lon)
+    or v_proof.destination_point<>jsonb_build_object(
+      'lat',v_dest_lat,'lon',v_dest_lon)
+    or round(v_proof.distance_km,5)<>round(target_distance_km,5)
+    or v_proof.duration_seconds<>target_route_duration_seconds
+    or round(v_proof.recommended_price,2)<>round(target_expected_price,2)
+    or v_proof.cargo_weight_kg is distinct from
+       (case when v_service='cargo'
+         then target_cargo_weight_kg else null end)
+  then
+    raise exception 'CARE_VERIFIED_ROUTE_MISMATCH'
+      using errcode='42501';
+  end if;
   -- Credencial transitoria generada en el servidor, nunca entregada al operador.
   -- Se revoca en la misma transaccion tras reutilizar los contratos de Cliente.
   v_token:=encode(extensions.gen_random_bytes(32),'hex');
@@ -239,6 +335,8 @@ begin
   update public.marketplace_customer_sessions set status='revoked' where id=v_session_id and project_id=target_project_id;
   insert into public.marketplace_admin_care_jobs(project_id,customer_id,job_id,actor_user_id,idempotency_key,payload_hash)
   values(target_project_id,target_customer_id,v_create.job_id,v_actor,target_idempotency_key,v_digest);
+  update public.marketplace_admin_care_verified_routes
+    set consumed_at=now() where id=target_verified_route_id;
   return jsonb_build_object('job_id',v_create.job_id,'customer_id',target_customer_id,
     'status',v_publish.status,'recommended_price',v_publish.recommended_price,
     'final_price',v_publish.final_price,'expires_at',v_publish.expires_at,
@@ -248,7 +346,7 @@ $fn$;
 
 revoke all on function public.admin_lookup_marketplace_care_customer(uuid,text) from public,anon,authenticated;
 revoke all on function public.admin_register_marketplace_care_customer(uuid,text,text) from public,anon,authenticated;
-revoke all on function public.admin_publish_marketplace_care_job(uuid,uuid,uuid,text,text,text,text,jsonb,jsonb,numeric,integer,numeric,text,numeric,text) from public,anon,authenticated;
+revoke all on function public.admin_publish_marketplace_care_job(uuid,uuid,uuid,text,text,text,text,jsonb,jsonb,numeric,integer,numeric,text,numeric,text,uuid) from public,anon,authenticated;
 grant execute on function public.admin_lookup_marketplace_care_customer(uuid,text) to authenticated;
 grant execute on function public.admin_register_marketplace_care_customer(uuid,text,text) to authenticated;
-grant execute on function public.admin_publish_marketplace_care_job(uuid,uuid,uuid,text,text,text,text,jsonb,jsonb,numeric,integer,numeric,text,numeric,text) to authenticated;
+grant execute on function public.admin_publish_marketplace_care_job(uuid,uuid,uuid,text,text,text,text,jsonb,jsonb,numeric,integer,numeric,text,numeric,text,uuid) to authenticated;
