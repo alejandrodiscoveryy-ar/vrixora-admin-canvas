@@ -24,7 +24,10 @@ test("la tasa es visual y la previsualizacion usa snapshot oficial", () => {
   assert.doesNotMatch(map, /setExchangeRate|setRate\(|rate_mode|rate_config/);
   assert.match(section, /exchange_rate_snapshot/);
   assert.match(section, /rounding_increment/);
-  assert.match(section, /Publicar tarifa/);
+  assert.match(section, /savePricingTariff\(projectId/);
+  assert.match(section, /onClick=\{\(\) => save\.mutate\(\)\}/);
+  assert.match(section, /setModalityVisibility\(projectId, input\)/);
+  assert.match(section, /disabled=\{!tariff \|\| !publication\.isSuccess \|\| visibility\.isPending\}/);
 });
 test("escenario se invalida al mover pines o cambiar tarifas", () => {
   assert.match(map, /requestRef\.current/);

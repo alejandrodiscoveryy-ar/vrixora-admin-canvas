@@ -21,7 +21,7 @@ jobs:
         with:
           bun-version: '1.4.2'
       - name: Contract tests
-        run: node --test tests/admin_customer_care_phase1.test.mjs
+        run: node --test tests/admin_customer_care_phase1.test.mjs tests/admin_customer_care_phase2.test.mjs
       - name: Install exact dependencies
         run: bun install --frozen-lockfile
       - name: Build web without deploy

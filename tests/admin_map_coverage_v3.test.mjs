@@ -26,5 +26,5 @@ test('Los grupos responden al zoom y se limpian al desmontarse', () => {
 test('Las capas operativas no invaden la cobertura y la leyenda comienza compacta', () => {
   assert.match(src, /mapViewMode === "operations" && layers\.incidents/);
   assert.match(src, /mapViewMode === "operations" && layers\.routes/);
-  assert.match(src, /useState\(true\);\n  const panelOpen = !agendaCollapsed/);
+  assert.match(src, /useState\(true\);\r?\n  const panelOpen = !agendaCollapsed/);
 });
