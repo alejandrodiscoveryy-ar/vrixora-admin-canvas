@@ -17,7 +17,7 @@ test('el catalogo es solo lectura para el servicio y bloquea acceso anonimo', ()
   assert.match(migrations, /enable row level security/i);
   assert.match(migrations, /revoke all on table .* from public, anon, authenticated/i);
   assert.match(migrations, /grant select on table .* to service_role/i);
-  assert.match(migrations, /revoke all on function .*\n\s*from public,anon,authenticated/i);
+  assert.match(migrations, /revoke all on function .*\r?\n\s*from public,anon,authenticated/i);
 });
 
 test('la busqueda limita la provincia operativa y su consumo', () => {
