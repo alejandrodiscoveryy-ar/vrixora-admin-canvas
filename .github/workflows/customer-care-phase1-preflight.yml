@@ -8,6 +8,9 @@ on:
       - 'src/features/admin/MarketplaceCustomerCareWorkspace.tsx'
       - 'src/features/admin/MarketplaceTestRouteMap.tsx'
       - 'tests/admin_customer_care_phase1.test.mjs'
+      - 'tests/admin_customer_care_phase2.test.mjs'
+      - 'supabase/migrations/20261031002958_marketplace_care_phase2_verified_20261030.sql'
+      - 'supabase/functions/marketplace-map-admin-gateway/index.ts'
       - '.github/workflows/customer-care-phase1-preflight.yml'
 permissions:
   contents: read
@@ -21,7 +24,7 @@ jobs:
         with:
           bun-version: '1.4.2'
       - name: Contract tests
-        run: node --test tests/admin_customer_care_phase1.test.mjs
+        run: node --test tests/admin_customer_care_phase1.test.mjs tests/admin_customer_care_phase2.test.mjs
       - name: Install exact dependencies
         run: bun install --frozen-lockfile
       - name: Build web without deploy

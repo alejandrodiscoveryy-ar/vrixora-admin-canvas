@@ -25,12 +25,13 @@ test('mapa de solicitudes admite origen destino y tamaño grande sin alterar el 
   assert.match(map, /heightClassName \?\?/);
   assert.match(map, /ariaLabel \?\?/);
 });
-test('publicacion real bloqueada expresamente en primera fase', () => {
-  assert.match(care, /Publicar carrera · Próxima fase/);
-  assert.match(care, /disabled aria-label="Publicar carrera; disponible en fase 2"/);
-  assert.doesNotMatch(care, /test_lab_create_v3|admin_create_marketplace_job|marketplace_create_job/);
-});
-test('datos de cliente estan presentes y no se guardan en Supabase en fase 1', () => {
-  for (const s of ['Nombre del cliente','Teléfono del cliente','Tipo de servicio','Vehículo','Origen de recogida','Destino','Contacto preferido']) assert.ok(care.includes(s), s);
-  assert.doesNotMatch(care, /\.from\(["']customers["']\)|\.insert\(|\.upsert\(/);
+
+test('fase 2 mantiene identificacion y solicitud conectadas a las operaciones reales', () => {
+  assert.match(care, /admin_lookup_marketplace_care_customer/);
+  assert.match(care, /admin_register_marketplace_care_customer/);
+  assert.match(care, /customer\.display_name/);
+  assert.match(care, /onOpenCustomer\(customer\.id\)/);
+  assert.match(care, /"passenger" \| "courier" \| "cargo"/);
+  assert.match(care, /target_cargo_weight_kg/);
+  assert.match(care, /operation: "route_quote"/);
 });

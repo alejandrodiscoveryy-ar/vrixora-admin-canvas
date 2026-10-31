@@ -504,6 +504,7 @@ Deno.serve(async (request: Request) => {
         "driver_directory_media",
         "driver_document_signed_url",
         "test_lab_create_v3",
+        "care_route_verify_v1",
       ].includes(operation)
     ) {
       throw new Error("MAP_ADMIN_OPERATION_INVALID");
@@ -861,6 +862,147 @@ Deno.serve(async (request: Request) => {
       };
 
       return reply({ ...payload, data: payload });
+    }
+
+
+    if (operation === "care_route_verify_v1") {
+      const { data: authData, error: authError } =
+        await userClient.auth.getUser();
+
+      if (authError || !authData?.user?.id)
+        throw new Error("CARE_AUTH_REQUIRED");
+
+      const { data: allowed, error: permissionError } =
+        await userClient.rpc(
+          "admin_assert_marketplace_care_publish_access",
+          { target_project_id: projectId },
+        );
+
+      if (permissionError || allowed !== true)
+        throw new Error("CARE_PERMISSION_DENIED");
+
+      const readPoint = (raw: any) => {
+        const lat = Number(raw?.lat);
+        const lon = Number(raw?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) ||
+            lat < 18 || lat > 24.5 ||
+            lon < -85.5 || lon > -73)
+          throw new Error("CARE_COORDINATES_INVALID");
+        return { lat, lon };
+      };
+
+      const origin = readPoint(body?.target_origin_point);
+      const destination = readPoint(body?.target_destination_point);
+
+      if (origin.lat === destination.lat &&
+          origin.lon === destination.lon)
+        throw new Error("CARE_ROUTE_INVALID");
+
+      const serviceCode =
+        String(body?.target_service_code ?? "").trim();
+      const vehicleCode =
+        String(body?.target_vehicle_category_code ?? "").trim();
+
+      if (!["passenger","courier","cargo"].includes(serviceCode) ||
+          !["motorcycle","bicitaxi","tricycle","light_car"].includes(vehicleCode))
+        throw new Error("CARE_SERVICE_INVALID");
+
+      const cargoWeight = serviceCode === "cargo"
+        ? Number(body?.target_cargo_weight_kg) : null;
+
+      if (serviceCode === "cargo" &&
+          (!Number.isFinite(cargoWeight) ||
+           cargoWeight! <= 0 || cargoWeight! > 10000))
+        throw new Error("CARE_CARGO_WEIGHT_INVALID");
+
+      const mapbox =
+        await resolveOperationalRoutingCredential(
+          serviceClient, projectId
+        );
+
+      if (!mapbox)
+        throw new Error("MAPBOX_ROUTING_CREDENTIAL_MISSING");
+
+      const coords =
+        `${origin.lon},${origin.lat};${destination.lon},${destination.lat}`;
+
+      const params = new URLSearchParams({
+        geometries: "geojson",
+        overview: "false",
+        steps: "false",
+        access_token: mapbox,
+      });
+
+      const upstream = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?${params}`,
+        { signal: AbortSignal.timeout(10000) },
+      );
+
+      if (!upstream.ok)
+        throw new Error(`CARE_MAPBOX_HTTP_${upstream.status}`);
+
+      const routeData = await upstream.json();
+      const first = routeData?.routes?.[0];
+
+      const km = Number(first?.distance) / 1000;
+      const duration = Math.round(Number(first?.duration));
+
+      if (!Number.isFinite(km) || km <= 0 || km > 500 ||
+          !Number.isFinite(duration) ||
+          duration <= 0 || duration > 86400)
+        throw new Error("CARE_ROUTE_NOT_FOUND");
+
+      const { data: quoted, error: quoteError } =
+        await serviceClient.rpc(
+          "preview_marketplace_customer_quote_v3",
+          {
+            target_service_code: serviceCode,
+            target_vehicle_category_code: vehicleCode,
+            target_passenger_count: serviceCode === "passenger" ? 1 : null,
+            target_distance_km: km,
+            target_stop_count: 0,
+            target_destination_lat: destination.lat,
+            target_destination_lon: destination.lon,
+            target_scheduled_for: null,
+          }
+        );
+
+      if (quoteError) throw quoteError;
+
+      const price = Number(quoted?.recommended_price);
+
+      if (!Number.isFinite(price) || price <= 0 || price > 100000)
+        throw new Error("CARE_PRICE_UNAVAILABLE");
+
+      const { data: stored, error: storeError } = await serviceClient
+        .from("marketplace_admin_care_verified_routes")
+        .insert({
+          project_id: projectId,
+          actor_user_id: authData.user.id,
+          service_code: serviceCode,
+          vehicle_category_code: vehicleCode,
+          origin_point: origin,
+          destination_point: destination,
+          distance_km: km,
+          duration_seconds: duration,
+          recommended_price: price,
+          cargo_weight_kg: cargoWeight,
+        })
+        .select("id")
+        .single();
+
+      if (storeError || !stored?.id)
+        throw storeError ??
+          new Error("CARE_ROUTE_PROOF_STORE_FAILED");
+
+      return reply({
+        data: {
+          verified_route_id: stored.id,
+          distance_km: km,
+          duration_seconds: duration,
+          recommended_price: price,
+        },
+      });
     }
 
     if (operation === "test_lab_create_v3") {
