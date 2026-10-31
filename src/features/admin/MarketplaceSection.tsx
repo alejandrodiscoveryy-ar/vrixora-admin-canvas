@@ -893,6 +893,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [customerSort, setCustomerSort] = useState<"points_desc" | "recent">("points_desc");
 
   const [jobId, setJobId] = useState<string | null>(null);
+  const [jobDetailInitialTab, setJobDetailInitialTab] = useState<"overview" | "radar">("overview");
   const [expandedOperationId, setExpandedOperationId] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [driver, setDriver] = useState<{
@@ -1852,7 +1853,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 </div>
                               </div>
 
-                              <aside className="shrink-0 rounded-xl border border-border/55 bg-background/55 p-3 lg:w-[200px]">
+                              <div className="w-full shrink-0 space-y-3 lg:w-[200px]">
+                              <aside className="rounded-xl border border-border/55 bg-background/55 p-3">
                                 <div className="space-y-2 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
                                     <span>Programado</span>
@@ -1964,6 +1966,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ) : null}
                                 </div>
                               </aside>
+                              <JobRadarShortcut
+                                projectId={projectId}
+                                jobId={job.jobId}
+                                onOpen={() => {
+                                  setJobDetailInitialTab("radar");
+                                  setJobId(job.jobId);
+                                }}
+                              />
+                              </div>
                             </div>
                           </div>
                         ) : null}
@@ -2895,7 +2906,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog open={Boolean(jobId)} onOpenChange={() => setJobId(null)}>
+      <Dialog open={Boolean(jobId)} onOpenChange={(open) => {
+        if (!open) {
+          setJobId(null);
+          setJobDetailInitialTab("overview");
+        }
+      }}>
         <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
           <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
             <DialogHeader className="text-left">
@@ -2918,7 +2934,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             {detail.isLoading ? (
               <LoadingState />
             ) : detail.data ? (
-              <JobDetail key={jobId} detail={detail.data} projectId={projectId} jobId={jobId!} />
+              <JobDetail key={`${jobId}:${jobDetailInitialTab}`} detail={detail.data} projectId={projectId} jobId={jobId!} initialTab={jobDetailInitialTab} />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
                 No se encontro el trabajo.
@@ -3330,6 +3346,70 @@ type JobRadarAnalysis = {
   impacts: JobRadarImpact[];
 };
 
+function JobRadarShortcut({ projectId, jobId, onOpen }: {
+  projectId: string;
+  jobId: string;
+  onOpen: () => void;
+}) {
+  const analysis = useQuery({
+    queryKey: ["marketplace-job-radar-analysis", projectId, jobId],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_job_radar_analysis",
+        { target_project_id: projectId, target_job_id: jobId },
+      );
+      if (error) throw error;
+      return data as JobRadarAnalysis;
+    },
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+
+  const state = analysis.isPending || analysis.isError
+    ? "unknown"
+    : analysis.data?.status === "yes" ? "yes"
+    : analysis.data?.status === "no" ? "no" : "unknown";
+  const total = Array.isArray(analysis.data?.impacts) ? analysis.data.impacts.length : 0;
+  const queued = analysis.data?.total_offers_enqueued ?? 0;
+  const headline = analysis.isPending ? "Consultando radar"
+    : analysis.isError ? "Radar no disponible"
+    : state === "yes" ? "Radar utilizado"
+    : state === "no" ? "Radar no utilizado" : "Sin registro histórico";
+  const tone = state === "yes"
+    ? "border-sky-400/45 bg-gradient-to-br from-sky-400/20 via-cyan-500/10 to-[#0b2231] text-sky-50 shadow-[0_18px_45px_-25px_rgba(56,189,248,0.48)] hover:border-sky-300/70 hover:from-sky-400/25"
+    : state === "no"
+    ? "border-slate-600/25 bg-slate-800/20 text-slate-400 opacity-75 hover:opacity-100 hover:border-slate-500/45"
+    : "border-slate-500/25 bg-[#11191e]/75 text-slate-300 hover:border-slate-400/45";
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={headline + ". Abrir análisis del radar de esta carrera"}
+      className={"group relative flex min-h-[166px] w-full flex-col overflow-hidden rounded-[20px] border p-3.5 text-left outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-sky-400 " + tone}
+    >
+      {state === "yes" ? (
+        <div aria-hidden="true" className="pointer-events-none absolute -right-7 -top-8 h-28 w-28 rounded-full bg-sky-300/15 blur-2xl" />
+      ) : null}
+      <span className="relative flex w-full items-center justify-between gap-2">
+        <span className={"grid h-10 w-10 shrink-0 place-items-center rounded-xl border " +
+          (state === "yes" ? "border-sky-300/35 bg-sky-300/15 text-sky-200" : "border-slate-500/25 bg-slate-500/10 text-slate-400")}>
+          <Radar className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <ArrowRight className="h-4 w-4 shrink-0 opacity-55 transition-transform group-hover:translate-x-1 group-hover:opacity-100" aria-hidden="true" />
+      </span>
+      <span className="relative mt-3 text-[10px] font-bold uppercase tracking-[0.15em] opacity-75">Radar de la carrera</span>
+      <span className="relative mt-1 text-sm font-bold leading-snug">{headline}</span>
+      <span className="relative mt-1 text-[11px] leading-relaxed opacity-75">
+        {state === "yes" ? total + " impactados · " + queued + " avisos encolados"
+          : state === "no" ? "Despacho sin búsqueda radial"
+          : "Abre el detalle para consultar los registros"}
+      </span>
+      <span className="relative mt-auto pt-3 text-[11px] font-semibold underline-offset-2 group-hover:underline">Ver análisis completo</span>
+    </button>
+  );
+}
+
 function JobNotificationReach({
   projectId, jobId, assignedDriverId, compact = false,
 }: {
@@ -3587,13 +3667,14 @@ function JobNotificationReach({
   );
 }
 
-function JobDetail({ detail, projectId, jobId }: {
+function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
   detail: import("@/lib/services/types").MarketplaceJobDetail;
   projectId: string;
   jobId: string;
+  initialTab?: "overview" | "radar";
 }) {
   const { job, serviceRequest, assignment, customer, financial, timeline, incidentResolution } = detail;
-  const [activeTab, setActiveTab] = useState<"overview" | "radar" | "finance" | "history">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "radar" | "finance" | "history">(initialTab);
   const state = text(job.status);
   const hasDriver = Boolean(assignment?.driver_user_id);
   const driverCode = typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null;
