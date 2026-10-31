@@ -2913,24 +2913,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         }
       }}>
         <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
-          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
-            <DialogHeader className="text-left">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.75)]" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-                  TUKTUK / OPERACIONES
-                </span>
-              </div>
-              <DialogTitle className="text-xl tracking-tight sm:text-2xl">
-                Expediente de carrera
-              </DialogTitle>
-              <DialogDescription className="max-w-2xl">
-                Información ejecutiva, cobertura del radar y trazabilidad del servicio.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+          <DialogHeader className="sr-only">
+            <DialogTitle>360 de carrera</DialogTitle>
+            <DialogDescription>
+              Expediente integral: ruta, participantes, radar, finanzas y trazabilidad.
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="p-4 sm:p-6">
+          <div className="p-4 pt-10 sm:p-6 sm:pt-10">
             {detail.isLoading ? (
               <LoadingState />
             ) : detail.data ? (
@@ -3371,12 +3361,17 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
     : analysis.data?.status === "no" ? "no" : "unknown";
   const total = Array.isArray(analysis.data?.impacts) ? analysis.data.impacts.length : 0;
   const queued = analysis.data?.total_offers_enqueued ?? 0;
+  const stages = [...new Set(
+    (analysis.data?.impacts ?? [])
+      .map((impact) => impact.radius_stage)
+      .filter((stage): stage is number => typeof stage === "number" && stage > 0)
+  )].sort((a, b) => a - b);
   const headline = analysis.isPending ? "Consultando radar"
     : analysis.isError ? "Radar no disponible"
     : state === "yes" ? "Radar utilizado"
     : state === "no" ? "Radar no utilizado" : "Sin registro histórico";
   const tone = state === "yes"
-    ? "border-sky-400/45 bg-gradient-to-br from-sky-400/20 via-cyan-500/10 to-[#0b2231] text-sky-50 shadow-[0_18px_45px_-25px_rgba(56,189,248,0.48)] hover:border-sky-300/70 hover:from-sky-400/25"
+    ? "border-sky-400/50 bg-gradient-to-br from-sky-400/20 via-cyan-500/10 to-[#0b2231] text-sky-100 shadow-[0_18px_45px_-25px_rgba(56,189,248,0.48)] hover:border-sky-300/75"
     : state === "no"
     ? "border-slate-600/25 bg-slate-800/20 text-slate-400 opacity-75 hover:opacity-100 hover:border-slate-500/45"
     : "border-slate-500/25 bg-[#11191e]/75 text-slate-300 hover:border-slate-400/45";
@@ -3385,27 +3380,27 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
     <button
       type="button"
       onClick={onOpen}
-      aria-label={headline + ". Abrir análisis del radar de esta carrera"}
-      className={"group relative flex min-h-[166px] w-full flex-col overflow-hidden rounded-[20px] border p-3.5 text-left outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-sky-400 " + tone}
+      aria-label={headline + ". Abrir radar y cobertura de esta carrera"}
+      title={headline + ". Clic para abrir el análisis del radar"}
+      className={"group relative flex min-h-[180px] w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border p-3 text-center outline-none transition-all duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-sky-300 " + tone}
     >
       {state === "yes" ? (
-        <div aria-hidden="true" className="pointer-events-none absolute -right-7 -top-8 h-28 w-28 rounded-full bg-sky-300/15 blur-2xl" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-full bg-sky-400/[0.09] blur-2xl" />
       ) : null}
-      <span className="relative flex w-full items-center justify-between gap-2">
-        <span className={"grid h-10 w-10 shrink-0 place-items-center rounded-xl border " +
-          (state === "yes" ? "border-sky-300/35 bg-sky-300/15 text-sky-200" : "border-slate-500/25 bg-slate-500/10 text-slate-400")}>
-          <Radar className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <ArrowRight className="h-4 w-4 shrink-0 opacity-55 transition-transform group-hover:translate-x-1 group-hover:opacity-100" aria-hidden="true" />
+      <span className="relative flex flex-col items-center gap-2 transition-transform duration-200 group-hover:scale-95 group-focus-visible:scale-95">
+        <Radar className="h-[76px] w-[76px] drop-shadow-[0_0_16px_rgba(34,211,238,0.25)]" strokeWidth={1.35} aria-hidden="true" />
+        <span className="text-xs font-bold">{headline}</span>
       </span>
-      <span className="relative mt-3 text-[10px] font-bold uppercase tracking-[0.15em] opacity-75">Radar de la carrera</span>
-      <span className="relative mt-1 text-sm font-bold leading-snug">{headline}</span>
-      <span className="relative mt-1 text-[11px] leading-relaxed opacity-75">
-        {state === "yes" ? total + " impactados · " + queued + " avisos encolados"
-          : state === "no" ? "Despacho sin búsqueda radial"
-          : "Abre el detalle para consultar los registros"}
+      <span className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-[#09161d]/95 px-2.5 py-3 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus:opacity-100">
+        <Radar className="h-7 w-7 text-sky-300" strokeWidth={1.5} aria-hidden="true" />
+        <span className="text-[11px] font-bold text-sky-100">Radar de la carrera</span>
+        <span className="text-[11px] font-semibold text-white">{headline}</span>
+        <span className="text-[10px] leading-relaxed text-slate-300">Impactados: {total} · Avisos encolados: {queued}</span>
+        {stages.length > 0 ? (
+          <span className="text-[10px] text-sky-200">Etapas: {stages.join(", ")}</span>
+        ) : null}
+        <span className="mt-1 text-[10px] font-semibold text-cyan-200">Clic: análisis completo</span>
       </span>
-      <span className="relative mt-auto pt-3 text-[11px] font-semibold underline-offset-2 group-hover:underline">Ver análisis completo</span>
     </button>
   );
 }
@@ -3710,7 +3705,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/25 bg-cyan-400/[0.08] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.13em] text-cyan-200">
-                <BriefcaseBusiness className="h-3.5 w-3.5" /> Expediente de operación
+                <BriefcaseBusiness className="h-3.5 w-3.5" /> Expediente 360 de carrera
               </span>
               <StatusBadge status={state} />
               <ServiceBadge service={text(serviceRequest.service_code)} />
@@ -3750,7 +3745,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
         </div>
       </section>
 
-      <nav aria-label="Secciones del expediente de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30">
+      <nav aria-label="Secciones del expediente 360 de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30">
         <div role="tablist" aria-label="Contenido de la carrera" className="flex gap-1 overflow-x-auto pb-0.5">
           {tabs.map(({id,label:tabLabel,Icon}) => (
             <button key={id} type="button" role="tab"

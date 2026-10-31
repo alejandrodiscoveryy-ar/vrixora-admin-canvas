@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const file=readFileSync('src/features/admin/MarketplaceSection.tsx','utf8');
 test('expediente premium y ventana ancha',()=>{
- assert.match(file,/Expediente de carrera/);
+ assert.match(file,/Expediente 360 de carrera/);
  assert.match(file,/max-w-\[1180px\]/);
  assert.match(file,/Identidad de la carrera/);
  assert.match(file,/Resumen ejecutivo/);
