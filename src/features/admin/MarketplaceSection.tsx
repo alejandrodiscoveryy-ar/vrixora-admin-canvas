@@ -38,6 +38,8 @@ import {
   type MarketplaceDriverFinancial360,
 } from "@/lib/services";
 import { useProjectPermissions } from "@/hooks/useProjects";
+import { getSupabaseClient } from "@/lib/supabase";
+import { toast } from "sonner";
 import { MARKETPLACE_WORKSPACE_VIEWS } from "@/lib/admin-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -902,6 +904,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     jobId: string;
     idempotencyKey: string;
   } | null>(null);
+  const [assistedCancel, setAssistedCancel] = useState<{
+    jobId: string; status: string; customer: string; key: string
+  } | null>(null);
+  const [assistedCancelReason, setAssistedCancelReason] = useState("");
+  const [assistedCancelError, setAssistedCancelError] = useState<string | null>(null);
   const [adminFinishReason, setAdminFinishReason] = useState("");
   const [adminFinishError, setAdminFinishError] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -1197,6 +1204,46 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
       void invalidate("marketplace-jobs", "marketplace-job-detail");
     },
   });
+  const assistedCancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!canManageMarketplace || !assistedCancel ||
+          assistedCancelReason.trim().length < 8) {
+        throw new Error("CARE_CANCEL_REASON_REQUIRED");
+      }
+
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_cancel_assisted_marketplace_job",
+        {
+          target_project_id: projectId,
+          target_job_id: assistedCancel.jobId,
+          target_expected_status: assistedCancel.status,
+          target_reason: assistedCancelReason.trim(),
+          target_idempotency_key: assistedCancel.key,
+        },
+      );
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setAssistedCancel(null);
+      setAssistedCancelReason("");
+      setAssistedCancelError(null);
+      toast.success("Carrera cancelada por solicitud del cliente.");
+
+      void invalidate(
+        "marketplace-jobs",
+        "marketplace-overview",
+        "marketplace-drivers",
+        "marketplace-wallets",
+        "marketplace-job-detail",
+        "marketplace-operational-map-live",
+        "marketplace-assisted-job-ids",
+      );
+    },
+    onError: (e) => setAssistedCancelError(errorText(e)),
+  });
+
   const resolve = useMutation({
     mutationFn: () =>
       supabaseServices.marketplace.resolveIncident(projectId, {
@@ -1330,6 +1377,35 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   });
 
   const jobRows = rows(jobs);
+  const assistedJobIds = useQuery({
+    queryKey: [
+      "marketplace-assisted-job-ids",
+      projectId,
+      jobRows.map((j) => j.jobId),
+    ],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_list_assisted_job_ids",
+        {
+          target_project_id: projectId,
+          target_job_ids: jobRows.map((j) => j.jobId),
+        },
+      );
+
+      if (error) throw error;
+
+      return new Set(
+        ((data ?? []) as Array<{ job_id: string }>)
+          .map((j) => j.job_id)
+      );
+    },
+    enabled: tab === "trabajos" &&
+      canManageMarketplace &&
+      jobRows.length > 0,
+    refetchInterval: 30_000,
+  });
+
+
   const driverRows = rows(drivers);
   const driverMediaIds = driverRows.map((row) => row.userId);
   const driverMedia = useQuery({
@@ -1639,6 +1715,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                               <StatusBadge status={job.status} />
                               <ServiceBadge service={job.serviceCode} />
+                              {!job.isTest &&
+                              assistedJobIds.data?.has(job.jobId) ? (
+                                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                  ASISTENCIA
+                                </span>
+                              ) : null}
                               {job.isTest ? (
                                 <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
                                   PRUEBA
@@ -1801,6 +1883,30 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     Abrir detalle
                                   </Button>
 
+                                  {canManageMarketplace &&
+                                  assistedJobIds.data?.has(job.jobId) &&
+                                  ["published", "accepted", "en_route", "pickup"]
+                                    .includes(job.status) ? (
+                                    <Button
+                                      className="w-full"
+                                      size="sm"
+                                      variant="destructive"
+                                      disabled={assistedCancelMutation.isPending}
+                                      onClick={() => {
+                                        setAssistedCancel({
+                                          jobId: job.jobId,
+                                          status: job.status,
+                                          customer: job.customerDisplayName || "Cliente",
+                                          key: crypto.randomUUID(),
+                                        });
+                                        setAssistedCancelReason("");
+                                        setAssistedCancelError(null);
+                                      }}
+                                    >
+                                      <AlertCircle className="mr-2 h-4 w-4" />
+                                      Cancelar por solicitud del cliente
+                                    </Button>
+                                  ) : null}
                                   {canFinishAdmin &&
                                   ["accepted", "en_route", "pickup", "in_progress"].includes(
                                     job.status,
@@ -2848,6 +2954,80 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           >
             {suspend.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {driver?.suspended ? "Suspender" : "Confirmar reactivación"}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(assistedCancel)}
+        onOpenChange={(open) => {
+          if (!open && !assistedCancelMutation.isPending) {
+            setAssistedCancel(null);
+            setAssistedCancelReason("");
+            setAssistedCancelError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Cancelar carrera por solicitud del cliente
+            </DialogTitle>
+            <DialogDescription>
+              Exclusivo para carreras creadas por asistencia.
+              La cancelaciÃ³n quedarÃ¡ registrada y se actualizarÃ¡
+              el estado de la carrera. Si existe una asignaciÃ³n,
+              se aplicarÃ¡n las reglas de liberaciÃ³n del conductor
+              y de la comisiÃ³n correspondiente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            {assistedCancel?.customer} Â· Estado:
+            {" "}{label(assistedCancel?.status ?? null)}
+          </p>
+
+          <Label htmlFor="care-assisted-cancel-reason">
+            Motivo indicado por el cliente
+          </Label>
+
+          <Textarea
+            id="care-assisted-cancel-reason"
+            value={assistedCancelReason}
+            rows={3}
+            maxLength={500}
+            disabled={assistedCancelMutation.isPending}
+            placeholder="El cliente ya no necesita el servicio"
+            onChange={(e) => setAssistedCancelReason(e.target.value)}
+          />
+
+          {assistedCancelError ? (
+            <p role="alert" className="text-sm text-rose-300">
+              {assistedCancelError}
+            </p>
+          ) : null}
+
+          <Button
+            className="w-full"
+            variant="destructive"
+            disabled={
+              !assistedCancel ||
+              assistedCancelReason.trim().length < 8 ||
+              assistedCancelMutation.isPending
+            }
+            onClick={() => {
+              if (!assistedCancel) return;
+
+              if (window.confirm(
+                "Â¿Confirmar la CANCELACIÃ“N REAL de esta carrera por solicitud del cliente?"
+              )) {
+                assistedCancelMutation.mutate();
+              }
+            }}
+          >
+            {assistedCancelMutation.isPending
+              ? "Cancelandoâ€¦"
+              : "Confirmar cancelaciÃ³n de carrera"}
           </Button>
         </DialogContent>
       </Dialog>
