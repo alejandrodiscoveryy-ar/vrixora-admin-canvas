@@ -241,27 +241,74 @@ export async function handleRequest(request: Request): Promise<Response> {
       if (query.length < 3 || query.length > 160) {
         throw Error("SEARCH_QUERY_INVALID");
       }
-      const result = await provider(
-        "search/geocode/v6/forward",
-        new URLSearchParams({
-          q: query,
-          language: "es",
-          country: "CU",
-          limit: "6",
-          proximity: "-82.3666,23.1136",
+      const normalized = query.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+      const incoming = body.proximity;
+      const nearLat = Number(incoming?.lat);
+      const nearLon = Number(incoming?.lon);
+      const inHavanaBox = Number.isFinite(nearLat) && Number.isFinite(nearLon) &&
+        nearLat >= 22.7 && nearLat <= 23.35 && nearLon >= -82.75 && nearLon <= -81.95;
+      const lat = inHavanaBox ? nearLat : 23.1136;
+      const lon = inHavanaBox ? nearLon : -82.3666;
+      // El catalogo es opcional durante despliegues escalonados: el servicio
+      // anterior continua funcionando hasta que el esquema y los POI se activen.
+      const [catalogResponse, mapboxResponse] = await Promise.allSettled([
+        db.rpc("search_marketplace_havana_places", {
+          target_query: normalized,
+          target_lat: lat,
+          target_lon: lon,
+          target_limit: 12,
         }),
-        mapbox,
-      );
-      return reply({
-        data: (result.features ?? []).map((feature: any) => ({
-          label: feature.properties?.full_address || feature.properties?.name ||
-            "Ubicación",
-          lat: feature.geometry?.coordinates?.[1],
-          lon: feature.geometry?.coordinates?.[0],
-        })).filter((item: Point) =>
-          Number.isFinite(item.lat) && Number.isFinite(item.lon)
+        provider(
+          "search/geocode/v6/forward",
+          new URLSearchParams({
+            q: query,
+            language: "es",
+            country: "CU",
+            limit: "8",
+            bbox: "-82.75,22.7,-81.95,23.35",
+            proximity: `${lon},${lat}`,
+          }),
+          mapbox,
         ),
+      ]);
+      const rawCatalog = catalogResponse.status === "fulfilled" &&
+          !catalogResponse.value.error && Array.isArray(catalogResponse.value.data)
+        ? catalogResponse.value.data : [];
+      const osm = rawCatalog.map((item: any) => ({
+        label: item.name,
+        category: item.category,
+        distance_km: item.distance_km,
+        source: "openstreetmap",
+        lat: Number(item.lat),
+        lon: Number(item.lon),
+      }));
+      const features = mapboxResponse.status === "fulfilled"
+        ? mapboxResponse.value.features ?? [] : [];
+      const addresses = features.map((feature: any) => ({
+        label: feature.properties?.full_address || feature.properties?.name || "Ubicación",
+        category: "Dirección",
+        source: "mapbox",
+        lat: feature.geometry?.coordinates?.[1],
+        lon: feature.geometry?.coordinates?.[0],
+      }));
+      if (mapboxResponse.status === "rejected" &&
+          (catalogResponse.status === "rejected" || catalogResponse.value.error)) {
+        throw Error("SEARCH_PROVIDERS_UNAVAILABLE");
+      }
+      const candidates = [...osm, ...addresses].filter((item: any) =>
+        Number.isFinite(item.lat) && Number.isFinite(item.lon) &&
+        item.lat >= 22.7 && item.lat <= 23.35 &&
+        item.lon >= -82.75 && item.lon <= -81.95
+      );
+      const seen = new Set<string>();
+      const unique = candidates.filter((item: any) => {
+        const key = `${String(item.label).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()}:${Math.round(item.lat * 1000)}:${Math.round(item.lon * 1000)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
+      return reply({ data: unique.slice(0, 14) });
     }
     if (operation === "reverse_geocode") {
       const selected = point(body.point);
