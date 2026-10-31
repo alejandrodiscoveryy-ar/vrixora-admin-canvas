@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
+import MarketplaceTerritoryCatalog from "@/features/admin/MarketplaceTerritoryCatalog";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
@@ -2003,6 +2004,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
         {mapVisited ? (
           <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
+            <MarketplaceTerritoryCatalog
+              projectId={projectId}
+              canManage={permissions.includes("marketplace.map.manage")}
+            />
             <MarketplaceOperationalMap
               projectId={projectId}
               canViewCustomers={canCustomers}
