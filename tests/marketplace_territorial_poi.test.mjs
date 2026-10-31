@@ -26,7 +26,7 @@ test('las actualizaciones son atomicas y el catálogo anterior se mantiene ante 
   assert.match(sql,/status='running'/);
 });
 test('solo administradores autorizados pueden solicitar sincronizacion',()=>{
-  assert.match(fn,/actor\.auth\.getUser\(\)/);
+  assert.match(fn,/actor\.auth\.getUser\(jwt\)/);
   assert.match(fn,/get_my_project_permissions/);
   assert.match(fn,/codes\.has\("marketplace\.map\.manage"\)/);
   assert.match(fn,/marketplace_poi_queue_refresh/);

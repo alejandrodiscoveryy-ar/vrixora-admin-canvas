@@ -25,7 +25,8 @@ Deno.serve(async (request) => {
       global: { headers: { Authorization: authorization } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: verified, error: authError } = await actor.auth.getUser();
+    const jwt = authorization.replace(/^Bearer\s+/i, "");
+    const { data: verified, error: authError } = await actor.auth.getUser(jwt);
     if (authError || !verified.user) return reply({ error: "AUTH_REQUIRED" }, 401);
 
     const body = await request.json();
