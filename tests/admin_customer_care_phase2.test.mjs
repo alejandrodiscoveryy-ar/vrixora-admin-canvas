@@ -65,3 +65,15 @@ test('carrera real exige ruta y precio certificados', () => {
   assert.match(gateway,/auth\.getUser\(\)/);
   assert.match(gateway,/marketplace_admin_care_verified_routes/);
 });
+
+test('Atencion conecta permisos reales y navegacion 360', () => {
+  const tag = section.match(
+    /<MarketplaceCustomerCareWorkspace[\s\S]*?\/>/
+  )?.[0] ?? '';
+
+  assert.match(tag,/canViewCustomers=\{canCustomers\}/);
+  assert.match(tag,/canManageMarketplace=\{canManageMarketplace\}/);
+  assert.match(tag,/canRegisterCustomers=\{permissions\.includes\("customers\.manage"\)\}/);
+  assert.match(tag,/onOpenCustomer=\{setCustomerId\}/);
+  assert.match(tag,/onOpenJob=\{setJobId\}/);
+});

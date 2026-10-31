@@ -1874,6 +1874,11 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           <MarketplaceCustomerCareWorkspace
             projectId={projectId}
             canManageContact={permissions.includes("whatsapp_settings.manage")}
+            canViewCustomers={canCustomers}
+            canManageMarketplace={canManageMarketplace}
+            canRegisterCustomers={permissions.includes("customers.manage")}
+            onOpenCustomer={setCustomerId}
+            onOpenJob={setJobId}
           />
         </TabsContent>
         {mapVisited ? (
