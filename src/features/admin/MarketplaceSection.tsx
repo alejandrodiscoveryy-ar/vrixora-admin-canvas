@@ -61,6 +61,7 @@ import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
+import MarketplaceRadarReadinessCard from "@/features/admin/MarketplaceRadarReadinessCard";
 import MarketplaceCustomerCareWorkspace from "@/features/admin/MarketplaceCustomerCareWorkspace";
 import {
   getMarketplaceOperationalMap,
@@ -1608,6 +1609,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
         <TabsContent value="trabajos" className="mt-3">
           <div className="space-y-3 sm:space-y-4">
+            <MarketplaceRadarReadinessCard projectId={projectId} />
             <section className="relative overflow-hidden rounded-[26px] border border-emerald-400/16 bg-gradient-to-br from-emerald-500/[0.055] via-background/60 to-cyan-500/[0.025] p-3 shadow-[0_24px_70px_-48px_rgba(16,185,129,0.85)] backdrop-blur-xl sm:p-4">
               <img
                 src="/admin-premium/operations.svg"
