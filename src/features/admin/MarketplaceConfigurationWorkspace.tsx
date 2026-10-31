@@ -3,9 +3,8 @@ import {
   BellRing,
   ChevronRight,
   FlaskConical,
-  MapPinned,
+  Globe2,
   Radar,
-  Settings2,
   ShieldCheck,
 } from "lucide-react";
 
@@ -16,34 +15,31 @@ import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
 
 const SECTIONS = [
   {
-    id: "territorio",
+    id: "pruebas",
     number: "01",
-    title: "Mapas y provincias",
-    subtitle: "Cobertura, catálogo y actualización geográfica",
-    eyebrow: "CARTOGRAFÍA Y COBERTURA",
-    description:
-      "Administra los lugares de La Habana, prepara nuevas provincias y consulta el estado de cada actualización sin modificar las carreras.",
-    icon: MapPinned,
+    title: "Centro de pruebas",
+    subtitle: "Simulación de carreras y rutas",
+    eyebrow: "VERIFICACIÓN CONTROLADA",
+    description: "Comprueba rutas, conductores y solicitudes de prueba sin alterar la operación habitual.",
+    icon: FlaskConical,
   },
   {
     id: "operacion",
     number: "02",
-    title: "Operación y avisos",
-    subtitle: "Despacho, radios de búsqueda y recordatorios",
-    eyebrow: "REGLAS OPERATIVAS",
-    description:
-      "Controla la asignación de solicitudes, la búsqueda de conductores y los avisos de carreras pendientes.",
+    title: "Radar",
+    subtitle: "Asignación, búsqueda y recordatorios",
+    eyebrow: "DESPACHO Y AVISOS",
+    description: "Define el alcance de las solicitudes, la prioridad de conductores y los avisos de carreras.",
     icon: Radar,
   },
   {
-    id: "pruebas",
+    id: "territorio",
     number: "03",
-    title: "Centro de pruebas",
-    subtitle: "Simulación y comprobación del servicio",
-    eyebrow: "DIAGNÓSTICO CONTROLADO",
-    description:
-      "Verifica rutas y funcionamiento del servicio desde un entorno de pruebas separado de las operaciones habituales.",
-    icon: FlaskConical,
+    title: "Provincia",
+    subtitle: "Cobertura y catálogo de lugares",
+    eyebrow: "DATOS TERRITORIALES",
+    description: "Actualiza La Habana, prepara otras provincias y consulta el historial de las importaciones.",
+    icon: Globe2,
   },
 ] as const;
 
@@ -64,41 +60,23 @@ export default function MarketplaceConfigurationWorkspace({
   canManageTerritory: boolean;
   onOpenJob: (jobId: string) => void;
 }) {
-  const [active, setActive] = useState<SectionId>("territorio");
+  const [active, setActive] = useState<SectionId>("pruebas");
   const selected = SECTIONS.find((section) => section.id === active) ?? SECTIONS[0];
   const SelectedIcon = selected.icon;
 
   return (
-    <section aria-label="Configuración de TukTuk" className="space-y-5">
-      <header className="relative isolate overflow-hidden rounded-[28px] border border-cyan-300/15 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 px-5 py-6 text-slate-50 shadow-[0_25px_65px_-45px_rgba(14,165,233,0.4)] sm:px-7 sm:py-7">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 -z-10 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/3 -z-10 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 shadow-inner shadow-cyan-400/10">
-              <Settings2 aria-hidden="true" className="h-6 w-6 text-cyan-200" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-200/80">TukTuk / Centro de control</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-[28px]">Configuración del servicio</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                Configura la cobertura geográfica, los criterios operativos y las herramientas de verificación desde un solo lugar.
-              </p>
-            </div>
+    <section aria-label="Configuración de TukTuk" className="min-w-0 space-y-3">
+      <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
+        <nav
+          aria-label="Secciones de configuración de TukTuk"
+          className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
+          <div className="relative z-10 px-2.5 pb-2 pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Configuración</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Áreas de control de TukTuk</p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-xs text-slate-300">
-            <ShieldCheck aria-hidden="true" className="h-4 w-4 text-cyan-200" />
-            Gestión protegida por permisos
-          </div>
-        </div>
-      </header>
-
-      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[285px_minmax(0,1fr)]">
-        <nav aria-label="Secciones de configuración de TukTuk" className="rounded-[24px] border border-border/70 bg-card/75 p-2 shadow-[0_20px_50px_-42px_rgba(0,0,0,0.65)] xl:sticky xl:top-4">
-          <div className="px-3 pb-2 pt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Áreas de configuración</p>
-          </div>
-          <div className="grid gap-1.5 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="relative z-10 grid gap-1.5 sm:grid-cols-3 xl:grid-cols-1">
             {SECTIONS.map((section) => {
               const Icon = section.icon;
               const isSelected = section.id === active;
@@ -109,50 +87,46 @@ export default function MarketplaceConfigurationWorkspace({
                   onClick={() => setActive(section.id)}
                   aria-pressed={isSelected}
                   aria-controls="tuktuk-config-detail"
-                  className={`group flex min-w-0 items-center gap-3 rounded-[17px] border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-cyan-400/35 bg-cyan-400/[0.085] text-foreground shadow-sm" : "border-transparent text-muted-foreground hover:border-border/65 hover:bg-muted/45 hover:text-foreground"}`}
+                  className={`group relative isolate flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-cyan-400/35 bg-gradient-to-r from-cyan-400/[0.11] via-cyan-400/[0.045] to-background/20 text-foreground shadow-[0_12px_30px_-24px_rgba(34,211,238,0.45)]" : "border-transparent bg-background/20 text-foreground/85 hover:border-border/65 hover:bg-muted/40"}`}
                 >
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${isSelected ? "border-cyan-400/25 bg-cyan-400/10 text-cyan-300" : "border-border/60 bg-background/50 text-muted-foreground"}`}>
-                    <Icon aria-hidden="true" className="h-[19px] w-[19px]" />
+                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
+                  <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner ${isSelected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border/60 bg-background/60 text-muted-foreground"}`}>
+                    <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-semibold tracking-wide text-muted-foreground">{section.number}</span>
-                    <span className="mt-0.5 block text-sm font-semibold leading-tight">{section.title}</span>
-                    <span className="mt-1 hidden text-xs leading-snug text-muted-foreground xl:block">{section.subtitle}</span>
+                  <span className="relative z-10 min-w-0 flex-1">
+                    <span className="block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{section.number}</span>
+                    <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">{section.title}</span>
+                    <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{section.subtitle}</span>
                   </span>
-                  <ChevronRight aria-hidden="true" className={`hidden h-4 w-4 shrink-0 xl:block ${isSelected ? "text-cyan-300" : "text-muted-foreground/40"}`} />
+                  <ChevronRight aria-hidden="true" className={`relative z-10 hidden h-4 w-4 shrink-0 xl:block ${isSelected ? "text-cyan-300" : "text-muted-foreground/45"}`} />
                 </button>
               );
             })}
           </div>
+          <div className="relative z-10 mt-2 flex items-center gap-1.5 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">
+            <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-cyan-400" />
+            Acceso según permisos
+          </div>
         </nav>
 
-        <div id="tuktuk-config-detail" className="min-w-0 space-y-4">
-          <div className="rounded-[24px] border border-border/70 bg-card/65 px-4 py-4 sm:px-5 sm:py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
-                <SelectedIcon aria-hidden="true" className="h-5 w-5" />
+        <div id="tuktuk-config-detail" className="min-w-0 space-y-3">
+          {active !== "pruebas" ? (
+            <header className="relative isolate overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-3 text-slate-50 shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5">
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_90%_10%,rgba(34,211,238,0.10),transparent_55%)]" />
+              <SelectedIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-8 z-0 h-32 w-32 rotate-[-15deg] text-cyan-100 opacity-[0.07] sm:right-4" />
+              <div className="relative z-10 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
+                  <SelectedIcon aria-hidden="true" className="h-[19px] w-[19px]" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-cyan-200/85">{selected.number} / {selected.eyebrow}</p>
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <h2 className="text-lg font-semibold tracking-tight text-white">{selected.title}</h2>
+                    <p className="text-xs leading-relaxed text-slate-300">{selected.description}</p>
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-400">{selected.number} / {selected.eyebrow}</p>
-                <h3 className="mt-0.5 text-lg font-semibold tracking-tight sm:text-xl">{selected.title}</h3>
-              </div>
-            </div>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{selected.description}</p>
-          </div>
-
-          {active === "territorio" ? (
-            <MarketplaceTerritoryCatalog projectId={projectId} canManage={canManageTerritory} />
-          ) : null}
-
-          {active === "operacion" ? (
-            <div className="grid min-w-0 gap-4 xl:grid-cols-2" aria-label="Despacho y recordatorios">
-              <MarketplaceDispatchSettingsCard projectId={projectId} canManage={canManageSettings} />
-              <MarketplaceJobReminderSettingsCard projectId={projectId} canManage={canManageSettings} />
-              <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-card/50 px-4 py-3 text-xs text-muted-foreground xl:col-span-2">
-                <BellRing aria-hidden="true" className="h-4 w-4 shrink-0 text-cyan-400" />
-                Los ajustes de despacho y avisos conservan sus permisos y validaciones actuales.
-              </div>
-            </div>
+            </header>
           ) : null}
 
           {active === "pruebas" ? (
@@ -162,6 +136,21 @@ export default function MarketplaceConfigurationWorkspace({
               canManagePayments={canManagePayments}
               onOpenJob={onOpenJob}
             />
+          ) : null}
+
+          {active === "operacion" ? (
+            <div className="grid min-w-0 gap-3.5 xl:grid-cols-2" aria-label="Radar: despacho y avisos">
+              <MarketplaceDispatchSettingsCard projectId={projectId} canManage={canManageSettings} />
+              <MarketplaceJobReminderSettingsCard projectId={projectId} canManage={canManageSettings} />
+              <div className="relative isolate flex items-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card/65 px-3.5 py-2.5 text-xs text-muted-foreground xl:col-span-2">
+                <BellRing aria-hidden="true" className="h-4 w-4 shrink-0 text-cyan-400" />
+                <span>Los permisos y validaciones de despacho y avisos se mantienen.</span>
+              </div>
+            </div>
+          ) : null}
+
+          {active === "territorio" ? (
+            <MarketplaceTerritoryCatalog projectId={projectId} canManage={canManageTerritory} />
           ) : null}
         </div>
       </div>

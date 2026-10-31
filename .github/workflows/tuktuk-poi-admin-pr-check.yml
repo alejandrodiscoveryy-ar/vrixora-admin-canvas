@@ -13,6 +13,7 @@ on:
       - '.github/workflows/tuktuk-poi-*.yml'
       - 'tests/marketplace_territorial_poi.test.mjs'
       - 'tests/marketplace_config_territory_premium.test.mjs'
+      - 'tests/marketplace_config_compacto_jerarquia.test.mjs'
 permissions:
   contents: read
 jobs:
@@ -30,7 +31,7 @@ jobs:
       - name: Pruebas geograficas
         run: python tests/test_territory_geometry.py
       - name: Pruebas de contratos
-        run: node --test tests/marketplace_territorial_poi.test.mjs tests/marketplace_config_territory_premium.test.mjs
+        run: node --test tests/marketplace_territorial_poi.test.mjs tests/marketplace_config_territory_premium.test.mjs tests/marketplace_config_compacto_jerarquia.test.mjs
       - name: Setup Bun 1.4.2
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:

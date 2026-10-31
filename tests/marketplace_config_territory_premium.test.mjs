@@ -15,7 +15,7 @@ test('el mapa operativo queda libre de controles de importacion de provincias', 
   assert.doesNotMatch(mapTab, /MarketplaceTerritoryCatalog|MarketplaceConfigurationWorkspace/);
 });
 
-test('Mapas y provincias vive dentro de Configuracion de TukTuk, no en el mapa', () => {
+test('Provincia vive dentro de Configuracion de TukTuk, no en el mapa', () => {
   assert.ok(settingsTab, 'Debe existir la vista Configuracion');
   assert.match(settingsTab, /<MarketplaceConfigurationWorkspace/);
   assert.match(settings, /<MarketplaceTerritoryCatalog/);
@@ -25,9 +25,9 @@ test('Mapas y provincias vive dentro de Configuracion de TukTuk, no en el mapa',
 test('configuracion organiza territorios, operacion y pruebas en una navegacion accesible', () => {
   assert.match(settings, /aria-label="Secciones de configuración de TukTuk"/);
   assert.match(settings, /aria-pressed=\{isSelected\}/);
-  assert.match(settings, /Mapas y provincias/);
-  assert.match(settings, /Operación y avisos/);
-  assert.match(settings, /Centro de pruebas/);
+  assert.match(settings, /title: "Centro de pruebas"/);
+  assert.match(settings, /title: "Radar"/);
+  assert.match(settings, /title: "Provincia"/);
   assert.match(settings, /<MarketplaceDispatchSettingsCard/);
   assert.match(settings, /<MarketplaceJobReminderSettingsCard/);
   assert.match(settings, /<MarketplaceTestCenterV2/);
