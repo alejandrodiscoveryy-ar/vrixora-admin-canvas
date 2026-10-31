@@ -21,6 +21,7 @@ import {
   Phone,
   Plus,
   Route,
+  Radar,
   ShieldCheck,
   Star,
   TestTube2,
@@ -3306,6 +3307,29 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   );
 }
 
+
+type JobRadarImpact = {
+  driver_user_id: string;
+  radius_stage: number | null;
+  radius_limit_km: number | null;
+  distance_km_at_selection: number | null;
+};
+
+type JobRadarAnalysis = {
+  status: "yes" | "no" | "unrecorded";
+  first_evaluation_at: string | null;
+  first_radar_at: string | null;
+  evaluation_count: number;
+  total_offers_enqueued: number;
+  radar_settings: {
+    r1?: number | null;
+    r2?: number | null;
+    r3?: number | null;
+    expansion_seconds?: number | null;
+  };
+  impacts: JobRadarImpact[];
+};
+
 function JobNotificationReach({
   projectId, jobId, assignedDriverId, compact = false,
 }: {
@@ -3314,6 +3338,22 @@ function JobNotificationReach({
   assignedDriverId?: string | null;
   compact?: boolean;
 }) {
+  const radar = useQuery({
+    queryKey: ["marketplace-job-radar-analysis", projectId, jobId],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_job_radar_analysis",
+        {
+          target_project_id: projectId,
+          target_job_id: jobId,
+        },
+      );
+      if (error) throw error;
+      return data as JobRadarAnalysis;
+    },
+    staleTime: 15_000,
+  });
+
   // Consulta solamente cuando se despliega la operacion o su ficha.
   const recipients = useQuery({
     queryKey: ["marketplace-job-notification-recipients", projectId, jobId],
@@ -3340,10 +3380,50 @@ function JobNotificationReach({
   const order = [...all].sort((a, b) =>
     (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
 
+  const radarByDriver = new Map(
+    (radar.data?.impacts ?? []).map(
+      (impact) => [impact.driver_user_id, impact] as const
+    )
+  );
+
+  const radarLabel = radar.isPending
+    ? "Consultando..."
+    : radar.isError
+      ? "No disponible"
+      : radar.data?.status === "yes"
+        ? "Sí"
+        : radar.data?.status === "no"
+          ? "No"
+          : "Sin registro histórico";
+
+  const radarStages = [...new Set(
+    actual
+      .map((item) => radarByDriver.get(item.driverUserId)?.radius_stage)
+      .filter((stage): stage is number => typeof stage === "number")
+  )].sort((a, b) => a - b);
+
+  const stageGroups = radarStages.map((stage) => ({
+    stage,
+    count: actual.filter(
+      (item) =>
+        radarByDriver.get(item.driverUserId)?.radius_stage === stage
+    ).length,
+    radius: radar.data?.impacts.find(
+      (impact) => impact.radius_stage === stage
+    )?.radius_limit_km ?? null,
+  }));
+
+  const snapshotRadii = [
+    radar.data?.radar_settings?.r1,
+    radar.data?.radar_settings?.r2,
+    radar.data?.radar_settings?.r3,
+  ].filter((km): km is number => typeof km === "number");
+
   if (compact) {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.035] px-3 py-2 text-xs">
         <span className="font-semibold text-cyan-200">Alcance de la solicitud</span>
+        <span className="text-foreground">Radar: <strong>{radarLabel}</strong></span>
         <span className="text-foreground">Destinatarios: <strong>{actual.length}</strong></span>
         <span className="text-foreground">Avisos enviados: <strong>{sent}</strong></span>
         {simulated > 0 ? <span className="text-violet-300">Prueba: {simulated} seleccionados</span> : null}
@@ -3378,6 +3458,82 @@ function JobNotificationReach({
           </p>
         </div>
       </div>
+      <section className="mt-3 rounded-2xl border border-cyan-400/20 bg-background/55 p-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-sm font-semibold text-cyan-200">
+            <Radar className="h-4 w-4" />
+            Análisis del radar
+          </p>
+          <span className="text-sm font-semibold text-foreground">
+            {radarLabel}
+          </span>
+        </div>
+
+        {radar.isError ? (
+          <p role="alert" className="mt-2 text-xs text-amber-300">
+            No fue posible consultar el registro del radar.
+          </p>
+        ) : null}
+
+        {radar.data ? (
+          <div className="mt-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+              <div className="rounded-xl border border-border/50 p-2">
+                <span className="block text-muted-foreground">Evaluaciones</span>
+                <strong>{radar.data.evaluation_count ?? 0}</strong>
+              </div>
+              <div className="rounded-xl border border-border/50 p-2">
+                <span className="block text-muted-foreground">Impactados</span>
+                <strong>{actual.length}</strong>
+              </div>
+              <div className="rounded-xl border border-border/50 p-2">
+                <span className="block text-muted-foreground">Avisos nuevos encolados</span>
+                <strong>{radar.data.total_offers_enqueued ?? 0}</strong>
+              </div>
+            </div>
+
+            {radar.data.first_radar_at ? (
+              <p className="text-xs text-muted-foreground">
+                Primera ejecución radial:{" "}
+                {new Date(radar.data.first_radar_at).toLocaleString("es-CU")}
+              </p>
+            ) : null}
+
+            {snapshotRadii.length > 0 && radar.data.status === "yes" ? (
+              <p className="text-xs text-muted-foreground">
+                Radios configurados al primer uso:{" "}
+                {snapshotRadii.map((km) => km + " km").join(" / ")}
+              </p>
+            ) : null}
+
+            {stageGroups.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {stageGroups.map(({ stage, count, radius }) => (
+                  <span
+                    key={stage}
+                    className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-2.5 py-1.5 text-xs"
+                  >
+                    Etapa {stage}
+                    {radius == null ? "" : " · hasta " + kilometers(radius)}
+                    {" · "}{count} conductor{count === 1 ? "" : "es"}
+                  </span>
+                ))}
+              </div>
+            ) : radar.data.status === "yes" && actual.length === 0 ? (
+              <p className="text-xs text-amber-200">
+                El radar se ejecutó, pero no constan conductores impactados.
+              </p>
+            ) : null}
+
+            {radar.data.status === "unrecorded" ? (
+              <p className="text-xs text-muted-foreground">
+                Esta carrera no tiene registro histórico de ejecución.
+                Los avisos y distancias conservados se muestran debajo.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
       {simulated > 0 ? (
         <p className="mt-3 text-xs text-violet-300">Simulador: {simulated} conductores seleccionados (no equivale a notificación enviada).</p>
       ) : null}
@@ -3397,6 +3553,24 @@ function JobNotificationReach({
                     item.deliveryStatus === "failed" ? "Falló el envío" : "En cola / pendiente"}
                   {!item.isTestRecipient && item.notificationCount > 1 ? " · " + item.notificationCount + " avisos registrados" : ""}
                 </p>
+                {!item.isTestRecipient ? (
+                  <p className="mt-1 text-[11px] text-cyan-200/80">
+                    {(() => {
+                      const impact = radarByDriver.get(item.driverUserId);
+                      if (impact?.radius_stage == null) {
+                        return "Etapa del radar sin registro";
+                      }
+                      if (impact.radius_stage === 0) {
+                        return "Distribución sin filtro radial";
+                      }
+                      return "Etapa " + impact.radius_stage +
+                        (impact.radius_limit_km == null
+                          ? ""
+                          : " · radio hasta " +
+                            kilometers(impact.radius_limit_km));
+                    })()}
+                  </p>
+                ) : null}
               </div>
               <span className="shrink-0 text-xs font-semibold text-cyan-200">
                 {item.distanceKm == null ? "Sin distancia histórica" : kilometers(item.distanceKm)}
