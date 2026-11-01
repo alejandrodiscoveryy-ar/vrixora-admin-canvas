@@ -40,6 +40,20 @@ function safeTarget(raw) {
   return new URL("/admin/proyectos", self.location.origin).toString();
 }
 
+function adminAlertTarget(data, raw) {
+  const project = typeof data?.project_id === "string" ? data.project_id : "";
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuid.test(project)) return safeTarget(raw);
+  const base = `/admin/proyectos/${encodeURIComponent(project)}/trabajos`;
+  if (data.kind === "admin_marketplace_new_driver" && uuid.test(data.driver_id || "")) {
+    return safeTarget(`${base}?vista=conductores&conductor=${encodeURIComponent(data.driver_id)}`);
+  }
+  if (ADMIN_PUSH_KINDS.has(data.kind) && uuid.test(data.job_id || "")) {
+    return safeTarget(`${base}?vista=trabajos&carrera=${encodeURIComponent(data.job_id)}`);
+  }
+  return safeTarget(raw);
+}
+
 // Registered BEFORE Firebase to avoid its default click handler stealing navigation.
 self.addEventListener("notificationclick", (event) => {
   // Resolve FCM's automatic notification link ourselves: this listener is
@@ -47,8 +61,8 @@ self.addEventListener("notificationclick", (event) => {
   event.stopImmediatePropagation();
   event.notification.close();
   const fcmData = event.notification.data?.FCM_MSG;
-  const destination = safeTarget(
-    event.notification.data?.url || fcmData?.data?.url || fcmData?.fcmOptions?.link,
+  const destination = adminAlertTarget(
+    fcmData?.data || {}, event.notification.data?.url || fcmData?.data?.url || fcmData?.fcmOptions?.link,
   );
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
@@ -77,7 +91,7 @@ self.addEventListener("push", (event) => {
         icon: "/icon-192.png", badge: "/favicon.png",
         tag: `vrixora:${data.kind}:${data.job_id || data.driver_id || data.notification_id || 'admin'}`,
         requireInteraction: data.kind !== "admin_marketplace_new_driver",
-        data: { url: safeTarget(data.url) },
+        data: { url: adminAlertTarget(data, data.url) },
       },
     ));
     return;
@@ -120,7 +134,7 @@ messaging.onBackgroundMessage((payload) => {
     tag: `vrixora:${data.kind}:${data.job_id || data.driver_id || 'admin'}`,
     requireInteraction: data.kind !== 'admin_marketplace_new_driver',
     renotify: true,
-    data: { url: safeTarget(data.url || fallback) },
+    data: { url: adminAlertTarget(data, data.url || fallback) },
   });
 });
 firebaseMessagingReady = true;

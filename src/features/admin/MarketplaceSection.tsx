@@ -876,11 +876,23 @@ function Customer360Detail({
     </div>
   );
 }
+function dateOfRegistration(value: string | null | undefined) {
+  const parsed = new Date(value ?? "");
+  return Number.isNaN(parsed.getTime()) ? "No disponible" :
+    parsed.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Havana" });
+}
+
 export default function MarketplaceSection({ projectId }: { projectId: string }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
 
   const requestedView = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).vista,
+  });
+  const alertDriverId = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).conductor,
+  });
+  const alertJobId = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).carrera,
   });
   const activeView = MARKETPLACE_WORKSPACE_VIEWS.find(
     (view) => view.slug === requestedView && permissions.includes(view.permission),
@@ -903,6 +915,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     suspended: boolean;
   } | null>(null);
   const [driver360Id, setDriver360Id] = useState<string | null>(null);
+  // Enlaces profundos desde la campana y las notificaciones de Windows.
+  // Abrir solo registros con identificadores validos; el backend conserva el control de acceso.
+  useEffect(() => {
+    if (typeof alertDriverId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alertDriverId)) {
+      setDriver360Id(alertDriverId);
+    }
+  }, [alertDriverId, projectId]);
+  useEffect(() => {
+    if (typeof alertJobId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alertJobId)) {
+      setJobId(alertJobId);
+    }
+  }, [alertJobId, projectId]);
   const [incident, setIncident] = useState<string | null>(null);
   const [adminFinish, setAdminFinish] = useState<{
     jobId: string;
@@ -2086,6 +2110,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   {item.isAvailable ? "Disponible" : "No disponible"}
                                 </span>
                               </div>
+                              <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+                                Inscripción: {dateOfRegistration(item.createdAt)}
+                              </p>
                             </div>
                           </div>
                         </div>

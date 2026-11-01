@@ -35,6 +35,18 @@ function safeAdminUrl(raw: string | undefined, projectId: string) {
   } catch { return fallback; }
 }
 
+function alertEntityUrl(data: { kind?: string; job_id?: string; driver_id?: string; url?: string }, projectId: string) {
+  const base = `/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`;
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (data.kind === "admin_marketplace_new_driver" && data.driver_id && uuid.test(data.driver_id)) {
+    return `${base}?vista=conductores&conductor=${encodeURIComponent(data.driver_id)}`;
+  }
+  if (data.job_id && uuid.test(data.job_id)) {
+    return `${base}?vista=trabajos&carrera=${encodeURIComponent(data.job_id)}`;
+  }
+  return safeAdminUrl(data.url, projectId);
+}
+
 export async function adminPushSupported() {
   return typeof window !== "undefined" && window.isSecureContext &&
     "Notification" in window && "serviceWorker" in navigator && "PushManager" in window &&
@@ -130,7 +142,7 @@ export async function listenAdminPush(projectId: string, handle: (event: AdminPu
       stage: data.stage,
       title: data.title || "Vrixora: operación requiere atención",
       body: data.body || "Abre el centro de control.",
-      url: safeAdminUrl(data.url, projectId),
+      url: alertEntityUrl({ kind, job_id: data.job_id, driver_id: data.driver_id, url: data.url }, projectId),
     };
     handle(event);
     // In the foreground FCM does not show OS notifications automatically.
