@@ -55,6 +55,14 @@ const sections: Array<{
   { key: "application", number: "05", label: "Aplicación y versiones", eyebrow: "EXPERIENCIA Y PUBLICACIÓN", description: "Actualizaciones de Android, mantenimiento y mensaje de bienvenida.", icon: Smartphone },
 ];
 
+const LEGACY_SECTION_LABELS: Record<SectionKey, string> = {
+  general: "General e identidad",
+  billing: "Moneda y cambio",
+  referrals: "Referidos",
+  communication: "Comunicación",
+  application: "Aplicación",
+};
+
 const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
 const PREMIUM_CONFIG_CARD_CLASS = "relative overflow-hidden rounded-[22px] border-cyan-400/[0.13] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.045] shadow-[0_22px_60px_-44px_rgba(0,0,0,0.85)]";
 
@@ -533,7 +541,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 onClick={() => setActiveSection(section.key)}
                 className="h-auto min-h-9 whitespace-normal px-3 py-1.5 text-xs leading-tight"
               >
-                {section.label}
+                {LEGACY_SECTION_LABELS[section.key]}
               </Button>
             ))}
           </div>
@@ -1150,6 +1158,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {visibleSection === "communication" ? (
         <div className="space-y-3">
+          {!isMarketplaceReferralProgram ? (
+            <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
+          ) : null}
           <SectionCard
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
@@ -1278,7 +1289,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {visibleSection === "application" ? (
         <div className="space-y-3">
-          <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
+          {isMarketplaceReferralProgram ? (
+            <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
+          ) : null}
         <SectionCard
           title="Comportamiento de TukTuk Control"
           description="Parámetros administrativos que afectan el acceso y la experiencia de la aplicación."
