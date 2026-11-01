@@ -37,7 +37,7 @@ export type AdminProjectGroup = {
 
 export type AdminProjectNavItem = AdminProjectTab | AdminProjectGroup;
 
-const administrationChildren = [
+export const ADMINISTRATION_VIEWS = [
   {
     slug: "configuracion",
     label: "Configuración",
@@ -118,7 +118,7 @@ export const ADMIN_PROJECT_TABS = [
     slug: "administracion",
     label: "Administración",
     icon: Settings2,
-    children: administrationChildren,
+    children: ADMINISTRATION_VIEWS,
   },
   {
     slug: "auditoria",
