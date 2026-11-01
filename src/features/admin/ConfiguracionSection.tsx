@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Save, Upload } from "lucide-react";
+import { ArrowLeft, ChevronRight, Coins, Gift, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, Smartphone, Upload, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -40,15 +40,31 @@ type SectionKey =
   | "communication"
   | "application";
 
-const sections: Array<{ key: SectionKey; label: string }> = [
-  { key: "general", label: "General e identidad" },
-  { key: "billing", label: "Moneda y cambio" },
-  { key: "referrals", label: "Referidos" },
-  { key: "communication", label: "Comunicación" },
-  { key: "application", label: "Aplicación" },
+const sections: Array<{
+  key: SectionKey;
+  label: string;
+  number: string;
+  eyebrow: string;
+  description: string;
+  icon: LucideIcon;
+}> = [
+  { key: "general", number: "01", label: "Identidad y marca", eyebrow: "INFORMACIÓN E IDENTIDAD", description: "Nombre, enlaces, logotipo, icono y colores del proyecto.", icon: Palette },
+  { key: "billing", number: "02", label: "Monedas y cambio", eyebrow: "PARÁMETROS ECONÓMICOS", description: "Monedas, tipo de cambio, fuente y actualización de la tasa.", icon: Coins },
+  { key: "referrals", number: "03", label: "Referidos", eyebrow: "RECOMPENSAS MARKETPLACE", description: "Control de la recompensa de referidos en la billetera.", icon: Gift },
+  { key: "communication", number: "04", label: "Comunicación y contacto", eyebrow: "CANALES DE ATENCIÓN", description: "WhatsApp institucional, soporte, pagos y plantillas.", icon: MessageSquareText },
+  { key: "application", number: "05", label: "Aplicación y versiones", eyebrow: "EXPERIENCIA Y PUBLICACIÓN", description: "Actualizaciones de Android, mantenimiento y mensaje de bienvenida.", icon: Smartphone },
 ];
 
+const LEGACY_SECTION_LABELS: Record<SectionKey, string> = {
+  general: "General e identidad",
+  billing: "Moneda y cambio",
+  referrals: "Referidos",
+  communication: "Comunicación",
+  application: "Aplicación",
+};
+
 const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
+const PREMIUM_CONFIG_CARD_CLASS = "relative overflow-hidden rounded-[22px] border-cyan-400/[0.13] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.045] shadow-[0_22px_60px_-44px_rgba(0,0,0,0.85)]";
 
 const CONFIG_HEADER_CLASS = "px-4 py-2.5 sm:px-4 sm:py-2.5";
 
@@ -92,13 +108,18 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     enabled: canManageWhatsApp,
   });
 
-  const [activeSection, setActiveSection] = useState<SectionKey>("general");
+  const [activeSection, setActiveSection] = useState<SectionKey | "inicio">("inicio");
   const isMarketplaceReferralProgram = project?.slug === "tuktuk-control";
+  const visibleSection = isMarketplaceReferralProgram
+    ? activeSection
+    : activeSection === "inicio" ? "general" : activeSection;
+  const currentSection = sections.find((section) => section.key === visibleSection);
+  const CurrentSectionIcon = currentSection?.icon ?? Settings2;
 
   const referralCampaignsQuery = useQuery({
     queryKey: ["referral-campaigns", projectId],
     queryFn: () => supabaseServices.referrals.listCampaigns(projectId),
-    enabled: activeSection === "referrals" && !isMarketplaceReferralProgram,
+    enabled: visibleSection === "referrals" && !isMarketplaceReferralProgram,
   });
 
   const [name, setName] = useState("");
@@ -120,7 +141,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   const marketplaceReferralSettingsQuery = useQuery({
     queryKey: ["marketplace-referral-settings", projectId],
     queryFn: () => supabaseServices.foundations.marketplaceReferralRewardSettings(projectId),
-    enabled: activeSection === "referrals" && isMarketplaceReferralProgram,
+    enabled: visibleSection === "referrals" && isMarketplaceReferralProgram,
   });
 
   useEffect(() => {
@@ -442,6 +463,61 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   return (
     <div className="space-y-3">
+      {isMarketplaceReferralProgram ? (
+        <>
+          <div className="flex min-h-9 flex-wrap items-center justify-end gap-2">
+            {visibleSection !== "inicio" ? (
+              <button
+                type="button"
+                onClick={() => setActiveSection("inicio")}
+                className="mr-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Volver
+              </button>
+            ) : null}
+            {isDirty ? (
+              <Badge variant="outline" className="border-amber-400/35 bg-amber-400/[0.07] text-amber-300">
+                Cambios sin guardar
+              </Badge>
+            ) : null}
+            {canSave ? (
+              <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || !isDirty}>
+                {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Guardar cambios
+              </Button>
+            ) : null}
+          </div>
+          {visibleSection === "inicio" ? (
+            <section aria-label="Categorías de configuración" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {sections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.key}
+                    type="button"
+                    onClick={() => setActiveSection(section.key)}
+                    className="group flex min-h-[92px] min-w-0 items-center gap-3 rounded-[18px] border border-border/65 bg-card/75 px-4 py-3 text-left transition-colors hover:border-cyan-400/35 hover:bg-cyan-400/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
+                      <Icon aria-hidden="true" className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">{section.label}</span>
+                    <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-cyan-300" />
+                  </button>
+                );
+              })}
+            </section>
+          ) : currentSection ? (
+            <header className="flex items-center gap-3 border-b border-border/55 px-1 pb-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
+                <CurrentSectionIcon aria-hidden="true" className="h-[18px] w-[18px]" />
+              </span>
+              <h3 className="text-base font-semibold text-foreground">{currentSection.label}</h3>
+            </header>
+          ) : null}
+        </>
+      ) : (
       <div className="rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-cyan-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl">
         <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
           <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
@@ -449,11 +525,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <Button
                 key={section.key}
                 type="button"
-                variant={activeSection === section.key ? "default" : "outline"}
+                variant={visibleSection === section.key ? "default" : "outline"}
                 onClick={() => setActiveSection(section.key)}
                 className="h-auto min-h-9 whitespace-normal px-3 py-1.5 text-xs leading-tight"
               >
-                {section.label}
+                {LEGACY_SECTION_LABELS[section.key]}
               </Button>
             ))}
           </div>
@@ -485,13 +561,14 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           </div>
         </div>
       </div>
-      {activeSection === "general" ? (
+      )}
+      {visibleSection === "general" ? (
         <div className="space-y-3">
           <SectionCard
             title="Identidad del proyecto"
             description="Información principal utilizada en la administración y en los documentos."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -569,7 +646,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Marca e identidad visual"
             description="Recursos visuales utilizados por el proyecto."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -730,7 +807,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </div>
       ) : null}
 
-      {activeSection === "billing" ? (
+      {visibleSection === "billing" ? (
         <div className="space-y-3">
           <PageAlert tone="info" title="Configuración monetaria">
             Estas monedas y el tipo de cambio se utilizan como referencia para la operación
@@ -741,7 +818,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Monedas y tipo de cambio"
             description="Define las monedas y el tipo de cambio utilizados por Marketplace."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -854,10 +931,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </div>
       ) : null}
 
-      {activeSection === "referrals" ? (
+      {visibleSection === "referrals" ? (
         <div className="space-y-3">
           {isMarketplaceReferralProgram ? (
-            <SectionCard title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
+            <SectionCard title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
               {marketplaceReferralSettingsQuery.isError ? <PageAlert tone="error">No se pudo cargar la configuración vigente de recompensas Marketplace.</PageAlert> : null}
               <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
                 <SettingToggle title="Programa de referidos" description="Activa o desactiva la recompensa vigente." checked={marketplaceRewardEnabled} onCheckedChange={setMarketplaceRewardEnabled} disabled={!canManage} />
@@ -867,11 +944,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <p className="mt-3 text-xs text-text-tertiary">Los días y campañas anteriores se conservan solo como histórico y no pueden iniciar nuevas recompensas para TukTuk.</p>
             </SectionCard>
           ) : null}
+          {!isMarketplaceReferralProgram ? (
           <SectionCard
             title="Programa de referidos"
             description="Cada campaña conserva su condición y recompensa para no alterar relaciones ni beneficios históricos."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -916,13 +994,13 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               })()
             )}
           </SectionCard>
-
+          ) : null}
           {canManage && !isMarketplaceReferralProgram ? (
             <SectionCard
               title="Iniciar nueva campaña"
               description="La campaña activa se cerrará al crear la nueva. Las reglas históricas no se modificarán."
               module="configuracion"
-              className={CONFIG_CARD_CLASS}
+              className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
               headerClassName={CONFIG_HEADER_CLASS}
               contentClassName={CONFIG_CONTENT_CLASS}
             >
@@ -992,11 +1070,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </PageAlert>
           ) : null}
 
+          {!isMarketplaceReferralProgram ? (
           <SectionCard
             title="Historial de campañas"
             description="Las campañas cerradas conservan las condiciones con las que se emitieron las recompensas."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -1061,17 +1140,20 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               </PageAlert>
             )}
           </SectionCard>
+          ) : null}
         </div>
       ) : null}
 
-      {activeSection === "communication" ? (
+      {visibleSection === "communication" ? (
         <div className="space-y-3">
-          <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
+          {!isMarketplaceReferralProgram ? (
+            <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
+          ) : null}
           <SectionCard
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -1091,7 +1173,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Canales operativos de WhatsApp"
             description="Configura soporte y cobros de forma independiente."
             module="configuracion"
-            className={CONFIG_CARD_CLASS}
+            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
             headerClassName={CONFIG_HEADER_CLASS}
             contentClassName={CONFIG_CONTENT_CLASS}
           >
@@ -1193,12 +1275,16 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </div>
       ) : null}
 
-      {activeSection === "application" ? (
+      {visibleSection === "application" ? (
+        <div className="space-y-3">
+          {isMarketplaceReferralProgram ? (
+            <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
+          ) : null}
         <SectionCard
           title="Comportamiento de TukTuk Control"
           description="Parámetros administrativos que afectan el acceso y la experiencia de la aplicación."
           module="configuracion"
-          className={CONFIG_CARD_CLASS}
+          className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
           headerClassName={CONFIG_HEADER_CLASS}
           contentClassName={CONFIG_CONTENT_CLASS}
         >
@@ -1223,6 +1309,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </div>
           </div>
         </SectionCard>
+        </div>
       ) : null}
 
 
