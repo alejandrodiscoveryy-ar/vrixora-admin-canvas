@@ -9,13 +9,21 @@ import {
 } from "@/lib/admin-push";
 
 type AlertKind = "driver" | "job" | "pending";
-type OperationalAlert = { id: string; kind: AlertKind; title: string; description: string; occurredAt: string };
+type OperationalAlert = { id: string; kind: AlertKind; title: string; description: string; occurredAt: string; targetId?: string };
 type PendingJob = { id: string; label: string; started: string };
 const POLL_INTERVAL_MS = 20_000;
 const MAX_RECENT_ITEMS = 80;
 const MAX_KNOWN_IDS = 800;
 const MAX_VISIBLE_ALERTS = 16;
 const PENDING_THRESHOLD_MS = 2 * 60_000;
+
+function alertDestination(projectId: string, alert: OperationalAlert) {
+  const base = `/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`;
+  if (alert.kind === "driver") {
+    return `${base}?vista=conductores${alert.targetId ? `&conductor=${encodeURIComponent(alert.targetId)}` : ""}`;
+  }
+  return `${base}?vista=trabajos${alert.targetId ? `&carrera=${encodeURIComponent(alert.targetId)}` : ""}`;
+}
 
 function tone(context: AudioContext, kind: AlertKind) {
   const notes = kind === "driver" ? [523, 659] : kind === "pending" ? [659, 659, 784, 659] : [784, 988, 784];
@@ -191,7 +199,8 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
           observed.push(key);
           if (initialized && !known.has(key)) {
             fresh.push({ id: key, kind: "driver", title: "Nuevo conductor registrado",
-              description: driver.displayName || "Consulta el directorio de conductores", occurredAt: driver.createdAt });
+              description: driver.displayName || "Conductor sin nombre", occurredAt: driver.createdAt,
+              targetId: driver.userId });
           }
         }
         for (const job of jobs.items) {
@@ -200,20 +209,22 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
           observed.push(key);
           const active = validCurrentJob(job);
           if (active) {
-            currentPending.push({ id: job.jobId, label: `${job.originText} → ${job.destinationText}`, started: job.publishedAt });
+            currentPending.push({ id: job.jobId, label: `${job.customerDisplayName || "Cliente sin nombre"} · ${job.originText} → ${job.destinationText}`, started: job.publishedAt });
           }
           // If the panel is opened after a live job was published, it must not silently swallow it.
           const recentlyPublished = active && now - Date.parse(job.publishedAt) <= PENDING_THRESHOLD_MS;
           if (!known.has(key) && (initialized || recentlyPublished)) {
             fresh.push({ id: key, kind: "job", title: "Nueva carrera publicada",
-              description: `${job.serviceCode} · ${job.originText} → ${job.destinationText}`, occurredAt: job.publishedAt });
+              description: `${job.customerDisplayName || "Cliente sin nombre"} · ${job.originText} → ${job.destinationText}`,
+              occurredAt: job.publishedAt, targetId: job.jobId });
           }
           if (active && now - Date.parse(job.publishedAt) >= PENDING_THRESHOLD_MS) {
             const pendingKey = `pending:${job.jobId}`;
             observed.push(pendingKey);
             if (!known.has(pendingKey)) {
               fresh.push({ id: pendingKey, kind: "pending", title: "Carrera sin conductor",
-                description: `${job.originText} → ${job.destinationText} · requiere supervisión`, occurredAt: new Date().toISOString() });
+                description: `${job.customerDisplayName || "Cliente sin nombre"} · ${job.originText} → ${job.destinationText}`,
+                occurredAt: new Date().toISOString(), targetId: job.jobId });
             }
           }
         }
@@ -225,6 +236,20 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
         } catch { /* optional */ }
         known = new Set([...fresh.map((event) => event.id), ...observed, ...known].slice(0, MAX_KNOWN_IDS));
         try { localStorage.setItem(storageKey, JSON.stringify([...known])); } catch { /* optional */ }
+        // Los avisos FCM pueden llegar con texto generico: completar datos en el area privada.
+        // No se coloca el nombre del cliente en las notificaciones de pantalla bloqueada.
+        const byDriver = new Map(drivers.items.map((driver) => [driver.userId, driver]));
+        const byJob = new Map(jobs.items.map((job) => [job.jobId, job]));
+        setAlerts((previous) => previous.map((alert) => {
+          const target = alert.targetId;
+          if (!target) return alert;
+          if (alert.kind === "driver") {
+            const driver = byDriver.get(target);
+            return driver ? { ...alert, description: driver.displayName || "Conductor sin nombre" } : alert;
+          }
+          const job = byJob.get(target);
+          return job ? { ...alert, description: `${job.customerDisplayName || "Cliente sin nombre"} · ${job.originText} → ${job.destinationText}` } : alert;
+        }));
         setPending(currentPending);
         setOnline(true);
         appendAlerts(fresh);
@@ -249,7 +274,8 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
       if (known.includes(id)) return;
       try { localStorage.setItem(storageKey, JSON.stringify([id, ...known].slice(0, MAX_KNOWN_IDS))); } catch { /* optional */ }
       appendAlerts([{ id, kind: message.job_id ? (message.kind === "admin_marketplace_pending_job" ? "pending" : "job") : "driver",
-        title: message.title, description: message.body, occurredAt: new Date().toISOString() }]);
+        title: message.title, description: message.body, occurredAt: new Date().toISOString(),
+        targetId: message.job_id || message.driver_id }]);
     }).then((off) => { if (disposed) off(); else unsubscribe = off; }).catch(() => undefined);
     return () => { disposed = true; unsubscribe?.(); };
   }, [projectId, storageKey, appendAlerts, pushEnabled]);
@@ -354,7 +380,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
         </div>
       </div>
       {pushError && <p role="alert" className="mt-2 text-xs text-amber-500">{pushError}</p>}
-      {pushDiagnostic && <p role="status" className="mt-2 text-xs text-cyan-300">{pushDiagnostic}</p>}
+      {pushDiagnostic && !pushDiagnostic.startsWith("Firebase cargado") && <p role="status" className="mt-2 text-xs text-cyan-300">{pushDiagnostic}</p>}
       {soundError && <p role="alert" className="mt-2 text-xs text-amber-500">{soundError}</p>}
       {soundPreferred && !soundEnabled && <p role="status" className="mt-2 text-xs text-amber-300">
         Sonido recordado, pendiente de que Chrome lo permita. Basta con hacer clic normalmente en Vrixora.
@@ -362,25 +388,22 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
       {pending.length > 0 && <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-500/5 p-2.5">
         <p className="text-xs font-semibold text-rose-300">Carreras que esperan conductor: {pending.length}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{pending[0].label}</p>
-        <a className="mt-1 inline-block text-xs font-semibold text-cyan-300 underline" href={`/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`}>Abrir operación</a>
+        <a className="mt-1 inline-block text-xs font-semibold text-cyan-300 underline" href={alertDestination(projectId, { id: pending[0].id, kind: "pending", title: "", description: "", occurredAt: pending[0].started, targetId: pending[0].id })}>Ver carrera 360</a>
       </div>}
       {alerts.length > 0 && <ul className="mt-3 grid gap-2" aria-label="Nuevas alarmas">
         {alerts.slice(0, 5).map((alert) => <li key={alert.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-1/70 p-2.5">
           <div className="flex min-w-0 flex-1 items-start gap-2">
             {alert.kind === "driver" ? <UserRoundPlus className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" /> : <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />}
-            <div className="min-w-0"><p className="text-xs font-semibold">{alert.title}</p>
-              <p className="max-w-xl truncate text-xs text-muted-foreground" title={alert.description}>{alert.description}</p>
+            <a href={alertDestination(projectId, alert)} className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400" aria-label={`Abrir ${alert.kind === "driver" ? "ficha 360" : "carrera 360"}: ${alert.description}`}>
+              <p className="text-xs font-semibold">{alert.title}</p>
+              <p className="max-w-xl truncate text-xs text-foreground" title={alert.description}>{alert.description}</p>
               <p className="text-[11px] text-muted-foreground">{dateLabel(alert.occurredAt)}</p>
-            </div>
+            </a>
           </div>
-          <a href={`/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`} className="rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">Abrir operación</a>
+          <a href={alertDestination(projectId, alert)} className="rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">{alert.kind === "driver" ? "Ver ficha 360" : "Ver carrera 360"}</a>
         </li>)}
         {alerts.length > 5 && <li className="text-xs text-muted-foreground">Y {alerts.length - 5} avisos más.</li>}
       </ul>}
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        El tono de la página requiere activar sonido. Los avisos Windows requieren autorización del navegador y pueden llegar con la web cerrada;
-        el sonido del sistema depende de Windows, del navegador y de No molestar.
-      </p>
         </section>
       </PopoverContent>
     </Popover>, portalTarget) : null;
