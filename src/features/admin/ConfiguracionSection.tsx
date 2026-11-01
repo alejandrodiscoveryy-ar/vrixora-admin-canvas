@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUpRight, ChevronRight, Coins, Gift, Globe2, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, ShieldCheck, Smartphone, Upload, type LucideIcon } from "lucide-react";
+import { ArrowLeft, ChevronRight, Coins, Gift, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, Smartphone, Upload, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -465,67 +465,55 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     <div className="space-y-3">
       {isMarketplaceReferralProgram ? (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[18px] border border-border/60 bg-card/65 px-3.5 py-2.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" aria-hidden="true" />
-              <span>Administración</span>
-              <ChevronRight className="h-3 w-3" aria-hidden="true" />
-              <button type="button" className="font-medium text-foreground hover:text-cyan-300" onClick={() => setActiveSection("inicio")}>Configuración</button>
-              {currentSection ? <><ChevronRight className="h-3 w-3" aria-hidden="true" /><span className="text-cyan-300">{currentSection.label}</span></> : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {isDirty ? <Badge variant="outline" className="border-amber-400/35 bg-amber-400/[0.07] text-amber-300">Cambios sin guardar</Badge> : null}
-              {canSave ? (
-                <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || !isDirty}>
-                  {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Guardar cambios
-                </Button>
-              ) : null}
-            </div>
+          <div className="flex min-h-9 flex-wrap items-center justify-end gap-2">
+            {visibleSection !== "inicio" ? (
+              <button
+                type="button"
+                onClick={() => setActiveSection("inicio")}
+                className="mr-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Volver
+              </button>
+            ) : null}
+            {isDirty ? (
+              <Badge variant="outline" className="border-amber-400/35 bg-amber-400/[0.07] text-amber-300">
+                Cambios sin guardar
+              </Badge>
+            ) : null}
+            {canSave ? (
+              <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || !isDirty}>
+                {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Guardar cambios
+              </Button>
+            ) : null}
           </div>
           {visibleSection === "inicio" ? (
-            <section aria-label="Categorías de configuración" className="relative isolate overflow-hidden rounded-[24px] border border-cyan-400/[0.14] bg-gradient-to-br from-card/95 via-background/95 to-cyan-950/[0.12] p-4 shadow-[0_26px_75px_-48px_rgba(14,165,233,0.30)] sm:p-5">
-              <Globe2 aria-hidden="true" className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rotate-[-15deg] text-cyan-400 opacity-[0.045]" />
-              <div className="relative z-10 mb-5 max-w-2xl">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">CENTRO DE CONFIGURACIÓN</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">¿Qué deseas administrar?</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Selecciona un área para acceder a sus parámetros y herramientas. Cada categoría tiene su propio espacio de trabajo.</p>
-              </div>
-              <div className="relative z-10 grid gap-3 md:grid-cols-2">
-                {sections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <button key={section.key} type="button" onClick={() => setActiveSection(section.key)}
-                      className="group relative flex min-h-[150px] flex-col items-start overflow-hidden rounded-[20px] border border-border/70 bg-gradient-to-br from-card via-card/95 to-cyan-950/[0.09] p-4 text-left shadow-[0_16px_36px_-32px_rgba(0,0,0,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/35 hover:shadow-[0_20px_45px_-32px_rgba(34,211,238,0.40)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:p-5">
-                      <Icon aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rotate-[-13deg] text-cyan-400 opacity-[0.045] transition-opacity group-hover:opacity-[0.09]" />
-                      <div className="relative flex w-full items-center justify-between gap-3">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/[0.08] text-cyan-300"><Icon className="h-5 w-5" aria-hidden="true" /></span>
-                        <span className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground">{section.number} / 05</span>
-                      </div>
-                      <p className="relative mt-3 text-base font-semibold text-foreground">{section.label}</p>
-                      <p className="relative mt-1 text-xs leading-relaxed text-muted-foreground">{section.description}</p>
-                      <span className="relative mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300">Abrir categoría <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></span>
-                    </button>
-                  );
-                })}
-              </div>
+            <section aria-label="Categorías de configuración" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {sections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.key}
+                    type="button"
+                    onClick={() => setActiveSection(section.key)}
+                    className="group flex min-h-[92px] min-w-0 items-center gap-3 rounded-[18px] border border-border/65 bg-card/75 px-4 py-3 text-left transition-colors hover:border-cyan-400/35 hover:bg-cyan-400/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
+                      <Icon aria-hidden="true" className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">{section.label}</span>
+                    <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-cyan-300" />
+                  </button>
+                );
+              })}
             </section>
           ) : currentSection ? (
-            <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-slate-50 shadow-[0_22px_52px_-38px_rgba(14,165,233,0.45)] sm:px-5">
-              <CurrentSectionIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-7 h-36 w-36 rotate-[-12deg] text-cyan-100 opacity-[0.06]" />
-              <div className="relative z-10">
-                <button type="button" onClick={() => setActiveSection("inicio")} className="mb-3 inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-xs font-medium text-cyan-200 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
-                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Todas las categorías
-                </button>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-400/[0.11] text-cyan-200"><CurrentSectionIcon className="h-5 w-5" aria-hidden="true" /></div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-200/80">{currentSection.number} / {currentSection.eyebrow}</p>
-                    <h3 className="mt-0.5 text-lg font-semibold tracking-tight text-white sm:text-xl">{currentSection.label}</h3>
-                  </div>
-                </div>
-                <p className="mt-3 text-xs leading-relaxed text-slate-300">{currentSection.description}</p>
-              </div>
+            <header className="flex items-center gap-3 border-b border-border/55 px-1 pb-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
+                <CurrentSectionIcon aria-hidden="true" className="h-[18px] w-[18px]" />
+              </span>
+              <h3 className="text-base font-semibold text-foreground">{currentSection.label}</h3>
             </header>
           ) : null}
         </>
