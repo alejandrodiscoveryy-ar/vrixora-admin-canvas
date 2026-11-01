@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { ShieldX } from "lucide-react";
 
 import { useSupabaseAuth } from "@/lib/supabase-auth";
@@ -18,6 +18,7 @@ import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
 import AuditoriaSection from "@/features/admin/AuditoriaSection";
 import ComercialSection from "@/features/admin/ComercialSection";
 import MarketplaceSection from "@/features/admin/MarketplaceSection";
+import AdministrationWorkspace from "@/features/admin/AdministrationWorkspace";
 
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -92,6 +93,15 @@ function SectionPage() {
     );
   }
 
+  const renderAdministration = (content: ReactNode) =>
+    project.slug === "tuktuk-control" ? (
+      <AdministrationWorkspace projectId={id} activeSection={section} permissions={permissions}>
+        {content}
+      </AdministrationWorkspace>
+    ) : (
+      content
+    );
+
   switch (section) {
     case "clientes":
       return <ClientesSection projectId={id} />;
@@ -109,19 +119,19 @@ function SectionPage() {
       return <PlanesPreciosSection projectId={id} />;
 
     case "empleados":
-      return <EmpleadosSection projectId={id} />;
+      return renderAdministration(<EmpleadosSection projectId={id} />);
 
     case "rendimiento":
       return <RendimientoSection projectId={id} />;
 
     case "configuracion":
-      return <ConfiguracionSection projectId={id} />;
+      return renderAdministration(<ConfiguracionSection projectId={id} />);
 
     case "comunicados":
-      return <ComunicadosSection projectId={id} />;
+      return renderAdministration(<ComunicadosSection projectId={id} />);
 
     case "integraciones":
-      return <IntegracionesSection projectId={id} />;
+      return renderAdministration(<IntegracionesSection projectId={id} />);
 
     case "auditoria":
       return <AuditoriaSection projectId={id} />;
