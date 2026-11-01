@@ -404,10 +404,6 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
         </li>)}
         {alerts.length > 5 && <li className="text-xs text-muted-foreground">Y {alerts.length - 5} avisos más.</li>}
       </ul>}
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        El tono de la página requiere activar sonido. Los avisos Windows requieren autorización del navegador y pueden llegar con la web cerrada;
-        el sonido del sistema depende de Windows, del navegador y de No molestar.
-      </p>
         </section>
       </PopoverContent>
     </Popover>, portalTarget) : null;

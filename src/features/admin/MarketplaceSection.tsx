@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -894,10 +894,21 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const alertJobId = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).carrera,
   });
+  const navigate = useNavigate();
   const activeView = MARKETPLACE_WORKSPACE_VIEWS.find(
     (view) => view.slug === requestedView && permissions.includes(view.permission),
   );
   const tab = activeView?.slug ?? "resumen";
+  // Remove the entity ID from the URL when a linked detail is dismissed.
+  // Keep the active workspace tab; the detail must not reopen on refresh.
+  const dismissAlertDeepLink = () => {
+    void navigate({
+      to: "/admin/proyectos/$id/$section",
+      params: { id: projectId, section: "trabajos" },
+      search: { vista: tab },
+      replace: true,
+    });
+  };
   const [mapVisited, setMapVisited] = useState(false);
   const [status, setStatus] = useState("");
   const [service, setService] = useState("");
@@ -2836,7 +2847,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
       <Dialog
         open={Boolean(driver360Id)}
         onOpenChange={(open) => {
-          if (!open) setDriver360Id(null);
+          if (!open) {
+            setDriver360Id(null);
+            if (typeof alertDriverId === "string") dismissAlertDeepLink();
+          }
         }}
       >
         <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
@@ -2868,6 +2882,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 onOpenJob={(id) => {
                   setDriver360Id(null);
                   setJobId(id);
+                  if (typeof alertDriverId === "string") {
+                    void navigate({
+                      to: "/admin/proyectos/$id/$section",
+                      params: { id: projectId, section: "trabajos" },
+                      search: { vista: "trabajos", carrera: id },
+                      replace: true,
+                    });
+                  }
                 }}
                 onChangeSuspension={(suspended) => {
                   if (!driver360Id) return;
@@ -2932,6 +2954,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         if (!open) {
           setJobId(null);
           setJobDetailInitialTab("overview");
+          if (typeof alertJobId === "string") dismissAlertDeepLink();
         }
       }}>
         <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">

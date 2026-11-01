@@ -27,3 +27,10 @@ test('Las alertas muestran nombres en el panel privado sin incorporar PII en el 
   assert.match(push, /alertEntityUrl/);
   assert.match(worker, /adminAlertTarget/);
 });
+
+test('dismissal clears deep-link identifiers and redundant footer is absent', () => {
+  assert.match(section, /dismissAlertDeepLink/);
+  assert.match(section, /if \(typeof alertDriverId === "string"\) dismissAlertDeepLink\(\)/);
+  assert.match(section, /if \(typeof alertJobId === "string"\) dismissAlertDeepLink\(\)/);
+  assert.doesNotMatch(ui, /El tono de la p/);
+});
