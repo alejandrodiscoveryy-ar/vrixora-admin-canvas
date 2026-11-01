@@ -45,7 +45,7 @@ const ASSIGNABLE_ROLES: Array<{ value: Exclude<ProjectRole, "owner">; label: str
   { value: "marketing", label: "Marketing" },
 ];
 
-export default function EmpleadosSection({ projectId }: { projectId: string }) {
+export default function EmpleadosSection({ projectId, premium = false }: { projectId: string; premium?: boolean }) {
   const queryClient = useQueryClient();
   const { data: rows = [] } = useProjectMembers(projectId);
   const { data: permissions = [] } = useProjectPermissions(projectId);
@@ -85,6 +85,16 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {premium ? (
+        <div className="flex justify-end">
+          {canManage ? (
+            <Button size="sm" onClick={() => setOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Añadir empleado
+            </Button>
+          ) : null}
+        </div>
+      ) : (
       <ModuleHeader
         title="Empleados"
         description="Gestión de miembros del equipo, roles y permisos operativos en el proyecto."
@@ -99,10 +109,12 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
           ) : undefined
         }
       />
+      )}
 
       {/* Bloque Informativo: Roles del Proyecto */}
-      <SectionCard title="Roles del proyecto y permisos" module="empleados">
-        <div className="grid gap-3 sm:grid-cols-3 text-xs">
+      <SectionCard title="Roles del proyecto y permisos" module="empleados" className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.08] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}>
+        {premium ? <Users aria-hidden="true" className="pointer-events-none absolute -right-8 -top-16 z-0 h-52 w-52 rotate-[-16deg] text-cyan-400 opacity-[0.045]" /> : null}
+        <div className="relative z-10 grid gap-3 text-xs sm:grid-cols-3">
           <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
             <span className="font-bold text-foreground">Owner</span>
             <p className="text-muted-foreground">
@@ -126,7 +138,8 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
 
       <AdminDataTableShell
         title="Empleados asignados"
-        description="Miembros con acceso activo al centro de control"
+        description={premium ? undefined : "Miembros con acceso activo al centro de control"}
+        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.06] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}
         isEmpty={rows.length === 0}
         emptyState={
           <EmptyState
@@ -137,6 +150,7 @@ export default function EmpleadosSection({ projectId }: { projectId: string }) {
           />
         }
       >
+        {premium ? <Users aria-hidden="true" className="pointer-events-none absolute -right-8 top-0 z-0 h-32 w-32 -rotate-12 text-cyan-400 opacity-[0.04]" /> : null}
         <Table>
           <TableHeader>
             <TableRow>

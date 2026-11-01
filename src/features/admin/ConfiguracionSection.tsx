@@ -465,6 +465,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     <div className="space-y-3">
       {isMarketplaceReferralProgram ? (
         <>
+          {visibleSection !== "inicio" ? (
           <div className="flex min-h-9 flex-wrap items-center justify-end gap-2">
             {visibleSection !== "inicio" ? (
               <button
@@ -488,8 +489,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               </Button>
             ) : null}
           </div>
+          ) : null}
           {visibleSection === "inicio" ? (
-            <section aria-label="Categorías de configuración" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <section aria-label="Categorías de configuración" className="grid gap-4 sm:grid-cols-2">
               {sections.map((section) => {
                 const Icon = section.icon;
                 return (
@@ -497,13 +499,14 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     key={section.key}
                     type="button"
                     onClick={() => setActiveSection(section.key)}
-                    className="group flex min-h-[92px] min-w-0 items-center gap-3 rounded-[18px] border border-border/65 bg-card/75 px-4 py-3 text-left transition-colors hover:border-cyan-400/35 hover:bg-cyan-400/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                    className="group relative isolate flex min-h-[156px] min-w-0 items-center gap-5 overflow-hidden rounded-[23px] border border-cyan-400/[0.14] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.10] px-5 py-6 text-left shadow-[0_22px_58px_-43px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/45 hover:shadow-[0_26px_58px_-38px_rgba(34,211,238,0.20)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:px-6"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
-                      <Icon aria-hidden="true" className="h-5 w-5" />
+                    <Icon aria-hidden="true" className="pointer-events-none absolute -right-9 -top-11 z-0 h-40 w-40 -rotate-12 text-cyan-300 opacity-[0.055] transition-opacity group-hover:opacity-[0.10]" />
+                    <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-cyan-400/25 bg-cyan-400/[0.09] text-cyan-300 shadow-inner">
+                      <Icon aria-hidden="true" className="h-8 w-8" />
                     </span>
-                    <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">{section.label}</span>
-                    <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-cyan-300" />
+                    <span className="relative z-10 min-w-0 flex-1 text-lg font-semibold leading-snug tracking-tight text-foreground">{section.label}</span>
+                    <ChevronRight aria-hidden="true" className="relative z-10 h-5 w-5 shrink-0 text-cyan-300/75 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
                   </button>
                 );
               })}

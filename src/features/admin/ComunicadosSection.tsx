@@ -40,7 +40,7 @@ const CONTENT_CLASS = "p-3";
 const CONTROL_CLASS =
   "border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
 
-export default function ComunicadosSection({ projectId }: { projectId: string }) {
+export default function ComunicadosSection({ projectId, premium = false }: { projectId: string; premium?: boolean }) {
   const queryClient = useQueryClient();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canSend = permissions.includes("settings.manage");
@@ -115,21 +115,24 @@ export default function ComunicadosSection({ projectId }: { projectId: string })
 
   return (
     <div className="space-y-3">
-      <ModuleHeader
-        title="Comunicados"
-        description="Envía avisos y actualizaciones de TukTuk Control a los dispositivos Android elegibles."
-        icon={Megaphone}
-        module="configuracion"
-      />
+      {!premium ? (
+        <ModuleHeader
+          title="Comunicados"
+          description="Envía avisos y actualizaciones de TukTuk Control a los dispositivos Android elegibles."
+          icon={Megaphone}
+          module="configuracion"
+        />
+      ) : null}
 
       <SectionCard
         title="Audiencia de notificaciones"
         description="Se incluyen clientes con licencia activa y al menos un dispositivo Android con notificaciones habilitadas."
         module="configuracion"
-        className={CARD_CLASS}
+        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : CARD_CLASS}
         headerClassName={HEADER_CLASS}
         contentClassName={CONTENT_CLASS}
       >
+        {premium ? <Smartphone aria-hidden="true" className="pointer-events-none absolute -right-6 -top-12 z-0 h-40 w-40 -rotate-12 text-cyan-400 opacity-[0.055]" /> : null}
         {audienceQuery.isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -156,13 +159,14 @@ export default function ComunicadosSection({ projectId }: { projectId: string })
 
       <SectionCard
         title="Nuevo comunicado"
-        description="El envío se registra y el backend valida nuevamente el permiso de configuración."
+        description={premium ? undefined : "El envío se registra y el backend valida nuevamente el permiso de configuración."}
         module="configuracion"
-        className={CARD_CLASS}
+        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : CARD_CLASS}
         headerClassName={HEADER_CLASS}
         contentClassName={CONTENT_CLASS}
       >
-        <div className="space-y-3">
+        {premium ? <Megaphone aria-hidden="true" className="pointer-events-none absolute -right-7 -top-12 z-0 h-44 w-44 -rotate-12 text-cyan-400 opacity-[0.045]" /> : null}
+        <div className="relative z-10 space-y-3">
           {!canSend ? (
             <PageAlert tone="info" title="Solo lectura">
               Puedes consultar la audiencia, pero necesitas el permiso de configuración para enviar

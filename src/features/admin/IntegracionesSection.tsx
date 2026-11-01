@@ -88,8 +88,10 @@ function getStatus(
 
 export default function IntegracionesSection({
   projectId,
+  premium = false,
 }: {
   projectId: string;
+  premium?: boolean;
 }) {
   const queryClient = useQueryClient();
 
@@ -229,7 +231,7 @@ export default function IntegracionesSection({
   });
 
   const integrationSwitcher = (
-    <div className="flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-surface-1 p-2">
+    <div className={premium ? "relative isolate flex flex-wrap gap-3 overflow-hidden rounded-[20px] border border-cyan-400/20 bg-gradient-to-r from-card/95 via-card/90 to-cyan-950/[0.09] p-3 shadow-[0_18px_45px_-40px_rgba(14,165,233,0.3)]" : "flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-surface-1 p-2"}>
       <Button
         type="button"
         aria-pressed={activeIntegration === "eltoque"}
@@ -253,12 +255,14 @@ export default function IntegracionesSection({
   if (activeIntegration === "maps") {
     return (
       <div className="space-y-4 sm:space-y-6">
+        {!premium ? (
         <ModuleHeader
           title="Integraciones y API"
           description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
           icon={PlugZap}
           module="configuracion"
         />
+      ) : null}
 
         {integrationSwitcher}
 
@@ -270,12 +274,14 @@ export default function IntegracionesSection({
   if (integrationQuery.isLoading) {
     return (
       <div className="space-y-4 sm:space-y-6">
+        {!premium ? (
         <ModuleHeader
           title="Integraciones y API"
           description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
           icon={PlugZap}
           module="configuracion"
         />
+      ) : null}
 
         {integrationSwitcher}
 
@@ -289,12 +295,14 @@ export default function IntegracionesSection({
   if (integrationQuery.isError || !settings) {
     return (
       <div className="space-y-4 sm:space-y-6">
+        {!premium ? (
         <ModuleHeader
           title="Integraciones y API"
           description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
           icon={PlugZap}
           module="configuracion"
         />
+      ) : null}
 
         {integrationSwitcher}
 
@@ -314,30 +322,36 @@ export default function IntegracionesSection({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <ModuleHeader
+      {!premium ? (
+        <ModuleHeader
         title="Integraciones y API"
         description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
         icon={PlugZap}
         module="configuracion"
       />
+      ) : null}
 
       {integrationSwitcher}
 
-      <PageAlert tone="info">
-        Este espacio centraliza las integraciones externas del
-        proyecto. La primera integración disponible es la API oficial
-        de tasas de elTOQUE.
-      </PageAlert>
+      {!premium ? (
+        <PageAlert tone="info">
+          Este espacio centraliza las integraciones externas del
+          proyecto. La primera integración disponible es la API oficial
+          de tasas de elTOQUE.
+        </PageAlert>
+      ) : null}
 
       <SectionCard
         title="elTOQUE"
         description="Tasa referencial automática para operaciones USD/EUR → CUP."
         module="configuracion"
+        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}
         actions={
           <Badge variant={status.variant}>{status.label}</Badge>
         }
       >
-        <div className="space-y-6">
+        {premium ? <PlugZap aria-hidden="true" className="pointer-events-none absolute -right-9 -top-10 z-0 h-48 w-48 -rotate-12 text-cyan-400 opacity-[0.05]" /> : null}
+        <div className="relative z-10 space-y-6">
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="eltoque-api-key">
@@ -520,8 +534,10 @@ export default function IntegracionesSection({
         title="Notificación diaria de la tasa"
         description="Prepara una notificación diaria con la tasa vigente."
         module="configuracion"
+        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}
       >
-        <div className="space-y-5">
+        {premium ? <BellRing aria-hidden="true" className="pointer-events-none absolute -right-9 -top-10 z-0 h-44 w-44 -rotate-12 text-cyan-400 opacity-[0.045]" /> : null}
+        <div className="relative z-10 space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="flex items-center gap-2 font-medium">
