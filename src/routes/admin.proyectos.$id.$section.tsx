@@ -119,7 +119,7 @@ function SectionPage() {
       return <PlanesPreciosSection projectId={id} />;
 
     case "empleados":
-      return renderAdministration(<EmpleadosSection projectId={id} />);
+      return renderAdministration(<EmpleadosSection projectId={id} premium={project.slug === "tuktuk-control"} />);
 
     case "rendimiento":
       return <RendimientoSection projectId={id} />;
@@ -128,10 +128,10 @@ function SectionPage() {
       return renderAdministration(<ConfiguracionSection projectId={id} />);
 
     case "comunicados":
-      return renderAdministration(<ComunicadosSection projectId={id} />);
+      return renderAdministration(<ComunicadosSection projectId={id} premium={project.slug === "tuktuk-control"} />);
 
     case "integraciones":
-      return renderAdministration(<IntegracionesSection projectId={id} />);
+      return renderAdministration(<IntegracionesSection projectId={id} premium={project.slug === "tuktuk-control"} />);
 
     case "auditoria":
       return <AuditoriaSection projectId={id} />;
