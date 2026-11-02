@@ -6,6 +6,8 @@ on:
       - 'supabase/migrations/20261022175058_marketplace_customer_cancel_before_departure_20261022.sql'
       - 'supabase/verification/20261022_marketplace_customer_cancel_before_departure_static.py'
       - '.github/workflows/marketplace-customer-cancel-preflight.yml'
+      - 'supabase/migrations/*_marketplace_customer_cancel_pretrip_reason_guard.sql'
+      - 'supabase/verification/20261102_marketplace_customer_cancel_pretrip_guard_static.py'
 permissions:
   contents: read
 jobs:
@@ -15,3 +17,5 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       - name: Verify static migration contract
         run: python3 supabase/verification/20261022_marketplace_customer_cancel_before_departure_static.py
+      - name: Verify pre-trip customer cancellation migration
+        run: python3 supabase/verification/20261102_marketplace_customer_cancel_pretrip_guard_static.py
