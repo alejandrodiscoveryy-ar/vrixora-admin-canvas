@@ -15,6 +15,7 @@ import {
 } from "@/lib/services";
 
 import { SectionCard } from "@/components/admin/SectionCard";
+import PremiumSettingsSnapshot, { type PremiumSettingsMetric } from "./PremiumSettingsSnapshot";
 import AppReleaseSettingsCard from "./AppReleaseSettingsCard";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Badge } from "@/components/ui/badge";
@@ -64,20 +65,20 @@ const LEGACY_SECTION_LABELS: Record<SectionKey, string> = {
 };
 
 const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
-const PREMIUM_CONFIG_CARD_CLASS = "relative overflow-hidden rounded-[22px] border-cyan-400/[0.13] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.045] shadow-[0_22px_60px_-44px_rgba(0,0,0,0.85)]";
+const PREMIUM_CONFIG_CARD_CLASS = "relative overflow-hidden rounded-[25px] border border-cyan-400/20 bg-gradient-to-br from-[#0b171c] via-[#080f15] to-[#061a20]/90 shadow-[0_26px_70px_-42px_rgba(0,0,0,0.94)]";
 
-const CONFIG_HEADER_CLASS = "px-4 py-2.5 sm:px-4 sm:py-2.5";
+const CONFIG_HEADER_CLASS = "border-b border-cyan-400/[0.12] bg-cyan-300/[0.025] px-4 py-4 sm:px-6 sm:py-4";
 
-const CONFIG_CONTENT_CLASS = "p-3";
+const CONFIG_CONTENT_CLASS = "px-4 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5";
 
 const CONFIG_CONTROL_CLASS =
-  "h-9 border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+  "h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80 shadow-inner shadow-black/10 transition-colors hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
 
 const CONFIG_SELECT_CLASS =
-  "h-9 border-border-strong bg-surface-2 hover:border-primary/60 focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80 hover:border-cyan-300/45 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20";
 
 const CONFIG_TEXTAREA_CLASS =
-  "min-h-[60px] border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+  "min-h-[88px] rounded-xl border-cyan-400/20 bg-[#08141a]/80 shadow-inner shadow-black/10 hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
 
 const ACTIVE_CAMPAIGN_BADGE_CLASS =
   "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]";
@@ -461,6 +462,40 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     );
   }
 
+  const premiumMetrics: PremiumSettingsMetric[] = visibleSection === "general"
+    ? [
+        { label: "Proyecto", value: name.trim() || "Sin nombre", hint: "Identidad administrativa" },
+        { label: "Logotipo", value: form.logoUrl ? "Configurado" : "Pendiente", hint: "Marca principal", tone: form.logoUrl ? "success" : "default" },
+        { label: "Icono", value: form.iconUrl ? "Configurado" : "Pendiente", hint: "Aplicación y avisos", tone: form.iconUrl ? "success" : "default" },
+      ]
+    : visibleSection === "billing"
+      ? [
+          { label: "Moneda base", value: foundationForm.baseCurrency, hint: "Referencia de cálculo" },
+          { label: "Moneda de cobro", value: foundationForm.chargeCurrency, hint: "Operaciones" },
+          { label: "Tipo de cambio", value: Number.isFinite(foundationForm.currentRate) ? foundationForm.currentRate.toLocaleString("es-CU") : "No disponible", hint: foundationForm.rateMode === "automatic" ? "Fuente automática" : "Gestión manual" },
+        ]
+      : visibleSection === "referrals"
+        ? isMarketplaceReferralProgram ? [
+            { label: "Programa", value: marketplaceReferralSettingsQuery.isLoading ? "Consultando" : marketplaceRewardEnabled ? "Activo" : "Pausado", hint: "Recompensa por primer servicio", tone: marketplaceRewardEnabled ? "success" : "default" },
+            { label: "Recompensa", value: marketplaceReferralSettingsQuery.isLoading ? "Consultando" : marketplaceRewardAmount.toLocaleString("es-CU") + " CUP", hint: "Por referido válido" },
+            { label: "Liquidación", value: "Billetera", hint: "Sin alterar historial" },
+          ] : [
+            { label: "Programa", value: "Campañas", hint: "Gestión por períodos" },
+            { label: "Campaña activa", value: referralCampaignsQuery.isLoading ? "Consultando" : referralCampaignsQuery.data?.some((campaign) => campaign.status === "active") ? "Activa" : "Sin campaña", hint: "Estado del programa" },
+            { label: "Historial", value: referralCampaignsQuery.isLoading ? "Consultando" : String(referralCampaignsQuery.data?.length ?? 0), hint: "Campañas registradas" },
+          ]
+        : visibleSection === "communication"
+          ? [
+              { label: "WhatsApp institucional", value: form.whatsapp.trim() ? "Configurado" : "Pendiente", hint: "Identidad del proyecto" },
+              { label: "Soporte", value: canManageWhatsApp && whatsappForm ? whatsappForm.supportEnabled ? "Activo" : "Inactivo" : "Acceso limitado", hint: "Canal de atención", tone: whatsappForm?.supportEnabled ? "success" : "default" },
+              { label: "Pagos", value: canManageWhatsApp && whatsappForm ? whatsappForm.paymentEnabled ? "Activo" : "Inactivo" : "Acceso limitado", hint: "Canal de cobros", tone: whatsappForm?.paymentEnabled ? "success" : "default" },
+            ]
+          : [
+              { label: "Mantenimiento", value: form.maintenanceMode ? "Activado" : "Desactivado", hint: form.maintenanceMode ? "Revisar impacto en usuarios" : "Acceso general disponible", tone: form.maintenanceMode ? "warning" : "success" },
+              { label: "Bienvenida", value: form.welcomeMessage.trim() ? "Configurada" : "Pendiente", hint: "Mensaje de entrada" },
+              { label: "Versión Android", value: "Panel independiente", hint: "Actualizaciones y descargas" },
+            ];
+
   return (
     <div className="space-y-3">
       {isMarketplaceReferralProgram ? (
@@ -505,19 +540,43 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-cyan-400/25 bg-cyan-400/[0.09] text-cyan-300 shadow-inner">
                       <Icon aria-hidden="true" className="h-8 w-8" />
                     </span>
-                    <span className="relative z-10 min-w-0 flex-1 text-lg font-semibold leading-snug tracking-tight text-foreground">{section.label}</span>
+                    <span className="relative z-10 min-w-0 flex-1 space-y-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300/75">{section.eyebrow}</span>
+                      <span className="block text-lg font-semibold leading-snug tracking-tight text-foreground">{section.label}</span>
+                      <span className="block max-w-sm text-xs leading-relaxed text-slate-400">{section.description}</span>
+                    </span>
                     <ChevronRight aria-hidden="true" className="relative z-10 h-5 w-5 shrink-0 text-cyan-300/75 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
                   </button>
                 );
               })}
             </section>
           ) : currentSection ? (
-            <header className="flex items-center gap-3 border-b border-border/55 px-1 pb-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300">
-                <CurrentSectionIcon aria-hidden="true" className="h-[18px] w-[18px]" />
-              </span>
-              <h3 className="text-base font-semibold text-foreground">{currentSection.label}</h3>
-            </header>
+            <div className="space-y-3">
+              <PremiumSettingsSnapshot
+                number={currentSection.number}
+                eyebrow={currentSection.eyebrow}
+                title={currentSection.label}
+                description={currentSection.description}
+                icon={CurrentSectionIcon}
+                metrics={premiumMetrics}
+              />
+              <nav aria-label="Cambiar módulo de configuración" className="flex gap-2 overflow-x-auto pb-1">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <button
+                      type="button"
+                      key={section.key}
+                      aria-current={visibleSection === section.key ? "page" : undefined}
+                      onClick={() => setActiveSection(section.key)}
+                      className={"inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 " + (visibleSection === section.key ? "border-cyan-300/45 bg-cyan-300/12 text-cyan-100" : "border-cyan-400/15 bg-[#09161b]/70 text-slate-400 hover:border-cyan-400/35 hover:text-white")}
+                    >
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />{section.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           ) : null}
         </>
       ) : (
@@ -701,7 +760,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   </p>
                 </div>
 
-                <div className="flex h-20 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[120px]">
+                <div className="flex h-24 w-full items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.035] p-2 shadow-inner shadow-black/20 sm:w-[120px]">
                   {form.logoUrl ? (
                     <img
                       src={form.logoUrl}
@@ -774,7 +833,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Label>Color primario</Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-9 w-9 shrink-0 rounded-lg border border-border-subtle"
+                    className="h-10 w-10 shrink-0 rounded-xl border border-cyan-400/30 shadow-inner shadow-black/20"
                     style={{
                       backgroundColor: form.primaryColor,
                     }}
@@ -792,7 +851,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Label>Color secundario</Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-9 w-9 shrink-0 rounded-lg border border-border-subtle"
+                    className="h-10 w-10 shrink-0 rounded-xl border border-cyan-400/30 shadow-inner shadow-black/20"
                     style={{
                       backgroundColor: form.secondaryColor,
                     }}
@@ -812,11 +871,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {visibleSection === "billing" ? (
         <div className="space-y-3">
-          <PageAlert tone="info" title="Configuración monetaria">
-            Estas monedas y el tipo de cambio se utilizan como referencia para la operación
-            Marketplace y sus tarifas.
-          </PageAlert>
-
           <SectionCard
             title="Monedas y tipo de cambio"
             description="Define las monedas y el tipo de cambio utilizados por Marketplace."
@@ -914,7 +968,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <p className="text-xs text-text-tertiary md:col-span-2">
+              <p className="flex items-center gap-2 rounded-xl border border-cyan-400/15 bg-cyan-300/[0.035] px-3.5 py-3 text-xs text-slate-300 md:col-span-2">
                 Última actualización: {formatDateTime(foundationForm.rateUpdatedAt)}
               </p>
 
@@ -939,7 +993,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           {isMarketplaceReferralProgram ? (
             <SectionCard title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
               {marketplaceReferralSettingsQuery.isError ? <PageAlert tone="error">No se pudo cargar la configuración vigente de recompensas Marketplace.</PageAlert> : null}
-              <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
+              <div className="grid gap-4 lg:grid-cols-[minmax(250px,1.2fr)_minmax(220px,1fr)_auto] lg:items-center">
                 <SettingToggle title="Programa de referidos" description="Activa o desactiva la recompensa vigente." checked={marketplaceRewardEnabled} onCheckedChange={setMarketplaceRewardEnabled} disabled={!canManage} />
                 <div className="space-y-1.5"><Label>Recompensa por referido (CUP)</Label><Input className={CONFIG_CONTROL_CLASS} type="number" min={0.01} step="0.01" value={marketplaceRewardAmount} onChange={(event) => setMarketplaceRewardAmount(Number(event.target.value))} disabled={!canManage} /></div>
                 <Button disabled={!canManage || marketplaceReferralSettingsQuery.isLoading || marketplaceReferralSettingsQuery.isError || marketplaceRewardAmount <= 0 || saveMarketplaceReferralReward.isPending} onClick={() => saveMarketplaceReferralReward.mutate()}>Guardar recompensa</Button>
@@ -1189,7 +1243,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-5">
+                <div>
+                  <p className="mb-1 text-sm font-semibold text-foreground">Números operativos</p>
+                  <p className="mb-3 text-xs text-slate-400">Cada número cumple una función distinta en la atención del Marketplace.</p>
+                </div>
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="space-y-1.5">
                     <Label>Número general</Label>
@@ -1219,6 +1277,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   </div>
                 </div>
 
+                <div className="border-t border-cyan-400/10 pt-4">
+                  <p className="mb-3 text-sm font-semibold text-foreground">Canales habilitados</p>
+                </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <SettingToggle
                     title="Soporte por WhatsApp"
@@ -1235,6 +1296,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   />
                 </div>
 
+                <div className="border-t border-cyan-400/10 pt-4">
+                  <p className="mb-1 text-sm font-semibold text-foreground">Botones y mensajes</p>
+                  <p className="mb-3 text-xs text-slate-400">Textos visibles y plantillas de contacto para soporte y pagos.</p>
+                </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Texto del botón de soporte</Label>
@@ -1291,7 +1356,13 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           headerClassName={CONFIG_HEADER_CLASS}
           contentClassName={CONFIG_CONTENT_CLASS}
         >
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
+            {form.maintenanceMode ? (
+              <div role="status" className="flex items-start gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/[0.08] p-4 text-sm text-amber-100 md:col-span-2">
+                <span className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-amber-300" />
+                El modo mantenimiento está seleccionado. Verifica su impacto antes de guardar los cambios.
+              </div>
+            ) : null}
 
             <SettingToggle
               title="Modo mantenimiento"
@@ -1335,7 +1406,7 @@ function SettingToggle({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-3">
+    <div className="flex min-h-[90px] items-start justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4 shadow-inner shadow-black/15">
       <div className="min-w-0">
         <p className="text-sm font-medium text-text-primary">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-text-secondary">{description}</p>
@@ -1380,7 +1451,7 @@ function ReferralCampaignDetail({
   tone?: "success";
 }) {
   return (
-    <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-3">
+    <div className="rounded-2xl border border-cyan-400/18 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
       {tone === "success" ? (
         <Badge variant="outline" className={`mt-1.5 ${ACTIVE_CAMPAIGN_BADGE_CLASS}`}>
@@ -1418,7 +1489,7 @@ function IconMasterPreview({
   return (
     <div className="space-y-1.5 text-center">
       <div
-        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 ${shapeClass}`}
+        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-cyan-400/20 bg-cyan-400/[0.04] shadow-inner shadow-black/20 ${shapeClass}`}
       >
         {variantUrl ? (
           <img

@@ -112,8 +112,8 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       title="Actualizaciones de TukTuk Conductor"
       description="Configura el aviso automático, el tipo de actualización y el enlace oficial desde una sola ficha."
       module="configuracion"
-      className="border-primary/25 bg-gradient-to-br from-surface-1 via-surface-1 to-primary/[0.055] shadow-[0_18px_52px_-35px_rgba(0,0,0,0.9)]"
-      headerClassName="px-4 py-2.5"
+      className="relative overflow-hidden rounded-[25px] border border-cyan-400/20 bg-gradient-to-br from-[#0b171c] via-[#081116] to-[#061a20]/90 shadow-[0_26px_70px_-42px_rgba(0,0,0,0.94)]"
+      headerClassName="border-b border-cyan-400/[0.12] bg-cyan-300/[0.025] px-4 py-4 sm:px-6"
       contentClassName="p-0"
     >
       {query.isLoading || projectSettings.isLoading ? (
@@ -123,13 +123,13 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           No se pudo cargar la configuración de versiones. Verifica que la migración de Supabase esté aplicada.
         </p>
       ) : (
-        <div className="relative isolate overflow-hidden p-3 sm:p-4">
+        <div className="relative isolate overflow-hidden p-4 sm:p-6">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none overflow-hidden">
             <span className="absolute -right-6 top-0 rotate-[-14deg] text-[clamp(5rem,14vw,11rem)] font-black tracking-tighter text-primary/[0.045]">TUKTUK</span>
             <Smartphone className="absolute -bottom-12 -right-8 h-60 w-60 rotate-[-16deg] text-primary/[0.065]" strokeWidth={0.8} />
           </div>
           <div className="relative z-10 space-y-2.5">
-          <div className="flex items-start justify-between gap-3 rounded-lg border border-border p-3">
+          <div className="flex items-start justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
             <div>
               <p className="text-sm font-medium">Activar aviso automático</p>
               <p className="text-xs text-text-secondary">Desactivado por defecto. No envía notificaciones push.</p>
@@ -138,13 +138,13 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <button type="button" aria-pressed={mode === "optional"} disabled={!canManage || save.isPending}
-              className={`rounded-xl border p-2.5 text-left text-sm ${mode === "optional" ? "border-primary/60 bg-primary/10" : "border-border-default bg-background/40"}`}
+              className={`min-h-20 rounded-2xl border p-4 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${mode === "optional" ? "border-cyan-300/50 bg-cyan-300/[0.09]" : "border-cyan-400/15 bg-[#08151b]/70 hover:border-cyan-400/35"}`}
               onClick={() => setMode("optional")}>
               <span className="font-semibold">Opcional</span>
               <span className="block text-xs text-text-secondary">Actualizar ahora o más tarde</span>
             </button>
             <button type="button" aria-pressed={mode === "mandatory"} disabled={!canManage || save.isPending}
-              className={`rounded-xl border p-2.5 text-left text-sm ${mode === "mandatory" ? "border-amber-400/50 bg-amber-400/10" : "border-border-default bg-background/40"}`}
+              className={`min-h-20 rounded-2xl border p-4 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${mode === "mandatory" ? "border-amber-400/50 bg-amber-400/[0.09]" : "border-cyan-400/15 bg-[#08151b]/70 hover:border-cyan-400/35"}`}
               onClick={() => setMode("mandatory")}>
               <span className="font-semibold">Obligatoria</span>
               <span className="block text-xs text-text-secondary">Requiere instalar la nueva versión</span>
@@ -153,23 +153,23 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           <div className="grid gap-2 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="app-release-version">Versión publicada</Label>
-              <Input id="app-release-version" value={version} onChange={(e) => setVersion(e.target.value)}
+              <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-version" value={version} onChange={(e) => setVersion(e.target.value)}
                 placeholder="1.0.21" maxLength={24} disabled={!canManage || save.isPending} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="app-release-build">Número de compilación Android</Label>
-              <Input id="app-release-build" type="number" min={1} step={1} value={build}
+              <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-build" type="number" min={1} step={1} value={build}
                 onChange={(e) => setBuild(e.target.value)} placeholder="23" disabled={!canManage || save.isPending} />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="app-release-download">Enlace oficial HTTPS de descarga</Label>
-            <Input id="app-release-download" type="url" value={url} onChange={(e) => setUrl(e.target.value)}
+            <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-download" type="url" value={url} onChange={(e) => setUrl(e.target.value)}
               placeholder="Enlace oficial HTTPS de la nueva APK" maxLength={1500} disabled={!canManage || save.isPending} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="app-release-notes">Novedades de la versión</Label>
-            <Textarea id="app-release-notes" value={notes} onChange={(e) => setNotes(e.target.value)}
+            <Textarea className="min-h-24 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-notes" value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder="Mejoras de estabilidad, avisos y experiencia del conductor."
               maxLength={1800} disabled={!canManage || save.isPending} />
           </div>
