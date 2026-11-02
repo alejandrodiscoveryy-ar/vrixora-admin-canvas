@@ -35,3 +35,9 @@ test('Live operational snapshot avoids invented values and uses persisted permis
   assert.ok(config.includes('Cambios sin guardar'));
   assert.ok(summary.includes('metric.tone === "warning"'));
 });
+
+// Error responses must never be displayed as confirmed referral state.
+test('Referral summaries distinguish unavailable data from inactive campaigns', () => {
+  assert.match(config, /marketplaceReferralSettingsQuery\.isError \? "No disponible"/);
+  assert.match(config, /referralCampaignsQuery\.isError \? "No disponible"/);
+});

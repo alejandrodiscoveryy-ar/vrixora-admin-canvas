@@ -476,13 +476,13 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         ]
       : visibleSection === "referrals"
         ? isMarketplaceReferralProgram ? [
-            { label: "Programa", value: marketplaceReferralSettingsQuery.isLoading ? "Consultando" : marketplaceRewardEnabled ? "Activo" : "Pausado", hint: "Recompensa por primer servicio", tone: marketplaceRewardEnabled ? "success" : "default" },
-            { label: "Recompensa", value: marketplaceReferralSettingsQuery.isLoading ? "Consultando" : marketplaceRewardAmount.toLocaleString("es-CU") + " CUP", hint: "Por referido válido" },
+            { label: "Programa", value: marketplaceReferralSettingsQuery.isLoading ? "Consultando" : marketplaceReferralSettingsQuery.isError ? "No disponible" : marketplaceRewardEnabled ? "Activo" : "Pausado", hint: "Recompensa por primer servicio", tone: marketplaceReferralSettingsQuery.isError ? "default" : marketplaceRewardEnabled ? "success" : "default" },
+            { label: "Recompensa", value: marketplaceReferralSettingsQuery.isLoading ? "Consultando" : marketplaceReferralSettingsQuery.isError ? "No disponible" : marketplaceRewardAmount.toLocaleString("es-CU") + " CUP", hint: "Por referido válido" },
             { label: "Liquidación", value: "Billetera", hint: "Sin alterar historial" },
           ] : [
             { label: "Programa", value: "Campañas", hint: "Gestión por períodos" },
-            { label: "Campaña activa", value: referralCampaignsQuery.isLoading ? "Consultando" : referralCampaignsQuery.data?.some((campaign) => campaign.status === "active") ? "Activa" : "Sin campaña", hint: "Estado del programa" },
-            { label: "Historial", value: referralCampaignsQuery.isLoading ? "Consultando" : String(referralCampaignsQuery.data?.length ?? 0), hint: "Campañas registradas" },
+            { label: "Campaña activa", value: referralCampaignsQuery.isLoading ? "Consultando" : referralCampaignsQuery.isError ? "No disponible" : referralCampaignsQuery.data?.some((campaign) => campaign.status === "active") ? "Activa" : "Sin campaña", hint: "Estado del programa" },
+            { label: "Historial", value: referralCampaignsQuery.isLoading ? "Consultando" : referralCampaignsQuery.isError ? "No disponible" : String(referralCampaignsQuery.data?.length ?? 0), hint: "Campañas registradas" },
           ]
         : visibleSection === "communication"
           ? [
