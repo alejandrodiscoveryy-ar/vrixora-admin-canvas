@@ -58,6 +58,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
 import MarketplaceConfigurationWorkspace from "@/features/admin/MarketplaceConfigurationWorkspace";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
+import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 
 
@@ -1642,6 +1643,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               ) : null}
             </div>
           </PremiumPanel>
+          <MarketplaceFleetPulse projectId={projectId} enabled={tab === "resumen"} onOpenDriver={setDriver360Id} />
         </TabsContent>
         <TabsContent value="trabajos" className="mt-3">
           <div className="space-y-3 sm:space-y-4">
