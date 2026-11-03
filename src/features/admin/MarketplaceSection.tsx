@@ -1506,13 +1506,13 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   <Eye className="h-6 w-6" />
                 </span>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85">Centro de control ? Indicadores</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85">Centro de control · Indicadores</p>
                   <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground sm:text-xl">Pulso operativo</h2>
-                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Actividad, equipo y gesti\u00f3n del Marketplace.</p>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Actividad, equipo y gestión del Marketplace.</p>
                 </div>
               </div>
               <span role="status" className="rounded-xl border border-border/60 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
-                {overview.isError ? "Error de actualizaci\u00f3n" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}
+                {overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}
               </span>
             </header>
             <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1627,7 +1627,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       ) : (
                         <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
-                          {overview.isError ? "?" : Number(value ?? 0)}
+                          {overview.isError ? "—" : Number(value ?? 0)}
                         </p>
                       )}
                     </div>
@@ -1658,9 +1658,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     </div>
 
                     <p className="mt-5 font-mono text-3xl font-bold tracking-tight text-foreground">
-                      {overview.isError ? "?" : (overview.data?.pendingTopups ?? 0)}
+                      {overview.isError ? "—" : (overview.data?.pendingTopups ?? 0)}
                     </p>
-                    <p className="relative mt-1 text-[11px] text-muted-foreground">En revisi\u00f3n financiera</p>
+                    <p className="relative mt-1 text-[11px] text-muted-foreground">En revisión financiera</p>
                   </div>
                 </article>
               ) : null}
