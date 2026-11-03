@@ -1495,18 +1495,31 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     <div className="space-y-5 sm:space-y-6">
       <Tabs value={tab}>
         <TabsContent value="resumen">
-          <PremiumPanel
-            headerless
-            title="Pulso operativo"
-            description="Visión general del estado actual del Marketplace"
-            icon={Eye}
-            tone="emerald"
-            backgroundImage="/admin-premium/overview.svg"
+          <section
+            aria-label="Indicadores operativos de Pulso"
+            className="relative overflow-hidden rounded-[28px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-4 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:p-5 lg:p-6"
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Eye aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 text-cyan-300/[0.025]" />
+            <header className="relative mb-5 flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07]">
+                  <Eye className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85">Centro de control ? Indicadores</p>
+                  <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground sm:text-xl">Pulso operativo</h2>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Actividad, equipo y gesti\u00f3n del Marketplace.</p>
+                </div>
+              </div>
+              <span role="status" className="rounded-xl border border-border/60 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
+                {overview.isError ? "Error de actualizaci\u00f3n" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}
+              </span>
+            </header>
+            <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 {
                   label: "Conductores",
+                  detail: "Perfiles registrados",
                   eyebrow: "Equipo",
                   value: overview.data?.driversTotal,
                   Icon: Users,
@@ -1517,6 +1530,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 },
                 {
                   label: "Activos",
+                  detail: "Perfiles habilitados",
                   eyebrow: "Operación",
                   value: overview.data?.driversActive,
                   Icon: Users,
@@ -1527,6 +1541,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 },
                 {
                   label: "En promoción",
+                  detail: "Beneficio vigente",
                   eyebrow: "Beneficio",
                   value: overview.data?.driversTrialActive,
                   Icon: BriefcaseBusiness,
@@ -1537,6 +1552,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 },
                 {
                   label: "Post-promoción activos",
+                  detail: "Activos tras el beneficio",
                   eyebrow: "Comercial",
                   value: overview.data?.driversPostTrialActive,
                   Icon: WalletCards,
@@ -1547,6 +1563,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 },
                 {
                   label: "Trabajos publicados",
+                  detail: "Solicitudes publicadas",
                   eyebrow: "Marketplace",
                   value: overview.data?.jobsPublished,
                   Icon: BriefcaseBusiness,
@@ -1557,6 +1574,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 },
                 {
                   label: "Trabajos activos",
+                  detail: "Operaciones en desarrollo",
                   eyebrow: "Actividad",
                   value: overview.data?.jobsActive,
                   Icon: BriefcaseBusiness,
@@ -1567,6 +1585,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 },
                 {
                   label: "Incidencias abiertas",
+                  detail: "Pendientes de resolver",
                   eyebrow: "Atención",
                   value: overview.data?.jobsIncidentOpen,
                   Icon: AlertTriangle,
@@ -1575,14 +1594,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   icon: "border-rose-400/20 bg-rose-500/[0.08] text-rose-300",
                   glow: "bg-rose-400/[0.06]",
                 },
-              ].map(({ label: metricLabel, eyebrow, value, Icon, shell, icon, glow }) => (
+              ].map(({ label: metricLabel, eyebrow, detail, value, Icon, shell, icon, glow }) => (
                 <article
                   key={metricLabel}
-                  className={`group relative min-h-[128px] overflow-hidden rounded-[22px] border p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${shell}`}
+                  className={`group relative min-h-[174px] overflow-hidden rounded-[23px] border p-4 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${shell}`}
                 >
                   <div
                     className={`pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl ${glow}`}
                   />
+                  <Icon aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 h-36 w-36 rotate-[-11deg] text-cyan-300/[0.065]" />
 
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">
@@ -1590,15 +1610,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           {eyebrow}
                         </p>
-                        <p className="mt-1.5 text-xs font-semibold text-foreground/80">
+                        <p className="mt-1.5 text-sm font-semibold text-foreground">
                           {metricLabel}
                         </p>
                       </div>
 
                       <div
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${icon}`}
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${icon}`}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-5 w-5" />
                       </div>
                     </div>
 
@@ -1607,17 +1627,19 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       ) : (
                         <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
-                          {Number(value ?? 0)}
+                          {overview.isError ? "?" : Number(value ?? 0)}
                         </p>
                       )}
                     </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
                   </div>
                 </article>
               ))}
 
               {!overview.isLoading && overview.data?.pendingTopups !== null ? (
-                <article className="group relative min-h-[128px] overflow-hidden rounded-[22px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-4 shadow-[0_20px_52px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5">
+                <article className="group relative min-h-[174px] overflow-hidden rounded-[23px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-4 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5">
                   <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-amber-400/[0.06] blur-3xl" />
+                  <WalletCards aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 h-36 w-36 rotate-[-11deg] text-amber-300/[0.065]" />
 
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">
@@ -1625,24 +1647,25 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Finanzas
                         </p>
-                        <p className="mt-1.5 text-xs font-semibold text-foreground/80">
+                        <p className="mt-1.5 text-sm font-semibold text-foreground">
                           Recargas pendientes
                         </p>
                       </div>
 
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-500/[0.08] text-amber-300">
-                        <WalletCards className="h-4 w-4" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-500/[0.08] text-amber-300">
+                        <WalletCards className="h-5 w-5" />
                       </div>
                     </div>
 
                     <p className="mt-5 font-mono text-3xl font-bold tracking-tight text-foreground">
-                      {overview.data?.pendingTopups ?? 0}
+                      {overview.isError ? "?" : (overview.data?.pendingTopups ?? 0)}
                     </p>
+                    <p className="relative mt-1 text-[11px] text-muted-foreground">En revisi\u00f3n financiera</p>
                   </div>
                 </article>
               ) : null}
             </div>
-          </PremiumPanel>
+          </section>
           <MarketplaceFleetPulse projectId={projectId} enabled={tab === "resumen"} onOpenDriver={setDriver360Id} />
         </TabsContent>
         <TabsContent value="trabajos" className="mt-3">
