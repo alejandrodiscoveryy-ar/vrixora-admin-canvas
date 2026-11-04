@@ -139,7 +139,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
             className="h-5 w-5 accent-cyan-400"/>
           <span className="flex flex-col gap-1">
             <strong className="text-sm">Aplicar recargo en días festivos</strong>
-            <span className="text-slate-400">{form.holiday_dates.length ? 'Calendario cubano guardado · recargo del 10 %' : 'Calendario no disponible'}</span>
+            <span className="text-slate-400">{form.holiday_dates.length ?  (form.holiday_pct>0 ? 'Calendario cubano guardado · recargo del 10 %' : 'Calendario cubano guardado · recargo desactivado') : 'Calendario no disponible'}</span>
           </span>
         </label>
         <p className="flex gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 shrink-0 text-cyan-300"/>El servidor sigue usando el horario oficial de Cuba. Los porcentajes se guardan como borradores aislados del motor de cobro.</p>
