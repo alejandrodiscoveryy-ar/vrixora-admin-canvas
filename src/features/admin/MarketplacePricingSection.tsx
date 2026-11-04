@@ -35,6 +35,7 @@ import {
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
 import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
 import MarketplacePricingV3Diagnostics from "@/features/admin/MarketplacePricingV3Diagnostics";
+import MarketplacePricingV3Hierarchy from "@/features/admin/MarketplacePricingV3Hierarchy";
 import MarketplaceTemporalDraftsV3 from "@/features/admin/MarketplaceTemporalDraftsV3";
 import MarketplacePricingMapV3, { type PricingRouteScenario } from "@/features/admin/MarketplacePricingMapV3";
 import { useProjectPermissions } from "@/hooks/useProjects";
@@ -449,6 +450,14 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         tariffs={tariffs.data ?? []}
         adjustments={adjustments.data ?? []}
       />
+
+      {selectedService === "passenger" ? (
+        <MarketplacePricingV3Hierarchy
+          projectId={projectId}
+          tariffs={tariffs.data ?? []}
+          exchangeRate={rate}
+        />
+      ) : null}
 
       {selectedService === "passenger" ? (
         <MarketplaceTemporalDraftsV3
