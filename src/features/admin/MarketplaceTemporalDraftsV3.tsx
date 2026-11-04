@@ -32,7 +32,6 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
   const qc = useQueryClient();
   const [category,setCategory] = useState<string>('motorcycle');
   const [form,setForm] = useState<TemporalProfile>(()=>blank('motorcycle'));
-  const [holidayText,setHolidayText] = useState('');
   const [distance,setDistance] = useState(5);
   const [hour,setHour] = useState(2);
   const [weekend,setWeekend] = useState(true);
@@ -67,7 +66,6 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
   useEffect(()=>{
     const base=toNumbers(current??blank(category));
     setForm(base);
-    setHolidayText(base.holiday_dates.join(', '));
     setFormError(null);
     setSavedMessage(null);
   },[category,current]);
@@ -80,7 +78,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
   const baseCup = cupSettingsValid ? roundTemporalDraftCup(baseUsd,exchangeRate,cupIncrement,cupMode) : null;
   const projectedCup = cupSettingsValid ? roundTemporalDraftCup(projectedUsd,exchangeRate,cupIncrement,cupMode) : null;
   const cupText = (value:number|null) => value === null ? 'No disponible' : value.toLocaleString('es-CU',{maximumFractionDigits:0}) + ' CUP';
-  const parsedDates=holidayText.trim()===''?[]:holidayText.split(',').map(x=>x.trim()).filter(Boolean);
+  const parsedDates=form.holiday_dates;
   const datesValid=parsedDates.length <= 60 && new Set(parsedDates).size===parsedDates.length && parsedDates.every(isValidHolidayDate);
   const ceiling = Math.max(form.evening_pct,form.night_pct,form.dawn_pct)+form.weekend_pct+form.holiday_pct;
   const validNumbers = [form.evening_pct,form.night_pct,form.dawn_pct,form.weekend_pct,form.holiday_pct,form.max_combined_pct]
@@ -106,7 +104,6 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
     ['night_pct','Noche · 22:00–00:00','Nocturnidad'],
     ['dawn_pct','Madrugada · 00:00–06:00','Madrugada'],
     ['weekend_pct','Sábado y domingo','Acumulable con una franja horaria'],
-    ['holiday_pct','Festivo configurado','Solo para fechas registradas'],
   ];
   return <section aria-label="Borradores de ajustes temporales V3" className="overflow-hidden rounded-2xl border border-cyan-500/25 bg-slate-950/70 p-4 text-slate-100 sm:p-5">
     <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
@@ -134,9 +131,16 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
               className="w-full rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-white"/>%</span>
           </label>
         </div>
-        <label className="block text-xs text-slate-300">Festivos específicos (AAAA-MM-DD, separados por comas)
-          <input disabled={!canManage} value={holidayText} onChange={e=>{setSavedMessage(null);setHolidayText(e.target.value)}} placeholder="2026-12-25, 2027-01-01"
-            className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white"/>
+        <label className="flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-slate-200">
+          <input type="checkbox" aria-label="Aplicar recargo en días festivos"
+            disabled={!canManage || form.holiday_dates.length===0}
+            checked={form.holiday_pct>0}
+            onChange={e=>{const activo=e.target.checked;setSavedMessage(null);setForm(prev=>({...prev,holiday_pct:activo?10:0}));}}
+            className="h-5 w-5 accent-cyan-400"/>
+          <span className="flex flex-col gap-1">
+            <strong className="text-sm">Aplicar recargo en días festivos</strong>
+            <span className="text-slate-400">{form.holiday_dates.length ? 'Calendario cubano guardado · recargo del 10 %' : 'Calendario no disponible'}</span>
+          </span>
         </label>
         <p className="flex gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 shrink-0 text-cyan-300"/>El servidor sigue usando el horario oficial de Cuba. Los porcentajes se guardan como borradores aislados del motor de cobro.</p>
         {!safe?<p role="alert" className="flex gap-2 text-xs text-amber-200"><AlertTriangle className="h-4 w-4 shrink-0"/>Revisa porcentajes, fechas y tope: la suma máxima posible debe ser menor o igual al tope.</p>:null}
@@ -157,7 +161,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
           </select>
         </label>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={weekend} onChange={e=>setWeekend(e.target.checked)}/>Fin de semana</label>
-        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={holiday} onChange={e=>setHoliday(e.target.checked)}/>Festivo (escenario hipotético)</label>
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={holiday} onChange={e=>setHoliday(e.target.checked)}/>Simular día festivo (solo vista previa)</label>
         <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3">
           <p className="text-xs text-slate-400">Base estructural estimada · MN</p>
           <p className="text-lg font-semibold tabular-nums">{cupText(baseCup)}</p>
