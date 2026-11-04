@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  ArrowLeft,
+  CalendarClock,
+  ChevronRight,
+  SlidersHorizontal,
   Bike,
   Boxes,
   CarFront,
@@ -48,6 +52,15 @@ type PricingFieldKey =
   | "perStopPriceUsd";
 
 type ServiceCode = "passenger" | "cargo" | "courier";
+
+// El inicio solo muestra rutas de navegación. Cada herramienta se monta al abrir su área.
+const pricingWorkspaceOptions = [
+  { code: "tariffs", title: "Tarifas actuales", description: "Revisar y editar precios por vehículo.", note: "Precios reales", icon: DollarSign },
+  { code: "temporal", title: "Horarios y recargos", description: "Configurar noche, fines de semana y festivos.", note: "Solo borradores", icon: CalendarClock },
+  { code: "simulation", title: "Probar un precio", description: "Elegir una ruta y consultar el importe.", note: "Sin crear viajes", icon: Route },
+  { code: "advanced", title: "Herramientas avanzadas", description: "Revisar diagnósticos y comparaciones.", note: "Solo análisis", icon: SlidersHorizontal },
+] as const;
+type PricingWorkspace = (typeof pricingWorkspaceOptions)[number]["code"];
 
 type EditingTarget = {
   serviceCode: ServiceCode;
@@ -302,6 +315,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   });
 
   const [selectedService, setSelectedService] = useState<ServiceCode>("passenger");
+  const [workspace, setWorkspace] = useState<PricingWorkspace | null>(null);
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [draft, setDraft] = useState<MarketplacePricingTariffInput | null>(null);
   const [pricingRouteScenario, setPricingRouteScenario] = useState<PricingRouteScenario | null>(null);
@@ -356,6 +370,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   ).length;
 
   const selectedVisual = serviceVisuals[selectedService];
+  const activeWorkspace = pricingWorkspaceOptions.find((item) => item.code === workspace);
 
   const openTariff = (
     serviceCode: ServiceCode,
@@ -405,6 +420,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 type="button"
                 onClick={() => {
                   setSelectedService(service.code);
+                  setWorkspace(null);
+                  setPricingRouteScenario(null);
                   setEditing(null);
                   setDraft(null);
                 }}
@@ -426,79 +443,137 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <Sparkles className={`h-4 w-4 ${selectedVisual.text}`} />
-            <h3 className="text-lg font-semibold tracking-tight text-foreground">
-              {serviceLabel(selectedService)}
-            </h3>
+      {workspace === null ? (
+        <section aria-label="Inicio de gestión de precios" className="space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3 px-1">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Sparkles className={`h-4 w-4 ${selectedVisual.text}`} />
+                {serviceLabel(selectedService)}
+              </div>
+              <h3 className="mt-1 text-xl font-bold tracking-tight text-foreground">¿Qué quieres gestionar?</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{serviceDescription(selectedService)}</p>
+            </div>
+            <span className="rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs text-muted-foreground">
+              {configuredCount} de {categories.length} tarifas configuradas
+            </span>
           </div>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            {serviceDescription(selectedService)}
-          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {pricingWorkspaceOptions.map((item) => {
+              const AreaIcon = item.icon;
+              return (
+                <button
+                  key={item.code}
+                  type="button"
+                  onClick={() => {
+                    setWorkspace(item.code);
+                    setPricingRouteScenario(null);
+                  }}
+                  className="group flex min-h-[135px] items-start gap-4 rounded-2xl border border-slate-500/45 bg-card/80 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-400/65 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                >
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300">
+                    <AreaIcon className="h-6 w-6" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-semibold text-foreground">{item.title}</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">{item.description}</span>
+                    <span className="mt-3 block text-xs font-semibold text-cyan-700 dark:text-cyan-300">{item.note}</span>
+                  </span>
+                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1" />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-500/40 bg-card/70 p-3 shadow-sm sm:p-4">
+          <Button type="button" variant="outline" className="h-10 gap-2" onClick={() => {
+            setWorkspace(null);
+            setPricingRouteScenario(null);
+          }}>
+            <ArrowLeft className="h-4 w-4" /> Volver al menú
+          </Button>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">{serviceLabel(selectedService)} / Precios</p>
+            <h3 className="text-lg font-semibold text-foreground">{activeWorkspace?.title}</h3>
+          </div>
+          <span className="rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">{activeWorkspace?.note}</span>
         </div>
+      )}
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="rounded-full border border-border/70 bg-card px-3 py-1.5">
-            {configuredCount} de {categories.length} modalidades configuradas
-          </span>
-          <span className="hidden rounded-full border border-border/70 bg-card px-3 py-1.5 md:inline-flex">
-            USD · conversión automática a CUP
-          </span>
-        </div>
-      </div>
-
-      <MarketplacePricingV3Diagnostics
-        serviceCode={selectedService}
-        tariffs={tariffs.data ?? []}
-        adjustments={adjustments.data ?? []}
-      />
-
-      {selectedService === "passenger" ? (
-        <MarketplacePricingV3Hierarchy
-          projectId={projectId}
-          tariffs={tariffs.data ?? []}
-          exchangeRate={rate}
-        />
+      {workspace === "advanced" ? (
+        <section aria-label="Herramientas avanzadas" className="space-y-4">
+          <MarketplacePricingV3Diagnostics
+            serviceCode={selectedService}
+            tariffs={tariffs.data ?? []}
+            adjustments={adjustments.data ?? []}
+          />
+          {selectedService === "passenger" ? (
+            <MarketplacePricingV3Hierarchy
+              projectId={projectId}
+              tariffs={tariffs.data ?? []}
+              exchangeRate={rate}
+            />
+          ) : null}
+        </section>
       ) : null}
 
-      <MarketplaceTemporalDraftsV3
-        projectId={projectId}
-        serviceCode={selectedService}
-        canManage={canManage}
-        tariffs={tariffs.data ?? []}
-        exchangeRate={rate}
-      />
-
-      <MarketplacePricingMapV3
-        projectId={projectId}
-        serviceCode={selectedService}
-        tariffs={tariffs.data ?? []}
-        canManage={canManage}
-        onScenarioChange={setPricingRouteScenario}
-        onEditTariff={(vehicleCategoryCode) => {
-          if (!canManage) return;
-          const tariff = tariffs.data?.find((item) =>
-            item.serviceCode === selectedService && item.vehicleCategoryCode === vehicleCategoryCode
-          ) ?? null;
-          openTariff(selectedService, vehicleCategoryCode, tariff);
-        }}
-      />
-      <details className="tuktuk-v3-secondary rounded-xl border border-slate-500/45 px-3 py-2">
-        <summary className="cursor-pointer text-xs text-muted-foreground">Distancia manual · alternativa de respaldo</summary>
-        <div className="mt-3">
-          <MarketplacePricingLaboratoryV2
+      {workspace === "temporal" ? (
+        <section aria-label="Horarios y recargos" className="space-y-3">
+          <p className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-sm text-foreground">
+            Estos recargos son borradores. Guardarlos no cambia las tarifas que pagan los clientes.
+          </p>
+          <MarketplaceTemporalDraftsV3
+            projectId={projectId}
             serviceCode={selectedService}
+            canManage={canManage}
             tariffs={tariffs.data ?? []}
             exchangeRate={rate}
           />
-        </div>
-      </details>
+        </section>
+      ) : null}
 
-      <details className="tuktuk-v3-secondary rounded-xl border border-slate-500/45 px-3 py-3">
-        <summary className="cursor-pointer text-xs font-semibold text-slate-200">Ver fichas completas de tarifas y reglas especiales</summary>
-        <div className="mt-3">
+      {workspace === "simulation" ? (
+        <section aria-label="Prueba de precios" className="space-y-3">
+          <p className="rounded-xl border border-slate-500/35 bg-card/60 p-3 text-sm text-muted-foreground">
+            Consulta tarifas vigentes marcando una ruta. Esta prueba no crea viajes ni modifica precios.
+          </p>
+          <MarketplacePricingMapV3
+            projectId={projectId}
+            serviceCode={selectedService}
+            tariffs={tariffs.data ?? []}
+            canManage={canManage}
+            onScenarioChange={setPricingRouteScenario}
+            onEditTariff={(vehicleCategoryCode) => {
+              if (!canManage) return;
+              const tariff = tariffs.data?.find((item) =>
+                item.serviceCode === selectedService && item.vehicleCategoryCode === vehicleCategoryCode
+              ) ?? null;
+              openTariff(selectedService, vehicleCategoryCode, tariff);
+            }}
+          />
+          <details className="tuktuk-v3-secondary rounded-xl border border-slate-500/45 px-3 py-2">
+            <summary className="cursor-pointer text-xs text-muted-foreground">Introducir distancia manualmente</summary>
+            <div className="mt-3">
+              <MarketplacePricingLaboratoryV2
+                serviceCode={selectedService}
+                tariffs={tariffs.data ?? []}
+                exchangeRate={rate}
+              />
+            </div>
+          </details>
+        </section>
+      ) : null}
+
+      {workspace === "tariffs" ? (
+      <section aria-label="Tarifas actuales" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3">
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">Tarifas reales por vehículo</h4>
+            <p className="mt-0.5 text-xs text-muted-foreground">Guardar una tarifa puede cambiar los importes cobrados. Los cambios de visibilidad también afectan a los clientes.</p>
+          </div>
+          <span className="text-xs font-semibold text-amber-600 dark:text-amber-300">Edición con efecto real</span>
+        </div>
       {tariffs.isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando tarifas…</p>
       ) : (
@@ -722,8 +797,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         </div>
       )}
 
-        </div>
-      </details>
+      </section>
+      ) : null}
 
       <Dialog
         open={Boolean(editing && draft)}
