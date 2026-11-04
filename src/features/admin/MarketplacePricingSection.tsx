@@ -105,6 +105,7 @@ const serviceVisuals: Record<
 const vehicleVisuals: Record<string, string> = {
   light_car: "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400",
   bicitaxi: "border-cyan-500/25 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+  bicycle: "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   motorcycle: "border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-400",
   tricycle: "border-violet-500/25 bg-violet-500/10 text-violet-600 dark:text-violet-400",
   van: "border-teal-500/25 bg-teal-500/10 text-teal-600 dark:text-teal-400",
@@ -114,7 +115,7 @@ const vehicleVisuals: Record<string, string> = {
 
 const passengerCategories = ["light_car", "bicitaxi", "motorcycle", "tricycle"] as const;
 
-const cargoCourierCategories = [
+const cargoCategories = [
   "light_car",
   "bicitaxi",
   "tricycle",
@@ -123,6 +124,7 @@ const cargoCourierCategories = [
   "truck",
   "other",
 ] as const;
+const courierCategories = ["bicycle",...cargoCategories] as const;
 
 const passengerFields: Array<[PricingFieldKey, string]> = [
   ["basePriceUsd", "Precio base"],
@@ -211,6 +213,7 @@ function categoryLabel(code: string) {
       {
         light_car: "Auto ligero",
         bicitaxi: "Bicitaxi",
+        bicycle: "Bicicleta",
         motorcycle: "Motocicleta",
         tricycle: "Triciclo",
         van: "Furgoneta",
@@ -227,6 +230,7 @@ function VehicleIcon({ code }: { code: string }) {
     case "light_car":
       return <CarFront className={className} />;
     case "motorcycle":
+    case "bicycle":
     case "bicitaxi":
     case "tricycle":
       return <Bike className={className} />;
@@ -344,7 +348,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
 
   const rate = exchange.data?.currentRate ?? 0;
   const airport = adjustments.data?.find((item) => item.code === "airport_destination_auto");
-  const categories = selectedService === "passenger" ? passengerCategories : cargoCourierCategories;
+  const categories = selectedService === "passenger" ? passengerCategories : selectedService === "cargo" ? cargoCategories : courierCategories;
 
   const serviceTariffs = tariffs.data?.filter((item) => item.serviceCode === selectedService) ?? [];
   const configuredCount = categories.filter((vehicleCategoryCode) =>
@@ -459,14 +463,13 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         />
       ) : null}
 
-      {selectedService === "passenger" ? (
-        <MarketplaceTemporalDraftsV3
-          projectId={projectId}
-          canManage={canManage}
-          tariffs={tariffs.data ?? []}
-          exchangeRate={rate}
-        />
-      ) : null}
+      <MarketplaceTemporalDraftsV3
+        projectId={projectId}
+        serviceCode={selectedService}
+        canManage={canManage}
+        tariffs={tariffs.data ?? []}
+        exchangeRate={rate}
+      />
 
       <MarketplacePricingMapV3
         projectId={projectId}

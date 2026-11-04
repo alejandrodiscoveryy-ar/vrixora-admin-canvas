@@ -26,7 +26,7 @@ export interface PricingRouteScenario {
 }
 
 const names: Record<string, string> = {
-  bicitaxi: "Bicitaxi", motorcycle: "Motocicleta", tricycle: "Triciclo",
+  bicycle: "Bicicleta", bicitaxi: "Bicitaxi", motorcycle: "Motocicleta", tricycle: "Triciclo",
   light_car: "Auto ligero", van: "Furgoneta", truck: "Camión", other: "Otro",
 };
 

@@ -7,10 +7,15 @@ import { isValidHolidayDate, simulateTemporalDraftUsd, roundTemporalDraftCup, ty
 import type { MarketplacePricingTariff } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 
-const modes = [
-  ['motorcycle','Motocicleta'], ['bicitaxi','Bicitaxi'],
-  ['tricycle','Triciclo'], ['light_car','Auto ligero'],
-] as const;
+type ServiceCode = 'passenger' | 'cargo' | 'courier';
+const serviceLabels: Record<ServiceCode,string> = {
+  passenger: 'pasajeros', cargo: 'carga', courier: 'mensajería',
+};
+const vehicleLabels: Record<string,string> = {
+  bicycle: 'Bicicleta', bicitaxi: 'Bicitaxi', motorcycle: 'Motocicleta',
+  tricycle: 'Triciclo', light_car: 'Auto ligero', van: 'Furgoneta',
+  truck: 'Camión', other: 'Otros',
+};
 
 const blank = (code: string): TemporalProfile => ({
   vehicle_category_code: code,
@@ -23,14 +28,26 @@ const toNumbers = (p: TemporalProfile): TemporalProfile => ({
   holiday_dates: Array.isArray(p.holiday_dates) ? p.holiday_dates : [],
 });
 
-export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs,exchangeRate}:{
+export default function MarketplaceTemporalDraftsV3({projectId,serviceCode,canManage,tariffs,exchangeRate}:{
   projectId: string;
+  serviceCode: ServiceCode;
   canManage: boolean;
   tariffs: MarketplacePricingTariff[];
   exchangeRate: number;
 }) {
   const qc = useQueryClient();
+  const modes = useMemo((): Array<[string,string]> => {
+    const seen = new Set<string>();
+    return tariffs.filter(t=>t.serviceCode===serviceCode).flatMap(t=>{
+      if (seen.has(t.vehicleCategoryCode)) return [];
+      seen.add(t.vehicleCategoryCode);
+      return [[t.vehicleCategoryCode,vehicleLabels[t.vehicleCategoryCode] ?? t.vehicleCategoryCode] as [string,string]];
+    });
+  },[tariffs,serviceCode]);
   const [category,setCategory] = useState<string>('motorcycle');
+  useEffect(()=>{
+    if(!modes.some(([code])=>code===category)) setCategory(modes[0]?.[0] ?? '');
+  },[modes,category]);
   const [form,setForm] = useState<TemporalProfile>(()=>blank('motorcycle'));
   const [distance,setDistance] = useState(5);
   const [hour,setHour] = useState(2);
@@ -40,9 +57,9 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
   const [savedMessage,setSavedMessage] = useState<string|null>(null);
 
   const drafts = useQuery({
-    queryKey:['marketplace-temporal-drafts-v3',projectId], enabled:Boolean(projectId),
+    queryKey:['marketplace-temporal-drafts-v3',projectId,serviceCode], enabled:Boolean(projectId),
     queryFn:async()=>{
-      const {data,error}=await getSupabaseClient().rpc('admin_list_marketplace_temporal_drafts_v3',{target_project_id:projectId});
+      const {data,error}=await getSupabaseClient().rpc('admin_list_marketplace_temporal_drafts_v3_service',{target_project_id:projectId,target_service_code:serviceCode});
       if(error) throw error;
       return (Array.isArray(data)?data:[]) as TemporalProfile[];
     },
@@ -68,8 +85,8 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
     setForm(base);
     setFormError(null);
     setSavedMessage(null);
-  },[category,current]);
-  const selectedTariff=tariffs.find(t=>t.serviceCode==='passenger' && t.vehicleCategoryCode===category);
+  },[category,current,serviceCode]);
+  const selectedTariff=tariffs.find(t=>t.serviceCode===serviceCode && t.vehicleCategoryCode===category);
   const baseUsd=structuralPriceUsd(selectedTariff,distance);
   const projectedUsd=baseUsd == null?null:simulateTemporalDraftUsd(baseUsd,form,{hour,weekend,holiday});
   const cupSettingsValid = currencySettings.data?.base === 'USD' && currencySettings.data?.charge === 'CUP';
@@ -86,9 +103,9 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
   const safe = datesValid && validNumbers && ceiling<=form.max_combined_pct;
   const save = useMutation({
     mutationFn:async()=>{
-      if(!safe || !canManage) throw new Error('Borrador fuera de límites o sin permiso.');
-      const {error}=await getSupabaseClient().rpc('admin_save_marketplace_temporal_draft_v3',{
-        target_project_id:projectId, target_vehicle_category_code:category,
+      if(!safe || !canManage || !drafts.isSuccess || !current || !modes.some(([code])=>code===category)) throw new Error('Borrador fuera de límites, modalidad no configurada o sin permiso.');
+      const {error}=await getSupabaseClient().rpc('admin_save_marketplace_temporal_draft_v3_service',{
+        target_project_id:projectId, target_service_code:serviceCode, target_vehicle_category_code:category,
         target_evening_pct:form.evening_pct, target_night_pct:form.night_pct,
         target_dawn_pct:form.dawn_pct, target_weekend_pct:form.weekend_pct,
         target_holiday_pct:form.holiday_pct, target_max_combined_pct:form.max_combined_pct,
@@ -113,8 +130,9 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
     {drafts.isError ? <p role="alert" className="mb-3 text-sm text-amber-200">La gestión de borradores requiere la migración de la fase 2B en Supabase. No se han cambiado precios.</p> : null}
     <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4">
-        <label className="block text-xs text-slate-300">Modalidad de pasajeros
-          <select value={category} onChange={e=>setCategory(e.target.value)} className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white">
+        {modes.length===0?<p role="status" className="text-xs text-amber-200">No hay tarifas activas para este servicio.</p>:null}
+        <label className="block text-xs text-slate-300">Modalidad de {serviceLabels[serviceCode]}
+          <select value={category} disabled={modes.length===0} onChange={e=>setCategory(e.target.value)} className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white">
             {modes.map(([code,label])=><option key={code} value={code}>{label}</option>)}
           </select>
         </label>
@@ -146,7 +164,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
         {!safe?<p role="alert" className="flex gap-2 text-xs text-amber-200"><AlertTriangle className="h-4 w-4 shrink-0"/>Revisa porcentajes, fechas y tope: la suma máxima posible debe ser menor o igual al tope.</p>:null}
         {formError?<p role="alert" className="text-xs text-rose-300">{formError}</p>:null}
         {savedMessage?<p className="text-xs text-emerald-300">{savedMessage}</p>:null}
-        <Button disabled={!canManage||!safe||save.isPending||drafts.isError} onClick={()=>save.mutate()}><Save className="mr-2 h-4 w-4"/>Guardar borrador</Button>
+        <Button disabled={!canManage||!safe||save.isPending||!drafts.isSuccess||!current} onClick={()=>save.mutate()}><Save className="mr-2 h-4 w-4"/>Guardar borrador</Button>
       </div>
       <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4">
         <h4 className="text-sm font-semibold">Simulación estructural · sin publicar</h4>
