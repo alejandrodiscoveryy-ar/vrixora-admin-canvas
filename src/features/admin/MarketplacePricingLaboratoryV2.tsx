@@ -1,3 +1,4 @@
+import { initialHavanaTime, havanaDateTimeToIso } from "@/lib/havana-official-time";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FlaskConical, RefreshCw, Route, Clock3, Users, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,53 +49,6 @@ const labels: Record<string, string> = {
   truck: "Camión",
   other: "Otro",
 };
-
-function initialHavanaTime(): string {
-  const dateParts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Havana",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date());
-  const read = (key: string) => dateParts.find((part) => part.type === key)?.value ?? "";
-  return `${read("year")}-${read("month")}-${read("day")}T${read("hour")}:${read("minute")}`;
-}
-
-function havanaDateTimeToIso(value: string): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
-  const nominal = Date.parse(`${value}:00Z`);
-  if (!Number.isFinite(nominal)) return null;
-  const tz = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Havana",
-    timeZoneName: "shortOffset",
-  });
-  let actual = nominal;
-  for (let i = 0; i < 2; i++) {
-    const offsetName = tz.formatToParts(new Date(actual)).find((part) => part.type === "timeZoneName")?.value;
-    const found = /^GMT([+-])(\d{1,2})(?::(\d{2}))?$/.exec(offsetName ?? "");
-    if (!found) return null;
-    const offsetMinutes = (found[1] === "+" ? 1 : -1) * (Number(found[2]) * 60 + Number(found[3] ?? "0"));
-    actual = nominal - offsetMinutes * 60_000;
-  }
-  if (!Number.isFinite(actual)) return null;
-  // Validar fecha civil y horario de Cuba: evita 30 de febrero y horas que no existen al cambiar DST.
-  const localParts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Havana",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date(actual));
-  const local = (kind: string) => localParts.find((part) => part.type === kind)?.value ?? "";
-  const normalized = `${local("year")}-${local("month")}-${local("day")}T${local("hour")}:${local("minute")}`;
-  if (normalized !== value) return null;
-  return new Date(actual).toISOString();
-}
 
 const money = (value: number, currency: "USD" | "CUP") =>
   new Intl.NumberFormat(currency === "CUP" ? "es-CU" : "en-US", {
