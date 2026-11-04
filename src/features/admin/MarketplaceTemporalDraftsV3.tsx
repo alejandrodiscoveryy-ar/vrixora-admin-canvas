@@ -85,7 +85,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,serviceCode,canMa
     setForm(base);
     setFormError(null);
     setSavedMessage(null);
-  },[category,current]);
+  },[category,current,serviceCode]);
   const selectedTariff=tariffs.find(t=>t.serviceCode===serviceCode && t.vehicleCategoryCode===category);
   const baseUsd=structuralPriceUsd(selectedTariff,distance);
   const projectedUsd=baseUsd == null?null:simulateTemporalDraftUsd(baseUsd,form,{hour,weekend,holiday});
@@ -103,7 +103,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,serviceCode,canMa
   const safe = datesValid && validNumbers && ceiling<=form.max_combined_pct;
   const save = useMutation({
     mutationFn:async()=>{
-      if(!safe || !canManage || !modes.some(([code])=>code===category)) throw new Error('Borrador fuera de límites, modalidad no configurada o sin permiso.');
+      if(!safe || !canManage || !drafts.isSuccess || !current || !modes.some(([code])=>code===category)) throw new Error('Borrador fuera de límites, modalidad no configurada o sin permiso.');
       const {error}=await getSupabaseClient().rpc('admin_save_marketplace_temporal_draft_v3_service',{
         target_project_id:projectId, target_service_code:serviceCode, target_vehicle_category_code:category,
         target_evening_pct:form.evening_pct, target_night_pct:form.night_pct,
@@ -164,7 +164,7 @@ export default function MarketplaceTemporalDraftsV3({projectId,serviceCode,canMa
         {!safe?<p role="alert" className="flex gap-2 text-xs text-amber-200"><AlertTriangle className="h-4 w-4 shrink-0"/>Revisa porcentajes, fechas y tope: la suma máxima posible debe ser menor o igual al tope.</p>:null}
         {formError?<p role="alert" className="text-xs text-rose-300">{formError}</p>:null}
         {savedMessage?<p className="text-xs text-emerald-300">{savedMessage}</p>:null}
-        <Button disabled={!canManage||!safe||save.isPending||drafts.isError} onClick={()=>save.mutate()}><Save className="mr-2 h-4 w-4"/>Guardar borrador</Button>
+        <Button disabled={!canManage||!safe||save.isPending||!drafts.isSuccess||!current} onClick={()=>save.mutate()}><Save className="mr-2 h-4 w-4"/>Guardar borrador</Button>
       </div>
       <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4">
         <h4 className="text-sm font-semibold">Simulación estructural · sin publicar</h4>

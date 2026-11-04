@@ -23,3 +23,8 @@ test('SQL de propuesta exige permisos y nunca activa cargos',()=>{
   assert.doesNotMatch(sql,/INSERT INTO public\.marketplace_pricing_tariffs|UPDATE public\.marketplace_pricing_adjustments/);
   assert.match(sql,/ON CONFLICT \(project_id, service_code, vehicle_category_code\) DO NOTHING/);
 });
+
+test('no permite guardar un borrador hasta terminar la carga',()=>{
+  assert.match(view,/!drafts\.isSuccess\|\|!current/);
+  assert.match(view,/\[category,current,serviceCode\]/);
+});
