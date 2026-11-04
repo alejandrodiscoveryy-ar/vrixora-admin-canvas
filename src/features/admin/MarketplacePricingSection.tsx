@@ -34,6 +34,7 @@ import {
 } from "@/lib/services";
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
 import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
+import MarketplacePricingV3Diagnostics from "@/features/admin/MarketplacePricingV3Diagnostics";
 import MarketplacePricingMapV3, { type PricingRouteScenario } from "@/features/admin/MarketplacePricingMapV3";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
@@ -441,6 +442,12 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           </span>
         </div>
       </div>
+
+      <MarketplacePricingV3Diagnostics
+        serviceCode={selectedService}
+        tariffs={tariffs.data ?? []}
+        adjustments={adjustments.data ?? []}
+      />
 
       <MarketplacePricingMapV3
         projectId={projectId}
