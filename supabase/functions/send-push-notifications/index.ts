@@ -38,6 +38,7 @@ const ALLOWED_KINDS = [
   "admin_marketplace_new_job",
   "admin_marketplace_new_driver",
   "admin_marketplace_pending_job",
+  "admin_marketplace_pickup",
 ];
 const AUTH_HEADER = "x-tuktuk-dispatch-secret";
 

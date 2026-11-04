@@ -16,7 +16,7 @@ const FIREBASE_CONFIG = {
 const VAPID_PUBLIC_KEY = "BF-az4NW8nREYEw-RvnBOfQ2wrJGttOjBhR_PD0SKWEKDHWqWvFBLdmka5e_0d-_Mptdrpxxfy1aF-FFPQpvfEE";
 const FIREBASE_APP_NAME = "vrixora-admin-push";
 const TOKEN_STORAGE = "vrixora:admin:fcm-token:v1";
-export const ADMIN_PUSH_KINDS = ["admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job"] as const;
+export const ADMIN_PUSH_KINDS = ["admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup"] as const;
 export type AdminPushEvent = { kind: string; job_id?: string; driver_id?: string; stage?: string; title: string; body: string; url: string };
 
 function app() {
