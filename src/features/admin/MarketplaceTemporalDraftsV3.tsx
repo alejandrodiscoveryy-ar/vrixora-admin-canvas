@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarClock, Save, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { structuralPriceUsd } from '@/lib/smart-pricing-v3-diagnostics';
-import { isValidHolidayDate, simulateTemporalDraftUsd, type TemporalProfile } from '@/lib/smart-pricing-v3-temporal';
+import { isValidHolidayDate, simulateTemporalDraftUsd, roundTemporalDraftCup, type TemporalProfile } from '@/lib/smart-pricing-v3-temporal';
 import type { MarketplacePricingTariff } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 
@@ -23,10 +23,11 @@ const toNumbers = (p: TemporalProfile): TemporalProfile => ({
   holiday_dates: Array.isArray(p.holiday_dates) ? p.holiday_dates : [],
 });
 
-export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs}:{
+export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs,exchangeRate}:{
   projectId: string;
   canManage: boolean;
   tariffs: MarketplacePricingTariff[];
+  exchangeRate: number;
 }) {
   const qc = useQueryClient();
   const [category,setCategory] = useState<string>('motorcycle');
@@ -47,6 +48,21 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
       return (Array.isArray(data)?data:[]) as TemporalProfile[];
     },
   });
+  const currencySettings = useQuery({
+    queryKey:['marketplace-temporal-currency-v3',projectId], enabled:Boolean(projectId),
+    queryFn:async()=>{
+      const {data,error}=await getSupabaseClient().rpc('admin_get_marketplace_pricing_dashboard',{target_project_id:projectId});
+      if(error) throw error;
+      const dashboard = (data ?? {}) as Record<string,unknown>;
+      const settings = (dashboard.settings ?? {}) as Record<string,unknown>;
+      return {
+        base: String(settings.base_currency ?? ''),
+        charge: String(settings.charge_currency ?? ''),
+        mode: String(settings.rounding_mode ?? ''),
+        increment: Number(settings.rounding_increment),
+      };
+    },
+  });
   const current = useMemo(()=>drafts.data?.find(x=>x.vehicle_category_code===category),[drafts.data,category]);
   useEffect(()=>{
     const base=toNumbers(current??blank(category));
@@ -58,6 +74,12 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
   const selectedTariff=tariffs.find(t=>t.serviceCode==='passenger' && t.vehicleCategoryCode===category);
   const baseUsd=structuralPriceUsd(selectedTariff,distance);
   const projectedUsd=baseUsd == null?null:simulateTemporalDraftUsd(baseUsd,form,{hour,weekend,holiday});
+  const cupSettingsValid = currencySettings.data?.base === 'USD' && currencySettings.data?.charge === 'CUP';
+  const cupIncrement = currencySettings.data?.increment ?? NaN;
+  const cupMode = currencySettings.data?.mode ?? '';
+  const baseCup = cupSettingsValid ? roundTemporalDraftCup(baseUsd,exchangeRate,cupIncrement,cupMode) : null;
+  const projectedCup = cupSettingsValid ? roundTemporalDraftCup(projectedUsd,exchangeRate,cupIncrement,cupMode) : null;
+  const cupText = (value:number|null) => value === null ? 'No disponible' : value.toLocaleString('es-CU',{maximumFractionDigits:0}) + ' CUP';
   const parsedDates=holidayText.trim()===''?[]:holidayText.split(',').map(x=>x.trim()).filter(Boolean);
   const datesValid=parsedDates.length <= 60 && new Set(parsedDates).size===parsedDates.length && parsedDates.every(isValidHolidayDate);
   const ceiling = Math.max(form.evening_pct,form.night_pct,form.dawn_pct)+form.weekend_pct+form.holiday_pct;
@@ -137,10 +159,18 @@ export default function MarketplaceTemporalDraftsV3({projectId,canManage,tariffs
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={weekend} onChange={e=>setWeekend(e.target.checked)}/>Fin de semana</label>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={holiday} onChange={e=>setHoliday(e.target.checked)}/>Festivo (escenario hipotético)</label>
         <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3">
-          <p className="text-xs text-slate-400">Base estructural USD</p><p className="text-lg font-semibold">{baseUsd==null?'Sin tarifa':baseUsd.toFixed(2)+' USD'}</p>
-          <p className="mt-3 text-xs text-slate-400">Estimado con borrador USD</p><p className="text-xl font-bold text-cyan-100">{projectedUsd==null?'No disponible':projectedUsd.toFixed(2)+' USD'}</p>
+          <p className="text-xs text-slate-400">Base estructural estimada · MN</p>
+          <p className="text-lg font-semibold tabular-nums">{cupText(baseCup)}</p>
+          <p className="mt-3 text-xs text-slate-300">Estimación con borrador · moneda nacional (MN)</p>
+          <p className="text-2xl font-bold tabular-nums text-cyan-100">{cupText(projectedCup)}</p>
+          <p className="mt-3 text-[11px] text-slate-300">Cálculo interno: {baseUsd==null?'Sin tarifa':baseUsd.toFixed(2)+' USD'} → {projectedUsd==null?'No disponible':projectedUsd.toFixed(3)+' USD'}</p>
+          {projectedCup !== null ? (
+            <p className="mt-1 text-[11px] text-slate-300">Tasa: 1 USD = {exchangeRate.toLocaleString('es-CU')} CUP · redondeo hacia arriba cada {cupIncrement.toLocaleString('es-CU')} CUP</p>
+          ) : (
+            <p role="status" className="mt-2 text-xs text-amber-200">Tasa o configuración de redondeo no disponibles. No se inventa un precio en MN.</p>
+          )}
         </div>
-        <p className="text-[11px] text-slate-400">No incluye peajes, paradas, aeropuerto, duración, cambio CUP, redondeo ni otras reglas. No equivale al importe que pagaría el cliente.</p>
+        <p className="text-[11px] text-slate-400">Importe simulado en CUP/MN, no cotización final. El servidor calcula el precio real en CUP; este escenario omite otros recargos activos, aeropuerto, paradas y demás componentes de la carrera.</p>
       </div>
     </div>
   </section>;

@@ -455,6 +455,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           projectId={projectId}
           canManage={canManage}
           tariffs={tariffs.data ?? []}
+          exchangeRate={rate}
         />
       ) : null}
 
