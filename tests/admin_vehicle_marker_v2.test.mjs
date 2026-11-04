@@ -15,8 +15,8 @@ test('Diferencia disponible, ocupado, ubicacion antigua y sin disponibilidad', (
   assert.match(src, /if \(driver\.activeJobId\) return "busy"/);
   assert.match(src, /driverState: driverPinState\(driver\)/);
   assert.match(src, /driverPinStateLabel\[driverPinState\(driver\)\]/);
-  assert.match(src, /Conductor disponible \(verde\)/);
-  assert.match(src, /Conductor en servicio \(azul\)/);
+  assert.match(src, /Conductor disponible \(azul\)/);
+  assert.match(src, /Conductor en servicio \(verde\)/);
   assert.match(src, /Última ubicación conocida \(ámbar, no disponible\)/);
 });
 test('Conserva todas las capas y rutas del mapa operativo', () => {

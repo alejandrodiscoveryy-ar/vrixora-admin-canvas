@@ -317,9 +317,9 @@ function operationalPinSvg({
       ? stale || driverState === "stale"
         ? ["#ffe2a3", "#b98233", "#96602b", "#633819"]
         : driverState === "available"
-          ? ["#bafcd7", "#22c55e", "#15803d", "#166534"]
+          ? ["#bae6fd", "#0284c7", "#0369a1", "#075985"]
           : driverState === "busy"
-            ? ["#bae6fd", "#0284c7", "#0369a1", "#075985"]
+            ? ["#bafcd7", "#22c55e", "#15803d", "#166534"]
             : ["#e2e8f0", "#64748b", "#475569", "#334155"]
       : kind === "customer"
         ? ["#9bf2b7", "#22c55e", "#15803d", "#14532d"]
@@ -340,8 +340,8 @@ function operationalPinSvg({
   const markerOpacity = kind === "driver" && stale ? "0.90" : "1";
 
   // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
-  const pinWidth = legend ? 48 : kind === "driver" ? (selected ? 45 : 40) : selected ? 38 : 32;
-  const pinHeight = legend ? 60 : kind === "driver" ? (selected ? 56 : 50) : selected ? 48 : 40;
+  const pinWidth = legend ? 48 : kind === "driver" ? (selected ? 39 : 34) : selected ? 38 : 32;
+  const pinHeight = legend ? 60 : kind === "driver" ? (selected ? 49 : 43) : selected ? 48 : 40;
 
   return `
     <svg
@@ -780,14 +780,14 @@ function addOperationalLayers(map: mapboxgl.Map) {
     });
   };
 
-  pointLayer(MAP_LAYERS.driversFresh, "driver_fresh", "#f97316", 8, {
-    "circle-stroke-color": "#ffedd5",
-    "circle-stroke-width": 3,
-  });
-
-  pointLayer(MAP_LAYERS.driversStale, "driver_stale", "#f59e0b", 7, {
+  pointLayer(MAP_LAYERS.driversStale, "driver_stale", "#f59e0b", 6, {
     "circle-opacity": 0.65,
     "circle-stroke-color": "#fde68a",
+  });
+
+  pointLayer(MAP_LAYERS.driversFresh, "driver_fresh", "#0284c7", 7, {
+    "circle-stroke-color": "#bae6fd",
+    "circle-stroke-width": 3,
   });
 
   pointLayer(MAP_LAYERS.incidents, "incident", "#ef4444", 12, {
@@ -1389,8 +1389,8 @@ export default function MarketplaceOperationalMap({
 
           const pin = document.createElement("div");
           pin.dataset.role = "driver-pin";
-          pin.style.width = "48px";
-          pin.style.height = "60px";
+          pin.style.width = "42px";
+          pin.style.height = "53px";
           pin.style.display = "flex";
           pin.style.alignItems = "flex-end";
           pin.style.justifyContent = "center";
@@ -1413,6 +1413,8 @@ export default function MarketplaceOperationalMap({
         }
 
         const element = marker.getElement();
+        // En servicio > disponible > GPS antiguo.
+        element.style.zIndex = !driver.locationFresh ? "10" : driver.activeJobId ? "30" : driverPinState(driver) === "available" ? "20" : "15";
         const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
 
         if (!pin) continue;
@@ -1501,6 +1503,8 @@ export default function MarketplaceOperationalMap({
       for (const driver of coverageDrivers) {
         const point = driverCoordinate(driver);
         if (!point || !markers.has(driver.driverUserId)) continue;
+        // Agrupar solo posiciones antiguas; mantener visibles las actuales.
+        if (driver.locationFresh) continue;
         const projected = map.project(point);
         const key =
           zoom >= 14.5
@@ -1528,6 +1532,7 @@ export default function MarketplaceOperationalMap({
         bubble.setAttribute("aria-label", bubble.title);
         bubble.style.cssText =
           "width:46px;height:46px;min-width:46px;min-height:46px;border-radius:50%;border:3px solid #67e8f9;background:#075985;color:white;box-shadow:0 4px 18px #020617bb;display:grid;place-items:center;font-size:15px;font-weight:800;cursor:pointer";
+        bubble.style.zIndex = "12";
         bubble.onclick = (event) => {
           event.stopPropagation();
           const bounds = new mapboxgl.LngLatBounds();
@@ -2304,7 +2309,7 @@ export default function MarketplaceOperationalMap({
                             vehicleCategoryCode="tricycle"
                             driverState="available"
                           />
-                          <span>Conductor disponible (verde)</span>
+                          <span>Conductor disponible (azul)</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <OperationalPinLegend
@@ -2312,7 +2317,7 @@ export default function MarketplaceOperationalMap({
                             vehicleCategoryCode="tricycle"
                             driverState="busy"
                           />
-                          <span>Conductor en servicio (azul)</span>
+                          <span>Conductor en servicio (verde)</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <OperationalPinLegend
