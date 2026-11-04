@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { temporalDraftPct, simulateTemporalDraftUsd, isValidHolidayDate } from '../src/lib/smart-pricing-v3-temporal.ts';
+import { temporalDraftPct, simulateTemporalDraftUsd, roundTemporalDraftCup, isValidHolidayDate } from '../src/lib/smart-pricing-v3-temporal.ts';
 
 const p = {
   vehicle_category_code: 'motorcycle', evening_pct: 5, night_pct: 10,
@@ -30,6 +30,20 @@ test('se rechazan horas y fechas inválidas',()=>{
   assert.equal(temporalDraftPct({...p,dawn_pct:-2},{hour:2,weekend:false,holiday:false}),null);
   assert.equal(isValidHolidayDate('2026-02-30'),false);
   assert.equal(isValidHolidayDate('2027-01-01'),true);
+});
+
+test('el simulador convierte USD a CUP y redondea hacia arriba como el motor',()=>{
+  assert.equal(roundTemporalDraftCup(2.5,910,100,'up'),2300);
+  assert.equal(roundTemporalDraftCup(2.775,910,100,'up'),2600);
+  assert.equal(roundTemporalDraftCup(2.775,0,100,'up'),null);
+  assert.equal(roundTemporalDraftCup(2.775,910,0,'up'),null);
+  assert.equal(roundTemporalDraftCup(2.775,910,100,'nearest'),null);
+  assert.equal(roundTemporalDraftCup(null,910,100,'up'),null);
+  assert.equal(roundTemporalDraftCup(2.775,Number.NaN,100,'up'),null);
+  const ui = readFileSync(new URL('../src/features/admin/MarketplaceTemporalDraftsV3.tsx',import.meta.url),'utf8');
+  assert.match(ui,/Estimación con borrador · moneda nacional \(MN\)/);
+  assert.match(ui,/roundTemporalDraftCup/);
+  assert.match(ui,/admin_get_marketplace_pricing_dashboard/);
 });
 
 test('pantalla no publica precios; borradores aislados y permisos server-side',()=>{

@@ -29,6 +29,17 @@ export function simulateTemporalDraftUsd(structuralUsd: number, profile: Tempora
   return pct === null ? null : structuralUsd * (1 + pct / 100);
 }
 
+/** Visual-only projection: server alone owns the actual final CUP customer quote. */
+export function roundTemporalDraftCup(usd: number | null, rate: number, increment: number, mode: string): number | null {
+  if (usd === null || !Number.isFinite(usd) || usd <= 0 ||
+      !Number.isFinite(rate) || rate <= 0 ||
+      !Number.isFinite(increment) || increment <= 0 || mode !== 'up') return null;
+  const beforeRounding = usd * rate;
+  if (!Number.isFinite(beforeRounding)) return null;
+  const rounded = Math.ceil(beforeRounding / increment) * increment;
+  return Number.isFinite(rounded) ? rounded : null;
+}
+
 export function isValidHolidayDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const instant = Date.parse(`${value}T00:00:00Z`);
