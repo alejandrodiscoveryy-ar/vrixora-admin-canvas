@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'src/features/admin/MarketplaceTestCenterV2.tsx'
+      - 'supabase/functions/send-push-notifications/index.ts'
       - 'supabase/migrations/20261105224500_tuktuk_broadcast_working_test_jobs.sql'
       - 'tests/marketplace_test_broadcast_preflight.test.mjs'
       - '.github/workflows/tuktuk-test-broadcast-preflight.yml'
