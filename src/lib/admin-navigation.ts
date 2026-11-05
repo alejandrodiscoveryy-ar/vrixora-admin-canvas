@@ -13,6 +13,10 @@ import {
   Settings2,
   ShieldCheck,
   Tags,
+  SlidersHorizontal,
+  CarFront,
+  Truck,
+  Package,
   UserRound,
   Wallet,
   WalletCards,
@@ -63,6 +67,13 @@ export const ADMINISTRATION_VIEWS = [
     permission: "settings.view",
   },
 ] satisfies Array<AdminProjectTab>;
+
+export const PRICING_WORKSPACE_VIEWS = [
+  { code: "global", number: "01", label: "Ajuste general", subtitle: "Plataforma y control de cambios", eyebrow: "GESTIÓN TRANSVERSAL", description: "Consulta el ajuste publicado y prepara nuevas simulaciones con verificación segura.", icon: SlidersHorizontal },
+  { code: "passenger", number: "02", label: "Pasajeros", subtitle: "Viajes y modalidades de transporte", eyebrow: "SERVICIO DE PASAJEROS", description: "Gestiona los precios de las modalidades para trasladar personas.", icon: CarFront },
+  { code: "cargo", number: "03", label: "Carga", subtitle: "Mercancías y logística", eyebrow: "SERVICIO DE CARGA", description: "Gestiona tarifas para el transporte de objetos y mercancías.", icon: Truck },
+  { code: "courier", number: "04", label: "Mensajería", subtitle: "Paquetes y entregas", eyebrow: "SERVICIO DE MENSAJERÍA", description: "Gestiona tarifas para recogidas y entregas.", icon: Package },
+] as const;
 
 export const MARKETPLACE_WORKSPACE_VIEWS = [
   { slug: "resumen", label: "Pulso", icon: Eye, permission: "marketplace.view" },
