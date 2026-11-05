@@ -28,7 +28,7 @@ jobs:
       VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
       PUBLIC_URL: https://admin.vrixora.com/
-      WORKER_NAME: alejandrodiscoveryy-ar-vrixora-admin-canvas
+      WORKER_NAME: vrixora-admin-canvas
       COMPATIBILITY_DATE: "2026-09-23"
 
     steps:
@@ -111,6 +111,15 @@ jobs:
           console.log(`COMPATIBILITY_DATE=${config.compatibility_date}`);
           NODE
 
+      - name: Include exact release proof in public build
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d .output/public
+          PROOF_ASSET="tuktuk-admin-release-${GITHUB_SHA}.txt"
+          printf '%s\n' "$GITHUB_SHA" > ".output/public/$PROOF_ASSET"
+          echo "PROOF_ASSET=$PROOF_ASSET" >> "$GITHUB_ENV"
+
       - name: Calculate integrity marker hash
         shell: bash
         run: |
@@ -177,4 +186,24 @@ jobs:
           echo "EXPECTED_HASH=$LOCAL_HASH"
           echo "LAST_REMOTE_HASH=${REMOTE_HASH:-NOT_AVAILABLE}"
           echo 'CHECK_ACTIVE_WORKER_CUSTOM_DOMAIN_ROUTE_AND_EDGE_CACHE'
+          exit 1
+      - name: Verify exact deployed release on admin.vrixora.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${PROOF_ASSET:-}"
+          PROOF_FILE="$RUNNER_TEMP/tuktuk-admin-proof.txt"
+          for attempt in $(seq 1 18); do
+            if curl -fsSL --max-time 15 \
+              -H "Cache-Control: no-cache, no-store, max-age=0" \
+              "${PUBLIC_URL}${PROOF_ASSET}?verify=${GITHUB_SHA}-${attempt}" -o "$PROOF_FILE"; then
+              if [ "$(cat "$PROOF_FILE")" = "$GITHUB_SHA" ]; then
+                echo "PRODUCTION_EXACT_RELEASE_VERIFIED=$GITHUB_SHA"
+                exit 0
+              fi
+            fi
+            echo "PRODUCTION_EXACT_RELEASE_VERIFY_ATTEMPT=${attempt}/18"
+            if [ "$attempt" -lt 18 ]; then sleep 5; fi
+          done
+          echo 'PUBLIC_ADMIN_DOMAIN_DOES_NOT_MATCH_DEPLOYED_GIT_COMMIT' >&2
           exit 1
