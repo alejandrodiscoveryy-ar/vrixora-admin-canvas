@@ -389,21 +389,23 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-cyan-300" />
-              <span className="text-xs font-semibold text-slate-200">Tasa USD/CUP Â· API</span>
+              <span className="text-xs font-semibold text-slate-200">Tasa USD/CUP · API</span>
             </div>
-            <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">AutomÃ¡tica</span>
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${exchange.isError || (exchange.data?.autoSyncEnabled && exchange.data?.lastAutoSyncStatus !== "ok") ? "border-amber-400/40 bg-amber-500/10 text-amber-200" : exchange.data?.autoSyncEnabled ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300" : "border-slate-400/30 bg-slate-500/10 text-slate-300"}`}>
+  {exchange.isLoading ? "Consultando" : exchange.isError ? "Sin conexión" : !exchange.data?.autoSyncEnabled ? "Manual" : exchange.data.lastAutoSyncStatus === "ok" ? "Automática" : "Revisar sincronización"}
+</span>
           </div>
           {exchange.isLoading ? (
-            <p className="mt-2 text-xs text-slate-300">Consultando tasa vigenteâ€¦</p>
+            <p className="mt-2 text-xs text-slate-300">Consultando tasa vigente…</p>
           ) : exchange.isError ? (
             <p className="mt-2 text-xs text-rose-300">Tasa temporalmente no disponible</p>
           ) : (
             <>
               <p className="mt-1 text-right text-xl font-bold tabular-nums text-white">1 USD = {rate.toLocaleString("es-CU")} CUP</p>
               <p className="mt-1 text-right text-[11px] text-slate-300">
-                {exchange.data?.rateSource ?? "Fuente automÃ¡tica"} Â· {exchange.data?.rateUpdatedAt
+                {exchange.data?.rateSource ?? "Fuente automática"} · {exchange.data?.rateUpdatedAt
                   ? new Date(exchange.data.rateUpdatedAt).toLocaleString("es-CU")
-                  : "sin fecha de actualizaciÃ³n"}
+                  : "sin fecha de actualización"}
               </p>
             </>
           )}
@@ -684,7 +686,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
 
                     <div className="flex shrink-0 items-center gap-2">
                       <span className={`text-[10px] font-semibold ${published ? "text-emerald-400" : "text-amber-400"}`}>
-                        {publication.isLoading ? "Comprobando" : publication.isError ? "Sin conexiÃ³n" : published ? "Publicada" : "No publicada"}
+                        {publication.isLoading ? "Comprobando" : publication.isError ? "Sin conexión" : published ? "Publicada" : "No publicada"}
                       </span>
                       {canManage ? (
                         <Switch
@@ -692,7 +694,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                           checked={published}
                           disabled={!tariff || !publication.isSuccess || visibility.isPending}
                           onCheckedChange={(isPublished) => {
-                            if (!isPublished && !window.confirm(`Â¿Ocultar ${categoryLabel(vehicleCategoryCode)} para los clientes de ${serviceLabel(selectedService)}? Se conservarÃ¡ su tarifa.`)) return;
+                            if (!isPublished && !window.confirm(`¿Ocultar ${categoryLabel(vehicleCategoryCode)} para los clientes de ${serviceLabel(selectedService)}? Se conservará su tarifa.`)) return;
                             visibility.mutate({ serviceCode: selectedService, vehicleCategoryCode, isPublished });
                           }}
                         />
