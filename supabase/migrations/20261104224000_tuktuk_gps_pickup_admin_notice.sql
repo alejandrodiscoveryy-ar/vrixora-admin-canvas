@@ -2,6 +2,22 @@
 -- notificacion privada a Admin. PREPARADO PARA REVISION: NO APLICAR SIN APROBACION.
 -- No altera precios, cancelaciones, liquidacion, ni calificacion.
 
+-- Conservar la primera lectura GPS valida hasta confirmar la llegada.
+create table app_private.marketplace_arrival_proximity (
+  project_id uuid not null,
+  job_id uuid not null,
+  driver_user_id uuid not null,
+  vehicle_id text not null,
+  first_captured_at timestamptz not null,
+  last_captured_at timestamptz not null,
+  primary key (project_id,job_id),
+  foreign key (project_id,job_id)
+    references public.jobs(project_id,id) on delete cascade
+);
+alter table app_private.marketplace_arrival_proximity enable row level security;
+revoke all on table app_private.marketplace_arrival_proximity
+  from PUBLIC,anon,authenticated;
+
 -- El conductor actualiza su GPS con la RPC existente. Dos lecturas diferentes,
 -- dentro del radio de 90 m y separadas >=12 s confirman la llegada.
 create or replace function app_private.marketplace_autopickup_from_driver_location()
@@ -12,7 +28,7 @@ declare
   j record;
   pickup_lat double precision;
   pickup_lon double precision;
-  old_dist double precision;
+  first_seen_at timestamptz;
   new_dist double precision;
   dlat double precision;
   dlon double precision;
@@ -24,13 +40,9 @@ begin
      or new.project_id <> 'dfb41cea-a812-46f2-b511-7a60bd3d78af'::uuid
      or new.vehicle_id is distinct from old.vehicle_id
      or new.captured_at <= old.captured_at
-     or new.captured_at - old.captured_at < interval '12 seconds'
-     or new.captured_at - old.captured_at > interval '55 seconds'
-     or old.captured_at < now() - interval '60 seconds'
      or new.captured_at < now() - interval '45 seconds'
      or new.captured_at > now() + interval '15 seconds'
-     or old.accuracy_m is null or old.accuracy_m > 35
-     or new.accuracy_m is null or new.accuracy_m > 35 then
+     then
     return new;
   end if;
 
@@ -58,17 +70,41 @@ begin
     end if;
 
     -- Haversine en metros, sin PostGIS y sin aproximar latitudes altas.
-    dlat := radians(old.latitude::double precision - pickup_lat);
-    dlon := radians(old.longitude::double precision - pickup_lon);
-    a := power(sin(dlat/2),2) + cos(radians(pickup_lat)) *
-         cos(radians(old.latitude::double precision)) * power(sin(dlon/2),2);
-    old_dist := 2 * 6371000 * asin(least(1.0,sqrt(greatest(0.0,a))));
     dlat := radians(new.latitude::double precision - pickup_lat);
     dlon := radians(new.longitude::double precision - pickup_lon);
     a := power(sin(dlat/2),2) + cos(radians(pickup_lat)) *
          cos(radians(new.latitude::double precision)) * power(sin(dlon/2),2);
     new_dist := 2 * 6371000 * asin(least(1.0,sqrt(greatest(0.0,a))));
-    if old_dist > 90 or new_dist > 90 then continue; end if;
+    if new.accuracy_m is null or new.accuracy_m > 35 or new_dist > 90 then
+      delete from app_private.marketplace_arrival_proximity
+        where project_id=new.project_id and job_id=j.id;
+      continue;
+    end if;
+
+    insert into app_private.marketplace_arrival_proximity as tracked(
+      project_id,job_id,driver_user_id,vehicle_id,
+      first_captured_at,last_captured_at
+    ) values (
+      new.project_id,j.id,new.driver_user_id,new.vehicle_id,
+      new.captured_at,new.captured_at
+    ) on conflict (project_id,job_id) do update
+      set driver_user_id=excluded.driver_user_id,
+          vehicle_id=excluded.vehicle_id,
+          first_captured_at=case
+            when tracked.driver_user_id is distinct from excluded.driver_user_id
+              or tracked.vehicle_id is distinct from excluded.vehicle_id
+              or excluded.last_captured_at <= tracked.last_captured_at
+              or excluded.last_captured_at >
+                  tracked.first_captured_at + interval '120 seconds'
+            then excluded.first_captured_at
+            else tracked.first_captured_at
+          end,
+          last_captured_at=excluded.last_captured_at
+    returning first_captured_at into first_seen_at;
+
+    if new.captured_at < first_seen_at + interval '12 seconds' then
+      continue;
+    end if;
 
     if not app_private.marketplace_job_transition_allowed('en_route','pickup','driver') then
       return new;
@@ -116,6 +152,10 @@ language plpgsql security definer set search_path = ''
 as $function$
 declare total_inserted integer := 0;
 begin
+  if new.status <> 'en_route' then
+    delete from app_private.marketplace_arrival_proximity
+      where project_id=new.project_id and job_id=new.id;
+  end if;
   if new.project_id <> 'dfb41cea-a812-46f2-b511-7a60bd3d78af'::uuid
      or new.status <> 'pickup' or old.status='pickup'
      or new.is_test or new.test_deleted_at is not null then
