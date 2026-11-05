@@ -36,3 +36,11 @@ test('Envío al outbox actual, auditable y sin modificar el radar', () => {
   assert.doesNotMatch(sql, /CREATE OR REPLACE FUNCTION public\.accept_job/);
   assert.doesNotMatch(sql, /CREATE OR REPLACE FUNCTION app_private\.marketplace_dispatch_candidate_state/);
 });
+test('Avisos de simulacro llegan al grupo aunque un conductor acepte primero', () => {
+  const sender = readFileSync('supabase/functions/send-push-notifications/index.ts','utf8');
+  assert.match(sender, /row\.data\?\.test_broadcast === true/);
+  assert.match(sender, /liveJob\?\.is_test === true/);
+  assert.match(sender, /liveJob\?\.pricing_breakdown\?\.test_broadcast === true/);
+  assert.match(sender, /!verifiedBroadcast && \(liveJob\.status !== "published"/);
+  assert.match(sender, /if \(!verifiedBroadcast\)/);
+});
