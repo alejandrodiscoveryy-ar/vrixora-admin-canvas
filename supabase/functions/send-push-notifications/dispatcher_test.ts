@@ -11,7 +11,7 @@ Deno.env.set("FIREBASE_SERVICE_ACCOUNT_JSON", JSON.stringify({ project_id: "synt
   client_email: "synthetic@example.invalid", private_key: "-----BEGIN PRIVATE KEY-----\n" + encoded + "\n-----END PRIVATE KEY-----" }));
 Deno.env.set("TUKTUK_PUSH_DISPATCH_SECRET", "synthetic-dispatch-secret");
 const kinds = ["daily_exchange_rate", "exchange_rate_update", "app_announcement", "app_update", "new_subscription", "marketplace_job_available"];
-const allowedKinds = [...kinds, "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job"];
+const allowedKinds = [...kinds, "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup"];
 const originalFetch = globalThis.fetch;
 function setup(events = kinds) {
   const db = new FakeAdmin(), messages: Record<string, any>[] = [], order: string[] = [];

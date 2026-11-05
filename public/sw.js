@@ -2,7 +2,7 @@
 const CACHE_VERSION = "v4";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
 const ADMIN_PUSH_KINDS = new Set([
-  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job",
+  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup",
 ]);
 let firebaseMessagingReady = false;
 const ESSENTIAL_ASSETS = [
