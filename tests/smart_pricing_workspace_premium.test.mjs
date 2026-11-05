@@ -44,3 +44,11 @@ test('no incluye mutaciones de servidor en los cambios de navegación', () => {
   assert.match(page, /<MarketplacePricingGlobalAdjustment/);
   assert.match(page, /marketplace\.setModalityVisibility/);
 });
+
+test('simulacion vacia oculta publicacion', () => {
+  assert.match(history, /Sin ajuste nuevo/);
+  assert.match(history, /canManage && reduction > 0/);
+  assert.match(history, /Ajuste aplicado/);
+  assert.doesNotMatch(history, /Sin seleccionar/);
+  assert.doesNotMatch(history, /No revertido/);
+});

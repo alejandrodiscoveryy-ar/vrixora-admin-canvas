@@ -232,7 +232,7 @@ export default function MarketplacePricingGlobalAdjustment({
             </div>
             {latestBatch && !historyLoading && !historyError ? (
               <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${latestBatch.reverted ? 'border-slate-500/35 text-muted-foreground' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'}`}>
-                {latestBatch.reverted ? 'Revertido' : 'No revertido'}
+                {latestBatch.reverted ? 'Revertido' : 'Ajuste aplicado'}
               </span>
             ) : null}
           </div>
@@ -288,7 +288,7 @@ export default function MarketplacePricingGlobalAdjustment({
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="tuktuk-global-reduction" className="text-sm font-medium text-foreground">Reducir precios</label>
-                <span className="text-2xl font-bold tabular-nums text-cyan-600 dark:text-cyan-300">{reduction === 0 ? "Sin seleccionar" : `−${reduction} %`}</span>
+                <span className="text-2xl font-bold tabular-nums text-cyan-600 dark:text-cyan-300">{reduction === 0 ? "Sin ajuste nuevo" : `−${reduction} %`}</span>
               </div>
               <input
                 id="tuktuk-global-reduction"
@@ -328,13 +328,13 @@ export default function MarketplacePricingGlobalAdjustment({
         </div>
       </div>
 
-            {canManage && (
+            {canManage && reduction > 0 && (
               <div className="space-y-3 rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.075] via-card to-card p-4 shadow-sm" aria-label="Publicación segura del ajuste global">
                 <div>
                   <h4 className="font-semibold text-foreground">Publicar la reducción general</h4>
                   <p className="mt-1 text-xs text-muted-foreground">Selecciona un porcentaje nuevo, revisa su alcance y verifica el lote en Supabase antes de publicar. Los redondeos pueden modificar el importe final.</p>
                 </div>
-                {reduction === 0 && <p className="text-xs font-medium text-muted-foreground">Elige un porcentaje para iniciar una nueva simulación. Tu último ajuste publicado no cambia.</p>}
+
                 <div className="flex flex-wrap items-center gap-3">
                   <button type="button" disabled={!canValidate || reduction === 0}
                     onClick={() => void validateServer()}
