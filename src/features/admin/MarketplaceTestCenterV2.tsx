@@ -106,7 +106,7 @@ export default function MarketplaceTestCenterV2({
   const [enabled, setEnabled] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [forceRealCommission, setForceRealCommission] = useState(false);
-  const [recipientMode, setRecipientMode] = useState<"individual" | "group">("individual");
+  const [recipientMode, setRecipientMode] = useState<"individual" | "group" | "broadcast_all" | "broadcast_category">("individual");
   const [individualId, setIndividualId] = useState("");
   const [serviceCode, setServiceCode] = useState("passenger");
   const [vehicleCategory, setVehicleCategory] = useState("tricycle");
@@ -401,6 +401,7 @@ export default function MarketplaceTestCenterV2({
   const activeCount = (history.data?.items ?? []).filter((job) =>
     ["published", "accepted", "en_route", "pickup", "in_progress"].includes(job.status),
   ).length;
+  const broadcastMode = recipientMode === "broadcast_all" || recipientMode === "broadcast_category";
   const allowed = recipientMode === "group" ? selectedIds : individualId ? [individualId] : [];
   const configured = current.data?.enabled && audience.data != null;
   const dirty =
@@ -439,9 +440,15 @@ export default function MarketplaceTestCenterV2({
   const send = useMutation({
     mutationFn: async () => {
       if (successJobId) throw new Error("Pulsa Nueva prueba antes de enviar otra carrera.");
-      if (!configured || dirty)
+      if (!current.data?.enabled) throw new Error("Activa primero el modo de prueba.");
+      if (!broadcastMode && (!configured || dirty))
         throw new Error("Guarda primero el grupo de conductores y el modo de prueba.");
-      if (allowed.length < 1) throw new Error("Selecciona el destinatario de esta carrera.");
+      if (!broadcastMode && allowed.length < 1)
+        throw new Error("Selecciona el destinatario de esta carrera.");
+      if (broadcastMode && forceRealCommission)
+        throw new Error("La difusion general no permite comisiones reales.");
+      if (recipientMode === "broadcast_category" && !vehicleCategory)
+        throw new Error("Selecciona una modalidad para la difusion.");
       if (!originPoint || !destinationPoint || !validQuote)
         throw new Error("Calcula primero un recorrido real en el mapa.");
       if (priceMode === "auto" && (!canUseAuto || validQuote.recommendedPrice == null))
@@ -454,7 +461,7 @@ export default function MarketplaceTestCenterV2({
         throw new Error("No tienes permiso financiero para probar una comisión real.");
       if (
         !window.confirm(
-          `Crear UNA carrera de PRUEBA para ${allowed.length} conductor(es), por ${selectedPrice} CUP. ${forceRealCommission ? "ATENCIÓN: se aplicará una comisión REAL al conductor que acepte." : "Sin cobrar comisión real."} ¿Enviar?`,
+          `Crear UNA carrera de PRUEBA para ${broadcastMode ? (recipientMode === "broadcast_all" ? "TODOS los conductores Trabajando (todas las modalidades)" : "los conductores Trabajando de la modalidad seleccionada") : allowed.length + " conductor(es)"}, por ${selectedPrice} CUP. ${forceRealCommission ? "ATENCIÓN: se aplicará una comisión REAL al conductor que acepte." : "Sin cobrar comisión real."} ¿Enviar?`,
         )
       )
         return null;
@@ -465,6 +472,28 @@ export default function MarketplaceTestCenterV2({
         )
       )
         return null;
+      if (broadcastMode) {
+        const created = await rpcJson<{ job_id: string; replayed: boolean; recipient_count: number }>(
+          "admin_create_marketplace_test_broadcast_v1",
+          {
+            target_project_id: projectId,
+            target_idempotency_key: requestKey,
+            target_vehicle_category_code: recipientMode === "broadcast_category" ? vehicleCategory : null,
+            target_service_code: serviceCode,
+            target_origin_text: origin.trim(),
+            target_destination_text: destination.trim(),
+            target_origin_point: { lat: originPoint.lat, lon: originPoint.lon },
+            target_destination_point: { lat: destinationPoint.lat, lon: destinationPoint.lon },
+            target_distance_km: validQuote.distanceKm,
+            target_route_duration_seconds: Math.ceil(validQuote.durationSeconds),
+            target_expected_price: selectedPrice,
+            target_notes: notes.trim() || null,
+          },
+        );
+        if (!created || typeof created.job_id !== "string")
+          throw new Error("TEST_BROADCAST_RESPONSE_INVALID");
+        return created;
+      }
       const { data, error: gatewayError } = await getSupabaseClient().functions.invoke(
         "marketplace-map-admin-gateway",
         {
@@ -749,11 +778,17 @@ export default function MarketplaceTestCenterV2({
                     Destinatarios
                     <select
                       value={recipientMode}
-                      onChange={(e) => setRecipientMode(e.target.value as "individual" | "group")}
+                      onChange={(e) => {
+                        const mode = e.target.value as "individual" | "group" | "broadcast_all" | "broadcast_category";
+                        setRecipientMode(mode);
+                        if (mode === "broadcast_all" || mode === "broadcast_category") setForceRealCommission(false);
+                      }}
                       className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
                     >
                       <option value="individual">Un conductor</option>
                       <option value="group">Todo el grupo</option>
+                      <option value="broadcast_all">Todos los que estan Trabajando - todas las modalidades</option>
+                      <option value="broadcast_category">Todos los que estan Trabajando - por modalidad</option>
                     </select>
                   </label>
                   {recipientMode === "individual" ? (
@@ -783,7 +818,7 @@ export default function MarketplaceTestCenterV2({
                     )
                   ) : (
                     <div className="self-end rounded-lg border border-cyan-400/20 px-3 py-3 text-xs text-cyan-200">
-                      {allowed.length} conductores del grupo
+                      {recipientMode === "group" ? `${allowed.length} conductores del grupo` : recipientMode === "broadcast_all" ? "TODOS los conductores Trabajando" : `Trabajando · ${labelFor(vehicleCategory)}`}
                     </div>
                   )}
                   <label className="space-y-1 text-xs text-muted-foreground">
@@ -801,7 +836,7 @@ export default function MarketplaceTestCenterV2({
                     </select>
                   </label>
                   <label className="space-y-1 text-xs text-muted-foreground">
-                    Tipo de vehículo (opcional)
+                    {recipientMode === "broadcast_category" ? "Modalidad destinataria" : recipientMode === "broadcast_all" ? "Modalidad de referencia de tarifa (no filtra)" : "Tipo de vehículo (opcional)"}
                     <select
                       value={vehicleCategory}
                       onChange={(e) => setVehicleCategory(e.target.value)}
@@ -1003,17 +1038,18 @@ export default function MarketplaceTestCenterV2({
                         ? "Guarda los cambios del grupo antes del envío."
                         : forceRealCommission
                           ? "Ensayo financiero con doble confirmación."
-                          : "Prueba georreferenciada · sin comisión real."}
+                          : broadcastMode
+                            ? "Difusion de PRUEBA a todos los Trabajando, sin cobro real."
+                            : "Prueba georreferenciada · sin comisión real."}
                     </p>
                     <Button
                       disabled={
                         !canManage ||
-                        !configured ||
-                        dirty ||
+                        !current.data?.enabled ||
+                        (!broadcastMode && (!configured || dirty || allowed.length === 0)) ||
                         send.isPending ||
                         Boolean(successJobId) ||
                         routeLoading ||
-                        allowed.length === 0 ||
                         !validQuote ||
                         (priceMode === "auto" && validQuote.recommendedPrice == null)
                       }
@@ -1107,7 +1143,7 @@ export default function MarketplaceTestCenterV2({
                       <span>Comisión real (puede afectar el saldo del conductor)</span>
                       <Switch
                         checked={forceRealCommission}
-                        disabled={!canManage || !canManagePayments}
+                        disabled={!canManage || !canManagePayments || broadcastMode}
                         onCheckedChange={setForceRealCommission}
                         aria-label="Probar comisión real"
                       />
