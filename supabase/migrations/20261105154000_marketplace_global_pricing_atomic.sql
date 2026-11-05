@@ -26,7 +26,7 @@ language sql volatile security invoker set search_path = '' as $$
     ),'[]'::jsonb) as rows from eligible
   )
   select jsonb_build_object('fingerprint',md5(rows::text),
-    'count',jsonb_array_length(rows)) from snapshot;
+    'count',jsonb_array_length(rows), 'entries',rows) from snapshot;
 $$;
 
 create or replace function public.admin_preview_marketplace_global_adjustment(
@@ -168,6 +168,7 @@ begin
     select * from public.marketplace_pricing_tariffs t
     where t.project_id=target_project_id and t.metadata->>'global_batch_id'=target_batch_id::text
       and t.metadata->>'global_action'='apply'
+      and t.version='global-'||target_batch_id::text
     order by t.service_code,t.vehicle_category_code
   loop
     select t.id into current_id from public.marketplace_pricing_tariffs t

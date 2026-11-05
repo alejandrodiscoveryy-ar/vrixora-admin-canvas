@@ -131,10 +131,38 @@ export default function MarketplacePricingGlobalAdjustment({
         target_reduction_percent: reduction,
       });
       if (error) throw error;
-      const plan = data as { fingerprint?: unknown; count?: unknown } | null;
+      const plan = data as { fingerprint?: unknown; count?: unknown; entries?: unknown } | null;
       if (typeof plan?.fingerprint !== 'string' || !/^[a-f0-9]{32}$/.test(plan.fingerprint) ||
         typeof plan.count !== 'number' || plan.count !== previews.length) {
         throw new Error('Las tarifas de la pantalla no coinciden con el servidor. Actualiza los datos.');
+      }
+      // No basta que coincida la cantidad: tambiÃ©n deben coincidir los cinco precios de cada tarifa.
+      const entries = plan.entries;
+      if (!Array.isArray(entries) || entries.length !== previews.length) {
+        throw new Error('La vista previa ha cambiado. Actualiza las tarifas y vuelve a comprobar.');
+      }
+      const serverRows = new Map<string, unknown[]>();
+      for (const entry of entries) {
+        if (!Array.isArray(entry) || entry.length !== 10 ||
+            typeof entry[1] !== 'string' || typeof entry[2] !== 'string') {
+          throw new Error('Respuesta incompleta del servidor. No se puede publicar.');
+        }
+        const key = `${entry[1]}:${entry[2]}`;
+        if (serverRows.has(key)) throw new Error('Tarifas duplicadas en el servidor. No se puede publicar.');
+        serverRows.set(key, entry);
+      }
+      const samePrices = previews.every((preview) => {
+        const item = serverRows.get(`${preview.serviceCode}:${preview.vehicleCategoryCode}`);
+        if (!item) return false;
+        const fields = [
+          preview.before.basePriceUsd, preview.before.minimumPriceUsd,
+          preview.before.perKmPriceUsd, preview.before.perExtraPassengerPriceUsd,
+          preview.before.perStopPriceUsd,
+        ];
+        return fields.every((amount, i) => typeof item[4 + i] === 'number' && item[4 + i] === amount);
+      });
+      if (!samePrices) {
+        throw new Error('Los importes mostrados no coinciden con Supabase. Actualiza la pantalla antes de publicar.');
       }
       setVerified({ fingerprint: plan.fingerprint, count: plan.count, scope, reduction, sourceKey });
       toast.success('Tarifas verificadas en el servidor. Puedes confirmar el ajuste.');

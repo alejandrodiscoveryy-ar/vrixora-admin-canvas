@@ -13,6 +13,9 @@ test('actualizacion atómica, preflight, permiso exacto, bloqueo y reversión se
   assert.match(sql,/lock table public\.marketplace_pricing_tariffs in share row exclusive mode/);
   assert.match(sql,/GLOBAL_PRICING_STALE_PREVIEW/);
   assert.match(sql,/GLOBAL_PRICING_REVERT_CONFLICT/);
+  assert.match(sql,/'entries',rows/);
+  assert.match(sql,/t\.version='global-'\|\|target_batch_id::text/);
+  assert.match(panel,/samePrices/);
   assert.match(sql,/marketplace_global_apply/);
   assert.match(sql,/marketplace_global_revert/);
   assert.match(sql,/from public,anon/);
