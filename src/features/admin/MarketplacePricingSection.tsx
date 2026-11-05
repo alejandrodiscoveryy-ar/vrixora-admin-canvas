@@ -505,9 +505,10 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
 
       {workspace === "global" ? (
         <MarketplacePricingGlobalAdjustment
+          projectId={projectId}
           tariffs={tariffs.data ?? []}
           exchangeRate={rate}
-          canManage={canManage}
+          canManage={permissions.includes("marketplace.pricing.manage")}
           tariffsLoading={tariffs.isLoading}
           tariffsError={tariffs.isError}
         />

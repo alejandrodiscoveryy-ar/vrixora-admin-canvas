@@ -48,10 +48,13 @@ test('rechaza porcentajes inadecuados y nunca inventa precios inválidos', () =>
   assert.equal(exampleCup(2.5, Number.NaN), null);
 });
 
-test('la vista previa está aislada del motor, no publica ni guarda ni hace RPC', () => {
+test('la interfaz solo usa los RPC oficiales con confirmación, no altera el motor', () => {
   const view = readFileSync(new URL('../src/features/admin/MarketplacePricingGlobalAdjustment.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(view, /\.rpc\(|\.insert\(|\.update\(|\.delete\(|savePricing|publishPricing|fetch\(/);
-  assert.match(view, /Solo simulación/);
+  assert.doesNotMatch(view, /\.insert\(|\.update\(|\.delete\(|savePricing|publishPricing|fetch\(/);
+  assert.match(view, /admin_preview_marketplace_global_adjustment/);
+  assert.match(view, /admin_apply_marketplace_global_adjustment/);
+  assert.match(view, /admin_revert_marketplace_global_adjustment/);
+  assert.match(view, /Confirmación obligatoria/);
   const screen = readFileSync(new URL('../src/features/admin/MarketplacePricingSection.tsx', import.meta.url), 'utf8');
   assert.match(screen, /<MarketplacePricingGlobalAdjustment/);
   assert.match(screen, /code: "global"/);
