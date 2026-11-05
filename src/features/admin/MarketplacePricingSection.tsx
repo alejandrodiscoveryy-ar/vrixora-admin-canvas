@@ -56,13 +56,12 @@ type ServiceCode = "passenger" | "cargo" | "courier";
 
 // El inicio solo muestra rutas de navegación. Cada herramienta se monta al abrir su área.
 const pricingWorkspaceOptions = [
-  { code: "global", title: "Ajuste general", description: "Simular una reducción conjunta de tarifas por servicio.", note: "Vista previa · sin publicar", icon: SlidersHorizontal },
   { code: "tariffs", title: "Tarifas actuales", description: "Revisar y editar precios por vehículo.", note: "Precios reales", icon: DollarSign },
   { code: "temporal", title: "Horarios y recargos", description: "Configurar noche, fines de semana y festivos.", note: "Solo borradores", icon: CalendarClock },
   { code: "simulation", title: "Probar un precio", description: "Elegir una ruta y consultar el importe.", note: "Sin crear viajes", icon: Route },
   { code: "advanced", title: "Herramientas avanzadas", description: "Revisar diagnósticos y comparaciones.", note: "Solo análisis", icon: SlidersHorizontal },
 ] as const;
-type PricingWorkspace = (typeof pricingWorkspaceOptions)[number]["code"];
+type PricingWorkspace = (typeof pricingWorkspaceOptions)[number]["code"] | "global" | "service-menu";
 
 type EditingTarget = {
   serviceCode: ServiceCode;
@@ -410,6 +409,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           )}
         </aside>
       </div>
+      {workspace !== null && workspace !== "global" ? (
       <div className="tuktuk-v3-tabs rounded-2xl border border-slate-500/45 p-2 shadow-sm">
         <div className="grid grid-cols-3 gap-2">
           {serviceOptions.map((service) => {
@@ -422,7 +422,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 type="button"
                 onClick={() => {
                   setSelectedService(service.code);
-                  setWorkspace(null);
+                  setWorkspace("service-menu");
                   setPricingRouteScenario(null);
                   setEditing(null);
                   setDraft(null);
@@ -444,44 +444,83 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           })}
         </div>
       </div>
+      ) : null}
 
       {workspace === null ? (
         <section aria-label="Inicio de gestión de precios" className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3 px-1">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <Sparkles className={`h-4 w-4 ${selectedVisual.text}`} />
-                {serviceLabel(selectedService)}
-              </div>
-              <h3 className="mt-1 text-xl font-bold tracking-tight text-foreground">¿Qué quieres gestionar?</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{serviceDescription(selectedService)}</p>
+          <header className="relative isolate overflow-hidden rounded-[24px] border border-cyan-400/25 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/80 px-5 py-5 text-white shadow-[0_24px_60px_-42px_rgba(14,165,233,.6)] sm:px-7">
+            <DollarSign aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-56 w-56 -rotate-12 text-cyan-200 opacity-[0.055]" />
+            <div className="relative z-10">
+              <p className="text-[11px] font-semibold uppercase tracking-[.15em] text-cyan-300">Administración · Precios</p>
+              <h3 className="mt-2 text-2xl font-bold tracking-tight">Centro de precios</h3>
+              <p className="mt-1 max-w-2xl text-sm text-slate-300">Elige entre una decisión para toda la plataforma y la configuración particular de cada servicio.</p>
             </div>
-            <span className="rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs text-muted-foreground">
-              {configuredCount} de {categories.length} tarifas configuradas
+          </header>
+
+          <button type="button" onClick={() => { setWorkspace("global"); setPricingRouteScenario(null); }}
+            className="group relative isolate flex w-full min-h-[150px] items-center gap-5 overflow-hidden rounded-[24px] border border-cyan-400/40 bg-gradient-to-br from-cyan-500/[0.14] via-card to-card p-5 text-left shadow-[0_18px_60px_-43px_rgba(34,211,238,.8)] transition hover:border-cyan-300/75 hover:bg-cyan-500/[0.10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:p-6">
+            <SlidersHorizontal aria-hidden="true" className="pointer-events-none absolute -right-10 -top-14 z-0 h-60 w-60 -rotate-12 text-cyan-300 opacity-[0.065]" />
+            <span className="relative z-10 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/15 text-cyan-300"><SlidersHorizontal className="h-7 w-7" /></span>
+            <span className="relative z-10 min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold uppercase tracking-[.15em] text-cyan-400">01 / Gestión transversal</span>
+              <span className="mt-1 block text-xl font-bold text-foreground">Ajuste general de tarifas</span>
+              <span className="mt-1 block text-sm text-muted-foreground">Simular, verificar, publicar o revertir reducciones para todos los servicios desde un único lugar.</span>
+              <span className="mt-3 block text-xs font-semibold text-cyan-400">Afecta a toda la plataforma o al conjunto que elijas</span>
             </span>
+            <ChevronRight aria-hidden="true" className="relative z-10 h-6 w-6 shrink-0 text-cyan-300 transition group-hover:translate-x-1" />
+          </button>
+
+          <div className="flex items-center gap-3 px-1">
+            <h4 className="text-base font-semibold text-foreground">02 / Precios por servicio</h4>
+            <span className="text-xs text-muted-foreground">Herramientas específicas de cada actividad</span>
           </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {serviceOptions.map((service) => {
+              const ServiceIcon = service.code === "passenger" ? CarFront : service.code === "cargo" ? Truck : Package;
+              return (
+                <button key={service.code} type="button"
+                  onClick={() => { setSelectedService(service.code); setWorkspace("service-menu"); setPricingRouteScenario(null); setEditing(null); setDraft(null); }}
+                  className="group relative isolate min-h-[150px] overflow-hidden rounded-[22px] border border-border/70 bg-card/80 p-5 text-left transition hover:border-cyan-400/60 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+                  <ServiceIcon aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 z-0 h-36 w-36 -rotate-12 text-cyan-300 opacity-[0.055]" />
+                  <span className="relative z-10 flex items-center gap-3">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-400"><ServiceIcon className="h-5 w-5" /></span>
+                    <span className="flex-1 text-lg font-semibold text-foreground">{service.label}</span>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1" />
+                  </span>
+                  <span className="relative z-10 mt-3 block text-sm text-muted-foreground">{service.caption}</span>
+                  <span className="relative z-10 mt-2 block text-xs font-semibold text-cyan-400">Gestionar modalidad</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : workspace === "service-menu" ? (
+        <section aria-label="Menú de precios por modalidad" className="space-y-4">
+          <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-card via-card to-cyan-950/20 p-5">
+            <Sparkles aria-hidden="true" className="pointer-events-none absolute -right-5 -top-10 h-40 w-40 -rotate-12 text-cyan-400 opacity-[0.055]" />
+            <div className="relative z-10">
+              <button type="button" className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:underline"
+                onClick={() => setWorkspace(null)}><ArrowLeft className="h-4 w-4" /> Volver al centro de precios</button>
+              <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Precios por servicio</p>
+              <h3 className="mt-1 text-xl font-bold text-foreground">{serviceLabel(selectedService)}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{serviceDescription(selectedService)} · {configuredCount} de {categories.length} tarifas configuradas</p>
+            </div>
+          </header>
           <div className="grid gap-3 md:grid-cols-2">
             {pricingWorkspaceOptions.map((item) => {
               const AreaIcon = item.icon;
               return (
-                <button
-                  key={item.code}
-                  type="button"
-                  onClick={() => {
-                    setWorkspace(item.code);
-                    setPricingRouteScenario(null);
-                  }}
-                  className="group flex min-h-[135px] items-start gap-4 rounded-2xl border border-slate-500/45 bg-card/80 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-400/65 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
-                >
-                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300">
-                    <AreaIcon className="h-6 w-6" />
-                  </span>
-                  <span className="min-w-0 flex-1">
+                <button key={item.code} type="button"
+                  onClick={() => { setWorkspace(item.code); setPricingRouteScenario(null); }}
+                  className="group relative isolate flex min-h-[135px] items-start gap-4 overflow-hidden rounded-[22px] border border-border/70 bg-card/80 p-5 text-left transition hover:border-cyan-400/65 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+                  <AreaIcon aria-hidden="true" className="pointer-events-none absolute -right-6 -top-7 z-0 h-40 w-40 -rotate-12 text-cyan-300 opacity-[0.055]" />
+                  <span className="relative z-10 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-400"><AreaIcon className="h-6 w-6" /></span>
+                  <span className="relative z-10 min-w-0 flex-1">
                     <span className="block text-base font-semibold text-foreground">{item.title}</span>
                     <span className="mt-1 block text-sm text-muted-foreground">{item.description}</span>
-                    <span className="mt-3 block text-xs font-semibold text-cyan-700 dark:text-cyan-300">{item.note}</span>
+                    <span className="mt-3 block text-xs font-semibold text-cyan-400">{item.note}</span>
                   </span>
-                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1" />
+                  <ChevronRight className="relative z-10 mt-1 h-5 w-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1" />
                 </button>
               );
             })}
@@ -490,16 +529,16 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
       ) : (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-500/40 bg-card/70 p-3 shadow-sm sm:p-4">
           <Button type="button" variant="outline" className="h-10 gap-2" onClick={() => {
-            setWorkspace(null);
+            setWorkspace(workspace === "global" ? null : "service-menu");
             setPricingRouteScenario(null);
           }}>
             <ArrowLeft className="h-4 w-4" /> Volver al menú
           </Button>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground">{workspace === "global" ? "Todos los servicios" : serviceLabel(selectedService)} / Precios</p>
-            <h3 className="text-lg font-semibold text-foreground">{activeWorkspace?.title}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{workspace === "global" ? "Ajuste general" : activeWorkspace?.title}</h3>
           </div>
-          <span className="rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">{activeWorkspace?.note}</span>
+          <span className="rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">{workspace === "global" ? "Gestión transversal" : activeWorkspace?.note}</span>
         </div>
       )}
 
