@@ -42,6 +42,7 @@ import MarketplacePricingV3Diagnostics from "@/features/admin/MarketplacePricing
 import MarketplacePricingV3Hierarchy from "@/features/admin/MarketplacePricingV3Hierarchy";
 import MarketplaceTemporalDraftsV3 from "@/features/admin/MarketplaceTemporalDraftsV3";
 import MarketplacePricingMapV3, { type PricingRouteScenario } from "@/features/admin/MarketplacePricingMapV3";
+import MarketplacePricingGlobalAdjustment from "@/features/admin/MarketplacePricingGlobalAdjustment";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
 type PricingFieldKey =
@@ -55,6 +56,7 @@ type ServiceCode = "passenger" | "cargo" | "courier";
 
 // El inicio solo muestra rutas de navegación. Cada herramienta se monta al abrir su área.
 const pricingWorkspaceOptions = [
+  { code: "global", title: "Ajuste general", description: "Simular una reducción conjunta de tarifas por servicio.", note: "Vista previa · sin publicar", icon: SlidersHorizontal },
   { code: "tariffs", title: "Tarifas actuales", description: "Revisar y editar precios por vehículo.", note: "Precios reales", icon: DollarSign },
   { code: "temporal", title: "Horarios y recargos", description: "Configurar noche, fines de semana y festivos.", note: "Solo borradores", icon: CalendarClock },
   { code: "simulation", title: "Probar un precio", description: "Elegir una ruta y consultar el importe.", note: "Sin crear viajes", icon: Route },
@@ -494,12 +496,22 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             <ArrowLeft className="h-4 w-4" /> Volver al menú
           </Button>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">{serviceLabel(selectedService)} / Precios</p>
+            <p className="text-xs text-muted-foreground">{workspace === "global" ? "Todos los servicios" : serviceLabel(selectedService)} / Precios</p>
             <h3 className="text-lg font-semibold text-foreground">{activeWorkspace?.title}</h3>
           </div>
           <span className="rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">{activeWorkspace?.note}</span>
         </div>
       )}
+
+      {workspace === "global" ? (
+        <MarketplacePricingGlobalAdjustment
+          tariffs={tariffs.data ?? []}
+          exchangeRate={rate}
+          canManage={canManage}
+          tariffsLoading={tariffs.isLoading}
+          tariffsError={tariffs.isError}
+        />
+      ) : null}
 
       {workspace === "advanced" ? (
         <section aria-label="Herramientas avanzadas" className="space-y-4">
