@@ -8,7 +8,7 @@ test('solo TukTuk convierte Tarifas en Centro de precios con cuatro destinos', (
   assert.match(sidebar, /tab.slug === "planes" && project.slug === "tuktuk-control"/);
   assert.match(sidebar, /Centro de precios/);
   for (const code of ['global', 'passenger', 'cargo', 'courier']) {
-    assert.match(sidebar, new RegExp('code: "' + code + '"'));
+    assert.match(nav, new RegExp('code: "' + code + '"'));
   }
   assert.match(sidebar, /search=\{\{ precio: view.code \}\}/);
   assert.match(sidebar, /section: "planes"/);

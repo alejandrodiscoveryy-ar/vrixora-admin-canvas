@@ -8,6 +8,9 @@ on:
       - 'src/features/admin/MarketplacePricingSection.tsx'
       - 'src/routes/admin.tsx'
       - 'tests/smart_pricing_sidebar_navigation.test.mjs'
+      - 'tests/smart_pricing_workspace_premium.test.mjs'
+      - 'src/lib/admin-navigation.ts'
+      - 'src/features/admin/MarketplacePricingGlobalAdjustment.tsx'
       - 'tests/smart_pricing_premium_navigation.test.mjs'
       - 'supabase/proposals/tuktuk_smart_pricing_temporal_drafts_v3.sql'
       - 'tests/smart_pricing_v3_temporal_drafts.test.mjs'
@@ -28,7 +31,7 @@ jobs:
         with:
           node-version: '24'
       - name: Probar borradores temporales
-        run: node --experimental-strip-types --test tests/smart_pricing_v3_temporal_drafts.test.mjs tests/smart_pricing_v3_temporal_services.test.mjs tests/smart_pricing_v3_navigation.test.mjs tests/smart_pricing_sidebar_navigation.test.mjs tests/smart_pricing_premium_navigation.test.mjs tests/smart_pricing_global_adjustment.test.mjs
+        run: node --experimental-strip-types --test tests/smart_pricing_v3_temporal_drafts.test.mjs tests/smart_pricing_v3_temporal_services.test.mjs tests/smart_pricing_v3_navigation.test.mjs tests/smart_pricing_sidebar_navigation.test.mjs tests/smart_pricing_premium_navigation.test.mjs tests/smart_pricing_global_adjustment.test.mjs tests/smart_pricing_workspace_premium.test.mjs tests/smart_pricing_eltoque_display.test.mjs
       - name: Preparar Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:

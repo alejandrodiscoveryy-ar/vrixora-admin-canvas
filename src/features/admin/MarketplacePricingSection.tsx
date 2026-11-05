@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -38,6 +38,7 @@ import {
   type MarketplacePricingTariffInput,
 } from "@/lib/services";
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
+import { PRICING_WORKSPACE_VIEWS } from "@/lib/admin-navigation";
 import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
 import MarketplacePricingV3Diagnostics from "@/features/admin/MarketplacePricingV3Diagnostics";
 import MarketplacePricingV3Hierarchy from "@/features/admin/MarketplacePricingV3Hierarchy";
@@ -383,6 +384,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
 
   const selectedVisual = serviceVisuals[selectedService];
   const activeWorkspace = pricingWorkspaceOptions.find((item) => item.code === workspace);
+  const selectedPricingView = PRICING_WORKSPACE_VIEWS.find((view) => view.code === pricingRoute) ?? PRICING_WORKSPACE_VIEWS[0];
+  const SelectedPricingIcon = selectedPricingView.icon;
 
   const openTariff = (
     serviceCode: ServiceCode,
@@ -394,44 +397,72 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   };
 
   return (
-    <div className="tuktuk-pricing-v3-sheet space-y-4">
-      <div className="flex justify-end">
-        <aside aria-label="Tasa USD CUP automatica, solo informativa" className="tuktuk-v3-rate w-full rounded-2xl border border-slate-500/50 px-4 py-3 text-sm shadow-lg sm:w-auto sm:min-w-[300px]">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-cyan-300" />
-              <span className="text-xs font-semibold text-slate-200">Tasa USD/CUP · API</span>
-            </div>
-            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${exchange.isError || (exchange.data?.autoSyncEnabled && exchange.data?.lastAutoSyncStatus !== "ok") ? "border-amber-400/40 bg-amber-500/10 text-amber-200" : exchange.data?.autoSyncEnabled ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300" : "border-slate-400/30 bg-slate-500/10 text-slate-300"}`}>
-  {exchange.isLoading ? "Consultando" : exchange.isError ? "Sin conexión" : !exchange.data?.autoSyncEnabled ? "Manual" : exchange.data.lastAutoSyncStatus === "ok" ? "Automática" : "Revisar sincronización"}
-</span>
+    <section aria-label="Centro de precios" className="tuktuk-pricing-v3-sheet min-w-0">
+      <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
+        <nav aria-label="Secciones del Centro de precios" className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
+          <div className="relative z-10 px-2.5 pb-2 pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Centro de precios</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Gestión económica del proyecto</p>
           </div>
-          {exchange.isLoading ? (
-            <p className="mt-2 text-xs text-slate-300">Consultando tasa vigente…</p>
-          ) : exchange.isError ? (
-            <p className="mt-2 text-xs text-rose-300">Tasa temporalmente no disponible</p>
-          ) : (
-            <>
-              <p className="mt-1 text-right text-xl font-bold tabular-nums text-white">1 USD = {rate.toLocaleString("es-CU")} CUP</p>
-              <p className="mt-1 text-right text-[11px] text-slate-300">
-                {exchange.data?.rateSource ?? "Fuente automática"} · {exchange.data?.rateUpdatedAt
-                  ? new Date(exchange.data.rateUpdatedAt).toLocaleString("es-CU")
-                  : "sin fecha de actualización"}
-              </p>
-            </>
-          )}
-        </aside>
-      </div>
-      {workspace === "service-menu" ? (
-        <section aria-label="Menú de precios por modalidad" className="space-y-4">
-          <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-card via-card to-cyan-950/20 p-5">
-            <Sparkles aria-hidden="true" className="pointer-events-none absolute -right-5 -top-10 h-40 w-40 -rotate-12 text-cyan-400 opacity-[0.055]" />
-            <div className="relative z-10">
-              <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Precios por servicio</p>
-              <h3 className="mt-1 text-xl font-bold text-foreground">{serviceLabel(selectedService)}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{serviceDescription(selectedService)} · {configuredCount} de {categories.length} tarifas configuradas</p>
+          <div className="relative z-10 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-1">
+            {PRICING_WORKSPACE_VIEWS.map((view) => {
+              const Icon = view.icon;
+              const selected = view.code === selectedPricingView.code;
+              return (
+                <Link key={view.code} to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "planes" }} search={{ precio: view.code }}
+                  aria-current={selected ? "page" : undefined}
+                  className={`group relative isolate flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${selected ? "border-cyan-400/35 bg-gradient-to-r from-cyan-400/[0.11] via-cyan-400/[0.045] to-background/20 text-foreground shadow-[0_12px_30px_-24px_rgba(34,211,238,0.45)]" : "border-transparent bg-background/20 text-foreground/85 hover:border-border/65 hover:bg-muted/40"}`}>
+                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 -rotate-12 ${selected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
+                  <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner ${selected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border/60 bg-background/60 text-muted-foreground"}`}>
+                    <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
+                  </span>
+                  <span className="relative z-10 min-w-0 flex-1">
+                    <span className="block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{view.number}</span>
+                    <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">{view.label}</span>
+                    <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{view.subtitle}</span>
+                  </span>
+                  <ChevronRight aria-hidden="true" className={`relative z-10 hidden h-4 w-4 shrink-0 xl:block ${selected ? "text-cyan-300" : "text-muted-foreground/45"}`} />
+                </Link>
+              );
+            })}
+          </div>
+          <div className="relative z-10 mt-2 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">Precios y accesos según permisos</div>
+        </nav>
+        <div className="min-w-0 space-y-3">
+          <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5">
+            <SelectedPricingIcon aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-44 w-44 -rotate-12 text-cyan-100 opacity-[0.06]" />
+            <div className="relative z-10 grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(235px,320px)]">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90">{selectedPricingView.number} / {selectedPricingView.eyebrow}</p>
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/[0.08] text-cyan-200"><SelectedPricingIcon className="h-5 w-5" /></span>
+                  <h2 className="text-xl font-semibold tracking-tight text-white">{selectedPricingView.label}</h2>
+                </div>
+                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">{selectedPricingView.description}</p>
+              </div>
+              <aside aria-label="Tasa USD CUP informativa integrada en Centro de precios" className="min-w-0 rounded-2xl border border-cyan-400/20 bg-slate-950/55 px-3.5 py-3 shadow-inner shadow-black/25">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-2 text-[11px] font-semibold text-slate-200"><DollarSign className="h-4 w-4 text-cyan-300" />Tasa USD/CUP · API</span>
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${exchange.isError || (exchange.data?.autoSyncEnabled && exchange.data?.lastAutoSyncStatus !== "ok") ? "border-amber-400/40 bg-amber-500/10 text-amber-200" : exchange.data?.autoSyncEnabled ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300" : "border-slate-400/30 bg-slate-500/10 text-slate-300"}`}>
+                    {exchange.isLoading ? "Consultando" : exchange.isError ? "Sin conexión" : !exchange.data?.autoSyncEnabled ? "Manual" : exchange.data.lastAutoSyncStatus === "ok" ? "Automática" : "Revisar sincronización"}
+                  </span>
+                </div>
+                {exchange.isLoading ? <p className="mt-2 text-xs text-slate-300">Consultando tasa vigente…</p>
+                  : exchange.isError ? <p className="mt-2 text-xs text-amber-300">Tasa temporalmente no disponible</p>
+                  : <>
+                    <p className="mt-2 text-right text-lg font-bold tabular-nums text-white">1 USD = {rate.toLocaleString("es-CU")} CUP</p>
+                    <p className="mt-1 text-right text-[10px] text-slate-300">{exchange.data?.rateSource ?? "Fuente automática"} · {exchange.data?.rateUpdatedAt ? new Date(exchange.data.rateUpdatedAt).toLocaleString("es-CU") : "sin fecha de actualización"}</p>
+                  </>}
+              </aside>
             </div>
           </header>
+      {workspace === "service-menu" ? (
+        <section aria-label="Menú de precios por modalidad" className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card/50 px-4 py-3">
+            <p className="text-sm font-medium text-foreground">Herramientas del servicio</p>
+            <p className="text-xs text-muted-foreground">{configuredCount} de {categories.length} tarifas configuradas</p>
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
             {pricingWorkspaceOptions.map((item) => {
               const AreaIcon = item.icon;
@@ -452,8 +483,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             })}
           </div>
         </section>
-      ) : (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-500/40 bg-card/70 p-3 shadow-sm sm:p-4">
+      ) : workspace === "global" ? null : (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/65 bg-card/65 p-3 shadow-sm sm:p-4">
           {workspace !== "global" ? (
             <Button type="button" variant="outline" className="h-10 gap-2" onClick={() => {
               setWorkspace("service-menu");
@@ -1006,6 +1037,8 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           </DialogContent>
         ) : null}
       </Dialog>
-    </div>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -70,13 +70,18 @@ export default function MarketplacePricingGlobalAdjustment({
   const [verified, setVerified] = useState<VerifiedPreview | null>(null);
   const [history, setHistory] = useState<PriceBatch[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [acknowledgeAdditional, setAcknowledgeAdditional] = useState(false);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
   const [scope, setScope] = useState<GlobalPricingScope>('all');
-  const [reduction, setReduction] = useState(15);
+  // Sin una selección consciente no se prepara ninguna reducción adicional.
+  const [reduction, setReduction] = useState(0);
+  const latestBatch = history[0] ?? null;
+  const latestNonRevertedBatch = history.find((batch) => !batch.reverted) ?? null;
   const previews = useMemo(
-    () => previewGlobalPricingAdjustment(tariffs, scope, reduction, exchangeRate, 100),
+    () => reduction === 0 ? [] : previewGlobalPricingAdjustment(tariffs, scope, reduction, exchangeRate, 100),
     [tariffs, scope, reduction, exchangeRate],
   );
   // Protege la aprobación frente a cambios del catálogo, de la tasa o del porcentaje.
@@ -94,11 +99,14 @@ export default function MarketplacePricingGlobalAdjustment({
 
   useEffect(() => {
     let active = true;
-    if (!canManage) return;
+    if (!canManage) { setHistory([]); setHistoryLoading(false); return; }
+    setHistoryLoading(true);
+    setHistory([]);
     void getSupabaseClient().rpc('admin_list_marketplace_global_adjustments', {
       target_project_id: projectId,
     }).then(({ data, error }) => {
       if (!active) return;
+      setHistoryLoading(false);
       if (error) { setHistoryError(error.message); return; }
       setHistory(Array.isArray(data) ? data as PriceBatch[] : []);
       setHistoryError(null);
@@ -118,7 +126,9 @@ export default function MarketplacePricingGlobalAdjustment({
   const invalid = previews.filter((row) => row.example5kmUsdBefore === null || row.example5kmUsdAfter === null).length;
 
   const canValidate = canManage && !busy && !tariffsLoading && !tariffsError &&
-    previews.length > 0 && invalid === 0 && Number.isFinite(exchangeRate) && exchangeRate > 0;
+    previews.length > 0 && invalid === 0 && Number.isFinite(exchangeRate) && exchangeRate > 0 &&
+    (!latestNonRevertedBatch || acknowledgeAdditional) &&
+    (!canManage || (!historyLoading && !historyError));
 
   async function validateServer() {
     if (!canValidate || reduction === 0) return;
@@ -137,7 +147,7 @@ export default function MarketplacePricingGlobalAdjustment({
         typeof plan.count !== 'number' || plan.count !== previews.length) {
         throw new Error('Las tarifas de la pantalla no coinciden con el servidor. Actualiza los datos.');
       }
-      // No basta que coincida la cantidad: tambiÃ©n deben coincidir los cinco precios de cada tarifa.
+      // No basta que coincida la cantidad: también deben coincidir los cinco precios de cada tarifa.
       const entries = plan.entries;
       if (!Array.isArray(entries) || entries.length !== previews.length) {
         throw new Error('La vista previa ha cambiado. Actualiza las tarifas y vuelve a comprobar.');
@@ -197,6 +207,8 @@ export default function MarketplacePricingGlobalAdjustment({
       setVerified(null);
       setPending(null);
       setConfirmation('');
+      setReduction(0);
+      setAcknowledgeAdditional(false);
       await queryClient.invalidateQueries({ queryKey: ['marketplace-pricing-tariffs', projectId] });
       await reloadHistory();
     } catch (error) {
@@ -210,9 +222,37 @@ export default function MarketplacePricingGlobalAdjustment({
 
   return (
     <section aria-label="Ajuste general de tarifas con publicación confirmada" className="space-y-4">
-      <div className="relative isolate overflow-hidden rounded-2xl border border-cyan-500/30 bg-card/80 shadow-sm">
+      {canManage && (
+        <section aria-label="Último ajuste publicado" className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.09] via-card/95 to-cyan-500/[0.055] p-4 shadow-[0_18px_42px_-35px_rgba(16,185,129,0.45)] sm:p-5">
+          <ShieldCheck aria-hidden="true" className="pointer-events-none absolute -right-6 -top-12 z-0 h-40 w-40 -rotate-12 text-emerald-300 opacity-[0.055]" />
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-500 dark:text-emerald-300">ESTADO REGISTRADO EN SUPABASE</p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">Último ajuste publicado</h3>
+            </div>
+            {latestBatch && !historyLoading && !historyError ? (
+              <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${latestBatch.reverted ? 'border-slate-500/35 text-muted-foreground' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'}`}>
+                {latestBatch.reverted ? 'Revertido' : 'No revertido'}
+              </span>
+            ) : null}
+          </div>
+          {historyLoading ? <p className="relative z-10 mt-3 text-sm text-muted-foreground">Consultando historial de ajustes…</p>
+            : historyError ? <p role="alert" className="relative z-10 mt-3 text-sm text-amber-500">No se pudo consultar el ajuste publicado. {historyError}</p>
+            : latestBatch ? (
+              <div className="relative z-10 mt-3 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-3xl font-bold tabular-nums tracking-tight text-emerald-600 dark:text-emerald-300">−{latestBatch.reduction_percent} %</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{serviceLabels[latestBatch.scope] ?? (latestBatch.scope === 'all' ? 'Todos los servicios' : latestBatch.scope)} · {latestBatch.count} tarifas · {new Date(latestBatch.created_at).toLocaleString('es-CU')}</p>
+                </div>
+                <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">Registro histórico. Las modificaciones individuales posteriores pueden cambiar los precios vigentes.</p>
+              </div>
+            ) : <p className="relative z-10 mt-3 text-sm text-muted-foreground">Todavía no se registran ajustes globales.</p>}
+        </section>
+      )}
+
+      <div className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.08] shadow-[0_24px_60px_-44px_rgba(0,0,0,0.75)]">
         <SlidersHorizontal aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-52 w-52 -rotate-12 text-cyan-300 opacity-[0.045]" />
-        <div className="h-1 bg-gradient-to-r from-cyan-500 via-blue-500/70 to-transparent" />
+        <div className="h-0.5 bg-gradient-to-r from-cyan-500 via-sky-500/60 to-transparent" />
         <div className="space-y-4 p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -220,12 +260,13 @@ export default function MarketplacePricingGlobalAdjustment({
                 <SlidersHorizontal className="h-6 w-6" />
               </span>
               <div>
-                <h4 className="text-lg font-semibold text-foreground">Ajuste general de tarifas</h4>
-                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Reduce proporcionalmente las tarifas de las modalidades seleccionadas, sin editarlas una por una.</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan-500 dark:text-cyan-300">NUEVA SIMULACIÓN</p>
+                <h4 className="mt-1 text-lg font-semibold text-foreground">Preparar otra reducción</h4>
+                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Introduce una nueva reducción para las tarifas vigentes; nada se publica sin verificación y confirmación.</p>
               </div>
             </div>
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-300">
-              Ajuste seguro · confirmación obligatoria
+            <span className="rounded-full border border-cyan-400/25 bg-cyan-500/[0.065] px-3 py-1.5 text-xs font-semibold text-cyan-600 dark:text-cyan-300">
+              Sin cambios hasta publicar
             </span>
           </div>
 
@@ -247,7 +288,7 @@ export default function MarketplacePricingGlobalAdjustment({
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="tuktuk-global-reduction" className="text-sm font-medium text-foreground">Reducir precios</label>
-                <span className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-300">{reduction} %</span>
+                <span className="text-2xl font-bold tabular-nums text-cyan-600 dark:text-cyan-300">{reduction === 0 ? "Sin seleccionar" : `−${reduction} %`}</span>
               </div>
               <input
                 id="tuktuk-global-reduction"
@@ -266,27 +307,34 @@ export default function MarketplacePricingGlobalAdjustment({
                     −{value} %
                   </button>
                 ))}
-                <button type="button" onClick={() => { setScope('all'); setReduction(15); setVerified(null); setPending(null); }}
+                <button type="button" onClick={() => { setScope('all'); setReduction(0); setAcknowledgeAdditional(false); setVerified(null); setPending(null); }}
                   className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-                  <RotateCcw className="h-3.5 w-3.5" /> Restablecer
+                  <RotateCcw className="h-3.5 w-3.5" /> Limpiar simulación
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 text-sm text-foreground">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" />
-            <p>La simulación no cambia ningún precio. Para publicar debes verificar las tarifas en el servidor y confirmar escribiendo APLICAR. Supabase actualiza todo el lote o no modifica nada. Se conserva historial para revertir sin sobrescribir ediciones posteriores.</p>
+          <div className="flex flex-wrap items-start gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.04] p-3 text-sm text-foreground">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-500 dark:text-cyan-300" />
+            <p>La simulación no cambia precios. Para publicar se exige verificación del servidor y confirmación escrita. Las nuevas reducciones se calculan sobre las tarifas vigentes, no sobre sus valores originales.</p>
           </div>
+          {latestNonRevertedBatch && reduction > 0 && canManage && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.065] p-3 text-sm text-foreground">
+              <input type="checkbox" checked={acknowledgeAdditional} onChange={(event) => { setAcknowledgeAdditional(event.target.checked); setVerified(null); }} className="mt-1 h-4 w-4 accent-cyan-500" />
+              <span><strong>Reducción adicional:</strong> existe una reducción previa no revertida de {latestNonRevertedBatch.reduction_percent} %. Confirmo que esta nueva operación se acumularía sobre los precios vigentes.</span>
+            </label>
+          )}
         </div>
       </div>
 
             {canManage && (
-              <div className="space-y-3 rounded-2xl border border-cyan-500/35 bg-cyan-500/5 p-4" aria-label="Publicación segura del ajuste global">
+              <div className="space-y-3 rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.075] via-card to-card p-4 shadow-sm" aria-label="Publicación segura del ajuste global">
                 <div>
                   <h4 className="font-semibold text-foreground">Publicar la reducción general</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Confirma el lote completo en Supabase antes de modificar tarifas. El precio final puede variar por recargos y redondeos.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Selecciona un porcentaje nuevo, revisa su alcance y verifica el lote en Supabase antes de publicar. Los redondeos pueden modificar el importe final.</p>
                 </div>
+                {reduction === 0 && <p className="text-xs font-medium text-muted-foreground">Elige un porcentaje para iniciar una nueva simulación. Tu último ajuste publicado no cambia.</p>}
                 <div className="flex flex-wrap items-center gap-3">
                   <button type="button" disabled={!canValidate || reduction === 0}
                     onClick={() => void validateServer()}
@@ -313,6 +361,7 @@ export default function MarketplacePricingGlobalAdjustment({
               ? `Se modificarán ${previews.length} tarifas vigentes de ${scope === 'all' ? 'todos los servicios' : serviceLabels[scope]} reduciendo ${reduction} %. Los viajes ya acordados no cambian.`
               : `Se restaurará el lote ${pending.batchId}. Si una tarifa cambió después, Supabase rechazará toda la reversión.`}
           </p>
+          {pending.kind === 'apply' && latestNonRevertedBatch && <p className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-foreground">Operación adicional: este porcentaje se acumula sobre tarifas que ya fueron ajustadas. No sustituye el porcentaje anterior.</p>}
           <label className="mt-3 block text-sm font-medium text-foreground">
             Escribe {pending.kind === 'apply' ? 'APLICAR' : 'REVERTIR'} para autorizar
             <input type="text" autoComplete="off" autoFocus value={confirmation} onChange={(event) => setConfirmation(event.target.value)}
@@ -360,7 +409,8 @@ export default function MarketplacePricingGlobalAdjustment({
         </details>
       )}
 
-      {tariffsLoading ? <p className="p-4 text-sm text-muted-foreground">Cargando tarifas vigentes…</p>
+      {reduction === 0 ? <p className="rounded-2xl border border-border/60 bg-card/40 px-4 py-3 text-xs text-muted-foreground">El desglose comparativo aparecerá cuando elijas un porcentaje de nueva reducción.</p>
+        : tariffsLoading ? <p className="p-4 text-sm text-muted-foreground">Cargando tarifas vigentes…</p>
         : tariffsError ? <p role="alert" className="rounded-xl border border-rose-500/30 p-4 text-sm text-rose-500">No se pudieron consultar las tarifas. No se calcula una vista previa sin datos.</p>
         : previews.length === 0 ? <p className="rounded-xl border border-border p-4 text-sm text-muted-foreground">No existen tarifas vigentes para el ámbito seleccionado.</p>
         : (
