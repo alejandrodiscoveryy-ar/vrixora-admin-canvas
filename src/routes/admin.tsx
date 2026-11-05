@@ -3,6 +3,10 @@ import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tan
 import {
   Activity,
   ChevronRight,
+  CarFront,
+  Package,
+  SlidersHorizontal,
+  Truck,
   FolderKanban,
   LayoutDashboard,
   Loader2,
@@ -37,6 +41,13 @@ import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
 import { projectIconVariantUrl } from "@/lib/project-icon-variants";
+
+const PRICING_VIEWS = [
+  { code: "global", label: "Ajuste general", icon: SlidersHorizontal },
+  { code: "passenger", label: "Pasajeros", icon: CarFront },
+  { code: "cargo", label: "Carga", icon: Truck },
+  { code: "courier", label: "Mensajería", icon: Package },
+] as const;
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -148,6 +159,7 @@ function ProjectNavItem({
 }: {
   project: {
     id: string;
+    slug: string;
     name: string;
     description: string;
     status: string;
@@ -197,6 +209,9 @@ function ProjectNavItem({
 
   const workspaceView = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).vista,
+  });
+  const pricingView = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).precio,
   });
 
   const projectBasePath = `/admin/proyectos/${project.id}`;
@@ -288,6 +303,42 @@ function ProjectNavItem({
                       })}
                     </div>
                   </details>
+                </div>
+              );
+            }
+
+            // El centro de precios es un grupo propio de TukTuk; conserva la ruta /planes.
+            if (tab.slug === "planes" && project.slug === "tuktuk-control") {
+              const isPricing = isActiveProject && currentSection === "planes";
+              return (
+                <div key="centro-precios" className="space-y-1">
+                  <Link to="/admin/proyectos/$id/$section"
+                    params={{ id: project.id, section: "planes" }} search={{ precio: "global" }}
+                    onClick={closeDrawer}
+                    className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${isPricing ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">Centro de precios</span>
+                    <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${isPricing ? "rotate-90" : ""}`} />
+                  </Link>
+                  {isPricing ? (
+                    <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas del Centro de precios">
+                      {PRICING_VIEWS.map((view) => {
+                        const ViewIcon = view.icon;
+                        const selected = pricingView === view.code || (!pricingView && view.code === "global");
+                        return (
+                          <Link key={view.code} to="/admin/proyectos/$id/$section"
+                            params={{ id: project.id, section: "planes" }} search={{ precio: view.code }}
+                            onClick={closeDrawer} aria-current={selected ? "page" : undefined}
+                            className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${selected ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+                          >
+                            <ViewIcon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{view.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               );
             }

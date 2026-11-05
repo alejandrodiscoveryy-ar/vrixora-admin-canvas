@@ -4,17 +4,16 @@ import { readFileSync } from 'node:fs';
 const page = readFileSync(new URL('../src/features/admin/MarketplacePricingSection.tsx', import.meta.url), 'utf8');
 const modal = readFileSync(new URL('../src/features/admin/MarketplacePricingGlobalAdjustment.tsx', import.meta.url), 'utf8');
 
-test('centro premium separa gestion global de las modalidades', () => {
-  assert.match(page, /Centro de precios/);
-  assert.match(page, /01 \/ Gestión transversal/);
-  assert.match(page, /02 \/ Precios por servicio/);
+test('centro premium abre directamente el contenido elegido desde el menú lateral', () => {
+  const sidebar = readFileSync(new URL('../src/routes/admin.tsx', import.meta.url), 'utf8');
+  assert.match(sidebar, /Centro de precios/);
+  assert.match(sidebar, /PRICING_VIEWS/);
+  assert.match(page, /pricingRoute === "cargo"/);
   assert.match(page, /setWorkspace\("global"\)/);
   assert.match(page, /setWorkspace\("service-menu"\)/);
-  assert.match(page, /workspace !== null && workspace !== "global"/);
-  assert.match(page, /aria-label="Inicio de gestión de precios"/);
   assert.match(page, /aria-label="Menú de precios por modalidad"/);
-  assert.doesNotMatch(page, /code: "global"/);
-  assert.match(page, /pointer-events-none absolute -right-8/);
+  assert.doesNotMatch(page, /aria-label="Inicio de gestión de precios"/);
+  assert.doesNotMatch(page, /tuktuk-v3-tabs/);
 });
 
 test('confirmacion centrada y publicacion antes del desglose', () => {

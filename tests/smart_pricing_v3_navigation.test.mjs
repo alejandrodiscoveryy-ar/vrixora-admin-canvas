@@ -7,14 +7,14 @@ const workflow = readFileSync(new URL('../.github/workflows/smart-pricing-v3-tem
 
 const occurrences = (needle) => source.split(needle).length - 1;
 
-test('inicio premium con cuatro destinos y regreso', () => {
+test('cada servicio conserva sus cuatro herramientas y la navegación de regreso', () => {
   for (const key of ['tariffs', 'temporal', 'simulation', 'advanced']) {
     assert.match(source, new RegExp('code: "' + key + '"'));
     assert.match(source, new RegExp('workspace === "' + key + '"'));
   }
-  assert.match(source, /setWorkspace\(null\)/);
-  assert.match(source, /Volver al menú/);
-  assert.match(source, /aria-label="Inicio de gestión de precios"/);
+  assert.match(source, /Volver al servicio/);
+  assert.match(source, /aria-label="Menú de precios por modalidad"/);
+  assert.doesNotMatch(source, /aria-label="Inicio de gestión de precios"/);
 });
 
 test('un solo componente por destino y sin duplicados', () => {
@@ -33,7 +33,8 @@ test('conserva tarifas, publicación y reglas especiales sin tocar servidor', ()
   assert.equal(occurrences('supabaseServices.marketplace.setModalityVisibility'), 1);
   assert.equal(occurrences('supabaseServices.marketplace.publishPricingAdjustment'), 1);
   assert.match(source, /Aeropuerto José Martí/);
-  assert.match(source, /setSelectedService\(service.code\);\s+setWorkspace\("service-menu"\)/);
+  assert.match(source, /setSelectedService\(pricingRoute\)/);
+  assert.match(source, /setWorkspace\("service-menu"\)/);
 });
 
 test('distingue cambios reales y simulaciones sin publicar', () => {
