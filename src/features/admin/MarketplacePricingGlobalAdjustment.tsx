@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/lib/supabase';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { ArrowDownRight, Info, RotateCcw, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import type { MarketplacePricingTariff } from '@/lib/services';
 import { previewGlobalPricingAdjustment, type GlobalPricingScope, type PricingField } from '@/lib/smart-pricing-global-adjustment';
@@ -209,7 +210,8 @@ export default function MarketplacePricingGlobalAdjustment({
 
   return (
     <section aria-label="Ajuste general de tarifas con publicación confirmada" className="space-y-4">
-      <div className="overflow-hidden rounded-2xl border border-cyan-500/30 bg-card/80 shadow-sm">
+      <div className="relative isolate overflow-hidden rounded-2xl border border-cyan-500/30 bg-card/80 shadow-sm">
+        <SlidersHorizontal aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-52 w-52 -rotate-12 text-cyan-300 opacity-[0.045]" />
         <div className="h-1 bg-gradient-to-r from-cyan-500 via-blue-500/70 to-transparent" />
         <div className="space-y-4 p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -279,9 +281,33 @@ export default function MarketplacePricingGlobalAdjustment({
         </div>
       </div>
 
+            {canManage && (
+              <div className="space-y-3 rounded-2xl border border-cyan-500/35 bg-cyan-500/5 p-4" aria-label="Publicación segura del ajuste global">
+                <div>
+                  <h4 className="font-semibold text-foreground">Publicar la reducción general</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">Confirma el lote completo en Supabase antes de modificar tarifas. El precio final puede variar por recargos y redondeos.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" disabled={!canValidate || reduction === 0}
+                    onClick={() => void validateServer()}
+                    className="min-h-11 rounded-xl border border-cyan-500/40 bg-background px-4 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40">
+                    {busy ? 'Comprobando…' : '1. Verificar con Supabase'}
+                  </button>
+                  <button type="button" disabled={!isVerified || busy || !canValidate}
+                    onClick={() => { setPending({ kind: 'apply' }); setConfirmation(''); }}
+                    className="min-h-11 rounded-xl bg-cyan-700 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
+                    2. Aplicar reducción de {reduction} % a {previews.length} tarifas
+                  </button>
+                </div>
+                {isVerified && <p className="text-xs font-medium text-emerald-600 dark:text-emerald-300">Comprobación correcta: {previews.length} tarifas coinciden con Supabase.</p>}
+              </div>
+            )}
+
       {pending && canManage && (
-        <div role="dialog" aria-modal="true" aria-label="Confirmar operación tarifaria" className="rounded-2xl border-2 border-amber-500/50 bg-card p-5 shadow-lg">
-          <h4 className="text-lg font-bold text-foreground">Confirmación obligatoria</h4>
+        <Dialog open onOpenChange={(open) => { if (!open && !busy) { setPending(null); setConfirmation(''); } }}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto border-amber-500/50 bg-card sm:max-w-lg">
+            <DialogTitle>Confirmación obligatoria</DialogTitle>
+            <DialogDescription>Revisa el alcance y confirma expresamente antes de modificar tarifas.</DialogDescription>
           <p className="mt-2 text-sm text-foreground">
             {pending.kind === 'apply'
               ? `Se modificarán ${previews.length} tarifas vigentes de ${scope === 'all' ? 'todos los servicios' : serviceLabels[scope]} reduciendo ${reduction} %. Los viajes ya acordados no cambian.`
@@ -289,7 +315,7 @@ export default function MarketplacePricingGlobalAdjustment({
           </p>
           <label className="mt-3 block text-sm font-medium text-foreground">
             Escribe {pending.kind === 'apply' ? 'APLICAR' : 'REVERTIR'} para autorizar
-            <input type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)}
+            <input type="text" autoComplete="off" autoFocus value={confirmation} onChange={(event) => setConfirmation(event.target.value)}
               className="mt-2 block h-11 w-full max-w-sm rounded-xl border border-border bg-background px-3" />
           </label>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -302,11 +328,14 @@ export default function MarketplacePricingGlobalAdjustment({
             <button type="button" disabled={busy} onClick={() => { setPending(null); setConfirmation(''); }}
               className="min-h-11 rounded-xl border border-border px-4 text-sm text-foreground">Cancelar</button>
           </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {canManage && (
-        <section aria-label="Historial de ajustes globales" className="rounded-2xl border border-border/70 bg-card/75 p-4">
+        <details className="rounded-2xl border border-border/70 bg-card/75 p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-foreground">Historial y reversión · {history.length} operaciones</summary>
+          <section aria-label="Historial de ajustes globales" className="mt-4 space-y-2">
           <div className="flex items-center justify-between gap-3">
             <h4 className="font-semibold text-foreground">Historial y reversión</h4>
             <button type="button" disabled={busy} onClick={() => void reloadHistory()} className="text-xs font-medium text-cyan-600 dark:text-cyan-300">Actualizar historial</button>
@@ -327,14 +356,17 @@ export default function MarketplacePricingGlobalAdjustment({
               </div>
             ))}
           </div>
-        </section>
+          </section>
+        </details>
       )}
 
       {tariffsLoading ? <p className="p-4 text-sm text-muted-foreground">Cargando tarifas vigentes…</p>
         : tariffsError ? <p role="alert" className="rounded-xl border border-rose-500/30 p-4 text-sm text-rose-500">No se pudieron consultar las tarifas. No se calcula una vista previa sin datos.</p>
         : previews.length === 0 ? <p className="rounded-xl border border-border p-4 text-sm text-muted-foreground">No existen tarifas vigentes para el ámbito seleccionado.</p>
         : (
-          <div className="space-y-3">
+          <details className="rounded-2xl border border-border/70 bg-card/70 p-4">
+            <summary className="cursor-pointer text-base font-semibold text-foreground">Desglose por modalidad · {previews.length} tarifas</summary>
+            <div className="space-y-3 pt-4">
             <div className="flex flex-wrap items-start justify-between gap-3 px-1">
               <div>
                 <h4 className="text-base font-semibold text-foreground">Comparación de tarifas</h4>
@@ -378,31 +410,11 @@ export default function MarketplacePricingGlobalAdjustment({
                 </article>
               ))}
             </div>
-            {canManage && (
-              <div className="space-y-3 rounded-2xl border border-cyan-500/35 bg-cyan-500/5 p-4" aria-label="Publicación segura del ajuste global">
-                <div>
-                  <h4 className="font-semibold text-foreground">Publicar la reducción general</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Confirma el lote completo en Supabase antes de modificar tarifas. El precio final puede variar por recargos y redondeos.</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <button type="button" disabled={!canValidate || reduction === 0}
-                    onClick={() => void validateServer()}
-                    className="min-h-11 rounded-xl border border-cyan-500/40 bg-background px-4 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40">
-                    {busy ? 'Comprobando…' : '1. Verificar con Supabase'}
-                  </button>
-                  <button type="button" disabled={!isVerified || busy || !canValidate}
-                    onClick={() => { setPending({ kind: 'apply' }); setConfirmation(''); }}
-                    className="min-h-11 rounded-xl bg-cyan-700 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
-                    2. Aplicar reducción de {reduction} % a {previews.length} tarifas
-                  </button>
-                </div>
-                {isVerified && <p className="text-xs font-medium text-emerald-600 dark:text-emerald-300">Comprobación correcta: {previews.length} tarifas coinciden con Supabase.</p>}
-              </div>
-            )}
             <div className="rounded-xl border border-slate-500/30 bg-background/50 p-3 text-xs leading-relaxed text-muted-foreground">
               El ejemplo de 5 km es estructural (máximo entre mínimo y base + kilómetros), con la tasa consultada y redondeo ilustrativo al alza de 100 CUP. No es una cotización oficial: excluye recargos de aeropuerto, horarios, esperas, paradas, pasajeros adicionales y otras condiciones. El descuento real en CUP puede ser diferente por el redondeo. No modifica la tasa de elTOQUE ni precios ya acordados.
             </div>
-          </div>
+            </div>
+          </details>
         )}
     </section>
   );

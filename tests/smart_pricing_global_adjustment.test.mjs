@@ -57,5 +57,5 @@ test('la interfaz solo usa los RPC oficiales con confirmación, no altera el mot
   assert.match(view, /Confirmación obligatoria/);
   const screen = readFileSync(new URL('../src/features/admin/MarketplacePricingSection.tsx', import.meta.url), 'utf8');
   assert.match(screen, /<MarketplacePricingGlobalAdjustment/);
-  assert.match(screen, /code: "global"/);
+  assert.match(screen, /setWorkspace\("global"\)/);
 });

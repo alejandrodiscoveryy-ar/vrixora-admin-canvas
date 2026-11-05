@@ -33,7 +33,7 @@ test('conserva tarifas, publicación y reglas especiales sin tocar servidor', ()
   assert.equal(occurrences('supabaseServices.marketplace.setModalityVisibility'), 1);
   assert.equal(occurrences('supabaseServices.marketplace.publishPricingAdjustment'), 1);
   assert.match(source, /Aeropuerto José Martí/);
-  assert.match(source, /setSelectedService\(service.code\);\s+setWorkspace\(null\)/);
+  assert.match(source, /setSelectedService\(service.code\);\s+setWorkspace\("service-menu"\)/);
 });
 
 test('distingue cambios reales y simulaciones sin publicar', () => {
