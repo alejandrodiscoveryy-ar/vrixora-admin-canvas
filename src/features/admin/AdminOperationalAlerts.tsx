@@ -213,7 +213,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
             observed.push(arrivalKey);
             if (initialized && !known.has(arrivalKey)) {
               fresh.push({ id: arrivalKey, kind: "job",
-                title: "Recogida confirmada",
+                title: "Conductor llegó al punto de recogida",
                 description: `${job.driverDisplayName || "Conductor"} · ${job.customerDisplayName || "Cliente"}`,
                 occurredAt: new Date().toISOString(), targetId: job.jobId });
             }

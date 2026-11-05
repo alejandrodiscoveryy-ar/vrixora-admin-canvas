@@ -167,8 +167,8 @@ begin
   )
   select new.project_id,recipient.user_id,'admin_marketplace_pickup',current_date,
     'admin-op:pickup:' || new.id::text,
-    'Recogida confirmada',
-    'El conductor confirmó la llegada. Abre la ficha de la carrera.',
+    'Conductor llegó al punto de recogida',
+    'El conductor llegó al punto de recogida. Abre la ficha de la carrera.',
     jsonb_build_object(
       'kind','admin_marketplace_pickup','event_type','admin_marketplace_pickup',
       'target_audience','admin','project_id',new.project_id,
