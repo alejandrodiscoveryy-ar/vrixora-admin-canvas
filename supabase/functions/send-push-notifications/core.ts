@@ -9,7 +9,7 @@ export const DEFAULT_TIME_BUDGET_MS = 45_000;
 export const MAX_TIME_BUDGET_MS = 50_000;
 export const MAX_ATTEMPTS = 5;
 const ADMIN_WEB_PUSH_KINDS = new Set([
-  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job",
+  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup",
 ]);
 
 export type WorkerOptions = {

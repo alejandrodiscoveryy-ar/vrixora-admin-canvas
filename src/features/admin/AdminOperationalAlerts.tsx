@@ -207,6 +207,17 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
           if (!job.publishedAt || job.isTest) continue;
           const key = `job:${job.jobId}`;
           observed.push(key);
+          // Confirmacion de llegada visible en Admin, incluso sin FCM.
+          if (job.status === "pickup") {
+            const arrivalKey = `arrival:${job.jobId}`;
+            observed.push(arrivalKey);
+            if (initialized && !known.has(arrivalKey)) {
+              fresh.push({ id: arrivalKey, kind: "job",
+                title: "Conductor llegó al punto de recogida",
+                description: `${job.driverDisplayName || "Conductor"} · ${job.customerDisplayName || "Cliente"}`,
+                occurredAt: new Date().toISOString(), targetId: job.jobId });
+            }
+          }
           const active = validCurrentJob(job);
           if (active) {
             currentPending.push({ id: job.jobId, label: `${job.customerDisplayName || "Cliente sin nombre"} · ${job.originText} → ${job.destinationText}`, started: job.publishedAt });
@@ -267,7 +278,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     let disposed = false;
     let unsubscribe: (() => void) | null = null;
     void listenAdminPush(projectId, (message: AdminPushEvent) => {
-      const id = message.job_id ? `${message.kind === "admin_marketplace_pending_job" ? message.stage === "pending_10m" ? "pending10" : "pending" : "job"}:${message.job_id}` :
+      const id = message.job_id ? `${message.kind === "admin_marketplace_pickup" ? "arrival" : message.kind === "admin_marketplace_pending_job" ? message.stage === "pending_10m" ? "pending10" : "pending" : "job"}:${message.job_id}` :
         message.driver_id ? `driver:${message.driver_id}` : `push:${message.kind}`;
       let known: string[] = [];
       try { known = JSON.parse(localStorage.getItem(storageKey) || "[]") as string[]; } catch { /* optional */ }
