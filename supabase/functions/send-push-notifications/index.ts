@@ -198,18 +198,24 @@ export default {
           return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
         }
         const { data: liveJob, error: liveJobError } = await admin.from("jobs")
-          .select("status,assigned_driver_user_id,expires_at,test_deleted_at")
+          .select("status,assigned_driver_user_id,expires_at,test_deleted_at,is_test,pricing_breakdown")
           .eq("project_id", row.project_id).eq("id", jobId).maybeSingle();
         if (liveJobError) {
           await releaseForRetry(admin, row, "Could not verify current marketplace job status");
           return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
         }
+        // Para pruebas difusivas, una primera aceptacion no anula los avisos al resto.
+        // Exige prueba real verificada en BD y marca explicita en el outbox.
+        const verifiedBroadcast = row.data?.test_broadcast === true &&
+          liveJob?.is_test === true &&
+          liveJob?.pricing_breakdown?.test_broadcast === true;
         const expires = liveJob?.expires_at ? Date.parse(liveJob.expires_at) : Number.POSITIVE_INFINITY;
-        if (!liveJob || liveJob.status !== "published" || liveJob.assigned_driver_user_id ||
-            liveJob.test_deleted_at || Number.isNaN(expires) || expires <= Date.now()) {
+        if (!liveJob || liveJob.test_deleted_at || Number.isNaN(expires) || expires <= Date.now() ||
+            (!verifiedBroadcast && (liveJob.status !== "published" || liveJob.assigned_driver_user_id))) {
           await finishRow(admin, row, "skipped", "Marketplace job no longer available");
           return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
         }
+        if (!verifiedBroadcast) {
         const { data: assignment, error: assignmentError } = await admin.from("job_assignments")
           .select("id").eq("project_id", row.project_id).eq("job_id", jobId).maybeSingle();
         if (assignmentError) {
@@ -219,6 +225,7 @@ export default {
         if (assignment) {
           await finishRow(admin, row, "skipped", "Marketplace job already assigned");
           return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
         }
         if (row.data?.reminder_index !== undefined) {
           const index = Number(row.data.reminder_index);
