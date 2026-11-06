@@ -42,3 +42,22 @@ test('Cada conductor recibe su job independiente y puede cerrar mediante el fluj
   assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION public\.advance_my_marketplace_job/);
   assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION app_private\.finish_marketplace_job_core/);
 });
+
+test('El selector inicial muestra solo tres opciones principales', () => {
+  assert.match(ui, /\[recipientMode, setRecipientMode\] = useState<[^;]+>\("cycle_all"\)/);
+  const primary = ui.match(/Destinatarios\s*<select[\s\S]*?<\/select>/)?.[0];
+  assert.ok(primary, 'No se encuentra el selector principal');
+  for (const mode of ['individual', 'cycle_all', 'cycle_category']) {
+    assert.match(primary, new RegExp(`<option value="${mode}">`));
+  }
+  for (const legacy of ['group', 'broadcast_all', 'broadcast_category']) {
+    assert.doesNotMatch(primary, new RegExp(`<option value="${legacy}">`));
+  }
+  const advanced = ui.match(/Opciones avanzadas de destinatarios[\s\S]*?<\/details>/)?.[0];
+  assert.ok(advanced, 'No se conservan los modos tradicionales');
+  for (const legacy of ['group', 'broadcast_all', 'broadcast_category']) {
+    assert.match(advanced, new RegExp(`<option value="${legacy}">`));
+  }
+  assert.match(ui, /legacyRecipientMode \? "advanced" : recipientMode/);
+  assert.match(ui, /broadcastMode \? "Destinatarios" : "Conductores del grupo"/);
+});

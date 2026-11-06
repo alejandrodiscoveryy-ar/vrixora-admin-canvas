@@ -106,7 +106,7 @@ export default function MarketplaceTestCenterV2({
   const [enabled, setEnabled] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [forceRealCommission, setForceRealCommission] = useState(false);
-  const [recipientMode, setRecipientMode] = useState<"individual" | "group" | "broadcast_all" | "broadcast_category" | "cycle_all" | "cycle_category">("individual");
+  const [recipientMode, setRecipientMode] = useState<"individual" | "group" | "broadcast_all" | "broadcast_category" | "cycle_all" | "cycle_category">("cycle_all");
   const [individualId, setIndividualId] = useState("");
   const [serviceCode, setServiceCode] = useState("passenger");
   const [vehicleCategory, setVehicleCategory] = useState("tricycle");
@@ -403,7 +403,14 @@ export default function MarketplaceTestCenterV2({
     ["published", "accepted", "en_route", "pickup", "in_progress"].includes(job.status),
   ).length;
   const cycleMode = recipientMode === "cycle_all" || recipientMode === "cycle_category";
+  const legacyRecipientMode = recipientMode === "group" || recipientMode === "broadcast_all" || recipientMode === "broadcast_category";
   const broadcastMode = cycleMode || recipientMode === "broadcast_all" || recipientMode === "broadcast_category";
+  const chooseRecipientMode = (mode: typeof recipientMode) => {
+    setRecipientMode(mode);
+    setError(null);
+    if (mode !== "individual" && mode !== "group") setForceRealCommission(false);
+    if ((mode === "cycle_all" || mode === "broadcast_all") && !vehicleCategory) setVehicleCategory("tricycle");
+  };
   const allowed = recipientMode === "group" ? selectedIds : individualId ? [individualId] : [];
   const configured = current.data?.enabled && audience.data != null;
   const dirty =
@@ -638,7 +645,7 @@ export default function MarketplaceTestCenterV2({
           aria-label="Resumen del laboratorio"
         >
           {[
-            { label: "Conductores", value: String(selectedIds.length) },
+            { label: broadcastMode ? "Destinatarios" : "Conductores del grupo", value: broadcastMode ? "Automáticos" : String(selectedIds.length) },
             {
               label: "En esta página",
               value: history.isSuccess ? String(history.data.items.length) : "—",
@@ -804,28 +811,46 @@ export default function MarketplaceTestCenterV2({
               </p>
               <div className="tt-lab-v5-controls min-w-0">
                 <div className="tt-lab-v4-fields mt-3 grid gap-2.5 sm:grid-cols-2">
-                  <label className="space-y-1 text-xs text-muted-foreground">
-                    Destinatarios
-                    <select
-                      value={recipientMode}
-                      onChange={(e) => {
-                        const mode = e.target.value as "individual" | "group" | "broadcast_all" | "broadcast_category" | "cycle_all" | "cycle_category";
-                        setRecipientMode(mode);
-                        setError(null);
-                        if (mode === "broadcast_all" || mode === "broadcast_category" || mode === "cycle_all" || mode === "cycle_category") setForceRealCommission(false);
-                        if ((mode === "broadcast_all" || mode === "cycle_all") && !vehicleCategory) setVehicleCategory("tricycle");
-                      }}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
-                    >
-                      <option value="individual">Un conductor</option>
-                      <option value="group">Todo el grupo</option>
-                      <option value="broadcast_all">Todos los que estan Trabajando - todas las modalidades</option>
-                      <option value="broadcast_category">Todos los que estan Trabajando - por modalidad</option>
-                      <option value="cycle_all">CICLO COMPLETO - cada conductor su carrera (todas)</option>
-                      <option value="cycle_category">CICLO COMPLETO - cada conductor su carrera (por modalidad)</option>
-                    </select>
-                    {cycleMode && <span className="mt-1 block text-[11px] text-cyan-200">Cada conductor recibe su propia prueba; para aceptarla debe estar disponible y sin una carrera activa.</span>}
-                  </label>
+                  <div className="min-w-0 space-y-1">
+                    <label className="block space-y-1 text-xs text-muted-foreground">
+                      Destinatarios
+                      <select
+                        value={legacyRecipientMode ? "advanced" : recipientMode}
+                        onChange={(e) => chooseRecipientMode(e.target.value as typeof recipientMode)}
+                        className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                      >
+                        {legacyRecipientMode && <option value="advanced" disabled>Modo avanzado seleccionado</option>}
+                        <option value="individual">Un conductor</option>
+                        <option value="cycle_all">Todos los que están Trabajando</option>
+                        <option value="cycle_category">Por modalidad</option>
+                      </select>
+                    </label>
+                    {cycleMode && (
+                      <p className="text-[11px] text-cyan-200">
+                        Cada conductor recibe su propia carrera. Si está ocupado, debe finalizar la anterior para aceptarla.
+                      </p>
+                    )}
+                    <details className="rounded-lg border border-border/40 bg-background/30">
+                      <summary className="cursor-pointer px-2.5 py-2 text-[11px] font-medium text-muted-foreground">
+                        Opciones avanzadas de destinatarios
+                      </summary>
+                      <div className="border-t border-border/40 p-2.5">
+                        <label className="block space-y-1 text-xs text-muted-foreground">
+                          Envío tradicional
+                          <select
+                            value={legacyRecipientMode ? recipientMode : ""}
+                            onChange={(e) => chooseRecipientMode(e.target.value as typeof recipientMode)}
+                            className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                          >
+                            <option value="" disabled>Seleccionar modo tradicional</option>
+                            <option value="group">Todo el grupo autorizado</option>
+                            <option value="broadcast_all">Una carrera compartida - todos</option>
+                            <option value="broadcast_category">Una carrera compartida - por modalidad</option>
+                          </select>
+                        </label>
+                      </div>
+                    </details>
+                  </div>
                   {recipientMode === "individual" ? (
                     selected.length === 1 ? (
                       <div
