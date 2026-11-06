@@ -46,7 +46,7 @@ async function harness() {
   let customerHandler;
   const modules = new Map();
   const globals = {
-    Request, Response, Headers, URL, URLSearchParams, TextEncoder, Error, AbortSignal,
+    Request, Response, Headers, URL, URLSearchParams, TextEncoder, TextDecoder, Error, AbortSignal,
     crypto: webcrypto,
     Deno: { env: { get: (key) => env[key] }, serve: (handler) => { customerHandler = handler; } },
     fetch: async (url) => {
@@ -92,6 +92,56 @@ function request(kind, headers = {}, method = 'POST') {
 }
 
 for (const kind of ['customer', 'map']) {
+  test(`${kind}: rejects oversized streamed JSON despite a misleading Content-Length`, async () => {
+    const { handlers, calls } = await harness();
+    const payload = new TextEncoder().encode(JSON.stringify({
+      operation: kind === 'customer' ? 'services' : 'geocode', query: 'Habana',
+      padding: 'a'.repeat(96 * 1024),
+    }));
+    let offset = 0;
+    let cancelled = false;
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (offset >= payload.length) { controller.close(); return; }
+        controller.enqueue(payload.slice(offset, offset + 8192));
+        offset += 8192;
+      },
+      cancel() { cancelled = true; },
+    });
+    const req = new Request('https://isolated.invalid', {
+      method: 'POST', body: stream, duplex: 'half',
+      headers: { 'cf-connecting-ip': '203.0.113.9', 'content-type': 'application/json',
+        'content-length': '1' },
+    });
+    const response = await handlers[kind](req);
+    assert.equal(response.status, 413);
+    assert.equal((await response.json()).error, 'GATEWAY_REQUEST_TOO_LARGE');
+    assert.equal(cancelled, true);
+    assert.equal(calls.clients, 0);
+    assert.equal(calls.providers, 0);
+  });
+
+  test(`${kind}: accepts JSON at the byte limit and counts UTF-8 bytes`, async () => {
+    const make = (padding) => JSON.stringify({
+      operation: kind === 'customer' ? 'services' : 'geocode', query: 'Habana', padding,
+    });
+    const baseBytes = new TextEncoder().encode(make('')).length;
+    for (const [padding, status] of [
+      ['a'.repeat(65536 - baseBytes), 200], ['é'.repeat(32768), 413],
+    ]) {
+      const { handlers, calls } = await harness();
+      const response = await handlers[kind](new Request('https://isolated.invalid', {
+        method: 'POST', body: make(padding),
+        headers: { 'cf-connecting-ip': '203.0.113.9', 'content-type': 'application/json' },
+      }));
+      assert.equal(response.status, status);
+      if (status === 413) {
+        assert.equal(calls.clients, 0);
+        assert.equal(calls.providers, 0);
+      }
+    }
+  });
+
   test(`${kind}: rotating forged XFF cannot create fresh limiter buckets`, async () => {
     const { handlers, calls } = await harness();
     for (let i = 1; i <= 3; i++) {

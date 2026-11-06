@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/_shared/gateway-client-ip.ts'
+      - 'supabase/functions/_shared/gateway-json.ts'
       - 'supabase/functions/marketplace-customer-gateway/**'
       - 'supabase/functions/marketplace-map-gateway/**'
       - 'tests/security/**'
