@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.8";
 import { gatewayClientIp } from "../_shared/gateway-client-ip.ts";
+import { gatewayJson } from "../_shared/gateway-json.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -194,7 +195,7 @@ export async function handleRequest(request: Request): Promise<Response> {
     if (!url || !key || !secret || !rateSecret) {
       throw Error("MAP_GATEWAY_CONFIGURATION_MISSING");
     }
-    const body = await request.json(), operation = body?.operation;
+    const body = await gatewayJson(request), operation = body?.operation;
     requestOperation = typeof operation === "string" ? operation : null;
     if (
       ![
@@ -621,6 +622,8 @@ export async function handleRequest(request: Request): Promise<Response> {
 
     const status = message === "GATEWAY_CLIENT_IP_UNAVAILABLE"
       ? 503
+      : message === "GATEWAY_REQUEST_TOO_LARGE"
+      ? 413
       : message === "AUTHENTICATION_REQUIRED"
       ? 401
       : message === "DRIVER_JOB_FORBIDDEN"

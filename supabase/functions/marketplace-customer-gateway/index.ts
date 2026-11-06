@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.8";
 import { gatewayClientIp } from "../_shared/gateway-client-ip.ts";
+import { gatewayJson } from "../_shared/gateway-json.ts";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
@@ -39,7 +40,7 @@ Deno.serve(async (request) => {
     const clientIp = gatewayClientIp(request.headers);
     const url = Deno.env.get("SUPABASE_URL"); const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"); const rateSecret = Deno.env.get("MARKETPLACE_RATE_LIMIT_SECRET");
     if (!url || !key || !rateSecret) throw new Error("GATEWAY_CONFIGURATION_MISSING");
-    const body = await request.json(); const operation = body?.operation;
+    const body = await gatewayJson(request); const operation = body?.operation;
     if (typeof operation !== "string") throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
     const category = rateLimitCategory[operation];
     if (!category) throw new Error("CUSTOMER_GATEWAY_OPERATION_INVALID");
@@ -140,6 +141,8 @@ Deno.serve(async (request) => {
         : error && typeof error === "object" && "message" in error && typeof error.message === "string"
           ? error.message
           : "CUSTOMER_GATEWAY_FAILED";
-    return json({ error: message }, message === "GATEWAY_CLIENT_IP_UNAVAILABLE" ? 503 : 400);
+    const status = message === "GATEWAY_CLIENT_IP_UNAVAILABLE" ? 503
+      : message === "GATEWAY_REQUEST_TOO_LARGE" ? 413 : 400;
+    return json({ error: message }, status);
   }
 });
