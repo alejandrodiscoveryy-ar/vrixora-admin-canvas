@@ -8,6 +8,7 @@ on:
       - 'supabase/functions/marketplace-customer-gateway/**'
       - 'supabase/functions/marketplace-map-gateway/**'
       - 'tests/security/**'
+      - 'supabase/verification/gateway-ip-probe/**'
       - '.github/workflows/public-gateway-security.yml'
 
 permissions:
@@ -23,6 +24,6 @@ jobs:
         with:
           node-version: '24.20.0'
       - name: Execute gateways with simulated services (no dependencies or credentials)
-        run: node --experimental-vm-modules --test tests/security/public_gateway_ip_boundary.test.mjs
+        run: node --experimental-vm-modules --test tests/security/*.test.mjs
       - name: Existing map search contracts
         run: node --test tests/havana_poi_search.test.mjs

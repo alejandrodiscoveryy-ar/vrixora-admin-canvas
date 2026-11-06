@@ -87,11 +87,11 @@ los resultados remotos deben comprobarse por separado.
 Desde la carpeta del repositorio y esta rama, con Node 24.20.0:
 
 ```powershell
-node --experimental-vm-modules --test tests/security/public_gateway_ip_boundary.test.mjs
+node --experimental-vm-modules --test tests/security/*.test.mjs
 node --test tests/havana_poi_search.test.mjs
 ```
 
-Resultado esperado: 11 y 3 pruebas satisfactorias. Estos comandos ejecutan código
+Resultado esperado: 15 y 3 pruebas satisfactorias. Estos comandos ejecutan código
 local de pruebas; no modifican Supabase ni llaman a Mapbox. Node puede mostrar
 avisos sobre las APIs experimentales utilizadas por el arnés de pruebas.
 No hace falta ejecutarlos de nuevo para continuar la revisión: ya se ejecutaron.
@@ -136,3 +136,93 @@ Etapa 1 preparada para revisión: fallo de identidad XFF reproducido en aislamie
 corrección candidata compartida y pruebas incluidas. No integrada ni desplegada.
 Bloqueo pendiente: contrato verificable de `cf-connecting-ip` en el ingreso real
 y prueba autorizada fuera de producción. Mantener las etapas siguientes pendientes.
+
+## Continuación: comprobación de infraestructura y diagnóstico preparado
+
+En la continuación del 6 de noviembre se comprobó lo siguiente:
+
+- La conexión Supabase solo lista el proyecto TukTuk; su lista de ramas de
+  desarrollo está vacía. No se encontró un entorno de pruebas existente.
+- Agregación de solo lectura de los registros disponibles de las últimas 24 horas:
+  8 peticiones del gateway customer y 102 del gateway de mapas; todas presentan
+  `cf_connecting_ip` no vacío, sin listas separadas por comas, y respuesta marcada
+  como Cloudflare. No se extrajeron IPs ni cabeceras completas. Los registros son
+  del ingreso: no demuestran que el runtime reciba exactamente el mismo valor,
+  ni contienen una prueba controlada de falsificación.
+- La [documentación de registros de Supabase](https://supabase.com/docs/guides/observability/log-field-reference)
+  enumera esa cabecera como campo capturado; no establece allí una garantía de
+  sobrescritura para todas las rutas de Edge Functions.
+- Se verificó el [CI del commit 8a49dd6](https://github.com/alejandrodiscoveryy-ar/vrixora-admin-canvas/actions/runs/42267510461):
+  terminaron satisfactoriamente tanto las pruebas aisladas como los contratos de mapas.
+
+### Elección del entorno pendiente de autorización
+
+No crear automáticamente una rama que copie todo el proyecto. Las migraciones
+`20260929203648_marketplace_immediate_push_dispatch.sql`,
+`20261007153827_marketplace_progressive_dispatch_engine.sql`,
+`20261022203000_admin_operational_push_alerts.sql` y otras contienen URLs explícitas
+del proyecto de producción para enviar notificaciones. Eso exige revisar el
+aislamiento de llamadas salientes antes de probar con una copia completa.
+No se afirma que crear la rama por sí solo enviaría notificaciones.
+
+Para la primera comprobación del ingreso se propone un proyecto temporal vacío:
+`tuktuk-security-ip-probe`, región `us-east-1`, en la misma organización del proyecto
+TukTuk (`jdfdiwdckewonftygfmc`). No copiar datos, migraciones, secretos de producción,
+funciones existentes, tareas programadas ni webhooks. No conectarlo al repositorio
+para despliegue automático. La consulta de coste para esa organización devolvió
+proyecto: 0 mensuales; rama: 0.01344 por hora. Son cotizaciones del servicio, no una
+garantía de que todo consumo adicional sea gratuito. Revisar la cotización antes
+de crear el recurso. No se ha creado ninguno.
+
+### Artefacto de diagnóstico listo para revisión
+
+`supabase/verification/gateway-ip-probe/index.ts` está fuera de la carpeta de
+funciones desplegables del producto. Solo se publicaría en el entorno temporal
+tras autorización expresa. Requiere un token aleatorio de 256 bits y la referencia
+del proyecto temporal en una lista permitida. Rechaza el identificador conocido
+de producción incluso si se incluye en esa lista. No usa SQL, SDK de Supabase,
+Mapbox, CAPTCHA ni notificaciones, y no escribe registros propios.
+
+Devuelve únicamente si la cabecera CF contiene una IP válida y dos huellas HMAC
+de los valores recibidos (CF y primer XFF), protegidas por ese token temporal.
+No devuelve IPs, tokens ni cabeceras completas. La API de diagnóstico rechaza
+usuarios sin token; sus respuestas no se almacenan en caché.
+El proveedor puede conservar sus registros habituales de solicitudes: este
+artefacto no desactiva ni modifica esa retención.
+
+Cuatro pruebas nuevas verifican rechazo de producción/configuración incompleta,
+autenticación/método, ausencia de datos sensibles y huellas independientes. Total
+actual: 15 pruebas de seguridad satisfactorias. El chequeo Deno del diagnóstico
+también es satisfactorio. Estas cuatro pruebas solo validan el artefacto local.
+
+Tras autorizar el entorno, ejecutar una matriz pequeña y limitada:
+
+| Caso | Evidencia que recoger |
+|---|---|
+| Sin cabeceras IP aportadas por el cliente | CF válido y huella estable en repeticiones de la misma salida de red |
+| Dos prefijos XFF inventados | Si llega cada prefijo y si cambia la huella CF |
+| Dos CF-Connecting-IP inventadas | Rechazo en el ingreso o huella CF independiente de esos valores |
+| Cabeceras CF duplicadas/listas/malformadas | Rechazo en el ingreso o valor saneado; detener ante dato controlable |
+| Variación de X-Real-IP | La huella CF no debe depender de esa entrada |
+| IPv4/IPv6, cuando la salida de red lo permita | Anotar la familia realmente probada; no simular soporte no disponible |
+
+Usar inicialmente el dominio estándar del proyecto temporal. Inventariar los
+dominios alternativos antes de extrapolar resultados al producto. Un resultado
+favorable es evidencia para ese recorrido observado, no prueba universal.
+La validación completa de las operaciones y del SQL de ambos gateways seguirá
+pendiente de otro entorno aislado con esquema y datos sintéticos controlados.
+
+### Consulta técnica preparada para Supabase (no enviada)
+
+Para Edge Functions administradas accedidas por el dominio estándar y por
+dominios personalizados, ¿qué componente elimina o sobrescribe CF-Connecting-IP
+aportada por el cliente antes del runtime? ¿Se rechazan o normalizan duplicados y
+listas? ¿Existe una ruta soportada que evite esa protección? Necesitamos el
+contrato documentado o una confirmación oficial del proveedor para utilizar esa
+cabecera como identidad de un límite antiabuso. Una comprobación de formato y
+una observación aislada no establecen la procedencia de la cabecera.
+
+No se ha contactado a terceros, creado recursos, configurado secretos ni
+desplegado el diagnóstico. Pendiente: autorización del propietario para crear
+ese proyecto temporal, publicar únicamente el diagnóstico, ejecutar la matriz
+acotada y eliminar solo ese proyecto temporal al finalizar.
