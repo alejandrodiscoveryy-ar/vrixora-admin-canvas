@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.8";
+import { gatewayClientIp } from "../_shared/gateway-client-ip.ts";
 
-const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-forwarded-for" };
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const rateLimitCategory: Record<string, string> = {
   start_session: "session",
@@ -35,6 +36,7 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
+    const clientIp = gatewayClientIp(request.headers);
     const url = Deno.env.get("SUPABASE_URL"); const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"); const rateSecret = Deno.env.get("MARKETPLACE_RATE_LIMIT_SECRET");
     if (!url || !key || !rateSecret) throw new Error("GATEWAY_CONFIGURATION_MISSING");
     const body = await request.json(); const operation = body?.operation;
@@ -47,8 +49,7 @@ Deno.serve(async (request) => {
     const { data: settings, error: settingsError } = await supabase.from("marketplace_customer_abuse_settings").select("captcha_required,captcha_provider").eq("project_id", project.id).maybeSingle();
     if (settingsError) throw settingsError;
     if (settings?.captcha_required) await verifyCaptcha(body.captcha_token, settings.captcha_provider);
-    const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-network";
-    const identity = await hmac(`${category}:${forwarded}`, rateSecret);
+    const identity = await hmac(`${category}:${clientIp}`, rateSecret);
     const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
     const params = { ...(body.params ?? {}) };
@@ -139,6 +140,6 @@ Deno.serve(async (request) => {
         : error && typeof error === "object" && "message" in error && typeof error.message === "string"
           ? error.message
           : "CUSTOMER_GATEWAY_FAILED";
-    return json({ error: message }, 400);
+    return json({ error: message }, message === "GATEWAY_CLIENT_IP_UNAVAILABLE" ? 503 : 400);
   }
 });

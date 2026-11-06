@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.8";
+import { gatewayClientIp } from "../_shared/gateway-client-ip.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -185,6 +186,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
   let requestOperation: string | null = null;
   try {
+    const clientIp = gatewayClientIp(request.headers);
     const url = Deno.env.get("SUPABASE_URL"),
       key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const secret = Deno.env.get("MARKETPLACE_ROUTE_SIGNING_SECRET");
@@ -225,10 +227,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         ? "request"
         : "read";
     const identity = await sign(
-      `${category}:${
-        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-        "unknown-network"
-      }`,
+      `${category}:${clientIp}`,
       rateSecret,
     );
     const { error: limitError } = await db.rpc(
@@ -620,7 +619,9 @@ export async function handleRequest(request: Request): Promise<Response> {
       return reply({ error: message }, 200);
     }
 
-    const status = message === "AUTHENTICATION_REQUIRED"
+    const status = message === "GATEWAY_CLIENT_IP_UNAVAILABLE"
+      ? 503
+      : message === "AUTHENTICATION_REQUIRED"
       ? 401
       : message === "DRIVER_JOB_FORBIDDEN"
       ? 403
