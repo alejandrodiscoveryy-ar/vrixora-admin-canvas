@@ -106,7 +106,7 @@ export default function MarketplaceTestCenterV2({
   const [enabled, setEnabled] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [forceRealCommission, setForceRealCommission] = useState(false);
-  const [recipientMode, setRecipientMode] = useState<"individual" | "group" | "broadcast_all" | "broadcast_category">("individual");
+  const [recipientMode, setRecipientMode] = useState<"individual" | "group" | "broadcast_all" | "broadcast_category" | "cycle_all" | "cycle_category">("individual");
   const [individualId, setIndividualId] = useState("");
   const [serviceCode, setServiceCode] = useState("passenger");
   const [vehicleCategory, setVehicleCategory] = useState("tricycle");
@@ -127,6 +127,7 @@ export default function MarketplaceTestCenterV2({
   const [notes, setNotes] = useState("");
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
   const [successJobId, setSuccessJobId] = useState<string | null>(null);
+  const [successCampaignCount, setSuccessCampaignCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   // El laboratorio permanece compacto por defecto. No se altera la semántica V2.
   const [driversOpen, setDriversOpen] = useState(false);
@@ -401,7 +402,8 @@ export default function MarketplaceTestCenterV2({
   const activeCount = (history.data?.items ?? []).filter((job) =>
     ["published", "accepted", "en_route", "pickup", "in_progress"].includes(job.status),
   ).length;
-  const broadcastMode = recipientMode === "broadcast_all" || recipientMode === "broadcast_category";
+  const cycleMode = recipientMode === "cycle_all" || recipientMode === "cycle_category";
+  const broadcastMode = cycleMode || recipientMode === "broadcast_all" || recipientMode === "broadcast_category";
   const allowed = recipientMode === "group" ? selectedIds : individualId ? [individualId] : [];
   const configured = current.data?.enabled && audience.data != null;
   const dirty =
@@ -447,7 +449,7 @@ export default function MarketplaceTestCenterV2({
         throw new Error("Selecciona el destinatario de esta carrera.");
       if (broadcastMode && forceRealCommission)
         throw new Error("La difusion general no permite comisiones reales.");
-      if (recipientMode === "broadcast_category" && !vehicleCategory)
+      if ((recipientMode === "broadcast_category" || recipientMode === "cycle_category") && !vehicleCategory)
         throw new Error("Selecciona una modalidad para la difusion.");
       if (!originPoint || !destinationPoint || !validQuote)
         throw new Error("Calcula primero un recorrido real en el mapa.");
@@ -459,9 +461,14 @@ export default function MarketplaceTestCenterV2({
         throw new Error("El importe debe ser mayor que cero y no superar 100.000 CUP.");
       if (forceRealCommission && !canManagePayments)
         throw new Error("No tienes permiso financiero para probar una comisión real.");
+      const testScope = cycleMode
+        ? (recipientMode === "cycle_all" ? "una carrera INDIVIDUAL para CADA conductor Trabajando" : "una carrera INDIVIDUAL para CADA conductor Trabajando de esta modalidad")
+        : broadcastMode
+          ? (recipientMode === "broadcast_all" ? "UNA carrera compartida para TODOS los conductores Trabajando" : "UNA carrera compartida para los conductores Trabajando de esta modalidad")
+          : `UNA carrera para ${allowed.length} conductor(es)`;
       if (
         !window.confirm(
-          `Crear UNA carrera de PRUEBA para ${broadcastMode ? (recipientMode === "broadcast_all" ? "TODOS los conductores Trabajando (todas las modalidades)" : "los conductores Trabajando de la modalidad seleccionada") : allowed.length + " conductor(es)"}, por ${selectedPrice} CUP. ${forceRealCommission ? "ATENCIÓN: se aplicará una comisión REAL al conductor que acepte." : "Sin cobrar comisión real."} ¿Enviar?`,
+          `Crear ${testScope}, por ${selectedPrice} CUP. ${forceRealCommission ? "ATENCIÓN: se aplicará una comisión REAL al conductor que acepte." : "Sin cobrar comisión real."} ¿Enviar?`,
         )
       )
         return null;
@@ -472,6 +479,28 @@ export default function MarketplaceTestCenterV2({
         )
       )
         return null;
+      if (cycleMode) {
+        const created = await rpcJson<{ campaign_id: string; job_id: string; recipient_count: number; replayed: boolean }>(
+          "admin_create_marketplace_parallel_test_v1",
+          {
+            target_project_id: projectId,
+            target_idempotency_key: requestKey,
+            target_vehicle_category_code: recipientMode === "cycle_category" ? vehicleCategory : null,
+            target_service_code: serviceCode,
+            target_origin_text: origin.trim(),
+            target_destination_text: destination.trim(),
+            target_origin_point: { lat: originPoint.lat, lon: originPoint.lon },
+            target_destination_point: { lat: destinationPoint.lat, lon: destinationPoint.lon },
+            target_distance_km: validQuote.distanceKm,
+            target_route_duration_seconds: Math.ceil(validQuote.durationSeconds),
+            target_expected_price: selectedPrice,
+            target_notes: notes.trim() || null,
+          },
+        );
+        if (!created || typeof created.job_id !== "string" || created.recipient_count < 1)
+          throw new Error("TEST_PARALLEL_RESPONSE_INVALID");
+        return created;
+      }
       if (broadcastMode) {
         const created = await rpcJson<{ job_id: string; replayed: boolean; recipient_count: number }>(
           "admin_create_marketplace_test_broadcast_v1",
@@ -526,6 +555,7 @@ export default function MarketplaceTestCenterV2({
       if (!result) return;
       setError(null);
       setSuccessJobId(result.job_id);
+      setSuccessCampaignCount(cycleMode && "recipient_count" in result && typeof result.recipient_count === "number" ? result.recipient_count : null);
       setRequestKey(crypto.randomUUID());
       void qc.invalidateQueries({ queryKey: ["marketplace-test-history-v3", projectId] });
       void qc.invalidateQueries({ queryKey: ["marketplace-jobs", projectId] });
@@ -581,11 +611,11 @@ export default function MarketplaceTestCenterV2({
               aria-expanded={driversOpen}
               aria-controls="test-drivers-settings"
               onClick={() => setDriversOpen((v) => !v)}
+              disabled={broadcastMode}
               className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-background/55 px-3 py-2 text-xs font-semibold text-cyan-200"
             >
               <Users className="h-4 w-4" />
-              {selectedIds.length} conductor{selectedIds.length === 1 ? "" : "es"} autorizado
-              {selectedIds.length === 1 ? "" : "s"}
+              {broadcastMode ? "Destinatarios: Trabajando" : `${selectedIds.length} conductores del grupo tradicional`}
               {driversOpen ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
@@ -651,7 +681,7 @@ export default function MarketplaceTestCenterV2({
       {!loading && !current.isError && !drivers.isError && !audience.isError ? (
         <>
           <div className="tt-lab-v4-workspace grid min-w-0 gap-3">
-            {(driversOpen || dirty || !configured) && (
+            {!broadcastMode && (driversOpen || dirty || !configured) && (
               <section
                 id="test-drivers-settings"
                 className="tt-lab-v4-drivers min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4"
@@ -779,9 +809,11 @@ export default function MarketplaceTestCenterV2({
                     <select
                       value={recipientMode}
                       onChange={(e) => {
-                        const mode = e.target.value as "individual" | "group" | "broadcast_all" | "broadcast_category";
+                        const mode = e.target.value as "individual" | "group" | "broadcast_all" | "broadcast_category" | "cycle_all" | "cycle_category";
                         setRecipientMode(mode);
-                        if (mode === "broadcast_all" || mode === "broadcast_category") setForceRealCommission(false);
+                        setError(null);
+                        if (mode === "broadcast_all" || mode === "broadcast_category" || mode === "cycle_all" || mode === "cycle_category") setForceRealCommission(false);
+                        if ((mode === "broadcast_all" || mode === "cycle_all") && !vehicleCategory) setVehicleCategory("tricycle");
                       }}
                       className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
                     >
@@ -789,7 +821,10 @@ export default function MarketplaceTestCenterV2({
                       <option value="group">Todo el grupo</option>
                       <option value="broadcast_all">Todos los que estan Trabajando - todas las modalidades</option>
                       <option value="broadcast_category">Todos los que estan Trabajando - por modalidad</option>
+                      <option value="cycle_all">CICLO COMPLETO - cada conductor su carrera (todas)</option>
+                      <option value="cycle_category">CICLO COMPLETO - cada conductor su carrera (por modalidad)</option>
                     </select>
+                    {cycleMode && <span className="mt-1 block text-[11px] text-cyan-200">Cada conductor recibe su propia prueba; para aceptarla debe estar disponible y sin una carrera activa.</span>}
                   </label>
                   {recipientMode === "individual" ? (
                     selected.length === 1 ? (
@@ -818,7 +853,7 @@ export default function MarketplaceTestCenterV2({
                     )
                   ) : (
                     <div className="self-end rounded-lg border border-cyan-400/20 px-3 py-3 text-xs text-cyan-200">
-                      {recipientMode === "group" ? `${allowed.length} conductores del grupo` : recipientMode === "broadcast_all" ? "TODOS los conductores Trabajando" : `Trabajando · ${labelFor(vehicleCategory)}`}
+                      {recipientMode === "group" ? `${allowed.length} conductores del grupo` : cycleMode ? "Una carrera independiente por conductor" : recipientMode === "broadcast_all" ? "TODOS los conductores Trabajando" : `Trabajando · ${labelFor(vehicleCategory)}`}
                     </div>
                   )}
                   <label className="space-y-1 text-xs text-muted-foreground">
@@ -836,7 +871,7 @@ export default function MarketplaceTestCenterV2({
                     </select>
                   </label>
                   <label className="space-y-1 text-xs text-muted-foreground">
-                    {recipientMode === "broadcast_category" ? "Modalidad destinataria" : recipientMode === "broadcast_all" ? "Modalidad de referencia de tarifa (no filtra)" : "Tipo de vehículo (opcional)"}
+                    {recipientMode === "broadcast_category" || recipientMode === "cycle_category" ? "Modalidad destinataria" : recipientMode === "broadcast_all" || recipientMode === "cycle_all" ? "Modalidad de referencia de tarifa (no filtra)" : "Tipo de vehículo (opcional)"}
                     <select
                       value={vehicleCategory}
                       onChange={(e) => setVehicleCategory(e.target.value)}
@@ -1034,12 +1069,12 @@ export default function MarketplaceTestCenterV2({
                 {!successJobId && (
                   <div className="tt-lab-v4-actions mt-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-[11px] text-muted-foreground">
-                      {dirty
-                        ? "Guarda los cambios del grupo antes del envío."
-                        : forceRealCommission
-                          ? "Ensayo financiero con doble confirmación."
-                          : broadcastMode
-                            ? "Difusion de PRUEBA a todos los Trabajando, sin cobro real."
+                      {broadcastMode
+                        ? (cycleMode ? "Cada conductor recibe su propia carrera de PRUEBA; sin comisiones reales." : "Difusión de PRUEBA a todos los Trabajando, sin cobro real.")
+                        : dirty
+                          ? "Guarda los cambios del grupo antes del envío."
+                          : forceRealCommission
+                            ? "Ensayo financiero con doble confirmación."
                             : "Prueba georreferenciada · sin comisión real."}
                     </p>
                     <Button
@@ -1067,7 +1102,7 @@ export default function MarketplaceTestCenterV2({
                       onClick={() => onOpenJob(successJobId)}
                       className="flex items-center gap-2 text-xs text-emerald-300 underline"
                     >
-                      <CheckCircle2 className="h-4 w-4" /> Carrera creada. Ver detalle.
+                      <CheckCircle2 className="h-4 w-4" /> {successCampaignCount ? `${successCampaignCount} carreras individuales creadas. Ver una.` : "Carrera creada. Ver detalle."}
                     </button>
                     <Button
                       type="button"
@@ -1086,6 +1121,7 @@ export default function MarketplaceTestCenterV2({
                         setRouteError(null);
                         setPicking("origin");
                         setSuccessJobId(null);
+                        setSuccessCampaignCount(null);
                         setNotes("");
                         setPriceMode("auto");
                         setForceRealCommission(false);
