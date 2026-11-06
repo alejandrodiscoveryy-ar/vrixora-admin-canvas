@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP on
 -- Solo para PostgreSQL 17 efímero en CI; NUNCA ejecutar en producción.
+create role anon nologin;
+create role authenticated nologin;
 create schema app_private;
 create or replace function app_private.require_project_permission(target_project_id uuid, target_permission text)
 returns uuid language plpgsql as $$
