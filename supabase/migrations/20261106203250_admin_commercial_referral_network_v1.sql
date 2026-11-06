@@ -1,4 +1,4 @@
--- CANDIDATA: no aplicada. Comercial > Referidos: trazabilidad y rendimiento.
+-- APLICADA en Supabase 2026-11-06, version 20261106203250. Comercial > Referidos: trazabilidad y rendimiento.
 -- Consulta únicamente datos existentes; no crea premios ni altera billeteras.
 create or replace function public.admin_get_commercial_referral_network_v1(
   target_project_id uuid

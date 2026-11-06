@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
-const sql = read("supabase/migrations/20261106153000_admin_commercial_referral_network_v1.sql");
+const sql = read("supabase/migrations/20261106203250_admin_commercial_referral_network_v1.sql");
 const ui = read("src/features/admin/CommercialReferralsPanel.tsx");
 const comercial = read("src/features/admin/ComercialSection.tsx");
 

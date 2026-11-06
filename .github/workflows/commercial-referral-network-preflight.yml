@@ -5,7 +5,7 @@ on:
     paths:
       - 'src/features/admin/CommercialReferralsPanel.tsx'
       - 'src/features/admin/ComercialSection.tsx'
-      - 'supabase/migrations/20261106153000_admin_commercial_referral_network_v1.sql'
+      - 'supabase/migrations/20261106203250_admin_commercial_referral_network_v1.sql'
       - 'supabase/verification/commercial_referrals_disposable_fixture.sql'
       - 'tests/commercial_referral_network_contract.test.mjs'
       - '.github/workflows/commercial-referral-network-preflight.yml'

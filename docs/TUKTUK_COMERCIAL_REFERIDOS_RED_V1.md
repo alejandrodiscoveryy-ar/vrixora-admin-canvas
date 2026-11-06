@@ -1,6 +1,6 @@
 # Comercial: trazabilidad de referidos
 
-Estado: rama de desarrollo, sin cambios aplicados en Supabase ni despliegue.
+Estado: RPC aplicada en Supabase como migración 20261106203250; rama en revisión sin merge ni despliegue.
 
 Objetivo: mostrar para cada conductor referente todas las personas que invitó, aunque sean 57, 2 o 1, y cuánto ha generado la actividad válida de cada referido.
 
