@@ -53,6 +53,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
+import CommercialReferralsPanel from "@/features/admin/CommercialReferralsPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -97,7 +98,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
-  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas">("ofertas");
+  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas" | "referidos">("ofertas");
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
     queryFn: async () => {
@@ -113,6 +114,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   });
   const isTuktukProject = projectIdentity.data?.slug === "tuktuk-control";
   const showOffers = isTuktukProject && commercialView === "ofertas";
+  const showReferrals = isTuktukProject && commercialView === "referidos";
   const adminMembership = useQuery({
     queryKey: ["commercial-admin-membership", projectId, user?.id],
     queryFn: async () => {
@@ -292,16 +294,28 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             )}
             <Button
               type="button"
-              variant={!showOffers ? "default" : "outline"}
+              variant={commercialView === "captacion" ? "default" : "outline"}
               onClick={() => setCommercialView("captacion")}
               className="gap-2 rounded-xl font-semibold"
-              aria-pressed={!showOffers}
+              aria-pressed={commercialView === "captacion"}
             >
               <Megaphone className="h-4 w-4" />
               Captación y campañas
             </Button>
+            {isTuktukProject && (
+              <Button
+                type="button"
+                variant={showReferrals ? "default" : "outline"}
+                onClick={() => setCommercialView("referidos")}
+                className="gap-2 rounded-xl font-semibold"
+                aria-pressed={showReferrals}
+              >
+                <UsersRound className="h-4 w-4" />
+                Referidos
+              </Button>
+            )}
           </div>
-          {canManage && !showOffers && (
+          {canManage && !showOffers && !showReferrals && (
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
                 Nueva campaña
@@ -317,6 +331,8 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       {showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
+      ) : showReferrals ? (
+        <CommercialReferralsPanel projectId={projectId} />
       ) : (
         <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 shadow-[0_28px_86px_-62px_rgba(139,92,246,0.8)] sm:p-5">
           <img
