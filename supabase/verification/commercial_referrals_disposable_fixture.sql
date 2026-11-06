@@ -78,6 +78,8 @@ insert into public.wallet_transactions values
 insert into public.marketplace_referral_rewards values
  ('40000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000001');
 
+\ir ../migrations/20261106153000_admin_commercial_referral_network_v1.sql
+
 select set_config('tuktuk.fixture_commercial','on',false);
 select set_config('tuktuk.fixture_financial','on',false);
 
