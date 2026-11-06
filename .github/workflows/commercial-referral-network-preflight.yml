@@ -1,0 +1,56 @@
+name: Comercial Referidos TUKTUK - preflight
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/features/admin/CommercialReferralsPanel.tsx'
+      - 'src/features/admin/ComercialSection.tsx'
+      - 'supabase/migrations/20261106153000_admin_commercial_referral_network_v1.sql'
+      - 'supabase/verification/commercial_referrals_disposable_fixture.sql'
+      - 'tests/commercial_referral_network_contract.test.mjs'
+      - '.github/workflows/commercial-referral-network-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contracts-and-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.2'
+      - name: Verificar pertenencia y desglose de referidos
+        run: node --test tests/commercial_referral_network_contract.test.mjs
+      - name: Instalar dependencias bloqueadas
+        run: bun install --frozen-lockfile
+      - name: Compilar Admin sin publicar
+        env:
+          VITE_SUPABASE_URL: 'https://example.supabase.co'
+          VITE_SUPABASE_PUBLISHABLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.signature'
+        run: bun run build
+
+  disposable-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: referral_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d referral_fixture"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Probar SQL real en PostgreSQL 17 descartable, nunca en Supabase producción
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -w /work postgres:17 \
+            psql -h 127.0.0.1 -U postgres -d referral_fixture -v ON_ERROR_STOP=1 \
+            -f supabase/verification/commercial_referrals_disposable_fixture.sql
