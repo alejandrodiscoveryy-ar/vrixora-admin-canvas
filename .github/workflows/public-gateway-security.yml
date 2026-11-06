@@ -1,0 +1,28 @@
+name: Public gateway security (isolated)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/gateway-client-ip.ts'
+      - 'supabase/functions/marketplace-customer-gateway/**'
+      - 'supabase/functions/marketplace-map-gateway/**'
+      - 'tests/security/**'
+      - '.github/workflows/public-gateway-security.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.20.0'
+      - name: Execute gateways with simulated services (no dependencies or credentials)
+        run: node --experimental-vm-modules --test tests/security/public_gateway_ip_boundary.test.mjs
+      - name: Existing map search contracts
+        run: node --test tests/havana_poi_search.test.mjs
