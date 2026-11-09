@@ -3764,7 +3764,26 @@ function JobNotificationReach({
     radar.data?.radar_settings?.r1,
     radar.data?.radar_settings?.r2,
     radar.data?.radar_settings?.r3,
-  ].filter((km): km is number => typeof km === "number");
+  ].filter((km): km is number => typeof km === "number" && Number.isFinite(km) && km > 0);
+
+  // Los registros guardan el primer aviso por conductor, no todos los reintentos.
+  // Un radio sin destinatarios no demuestra que se ejecutara la etapa.
+  const notificationStageNumbers = [...new Set([
+    ...snapshotRadii.map((_, index) => index + 1),
+    ...stageGroups.map(({ stage }) => stage).filter((stage) => stage > 0),
+  ])].sort((a, b) => a - b);
+  const notificationRoute = notificationStageNumbers.map((stage) => {
+    const recipientsAtStage = actual.filter(
+      (item) => radarByDriver.get(item.driverUserId)?.radius_stage === stage
+    );
+    const recorded = stageGroups.find((group) => group.stage === stage);
+    return {
+      stage,
+      radius: recorded?.radius ?? snapshotRadii[stage - 1] ?? null,
+      recipients: recipientsAtStage,
+      sent: recipientsAtStage.filter((item) => item.deliveryStatus === "sent").length,
+    };
+  });
 
   if (compact) {
     return (
