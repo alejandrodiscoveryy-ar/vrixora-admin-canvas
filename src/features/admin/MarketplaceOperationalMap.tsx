@@ -2060,7 +2060,7 @@ export default function MarketplaceOperationalMap({
       type="button"
       aria-pressed={layers[key]}
       onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}
-      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-semibold backdrop-blur-xl transition-all duration-200 ${
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-semibold backdrop-blur-xl transition-all duration-200 ${
         layers[key]
           ? `${activeClass} shadow-[0_12px_30px_-18px_rgba(0,0,0,0.9)]`
           : "border-white/10 bg-background/25 text-muted-foreground opacity-65 hover:bg-background/40 hover:opacity-90"
@@ -2155,7 +2155,7 @@ export default function MarketplaceOperationalMap({
               expanded ? "min-h-0 flex-1" : "min-h-[320px] flex-none"
             }`}
           >
-            <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-5rem)] flex-col items-start gap-2">
+            <div className="absolute left-3 top-3 z-20 flex w-[calc(100%-5rem)] max-w-[820px] flex-col items-start gap-2">
               <div
                 className="flex items-center gap-1 rounded-2xl border border-white/20 bg-slate-950/85 p-1 shadow-lg backdrop-blur-xl"
                 role="group"
@@ -2179,7 +2179,7 @@ export default function MarketplaceOperationalMap({
                 ))}
               </div>
               {mapViewMode === "operations" ? (
-                <div className="flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl">
+                <div className="flex w-full max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin]">
                   {layerButton(
                     "drivers",
                     "Conductores",
@@ -2192,7 +2192,7 @@ export default function MarketplaceOperationalMap({
                     disabled={!layers.drivers || staleWorkingDriversWithLocation === 0}
                     title="Ubicaciones antiguas de conductores trabajando. No indican una posición GPS actual."
                     onClick={() => setShowStaleWorkingDrivers((current) => !current)}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold backdrop-blur-xl transition-colors enabled:hover:border-amber-400/50 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold backdrop-blur-xl transition-colors enabled:hover:border-amber-400/50 disabled:cursor-not-allowed disabled:opacity-40 ${
                       showStaleWorkingDrivers
                         ? "border-amber-400/60 bg-amber-500/20 text-amber-100"
                         : "border-white/15 bg-background/30 text-slate-200"
@@ -2231,7 +2231,7 @@ export default function MarketplaceOperationalMap({
                 </div>
               ) : (
                 <div
-                  className="flex flex-wrap items-center gap-1.5 rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl"
+                  className="flex w-full max-w-full flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin]"
                   role="group"
                   aria-label="Filtros de cobertura"
                 >
@@ -2249,7 +2249,7 @@ export default function MarketplaceOperationalMap({
                       type="button"
                       aria-pressed={coverageFilter === filter}
                       onClick={() => setCoverageFilter(filter)}
-                      className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold ${coverageFilter === filter ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"}`}
+                      className={`shrink-0 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold ${coverageFilter === filter ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"}`}
                     >
                       {label}
                     </button>

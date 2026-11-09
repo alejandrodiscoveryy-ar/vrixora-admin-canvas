@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -55,8 +55,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
-import MarketplaceConfigurationWorkspace from "@/features/admin/MarketplaceConfigurationWorkspace";
+
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
@@ -64,7 +63,7 @@ import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 
 
 import MarketplaceRadarReadinessCard from "@/features/admin/MarketplaceRadarReadinessCard";
-import MarketplaceCustomerCareWorkspace from "@/features/admin/MarketplaceCustomerCareWorkspace";
+
 import {
   getMarketplaceOperationalMap,
   getMarketplaceJobNotificationRecipients,
@@ -72,6 +71,11 @@ import {
   getMarketplaceDirectoryDriverMedia,
   type MarketplaceDirectoryDriverMedia,
 } from "@/lib/marketplace-map";
+
+// Evitar descargar mapas de pruebas y sus dependencias en las otras vistas.
+const MarketplaceOperationalMap = lazy(() => import("@/features/admin/MarketplaceOperationalMap"));
+const MarketplaceConfigurationWorkspace = lazy(() => import("@/features/admin/MarketplaceConfigurationWorkspace"));
+const MarketplaceCustomerCareWorkspace = lazy(() => import("@/features/admin/MarketplaceCustomerCareWorkspace"));
 
 const PAGE_SIZE = 25;
 
@@ -988,7 +992,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   }, [tab]);
 
   useEffect(() => {
-    if (!permissions.includes("marketplace.view")) return;
+    // No competir con los datos del panel inicial. Precalentar al entrar en Mapa,
+    // en paralelo a la descarga diferida del módulo visual.
+    if (tab !== "mapa" || !permissions.includes("marketplace.view")) return;
 
     void queryClient.prefetchQuery({
       queryKey: ["marketplace-operational-map-config", projectId],
@@ -1001,7 +1007,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
       queryFn: () => getMarketplaceOperationalMap(projectId),
       staleTime: 5_000,
     });
-  }, [permissions, projectId, queryClient]);
+  }, [permissions, projectId, queryClient, tab]);
 
   const invalidate = (...keys: string[]) =>
     Promise.all(
@@ -2052,25 +2058,35 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </div>
         </TabsContent>
         <TabsContent value="atencion" className="mt-3">
-          <MarketplaceCustomerCareWorkspace
-            projectId={projectId}
-            canManageContact={permissions.includes("whatsapp_settings.manage")}
-            canViewCustomers={canCustomers}
-            canManageMarketplace={canManageMarketplace}
-            canRegisterCustomers={permissions.includes("customers.manage")}
-            onOpenCustomer={setCustomerId}
-            onOpenJob={setJobId}
-          />
-        </TabsContent>
-        {mapVisited ? (
-          <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
-            <MarketplaceOperationalMap
+          <Suspense fallback={<div role="status" className="rounded-2xl border border-border/60 bg-background/45 p-6 text-sm text-muted-foreground">Cargando atención al cliente…</div>}>
+            <MarketplaceCustomerCareWorkspace
               projectId={projectId}
+              canManageContact={permissions.includes("whatsapp_settings.manage")}
               canViewCustomers={canCustomers}
-              onOpenDriver={setDriver360Id}
+              canManageMarketplace={canManageMarketplace}
+              canRegisterCustomers={permissions.includes("customers.manage")}
               onOpenCustomer={setCustomerId}
               onOpenJob={setJobId}
             />
+          </Suspense>
+        </TabsContent>
+        {mapVisited ? (
+          <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
+            <Suspense
+              fallback={
+                <div role="status" className="flex min-h-[320px] w-full items-center justify-center rounded-[26px] border border-border/60 bg-background/35 px-4 text-sm text-muted-foreground">
+                  Preparando mapa interactivo…
+                </div>
+              }
+            >
+              <MarketplaceOperationalMap
+                projectId={projectId}
+                canViewCustomers={canCustomers}
+                onOpenDriver={setDriver360Id}
+                onOpenCustomer={setCustomerId}
+                onOpenJob={setJobId}
+              />
+            </Suspense>
           </TabsContent>
         ) : null}
         <TabsContent value="conductores">
@@ -2851,14 +2867,16 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
         {canSettings ? (
           <TabsContent value="configuracion" className="mt-3">
-            <MarketplaceConfigurationWorkspace
-              projectId={projectId}
-              canManageSettings={canManageSettings}
-              canManageMarketplace={canManageMarketplace}
-              canManagePayments={canManagePayments}
-              canManageTerritory={permissions.includes("marketplace.map.manage")}
-              onOpenJob={setJobId}
-            />
+            <Suspense fallback={<div role="status" className="rounded-2xl border border-border/60 bg-background/45 p-6 text-sm text-muted-foreground">Cargando configuración de TukTuk…</div>}>
+              <MarketplaceConfigurationWorkspace
+                projectId={projectId}
+                canManageSettings={canManageSettings}
+                canManageMarketplace={canManageMarketplace}
+                canManagePayments={canManagePayments}
+                canManageTerritory={permissions.includes("marketplace.map.manage")}
+                onOpenJob={setJobId}
+              />
+            </Suspense>
           </TabsContent>
         ) : null}
       </Tabs>
