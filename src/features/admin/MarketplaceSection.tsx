@@ -1857,12 +1857,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         {expandedOperationId === job.jobId ? (
                           <div
                             id={`operation-content-${job.jobId}`}
-                            className="relative mt-3 border-t border-border/50 pt-4"
+                            className="relative mt-2 border-t border-border/50 pt-3"
                           >
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between lg:gap-3">
                               <div className="min-w-0 flex-1">
-                                <div className="rounded-2xl border border-border/55 bg-background/50 p-4">
-                                  <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
+                                <div className="rounded-xl border border-border/55 bg-background/50 p-3">
+                                  <div className="grid gap-2.5 md:grid-cols-[1fr_auto_1fr] md:items-center">
                                     <div className="flex min-w-0 items-start gap-3">
                                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
                                         <MapPin className="h-4 w-4" />
@@ -1901,8 +1901,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                                 <JobNotificationReach projectId={projectId} jobId={job.jobId} compact />
 
-                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                  <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
+                                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                  <div className="rounded-xl border border-border/50 bg-background/45 p-3">
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
                                         <UserRound className="h-4 w-4" />
@@ -1924,7 +1924,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     </div>
                                   </div>
 
-                                  <div className="rounded-2xl border border-border/50 bg-background/45 p-3.5">
+                                  <div className="rounded-xl border border-border/50 bg-background/45 p-3">
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/15 bg-amber-500/[0.05] text-amber-300">
                                         <CarFront className="h-4 w-4" />
@@ -1945,8 +1945,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 </div>
                               </div>
 
-                              <div className="w-full shrink-0 space-y-3 lg:w-[200px]">
-                              <aside className="rounded-xl border border-border/55 bg-background/55 p-3">
+                              <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[200px]">
+                              <aside className="rounded-xl border border-border/55 bg-background/55 p-2.5">
                                 <div className="space-y-2 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
                                     <span>Programado</span>
@@ -1967,7 +1967,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ) : null}
                                 </div>
 
-                                <div className="mt-4 grid gap-2">
+                                <div className="mt-2 grid gap-2">
                                   <Button
                                     className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-100 hover:bg-emerald-500/[0.12]"
                                     size="sm"
@@ -3792,7 +3792,7 @@ function JobNotificationReach({
 
   if (compact) {
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.035] px-3 py-2 text-xs">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.035] px-3 py-1.5 text-[11px] sm:text-xs">
         <span className="font-semibold text-cyan-200">Alcance de la solicitud</span>
         <span className="text-foreground">Radar: <strong>{radarLabel}</strong></span>
         <span className="text-foreground">Destinatarios: <strong>{actual.length}</strong></span>
