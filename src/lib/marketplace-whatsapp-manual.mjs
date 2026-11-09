@@ -69,6 +69,8 @@ export function interpretManualWhatsAppMessage(raw) {
   else if (/\b(moto|motocicleta|motorina)\b/i.test(vehicleSource)) result.vehicle = "motorcycle";
   else if (/\b(auto|carro|taxi|autom[oó]vil)\b/i.test(vehicleSource)) result.vehicle = "light_car";
 
+  if (!result.service && result.vehicle) result.service = "passenger";
+
   const customerLine = labelValue(lines, "cliente|nombre");
   const explicitContact = labelValue(lines, "contacto|tel[eé]fono|tel");
   const combined = customerLine.match(/^(.*?)(?:\s*[|·]\s*)(\+?53[\d\s()-]+)$/);
