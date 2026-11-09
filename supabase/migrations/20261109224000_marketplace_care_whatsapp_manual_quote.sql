@@ -25,6 +25,7 @@ create table if not exists public.marketplace_admin_whatsapp_quotes (
   created_at timestamptz not null default now(),
   quote_expires_at timestamptz not null default (now()+interval '2 hours'),
   sent_at timestamptz,
+  sent_by uuid,
   accepted_at timestamptz,
   accepted_by uuid,
   acceptance_excerpt text,
@@ -35,8 +36,10 @@ create table if not exists public.marketplace_admin_whatsapp_quotes (
   constraint marketplace_admin_whatsapp_quotes_job_fk
     foreign key(project_id,job_id) references public.jobs(project_id,id),
   constraint marketplace_admin_whatsapp_quotes_request_unique unique(project_id,request_key),
+  constraint marketplace_admin_whatsapp_quotes_sent_consistent
+    check(status<>'sent' or (sent_at is not null and sent_by is not null)),
   constraint marketplace_admin_whatsapp_quotes_acceptance_consistent
-    check(status<>'accepted' or (sent_at is not null and accepted_at is not null)),
+    check(status<>'accepted' or (sent_at is not null and sent_by is not null and accepted_at is not null)),
   constraint marketplace_admin_whatsapp_quotes_published_consistent
     check(status<>'published' or job_id is not null)
 );
@@ -151,7 +154,7 @@ begin
     raise exception 'WHATSAPP_QUOTE_INVALID_TRANSITION' using errcode='22023';
   end if;
   update public.marketplace_admin_whatsapp_quotes q
-    set status='sent',sent_at=now()
+    set status='sent',sent_at=now(),sent_by=v_actor
     where q.id=target_quote_id and q.project_id=target_project_id
     returning * into v_quote;
   return to_jsonb(v_quote);
@@ -208,7 +211,8 @@ begin
       'status','published','repeated',true);
   end if;
   if v_quote.status<>'accepted' or v_quote.accepted_at is null
-    or v_quote.sent_at is null or v_quote.acceptance_excerpt is null then
+    or v_quote.sent_at is null or v_quote.sent_by is null
+    or v_quote.acceptance_excerpt is null then
     raise exception 'WHATSAPP_QUOTE_NOT_ACCEPTED' using errcode='42501';
   end if;
   if v_quote.quote_expires_at<=now() then
