@@ -12,7 +12,7 @@ test("Radar de Operaciones usa cinco indicadores compactos en lugar de tarjetas 
   assert.match(radar, /grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5/);
   assert.match(radar, /flex min-w-0 items-center justify-between gap-2 rounded-xl/);
   assert.doesNotMatch(radar, /min-h-\[174px\]/);
-  for (const label of ["Trabajando", "GPS reciente", "Aptos", "Candidatos GPS", "Alertas Android"]) {
+  for (const label of ["Trabajando", "GPS reciente", "Aptos", "Candidatos con GPS", "Alertas Android"]) {
     assert.ok(radar.includes('label="' + label + '"'), "Falta indicador " + label);
   }
 });
