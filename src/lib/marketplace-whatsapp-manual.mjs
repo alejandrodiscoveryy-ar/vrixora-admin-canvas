@@ -82,7 +82,7 @@ export function interpretManualWhatsAppMessage(raw) {
   result.destination = labelValue(lines, "destino")
     || sectionValue(lines, "destino");
   // Compatibilidad con solicitudes con ambos campos en una misma línea.
-  const inlineStops = text.match(/\b(?:origen|recogida)\s*[:=-]\s*(.+?)\s+destino\s*[:=-]\s*(.+?)(?:[.!?;]|$)/i);
+  const inlineStops = lines.map((line) => line.match(/\b(?:origen|recogida)\s*[:=-]\s*(.+?)\s+destino\s*[:=-]\s*(.+?)(?:[.!?;]|$)/i)).find(Boolean);
   if (inlineStops) {
     result.origin = clean(inlineStops[1]);
     result.destination = clean(inlineStops[2]);
