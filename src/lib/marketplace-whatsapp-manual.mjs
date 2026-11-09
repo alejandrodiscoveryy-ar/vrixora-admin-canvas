@@ -21,7 +21,7 @@ export function interpretManualWhatsAppMessage(raw) {
   else if (/\b(auto|carro|taxi|autom[oó]vil)\b/i.test(text)) result.vehicle = "light_car";
 
   const originLabel = text.match(/\borigen\s*[:=-]\s*(.+?)(?=\s+(?:destino\s*[:=-]|hasta\b|hacia\b)|$)/i);
-  const destinationLabel = text.match(/\bdestino\s*[:=-]\s*(.+?)(?=\s+origen\s*[:=-]|$)/i);
+  const destinationLabel = text.match(/\bdestino\s*[:=-]\s*(.+?)(?=[.!?;]|\s+origen\s*[:=-]|$)/i);
   const route = text.match(/\b(?:desde|salgo\s+de|recoger\s+en|rec[oó]geme\s+en)\s+(.+?)\s+(?:hasta|hacia|para\s+ir\s+a)\s+(.+?)(?:[.!?;]|$)/i);
   result.origin = clean(originLabel?.[1] ?? route?.[1] ?? "");
   result.destination = clean(destinationLabel?.[1] ?? route?.[2] ?? "");
