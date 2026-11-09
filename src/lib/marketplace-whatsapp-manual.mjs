@@ -81,6 +81,12 @@ export function interpretManualWhatsAppMessage(raw) {
     || sectionValue(lines, "origen|recogida");
   result.destination = labelValue(lines, "destino")
     || sectionValue(lines, "destino");
+  // Compatibilidad con solicitudes con ambos campos en una misma línea.
+  const inlineStops = text.match(/\b(?:origen|recogida)\s*[:=-]\s*(.+?)\s+destino\s*[:=-]\s*(.+?)(?:[.!?;]|$)/i);
+  if (inlineStops) {
+    result.origin = clean(inlineStops[1]);
+    result.destination = clean(inlineStops[2]);
+  }
 
   // El texto libre conserva la compatibilidad con el flujo WhatsApp asistido.
   if (!result.origin || !result.destination) {
