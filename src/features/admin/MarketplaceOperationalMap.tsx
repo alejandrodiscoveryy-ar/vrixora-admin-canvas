@@ -806,17 +806,21 @@ function setLayerVisibility(map: mapboxgl.Map, id: string, visible: boolean) {
 export default function MarketplaceOperationalMap({
   projectId,
   canViewCustomers = false,
+  onOpenDriver,
   onOpenCustomer,
   onOpenJob,
 }: {
   projectId: string;
   canViewCustomers?: boolean;
+  onOpenDriver?: (driverUserId: string) => void;
   onOpenCustomer?: (customerId: string) => void;
   onOpenJob?: (jobId: string) => void;
 }) {
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
   // V3: conservar Operaciones como vista inicial; Cobertura es opcional.
   const [mapViewMode, setMapViewMode] = useState<MapViewMode>("operations");
+  // Operaciones prioriza GPS vigente. La ubicación antigua se consulta solo a demanda.
+  const [showStaleWorkingDrivers, setShowStaleWorkingDrivers] = useState(false);
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
   const [expanded, setExpanded] = useState(false);
   // Agenda de cristal: sin pestaña activa se muestra la leyenda.
@@ -895,6 +899,17 @@ export default function MarketplaceOperationalMap({
       );
     });
   }, [driverListMode, operational.data?.drivers]);
+
+  const staleWorkingDriversWithLocation = useMemo(
+    () =>
+      (operational.data?.drivers ?? []).filter(
+        (driver) =>
+          (driver.acceptingJobs || Boolean(driver.activeJobId)) &&
+          !driver.locationFresh &&
+          driverCoordinate(driver) != null,
+      ).length,
+    [operational.data?.drivers],
+  );
 
   const coverageDrivers = useMemo(() => {
     const all = operational.data?.drivers ?? [];
@@ -1370,6 +1385,7 @@ export default function MarketplaceOperationalMap({
     if (layers.drivers || mapViewMode === "coverage") {
       for (const driver of operational.data?.drivers ?? []) {
         if (mapViewMode === "operations" && !driver.acceptingJobs && !driver.activeJobId) continue;
+        if (mapViewMode === "operations" && !driver.locationFresh && !showStaleWorkingDrivers) continue;
         if (mapViewMode === "coverage" && !coverageDriverIds.has(driver.driverUserId)) continue;
 
         const coordinate = driverCoordinate(driver);
@@ -1478,7 +1494,7 @@ export default function MarketplaceOperationalMap({
         markers.delete(driverUserId);
       }
     }
-  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds]);
+  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds, showStaleWorkingDrivers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1856,7 +1872,7 @@ export default function MarketplaceOperationalMap({
     setLayerVisibility(
       map,
       MAP_LAYERS.driversStale,
-      mapViewMode === "operations" && layers.drivers,
+      mapViewMode === "operations" && layers.drivers && showStaleWorkingDrivers,
     );
     setLayerVisibility(map, MAP_LAYERS.routesPickup, mapViewMode === "operations" && layers.routes);
     setLayerVisibility(
@@ -1871,7 +1887,7 @@ export default function MarketplaceOperationalMap({
       mapViewMode === "operations" && layers.routes,
     );
     setLayerVisibility(map, MAP_LAYERS.incidents, mapViewMode === "operations" && layers.incidents);
-  }, [layers, mapLoaded, mapViewMode]);
+  }, [layers, mapLoaded, mapViewMode, showStaleWorkingDrivers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2170,6 +2186,24 @@ export default function MarketplaceOperationalMap({
                     "bg-orange-500",
                     "border-orange-400/30 bg-orange-500/20 text-orange-100",
                   )}
+                  <button
+                    type="button"
+                    aria-pressed={showStaleWorkingDrivers}
+                    disabled={!layers.drivers || staleWorkingDriversWithLocation === 0}
+                    title="Ubicaciones antiguas de conductores trabajando. No indican una posición GPS actual."
+                    onClick={() => setShowStaleWorkingDrivers((current) => !current)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold backdrop-blur-xl transition-colors enabled:hover:border-amber-400/50 disabled:cursor-not-allowed disabled:opacity-40 ${
+                      showStaleWorkingDrivers
+                        ? "border-amber-400/60 bg-amber-500/20 text-amber-100"
+                        : "border-white/15 bg-background/30 text-slate-200"
+                    }`}
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                    {showStaleWorkingDrivers ? "Ocultar GPS antiguo" : "Mostrar GPS antiguo"}
+                    <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 tabular-nums text-amber-200">
+                      {staleWorkingDriversWithLocation}
+                    </span>
+                  </button>
                   {layerButton(
                     "pickups",
                     "Clientes",
@@ -2411,15 +2445,26 @@ export default function MarketplaceOperationalMap({
                           </button>
                         </div>
 
-                        <div className="mt-2.5 space-y-1.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(148,163,184,0.35)_transparent] [scrollbar-width:thin]">
+                        <div className="mt-2.5 space-y-1.5 pr-1">
                           {filteredDrivers.length ? (
                             filteredDrivers.map((driver) => {
                               const hasLastPosition = driverCoordinate(driver) != null;
                               return (
                                 <div
                                   key={driver.driverUserId}
-                                  className="rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                                  className="relative rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md transition-colors hover:border-cyan-400/35 hover:bg-background/55"
                                 >
+                                  {onOpenDriver ? (
+                                    <button
+                                      type="button"
+                                      aria-label={`Abrir ficha 360 de ${driver.driverDisplayName || "Conductor"}`}
+                                      onClick={() => {
+                                        setExpanded(false);
+                                        onOpenDriver(driver.driverUserId);
+                                      }}
+                                      className="absolute inset-0 z-10 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                                    />
+                                  ) : null}
                                   <div className="flex min-w-0 items-start gap-2">
                                     <DriverAvatar
                                       name={driver.driverDisplayName}
@@ -2498,7 +2543,7 @@ export default function MarketplaceOperationalMap({
                                         <button
                                           type="button"
                                           disabled={!hasLastPosition}
-                                          className="rounded-md border border-orange-400/20 px-1.5 py-0.5 text-[10px] text-orange-200 enabled:hover:bg-orange-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                          className="relative z-20 rounded-md border border-orange-400/20 px-1.5 py-0.5 text-[10px] text-orange-200 enabled:hover:bg-orange-400/10 disabled:cursor-not-allowed disabled:opacity-40"
                                           onClick={() => {
                                             const coordinate = driverCoordinate(driver);
                                             const liveMap = mapRef.current;
@@ -2568,19 +2613,23 @@ export default function MarketplaceOperationalMap({
                         ) : null}
                         <div className="mt-3 space-y-2">
                           {operationalJobs.length ? (
-                            prioritizedJobs.slice(0, 12).map((job) => {
+                            prioritizedJobs.map((job) => {
                               const selected = job.jobId === selectedJobId;
                               return (
-                                <button
-                                  type="button"
-                                  key={job.jobId}
-                                  aria-expanded={selected && customerDetailsJobId === job.jobId}
-                                  onClick={() => {
-                                    const opening = customerDetailsJobId !== job.jobId;
-                                    setSelectedJobId(job.jobId);
-                                    setCustomerDetailsJobId(opening ? job.jobId : null);
-                                    if (opening) focusJob(job);
-                                  }}
+                                <div key={job.jobId} className="space-y-1">
+                                  <button
+                                    type="button"
+                                    aria-label={`Abrir ficha 360 del servicio de ${job.customerDisplayName || "Cliente"}`}
+                                    onClick={() => {
+                                      if (onOpenJob) {
+                                        setExpanded(false);
+                                        onOpenJob(job.jobId);
+                                      } else {
+                                        setSelectedJobId(job.jobId);
+                                        setCustomerDetailsJobId(job.jobId);
+                                        focusJob(job);
+                                      }
+                                    }}
                                   className={`w-full rounded-2xl border p-3 text-left transition ${
                                     selected
                                       ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
@@ -2624,7 +2673,21 @@ export default function MarketplaceOperationalMap({
                                       {job.driverDisplayName}
                                     </p>
                                   ) : null}
-                                </button>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    aria-label={`Ver en mapa y consultar detalles del servicio de ${job.customerDisplayName || "Cliente"}`}
+                                    onClick={() => {
+                                      const opening = customerDetailsJobId !== job.jobId;
+                                      setSelectedJobId(job.jobId);
+                                      setCustomerDetailsJobId(opening ? job.jobId : null);
+                                      if (opening) focusJob(job);
+                                    }}
+                                    className="rounded-lg border border-cyan-400/20 px-2 py-1 text-[10px] font-medium text-cyan-200 hover:bg-cyan-500/10"
+                                  >
+                                    Ver en mapa y detalles
+                                  </button>
+                                </div>
                               );
                             })
                           ) : (
@@ -2917,8 +2980,19 @@ export default function MarketplaceOperationalMap({
                           customerJobs.map((job) => (
                             <div
                               key={job.customerId || job.jobId}
-                              className="rounded-xl border border-white/15 bg-white/[0.035] p-3"
+                              className="relative rounded-xl border border-white/15 bg-white/[0.035] p-3 transition-colors hover:border-emerald-400/35 hover:bg-white/[0.06]"
                             >
+                              {canViewCustomers && job.customerId && onOpenCustomer ? (
+                                <button
+                                  type="button"
+                                  aria-label={`Abrir ficha 360 de ${job.customerDisplayName || "Cliente"}`}
+                                  onClick={() => {
+                                    setExpanded(false);
+                                    onOpenCustomer(job.customerId!);
+                                  }}
+                                  className="absolute inset-0 z-10 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                                />
+                              ) : null}
                               <div className="flex items-start gap-2">
                                 <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
                                 <div className="min-w-0 flex-1">
@@ -2933,7 +3007,7 @@ export default function MarketplaceOperationalMap({
                                   </p>
                                 </div>
                               </div>
-                              <div className="mt-2 flex flex-wrap gap-2">
+                              <div className="relative z-20 mt-2 flex flex-wrap gap-2">
                                 <button
                                   type="button"
                                   className="rounded-lg border border-cyan-400/25 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/10"
