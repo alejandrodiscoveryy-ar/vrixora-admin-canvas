@@ -23,6 +23,7 @@ import {
   PanelRightOpen,
   RefreshCw,
   Route,
+  SlidersHorizontal,
   Truck,
   UserRound,
   Users,
@@ -821,6 +822,8 @@ export default function MarketplaceOperationalMap({
   const [mapViewMode, setMapViewMode] = useState<MapViewMode>("operations");
   // Operaciones prioriza GPS vigente. La ubicación antigua se consulta solo a demanda.
   const [showStaleWorkingDrivers, setShowStaleWorkingDrivers] = useState(false);
+  // El móvil prioriza el mapa; las capas siguen accesibles con un toque.
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
   const [expanded, setExpanded] = useState(false);
   // Agenda de cristal: sin pestaña activa se muestra la leyenda.
@@ -2079,7 +2082,58 @@ export default function MarketplaceOperationalMap({
             expanded ? "h-full" : "self-start"
           }`}
         >
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/55 px-3 py-2.5 xl:flex-nowrap">
+          {/* Barra compacta móvil: un renglón en lugar de tres. En escritorio se conserva el panel completo. */}
+          <div className="flex min-w-0 items-center justify-between gap-1 border-b border-border/55 px-2 py-1.5 sm:hidden">
+            <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[10px] tabular-nums">
+              <span className="inline-flex items-center gap-1 text-emerald-300" aria-label={`En vivo, ${liveAt}`} title={`En vivo · ${liveAt}`}>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Vivo
+              </span>
+              <span className="rounded-full bg-orange-500/10 px-1.5 py-1 text-orange-200" title="Conductores trabajando">
+                Trab. <strong className="text-foreground">{data.summary.workingDrivers}</strong>
+              </span>
+              <span className="rounded-full bg-emerald-500/10 px-1.5 py-1 text-emerald-200" title="Conductores con GPS reciente">
+                GPS <strong className="text-foreground">{data.summary.driversWithFreshLocation}</strong>
+              </span>
+              <span className="hidden rounded-full bg-cyan-500/10 px-1.5 py-1 text-cyan-200 min-[370px]:inline-flex" title="Servicios activos">
+                Serv. <strong className="ml-1 text-foreground">{data.summary.activeJobs}</strong>
+              </span>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 bg-background/50 text-foreground"
+                aria-label={panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
+                title={panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
+                aria-pressed={panelOpen}
+                onClick={() => setAgendaCollapsed((collapsed) => !collapsed)}
+              >
+                {panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 bg-background/50 text-foreground disabled:opacity-40"
+                aria-label="Actualizar mapa"
+                title="Actualizar mapa"
+                disabled={operational.isFetching}
+                onClick={() => void operational.refetch()}
+              >
+                <RefreshCw className={`h-4 w-4 ${operational.isFetching ? "animate-spin" : ""}`} />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 bg-background/50 text-foreground"
+                aria-label={expanded ? "Salir de pantalla completa" : "Pantalla completa"}
+                title={expanded ? "Salir de pantalla completa" : "Pantalla completa"}
+                aria-pressed={expanded}
+                onClick={() => setExpanded((value) => !value)}
+              >
+                {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="hidden flex-wrap items-center justify-between gap-2 border-b border-border/55 px-3 py-2.5 sm:flex xl:flex-nowrap">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
@@ -2155,12 +2209,13 @@ export default function MarketplaceOperationalMap({
               expanded ? "min-h-0 flex-1" : "min-h-[320px] flex-none"
             }`}
           >
-            <div className="absolute left-3 top-3 z-20 flex w-[calc(100%-5rem)] max-w-[820px] flex-col items-start gap-2">
-              <div
-                className="flex items-center gap-1 rounded-2xl border border-white/20 bg-slate-950/85 p-1 shadow-lg backdrop-blur-xl"
-                role="group"
-                aria-label="Modo del mapa"
-              >
+            <div className="absolute left-2 top-2 z-20 flex w-[calc(100%-4.25rem)] max-w-[820px] flex-col items-start gap-1.5 sm:left-3 sm:top-3 sm:w-[calc(100%-5rem)] sm:gap-2">
+              <div className="flex w-full items-center gap-1 sm:w-auto">
+                <div
+                  className="flex shrink-0 items-center gap-1 rounded-xl border border-white/20 bg-slate-950/85 p-0.5 shadow-lg backdrop-blur-xl sm:rounded-2xl sm:p-1"
+                  role="group"
+                  aria-label="Modo del mapa"
+                >
                 {(
                   [
                     ["operations", "Operaciones"],
@@ -2172,14 +2227,26 @@ export default function MarketplaceOperationalMap({
                     type="button"
                     aria-pressed={mapViewMode === mode}
                     onClick={() => setMapViewMode(mode)}
-                    className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${mapViewMode === mode ? "bg-cyan-600 text-white" : "text-slate-200 hover:bg-white/10"}`}
+                    className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors sm:rounded-xl sm:px-3.5 sm:py-2 sm:text-xs ${mapViewMode === mode ? "bg-cyan-600 text-white" : "text-slate-200 hover:bg-white/10"}`}
                   >
                     {label}
                   </button>
                 ))}
+                </div>
+                <button
+                  type="button"
+                  aria-label={mobileFiltersOpen ? "Ocultar filtros del mapa" : "Mostrar filtros del mapa"}
+                  aria-controls="tuktuk-map-mobile-filters"
+                  aria-expanded={mobileFiltersOpen}
+                  onClick={() => setMobileFiltersOpen((open) => !open)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-white/20 bg-slate-950/85 px-2.5 py-2 text-[11px] font-semibold text-slate-100 shadow-lg backdrop-blur-xl sm:hidden"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Capas
+                </button>
               </div>
               {mapViewMode === "operations" ? (
-                <div className="flex w-full max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin]">
+                <div id="tuktuk-map-mobile-filters" className={`${mobileFiltersOpen ? "flex" : "hidden"} w-full max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin] sm:flex`}>
                   {layerButton(
                     "drivers",
                     "Conductores",
@@ -2231,7 +2298,8 @@ export default function MarketplaceOperationalMap({
                 </div>
               ) : (
                 <div
-                  className="flex w-full max-w-full flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin]"
+                  id="tuktuk-map-mobile-filters"
+                  className={`${mobileFiltersOpen ? "flex" : "hidden"} w-full max-w-full flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin] sm:flex`}
                   role="group"
                   aria-label="Filtros de cobertura"
                 >
