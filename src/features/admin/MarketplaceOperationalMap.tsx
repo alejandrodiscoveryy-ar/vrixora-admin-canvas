@@ -2259,6 +2259,23 @@ export default function MarketplaceOperationalMap({
                   </span>
                 </div>
               )}
+              {mapViewMode === "operations" &&
+              layers.drivers &&
+              !showStaleWorkingDrivers &&
+              staleWorkingDriversWithLocation > 0 &&
+              !(operational.data?.drivers ?? []).some(
+                (driver) =>
+                  (driver.acceptingJobs || Boolean(driver.activeJobId)) &&
+                  driver.locationFresh &&
+                  driverCoordinate(driver) != null,
+              ) ? (
+                <p
+                  role="status"
+                  className="max-w-md rounded-xl border border-amber-400/30 bg-slate-950/85 px-3 py-2 text-[11px] text-amber-100 shadow-lg backdrop-blur-xl"
+                >
+                  Sin conductores trabajando con GPS reciente. Hay {staleWorkingDriversWithLocation} con última posición antigua; puedes consultarlos con «Mostrar GPS antiguo».
+                </p>
+              ) : null}
             </div>
 
             {mapConfig.data ? (
