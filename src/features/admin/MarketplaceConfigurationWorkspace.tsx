@@ -69,7 +69,7 @@ export default function MarketplaceConfigurationWorkspace({
       <div className="grid min-w-0 items-start gap-2 sm:gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
         <nav
           aria-label="Secciones de configuración de TukTuk"
-          className="relative isolate overflow-hidden rounded-[17px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2 shadow sm:rounded-[22px] sm:p-2.5-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4"
+          className="relative isolate overflow-hidden rounded-[17px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] sm:rounded-[22px] sm:p-2.5 xl:sticky xl:top-4"
         >
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
           <div className="relative z-10 hidden px-2.5 pb-2 pt-2 sm:block">
