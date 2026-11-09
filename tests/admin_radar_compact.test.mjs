@@ -7,8 +7,9 @@ const radar = readFileSync(
   "utf8",
 );
 
-test("Radar de Operaciones usa cinco indicadores compactos en lugar de tarjetas altas", () => {
-  assert.match(radar, /Radar operativo/);
+test("GPS operativo de Operaciones usa cinco indicadores compactos en lugar de tarjetas altas", () => {
+  assert.match(radar, /GPS operativo/);
+  assert.match(radar, /aria-label="Diagnóstico de disponibilidad del GPS"/);
   assert.match(radar, /grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5/);
   assert.match(radar, /flex min-w-0 items-center justify-between gap-2 rounded-xl/);
   assert.doesNotMatch(radar, /min-h-\[174px\]/);
