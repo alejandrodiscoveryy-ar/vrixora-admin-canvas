@@ -2067,6 +2067,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             <MarketplaceOperationalMap
               projectId={projectId}
               canViewCustomers={canCustomers}
+              onOpenDriver={setDriver360Id}
               onOpenCustomer={setCustomerId}
               onOpenJob={setJobId}
             />
