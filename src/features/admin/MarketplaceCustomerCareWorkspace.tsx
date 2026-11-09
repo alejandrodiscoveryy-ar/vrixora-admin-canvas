@@ -350,6 +350,7 @@ export default function MarketplaceCustomerCareWorkspace({
       "Vehículo: " + (VEHICLES.find((item) => item.value === whatsappQuote.vehicle_category_code)?.label ?? whatsappQuote.vehicle_category_code),
       "Precio total: " + Number(whatsappQuote.expected_price).toLocaleString("es-CU", { maximumFractionDigits: 2 }) + " CUP",
       "Referencia: " + whatsappQuote.id.slice(0, 8).toUpperCase(),
+      "Válida hasta: " + new Intl.DateTimeFormat("es-CU", { timeZone: "America/Havana", dateStyle: "short", timeStyle: "short" }).format(new Date(whatsappQuote.quote_expires_at)) + " (hora de Cuba).",
       "Confirma este importe respondiendo ACEPTO y la referencia indicada.",
       "La carrera solo se enviará a los conductores después de tu aceptación.",
     ].join("\n")
