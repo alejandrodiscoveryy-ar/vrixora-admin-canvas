@@ -2071,7 +2071,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
           </Suspense>
         </TabsContent>
         {mapVisited ? (
-          <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
+          <TabsContent value="mapa" forceMount className="mt-0 sm:mt-3 data-[state=inactive]:hidden">
             <Suspense
               fallback={
                 <div role="status" className="flex min-h-[320px] w-full items-center justify-center rounded-[26px] border border-border/60 bg-background/35 px-4 text-sm text-muted-foreground">
