@@ -54,5 +54,7 @@ test('interfaz compacta premium, marca de agua tenue y accesibilidad', () => {
   assert.match(workspace, /aria-pressed=\{isSelected\}/);
   assert.match(workspace, /aria-controls="tuktuk-config-detail"/);
   assert.match(workspace, /text-white/);
-  assert.match(workspace, /sm:grid-cols-3 xl:grid-cols-1/);
+  // Las tres áreas se muestran en columnas también en teléfono; escritorio conserva la barra lateral.
+  assert.match(workspace, /grid grid-cols-3 gap-1 sm:gap-1\.5 xl:grid-cols-1/);
+  assert.match(workspace, /aria-controls="tuktuk-config-detail"/);
 });
