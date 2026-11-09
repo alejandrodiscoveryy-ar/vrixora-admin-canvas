@@ -621,6 +621,70 @@ export default function MarketplaceCustomerCareWorkspace({
       </header>
       <div className="grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]">
         <div className="min-w-0 space-y-3 sm:space-y-4">
+          <section className="rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.085] via-background to-background p-4 sm:p-5" aria-label="Recepción asistida desde WhatsApp">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-emerald-300" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">01 · Entrada de solicitudes</p>
+                  <h3 className="text-base font-semibold">WhatsApp asistido</h3>
+                </div>
+              </div>
+              <Button type="button" variant={whatsappMode ? "default" : "outline"} size="sm"
+                onClick={() => { reset(); setWhatsappMode(!whatsappMode); }}>
+                {whatsappMode ? "Volver a solicitud habitual" : "Iniciar desde WhatsApp"}
+              </Button>
+            </div>
+            {whatsappMode ? (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Copia el mensaje del cliente. La extracción es local y orientativa: no se sincroniza WhatsApp ni se usa IA externa.
+                  Comprueba siempre los datos y selecciona las ubicaciones exactas en el mapa.
+                </p>
+                <Label htmlFor="care-whatsapp-message">Mensaje recibido</Label>
+                <Textarea id="care-whatsapp-message" rows={3} maxLength={2000} value={whatsappRawMessage}
+                  placeholder="Ej.: Necesito un triciclo desde Alamar hasta el Capitolio"
+                  onChange={(event) => setWhatsappRawMessage(event.target.value)} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" size="sm" onClick={extractWhatsAppMessage} disabled={!whatsappRawMessage.trim()}>
+                    Extraer datos del mensaje
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground">No se guardará el mensaje completo.</span>
+                </div>
+                {missingWhatsAppFields.length > 0 ? (
+                  <div className="rounded-xl border border-amber-400/20 bg-amber-500/[0.05] p-3">
+                    <p className="text-xs font-semibold text-amber-200">Datos pendientes</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{missingWhatsAppFields.join(" · ")}</p>
+                    {whatsappQuestionLink ? (
+                      <a href={whatsappQuestionLink} target="_blank" rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-200 hover:underline">
+                        <MessageCircle className="h-3.5 w-3.5" /> Preguntar datos al cliente por WhatsApp
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
+                {pendingWhatsAppQuotes.data?.length ? (
+                  <div className="space-y-2 border-t border-border/40 pt-3">
+                    <p className="text-xs font-semibold">Cotizaciones pendientes guardadas</p>
+                    {pendingWhatsAppQuotes.data.slice(0, 8).map((saved) => (
+                      <button type="button" key={saved.id} onClick={() => recoverWhatsAppQuote(saved)}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-left text-xs hover:border-emerald-400/40">
+                        <span className="min-w-0 truncate">{saved.customer_name || saved.whatsapp_phone || "Cliente"} · {saved.origin_text} → {saved.destination_text}</span>
+                        <span className="shrink-0 font-semibold text-emerald-200">{saved.status === "accepted" ? "Aceptada" : saved.status === "sent" ? "Esperando" : "Sin enviar"}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {pendingWhatsAppQuotes.isError ? (
+                  <p role="alert" className="text-xs text-amber-200">
+                    No se pudieron cargar cotizaciones pendientes. Comprueba que esté aplicada la migración de WhatsApp asistido.
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">La atención habitual permanece sin cambios. Para cotizar un mensaje de WhatsApp y esperar aceptación, activa este flujo.</p>
+            )}
+          </section>
           {canManageContact ? <MarketplaceLiteContactCard projectId={projectId} /> : (
             <div className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.055] p-4 text-xs text-muted-foreground">El teléfono y horario del canal requieren el permiso de configuración de Lite.</div>
           )}
@@ -704,7 +768,7 @@ export default function MarketplaceCustomerCareWorkspace({
                   <Button type="button" disabled={!canPublish || publish.isPending} onClick={confirmPublish} className="w-full gap-2">
                     <ArrowRight className="h-4 w-4" /> {publish.isPending ? "Publicando…" : "Publicar carrera real"}
                   </Button>
-                  <p className="text-center text-xs text-muted-foreground">{!customer ? "Identifica o registra primero al cliente" : !validQuote ? "Selecciona origen y destino y espera la tarifa" : !validCargo ? "Indica el peso de la carga" : !canManageMarketplace ? "Tu rol no puede publicar carreras" : "Se solicitará confirmación antes de enviar al radar"}</p>
+                  <p className="text-center text-xs text-muted-foreground">{!customer ? "Identifica o registra primero al cliente" : !validQuote ? "Selecciona origen y destino y espera la tarifa" : !validCargo ? "Indica el peso de la carga" : !canManageMarketplace ? "Tu rol no puede publicar carreras" : whatsappMode && !acceptedWhatsAppQuote ? "WhatsApp: primero envía el precio y registra la aceptación del cliente" : "Se solicitará confirmación antes de enviar al radar"}</p>
                 </>
               )}
             </div>
@@ -741,6 +805,83 @@ export default function MarketplaceCustomerCareWorkspace({
             {quoteError ? <p role="alert" className="mt-2 text-xs text-amber-200">{quoteError}</p> : null}
             <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {customerName.trim() || "Sin identificar"} · {normalizedPhone || "Sin teléfono"}</div>
             <p className="mt-2 text-[11px] text-muted-foreground">El servidor comprueba de nuevo la tarifa antes de publicar; no se permite fijarla desde el navegador.</p>
+            {whatsappMode ? (
+              <div className="mt-4 space-y-3 border-t border-border/50 pt-3">
+                <h4 className="flex items-center gap-2 text-sm font-semibold"><Send className="h-4 w-4 text-emerald-300" /> 04 · Cotizar y esperar aceptación</h4>
+                {!whatsappQuote ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">El importe se verificará otra vez en el servidor antes de guardar la cotización.</p>
+                    <Button type="button" onClick={() => prepareWhatsAppQuote.mutate()}
+                      disabled={!canPrepareWhatsAppQuote || prepareWhatsAppQuote.isPending} className="w-full">
+                      {prepareWhatsAppQuote.isPending ? "Verificando tarifa…" : "Preparar cotización para WhatsApp"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 rounded-xl border border-emerald-400/25 bg-emerald-500/[0.05] p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <strong className="text-xs">Referencia {whatsappQuote.id.slice(0, 8).toUpperCase()}</strong>
+                      <span className="text-[11px] text-emerald-200">
+                        {whatsappQuote.status === "quoted" ? "Pendiente de envío" :
+                          whatsappQuote.status === "sent" ? "Esperando al cliente" :
+                          whatsappQuote.status === "accepted" ? "Aceptada por el cliente" : "Publicada"}
+                      </span>
+                    </div>
+                    <p className="text-xs">Importe informado: <strong>{Number(whatsappQuote.expected_price).toLocaleString("es-CU")} CUP</strong></p>
+                    {!quoteMatchesCurrent ? (
+                      <p role="alert" className="text-xs text-amber-200">Los datos, el precio o la vigencia no coinciden. Prepara una cotización nueva.</p>
+                    ) : null}
+                    <Textarea rows={6} readOnly value={quoteWhatsAppText} aria-label="Texto de cotización para enviar al cliente" className="text-xs" />
+                    {quoteWhatsAppLink && quoteMatchesCurrent ? (
+                      <a href={quoteWhatsAppLink} onClick={() => setWhatsappOpened(true)}
+                        target="_blank" rel="noopener noreferrer"
+                        className="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20">
+                        <MessageCircle className="h-4 w-4" /> Abrir WhatsApp con cotización
+                      </a>
+                    ) : null}
+                    {whatsappQuote.status === "quoted" && quoteMatchesCurrent ? (
+                      <div className="space-y-2">
+                        <p className="text-[11px] text-muted-foreground">
+                          {whatsappOpened ? "WhatsApp se abrió. El envío aún no está confirmado." : "Abrir WhatsApp no envía el mensaje automáticamente."}
+                        </p>
+                        <Button type="button" variant="outline" className="w-full"
+                          disabled={markWhatsAppQuoteSent.isPending}
+                          onClick={() => {
+                            if (window.confirm("¿Enviaste realmente esta cotización al cliente por WhatsApp?"))
+                              markWhatsAppQuoteSent.mutate();
+                          }}>He enviado la cotización</Button>
+                      </div>
+                    ) : null}
+                    {whatsappQuote.status === "sent" && quoteMatchesCurrent ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="care-whatsapp-acceptance">Respuesta de aceptación recibida en WhatsApp</Label>
+                        <Textarea id="care-whatsapp-acceptance" rows={2} maxLength={240} value={acceptanceExcerpt}
+                          onChange={(event) => { setAcceptanceExcerpt(event.target.value); setAcceptanceReviewed(false); }}
+                          placeholder="Copia la respuesta del cliente, por ejemplo: Acepto la cotización ABCD1234" />
+                        <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <input type="checkbox" checked={acceptanceReviewed}
+                            onChange={(event) => setAcceptanceReviewed(event.target.checked)} className="mt-0.5" />
+                          He revisado personalmente que esta respuesta corresponde al cliente, a esta cotización y al precio indicado.
+                        </label>
+                        <Button type="button" className="w-full"
+                          disabled={!acceptanceReviewed || acceptanceExcerpt.trim().length < 2 || confirmWhatsAppQuote.isPending}
+                          onClick={() => confirmWhatsAppQuote.mutate()}>
+                          Registrar aceptación del cliente
+                        </Button>
+                      </div>
+                    ) : null}
+                    {whatsappQuote.status === "accepted" && quoteMatchesCurrent ? (
+                      <div className="flex items-start gap-2 text-xs text-emerald-200">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> Aceptación registrada. Puedes publicar la carrera con su importe aceptado.
+                      </div>
+                    ) : null}
+                    <Button type="button" variant="ghost" size="sm" className="w-full text-xs"
+                      onClick={() => { invalidateRequest(); setQuoteRefresh((current) => current + 1); }}>
+                      Preparar una cotización nueva
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </section>
           <div className="flex items-center gap-2 px-1 text-xs text-emerald-200/80"><CheckCircle2 className="h-3.5 w-3.5" /> Las carreras se vinculan a Clientes y al despacho real.</div>
         </aside>
