@@ -221,6 +221,23 @@ const formatDate = (value: unknown) => {
   }).format(parsed);
 };
 
+// Fechas administrativas de clientes con zona horaria fija de Cuba,
+ // independientes del país o zona del dispositivo del operador.
+const formatCustomerDateTime = (value: string | null | undefined) => {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return new Intl.DateTimeFormat("es-CU", {
+    timeZone: "America/Havana",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(parsed);
+};
+
 const statusClasses = (status: string | null) => {
   if (
     status === "completed" ||
@@ -584,7 +601,7 @@ function Customer360Detail({
 
             <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
               <CalendarDays className="h-3.5 w-3.5 text-violet-300" />
-              Cliente desde {formatDate(detail.customer.createdAt)}
+              Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)
             </div>
           </div>
 
@@ -2347,6 +2364,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
                                 {customer.whatsappPhone}
                               </p>
+                              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-violet-300" />
+                                <span>Registrado: <time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span>
+                              </p>
                             </div>
 
                             <div className="inline-flex w-fit min-w-[104px] items-center gap-2 rounded-xl border border-violet-400/16 bg-violet-500/[0.065] px-3 py-2 shadow-inner shadow-violet-500/[0.04]">
@@ -2372,7 +2393,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                             <p className="text-xs text-muted-foreground">
                               {customer.lastJobAt
-                                ? formatDate(customer.lastJobAt)
+                                ? formatCustomerDateTime(customer.lastJobAt)
                                 : "Sin actividad"}
                             </p>
 
@@ -2406,9 +2427,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </div>
                             </div>
 
-                            <p className="mt-2 text-[11px] text-muted-foreground sm:hidden">
+                            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-violet-300" />
+                              <span>Registrado: <time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span>
+                            </p>
+                            <p className="mt-1.5 text-[11px] text-muted-foreground sm:hidden">
                               {customer.jobsTotal} trabajos · {customer.jobsActive} activos · {customer.jobsSettled} liquidados
                             </p>
+                            {customer.lastJobAt ? (
+                              <p className="mt-1 text-[11px] text-muted-foreground sm:hidden">
+                                Última carrera: <time dateTime={customer.lastJobAt}>{formatCustomerDateTime(customer.lastJobAt)}</time>
+                              </p>
+                            ) : null}
                             <div className="mt-3 hidden grid-cols-2 gap-2 sm:grid sm:grid-cols-4">
                               <MiniMetric labelText="Trabajos" value={customer.jobsTotal} />
                               <MiniMetric labelText="Activos" value={customer.jobsActive} />
@@ -2417,7 +2447,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 labelText="Última actividad"
                                 value={
                                   customer.lastJobAt
-                                    ? formatDate(customer.lastJobAt)
+                                    ? formatCustomerDateTime(customer.lastJobAt)
                                     : "Sin actividad"
                                 }
                               />
