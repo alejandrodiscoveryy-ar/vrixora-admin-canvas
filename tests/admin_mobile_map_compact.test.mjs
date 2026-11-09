@@ -36,3 +36,18 @@ test("siguen presentes filtros GPS antiguo y acciones de operación", () => {
   assert.match(source, /setAgendaCollapsed/);
   assert.match(source, /setExpanded/);
 });
+
+test("el mapa comienza debajo de la cabecera en móvil, sin alterar las otras vistas", () => {
+  const layout = readFileSync(
+    new URL("../src/routes/admin.tsx", import.meta.url),
+    "utf8",
+  );
+  const marketplace = readFileSync(
+    new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(layout, /compactMobileMap = compactWorkspace && requestedView === "mapa"/);
+  assert.match(layout, /compactMobileMap \? "pt-1 pb-2 sm:py-4" : "py-4"/);
+  assert.match(marketplace, /TabsContent value="mapa" forceMount className="mt-0 sm:mt-3/);
+  assert.match(layout, /compactWorkspace \? "lg:px-5 lg:py-5"/);
+});
