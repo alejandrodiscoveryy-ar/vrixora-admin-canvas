@@ -22,7 +22,8 @@ test("GPS operativo premium muestra cinco indicadores compactos y se adapta al a
 });
 
 test("El texto técnico pasa a un desplegable, manteniendo cifras y criterios", () => {
-  assert.match(radar, /<details className="group relative mt-2 border-t/);
+  assert.match(radar, /id=\{diagnosisId\} hidden=\{!diagnosisOpen\}/);
+  assert.match(radar, /aria-expanded=\{diagnosisOpen\}/);
   assert.match(radar, /Ver diagnóstico/);
   assert.match(radar, /Sin GPS reciente:.*\{d\.gps_missing\}/);
   assert.match(radar, /Perfil o vehículo no apto:.*\{d\.profile_blocked\}/);
@@ -47,6 +48,19 @@ test("Diseño premium prioriza GPS, candidatos aptos y conserva cabecera ligera"
   assert.match(radar, /tone="eligible" icon=\{Navigation\}/);
   assert.match(radar, /shadow-\[0_20px_48px_-38px_rgba\(8,145,178,0\.55\)\]/);
   assert.match(radar, /className="hidden text-\[11px\] text-slate-400 sm:block"/);
-  assert.match(radar, /min-h-9 cursor-pointer/);
+  assert.match(radar, /inline-flex min-h-9 items-center/);
   assert.match(radar, /role="status"/);
+});
+
+test("El botón de diagnóstico está en la cabecera y no queda una fila inferior permanente", () => {
+  const buttonAt = radar.indexOf("aria-expanded={diagnosisOpen}");
+  const metricsAt = radar.indexOf('label="Trabajando"');
+  assert.ok(buttonAt > 0 && buttonAt < metricsAt, "El control debe estar junto al encabezado, antes de las métricas");
+  assert.match(radar, /const \[diagnosisOpen, setDiagnosisOpen\] = useState\(false\)/);
+  assert.match(radar, /aria-controls=\{diagnosisId\}/);
+  assert.match(radar, /aria-label=\{diagnosisOpen \? "Ocultar diagnóstico GPS" : "Ver diagnóstico GPS"\}/);
+  assert.match(radar, /onClick=\{\(\) => setDiagnosisOpen\(\(open\) => !open\)\}/);
+  assert.match(radar, /<span className="sm:hidden">Detalles<\/span>/);
+  assert.doesNotMatch(radar, /<summary/);
+  assert.doesNotMatch(radar, /<details/);
 });

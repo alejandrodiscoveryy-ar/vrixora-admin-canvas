@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
@@ -93,6 +94,8 @@ function Metric({
 }
 
 export default function MarketplaceRadarReadinessCard({ projectId }: { projectId: string }) {
+  const [diagnosisOpen, setDiagnosisOpen] = useState(false);
+  const diagnosisId = useId();
   const readiness = useQuery({
     queryKey: ["marketplace-radar-readiness", projectId],
     queryFn: async () => {
@@ -127,15 +130,31 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
             <p className="hidden text-[11px] text-slate-400 sm:block">Disponibilidad técnica en tiempo real</p>
           </div>
         </div>
-        <span
-          role="status"
-          aria-label={readiness.isFetching ? "Actualizando disponibilidad GPS" : "Actualización automática cada 30 segundos"}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-2.5 py-1.5 text-[10px] font-medium text-slate-300"
-        >
-          <Activity aria-hidden="true" className="h-3 w-3 text-cyan-300" />
-          <span className="sm:hidden">{readiness.isFetching ? "Actualizando" : "30 s"}</span>
-          <span className="hidden sm:inline">{readiness.isFetching ? "Actualizando…" : "Cada 30 s"}</span>
-        </span>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {d ? (
+            <button
+              type="button"
+              aria-expanded={diagnosisOpen}
+              aria-controls={diagnosisId}
+              aria-label={diagnosisOpen ? "Ocultar diagnóstico GPS" : "Ver diagnóstico GPS"}
+              onClick={() => setDiagnosisOpen((open) => !open)}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.055] px-2.5 text-[11px] font-semibold text-cyan-200 transition-colors hover:border-cyan-300/40 hover:bg-cyan-400/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:px-3"
+            >
+              <span className="sm:hidden">Detalles</span>
+              <span className="hidden sm:inline">Ver diagnóstico</span>
+              <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 transition-transform ${diagnosisOpen ? "rotate-180" : ""}`} />
+            </button>
+          ) : null}
+          <span
+            role="status"
+            aria-label={readiness.isFetching ? "Actualizando disponibilidad GPS" : "Actualización automática cada 30 segundos"}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-2 py-1.5 text-[10px] font-medium text-slate-300 sm:px-2.5"
+          >
+            <Activity aria-hidden="true" className="h-3 w-3 text-cyan-300" />
+            <span className="sm:hidden">{readiness.isFetching ? "…" : "30 s"}</span>
+            <span className="hidden sm:inline">{readiness.isFetching ? "Actualizando…" : "Cada 30 s"}</span>
+          </span>
+        </div>
       </div>
 
       {readiness.isPending ? <p className="mt-2 text-xs text-slate-300">Consultando disponibilidad…</p> : null}
@@ -163,11 +182,7 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
             </p>
           ) : null}
 
-          <details className="group relative mt-2 border-t border-white/[0.09] pt-1.5">
-            <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-1.5 text-[11px] font-semibold text-cyan-200 hover:bg-white/[0.03] [&::-webkit-details-marker]:hidden">
-              Ver diagnóstico
-              <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
-            </summary>
+          <div id={diagnosisId} hidden={!diagnosisOpen} className="relative mt-2 border-t border-white/[0.09] pt-2">
             <div className="space-y-2 rounded-xl border border-white/[0.08] bg-black/[0.12] px-3 py-3 text-[11px] leading-relaxed text-slate-300">
               <p>GPS reciente: últimos 5 minutos · Actualización cada 30 s</p>
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -187,7 +202,7 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
               <p>La selección definitiva depende de radio, expansión, prioridad, servicio y compatibilidad.</p>
               <p>Los indicadores pueden solaparse. El diagnóstico no cambia el estado de los conductores.</p>
             </div>
-          </details>
+          </div>
         </>
       ) : null}
     </section>
