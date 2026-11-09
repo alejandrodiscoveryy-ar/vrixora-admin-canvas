@@ -51,6 +51,8 @@ test('el servidor guarda cotizaciones con RLS, permisos y auditoría', () => {
   assert.match(sql,/require_project_permission\(target_project_id,'customers\.view'\)/);
   assert.match(sql,/prepared_by uuid not null/);
   assert.match(sql,/accepted_by uuid/);
+  assert.match(sql,/sent_by uuid/);
+  assert.match(sql,/set status='sent',sent_at=now\(\),sent_by=v_actor/);
   assert.match(sql,/acceptance_excerpt text/);
   assert.match(sql,/status in \('quoted','sent','accepted','published'\)/);
   assert.match(sql,/unique\(project_id,request_key\)/);
