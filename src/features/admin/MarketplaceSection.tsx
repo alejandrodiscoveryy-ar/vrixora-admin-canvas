@@ -359,7 +359,7 @@ function PremiumPanel({
     return (
       <section aria-label={title} className="min-w-0">
         {action ? (
-          <div className="mb-3 flex min-w-0 flex-wrap items-center justify-end gap-2">{action}</div>
+          <div className="mb-2 flex min-w-0 flex-wrap items-center justify-start gap-2 sm:mb-3 sm:justify-end">{action}</div>
         ) : null}
         <div className="min-w-0">{children}</div>
       </section>
@@ -416,7 +416,7 @@ function EmptyMarketplaceState({
   icon?: typeof BriefcaseBusiness;
 }) {
   return (
-    <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-background/35 px-6 py-8 text-center">
+    <div className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/35 px-3 py-4 text-center sm:min-h-40 sm:rounded-2xl sm:px-6 sm:py-8">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300">
         <Icon className="h-5 w-5" />
       </div>
@@ -479,7 +479,7 @@ function FilterSelect({
   children: ReactNode;
 }) {
   return (
-    <label className="relative flex min-w-52 items-center gap-3 rounded-xl border border-border/70 bg-background/55 px-3 py-2">
+    <label className="relative flex w-full min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-background/55 px-2.5 py-2 sm:w-auto sm:min-w-52 sm:gap-3 sm:px-3">
       <Filter className="h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <span className="block text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -915,6 +915,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     });
   };
   const [mapVisited, setMapVisited] = useState(false);
+  const [showAllPulseMetrics, setShowAllPulseMetrics] = useState(false);
   const [status, setStatus] = useState("");
   const [service, setService] = useState("");
   const [incidentState, setIncidentState] = useState("open");
@@ -1498,30 +1499,31 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   ];
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="min-w-0 space-y-3 sm:space-y-6">
       <Tabs value={tab}>
         <TabsContent value="resumen">
           <section
             aria-label="Indicadores operativos de Pulso"
-            className="relative overflow-hidden rounded-[28px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-4 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:p-5 lg:p-6"
+            className="relative overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-3 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:rounded-[28px] sm:p-5 lg:p-6"
           >
             <Eye aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 text-cyan-300/[0.025]" />
-            <header className="relative mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07]">
-                  <Eye className="h-6 w-6" />
+            <header className="relative mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-5 sm:items-start sm:gap-3">
+              <div className="flex min-w-0 items-center gap-2 sm:items-start sm:gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07] sm:h-12 sm:w-12 sm:rounded-2xl">
+                  <Eye className="h-4 w-4 sm:h-6 sm:w-6" />
                 </span>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85">Centro de control · Indicadores</p>
-                  <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground sm:text-xl">Pulso operativo</h2>
-                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Actividad, equipo y gestión del Marketplace.</p>
+                  <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85 sm:block">Centro de control · Indicadores</p>
+                  <h2 className="text-base font-bold tracking-tight text-foreground sm:mt-1 sm:text-xl">Pulso operativo</h2>
+                  <p className="mt-1 hidden text-xs text-muted-foreground sm:block sm:text-sm">Actividad, equipo y gestión del Marketplace.</p>
                 </div>
               </div>
-              <span role="status" className="rounded-xl border border-border/60 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
-                {overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}
+              <span role="status" aria-label={overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando datos" : "Datos actualizados cada 30 segundos"} className="shrink-0 rounded-lg border border-border/60 bg-background/55 px-2 py-1.5 text-[10px] text-muted-foreground sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs">
+                <span className="sm:hidden">{overview.isError ? "Error" : overview.isFetching ? "Actualizando" : "Cada 30 s"}</span>
+                <span className="hidden sm:inline">{overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}</span>
               </span>
             </header>
-            <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
               {[
                 {
                   label: "Conductores",
@@ -1603,49 +1605,49 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               ].map(({ label: metricLabel, eyebrow, detail, value, Icon, shell, icon, glow }) => (
                 <article
                   key={metricLabel}
-                  className={`group relative min-h-[174px] overflow-hidden rounded-[23px] border p-4 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${shell}`}
+                  className={`group relative min-h-[126px] overflow-hidden rounded-[17px] border p-3 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 sm:min-h-[174px] sm:rounded-[23px] sm:p-4 ${!showAllPulseMetrics && ["En promoción", "Post-promoción activos", "Trabajos publicados"].includes(metricLabel) ? "hidden sm:block" : ""} ${shell}`}
                 >
                   <div
                     className={`pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl ${glow}`}
                   />
-                  <Icon aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 h-36 w-36 rotate-[-11deg] text-cyan-300/[0.065]" />
+                  <Icon aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 hidden h-36 w-36 rotate-[-11deg] text-cyan-300/[0.065] sm:block" />
 
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {eyebrow}
+                        <p className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:block">
+                           {eyebrow}
                         </p>
-                        <p className="mt-1.5 text-sm font-semibold text-foreground">
-                          {metricLabel}
+                        <p className="text-xs font-semibold leading-snug text-foreground sm:mt-1.5 sm:text-sm">
+                           {metricLabel}
                         </p>
                       </div>
 
                       <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${icon}`}
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:h-11 sm:w-11 sm:rounded-xl ${icon}`}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
                     </div>
 
-                    <div className="mt-5">
-                      {overview.isLoading ? (
+                    <div className="mt-2 sm:mt-5">
+                       {overview.isLoading ? (
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       ) : (
-                        <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
-                          {overview.isError ? "—" : Number(value ?? 0)}
+                        <p className="font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                           {overview.isError ? "—" : Number(value ?? 0)}
                         </p>
                       )}
                     </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
+                    <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground sm:mt-1 sm:text-[11px]">{detail}</p>
                   </div>
                 </article>
               ))}
 
               {!overview.isLoading && overview.data?.pendingTopups !== null ? (
-                <article className="group relative min-h-[174px] overflow-hidden rounded-[23px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-4 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5">
+                <article className={`group relative min-h-[126px] overflow-hidden rounded-[17px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-3 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 sm:min-h-[174px] sm:rounded-[23px] sm:p-4 ${!showAllPulseMetrics && !(Number(overview.data?.pendingTopups ?? 0) > 0) ? "hidden sm:block" : ""}`}>
                   <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-amber-400/[0.06] blur-3xl" />
-                  <WalletCards aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 h-36 w-36 rotate-[-11deg] text-amber-300/[0.065]" />
+                  <WalletCards aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 hidden h-36 w-36 rotate-[-11deg] text-amber-300/[0.065] sm:block" />
 
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">
@@ -1658,19 +1660,23 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         </p>
                       </div>
 
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-500/[0.08] text-amber-300">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-500/[0.08] text-amber-300 sm:h-11 sm:w-11 sm:rounded-xl">
                         <WalletCards className="h-5 w-5" />
                       </div>
                     </div>
 
-                    <p className="mt-5 font-mono text-3xl font-bold tracking-tight text-foreground">
-                      {overview.isError ? "—" : (overview.data?.pendingTopups ?? 0)}
+                    <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground sm:mt-5 sm:text-3xl">
+                       {overview.isError ? "—" : (overview.data?.pendingTopups ?? 0)}
                     </p>
                     <p className="relative mt-1 text-[11px] text-muted-foreground">En revisión financiera</p>
                   </div>
                 </article>
               ) : null}
             </div>
+            <button type="button" aria-expanded={showAllPulseMetrics} onClick={() => setShowAllPulseMetrics((open) => !open)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.06] px-3 py-2 text-xs font-semibold text-cyan-100 sm:hidden">
+              {showAllPulseMetrics ? "Mostrar indicadores principales" : "Ver todos los indicadores"}
+              <ChevronDown className={`h-4 w-4 transition-transform ${showAllPulseMetrics ? "rotate-180" : ""}`} />
+            </button>
           </section>
           <MarketplaceFleetPulse projectId={projectId} enabled={tab === "resumen"} onOpenDriver={setDriver360Id} />
         </TabsContent>
@@ -1687,7 +1693,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/20 to-emerald-500/[0.015]" />
 
-              <div className="relative mb-3 flex flex-col gap-3 rounded-[20px] border border-emerald-400/14 bg-background/55 p-3 shadow-[0_18px_46px_-34px_rgba(16,185,129,0.75)] backdrop-blur-md xl:flex-row xl:items-center xl:justify-between">
+              <div className="relative mb-2 flex flex-col gap-2 rounded-[16px] border border-emerald-400/14 bg-background/55 p-2.5 sm:mb-3 sm:gap-3 sm:rounded-[20px] sm:p-3 shadow-[0_18px_46px_-34px_rgba(16,185,129,0.75)] backdrop-blur-md xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/[0.10] px-3 py-2 text-xs font-semibold text-emerald-100 shadow-inner shadow-emerald-500/[0.04]">
                     <BriefcaseBusiness className="h-4 w-4" />
@@ -1718,7 +1724,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:justify-end">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:flex-wrap xl:justify-end">
                   <FilterSelect labelText="Estado" value={status} onChange={setStatus}>
                     <option value="">Todos los estados</option>
                     {statusOptions.map((item) => (
@@ -2118,7 +2124,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   {driverRows.map((item) => (
                     <article
                       key={item.userId}
-                      className="group relative overflow-hidden rounded-[22px] border border-cyan-400/14 bg-gradient-to-r from-cyan-500/[0.055] via-background/60 to-emerald-500/[0.025] px-4 py-3.5 shadow-[0_18px_50px_-40px_rgba(34,211,238,0.9)] transition duration-200 hover:border-cyan-400/26 hover:from-cyan-500/[0.075] hover:to-emerald-500/[0.04]"
+                      className="group relative overflow-hidden rounded-[17px] border border-cyan-400/14 bg-gradient-to-r from-cyan-500/[0.055] via-background/60 to-emerald-500/[0.025] px-3 py-2.5 shadow-[0_18px_50px_-40px_rgba(34,211,238,0.9)] transition duration-200 hover:border-cyan-400/26 hover:from-cyan-500/[0.075] hover:to-emerald-500/[0.04]"
                     >
                       <button
                         type="button"
@@ -2330,7 +2336,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           key={customer.customerId}
                           type="button"
                           onClick={() => setCustomerId(customer.customerId)}
-                          className="group relative w-full px-4 py-3.5 text-left transition duration-200 hover:bg-gradient-to-r hover:from-violet-500/[0.085] hover:via-violet-500/[0.035] hover:to-cyan-500/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/50"
+                          className="group relative w-full px-3 py-2.5 text-left transition duration-200 sm:px-4 sm:py-3.5 hover:bg-gradient-to-r hover:from-violet-500/[0.085] hover:via-violet-500/[0.035] hover:to-cyan-500/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/50"
                         >
                           <div className="hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 lg:grid">
                             <div className="min-w-0">
@@ -2400,7 +2406,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            <p className="mt-2 text-[11px] text-muted-foreground sm:hidden">
+                              {customer.jobsTotal} trabajos · {customer.jobsActive} activos · {customer.jobsSettled} liquidados
+                            </p>
+                            <div className="mt-3 hidden grid-cols-2 gap-2 sm:grid sm:grid-cols-4">
                               <MiniMetric labelText="Trabajos" value={customer.jobsTotal} />
                               <MiniMetric labelText="Activos" value={customer.jobsActive} />
                               <MiniMetric labelText="Liquidados" value={customer.jobsSettled} />
@@ -2450,7 +2459,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           return (
                             <article
                               key={wallet.userId}
-                              className="group relative overflow-hidden rounded-[20px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3.5 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4"
+                              className="group relative overflow-hidden rounded-[17px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4"
                             >
                               <img
                                 src="/admin-premium/wallets.svg"
@@ -2491,7 +2500,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
                                       Total
                                     </p>
-                                    <p className="mt-1 text-lg font-semibold text-foreground">
+                                    <p className="mt-1 break-words text-sm font-semibold tabular-nums text-foreground sm:text-lg">
                                       {formatAmount(wallet.totalBalance, wallet.currency)}
                                     </p>
                                   </div>
@@ -2500,7 +2509,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
                                       Disponible
                                     </p>
-                                    <p className="mt-1 text-lg font-semibold text-foreground">
+                                    <p className="mt-1 break-words text-sm font-semibold tabular-nums text-foreground sm:text-lg">
                                       {formatAmount(wallet.availableBalance, wallet.currency)}
                                     </p>
                                   </div>
@@ -2561,8 +2570,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 tone="cyan"
                 backgroundImage="/admin-premium/topups.svg"
                 action={
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex flex-wrap gap-1 rounded-2xl border border-cyan-400/15 bg-background/60 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-sm">
+                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+                    <div className="flex max-w-full flex-nowrap gap-1 overflow-x-auto overscroll-x-contain rounded-2xl border border-cyan-400/15 bg-background/60 p-1 sm:flex-wrap shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-sm">
                       {[
                         ["", "Todas"],
                         ["requested", "Pendientes"],
@@ -2573,6 +2582,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                         <Button
                           key={value || "all"}
                           size="sm"
+                          className="shrink-0"
                           variant={topupStatus === value ? "default" : "ghost"}
                           onClick={() => setTopupStatus(value)}
                         >
@@ -2811,8 +2821,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   {incidentRows.map((item) => (
                     <article
                       key={item.jobId}
-                      className={`rounded-2xl border p-4 ${
-                        item.resolved
+                      className={`rounded-2xl border p-3 sm:p-4 ${
+                         item.resolved
                           ? "border-border/65 bg-background/45"
                           : "border-rose-500/20 bg-rose-500/[0.035]"
                       }`}

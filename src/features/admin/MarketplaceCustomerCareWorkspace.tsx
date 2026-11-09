@@ -378,21 +378,21 @@ export default function MarketplaceCustomerCareWorkspace({
   );
 
   return (
-    <div className="space-y-4" data-testid="customer-care-workspace">
-      <header className="relative overflow-hidden rounded-[26px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.10] via-background/85 to-emerald-500/[0.08] px-4 py-4 shadow-[0_25px_60px_-45px_rgba(34,211,238,0.85)] sm:px-5">
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
+    <div className="min-w-0 space-y-3 sm:space-y-4" data-testid="customer-care-workspace">
+      <header className="relative overflow-hidden rounded-[18px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.10] via-background/85 to-emerald-500/[0.08] px-3 py-3 sm:rounded-[26px] sm:px-4 sm:py-4 shadow-[0_25px_60px_-45px_rgba(34,211,238,0.85)] sm:px-5">
+        <div className="relative flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"><Headphones className="h-5 w-5" /></span>
             <div><p className="text-[10px] font-bold uppercase tracking-[0.17em] text-cyan-300">Trabajos · Centro operativo</p>
-              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Atención al cliente</h2>
-              <p className="text-xs text-muted-foreground">Identifica clientes y publica carreras reales desde el mismo mapa.</p>
+              <h2 className="text-lg font-semibold tracking-tight sm:text-2xl">Atención al cliente</h2>
+              <p className="hidden text-xs text-muted-foreground sm:block">Identifica clientes y publica carreras reales desde el mismo mapa.</p>
             </div>
           </div>
           <Button size="sm" variant="outline" onClick={reset} className="gap-2"><Plus className="h-4 w-4" /> Nueva solicitud</Button>
         </div>
       </header>
-      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]">
-        <div className="min-w-0 space-y-4">
+      <div className="grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]">
+        <div className="min-w-0 space-y-3 sm:space-y-4">
           {canManageContact ? <MarketplaceLiteContactCard projectId={projectId} /> : (
             <div className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.055] p-4 text-xs text-muted-foreground">El teléfono y horario del canal requieren el permiso de configuración de Lite.</div>
           )}
