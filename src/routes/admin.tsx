@@ -66,6 +66,9 @@ function AdminChrome() {
   const { user, loading } = useSupabaseAuth();
   const navigate = useNavigate();
   const path = useRouterState({ select: (state) => state.location.pathname });
+  const requestedView = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).vista,
+  });
   const isLogin = path === "/admin/login" || path === "/admin";
 
   const projectRouteMatch = useMemo(
@@ -75,6 +78,8 @@ function AdminChrome() {
   const currentProjectId = projectRouteMatch?.[1] ?? null;
   const currentSection = projectRouteMatch?.[2] ?? "";
   const compactWorkspace = currentSection === "trabajos";
+  // Solo el mapa operativo móvil elimina el espacio superior del contenedor general.
+  const compactMobileMap = compactWorkspace && requestedView === "mapa";
 
   const { data: currentProject } = useProject(currentProjectId);
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
@@ -116,7 +121,9 @@ function AdminChrome() {
             project={currentProject ?? null}
           />
           <main
-            className={`min-w-0 flex-1 px-3 py-4 sm:px-4 md:px-6 md:py-6 ${
+            className={`min-w-0 flex-1 px-3 sm:px-4 md:px-6 md:py-6 ${
+              compactMobileMap ? "pt-1 pb-2 sm:py-4" : "py-4"
+            } ${
               compactWorkspace ? "lg:px-5 lg:py-5" : "lg:px-8 lg:py-8"
             }`}
           >
