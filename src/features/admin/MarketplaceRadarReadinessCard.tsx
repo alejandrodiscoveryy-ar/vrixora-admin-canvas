@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Radar, MapPinOff, ChevronDown, RadioTower, AlertTriangle, UserRoundCheck } from "lucide-react";
+import { MapPin, MapPinOff, ChevronDown, RadioTower, AlertTriangle, UserRoundCheck } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type RadarReadiness = {
@@ -50,10 +50,10 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
       aria-label="Diagnóstico de disponibilidad del GPS"
       className="relative isolate overflow-hidden rounded-[16px] border border-cyan-400/20 bg-gradient-to-br from-[#10282e] to-[#0b171e] p-3 sm:rounded-[18px] sm:p-3.5"
     >
-      <Radar aria-hidden="true" className="pointer-events-none absolute -right-4 -top-5 -z-10 h-28 w-28 text-cyan-200/[0.03]" />
+      <MapPin aria-hidden="true" className="pointer-events-none absolute -right-4 -top-5 -z-10 h-28 w-28 text-cyan-200/[0.03]" />
       <div className="flex items-center justify-between gap-2">
         <h3 className="flex min-w-0 items-center gap-2 text-sm font-bold text-cyan-100">
-          <Radar className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
           GPS operativo
         </h3>
         <span className="shrink-0 rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-300" title="Actualización automática cada 30 segundos">
