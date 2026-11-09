@@ -9,6 +9,11 @@ on:
       - 'src/features/admin/MarketplaceTestRouteMap.tsx'
       - 'tests/admin_customer_care_phase1.test.mjs'
       - 'tests/admin_customer_care_phase2.test.mjs'
+      - 'tests/admin_whatsapp_manual_parser.test.mjs'
+      - 'tests/admin_whatsapp_care_workflow.test.mjs'
+      - 'src/lib/marketplace-whatsapp-manual.mjs'
+      - 'src/lib/marketplace-whatsapp-manual.d.mts'
+      - 'supabase/migrations/20261109224000_marketplace_care_whatsapp_manual_quote.sql'
       - 'supabase/migrations/20261031002958_marketplace_care_phase2_verified_20261030.sql'
       - 'supabase/functions/marketplace-map-admin-gateway/index.ts'
       - '.github/workflows/customer-care-phase1-preflight.yml'
@@ -24,7 +29,7 @@ jobs:
         with:
           bun-version: '1.4.2'
       - name: Contract tests
-        run: node --test tests/admin_customer_care_phase1.test.mjs tests/admin_customer_care_phase2.test.mjs
+        run: node --test tests/admin_customer_care_phase1.test.mjs tests/admin_customer_care_phase2.test.mjs tests/admin_whatsapp_manual_parser.test.mjs tests/admin_whatsapp_care_workflow.test.mjs
       - name: Install exact dependencies
         run: bun install --frozen-lockfile
       - name: Build web without deploy
