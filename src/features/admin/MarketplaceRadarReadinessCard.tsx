@@ -68,7 +68,7 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
             <Metric label="Trabajando" value={d.working} />
             <Metric label="GPS reciente" value={d.gps_recent} note="Posición validada" />
             <Metric label="Aptos" value={d.profile_ready} note="Perfil y vehículo aptos" />
-            <Metric label="Candidatos GPS" value={d.radar_reachable} note="Preselección técnica" />
+            <Metric label="Candidatos con GPS" value={d.radar_reachable} note="Preselección técnica" />
             <Metric label="Alertas Android" value={d.android_channel_v2} note="Canal Android V2" />
           </div>
 
@@ -106,7 +106,7 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
                 </span>
               </div>
               <p>La selección definitiva depende de radio, expansión, prioridad, servicio y compatibilidad.</p>
-              <p>Los indicadores pueden solaparse. Este diagnóstico no cambia el estado de los conductores.</p>
+              <p>Los indicadores pueden solaparse. El diagnóstico no cambia el estado de los conductores.</p>
             </div>
           </details>
         </>
