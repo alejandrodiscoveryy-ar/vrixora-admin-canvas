@@ -66,17 +66,17 @@ export default function MarketplaceConfigurationWorkspace({
 
   return (
     <section aria-label="Configuración de TukTuk" className="min-w-0 space-y-3">
-      <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
+      <div className="grid min-w-0 items-start gap-2 sm:gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
         <nav
           aria-label="Secciones de configuración de TukTuk"
-          className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4"
+          className="relative isolate overflow-hidden rounded-[17px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2 shadow sm:rounded-[22px] sm:p-2.5-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4"
         >
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
-          <div className="relative z-10 px-2.5 pb-2 pt-2">
+          <div className="relative z-10 hidden px-2.5 pb-2 pt-2 sm:block">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Configuración</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Áreas de control de TukTuk</p>
           </div>
-          <div className="relative z-10 grid gap-1.5 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="relative z-10 grid grid-cols-3 gap-1 sm:gap-1.5 xl:grid-cols-1">
             {SECTIONS.map((section) => {
               const Icon = section.icon;
               const isSelected = section.id === active;
@@ -87,15 +87,15 @@ export default function MarketplaceConfigurationWorkspace({
                   onClick={() => setActive(section.id)}
                   aria-pressed={isSelected}
                   aria-controls="tuktuk-config-detail"
-                  className={`group relative isolate flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-cyan-400/35 bg-gradient-to-r from-cyan-400/[0.11] via-cyan-400/[0.045] to-background/20 text-foreground shadow-[0_12px_30px_-24px_rgba(34,211,238,0.45)]" : "border-transparent bg-background/20 text-foreground/85 hover:border-border/65 hover:bg-muted/40"}`}
+                  className={`group relative isolate flex min-h-11 min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[12px] border px-1.5 py-2 text-center transition-all duration-200 sm:justify-start sm:gap-2.5 sm:rounded-[16px] sm:px-3 sm:py-3 sm:text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-cyan-400/35 bg-gradient-to-r from-cyan-400/[0.11] via-cyan-400/[0.045] to-background/20 text-foreground shadow-[0_12px_30px_-24px_rgba(34,211,238,0.45)]" : "border-transparent bg-background/20 text-foreground/85 hover:border-border/65 hover:bg-muted/40"}`}
                 >
                   <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
-                  <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner ${isSelected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border/60 bg-background/60 text-muted-foreground"}`}>
+                  <span className={`relative z-10 hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner sm:flex ${isSelected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border/60 bg-background/60 text-muted-foreground"}`}>
                     <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
                   </span>
                   <span className="relative z-10 min-w-0 flex-1">
-                    <span className="block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{section.number}</span>
-                    <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">{section.title}</span>
+                    <span className="hidden text-[10px] font-semibold tracking-[0.12em] text-muted-foreground sm:block">{section.number}</span>
+                    <span className="block text-[11px] font-semibold leading-tight text-foreground sm:mt-0.5 sm:text-sm">{section.title}</span>
                     <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{section.subtitle}</span>
                   </span>
                   <ChevronRight aria-hidden="true" className={`relative z-10 hidden h-4 w-4 shrink-0 xl:block ${isSelected ? "text-cyan-300" : "text-muted-foreground/45"}`} />
@@ -103,7 +103,7 @@ export default function MarketplaceConfigurationWorkspace({
               );
             })}
           </div>
-          <div className="relative z-10 mt-2 flex items-center gap-1.5 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">
+          <div className="relative z-10 mt-2 hidden items-center gap-1.5 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground sm:flex">
             <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-cyan-400" />
             Acceso según permisos
           </div>
@@ -122,7 +122,7 @@ export default function MarketplaceConfigurationWorkspace({
                   <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-cyan-200/85">{selected.number} / {selected.eyebrow}</p>
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <h2 className="text-lg font-semibold tracking-tight text-white">{selected.title}</h2>
-                    <p className="text-xs leading-relaxed text-slate-300">{selected.description}</p>
+                    <p className="hidden text-xs leading-relaxed text-slate-300 sm:block">{selected.description}</p>
                   </div>
                 </div>
               </div>
