@@ -2499,7 +2499,72 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               />
                               <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-amber-400/[0.03] blur-3xl" />
 
-                              <div className="relative grid gap-3 lg:grid-cols-[minmax(200px,0.9fr)_minmax(0,3.1fr)] lg:items-center">
+                              {/* En móvil: resumen de los saldos críticos y desglose bajo demanda. */}
+                              <div className="relative min-w-0 space-y-2.5 sm:hidden">
+                                <div className="flex min-w-0 items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-foreground">{wallet.driverDisplayName}</p>
+                                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                                      {wallet.driverPhone || "Sin teléfono registrado"}
+                                    </p>
+                                  </div>
+                                  <span className={wallet.initialDepositConfirmed
+                                    ? "shrink-0 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-200"
+                                    : "shrink-0 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-200"}>
+                                    {wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="min-w-0 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] p-2.5">
+                                    <p className="text-[10px] font-semibold text-emerald-300">Disponible</p>
+                                    <p className="mt-1 break-words text-base font-bold tabular-nums text-foreground">
+                                      {formatAmount(wallet.availableBalance, wallet.currency)}
+                                    </p>
+                                  </div>
+                                  <div className="min-w-0 rounded-xl border border-rose-400/20 bg-rose-500/[0.045] p-2.5">
+                                    <p className="text-[10px] font-semibold text-rose-300">Reservado</p>
+                                    <p className="mt-1 break-words text-base font-bold tabular-nums text-foreground">
+                                      {formatAmount(reserved, wallet.currency)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Saldo total: <span className="font-semibold text-foreground">{formatAmount(wallet.totalBalance, wallet.currency)}</span>
+                                </p>
+                                <details className="group rounded-xl border border-border/60 bg-background/40">
+                                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
+                                    Ver detalles de la billetera
+                                    <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+                                  </summary>
+                                  <div className="space-y-2 border-t border-border/50 px-3 py-3 text-xs text-muted-foreground">
+                                    <div className="flex justify-between gap-2">
+                                      <span>Saldo real</span>
+                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.realBalance, wallet.currency)}</strong>
+                                    </div>
+                                    <div className="flex justify-between gap-2">
+                                      <span>Saldo promocional</span>
+                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.promotionalBalance, wallet.currency)}</strong>
+                                    </div>
+                                    <div className="flex justify-between gap-2">
+                                      <span>Promocional disponible</span>
+                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.promotionalAvailableBalance, wallet.currency)}</strong>
+                                    </div>
+                                    <div className="flex justify-between gap-2">
+                                      <span>Real reservado</span>
+                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.realReservedBalance, wallet.currency)}</strong>
+                                    </div>
+                                    <div className="flex justify-between gap-2">
+                                      <span>Promocional reservado</span>
+                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.promotionalReservedBalance, wallet.currency)}</strong>
+                                    </div>
+                                    <p className="border-t border-border/50 pt-2 text-[11px]">
+                                      Última actualización: {formatDate(wallet.updatedAt)}
+                                    </p>
+                                  </div>
+                                </details>
+                              </div>
+
+                              <div className="relative hidden gap-3 sm:grid lg:grid-cols-[minmax(200px,0.9fr)_minmax(0,3.1fr)] lg:items-center">
                                 <div className="min-w-0">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                     Conductor
