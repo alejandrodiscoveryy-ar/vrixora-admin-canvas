@@ -13,7 +13,7 @@ on:
       - 'tests/admin_whatsapp_care_workflow.test.mjs'
       - 'src/lib/marketplace-whatsapp-manual.mjs'
       - 'src/lib/marketplace-whatsapp-manual.d.mts'
-      - 'supabase/migrations/20261109224000_marketplace_care_whatsapp_manual_quote.sql'
+      - 'supabase/migrations/20261109233324_marketplace_care_whatsapp_manual_quote.sql'
       - 'supabase/migrations/20261031002958_marketplace_care_phase2_verified_20261030.sql'
       - 'supabase/functions/marketplace-map-admin-gateway/index.ts'
       - '.github/workflows/customer-care-phase1-preflight.yml'

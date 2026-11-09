@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const ui = readFileSync('src/features/admin/MarketplaceCustomerCareWorkspace.tsx','utf8');
-const sql = readFileSync('supabase/migrations/20261109224000_marketplace_care_whatsapp_manual_quote.sql','utf8');
+const sql = readFileSync('supabase/migrations/20261109233324_marketplace_care_whatsapp_manual_quote.sql','utf8');
 const parser = readFileSync('src/lib/marketplace-whatsapp-manual.mjs','utf8');
 
 test('nueva entrada WhatsApp es manual y no altera el flujo habitual', () => {
