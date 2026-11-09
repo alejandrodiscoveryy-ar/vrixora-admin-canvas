@@ -114,20 +114,20 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
   };
 
   return (
-    <section aria-label="Conductores por modalidad y tipo de vehículo" className="relative overflow-hidden rounded-[28px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-4 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:p-5 lg:p-6">
+    <section aria-label="Conductores por modalidad y tipo de vehículo" className="relative overflow-hidden rounded-[28px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-3 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:p-5 lg:p-6">
       <Users aria-hidden="true" className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 text-cyan-300/[0.025]" strokeWidth={1} />
-      <div className="relative mb-5 flex flex-wrap items-start justify-between gap-3">
+      <div className="relative mb-3 flex flex-wrap items-start justify-between gap-2 sm:mb-5 sm:gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07] sm:h-12 sm:w-12 sm:rounded-2xl">
             <Users className="h-6 w-6" />
           </span>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85">Equipo · Distribución de flota</p>
+            <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85 sm:block">Equipo · Distribución de flota</p>
             <h3 className="mt-1 text-lg font-bold tracking-tight text-foreground sm:text-xl">Conductores por modalidad</h3>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">Selecciona una modalidad, después un tipo de vehículo, para ver sus conductores.</p>
+            <p className="mt-1 hidden text-xs text-muted-foreground sm:block sm:text-sm">Selecciona una modalidad, después un tipo de vehículo, para ver sus conductores.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/55 px-2 py-1 text-[10px] text-muted-foreground sm:px-3 sm:py-2 sm:text-xs">
           <RefreshCw className={`h-3.5 w-3.5 ${fleet.isFetching ? "animate-spin" : ""}`} />
           {fleet.isLoading ? "Consultando flota" : fleet.isError ? "Sin conexión" : "Actualización automática"}
         </div>
@@ -140,7 +140,7 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
         </div>
       ) : (
         <>
-          <div className="relative grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="relative grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             {FLEET_SERVICE_CODES.map((code) => {
               const design = SERVICE_DESIGN[code];
               const record = overview.find((item) => item.code === code);
@@ -149,19 +149,19 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
               const Watermark = design.Watermark;
               return (
                 <button key={code} type="button" aria-expanded={active} aria-controls="marketplace-fleet-vehicle-detail" onClick={() => chooseService(code)}
-                  className={`group relative min-h-[174px] w-full overflow-hidden rounded-[23px] border p-4 text-left shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${design.frame} ${active ? design.focused : ""}`}>
+                  className={`group relative min-h-[126px] w-full overflow-hidden rounded-[17px] border p-3 text-left shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:min-h-[174px] sm:rounded-[23px] sm:p-4 ${design.frame} ${active ? design.focused : ""}`}>
                   <span aria-hidden="true" className={`pointer-events-none absolute -right-12 -top-14 h-32 w-32 rounded-full blur-3xl ${design.fog}`} />
-                  <Watermark aria-hidden="true" strokeWidth={0.7} className={`pointer-events-none absolute -right-5 bottom-0 h-36 w-36 rotate-[-11deg] opacity-[0.07] ${design.ink}`} />
+                  <Watermark aria-hidden="true" strokeWidth={0.7} className={`pointer-events-none absolute -right-5 bottom-0 hidden h-36 w-36 rotate-[-11deg] opacity-[0.07] sm:block ${design.ink}`} />
                   <div className="relative flex items-start justify-between gap-3">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${design.symbol}`}><Icon className="h-5 w-5" /></div>
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl border sm:h-11 sm:w-11 sm:rounded-2xl ${design.symbol}`}><Icon className="h-5 w-5" /></div>
                     <ChevronDown className={`mt-2 h-4 w-4 text-muted-foreground transition-transform ${active ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
                   </div>
-                  <div className="relative mt-4">
+                  <div className="relative mt-2 sm:mt-4">
                     <p className="text-sm font-semibold text-foreground">{design.name}</p>
                     {fleet.isLoading ? <Loader2 className="mt-2 h-6 w-6 animate-spin text-muted-foreground" /> : (
-                      <p className="mt-1 font-mono text-3xl font-bold tracking-tight text-foreground" aria-label={`${record?.total ?? 0} conductores`}>{record?.total ?? 0}</p>
+                      <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl" aria-label={`${record?.total ?? 0} conductores`}>{record?.total ?? 0}</p>
                     )}
-                    <p className="mt-1 text-[11px] text-muted-foreground">{record?.active ?? 0} activos · {record?.categories.length ?? 0} tipos de vehículo</p>
+                    <p className="mt-1 text-[10px] leading-snug text-muted-foreground sm:text-[11px]">{record?.active ?? 0} activos · {record?.categories.length ?? 0} tipos de vehículo</p>
                   </div>
                 </button>
               );
@@ -170,7 +170,7 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
 
           <div id="marketplace-fleet-vehicle-detail" className="relative">
             {service && selected && selectedDesign && !fleet.isLoading ? (
-              <div className="mt-4 overflow-hidden rounded-[23px] border border-border/60 bg-background/55 p-4 backdrop-blur-sm sm:p-5">
+              <div className="mt-3 overflow-hidden rounded-[18px] border border-border/60 bg-background/55 p-3 backdrop-blur-sm sm:mt-4 sm:rounded-[23px] sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{selectedDesign.name} · Tipos de vehículo</p>
