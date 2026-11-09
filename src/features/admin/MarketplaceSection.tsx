@@ -3626,36 +3626,52 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
     : analysis.isError ? "Radar no disponible"
     : state === "yes" ? "Radar utilizado"
     : state === "no" ? "Radar no utilizado" : "Sin registro histórico";
-  const tone = state === "yes"
-    ? "border-sky-400/50 bg-gradient-to-br from-sky-400/20 via-cyan-500/10 to-[#0b2231] text-sky-100 shadow-[0_18px_45px_-25px_rgba(56,189,248,0.48)] hover:border-sky-300/75"
-    : state === "no"
-    ? "border-slate-600/25 bg-slate-800/20 text-slate-400 opacity-75 hover:opacity-100 hover:border-slate-500/45"
-    : "border-slate-500/25 bg-[#11191e]/75 text-slate-300 hover:border-slate-400/45";
+  const active = state === "yes";
+  const inactive = state === "no";
+  const tone = active
+    ? "border-cyan-300/45 bg-gradient-to-br from-[#0b3642] via-[#0b2633] to-[#071b27] text-cyan-100 hover:border-cyan-200/80"
+    : inactive
+      ? "border-slate-600/45 bg-gradient-to-br from-[#1d2730] to-[#121920] text-slate-400 hover:border-slate-500/70"
+      : "border-slate-500/30 bg-[#131d24] text-slate-300 hover:border-slate-400/55";
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={headline + ". Abrir radar y cobertura de esta carrera"}
-      title={headline + ". Clic para abrir el análisis del radar"}
-      className={"group relative flex min-h-[180px] w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border p-3 text-center outline-none transition-all duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-sky-300 " + tone}
+      aria-label={headline + ". Ver recorrido de notificaciones por kilómetros de esta carrera"}
+      title={headline + ". Abrir etapas y distancias de notificación"}
+      className={"group relative flex min-h-[176px] w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border px-3 py-3 text-center outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300 " + tone}
     >
-      {state === "yes" ? (
-        <span aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-full bg-sky-400/[0.09] blur-2xl" />
-      ) : null}
-      <span className="relative flex flex-col items-center gap-2 transition-transform duration-200 group-hover:scale-95 group-focus-visible:scale-95">
-        <Radar className="h-[76px] w-[76px] drop-shadow-[0_0_16px_rgba(34,211,238,0.25)]" strokeWidth={1.35} aria-hidden="true" />
-        <span className="text-xs font-bold">{headline}</span>
-      </span>
-      <span className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-[#09161d]/95 px-2.5 py-3 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus:opacity-100">
-        <Radar className="h-7 w-7 text-sky-300" strokeWidth={1.5} aria-hidden="true" />
-        <span className="text-[11px] font-bold text-sky-100">Radar de la carrera</span>
-        <span className="text-[11px] font-semibold text-white">{headline}</span>
-        <span className="text-[10px] leading-relaxed text-slate-300">Impactados: {total} · Avisos encolados: {queued}</span>
-        {stages.length > 0 ? (
-          <span className="text-[10px] text-sky-200">Etapas: {stages.join(", ")}</span>
+      <span aria-hidden="true" className={"pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full blur-3xl " + (active ? "bg-cyan-300/[0.10]" : "bg-slate-300/[0.025]")} />
+      <span aria-hidden="true" className="relative flex h-[92px] w-[92px] shrink-0 items-center justify-center">
+        <span className={"absolute inset-0 rounded-full border " + (active ? "border-cyan-300/40" : "border-slate-500/45")} />
+        <span className={"absolute inset-[14px] rounded-full border " + (active ? "border-cyan-300/25" : "border-slate-500/25")} />
+        <span className={"absolute inset-[28px] rounded-full border " + (active ? "border-cyan-300/20" : "border-slate-500/20")} />
+        {active ? (
+          <span
+            className="absolute inset-0 rounded-full motion-safe:animate-[spin_6s_linear_infinite]"
+            style={{ background: "conic-gradient(from 0deg, transparent 0deg, transparent 302deg, rgba(34,211,238,.24) 342deg, transparent 360deg)" }}
+          />
         ) : null}
-        <span className="mt-1 text-[10px] font-semibold text-cyan-200">Clic: análisis completo</span>
+        <span className={"absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full " + (active ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,.8)]" : "bg-slate-500")} />
+        {active && total > 0 ? (
+          <>
+            <span className="absolute right-[11px] top-[19px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_rgba(110,231,183,.9)]" />
+            <span className="absolute bottom-[21px] left-[20px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_rgba(110,231,183,.9)]" />
+          </>
+        ) : null}
+      </span>
+      <span className="relative mt-2 flex flex-col items-center gap-1">
+        <span className={"rounded-full border px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] " + (active ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
+          {active ? "Activo" : inactive ? "Inactivo" : "Sin confirmar"}
+        </span>
+        <span className="text-[11px] font-bold">{headline}</span>
+        {active ? (
+          <span className="text-[10px] text-cyan-100/75">{total} registros · {queued} avisos encolados</span>
+        ) : null}
+        <span className={"text-[10px] font-semibold " + (active ? "text-cyan-200" : "text-slate-400")}>
+          Ver recorrido por km
+        </span>
       </span>
     </button>
   );
@@ -3744,11 +3760,35 @@ function JobNotificationReach({
     )?.radius_limit_km ?? null,
   }));
 
-  const snapshotRadii = [
+  const configuredRadii = [
     radar.data?.radar_settings?.r1,
     radar.data?.radar_settings?.r2,
     radar.data?.radar_settings?.r3,
-  ].filter((km): km is number => typeof km === "number");
+  ];
+  const snapshotRadii = configuredRadii.filter(
+    (km): km is number => typeof km === "number" && Number.isFinite(km) && km > 0
+  );
+
+  // Los registros guardan el primer aviso por conductor, no todos los reintentos.
+  // Un radio sin destinatarios no demuestra que se ejecutara la etapa.
+  const notificationStageNumbers = [...new Set([
+    ...configuredRadii.flatMap((km, index) =>
+      typeof km === "number" && Number.isFinite(km) && km > 0 ? [index + 1] : []
+    ),
+    ...stageGroups.map(({ stage }) => stage).filter((stage) => stage > 0),
+  ])].sort((a, b) => a - b);
+  const notificationRoute = notificationStageNumbers.map((stage) => {
+    const recipientsAtStage = actual.filter(
+      (item) => radarByDriver.get(item.driverUserId)?.radius_stage === stage
+    );
+    const recorded = stageGroups.find((group) => group.stage === stage);
+    return {
+      stage,
+      radius: recorded?.radius ?? configuredRadii[stage - 1] ?? null,
+      recipients: recipientsAtStage,
+      sent: recipientsAtStage.filter((item) => item.deliveryStatus === "sent").length,
+    };
+  });
 
   if (compact) {
     return (
@@ -3837,22 +3877,72 @@ function JobNotificationReach({
               </p>
             ) : null}
 
-            {stageGroups.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {stageGroups.map(({ stage, count, radius }) => (
-                  <span
-                    key={stage}
-                    className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-2.5 py-1.5 text-xs"
-                  >
-                    Etapa {stage}
-                    {radius == null ? "" : " · hasta " + kilometers(radius)}
-                    {" · "}{count} conductor{count === 1 ? "" : "es"}
+            {radar.data.status === "yes" ? (
+              <section aria-label="Recorrido de notificaciones por kilómetros" className="rounded-2xl border border-cyan-300/20 bg-[#0c2530]/50 p-3 sm:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h5 className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
+                    <Radar className="h-4 w-4" aria-hidden="true" />
+                    Recorrido de notificación por km
+                  </h5>
+                  <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold text-emerald-200">
+                    Radar activo en esta carrera
                   </span>
-                ))}
-              </div>
-            ) : radar.data.status === "yes" && actual.length === 0 ? (
-              <p className="text-xs text-amber-200">
-                El radar se ejecutó, pero no constan conductores impactados.
+                </div>
+                {notificationRoute.length > 0 ? (
+                  <ol className="mt-3 space-y-2">
+                    {notificationRoute.map(({ stage, radius, recipients: stageRecipients, sent: stageSent }) => (
+                      <li key={stage} className="rounded-xl border border-cyan-300/[0.12] bg-black/20 p-2.5 sm:p-3">
+                        <div className="flex min-w-0 items-start gap-2.5">
+                          <span aria-hidden="true" className={"flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold " + (stageRecipients.length > 0 ? "border-cyan-300/45 bg-cyan-400/15 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
+                            {stage}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground">
+                              Etapa {stage} · {radius == null ? "Radio sin registro" : "Hasta " + kilometers(radius)}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {stageRecipients.length} destinatario{stageRecipients.length === 1 ? "" : "s"} con aviso · {stageSent} marcado{stageSent === 1 ? "" : "s"} como enviado{stageSent === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                        </div>
+                        {stageRecipients.length > 0 ? (
+                          <details className="group mt-2 rounded-lg border border-white/[0.08] bg-white/[0.02]">
+                            <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 px-2.5 text-[11px] font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
+                              Ver avisos de esta etapa
+                              <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+                            </summary>
+                            <ul className="space-y-1 border-t border-white/[0.08] px-2.5 py-2">
+                              {stageRecipients.map((recipient) => (
+                                <li key={recipient.driverUserId} className="flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-1 text-[11px]">
+                                  <span className="min-w-0 break-words text-foreground">{recipient.driverDisplayName}</span>
+                                  <span className="text-muted-foreground">
+                                    {recipient.distanceKm == null ? "Distancia sin registro" : kilometers(recipient.distanceKm)}
+                                    {" · "}{recipient.deliveryStatus === "sent" ? "Enviado por push" : recipient.deliveryStatus === "failed" ? "Envío fallido" : "En cola / pendiente"}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        ) : (
+                          <p className="mt-2 text-[11px] text-slate-400">
+                            Sin avisos conservados para este radio; no confirma que se haya ejecutado la etapa.
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-3 text-xs text-amber-200">
+                    Se registró uso del radar, pero faltan radios y etapas para reconstruir sus avisos.
+                  </p>
+                )}
+                <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+                  Cobertura documental por radios, no una ruta GPS. Se conserva la primera selección por conductor; no se reconstruyen kilómetros intermedios ni reintentos sin registro.
+                </p>
+              </section>
+            ) : radar.data.status === "no" ? (
+              <p className="rounded-xl border border-slate-500/25 bg-slate-500/[0.06] px-3 py-2 text-xs text-slate-400">
+                El radar no se utilizó en esta carrera. No existe un recorrido radial que mostrar.
               </p>
             ) : null}
 
