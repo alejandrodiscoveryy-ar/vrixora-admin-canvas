@@ -17,9 +17,9 @@ type RadarReadiness = {
 
 function Metric({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+    <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] sm:p-3">
       <p className="text-[11px] text-slate-300">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold tabular-nums text-white">{value}</p>
+      <p className="mt-1 text-xl font-extrabold tabular-nums text-white sm:text-2xl">{value}</p>
       {note ? <p className="mt-1 text-[11px] text-slate-400">{note}</p> : null}
     </div>
   );
@@ -45,14 +45,14 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
 
   return (
     <section aria-label="Diagnóstico de disponibilidad del radar"
-      className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-br from-[#10282e] to-[#0b171e] p-4 sm:p-5">
+      className="relative isolate overflow-hidden rounded-[18px] border border-cyan-400/20 bg-gradient-to-br from-[#10282e] to-[#0b171e] p-3 sm:rounded-[22px] sm:p-5">
       <Radar aria-hidden="true" className="pointer-events-none absolute -right-5 -top-9 -z-10 h-48 w-48 text-cyan-200/[0.035]" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-cyan-100">
           <Radar className="h-5 w-5" aria-hidden="true" />
-          <h3 className="text-base font-bold">Disponibilidad operativa del radar</h3>
+          <h3 className="text-sm font-bold sm:text-base">Disponibilidad operativa del radar</h3>
         </div>
-        <span className="text-xs text-slate-300">GPS reciente: últimos 5 minutos · Actualiza cada 30 s</span>
+        <span className="text-[10px] text-slate-300 sm:text-xs">GPS reciente: últimos 5 minutos · Actualiza cada 30 s</span>
       </div>
       {readiness.isPending ? <p className="mt-3 text-xs text-slate-300">Consultando disponibilidad real…</p> : null}
       {readiness.isError ? <p role="alert" className="mt-3 text-xs text-amber-200">No se pudo consultar la disponibilidad. Los datos no se sustituyen por estimaciones.</p> : null}
