@@ -3872,22 +3872,72 @@ function JobNotificationReach({
               </p>
             ) : null}
 
-            {stageGroups.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {stageGroups.map(({ stage, count, radius }) => (
-                  <span
-                    key={stage}
-                    className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-2.5 py-1.5 text-xs"
-                  >
-                    Etapa {stage}
-                    {radius == null ? "" : " · hasta " + kilometers(radius)}
-                    {" · "}{count} conductor{count === 1 ? "" : "es"}
+            {radar.data.status === "yes" ? (
+              <section aria-label="Recorrido de notificaciones por kilómetros" className="rounded-2xl border border-cyan-300/20 bg-[#0c2530]/50 p-3 sm:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h5 className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
+                    <Radar className="h-4 w-4" aria-hidden="true" />
+                    Recorrido de notificación por km
+                  </h5>
+                  <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold text-emerald-200">
+                    Radar activo en esta carrera
                   </span>
-                ))}
-              </div>
-            ) : radar.data.status === "yes" && actual.length === 0 ? (
-              <p className="text-xs text-amber-200">
-                El radar se ejecutó, pero no constan conductores impactados.
+                </div>
+                {notificationRoute.length > 0 ? (
+                  <ol className="mt-3 space-y-2">
+                    {notificationRoute.map(({ stage, radius, recipients: stageRecipients, sent: stageSent }) => (
+                      <li key={stage} className="rounded-xl border border-cyan-300/[0.12] bg-black/20 p-2.5 sm:p-3">
+                        <div className="flex min-w-0 items-start gap-2.5">
+                          <span aria-hidden="true" className={"flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold " + (stageRecipients.length > 0 ? "border-cyan-300/45 bg-cyan-400/15 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
+                            {stage}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground">
+                              Etapa {stage} · {radius == null ? "Radio sin registro" : "Hasta " + kilometers(radius)}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {stageRecipients.length} destinatario{stageRecipients.length === 1 ? "" : "s"} con aviso · {stageSent} marcado{stageSent === 1 ? "" : "s"} como enviado{stageSent === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                        </div>
+                        {stageRecipients.length > 0 ? (
+                          <details className="group mt-2 rounded-lg border border-white/[0.08] bg-white/[0.02]">
+                            <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 px-2.5 text-[11px] font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
+                              Ver avisos de esta etapa
+                              <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+                            </summary>
+                            <ul className="space-y-1 border-t border-white/[0.08] px-2.5 py-2">
+                              {stageRecipients.map((recipient) => (
+                                <li key={recipient.driverUserId} className="flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-1 text-[11px]">
+                                  <span className="min-w-0 break-words text-foreground">{recipient.driverDisplayName}</span>
+                                  <span className="text-muted-foreground">
+                                    {recipient.distanceKm == null ? "Distancia sin registro" : kilometers(recipient.distanceKm)}
+                                    {" · "}{recipient.deliveryStatus === "sent" ? "Enviado por push" : recipient.deliveryStatus === "failed" ? "Envío fallido" : "En cola / pendiente"}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        ) : (
+                          <p className="mt-2 text-[11px] text-slate-400">
+                            Sin avisos conservados para este radio; no confirma que se haya ejecutado la etapa.
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-3 text-xs text-amber-200">
+                    Se registró uso del radar, pero faltan radios y etapas para reconstruir sus avisos.
+                  </p>
+                )}
+                <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+                  Cobertura documental por radios, no una ruta GPS. Se conserva la primera selección por conductor; no se reconstruyen kilómetros intermedios ni reintentos sin registro.
+                </p>
+              </section>
+            ) : radar.data.status === "no" ? (
+              <p className="rounded-xl border border-slate-500/25 bg-slate-500/[0.06] px-3 py-2 text-xs text-slate-400">
+                El radar no se utilizó en esta carrera. No existe un recorrido radial que mostrar.
               </p>
             ) : null}
 
