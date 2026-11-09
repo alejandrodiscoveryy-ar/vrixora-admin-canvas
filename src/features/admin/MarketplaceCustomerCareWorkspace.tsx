@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight, CheckCircle2, Clock3, Headphones, History, MapPin,
-  Navigation, Phone, Plus, Route, ShieldCheck, UserRound, Users,
+  MessageCircle, Navigation, Phone, Plus, Route, Send, ShieldCheck, UserRound, Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { getMarketplaceOperationalMap } from "@/lib/marketplace-map";
 import MarketplaceLiteContactCard from "@/features/admin/MarketplaceLiteContactCard";
 import MarketplaceTestRouteMap, { type TestPoint } from "@/features/admin/MarketplaceTestRouteMap";
+import { interpretManualWhatsAppMessage } from "@/lib/marketplace-whatsapp-manual.mjs";
 
 type Stop = "origin" | "destination";
 type ServiceCode = "passenger" | "courier" | "cargo";
@@ -25,6 +26,24 @@ type Quote = {
   durationSeconds: number;
   recommendedPrice: number;
   routePoints: Array<{ lat: number; lon: number }>;
+};
+type WhatsAppQuote = {
+  id: string;
+  request_key: string;
+  customer_id: string;
+  customer_name?: string;
+  whatsapp_phone?: string;
+  origin_text: string;
+  destination_text: string;
+  origin_point: { lat: number; lon: number };
+  destination_point: { lat: number; lon: number };
+  service_code: ServiceCode;
+  vehicle_category_code: VehicleCode;
+  expected_price: number;
+  notes: string | null;
+  cargo_weight_kg: number | null;
+  status: "quoted" | "sent" | "accepted" | "published";
+  quote_expires_at: string;
 };
 type Published = {
   job_id: string;
@@ -75,6 +94,12 @@ function message(error: unknown): string {
     CARE_IDEMPOTENCY_REUSED: "La solicitud cambió. Pulsa Nueva solicitud y vuelve a intentarlo.",
     PERMISSION_DENIED: "No tienes permisos para esta operación.",
     SMART_PRICING_TARIFF_NOT_CONFIGURED: "No hay una tarifa activa para esa modalidad.",
+    WHATSAPP_QUOTE_ROUTE_OR_PRICE_CHANGED: "La ruta o tarifa cambió. Debes enviar una cotización nueva y obtener otra aceptación.",
+    WHATSAPP_QUOTE_EXPIRED: "La cotización venció. Prepara y envía otra cotización.",
+    WHATSAPP_QUOTE_NOT_ACCEPTED: "Debes registrar primero la aceptación del cliente.",
+    WHATSAPP_QUOTE_MUST_BE_SENT_FIRST: "Registra primero que enviaste la cotización por WhatsApp.",
+    WHATSAPP_QUOTE_IDEMPOTENCY_CONFLICT: "La solicitud cambió. Prepara una cotización nueva.",
+    WHATSAPP_QUOTE_ACCEPTANCE_REQUIRED: "Copia la respuesta con la que el cliente acepta el importe.",
   };
   return Object.entries(labels).find(([key]) => code.includes(key))?.[1] ?? code;
 }
@@ -116,6 +141,13 @@ export default function MarketplaceCustomerCareWorkspace({
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [published, setPublished] = useState<Published | null>(null);
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [whatsappMode, setWhatsappMode] = useState(false);
+  const [whatsappRawMessage, setWhatsappRawMessage] = useState("");
+  const [whatsappQuote, setWhatsappQuote] = useState<WhatsAppQuote | null>(null);
+  const [whatsappOpened, setWhatsappOpened] = useState(false);
+  const [acceptanceExcerpt, setAcceptanceExcerpt] = useState("");
+  const [acceptanceReviewed, setAcceptanceReviewed] = useState(false);
+  const [quoteRefresh, setQuoteRefresh] = useState(0);
   const pointVersion = useRef({ origin: 0, destination: 0 });
 
   const normalizedPhone = useMemo(() => phoneE164(clientPhone), [clientPhone]);
@@ -144,7 +176,14 @@ export default function MarketplaceCustomerCareWorkspace({
   const customerName = customer?.display_name ?? clientName;
   const canRegister = canRegisterCustomers && !customer && validPhone(normalizedPhone) && clientName.trim().length >= 2;
 
-  const invalidateRequest = () => { setPublished(null); setRequestKey(crypto.randomUUID()); };
+  const invalidateRequest = () => {
+    setPublished(null);
+    setWhatsappQuote(null);
+    setWhatsappOpened(false);
+    setAcceptanceExcerpt("");
+    setAcceptanceReviewed(false);
+    setRequestKey(crypto.randomUUID());
+  };
   const onPhone = (value: string) => {
     setClientPhone(value); setRegistered(null); setClientName(""); invalidateRequest();
   };
@@ -187,6 +226,7 @@ export default function MarketplaceCustomerCareWorkspace({
     setNotes(""); setCargoWeight(""); setOrigin(""); setDestination("");
     setOriginPoint(null); setDestinationPoint(null); setPicking("origin");
     setSuggestions({ origin: [], destination: [] }); setQuote(null); setQuoteError(null);
+    setWhatsappRawMessage("");
     pointVersion.current.origin += 1; pointVersion.current.destination += 1;
     invalidateRequest();
   };
@@ -266,12 +306,179 @@ export default function MarketplaceCustomerCareWorkspace({
         .finally(() => { if (!cancelled) setQuoteLoading(false); });
     }, 400);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [originPoint, destinationPoint, service, vehicle, routeKey, cargoWeight]);
+  }, [originPoint, destinationPoint, service, vehicle, routeKey, cargoWeight, quoteRefresh]);
   const validQuote = quote?.key === routeKey ? quote : null;
   const weight = Number(cargoWeight);
   const validCargo = service !== "cargo" || (Number.isFinite(weight) && weight > 0 && weight <= 10000);
+  const pendingWhatsAppQuotes = useQuery({
+    queryKey: ["care-whatsapp-pending-quotes", projectId],
+    queryFn: () => rpc<WhatsAppQuote[]>("admin_list_marketplace_whatsapp_quotes", {
+      target_project_id: projectId,
+    }),
+    enabled: whatsappMode && canManageMarketplace && canViewCustomers,
+    staleTime: 15_000,
+  });
+  const quoteMatchesCurrent = !!(whatsappQuote && customer && validQuote
+    && originPoint && destinationPoint
+    && whatsappQuote.request_key === requestKey
+    && whatsappQuote.customer_id === customer.id
+    && whatsappQuote.service_code === service
+    && whatsappQuote.vehicle_category_code === vehicle
+    && whatsappQuote.origin_text === origin.trim()
+    && whatsappQuote.destination_text === destination.trim()
+    && (whatsappQuote.notes ?? "") === notes.trim()
+    && (whatsappQuote.cargo_weight_kg ?? null) === (service === "cargo" ? weight : null)
+    && Number(whatsappQuote.expected_price).toFixed(2) === validQuote.recommendedPrice.toFixed(2)
+    && Number(whatsappQuote.origin_point.lat) === originPoint.lat
+    && Number(whatsappQuote.origin_point.lon) === originPoint.lon
+    && Number(whatsappQuote.destination_point.lat) === destinationPoint.lat
+    && Number(whatsappQuote.destination_point.lon) === destinationPoint.lon
+    && new Date(whatsappQuote.quote_expires_at).getTime() > Date.now());
+  const acceptedWhatsAppQuote = quoteMatchesCurrent && whatsappQuote?.status === "accepted";
+  const canPrepareWhatsAppQuote = whatsappMode && canManageMarketplace && !!customer
+    && !!originPoint && !!destinationPoint && !!validQuote && !quoteLoading && validCargo
+    && !whatsappQuote && !published;
   const canPublish = canManageMarketplace && !!customer && !!originPoint && !!destinationPoint &&
-    !!validQuote && !quoteLoading && validCargo && !published;
+    !!validQuote && !quoteLoading && validCargo && !published &&
+    (!whatsappMode || acceptedWhatsAppQuote);
+  const quoteWhatsAppText = whatsappQuote
+    ? [
+      "TUKTUK | Cotización de servicio",
+      "Origen: " + whatsappQuote.origin_text,
+      "Destino: " + whatsappQuote.destination_text,
+      "Servicio: " + (SERVICES.find((item) => item.value === whatsappQuote.service_code)?.label ?? whatsappQuote.service_code),
+      "Vehículo: " + (VEHICLES.find((item) => item.value === whatsappQuote.vehicle_category_code)?.label ?? whatsappQuote.vehicle_category_code),
+      "Precio total: " + Number(whatsappQuote.expected_price).toLocaleString("es-CU", { maximumFractionDigits: 2 }) + " CUP",
+      "Referencia: " + whatsappQuote.id.slice(0, 8).toUpperCase(),
+      "Confirma este importe respondiendo ACEPTO y la referencia indicada.",
+      "La carrera solo se enviará a los conductores después de tu aceptación.",
+    ].join("\n")
+    : "";
+  const quoteWhatsAppLink = validPhone(normalizedPhone) && whatsappQuote
+    ? "https://wa.me/" + normalizedPhone.replace(/\D/g, "") + "?text=" + encodeURIComponent(quoteWhatsAppText)
+    : null;
+  const missingWhatsAppFields = [
+    !validPhone(normalizedPhone) ? "teléfono del cliente" : null,
+    validPhone(normalizedPhone) && !customer ? "identificar o registrar al cliente" : null,
+    !originPoint ? "ubicación exacta de recogida" : null,
+    !destinationPoint ? "ubicación exacta de destino" : null,
+    !validCargo ? "peso de la carga" : null,
+    !validQuote ? "calcular tarifa" : null,
+  ].filter((value): value is string => value !== null);
+  const whatsappQuestion = missingWhatsAppFields.length
+    ? "Hola, para preparar tu solicitud de TUKTUK necesitamos confirmar: "
+      + missingWhatsAppFields.filter((part) => part !== "calcular tarifa" && part !== "identificar o registrar al cliente").join(", ")
+      + ". ¿Puedes facilitarnos estos datos? Gracias."
+    : "";
+  const whatsappQuestionLink = validPhone(normalizedPhone) && whatsappQuestion
+    ? "https://wa.me/" + normalizedPhone.replace(/\D/g, "") + "?text=" + encodeURIComponent(whatsappQuestion)
+    : null;
+  const recoverWhatsAppQuote = (saved: WhatsAppQuote) => {
+    if (!saved.whatsapp_phone) return;
+    setWhatsappMode(true);
+    setClientPhone(saved.whatsapp_phone);
+    setClientName(""); setRegistered(null);
+    setService(saved.service_code); setVehicle(saved.vehicle_category_code);
+    setPreferredContact("whatsapp");
+    setOrigin(saved.origin_text); setDestination(saved.destination_text);
+    setOriginPoint(parsePoint(saved.origin_point)); setDestinationPoint(parsePoint(saved.destination_point));
+    setCargoWeight(saved.cargo_weight_kg == null ? "" : String(saved.cargo_weight_kg));
+    setNotes(saved.notes ?? "");
+    setSuggestions({ origin: [], destination: [] });
+    pointVersion.current.origin += 1; pointVersion.current.destination += 1;
+    setQuote(null); setQuoteError(null); setPublished(null);
+    setWhatsappQuote(saved); setRequestKey(saved.request_key);
+    setWhatsappOpened(false); setAcceptanceExcerpt(""); setAcceptanceReviewed(false);
+  };
+  const extractWhatsAppMessage = () => {
+    const parsed = interpretManualWhatsAppMessage(whatsappRawMessage);
+    if (!whatsappRawMessage.trim()) return toast.error("Pega primero el mensaje del cliente.");
+    if (parsed.origin) editStop("origin", parsed.origin);
+    if (parsed.destination) editStop("destination", parsed.destination);
+    if (parsed.service) setService(parsed.service);
+    if (parsed.vehicle) setVehicle(parsed.vehicle);
+    setPreferredContact("whatsapp");
+    invalidateRequest();
+    toast.info(parsed.hints.length
+      ? "Datos detectados. Comprueba lo que falta y selecciona ambos puntos exactos en el mapa."
+      : "Revisa los datos y confirma ambos puntos exactos en el mapa.");
+  };
+  const verifyWhatsAppRoute = async () => {
+    if (!customer || !originPoint || !destinationPoint || !validQuote || !validCargo)
+      throw new Error("Completa los datos y calcula la tarifa antes de preparar la cotización.");
+    const { data: verified, error } = await getSupabaseClient().functions.invoke(
+      "marketplace-map-admin-gateway",
+      { body: {
+        operation: "care_route_verify_v1",
+        project_id: projectId,
+        target_service_code: service,
+        target_vehicle_category_code: vehicle,
+        target_origin_point: { lat: originPoint.lat, lon: originPoint.lon },
+        target_destination_point: { lat: destinationPoint.lat, lon: destinationPoint.lon },
+        target_cargo_weight_kg: service === "cargo" ? weight : null,
+      } }
+    );
+    if (error || verified?.error) throw error ?? new Error(String(verified?.error));
+    const routeId = verified?.data?.verified_route_id;
+    const verifiedPrice = Number(verified?.data?.recommended_price);
+    if (typeof routeId !== "string" || !/^[0-9a-f-]{36}$/i.test(routeId)
+      || !Number.isFinite(verifiedPrice) || verifiedPrice <= 0)
+      throw new Error("CARE_ROUTE_VERIFICATION_FAILED");
+    if (Math.round(verifiedPrice * 100) !== Math.round(validQuote.recommendedPrice * 100))
+      throw new Error("CARE_PRICE_CHANGED");
+    return { routeId, verifiedPrice };
+  };
+  const prepareWhatsAppQuote = useMutation({
+    mutationFn: async () => {
+      if (!canPrepareWhatsAppQuote || !customer) throw new Error("Completa la solicitud antes de cotizar.");
+      const { routeId, verifiedPrice } = await verifyWhatsAppRoute();
+      return rpc<WhatsAppQuote>("admin_prepare_marketplace_whatsapp_quote", {
+        target_project_id: projectId,
+        target_customer_id: customer.id,
+        target_request_key: requestKey,
+        target_verified_route_id: routeId,
+        target_expected_price: verifiedPrice,
+        target_origin_text: origin.trim(),
+        target_destination_text: destination.trim(),
+        target_notes: notes.trim() || null,
+      });
+    },
+    onSuccess: (saved) => {
+      setWhatsappQuote(saved); setWhatsappOpened(false);
+      void queryClient.invalidateQueries({ queryKey: ["care-whatsapp-pending-quotes", projectId] });
+      toast.success("Cotización guardada. Ábrela en WhatsApp y envíala manualmente.");
+    },
+    onError: (error) => {
+      toast.error(message(error));
+      if (String(error).includes("PRICE_CHANGED") || String(error).includes("QUOTE_ROUTE")) {
+        setQuoteRefresh((current) => current + 1);
+      }
+    },
+  });
+  const markWhatsAppQuoteSent = useMutation({
+    mutationFn: () => rpc<WhatsAppQuote>("admin_mark_marketplace_whatsapp_quote_sent", {
+      target_project_id: projectId, target_quote_id: whatsappQuote?.id,
+    }),
+    onSuccess: (saved) => {
+      setWhatsappQuote(saved);
+      void queryClient.invalidateQueries({ queryKey: ["care-whatsapp-pending-quotes", projectId] });
+      toast.success("Envío marcado por el operador. Pendiente de respuesta del cliente.");
+    },
+    onError: (err) => toast.error(message(err)),
+  });
+  const confirmWhatsAppQuote = useMutation({
+    mutationFn: () => rpc<WhatsAppQuote>("admin_confirm_marketplace_whatsapp_quote", {
+      target_project_id: projectId,
+      target_quote_id: whatsappQuote?.id,
+      target_acceptance_excerpt: acceptanceExcerpt.trim(),
+    }),
+    onSuccess: (saved) => {
+      setWhatsappQuote(saved); setAcceptanceReviewed(false);
+      void queryClient.invalidateQueries({ queryKey: ["care-whatsapp-pending-quotes", projectId] });
+      toast.success("Aceptación registrada. Ya puedes publicar la carrera.");
+    },
+    onError: (err) => toast.error(message(err)),
+  });
   const publish = useMutation({
     mutationFn: async () => {
       if (!customer || !originPoint || !destinationPoint || !validQuote || !canPublish) throw new Error("Completa y verifica los datos antes de publicar.");
@@ -320,6 +527,16 @@ export default function MarketplaceCustomerCareWorkspace({
           Math.round(validQuote.recommendedPrice * 100))
         throw new Error("CARE_PRICE_CHANGED");
 
+      if (whatsappMode) {
+        if (!acceptedWhatsAppQuote || !whatsappQuote || !quoteMatchesCurrent)
+          throw new Error("WHATSAPP_QUOTE_NOT_ACCEPTED");
+        return rpc<Published>("admin_publish_marketplace_whatsapp_accepted_job", {
+          target_project_id: projectId,
+          target_quote_id: whatsappQuote.id,
+          target_verified_route_id: proofId,
+        });
+      }
+
       return rpc<Published>("admin_publish_marketplace_care_job", {
         target_verified_route_id: proofId,
         target_project_id: projectId,
@@ -345,14 +562,25 @@ export default function MarketplaceCustomerCareWorkspace({
         queryClient.invalidateQueries({ queryKey: ["marketplace-jobs", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-customers", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-operational-map-live", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["care-whatsapp-pending-quotes", projectId] }),
       ]);
       toast.success(data.repeated ? "Esta carrera ya estaba publicada." : "Carrera real publicada y enviada al despacho.");
     },
-    onError: (err) => toast.error(message(err)),
+    onError: (err) => {
+      toast.error(message(err));
+      if (String(err).includes("CARE_PRICE_CHANGED")
+        || String(err).includes("WHATSAPP_QUOTE_ROUTE_OR_PRICE_CHANGED")) {
+        setWhatsappQuote(null);
+        setAcceptanceReviewed(false);
+        setAcceptanceExcerpt("");
+        setQuoteRefresh((current) => current + 1);
+        setRequestKey(crypto.randomUUID());
+      }
+    },
   });
   const confirmPublish = () => {
     if (!customer || !validQuote || !canPublish || publish.isPending) return;
-    const ok = window.confirm(`¿Publicar carrera REAL para ${customer.display_name} (${customer.whatsapp_phone})?\n\n${origin} → ${destination}\n${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP\n\nLos conductores disponibles podrán recibirla.`);
+    const ok = window.confirm(`¿Publicar carrera REAL para ${customer.display_name} (${customer.whatsapp_phone})?\n\n${origin} → ${destination}\n${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP\n\n${whatsappMode ? "Aceptación del precio registrada por el operador. " : ""}Los conductores disponibles podrán recibirla.`);
     if (ok) publish.mutate();
   };
   const stopField = (kind: Stop, value: string) => (
