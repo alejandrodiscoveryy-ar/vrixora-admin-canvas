@@ -3617,11 +3617,6 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
     : analysis.data?.status === "no" ? "no" : "unknown";
   const total = Array.isArray(analysis.data?.impacts) ? analysis.data.impacts.length : 0;
   const queued = analysis.data?.total_offers_enqueued ?? 0;
-  const stages = [...new Set(
-    (analysis.data?.impacts ?? [])
-      .map((impact) => impact.radius_stage)
-      .filter((stage): stage is number => typeof stage === "number" && stage > 0)
-  )].sort((a, b) => a - b);
   const headline = analysis.isPending ? "Consultando radar"
     : analysis.isError ? "Radar no disponible"
     : state === "yes" ? "Radar utilizado"
@@ -3640,36 +3635,33 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
       onClick={onOpen}
       aria-label={headline + ". Ver recorrido de notificaciones por kilómetros de esta carrera"}
       title={headline + ". Abrir etapas y distancias de notificación"}
-      className={"group relative flex min-h-[176px] w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border px-3 py-3 text-center outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300 " + tone}
+      className={"group relative flex min-h-[104px] w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-2.5 py-2.5 text-left outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300 " + tone}
     >
-      <span aria-hidden="true" className={"pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full blur-3xl " + (active ? "bg-cyan-300/[0.10]" : "bg-slate-300/[0.025]")} />
-      <span aria-hidden="true" className="relative flex h-[92px] w-[92px] shrink-0 items-center justify-center">
+      <span aria-hidden="true" className={"pointer-events-none absolute -right-10 -top-14 h-28 w-28 rounded-full blur-3xl " + (active ? "bg-cyan-300/[0.10]" : "bg-slate-300/[0.025]")} />
+      <span aria-hidden="true" className="relative flex h-[62px] w-[62px] shrink-0 items-center justify-center">
         <span className={"absolute inset-0 rounded-full border " + (active ? "border-cyan-300/40" : "border-slate-500/45")} />
-        <span className={"absolute inset-[14px] rounded-full border " + (active ? "border-cyan-300/25" : "border-slate-500/25")} />
-        <span className={"absolute inset-[28px] rounded-full border " + (active ? "border-cyan-300/20" : "border-slate-500/20")} />
+        <span className={"absolute inset-[10px] rounded-full border " + (active ? "border-cyan-300/25" : "border-slate-500/25")} />
+        <span className={"absolute inset-[20px] rounded-full border " + (active ? "border-cyan-300/20" : "border-slate-500/20")} />
         {active ? (
           <span
             className="absolute inset-0 rounded-full motion-safe:animate-[spin_6s_linear_infinite]"
             style={{ background: "conic-gradient(from 0deg, transparent 0deg, transparent 302deg, rgba(34,211,238,.24) 342deg, transparent 360deg)" }}
           />
         ) : null}
-        <span className={"absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full " + (active ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,.8)]" : "bg-slate-500")} />
+        <span className={"absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full " + (active ? "bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,.8)]" : "bg-slate-500")} />
         {active && total > 0 ? (
-          <>
-            <span className="absolute right-[11px] top-[19px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_rgba(110,231,183,.9)]" />
-            <span className="absolute bottom-[21px] left-[20px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_rgba(110,231,183,.9)]" />
-          </>
+          <span className="absolute right-[7px] top-[12px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,.9)]" />
         ) : null}
       </span>
-      <span className="relative mt-2 flex flex-col items-center gap-1">
-        <span className={"rounded-full border px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] " + (active ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
+      <span className="relative flex min-w-0 flex-1 flex-col items-start gap-1">
+        <span className={"rounded-full border px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] " + (active ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
           {active ? "Activo" : inactive ? "Inactivo" : "Sin confirmar"}
         </span>
-        <span className="text-[11px] font-bold">{headline}</span>
+        <span className="text-[11px] font-bold leading-tight">{headline}</span>
         {active ? (
-          <span className="text-[10px] text-cyan-100/75">{total} registros · {queued} avisos encolados</span>
+          <span className="text-[10px] leading-tight text-cyan-100/75">{total} registros · {queued} avisos encolados</span>
         ) : null}
-        <span className={"text-[10px] font-semibold " + (active ? "text-cyan-200" : "text-slate-400")}>
+        <span className={"text-[10px] font-semibold leading-tight " + (active ? "text-cyan-200" : "text-slate-400")}>
           Ver recorrido por km
         </span>
       </span>
