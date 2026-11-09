@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -55,7 +55,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import MarketplaceOperationalMap from "@/features/admin/MarketplaceOperationalMap";
+// Mapbox GL es pesado: descargar el mapa solo al abrir la pestaña Mapa.
+const MarketplaceOperationalMap = lazy(() => import("@/features/admin/MarketplaceOperationalMap"));
 import MarketplaceConfigurationWorkspace from "@/features/admin/MarketplaceConfigurationWorkspace";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
@@ -988,7 +989,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   }, [tab]);
 
   useEffect(() => {
-    if (!permissions.includes("marketplace.view")) return;
+    // No competir con los datos del panel inicial. Precalentar al entrar en Mapa,
+    // en paralelo a la descarga diferida del módulo visual.
+    if (tab !== "mapa" || !permissions.includes("marketplace.view")) return;
 
     void queryClient.prefetchQuery({
       queryKey: ["marketplace-operational-map-config", projectId],
@@ -1001,7 +1004,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
       queryFn: () => getMarketplaceOperationalMap(projectId),
       staleTime: 5_000,
     });
-  }, [permissions, projectId, queryClient]);
+  }, [permissions, projectId, queryClient, tab]);
 
   const invalidate = (...keys: string[]) =>
     Promise.all(
@@ -2064,13 +2067,21 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         </TabsContent>
         {mapVisited ? (
           <TabsContent value="mapa" forceMount className="mt-3 data-[state=inactive]:hidden">
-            <MarketplaceOperationalMap
-              projectId={projectId}
-              canViewCustomers={canCustomers}
-              onOpenDriver={setDriver360Id}
-              onOpenCustomer={setCustomerId}
-              onOpenJob={setJobId}
-            />
+            <Suspense
+              fallback={
+                <div role="status" className="flex min-h-[320px] w-full items-center justify-center rounded-[26px] border border-border/60 bg-background/35 px-4 text-sm text-muted-foreground">
+                  Preparando mapa interactivo…
+                </div>
+              }
+            >
+              <MarketplaceOperationalMap
+                projectId={projectId}
+                canViewCustomers={canCustomers}
+                onOpenDriver={setDriver360Id}
+                onOpenCustomer={setCustomerId}
+                onOpenJob={setJobId}
+              />
+            </Suspense>
           </TabsContent>
         ) : null}
         <TabsContent value="conductores">
