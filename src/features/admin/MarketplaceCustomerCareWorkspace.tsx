@@ -365,10 +365,10 @@ export default function MarketplaceCustomerCareWorkspace({
     !validCargo ? "peso de la carga" : null,
     !validQuote ? "calcular tarifa" : null,
   ].filter((value): value is string => value !== null);
-  const whatsappQuestion = missingWhatsAppFields.length
+  const customerQuestions = missingWhatsAppFields.filter((part) => part !== "calcular tarifa" && part !== "identificar o registrar al cliente");
+  const whatsappQuestion = customerQuestions.length
     ? "Hola, para preparar tu solicitud de TUKTUK necesitamos confirmar: "
-      + missingWhatsAppFields.filter((part) => part !== "calcular tarifa" && part !== "identificar o registrar al cliente").join(", ")
-      + ". ¿Puedes facilitarnos estos datos? Gracias."
+      + customerQuestions.join(", ") + ". ¿Puedes facilitarnos estos datos? Gracias."
     : "";
   const whatsappQuestionLink = validPhone(normalizedPhone) && whatsappQuestion
     ? "https://wa.me/" + normalizedPhone.replace(/\D/g, "") + "?text=" + encodeURIComponent(whatsappQuestion)
