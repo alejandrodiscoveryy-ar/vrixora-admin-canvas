@@ -1,24 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { ShieldX } from "lucide-react";
 
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
 
-import ClientesSection from "@/features/admin/ClientesSection";
-import LicenciasSection from "@/features/admin/LicenciasSection";
-import PagosSection from "@/features/admin/PagosSection";
-import EmpleadosSection from "@/features/admin/EmpleadosSection";
-import RendimientoSection from "@/features/admin/RendimientoSection";
-import ConfiguracionSection from "@/features/admin/ConfiguracionSection";
-import ComunicadosSection from "@/features/admin/ComunicadosSection";
-import IntegracionesSection from "@/features/admin/IntegracionesSection";
-import PlanesPreciosSection from "@/features/admin/PlanesPreciosSection";
-import AuditoriaSection from "@/features/admin/AuditoriaSection";
-import ComercialSection from "@/features/admin/ComercialSection";
-import MarketplaceSection from "@/features/admin/MarketplaceSection";
-import AdministrationWorkspace from "@/features/admin/AdministrationWorkspace";
+const ClientesSection = lazy(() => import("@/features/admin/ClientesSection"));
+const LicenciasSection = lazy(() => import("@/features/admin/LicenciasSection"));
+const PagosSection = lazy(() => import("@/features/admin/PagosSection"));
+const EmpleadosSection = lazy(() => import("@/features/admin/EmpleadosSection"));
+const RendimientoSection = lazy(() => import("@/features/admin/RendimientoSection"));
+const ConfiguracionSection = lazy(() => import("@/features/admin/ConfiguracionSection"));
+const ComunicadosSection = lazy(() => import("@/features/admin/ComunicadosSection"));
+const IntegracionesSection = lazy(() => import("@/features/admin/IntegracionesSection"));
+const PlanesPreciosSection = lazy(() => import("@/features/admin/PlanesPreciosSection"));
+const AuditoriaSection = lazy(() => import("@/features/admin/AuditoriaSection"));
+const ComercialSection = lazy(() => import("@/features/admin/ComercialSection"));
+const MarketplaceSection = lazy(() => import("@/features/admin/MarketplaceSection"));
+const AdministrationWorkspace = lazy(() => import("@/features/admin/AdministrationWorkspace"));
 
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -102,7 +102,8 @@ function SectionPage() {
       content
     );
 
-  switch (section) {
+  const content = (() => {
+    switch (section) {
     case "clientes":
       return <ClientesSection projectId={id} />;
 
@@ -145,5 +146,18 @@ function SectionPage() {
           Sección no encontrada.
         </div>
       );
-  }
+    }
+  })();
+
+  return (
+    <Suspense
+      fallback={
+        <div role="status" className="flex min-h-44 w-full items-center justify-center rounded-2xl border border-border/60 bg-background/45 px-4 py-8 text-sm text-muted-foreground">
+          Cargando módulo…
+        </div>
+      }
+    >
+      {content}
+    </Suspense>
+  );
 }
