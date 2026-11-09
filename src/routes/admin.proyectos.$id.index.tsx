@@ -7,7 +7,9 @@ import {
   AlertTriangle,
   ArrowRight,
   BriefcaseBusiness,
+  ChevronDown,
   Gauge,
+  MapPin,
   Megaphone,
   RefreshCw,
   TrendingUp,
@@ -148,6 +150,93 @@ function ResumenPage() {
   const rangeLabel = `${formatDateShort(range.start)} - ${formatDateShort(range.end)}`;
 
   return (
+    <>
+
+      <div className="space-y-3 sm:hidden" aria-label="Panel general móvil">
+        <header className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.07] to-background/80 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan-300">VRIXORA · Panel general</p>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <h1 className="text-lg font-semibold text-foreground">Resumen operativo</h1>
+            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[10px] text-emerald-200">{allLoading ? "Cargando" : "En vivo"}</span>
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">{buildFreshnessLabel(dataUpdatedAt, allLoading)}</p>
+        </header>
+        {queryError ? <PageAlert tone="error" title="Error al actualizar">{friendlyError(queryError)}</PageAlert> : null}
+        <section className="grid grid-cols-2 gap-2" aria-label="Indicadores principales">
+          {canViewUsers ? <MobileDashboardStat label="Usuarios app" value={users.length} note={String(newUsersPeriod) + " nuevos"} icon={Users} loading={usersApp.isLoading} /> : null}
+          {canViewMarketplace ? (
+            <>
+              <MobileDashboardStat label="Conductores" value={overview?.driversTotal ?? 0} note={String(overview?.driversActive ?? 0) + " activos"} icon={Users} loading={marketplace.isLoading} />
+              <MobileDashboardStat label="Servicios activos" value={overview?.jobsActive ?? 0} note="En curso" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
+              <MobileDashboardStat label="Incidencias abiertas" value={overview?.jobsIncidentOpen ?? 0} note="Por atender" icon={AlertTriangle} loading={marketplace.isLoading} warning={(overview?.jobsIncidentOpen ?? 0) > 0} />
+            </>
+          ) : null}
+        </section>
+        <nav className="grid grid-cols-2 gap-2" aria-label="Accesos directos">
+          {canViewMarketplace ? (
+            <>
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "mapa" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-2 text-xs font-semibold text-cyan-100">
+                <MapPin className="h-4 w-4 shrink-0" /> Mapa en vivo
+              </Link>
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "trabajos" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 text-xs font-semibold text-foreground">
+                <BriefcaseBusiness className="h-4 w-4 shrink-0" /> Carreras
+              </Link>
+            </>
+          ) : null}
+          {canViewUsers ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "clientes" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 text-xs font-semibold text-foreground"><Users className="h-4 w-4 shrink-0" /> Usuarios</Link> : null}
+          {canViewCommercial ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "comercial" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 text-xs font-semibold text-foreground"><Megaphone className="h-4 w-4 shrink-0" /> Comercial</Link> : null}
+        </nav>
+        {(canViewMarketplace || canViewCommercial) ? (
+          <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/35">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Más indicadores <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
+            <div className="space-y-3 border-t border-border/50 p-3">
+              {canViewMarketplace ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <MobileDashboardStat label="Recargas pendientes" value={overview?.pendingTopups ?? 0} note="Finanzas" icon={WalletCards} loading={marketplace.isLoading} />
+                  <MobileDashboardStat label="Suspendidos" value={overview?.driversSuspended ?? 0} note="Conductores" icon={AlertTriangle} loading={marketplace.isLoading} />
+                  <MobileDashboardStat label="Trabajos publicados" value={overview?.jobsPublished ?? 0} note="Histórico" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
+                </div>
+              ) : null}
+              {canViewCommercial ? (
+                <section className="space-y-2" aria-label="Captación comercial">
+                  <p className="text-xs font-semibold text-violet-200">Captación del período</p>
+                  <div className="max-w-full overflow-x-auto">
+                    <AdminPeriodSelector value={period} range={dateRange} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setDateRange(nextRange); }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <MobileDashboardStat label="Leads" value={periodLeads.length} note="Recibidos" icon={Megaphone} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Contactados" value={contactedLeads} note="Atendidos" icon={Users} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Registrados" value={registeredLeads} note="Convertidos" icon={Users} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Conversión" value={conversionRate === null ? "—" : String(conversionRate) + "%"} note={conversionRate === null ? "Sin leads" : "A registro"} icon={TrendingUp} loading={commercialLeads.isLoading} />
+                  </div>
+                </section>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
+        {canViewAudit ? (
+          <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/35">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Actividad reciente <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
+            <div className="border-t border-border/50 p-3">
+              {recentActivity.length ? (
+                <ol className="divide-y divide-border/40">
+                  {recentActivity.slice(0, 3).map((event) => (
+                    <li key={event.id} className="min-w-0 py-2">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <span className="min-w-0 truncate text-xs text-foreground">{auditActionLabel(event.action)}</span>
+                        <time dateTime={event.createdAt} className="shrink-0 text-[10px] text-muted-foreground">{formatActivityDate(event.createdAt)}</time>
+                      </div>
+                      <p className="truncate text-[10px] text-muted-foreground">{event.actorEmail ?? "Sistema"}</p>
+                    </li>
+                  ))}
+                </ol>
+              ) : <p className="text-xs text-muted-foreground">Sin movimientos recientes.</p>}
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-cyan-300">Ver auditoría completa <ArrowRight className="h-3.5 w-3.5" /></Link>
+            </div>
+          </details>
+        ) : null}
+      </div>
+      <div className="hidden sm:block">
     <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.85)] sm:p-3">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/72 via-background/86 to-background/95" />
 
@@ -564,6 +653,27 @@ function ResumenPage() {
       </section>
       </div>
     </div>
+      </div>
+    </>
+  );
+}
+
+function MobileDashboardStat({
+  label, value, note, icon: Icon, loading, warning = false,
+}: {
+  label: string; value: number | string; note: string; icon: LucideIcon; loading: boolean; warning?: boolean;
+}) {
+  return (
+    <article className="min-w-0 rounded-xl border border-border/60 bg-card/55 p-3">
+      <div className="flex min-w-0 items-start justify-between gap-1.5">
+        <p className="min-w-0 text-[11px] font-medium leading-tight text-muted-foreground">{label}</p>
+        <Icon aria-hidden="true" className={warning ? "h-4 w-4 shrink-0 text-amber-300" : "h-4 w-4 shrink-0 text-cyan-300"} />
+      </div>
+      <p className={warning ? "mt-2 text-2xl font-bold leading-none tabular-nums text-amber-200" : "mt-2 text-2xl font-bold leading-none tabular-nums text-foreground"}>
+        {loading ? "…" : value}
+      </p>
+      <p className="mt-1.5 truncate text-[10px] text-muted-foreground">{note}</p>
+    </article>
   );
 }
 
