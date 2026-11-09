@@ -3626,36 +3626,52 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
     : analysis.isError ? "Radar no disponible"
     : state === "yes" ? "Radar utilizado"
     : state === "no" ? "Radar no utilizado" : "Sin registro histórico";
-  const tone = state === "yes"
-    ? "border-sky-400/50 bg-gradient-to-br from-sky-400/20 via-cyan-500/10 to-[#0b2231] text-sky-100 shadow-[0_18px_45px_-25px_rgba(56,189,248,0.48)] hover:border-sky-300/75"
-    : state === "no"
-    ? "border-slate-600/25 bg-slate-800/20 text-slate-400 opacity-75 hover:opacity-100 hover:border-slate-500/45"
-    : "border-slate-500/25 bg-[#11191e]/75 text-slate-300 hover:border-slate-400/45";
+  const active = state === "yes";
+  const inactive = state === "no";
+  const tone = active
+    ? "border-cyan-300/45 bg-gradient-to-br from-[#0b3642] via-[#0b2633] to-[#071b27] text-cyan-100 hover:border-cyan-200/80"
+    : inactive
+      ? "border-slate-600/45 bg-gradient-to-br from-[#1d2730] to-[#121920] text-slate-400 hover:border-slate-500/70"
+      : "border-slate-500/30 bg-[#131d24] text-slate-300 hover:border-slate-400/55";
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={headline + ". Abrir radar y cobertura de esta carrera"}
-      title={headline + ". Clic para abrir el análisis del radar"}
-      className={"group relative flex min-h-[180px] w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border p-3 text-center outline-none transition-all duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-sky-300 " + tone}
+      aria-label={headline + ". Ver recorrido de notificaciones por kilómetros de esta carrera"}
+      title={headline + ". Abrir etapas y distancias de notificación"}
+      className={"group relative flex min-h-[176px] w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border px-3 py-3 text-center outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300 " + tone}
     >
-      {state === "yes" ? (
-        <span aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-full bg-sky-400/[0.09] blur-2xl" />
-      ) : null}
-      <span className="relative flex flex-col items-center gap-2 transition-transform duration-200 group-hover:scale-95 group-focus-visible:scale-95">
-        <Radar className="h-[76px] w-[76px] drop-shadow-[0_0_16px_rgba(34,211,238,0.25)]" strokeWidth={1.35} aria-hidden="true" />
-        <span className="text-xs font-bold">{headline}</span>
-      </span>
-      <span className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-[#09161d]/95 px-2.5 py-3 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus:opacity-100">
-        <Radar className="h-7 w-7 text-sky-300" strokeWidth={1.5} aria-hidden="true" />
-        <span className="text-[11px] font-bold text-sky-100">Radar de la carrera</span>
-        <span className="text-[11px] font-semibold text-white">{headline}</span>
-        <span className="text-[10px] leading-relaxed text-slate-300">Impactados: {total} · Avisos encolados: {queued}</span>
-        {stages.length > 0 ? (
-          <span className="text-[10px] text-sky-200">Etapas: {stages.join(", ")}</span>
+      <span aria-hidden="true" className={"pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full blur-3xl " + (active ? "bg-cyan-300/[0.10]" : "bg-slate-300/[0.025]")} />
+      <span aria-hidden="true" className="relative flex h-[92px] w-[92px] shrink-0 items-center justify-center">
+        <span className={"absolute inset-0 rounded-full border " + (active ? "border-cyan-300/40" : "border-slate-500/45")} />
+        <span className={"absolute inset-[14px] rounded-full border " + (active ? "border-cyan-300/25" : "border-slate-500/25")} />
+        <span className={"absolute inset-[28px] rounded-full border " + (active ? "border-cyan-300/20" : "border-slate-500/20")} />
+        {active ? (
+          <span
+            className="absolute inset-0 rounded-full motion-safe:animate-[spin_6s_linear_infinite]"
+            style={{ background: "conic-gradient(from 0deg, transparent 0deg, transparent 302deg, rgba(34,211,238,.24) 342deg, transparent 360deg)" }}
+          />
         ) : null}
-        <span className="mt-1 text-[10px] font-semibold text-cyan-200">Clic: análisis completo</span>
+        <span className={"absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full " + (active ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,.8)]" : "bg-slate-500")} />
+        {active && total > 0 ? (
+          <>
+            <span className="absolute right-[11px] top-[19px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_rgba(110,231,183,.9)]" />
+            <span className="absolute bottom-[21px] left-[20px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_rgba(110,231,183,.9)]" />
+          </>
+        ) : null}
+      </span>
+      <span className="relative mt-2 flex flex-col items-center gap-1">
+        <span className={"rounded-full border px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] " + (active ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
+          {active ? "Activo" : inactive ? "Inactivo" : "Sin confirmar"}
+        </span>
+        <span className="text-[11px] font-bold">{headline}</span>
+        {active ? (
+          <span className="text-[10px] text-cyan-100/75">{total} registros · {queued} avisos encolados</span>
+        ) : null}
+        <span className={"text-[10px] font-semibold " + (active ? "text-cyan-200" : "text-slate-400")}>
+          Ver recorrido por km
+        </span>
       </span>
     </button>
   );
