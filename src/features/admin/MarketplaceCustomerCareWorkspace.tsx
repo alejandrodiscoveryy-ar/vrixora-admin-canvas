@@ -143,6 +143,7 @@ export default function MarketplaceCustomerCareWorkspace({
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
   const [whatsappMode, setWhatsappMode] = useState(false);
   const [whatsappRawMessage, setWhatsappRawMessage] = useState("");
+  const [whatsappVehicleReviewed, setWhatsappVehicleReviewed] = useState(false);
   const [whatsappQuote, setWhatsappQuote] = useState<WhatsAppQuote | null>(null);
   const [whatsappOpened, setWhatsappOpened] = useState(false);
   const [acceptanceExcerpt, setAcceptanceExcerpt] = useState("");
@@ -226,7 +227,7 @@ export default function MarketplaceCustomerCareWorkspace({
     setNotes(""); setCargoWeight(""); setOrigin(""); setDestination("");
     setOriginPoint(null); setDestinationPoint(null); setPicking("origin");
     setSuggestions({ origin: [], destination: [] }); setQuote(null); setQuoteError(null);
-    setWhatsappRawMessage("");
+    setWhatsappRawMessage(""); setWhatsappVehicleReviewed(false);
     pointVersion.current.origin += 1; pointVersion.current.destination += 1;
     invalidateRequest();
   };
@@ -318,7 +319,19 @@ export default function MarketplaceCustomerCareWorkspace({
     enabled: whatsappMode && canManageMarketplace && canViewCustomers,
     staleTime: 15_000,
   });
+  // Never price a requested Auto using the default Triciclo selection.
+  // Parse the pasted source on every change, independently of the user's dropdown.
+  const requestedVehicle = useMemo(() => whatsappMode && whatsappRawMessage.trim()
+    ? interpretManualWhatsAppMessage(whatsappRawMessage).vehicle
+    : null, [whatsappMode, whatsappRawMessage]);
+  const requestedVehicleLabel = requestedVehicle
+    ? VEHICLES.find((item) => item.value === requestedVehicle)?.label ?? requestedVehicle
+    : null;
+  const vehicleConflict = !!(whatsappMode && requestedVehicle && requestedVehicle !== vehicle);
+  const unreviewedVehicle = !!(whatsappMode && whatsappRawMessage.trim()
+    && !requestedVehicle && !whatsappVehicleReviewed);
   const quoteMatchesCurrent = !!(whatsappQuote && customer && validQuote
+    && !vehicleConflict && !unreviewedVehicle
     && originPoint && destinationPoint
     && whatsappQuote.request_key === requestKey
     && whatsappQuote.customer_id === customer.id
@@ -337,7 +350,7 @@ export default function MarketplaceCustomerCareWorkspace({
   const acceptedWhatsAppQuote = quoteMatchesCurrent && whatsappQuote?.status === "accepted";
   const canPrepareWhatsAppQuote = whatsappMode && canManageMarketplace && !!customer
     && !!originPoint && !!destinationPoint && !!validQuote && !quoteLoading && validCargo
-    && !whatsappQuote && !published;
+    && !whatsappQuote && !published && !vehicleConflict && !unreviewedVehicle;
   const canPublish = canManageMarketplace && !!customer && !!originPoint && !!destinationPoint &&
     !!validQuote && !quoteLoading && validCargo && !published &&
     (!whatsappMode || acceptedWhatsAppQuote);
@@ -389,6 +402,7 @@ export default function MarketplaceCustomerCareWorkspace({
     pointVersion.current.origin += 1; pointVersion.current.destination += 1;
     setQuote(null); setQuoteError(null); setPublished(null);
     setWhatsappQuote(saved); setRequestKey(saved.request_key);
+    setWhatsappRawMessage(""); setWhatsappVehicleReviewed(true);
     setWhatsappOpened(false); setAcceptanceExcerpt(""); setAcceptanceReviewed(false);
   };
   const extractWhatsAppMessage = () => {
@@ -401,6 +415,7 @@ export default function MarketplaceCustomerCareWorkspace({
     if (parsed.destination) editStop("destination", parsed.destination);
     if (parsed.service) setService(parsed.service);
     if (parsed.vehicle) setVehicle(parsed.vehicle);
+    setWhatsappVehicleReviewed(!!parsed.vehicle);
     setPreferredContact("whatsapp");
     invalidateRequest();
     toast.info(parsed.hints.length
@@ -648,7 +663,11 @@ export default function MarketplaceCustomerCareWorkspace({
                 <Label htmlFor="care-whatsapp-message">Mensaje recibido</Label>
                 <Textarea id="care-whatsapp-message" rows={3} maxLength={2000} value={whatsappRawMessage}
                   placeholder="Ej.: Necesito un triciclo desde Alamar hasta el Capitolio"
-                  onChange={(event) => setWhatsappRawMessage(event.target.value)} />
+                  onChange={(event) => {
+                    setWhatsappRawMessage(event.target.value);
+                    setWhatsappVehicleReviewed(false);
+                    invalidateRequest();
+                  }} />
                 <div className="flex flex-wrap items-center gap-2">
                   <Button type="button" size="sm" onClick={extractWhatsAppMessage} disabled={!whatsappRawMessage.trim()}>
                     Extraer datos del mensaje
@@ -739,12 +758,28 @@ export default function MarketplaceCustomerCareWorkspace({
                   </select>
                 </div>
                 <div className="space-y-1.5"><Label htmlFor="care-vehicle">Vehículo</Label>
-                  <select id="care-vehicle" value={vehicle} onChange={(e) => { setVehicle(e.target.value as VehicleCode); invalidateRequest(); }} className="flex h-10 w-full rounded-xl border border-border-default bg-surface-1 px-3 text-sm text-text-primary">
+                  <select id="care-vehicle" value={vehicle} onChange={(e) => { setVehicle(e.target.value as VehicleCode); setWhatsappVehicleReviewed(true); invalidateRequest(); }} className="flex h-10 w-full rounded-xl border border-border-default bg-surface-1 px-3 text-sm text-text-primary">
                     {VEHICLES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
                 </div>
               </div>
               {service === "cargo" ? <div className="space-y-1.5"><Label htmlFor="care-weight">Peso de la carga (kg)</Label>
+                {whatsappMode && requestedVehicleLabel ? (
+                  <p className={vehicleConflict
+                    ? "rounded-xl border border-rose-400/40 bg-rose-500/10 p-3 text-xs font-medium text-rose-200"
+                    : "text-xs font-medium text-emerald-200"}
+                    role={vehicleConflict ? "alert" : undefined}>
+                    Vehículo solicitado por WhatsApp: {requestedVehicleLabel}.
+                    {vehicleConflict ? " El formulario indica otra modalidad. Corrígela antes de cotizar." : " Coincide con la selección."}
+                  </p>
+                ) : null}
+                {whatsappMode && unreviewedVehicle ? (
+                  <label className="flex items-start gap-2 rounded-xl border border-amber-400/30 p-3 text-xs text-amber-200">
+                    <input type="checkbox" className="mt-0.5" checked={whatsappVehicleReviewed}
+                      onChange={(event) => setWhatsappVehicleReviewed(event.target.checked)} />
+                    El mensaje no indica un vehículo reconocible. He confirmado con el cliente la modalidad seleccionada.
+                  </label>
+                ) : null}
                 <Input id="care-weight" type="number" min="0.1" max="10000" step="0.1" value={cargoWeight} onChange={(e) => { setCargoWeight(e.target.value); invalidateRequest(); }} />
               </div> : null}
               {stopField("origin", origin)}
