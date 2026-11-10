@@ -628,8 +628,8 @@ export default function MarketplaceCustomerCareWorkspace({
   return (
     <div className="min-w-0 space-y-3 sm:space-y-4" data-testid="customer-care-workspace">
       <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/30 bg-gradient-to-br from-cyan-500/[0.15] via-background to-emerald-500/[0.065] px-4 py-4 shadow-[0_24px_58px_-37px_rgba(6,182,212,0.45)] ring-1 ring-inset ring-white/[0.035] sm:rounded-[26px] sm:px-5 sm:py-5">
-        <Headphones aria-hidden="true" className="pointer-events-none absolute -right-5 -top-14 h-44 w-44 text-cyan-300/[0.055] sm:right-12" />
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+        <Headphones aria-hidden="true" className="pointer-events-none absolute -right-5 -top-10 h-28 w-28 text-cyan-300/[0.055] sm:right-12 sm:top-[-3.5rem] sm:h-44 sm:w-44" />
+        <div className="relative z-10 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"><Headphones className="h-5 w-5" /></span>
             <div><p className="text-[10px] font-bold uppercase tracking-[0.17em] text-cyan-300">Trabajos · Centro operativo</p>
@@ -643,13 +643,13 @@ export default function MarketplaceCustomerCareWorkspace({
         </div>
       </header>
       <div role="tablist" aria-label="Secciones de Atención al cliente"
-        className="flex flex-wrap gap-2 rounded-xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.055] via-background to-background p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]">
+        className="flex flex-col gap-1.5 rounded-xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.055] via-background to-background p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] sm:flex-row sm:flex-wrap">
         <button type="button" id="care-requests-tab" role="tab" aria-controls="care-requests-panel"
           aria-selected={careTab === "requests"} tabIndex={careTab === "requests" ? 0 : -1}
           onClick={() => setCareTab("requests")} onKeyDown={onCareTabKeyDown}
           className={careTab === "requests"
-            ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] px-4 py-2.5 text-sm font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
-            : "rounded-lg border border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
+            ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] w-full px-4 py-2.5 text-center text-sm sm:w-auto font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
+            : "rounded-lg border border-transparent w-full px-4 py-2.5 text-center text-sm sm:w-auto font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
           Solicitudes y carreras
         </button>
         {canManageContact ? (
@@ -657,17 +657,17 @@ export default function MarketplaceCustomerCareWorkspace({
             aria-selected={careTab === "lite-settings"} tabIndex={careTab === "lite-settings" ? 0 : -1}
             onClick={() => setCareTab("lite-settings")} onKeyDown={onCareTabKeyDown}
             className={careTab === "lite-settings"
-              ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] px-4 py-2.5 text-sm font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
-              : "rounded-lg border border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
+              ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] w-full px-4 py-2.5 text-center text-sm sm:w-auto font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
+              : "rounded-lg border border-transparent w-full px-4 py-2.5 text-center text-sm sm:w-auto font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
             Configuración WhatsApp Lite
           </button>
         ) : null}
       </div>
       <div id="care-requests-panel" role="tabpanel" aria-labelledby="care-requests-tab" tabIndex={0}
-        className={careTab === "requests" ? "grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]" : "hidden"}>
+        className={careTab === "requests" ? "grid min-w-0 grid-cols-1 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : "hidden"}>
         <div className="min-w-0 space-y-3 sm:space-y-4">
           <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(16,185,129,0.55)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Recepción asistida desde WhatsApp">
-            <MessageCircle aria-hidden="true" className="pointer-events-none absolute -right-4 bottom-0 h-32 w-32 text-emerald-300/[0.06]" />
+            <MessageCircle aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-0 h-24 w-24 text-emerald-300/[0.06] sm:h-32 sm:w-32" />
             <div className="relative z-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -718,7 +718,7 @@ export default function MarketplaceCustomerCareWorkspace({
                     <div className="mt-2 space-y-2">
                     {pendingWhatsAppQuotes.data.slice(0, 8).map((saved) => (
                       <button type="button" key={saved.id} onClick={() => recoverWhatsAppQuote(saved)}
-                        className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-left text-xs hover:border-emerald-400/40">
+                        className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-left text-xs hover:border-emerald-400/40">
                         <span className="min-w-0 truncate">{saved.customer_name || saved.whatsapp_phone || "Cliente"} · {saved.origin_text} → {saved.destination_text}</span>
                         <span className="shrink-0 font-semibold text-emerald-200">{saved.status === "accepted" ? "Aceptada" : saved.status === "sent" ? "Esperando" : "Sin enviar"}</span>
                       </button>
@@ -738,7 +738,7 @@ export default function MarketplaceCustomerCareWorkspace({
             </div>
           </section>
           <section className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(167,139,250,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Identificación del cliente">
-            <UserRound aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-3 h-32 w-32 text-violet-300/[0.055]" />
+            <UserRound aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-3 h-24 w-24 text-violet-300/[0.055] sm:h-32 sm:w-32" />
             <div className="relative z-10 space-y-3">
               <div className="mb-3 flex items-center gap-3"><span className="rounded-xl border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200"><UserRound className="h-5 w-5" /></span>
                 <div><p className="text-xs font-bold uppercase tracking-wide text-violet-300">02 · Identificar cliente</p><h3 className="text-lg font-semibold tracking-tight text-foreground">Buscar cliente por teléfono</h3></div>
@@ -774,7 +774,7 @@ export default function MarketplaceCustomerCareWorkspace({
             </div>
           </section>
           <section className="relative isolate overflow-hidden rounded-[22px] border border-teal-400/25 bg-gradient-to-br from-teal-500/[0.10] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(45,212,191,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Formulario de solicitud manual">
-            <Route aria-hidden="true" className="pointer-events-none absolute -right-4 top-8 h-36 w-36 -rotate-12 text-teal-300/[0.055]" />
+            <Route aria-hidden="true" className="pointer-events-none absolute -right-2 top-8 h-24 w-24 -rotate-12 text-teal-300/[0.055] sm:h-36 sm:w-36" />
             <div className="relative z-10 mb-4 flex items-center gap-2"><Route className="h-4 w-4 text-teal-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">03 · Ruta y vehículo</h3></div>
             <div className="relative z-10 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -813,7 +813,7 @@ export default function MarketplaceCustomerCareWorkspace({
               <span className="rounded-full border border-cyan-400/20 bg-cyan-400/[0.075] px-3 py-1 text-[11px] text-cyan-100">Origen → destino</span>
             </div>
             <MarketplaceTestRouteMap projectId={projectId} origin={originPoint} destination={destinationPoint}
-              route={validQuote?.routePoints ?? []} picking={picking} heightClassName="h-[350px] w-full lg:h-[440px]"
+              route={validQuote?.routePoints ?? []} picking={picking} heightClassName="h-[285px] w-full sm:h-[350px] lg:h-[440px]"
               ariaLabel="Mapa interactivo de solicitud para cliente" onPick={(kind, lat, lon) => { void pickFromMap(kind, lat, lon); }} />
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" size="sm" variant={picking === "origin" ? "default" : "outline"} onClick={() => setPicking("origin")} className="gap-1"><MapPin className="h-4 w-4" /> Origen</Button>
@@ -823,7 +823,7 @@ export default function MarketplaceCustomerCareWorkspace({
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Marca el origen y el destino o elige las direcciones exactas en el mapa.</p>
             <details className="mt-3 rounded-xl border border-border/45 bg-background/40 p-3">
               <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Estado de la flota</summary>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+            <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
               <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Trabajando</span><strong>{live.data?.summary.workingDrivers ?? "—"}</strong></div>
               <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">GPS reciente</span><strong>{live.data?.summary.driversWithFreshLocation ?? "—"}</strong></div>
               <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Activas</span><strong>{live.data?.summary.activeJobs ?? "—"}</strong></div>
@@ -832,16 +832,16 @@ export default function MarketplaceCustomerCareWorkspace({
 
           </section>
           <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.09] via-background to-background p-4 shadow-[0_18px_46px_-33px_rgba(16,185,129,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-5">
-            <ShieldCheck aria-hidden="true" className="pointer-events-none absolute -right-4 top-3 h-32 w-32 text-emerald-300/[0.05]" />
+            <ShieldCheck aria-hidden="true" className="pointer-events-none absolute -right-2 top-3 h-24 w-24 text-emerald-300/[0.05] sm:h-32 sm:w-32" />
             <div className="relative z-10 mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">Cotización del recorrido</h3></div>
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="relative z-10 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Distancia</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
-              <div className="relative z-10 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tiempo</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}</strong></div>
-              <div className="relative z-10 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tarifa</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP` : "—"}</strong></div>
+              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Distancia</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
+              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tiempo</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}</strong></div>
+              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tarifa</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP` : "—"}</strong></div>
             </div>
             {quoteLoading ? <p className="mt-2 flex items-center gap-1 text-xs text-cyan-200"><Clock3 className="h-3.5 w-3.5" /> Calculando recorrido…</p> : null}
             {quoteError ? <p role="alert" className="mt-2 text-xs text-amber-200">{quoteError}</p> : null}
-            <div className="relative z-10 mt-3 flex items-center gap-2 text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {customerName.trim() || "Sin identificar"} · {normalizedPhone || "Sin teléfono"}</div>
+            <div className="relative z-10 mt-3 flex min-w-0 flex-wrap items-center gap-2 break-words text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {customerName.trim() || "Sin identificar"} · {normalizedPhone || "Sin teléfono"}</div>
             <p className="relative z-10 mt-2 text-xs leading-relaxed text-muted-foreground">El servidor comprueba de nuevo la tarifa antes de publicar; no se permite fijarla desde el navegador.</p>
             {whatsappMode ? (
               <div className="mt-4 space-y-3 border-t border-border/50 pt-3">
