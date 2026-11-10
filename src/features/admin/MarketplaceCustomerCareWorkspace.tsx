@@ -626,13 +626,14 @@ export default function MarketplaceCustomerCareWorkspace({
 
   return (
     <div className="min-w-0 space-y-3 sm:space-y-4" data-testid="customer-care-workspace">
-      <header className="relative overflow-hidden rounded-[18px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.10] via-background/85 to-emerald-500/[0.08] px-3 py-3 sm:rounded-[26px] sm:px-4 sm:py-4 shadow-[0_25px_60px_-45px_rgba(34,211,238,0.85)] sm:px-5">
-        <div className="relative flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+      <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/30 bg-gradient-to-br from-cyan-500/[0.15] via-background to-emerald-500/[0.065] px-4 py-4 shadow-[0_24px_58px_-37px_rgba(6,182,212,0.45)] ring-1 ring-inset ring-white/[0.035] sm:rounded-[26px] sm:px-5 sm:py-5">
+        <Headphones aria-hidden="true" className="pointer-events-none absolute -right-5 -top-14 h-44 w-44 text-cyan-300/[0.055] sm:right-12" />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"><Headphones className="h-5 w-5" /></span>
             <div><p className="text-[10px] font-bold uppercase tracking-[0.17em] text-cyan-300">Trabajos · Centro operativo</p>
-              <h2 className="text-lg font-semibold tracking-tight sm:text-2xl">Atención al cliente</h2>
-              <p className="hidden text-xs text-muted-foreground sm:block">Recibe la solicitud, prepara la ruta, cotiza y publica tras la aceptación del cliente.</p>
+              <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Atención al cliente</h2>
+              <p className="hidden text-sm leading-relaxed text-muted-foreground sm:block">Recibe la solicitud, prepara la ruta, cotiza y publica tras la aceptación del cliente.</p>
             </div>
           </div>
           {careTab === "requests" ? (
@@ -641,13 +642,13 @@ export default function MarketplaceCustomerCareWorkspace({
         </div>
       </header>
       <div role="tablist" aria-label="Secciones de Atención al cliente"
-        className="flex flex-wrap gap-2 rounded-xl border border-border/60 bg-background/60 p-1.5">
+        className="flex flex-wrap gap-2 rounded-xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.055] via-background to-background p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]">
         <button type="button" id="care-requests-tab" role="tab" aria-controls="care-requests-panel"
           aria-selected={careTab === "requests"} tabIndex={careTab === "requests" ? 0 : -1}
           onClick={() => setCareTab("requests")} onKeyDown={onCareTabKeyDown}
           className={careTab === "requests"
-            ? "rounded-lg border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100"
-            : "rounded-lg border border-transparent px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-background/70 hover:text-foreground"}>
+            ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] px-4 py-2.5 text-sm font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
+            : "rounded-lg border border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
           Solicitudes y carreras
         </button>
         {canManageContact ? (
@@ -655,8 +656,8 @@ export default function MarketplaceCustomerCareWorkspace({
             aria-selected={careTab === "lite-settings"} tabIndex={careTab === "lite-settings" ? 0 : -1}
             onClick={() => setCareTab("lite-settings")} onKeyDown={onCareTabKeyDown}
             className={careTab === "lite-settings"
-              ? "rounded-lg border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100"
-              : "rounded-lg border border-transparent px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-background/70 hover:text-foreground"}>
+              ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] px-4 py-2.5 text-sm font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
+              : "rounded-lg border border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
             Configuración WhatsApp Lite
           </button>
         ) : null}
