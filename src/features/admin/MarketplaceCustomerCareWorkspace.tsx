@@ -394,6 +394,9 @@ export default function MarketplaceCustomerCareWorkspace({
   const extractWhatsAppMessage = () => {
     const parsed = interpretManualWhatsAppMessage(whatsappRawMessage);
     if (!whatsappRawMessage.trim()) return toast.error("Pega primero el mensaje del cliente.");
+    if (parsed.clientPhone) onPhone(parsed.clientPhone);
+    if (parsed.clientName) setClientName(parsed.clientName);
+    if (parsed.notes) setNotes(parsed.notes);
     if (parsed.origin) editStop("origin", parsed.origin);
     if (parsed.destination) editStop("destination", parsed.destination);
     if (parsed.service) setService(parsed.service);
