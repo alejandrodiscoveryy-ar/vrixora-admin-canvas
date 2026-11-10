@@ -79,3 +79,20 @@ test('recupera borradores privados y no guarda mensajes completos', () => {
   assert.match(ui,/Cotizaciones pendientes guardadas/);
   assert.doesNotMatch(sql,/whatsapp_raw_message|full_message|source_message/);
 });
+
+test('no cotiza ni publica un vehículo distinto al solicitado por WhatsApp', () => {
+  assert.match(ui,/const requestedVehicle = useMemo\(/);
+  assert.match(ui,/interpretManualWhatsAppMessage\(whatsappRawMessage\)\.vehicle/);
+  assert.match(ui,/requestedVehicle !== vehicle/);
+  assert.match(ui,/!whatsappQuote && !published && !vehicleConflict && !unreviewedVehicle/);
+  assert.match(ui,/const quoteMatchesCurrent = !!\(whatsappQuote && customer && validQuote\s+&& !vehicleConflict/);
+  assert.match(ui,/Vehículo solicitado por WhatsApp:/);
+  assert.match(ui,/Corrígela antes de cotizar/);
+  assert.match(ui,/setWhatsappVehicleReviewed\(!!parsed\.vehicle\)/);
+});
+
+test('editar el mensaje revoca una cotización anterior y exige volver a validarla', () => {
+  assert.match(ui,/setWhatsappRawMessage\(event\.target\.value\);\s+setWhatsappVehicleReviewed\(false\);\s+invalidateRequest\(\);/);
+  assert.match(ui,/setWhatsappVehicleReviewed\(true\); invalidateRequest\(\)/);
+  assert.match(ui,/El mensaje no indica un vehículo reconocible/);
+});
