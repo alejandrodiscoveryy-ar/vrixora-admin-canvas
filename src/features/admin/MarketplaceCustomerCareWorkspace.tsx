@@ -808,8 +808,8 @@ export default function MarketplaceCustomerCareWorkspace({
           </section>
         </div>
         <aside className="min-w-0 space-y-3 xl:sticky xl:top-4" aria-label="Mapa y resumen de la carrera">
-          <section className="overflow-hidden rounded-[22px] border border-border/60 bg-background/85 p-3 sm:p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><Navigation className="h-4 w-4 text-cyan-300" /><h3 className="font-semibold">Mapa del servicio</h3></div>
+          <section className="relative overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-b from-cyan-500/[0.07] via-background to-background p-3 shadow-[0_20px_48px_-33px_rgba(34,211,238,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><Navigation className="h-5 w-5 text-cyan-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">Mapa del servicio</h3></div>
               <span className="rounded-full border border-cyan-400/20 bg-cyan-400/[0.075] px-3 py-1 text-[11px] text-cyan-100">Origen → destino</span>
             </div>
             <MarketplaceTestRouteMap projectId={projectId} origin={originPoint} destination={destinationPoint}
@@ -820,7 +820,7 @@ export default function MarketplaceCustomerCareWorkspace({
               <Button type="button" size="sm" variant={picking === "destination" ? "default" : "outline"} onClick={() => setPicking("destination")} className="gap-1"><MapPin className="h-4 w-4" /> Destino</Button>
               <Button type="button" size="sm" variant="outline" onClick={() => { setStop("origin",null); setStop("destination",null); }} className="gap-1"><Route className="h-4 w-4" /> Limpiar ruta</Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Marca el origen y el destino o elige las direcciones exactas en el mapa.</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Marca el origen y el destino o elige las direcciones exactas en el mapa.</p>
             <details className="mt-3 rounded-xl border border-border/45 bg-background/40 p-3">
               <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Estado de la flota</summary>
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
@@ -831,20 +831,21 @@ export default function MarketplaceCustomerCareWorkspace({
             </details>
 
           </section>
-          <section className="rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5">
-            <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /><h3 className="font-semibold">Cotización del recorrido</h3></div>
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.09] via-background to-background p-4 shadow-[0_18px_46px_-33px_rgba(16,185,129,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-5">
+            <ShieldCheck aria-hidden="true" className="pointer-events-none absolute -right-4 top-3 h-32 w-32 text-emerald-300/[0.05]" />
+            <div className="relative z-10 mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">Cotización del recorrido</h3></div>
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-border/55 bg-background/55 p-3"><span className="block text-xs text-muted-foreground">Distancia</span><strong>{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
-              <div className="rounded-xl border border-border/55 bg-background/55 p-3"><span className="block text-xs text-muted-foreground">Tiempo</span><strong>{validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}</strong></div>
-              <div className="rounded-xl border border-border/55 bg-background/55 p-3"><span className="block text-xs text-muted-foreground">Tarifa</span><strong>{validQuote ? `${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP` : "—"}</strong></div>
+              <div className="relative z-10 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Distancia</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
+              <div className="relative z-10 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tiempo</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}</strong></div>
+              <div className="relative z-10 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tarifa</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP` : "—"}</strong></div>
             </div>
             {quoteLoading ? <p className="mt-2 flex items-center gap-1 text-xs text-cyan-200"><Clock3 className="h-3.5 w-3.5" /> Calculando recorrido…</p> : null}
             {quoteError ? <p role="alert" className="mt-2 text-xs text-amber-200">{quoteError}</p> : null}
-            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {customerName.trim() || "Sin identificar"} · {normalizedPhone || "Sin teléfono"}</div>
-            <p className="mt-2 text-[11px] text-muted-foreground">El servidor comprueba de nuevo la tarifa antes de publicar; no se permite fijarla desde el navegador.</p>
+            <div className="relative z-10 mt-3 flex items-center gap-2 text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {customerName.trim() || "Sin identificar"} · {normalizedPhone || "Sin teléfono"}</div>
+            <p className="relative z-10 mt-2 text-xs leading-relaxed text-muted-foreground">El servidor comprueba de nuevo la tarifa antes de publicar; no se permite fijarla desde el navegador.</p>
             {whatsappMode ? (
               <div className="mt-4 space-y-3 border-t border-border/50 pt-3">
-                <h4 className="flex items-center gap-2 text-sm font-semibold"><Send className="h-4 w-4 text-emerald-300" /> 04 · Cotizar, aceptar y publicar</h4>
+                <h4 className="flex items-center gap-2 text-base font-semibold text-foreground"><Send className="h-4 w-4 text-emerald-300" /> 04 · Cotizar, aceptar y publicar</h4>
                 {!whatsappQuote ? (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">El importe se verificará otra vez en el servidor antes de guardar la cotización.</p>
@@ -946,7 +947,7 @@ export default function MarketplaceCustomerCareWorkspace({
       </div>
       {canManageContact ? (
         <section id="care-lite-settings-panel" role="tabpanel" aria-labelledby="care-lite-settings-tab" tabIndex={0}
-          className={careTab === "lite-settings" ? "rounded-[22px] border border-border/60 bg-background/75 p-3 sm:p-5" : "hidden"}>
+          className={careTab === "lite-settings" ? "relative overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.075] via-background to-background p-3 shadow-[0_18px_46px_-33px_rgba(34,211,238,0.4)] sm:p-5" : "hidden"}>
           <div className="mb-4 space-y-1">
             <h3 className="text-lg font-semibold">Configuración del canal WhatsApp Lite</h3>
             <p className="text-xs text-muted-foreground">
