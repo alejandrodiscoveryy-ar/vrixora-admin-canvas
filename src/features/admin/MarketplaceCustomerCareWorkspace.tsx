@@ -617,7 +617,7 @@ export default function MarketplaceCustomerCareWorkspace({
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"><Headphones className="h-5 w-5" /></span>
             <div><p className="text-[10px] font-bold uppercase tracking-[0.17em] text-cyan-300">Trabajos · Centro operativo</p>
               <h2 className="text-lg font-semibold tracking-tight sm:text-2xl">Atención al cliente</h2>
-              <p className="hidden text-xs text-muted-foreground sm:block">Identifica clientes y publica carreras reales desde el mismo mapa.</p>
+              <p className="hidden text-xs text-muted-foreground sm:block">Recibe la solicitud, prepara la ruta, cotiza y publica tras la aceptación del cliente.</p>
             </div>
           </div>
           <Button size="sm" variant="outline" onClick={reset} className="gap-2"><Plus className="h-4 w-4" /> Nueva solicitud</Button>
@@ -625,12 +625,12 @@ export default function MarketplaceCustomerCareWorkspace({
       </header>
       <div className="grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]">
         <div className="min-w-0 space-y-3 sm:space-y-4">
-          <section className="rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.085] via-background to-background p-4 sm:p-5" aria-label="Recepción asistida desde WhatsApp">
+          <section className="rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Recepción asistida desde WhatsApp">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-emerald-300" />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">01 · Entrada de solicitudes</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">01 · Recibir solicitud</p>
                   <h3 className="text-base font-semibold">WhatsApp asistido</h3>
                 </div>
               </div>
@@ -668,8 +668,11 @@ export default function MarketplaceCustomerCareWorkspace({
                   </div>
                 ) : null}
                 {pendingWhatsAppQuotes.data?.length ? (
-                  <div className="space-y-2 border-t border-border/40 pt-3">
-                    <p className="text-xs font-semibold">Cotizaciones pendientes guardadas</p>
+                  <details className="rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+                    <summary className="cursor-pointer text-xs font-semibold text-foreground">
+                      Solicitudes en espera ({pendingWhatsAppQuotes.data.length})
+                    </summary>
+                    <div className="mt-2 space-y-2">
                     {pendingWhatsAppQuotes.data.slice(0, 8).map((saved) => (
                       <button type="button" key={saved.id} onClick={() => recoverWhatsAppQuote(saved)}
                         className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-left text-xs hover:border-emerald-400/40">
@@ -677,7 +680,8 @@ export default function MarketplaceCustomerCareWorkspace({
                         <span className="shrink-0 font-semibold text-emerald-200">{saved.status === "accepted" ? "Aceptada" : saved.status === "sent" ? "Esperando" : "Sin enviar"}</span>
                       </button>
                     ))}
-                  </div>
+                    </div>
+                  </details>
                 ) : null}
                 {pendingWhatsAppQuotes.isError ? (
                   <p role="alert" className="text-xs text-amber-200">
@@ -686,17 +690,13 @@ export default function MarketplaceCustomerCareWorkspace({
                 ) : null}
               </div>
             ) : (
-              <p className="mt-2 text-xs text-muted-foreground">La atención habitual permanece sin cambios. Para cotizar un mensaje de WhatsApp y esperar aceptación, activa este flujo.</p>
+              <p className="mt-2 text-xs text-muted-foreground">Elige «Iniciar desde WhatsApp» para importar una petición recibida o continúa con una solicitud manual.</p>
             )}
           </section>
-          {canManageContact ? <MarketplaceLiteContactCard projectId={projectId} /> : (
-            <div className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.055] p-4 text-xs text-muted-foreground">El teléfono y horario del canal requieren el permiso de configuración de Lite.</div>
-          )}
-          <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.12] via-background/95 to-indigo-500/[0.045] p-4 shadow-[0_24px_65px_-44px_rgba(139,92,246,0.65)] sm:p-5" aria-label="Identificación del cliente">
-            <Users aria-hidden="true" className="pointer-events-none absolute -right-8 top-8 h-40 w-40 text-violet-200/[0.07]" />
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Identificación del cliente">
             <div className="relative z-10 space-y-3">
               <div className="mb-3 flex items-center gap-3"><span className="rounded-xl border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200"><UserRound className="h-5 w-5" /></span>
-                <div><p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">02 · Identificación</p><h3 className="text-base font-semibold">Buscar cliente por teléfono</h3></div>
+                <div><p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">02 · Identificar cliente</p><h3 className="text-base font-semibold">Buscar cliente por teléfono</h3></div>
               </div>
               <div className="space-y-1.5"><Label htmlFor="care-client-phone">Teléfono del cliente</Label>
                 <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+535XXXXXXX" value={clientPhone} maxLength={22} onChange={(e) => onPhone(e.target.value)} />
@@ -728,9 +728,8 @@ export default function MarketplaceCustomerCareWorkspace({
               ) : <p className="text-xs text-muted-foreground">Introduce un teléfono válido para recuperar la ficha 360 sin duplicados.</p>}
             </div>
           </section>
-          <section className="relative isolate overflow-hidden rounded-[26px] border border-teal-400/30 bg-gradient-to-br from-teal-500/[0.12] via-background/95 to-cyan-500/[0.035] p-4 shadow-[0_25px_70px_-45px_rgba(20,184,166,0.65)] sm:p-5" aria-label="Formulario de solicitud manual">
-            <Route aria-hidden="true" className="pointer-events-none absolute -right-10 top-10 h-44 w-44 -rotate-12 text-teal-200/[0.07]" />
-            <div className="relative z-10 mb-4 flex items-center gap-2"><Route className="h-4 w-4 text-teal-300" /><h3 className="text-base font-semibold">03 · Montar carrera</h3></div>
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Formulario de solicitud manual">
+            <div className="relative z-10 mb-4 flex items-center gap-2"><Route className="h-4 w-4 text-teal-300" /><h3 className="text-base font-semibold">03 · Ruta y vehículo</h3></div>
             <div className="relative z-10 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label htmlFor="care-service">Servicio</Label>
@@ -749,56 +748,44 @@ export default function MarketplaceCustomerCareWorkspace({
               </div> : null}
               {stopField("origin", origin)}
               {stopField("destination", destination)}
+              {!whatsappMode ? (
               <div className="space-y-1.5"><Label htmlFor="care-contact">Contacto preferido</Label>
                 <select id="care-contact" value={preferredContact} onChange={(e) => { setPreferredContact(e.target.value); invalidateRequest(); }} className="flex h-10 w-full rounded-xl border border-border-default bg-surface-1 px-3 text-sm text-text-primary">
                   <option value="phone">Llamada</option><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option>
                 </select>
               </div>
+              ) : null}
               <div className="space-y-1.5"><Label htmlFor="care-notes">Indicaciones al conductor</Label>
                 <Textarea id="care-notes" rows={3} maxLength={500} placeholder="Referencia o instrucciones de recogida" value={notes} onChange={(e) => { setNotes(e.target.value); invalidateRequest(); }} />
               </div>
-              {published ? (
-                <div className="space-y-2 rounded-xl border border-emerald-400/30 bg-emerald-500/[0.08] p-3">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><CheckCircle2 className="h-4 w-4" /> Carrera publicada correctamente</p>
-                  <p className="break-all text-xs">ID: {published.job_id}</p>
-                  <div className="flex flex-wrap gap-3">
-                    <button type="button" onClick={() => onOpenJob(published.job_id)} className="inline-flex gap-1 text-xs font-semibold text-emerald-200 underline-offset-2 hover:underline">Ver detalle de carrera <ArrowRight className="h-3.5 w-3.5" /></button>
-                    <a href={`/admin/proyectos/${encodeURIComponent(projectId)}/trabajos?vista=trabajos`} className="inline-flex gap-1 text-xs font-semibold text-emerald-200 underline-offset-2 hover:underline">Abrir Operaciones</a>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Para atender otro cliente, pulsa Nueva solicitud.</p>
-                </div>
-              ) : (
-                <>
-                  <Button type="button" disabled={!canPublish || publish.isPending} onClick={confirmPublish} className="w-full gap-2">
-                    <ArrowRight className="h-4 w-4" /> {publish.isPending ? "Publicando…" : "Publicar carrera real"}
-                  </Button>
-                  <p className="text-center text-xs text-muted-foreground">{!customer ? "Identifica o registra primero al cliente" : !validQuote ? "Selecciona origen y destino y espera la tarifa" : !validCargo ? "Indica el peso de la carga" : !canManageMarketplace ? "Tu rol no puede publicar carreras" : whatsappMode && !acceptedWhatsAppQuote ? "WhatsApp: primero envía el precio y registra la aceptación del cliente" : "Se solicitará confirmación antes de enviar al radar"}</p>
-                </>
-              )}
             </div>
           </section>
         </div>
         <aside className="min-w-0 space-y-3 xl:sticky xl:top-4" aria-label="Mapa y resumen de la carrera">
-          <section className="overflow-hidden rounded-[24px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.075] via-background/95 to-background p-3 shadow-[0_26px_70px_-45px_rgba(34,211,238,0.85)] sm:p-4">
+          <section className="overflow-hidden rounded-[22px] border border-border/60 bg-background/85 p-3 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><Navigation className="h-4 w-4 text-cyan-300" /><h3 className="font-semibold">Mapa del servicio</h3></div>
               <span className="rounded-full border border-cyan-400/20 bg-cyan-400/[0.075] px-3 py-1 text-[11px] text-cyan-100">Origen → destino</span>
             </div>
-            <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
-              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Trabajando</span><strong>{live.data?.summary.workingDrivers ?? "—"}</strong></div>
-              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">GPS reciente</span><strong>{live.data?.summary.driversWithFreshLocation ?? "—"}</strong></div>
-              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Activas</span><strong>{live.data?.summary.activeJobs ?? "—"}</strong></div>
-            </div>
             <MarketplaceTestRouteMap projectId={projectId} origin={originPoint} destination={destinationPoint}
-              route={validQuote?.routePoints ?? []} picking={picking} heightClassName="h-[390px] w-full lg:h-[570px]"
+              route={validQuote?.routePoints ?? []} picking={picking} heightClassName="h-[350px] w-full lg:h-[440px]"
               ariaLabel="Mapa interactivo de solicitud para cliente" onPick={(kind, lat, lon) => { void pickFromMap(kind, lat, lon); }} />
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" size="sm" variant={picking === "origin" ? "default" : "outline"} onClick={() => setPicking("origin")} className="gap-1"><MapPin className="h-4 w-4" /> Origen</Button>
               <Button type="button" size="sm" variant={picking === "destination" ? "default" : "outline"} onClick={() => setPicking("destination")} className="gap-1"><MapPin className="h-4 w-4" /> Destino</Button>
               <Button type="button" size="sm" variant="outline" onClick={() => { setStop("origin",null); setStop("destination",null); }} className="gap-1"><Route className="h-4 w-4" /> Limpiar ruta</Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Dos toques para origen y destino. También puedes arrastrar marcadores o buscar direcciones.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Marca el origen y el destino o elige las direcciones exactas en el mapa.</p>
+            <details className="mt-3 rounded-xl border border-border/45 bg-background/40 p-3">
+              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Estado de la flota</summary>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Trabajando</span><strong>{live.data?.summary.workingDrivers ?? "—"}</strong></div>
+              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">GPS reciente</span><strong>{live.data?.summary.driversWithFreshLocation ?? "—"}</strong></div>
+              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Activas</span><strong>{live.data?.summary.activeJobs ?? "—"}</strong></div>
+            </div>
+            </details>
+
           </section>
-          <section className="rounded-[24px] border border-emerald-400/20 bg-gradient-to-br from-emerald-500/[0.065] to-background p-4 sm:p-5">
+          <section className="rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /><h3 className="font-semibold">Cotización del recorrido</h3></div>
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="rounded-xl border border-border/55 bg-background/55 p-3"><span className="block text-xs text-muted-foreground">Distancia</span><strong>{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
@@ -811,7 +798,7 @@ export default function MarketplaceCustomerCareWorkspace({
             <p className="mt-2 text-[11px] text-muted-foreground">El servidor comprueba de nuevo la tarifa antes de publicar; no se permite fijarla desde el navegador.</p>
             {whatsappMode ? (
               <div className="mt-4 space-y-3 border-t border-border/50 pt-3">
-                <h4 className="flex items-center gap-2 text-sm font-semibold"><Send className="h-4 w-4 text-emerald-300" /> 04 · Cotizar y esperar aceptación</h4>
+                <h4 className="flex items-center gap-2 text-sm font-semibold"><Send className="h-4 w-4 text-emerald-300" /> 04 · Cotizar, aceptar y publicar</h4>
                 {!whatsappQuote ? (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">El importe se verificará otra vez en el servidor antes de guardar la cotización.</p>
@@ -886,10 +873,41 @@ export default function MarketplaceCustomerCareWorkspace({
                 )}
               </div>
             ) : null}
+            <div className="mt-4 border-t border-border/50 pt-4" aria-label="Confirmar publicación de la carrera">
+              {published ? (
+                <div className="space-y-2 rounded-xl border border-emerald-400/30 bg-emerald-500/[0.08] p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><CheckCircle2 className="h-4 w-4" /> Carrera publicada correctamente</p>
+                  <p className="break-all text-xs">ID: {published.job_id}</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" onClick={() => onOpenJob(published.job_id)} className="inline-flex gap-1 text-xs font-semibold text-emerald-200 underline-offset-2 hover:underline">Ver detalle de carrera <ArrowRight className="h-3.5 w-3.5" /></button>
+                    <a href={`/admin/proyectos/${encodeURIComponent(projectId)}/trabajos?vista=trabajos`} className="inline-flex gap-1 text-xs font-semibold text-emerald-200 underline-offset-2 hover:underline">Abrir Operaciones</a>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Para atender otro cliente, pulsa Nueva solicitud.</p>
+                </div>
+              ) : (
+                <>
+                  <Button type="button" disabled={!canPublish || publish.isPending} onClick={confirmPublish} className="w-full gap-2">
+                    <ArrowRight className="h-4 w-4" /> {publish.isPending ? "Publicando…" : "Publicar carrera real"}
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">{!customer ? "Identifica o registra primero al cliente" : !validQuote ? "Selecciona origen y destino y espera la tarifa" : !validCargo ? "Indica el peso de la carga" : !canManageMarketplace ? "Tu rol no puede publicar carreras" : whatsappMode && !acceptedWhatsAppQuote ? "WhatsApp: primero envía el precio y registra la aceptación del cliente" : "Se solicitará confirmación antes de enviar al radar"}</p>
+                </>
+              )}
+
+            </div>
           </section>
           <div className="flex items-center gap-2 px-1 text-xs text-emerald-200/80"><CheckCircle2 className="h-3.5 w-3.5" /> Las carreras se vinculan a Clientes y al despacho real.</div>
         </aside>
       </div>
+      {canManageContact ? (
+        <details className="rounded-xl border border-border/55 bg-background/55 p-3 sm:p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-muted-foreground">
+            Configuración del canal WhatsApp Lite · Administración
+          </summary>
+          <div className="mt-3">
+            <MarketplaceLiteContactCard projectId={projectId} />
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }
