@@ -92,12 +92,31 @@ test('flujo en cuatro etapas y publicación junto a cotización', () => {
   assert.match(ui,/onClick={confirmPublish}/);
 });
 
-test('ajustes Lite y métricas de flota no interrumpen el trabajo', () => {
-  assert.match(ui,/<details className="rounded-xl border border-border\/55 bg-background\/55 p-3 sm:p-4">/);
-  assert.match(ui,/Configuración del canal WhatsApp Lite · Administración/);
+test('ajustes Lite en pestaña independiente y métricas de flota secundarias', () => {
+  assert.match(ui,/role="tablist" aria-label="Secciones de Atención al cliente"/);
+  assert.match(ui,/id="care-requests-tab" role="tab" aria-controls="care-requests-panel"/);
+  assert.match(ui,/id="care-lite-settings-tab" role="tab" aria-controls="care-lite-settings-panel"/);
+  assert.match(ui,/id="care-requests-panel" role="tabpanel" aria-labelledby="care-requests-tab"/);
+  assert.match(ui,/id="care-lite-settings-panel" role="tabpanel" aria-labelledby="care-lite-settings-tab"/);
+  assert.match(ui,/Configuración del canal WhatsApp Lite/);
   assert.match(ui,/<summary[^>]*>Estado de la flota<\/summary>/);
   assert.match(ui,/Solicitudes en espera \(\{pendingWhatsAppQuotes\.data\.length\}\)/);
-  assert.ok(ui.indexOf('Configuración del canal WhatsApp Lite · Administración')
+  assert.ok(ui.indexOf('id="care-lite-settings-panel"')
     > ui.indexOf('Publicar carrera real'));
   assert.ok(ui.indexOf('Estado de la flota') > ui.indexOf('Mapa interactivo de solicitud para cliente'));
+  assert.doesNotMatch(ui,/Configuración del canal WhatsApp Lite · Administración/);
+});
+
+test('pestañas no reinician solicitudes ni desmontan los paneles al cambiar', () => {
+  assert.match(ui,/useState<"requests" \| "lite-settings">\("requests"\)/);
+  assert.match(ui,/onClick=\{\(\) => setCareTab\("requests"\)\}/);
+  assert.match(ui,/onClick=\{\(\) => setCareTab\("lite-settings"\)\}/);
+  assert.match(ui,/className=\{careTab === "requests" \? "grid/);
+  assert.match(ui,/className=\{careTab === "lite-settings" \? "rounded/);
+  assert.match(ui,/aria-selected=\{careTab === "requests"\}/);
+  assert.match(ui,/aria-selected=\{careTab === "lite-settings"\}/);
+  assert.match(ui,/onKeyDown=\{onCareTabKeyDown\}/);
+  assert.match(ui,/if \(!canManageContact && careTab !== "requests"\)/);
+  assert.match(ui,/\{canManageContact \? \(\s*<button type="button" id="care-lite-settings-tab"/);
+  assert.doesNotMatch(ui,/onClick=\{\(\) => \{ reset\(\); setCareTab/);
 });
