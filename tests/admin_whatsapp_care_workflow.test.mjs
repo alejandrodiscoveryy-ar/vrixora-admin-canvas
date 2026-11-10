@@ -143,3 +143,18 @@ test('tipografía y campos principales legibles; mapa y cotización conservan su
   assert.match(ui,/MarketplaceTestRouteMap/);
   assert.match(ui,/target_expected_price: verifiedPrice/);
 });
+
+
+test('Atención al cliente se adapta a móviles estrechos, tablets y escritorio', () => {
+  assert.match(ui,/flex flex-col gap-1\.5 rounded-xl border border-cyan-400\/15/);
+  assert.match(ui,/sm:flex-row sm:flex-wrap/);
+  assert.match(ui,/px-4 py-2\.5 text-center text-sm sm:w-auto/);
+  assert.match(ui,/grid min-w-0 grid-cols-1 items-start/);
+  assert.match(ui,/xl:grid-cols-\[minmax\(0,2fr\)_minmax\(0,3fr\)\]/);
+  assert.match(ui,/sm:flex-row sm:items-center/);
+  assert.match(ui,/h-\[285px\] w-full sm:h-\[350px\] lg:h-\[440px\]/);
+  assert.match(ui,/mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3/);
+  assert.match(ui,/min-w-0 flex-wrap items-center gap-2 break-words/);
+  assert.match(ui,/h-24 w-24 text-emerald-300\/\[0\.06\] sm:h-32 sm:w-32/);
+  assert.match(ui,/overflow-hidden rounded-\[22px\]/);
+});
