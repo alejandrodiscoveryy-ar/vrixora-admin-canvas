@@ -112,11 +112,49 @@ test('pestañas no reinician solicitudes ni desmontan los paneles al cambiar', (
   assert.match(ui,/onClick=\{\(\) => setCareTab\("requests"\)\}/);
   assert.match(ui,/onClick=\{\(\) => setCareTab\("lite-settings"\)\}/);
   assert.match(ui,/className=\{careTab === "requests" \? "grid/);
-  assert.match(ui,/className=\{careTab === "lite-settings" \? "rounded/);
+  assert.match(ui,/className=\{careTab === "lite-settings" \? "relative overflow-hidden rounded/);
   assert.match(ui,/aria-selected=\{careTab === "requests"\}/);
   assert.match(ui,/aria-selected=\{careTab === "lite-settings"\}/);
   assert.match(ui,/onKeyDown=\{onCareTabKeyDown\}/);
   assert.match(ui,/if \(!canManageContact && careTab !== "requests"\)/);
   assert.match(ui,/\{canManageContact \? \(\s*<button type="button" id="care-lite-settings-tab"/);
   assert.doesNotMatch(ui,/onClick=\{\(\) => \{ reset\(\); setCareTab/);
+});
+
+
+test('profundidad discreta con marcas de agua decorativas y contenido por encima', () => {
+  assert.match(ui,/<Headphones aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<MessageCircle aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<UserRound aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<Route aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<ShieldCheck aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/relative z-10/);
+  assert.match(ui,/ring-1 ring-inset/);
+  assert.match(ui,/shadow-\[0_16px_45px/);
+});
+
+test('tipografía y campos principales legibles; mapa y cotización conservan sus controles', () => {
+  assert.match(ui,/text-xl font-bold tracking-tight text-foreground/);
+  assert.match(ui,/className="h-11 border-violet-300\/20/);
+  assert.match(ui,/className="h-11 border-teal-300\/20/);
+  assert.match(ui,/text-lg font-semibold tabular-nums text-foreground/);
+  assert.match(ui,/onClick=\{confirmPublish\}/);
+  assert.match(ui,/onClick=\{\(\) => setCareTab\("lite-settings"\)\}/);
+  assert.match(ui,/MarketplaceTestRouteMap/);
+  assert.match(ui,/target_expected_price: verifiedPrice/);
+});
+
+
+test('Atención al cliente se adapta a móviles estrechos, tablets y escritorio', () => {
+  assert.match(ui,/flex flex-col gap-1\.5 rounded-xl border border-cyan-400\/15/);
+  assert.match(ui,/sm:flex-row sm:flex-wrap/);
+  assert.match(ui,/px-4 py-2\.5 text-center text-sm sm:w-auto/);
+  assert.match(ui,/grid min-w-0 grid-cols-1 items-start/);
+  assert.match(ui,/xl:grid-cols-\[minmax\(0,2fr\)_minmax\(0,3fr\)\]/);
+  assert.match(ui,/sm:flex-row sm:items-center/);
+  assert.match(ui,/h-\[285px\] w-full sm:h-\[350px\] lg:h-\[440px\]/);
+  assert.match(ui,/mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3/);
+  assert.match(ui,/min-w-0 flex-wrap items-center gap-2 break-words/);
+  assert.match(ui,/h-24 w-24 text-emerald-300\/\[0\.06\] sm:h-32 sm:w-32/);
+  assert.match(ui,/overflow-hidden rounded-\[22px\]/);
 });
