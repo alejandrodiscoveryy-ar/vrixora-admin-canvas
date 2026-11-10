@@ -76,6 +76,28 @@ test('recupera borradores privados y no guarda mensajes completos', () => {
   assert.match(sql,/admin_list_marketplace_whatsapp_quotes/);
   assert.match(sql,/q\.quote_expires_at>now\(\)/);
   assert.match(ui,/recoverWhatsAppQuote/);
-  assert.match(ui,/Cotizaciones pendientes guardadas/);
+  assert.match(ui,/Solicitudes en espera/);
   assert.doesNotMatch(sql,/whatsapp_raw_message|full_message|source_message/);
+});
+
+test('flujo en cuatro etapas y publicación junto a cotización', () => {
+  const a = ui.indexOf('01 · Recibir solicitud');
+  const b = ui.indexOf('02 · Identificar cliente');
+  const c = ui.indexOf('03 · Ruta y vehículo');
+  const d = ui.indexOf('04 · Cotizar, aceptar y publicar');
+  const publish = ui.lastIndexOf('Publicar carrera real');
+  assert.ok(a >= 0 && b > a && c > b && d > c && publish > d);
+  assert.match(ui,/aria-label="Confirmar publicación de la carrera"/);
+  assert.match(ui,/!whatsappMode \|\| acceptedWhatsAppQuote/);
+  assert.match(ui,/onClick={confirmPublish}/);
+});
+
+test('ajustes Lite y métricas de flota no interrumpen el trabajo', () => {
+  assert.match(ui,/<details className="rounded-xl border border-border\/55 bg-background\/55 p-3 sm:p-4">/);
+  assert.match(ui,/Configuración del canal WhatsApp Lite · Administración/);
+  assert.match(ui,/<summary[^>]*>Estado de la flota<\/summary>/);
+  assert.match(ui,/Solicitudes en espera \(\{pendingWhatsAppQuotes\.data\.length\}\)/);
+  assert.ok(ui.indexOf('Configuración del canal WhatsApp Lite · Administración')
+    > ui.indexOf('Publicar carrera real'));
+  assert.ok(ui.indexOf('Estado de la flota') > ui.indexOf('Mapa interactivo de solicitud para cliente'));
 });
