@@ -665,13 +665,15 @@ export default function MarketplaceCustomerCareWorkspace({
       <div id="care-requests-panel" role="tabpanel" aria-labelledby="care-requests-tab" tabIndex={0}
         className={careTab === "requests" ? "grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]" : "hidden"}>
         <div className="min-w-0 space-y-3 sm:space-y-4">
-          <section className="rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Recepción asistida desde WhatsApp">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(16,185,129,0.55)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Recepción asistida desde WhatsApp">
+            <MessageCircle aria-hidden="true" className="pointer-events-none absolute -right-4 bottom-0 h-32 w-32 text-emerald-300/[0.06]" />
+            <div className="relative z-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-emerald-300" />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">01 · Recibir solicitud</p>
-                  <h3 className="text-base font-semibold">WhatsApp asistido</h3>
+                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">01 · Recibir solicitud</p>
+                  <h3 className="text-lg font-semibold tracking-tight text-foreground">WhatsApp asistido</h3>
                 </div>
               </div>
               <Button type="button" variant={whatsappMode ? "default" : "outline"} size="sm"
@@ -730,17 +732,19 @@ export default function MarketplaceCustomerCareWorkspace({
                 ) : null}
               </div>
             ) : (
-              <p className="mt-2 text-xs text-muted-foreground">Elige «Iniciar desde WhatsApp» para importar una petición recibida o continúa con una solicitud manual.</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Elige «Iniciar desde WhatsApp» para importar una petición recibida o continúa con una solicitud manual.</p>
             )}
+            </div>
           </section>
-          <section className="relative isolate overflow-hidden rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Identificación del cliente">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(167,139,250,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Identificación del cliente">
+            <UserRound aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-3 h-32 w-32 text-violet-300/[0.055]" />
             <div className="relative z-10 space-y-3">
               <div className="mb-3 flex items-center gap-3"><span className="rounded-xl border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200"><UserRound className="h-5 w-5" /></span>
-                <div><p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">02 · Identificar cliente</p><h3 className="text-base font-semibold">Buscar cliente por teléfono</h3></div>
+                <div><p className="text-xs font-bold uppercase tracking-wide text-violet-300">02 · Identificar cliente</p><h3 className="text-lg font-semibold tracking-tight text-foreground">Buscar cliente por teléfono</h3></div>
               </div>
               <div className="space-y-1.5"><Label htmlFor="care-client-phone">Teléfono del cliente</Label>
                 <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+535XXXXXXX" value={clientPhone} maxLength={22} onChange={(e) => onPhone(e.target.value)} />
-                <p className="text-xs text-violet-200/80">Se acepta +53, 53 o número cubano de 8 dígitos que empiece por 5.</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">Se acepta +53, 53 o número cubano de 8 dígitos que empiece por 5.</p>
               </div>
               {validPhone(normalizedPhone) && canViewCustomers && lookup.isFetching ? <p className="text-xs text-cyan-200">Buscando en Clientes…</p> : null}
               {lookup.isError && validPhone(normalizedPhone) ? <p role="alert" className="text-xs text-rose-300">{message(lookup.error)}</p> : null}
@@ -765,11 +769,12 @@ export default function MarketplaceCustomerCareWorkspace({
                   </Button>
                   {!canRegisterCustomers ? <p className="text-xs text-muted-foreground">Tu rol requiere permiso de gestión de Clientes para registrar.</p> : null}
                 </div>
-              ) : <p className="text-xs text-muted-foreground">Introduce un teléfono válido para recuperar la ficha 360 sin duplicados.</p>}
+              ) : <p className="text-sm leading-relaxed text-muted-foreground">Introduce un teléfono válido para recuperar la ficha 360 sin duplicados.</p>}
             </div>
           </section>
-          <section className="relative isolate overflow-hidden rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Formulario de solicitud manual">
-            <div className="relative z-10 mb-4 flex items-center gap-2"><Route className="h-4 w-4 text-teal-300" /><h3 className="text-base font-semibold">03 · Ruta y vehículo</h3></div>
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-teal-400/25 bg-gradient-to-br from-teal-500/[0.10] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(45,212,191,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Formulario de solicitud manual">
+            <Route aria-hidden="true" className="pointer-events-none absolute -right-4 top-8 h-36 w-36 -rotate-12 text-teal-300/[0.055]" />
+            <div className="relative z-10 mb-4 flex items-center gap-2"><Route className="h-4 w-4 text-teal-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">03 · Ruta y vehículo</h3></div>
             <div className="relative z-10 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label htmlFor="care-service">Servicio</Label>
