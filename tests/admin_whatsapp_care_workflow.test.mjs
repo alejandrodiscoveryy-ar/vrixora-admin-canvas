@@ -112,11 +112,34 @@ test('pestañas no reinician solicitudes ni desmontan los paneles al cambiar', (
   assert.match(ui,/onClick=\{\(\) => setCareTab\("requests"\)\}/);
   assert.match(ui,/onClick=\{\(\) => setCareTab\("lite-settings"\)\}/);
   assert.match(ui,/className=\{careTab === "requests" \? "grid/);
-  assert.match(ui,/className=\{careTab === "lite-settings" \? "rounded/);
+  assert.match(ui,/className=\{careTab === "lite-settings" \? "relative overflow-hidden rounded/);
   assert.match(ui,/aria-selected=\{careTab === "requests"\}/);
   assert.match(ui,/aria-selected=\{careTab === "lite-settings"\}/);
   assert.match(ui,/onKeyDown=\{onCareTabKeyDown\}/);
   assert.match(ui,/if \(!canManageContact && careTab !== "requests"\)/);
   assert.match(ui,/\{canManageContact \? \(\s*<button type="button" id="care-lite-settings-tab"/);
   assert.doesNotMatch(ui,/onClick=\{\(\) => \{ reset\(\); setCareTab/);
+});
+
+
+test('profundidad discreta con marcas de agua decorativas y contenido por encima', () => {
+  assert.match(ui,/<Headphones aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<MessageCircle aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<UserRound aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<Route aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/<ShieldCheck aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(ui,/relative z-10/);
+  assert.match(ui,/ring-1 ring-inset/);
+  assert.match(ui,/shadow-\[0_16px_45px/);
+});
+
+test('tipografía y campos principales legibles; mapa y cotización conservan sus controles', () => {
+  assert.match(ui,/text-xl font-bold tracking-tight text-foreground/);
+  assert.match(ui,/className="h-11 border-violet-300\/20/);
+  assert.match(ui,/className="h-11 border-teal-300\/20/);
+  assert.match(ui,/text-lg font-semibold tabular-nums text-foreground/);
+  assert.match(ui,/onClick=\{confirmPublish\}/);
+  assert.match(ui,/onClick=\{\(\) => setCareTab\("lite-settings"\)\}/);
+  assert.match(ui,/MarketplaceTestRouteMap/);
+  assert.match(ui,/target_expected_price: verifiedPrice/);
 });
