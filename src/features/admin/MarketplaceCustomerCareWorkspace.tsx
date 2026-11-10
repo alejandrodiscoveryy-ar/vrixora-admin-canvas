@@ -610,13 +610,14 @@ export default function MarketplaceCustomerCareWorkspace({
           onClick={() => setPicking(kind)} className="h-8 gap-1 text-xs"><MapPin className="h-3.5 w-3.5" /> Mapa</Button>
       </div>
       <Input id={`care-${kind}`} value={value} autoComplete="off" maxLength={240}
+        className="h-11 border-teal-300/20 bg-background/80 text-sm shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-teal-400/40"
         placeholder={kind === "origin" ? "Escribe o marca dónde recoger" : "Escribe o marca el destino"}
         onChange={(event) => editStop(kind, event.target.value)} />
       {suggestions[kind].length > 0 && (
         <div className="relative z-20 overflow-hidden rounded-xl border border-cyan-400/20 bg-background shadow-lg">
           {suggestions[kind].map((point, index) => (
             <button key={`${kind}-${index}-${point.lat}-${point.lon}`} type="button"
-              className="flex w-full items-center gap-2 border-b border-border/45 px-3 py-2 text-left text-xs last:border-0 hover:bg-cyan-400/[0.08]"
+              className="flex w-full items-center gap-2 border-b border-border/45 px-3 py-2.5 text-left text-sm last:border-0 hover:bg-cyan-400/[0.08]"
               onClick={() => setStop(kind, point)}><MapPin className="h-3.5 w-3.5 shrink-0 text-cyan-300" /><span>{point.label}</span></button>
           ))}
         </div>
@@ -683,12 +684,12 @@ export default function MarketplaceCustomerCareWorkspace({
             </div>
             {whatsappMode ? (
               <div className="mt-3 space-y-3">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   Copia el mensaje del cliente. La extracción es local y orientativa: no se sincroniza WhatsApp ni se usa IA externa.
                   Comprueba siempre los datos y selecciona las ubicaciones exactas en el mapa.
                 </p>
                 <Label htmlFor="care-whatsapp-message">Mensaje recibido</Label>
-                <Textarea id="care-whatsapp-message" rows={3} maxLength={2000} value={whatsappRawMessage}
+                <Textarea id="care-whatsapp-message" rows={3} maxLength={2000} value={whatsappRawMessage} className="border-emerald-400/20 bg-background/85 text-sm leading-relaxed shadow-inner focus-visible:ring-emerald-400/40"
                   placeholder="Ej.: Necesito un triciclo desde Alamar hasta el Capitolio"
                   onChange={(event) => setWhatsappRawMessage(event.target.value)} />
                 <div className="flex flex-wrap items-center gap-2">
@@ -743,7 +744,7 @@ export default function MarketplaceCustomerCareWorkspace({
                 <div><p className="text-xs font-bold uppercase tracking-wide text-violet-300">02 · Identificar cliente</p><h3 className="text-lg font-semibold tracking-tight text-foreground">Buscar cliente por teléfono</h3></div>
               </div>
               <div className="space-y-1.5"><Label htmlFor="care-client-phone">Teléfono del cliente</Label>
-                <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+535XXXXXXX" value={clientPhone} maxLength={22} onChange={(e) => onPhone(e.target.value)} />
+                <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+535XXXXXXX" value={clientPhone} maxLength={22} className="h-11 border-violet-300/20 bg-background/80 text-sm shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-violet-400/40" onChange={(e) => onPhone(e.target.value)} />
                 <p className="text-sm leading-relaxed text-muted-foreground">Se acepta +53, 53 o número cubano de 8 dígitos que empiece por 5.</p>
               </div>
               {validPhone(normalizedPhone) && canViewCustomers && lookup.isFetching ? <p className="text-xs text-cyan-200">Buscando en Clientes…</p> : null}
@@ -763,7 +764,7 @@ export default function MarketplaceCustomerCareWorkspace({
                 <div className="space-y-2 rounded-xl border border-violet-400/20 bg-background/65 p-3">
                   <p className="text-sm font-semibold">Teléfono sin ficha registrada</p>
                   <Label htmlFor="care-new-name">Nombre del cliente</Label>
-                  <Input id="care-new-name" maxLength={100} placeholder="Nombre y apellido" value={clientName} onChange={(e) => { setClientName(e.target.value); invalidateRequest(); }} />
+                  <Input id="care-new-name" maxLength={100} placeholder="Nombre y apellido" value={clientName} className="h-11 border-violet-300/20 bg-background/80 text-sm shadow-inner focus-visible:ring-violet-400/40" onChange={(e) => { setClientName(e.target.value); invalidateRequest(); }} />
                   <Button type="button" size="sm" disabled={!canRegister || register.isPending} onClick={() => register.mutate()}>
                     {register.isPending ? "Registrando…" : "Registrar en Clientes"}
                   </Button>
@@ -778,30 +779,30 @@ export default function MarketplaceCustomerCareWorkspace({
             <div className="relative z-10 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label htmlFor="care-service">Servicio</Label>
-                  <select id="care-service" value={service} onChange={(e) => { setService(e.target.value as ServiceCode); invalidateRequest(); }} className="flex h-10 w-full rounded-xl border border-border-default bg-surface-1 px-3 text-sm text-text-primary">
+                  <select id="care-service" value={service} onChange={(e) => { setService(e.target.value as ServiceCode); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40">
                     {SERVICES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5"><Label htmlFor="care-vehicle">Vehículo</Label>
-                  <select id="care-vehicle" value={vehicle} onChange={(e) => { setVehicle(e.target.value as VehicleCode); invalidateRequest(); }} className="flex h-10 w-full rounded-xl border border-border-default bg-surface-1 px-3 text-sm text-text-primary">
+                  <select id="care-vehicle" value={vehicle} onChange={(e) => { setVehicle(e.target.value as VehicleCode); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40">
                     {VEHICLES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
                 </div>
               </div>
               {service === "cargo" ? <div className="space-y-1.5"><Label htmlFor="care-weight">Peso de la carga (kg)</Label>
-                <Input id="care-weight" type="number" min="0.1" max="10000" step="0.1" value={cargoWeight} onChange={(e) => { setCargoWeight(e.target.value); invalidateRequest(); }} />
+                <Input id="care-weight" type="number" min="0.1" max="10000" step="0.1" value={cargoWeight} className="h-11 border-teal-300/20 bg-background/80 text-sm shadow-inner" onChange={(e) => { setCargoWeight(e.target.value); invalidateRequest(); }} />
               </div> : null}
               {stopField("origin", origin)}
               {stopField("destination", destination)}
               {!whatsappMode ? (
               <div className="space-y-1.5"><Label htmlFor="care-contact">Contacto preferido</Label>
-                <select id="care-contact" value={preferredContact} onChange={(e) => { setPreferredContact(e.target.value); invalidateRequest(); }} className="flex h-10 w-full rounded-xl border border-border-default bg-surface-1 px-3 text-sm text-text-primary">
+                <select id="care-contact" value={preferredContact} onChange={(e) => { setPreferredContact(e.target.value); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40">
                   <option value="phone">Llamada</option><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option>
                 </select>
               </div>
               ) : null}
               <div className="space-y-1.5"><Label htmlFor="care-notes">Indicaciones al conductor</Label>
-                <Textarea id="care-notes" rows={3} maxLength={500} placeholder="Referencia o instrucciones de recogida" value={notes} onChange={(e) => { setNotes(e.target.value); invalidateRequest(); }} />
+                <Textarea id="care-notes" rows={3} maxLength={500} placeholder="Referencia o instrucciones de recogida" value={notes} className="border-teal-300/20 bg-background/80 text-sm leading-relaxed shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-teal-400/40" onChange={(e) => { setNotes(e.target.value); invalidateRequest(); }} />
               </div>
             </div>
           </section>
