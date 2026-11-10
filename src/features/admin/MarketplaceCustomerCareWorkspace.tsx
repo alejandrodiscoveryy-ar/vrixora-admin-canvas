@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight, CheckCircle2, Clock3, Headphones, History, MapPin,
@@ -141,6 +141,7 @@ export default function MarketplaceCustomerCareWorkspace({
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [published, setPublished] = useState<Published | null>(null);
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [careTab, setCareTab] = useState<"requests" | "lite-settings">("requests");
   const [whatsappMode, setWhatsappMode] = useState(false);
   const [whatsappRawMessage, setWhatsappRawMessage] = useState("");
   const [whatsappQuote, setWhatsappQuote] = useState<WhatsAppQuote | null>(null);
@@ -149,6 +150,20 @@ export default function MarketplaceCustomerCareWorkspace({
   const [acceptanceReviewed, setAcceptanceReviewed] = useState(false);
   const [quoteRefresh, setQuoteRefresh] = useState(0);
   const pointVersion = useRef({ origin: 0, destination: 0 });
+
+  // Las pestañas cambian solo el panel visible: la solicitud en curso sigue montada.
+  const onCareTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (!canManageContact || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? "requests"
+      : event.key === "End" ? "lite-settings"
+      : careTab === "requests" ? "lite-settings" : "requests";
+    setCareTab(next);
+    document.getElementById(next === "requests" ? "care-requests-tab" : "care-lite-settings-tab")?.focus();
+  };
+  useEffect(() => {
+    if (!canManageContact && careTab !== "requests") setCareTab("requests");
+  }, [canManageContact, careTab]);
 
   const normalizedPhone = useMemo(() => phoneE164(clientPhone), [clientPhone]);
   const live = useQuery({
@@ -620,10 +635,34 @@ export default function MarketplaceCustomerCareWorkspace({
               <p className="hidden text-xs text-muted-foreground sm:block">Recibe la solicitud, prepara la ruta, cotiza y publica tras la aceptación del cliente.</p>
             </div>
           </div>
-          <Button size="sm" variant="outline" onClick={reset} className="gap-2"><Plus className="h-4 w-4" /> Nueva solicitud</Button>
+          {careTab === "requests" ? (
+            <Button size="sm" variant="outline" onClick={reset} className="gap-2"><Plus className="h-4 w-4" /> Nueva solicitud</Button>
+          ) : null}
         </div>
       </header>
-      <div className="grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]">
+      <div role="tablist" aria-label="Secciones de Atención al cliente"
+        className="flex flex-wrap gap-2 rounded-xl border border-border/60 bg-background/60 p-1.5">
+        <button type="button" id="care-requests-tab" role="tab" aria-controls="care-requests-panel"
+          aria-selected={careTab === "requests"} tabIndex={careTab === "requests" ? 0 : -1}
+          onClick={() => setCareTab("requests")} onKeyDown={onCareTabKeyDown}
+          className={careTab === "requests"
+            ? "rounded-lg border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100"
+            : "rounded-lg border border-transparent px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-background/70 hover:text-foreground"}>
+          Solicitudes y carreras
+        </button>
+        {canManageContact ? (
+          <button type="button" id="care-lite-settings-tab" role="tab" aria-controls="care-lite-settings-panel"
+            aria-selected={careTab === "lite-settings"} tabIndex={careTab === "lite-settings" ? 0 : -1}
+            onClick={() => setCareTab("lite-settings")} onKeyDown={onCareTabKeyDown}
+            className={careTab === "lite-settings"
+              ? "rounded-lg border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100"
+              : "rounded-lg border border-transparent px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-background/70 hover:text-foreground"}>
+            Configuración WhatsApp Lite
+          </button>
+        ) : null}
+      </div>
+      <div id="care-requests-panel" role="tabpanel" aria-labelledby="care-requests-tab" tabIndex={0}
+        className={careTab === "requests" ? "grid min-w-0 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)]" : "hidden"}>
         <div className="min-w-0 space-y-3 sm:space-y-4">
           <section className="rounded-[22px] border border-border/60 bg-background/85 p-4 sm:p-5" aria-label="Recepción asistida desde WhatsApp">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -899,14 +938,16 @@ export default function MarketplaceCustomerCareWorkspace({
         </aside>
       </div>
       {canManageContact ? (
-        <details className="rounded-xl border border-border/55 bg-background/55 p-3 sm:p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-muted-foreground">
-            Configuración del canal WhatsApp Lite · Administración
-          </summary>
-          <div className="mt-3">
-            <MarketplaceLiteContactCard projectId={projectId} />
+        <section id="care-lite-settings-panel" role="tabpanel" aria-labelledby="care-lite-settings-tab" tabIndex={0}
+          className={careTab === "lite-settings" ? "rounded-[22px] border border-border/60 bg-background/75 p-3 sm:p-5" : "hidden"}>
+          <div className="mb-4 space-y-1">
+            <h3 className="text-lg font-semibold">Configuración del canal WhatsApp Lite</h3>
+            <p className="text-xs text-muted-foreground">
+              Administra el teléfono y los horarios del canal. Esto no modifica las carreras ni las cotizaciones.
+            </p>
           </div>
-        </details>
+          <MarketplaceLiteContactCard projectId={projectId} />
+        </section>
       ) : null}
     </div>
   );
