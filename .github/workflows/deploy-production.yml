@@ -1,209 +1,22 @@
-name: Deploy Vrixora Admin
+# PROCEDIMIENTO OBSOLETO: sin capacidad de publicar en produccion.
+# Publicacion vigente de Vrixora Admin: Cloudflare Workers Builds,
+# activada automaticamente por cambios integrados en main.
+# Esta ruta manual se deshabilito para impedir despliegues duplicados
+# y errores de acceso al Worker. El historial Git conserva el original.
+name: "INACTIVO - despliegue manual de Vrixora Admin"
 
 on:
   workflow_dispatch:
-    inputs:
-      confirm_production:
-        description: "Confirmar publicación en producción"
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
 
-concurrency:
-  group: vrixora-admin-production
-  cancel-in-progress: false
-
 jobs:
-  deploy:
-    if: ${{ inputs.confirm_production == true }}
-    environment: production
+  aviso:
+    name: "No publica: Cloudflare Workers Builds gestiona Admin"
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-      PUBLIC_URL: https://admin.vrixora.com/
-      WORKER_NAME: vrixora-admin-canvas
-      COMPATIBILITY_DATE: "2026-09-23"
-
     steps:
-      - name: Checkout exact main commit
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 1
-
-      - name: Verify approved commit is still main HEAD
-        shell: bash
+      - name: Informar que el procedimiento manual esta inhabilitado
         run: |
-          set -euo pipefail
-          git fetch origin main --depth=1
-          SOURCE_SHA="$(git rev-parse HEAD)"
-          REMOTE_MAIN="$(git rev-parse origin/main)"
-          test "$SOURCE_SHA" = "$GITHUB_SHA"
-          test "$SOURCE_SHA" = "$REMOTE_MAIN"
-          echo "SOURCE_SHA=$SOURCE_SHA"
-          echo "APPROVED_COMMIT_STILL_MAIN=OK"
-
-      - name: Setup Bun 1.4.2
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: "1.4.2"
-
-      - name: Verify required configuration exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "${CLOUDFLARE_API_TOKEN:-}"
-          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
-          test -n "${VITE_SUPABASE_URL:-}"
-          test -n "${VITE_SUPABASE_PUBLISHABLE_KEY:-}"
-          case "$VITE_SUPABASE_PUBLISHABLE_KEY" in
-            sb_publishable_*) ;;
-            *) echo "SUPABASE_PUBLISHABLE_KEY_INVALID"; exit 1 ;;
-          esac
-
-      - name: Install dependencies from lockfile
-        run: bun install --frozen-lockfile
-
-      - name: Build and verify production bundle
-        run: bun run build:production-safe
-
-      - name: Prepare exact Cloudflare config
-        shell: bash
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require("fs");
-
-          const configPath = ".output/server/wrangler.json";
-          if (!fs.existsSync(configPath)) {
-            console.error("Generated Nitro wrangler.json not found.");
-            process.exit(1);
-          }
-
-          const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-
-          if (!config.main && !(config.assets && config.assets.directory)) {
-            console.error("Generated Wrangler config has no Worker entry point or assets directory.");
-            process.exit(1);
-          }
-
-          config.name = process.env.WORKER_NAME;
-          config.compatibility_date = process.env.COMPATIBILITY_DATE;
-          config.compatibility_flags = ["nodejs_compat"];
-          // Production routing is managed in Cloudflare, not by this workflow.
-          // Disable workers.dev so a least-privilege Worker token can deploy
-          // without account-level subdomain permissions.
-          config.workers_dev = false;
-
-          fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-
-          console.log(`CONFIG_SOURCE=${configPath}`);
-          console.log(`CONFIG_MAIN=${config.main ?? "NONE"}`);
-          console.log(`CONFIG_ASSETS=${config.assets?.directory ?? "NONE"}`);
-          console.log(`WORKER_NAME=${config.name}`);
-          console.log(`COMPATIBILITY_DATE=${config.compatibility_date}`);
-          NODE
-
-      - name: Include exact release proof in public build
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -d .output/public
-          PROOF_ASSET="tuktuk-admin-release-${GITHUB_SHA}.txt"
-          printf '%s\n' "$GITHUB_SHA" > ".output/public/$PROOF_ASSET"
-          echo "PROOF_ASSET=$PROOF_ASSET" >> "$GITHUB_ENV"
-
-      - name: Calculate integrity marker hash
-        shell: bash
-        run: |
-          set -euo pipefail
-          ASSET="$(grep -RIl --include='*.js' --include='*.mjs' 'Mapa operativo' .output/public | head -n 1)"
-          test -n "$ASSET"
-          REL="${ASSET#.output/public/}"
-          LOCAL_HASH="$(sha256sum "$ASSET" | awk '{print toupper($1)}')"
-          echo "MAP_ASSET=$REL" >> "$GITHUB_ENV"
-          echo "LOCAL_HASH=$LOCAL_HASH" >> "$GITHUB_ENV"
-          echo "MAP_ASSET=$REL"
-          echo "LOCAL_SHA256=$LOCAL_HASH"
-
-      - name: Upload exact build to existing Admin Worker
-        shell: bash
-        run: |
-          set -euo pipefail
-          DEPLOY_LOG="$RUNNER_TEMP/vrixora-admin-wrangler-deploy.log"
-          npx --yes wrangler@4.115.0 deploy \
-            --config .output/server/wrangler.json \
-            --keep-vars 2>&1 | tee "$DEPLOY_LOG"
-
-          VERSION_ID="$(sed -n 's/.*Current Version ID: \([0-9a-f-]\+\).*/\1/p' "$DEPLOY_LOG" | tail -n 1)"
-          test -n "$VERSION_ID"
-          echo "VERSION_ID=$VERSION_ID" >> "$GITHUB_ENV"
-          echo "ADMIN_UPLOADED_VERSION_ID=$VERSION_ID"
-
-      - name: Activate exact uploaded version at 100 percent
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$VERSION_ID"
-          npx --yes wrangler@4.115.0 versions deploy \
-            "${VERSION_ID}@100%" \
-            --config .output/server/wrangler.json \
-            --name "$WORKER_NAME" \
-            --yes
-
-      - name: Verify public production asset hash with edge retries
-        shell: bash
-        run: |
-          set -euo pipefail
-          REMOTE="$RUNNER_TEMP/vrixora-admin-asset.js"
-          MAX_ATTEMPTS=24
-          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-            cache_buster="${GITHUB_SHA}-${attempt}-$(date +%s)"
-            curl -fsS \
-              -H "Cache-Control: no-cache, no-store, max-age=0" \
-              "${PUBLIC_URL}?release=${cache_buster}" >/dev/null || true
-            if curl -fsSL \
-              -H "Cache-Control: no-cache, no-store, max-age=0" \
-              "${PUBLIC_URL}${MAP_ASSET}?release=${cache_buster}" -o "$REMOTE"; then
-              REMOTE_HASH="$(sha256sum "$REMOTE" | awk '{print toupper($1)}')"
-              echo "ADMIN_REMOTE_SHA256=$REMOTE_HASH"
-              if [ "$REMOTE_HASH" = "$LOCAL_HASH" ] && grep -q 'Mapa operativo' "$REMOTE"; then
-                echo 'PRODUCTION_INTEGRITY=OK'
-                exit 0
-              fi
-            fi
-            echo "ADMIN_PRODUCTION_VERIFY_ATTEMPT=${attempt}/${MAX_ATTEMPTS} NOT_YET_MATCHING"
-            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then sleep 5; fi
-          done
-          echo 'PRODUCTION_INTEGRITY=FAILED_AFTER_RETRIES'
-          echo "EXPECTED_HASH=$LOCAL_HASH"
-          echo "LAST_REMOTE_HASH=${REMOTE_HASH:-NOT_AVAILABLE}"
-          echo 'CHECK_ACTIVE_WORKER_CUSTOM_DOMAIN_ROUTE_AND_EDGE_CACHE'
-          exit 1
-      - name: Verify exact deployed release on admin.vrixora.com
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "${PROOF_ASSET:-}"
-          PROOF_FILE="$RUNNER_TEMP/tuktuk-admin-proof.txt"
-          for attempt in $(seq 1 18); do
-            if curl -fsSL --max-time 15 \
-              -H "Cache-Control: no-cache, no-store, max-age=0" \
-              "${PUBLIC_URL}${PROOF_ASSET}?verify=${GITHUB_SHA}-${attempt}" -o "$PROOF_FILE"; then
-              if [ "$(cat "$PROOF_FILE")" = "$GITHUB_SHA" ]; then
-                echo "PRODUCTION_EXACT_RELEASE_VERIFIED=$GITHUB_SHA"
-                exit 0
-              fi
-            fi
-            echo "PRODUCTION_EXACT_RELEASE_VERIFY_ATTEMPT=${attempt}/18"
-            if [ "$attempt" -lt 18 ]; then sleep 5; fi
-          done
-          echo 'PUBLIC_ADMIN_DOMAIN_DOES_NOT_MATCH_DEPLOYED_GIT_COMMIT' >&2
-          exit 1
+          echo "::notice title=Despliegue manual inhabilitado::Vrixora Admin se publica automaticamente mediante Cloudflare Workers Builds al integrar en main."
+          echo "LEGACY_MANUAL_DEPLOY=DISABLED"
