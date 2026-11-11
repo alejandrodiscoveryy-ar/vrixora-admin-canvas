@@ -7,6 +7,7 @@ function source(relative) {
 }
 
 const panel = source("MarketplaceSection.tsx");
+const listPrimitives = source("MarketplaceListPrimitives.tsx");
 const fleet = source("MarketplaceFleetPulse.tsx");
 const radar = source("MarketplaceRadarReadinessCard.tsx");
 const care = source("MarketplaceCustomerCareWorkspace.tsx");
@@ -32,7 +33,9 @@ test("Las operaciones conservan todos sus accesos y controles", () => {
     assert.ok(panel.includes(method), "Acción faltante: " + method);
   }
   assert.match(panel, /grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:flex-wrap/);
-  assert.match(panel, /sm:min-w-52/);
+  // El filtro móvil reside ahora en su componente visual reutilizable.
+  assert.match(listPrimitives, /sm:min-w-52/);
+  assert.match(panel, /<FilterSelect/);
   assert.match(panel, /overflow-x-auto overscroll-x-contain/);
   assert.match(panel, /customer\.jobsTotal\} trabajos · \{customer\.jobsActive\} activos/);
   assert.match(panel, /break-words text-sm font-semibold tabular-nums/);
