@@ -12,64 +12,53 @@ type AuthCtx = {
 };
 
 const AuthContext = createContext<AuthCtx | null>(null);
-const STORAGE_KEY = "vrixora_auth_session";
+const LEGACY_STORAGE_KEY = "vrixora_auth_session";
 
 export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    let subscription: { unsubscribe: () => void } | null = null;
+
     const initializeAuth = async () => {
       try {
         const client = getSupabaseClient();
 
-        // Recuperar sesión almacenada
-        const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            // Validar que la sesión sea válida en Supabase
-            const { data } = await client.auth.getSession();
-            if (data.session) {
-              setSession(data.session);
-            } else {
-              // Si no hay sesión en Supabase, limpiar storage
-              localStorage.removeItem(STORAGE_KEY);
-            }
-          } catch {
-            localStorage.removeItem(STORAGE_KEY);
-          }
-        } else {
-          // Obtener sesión actual de Supabase
-          const { data } = await client.auth.getSession();
-          if (data.session) {
-            setSession(data.session);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.session));
-          }
+        // Supabase gestiona la persistencia de su propia sesión.
+        // Retirar una única vez la copia antigua, que nunca se restauraba
+        // como sesión válida y duplicaba los tokens en el navegador.
+        try {
+          window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+        } catch {
+          // Almacenamiento opcional o bloqueado: Auth sigue operativa.
         }
 
-        // Escuchar cambios de autenticación
         const {
-          data: { subscription },
-        } = client.auth.onAuthStateChange((event, newSession) => {
-          setSession(newSession);
-          if (newSession) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
-          } else {
-            localStorage.removeItem(STORAGE_KEY);
-          }
+          data: { subscription: authSubscription },
+        } = client.auth.onAuthStateChange((_event, nextSession) => {
+          if (mounted) setSession(nextSession);
         });
+        subscription = authSubscription;
 
-        return () => subscription?.unsubscribe();
+        const { data, error } = await client.auth.getSession();
+        if (error) throw error;
+        if (mounted) setSession(data.session);
       } catch (error) {
         console.error("Auth initialization error:", error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    initializeAuth();
+    void initializeAuth();
+
+    // La limpieza debe devolverse desde useEffect, no desde su función async.
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
@@ -100,7 +89,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       const { error } = await client.auth.signOut();
       if (error) throw error;
       setSession(null);
-      localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
       console.error("Sign out error:", error);
       throw error;
