@@ -22,6 +22,7 @@ import {
   Plus,
   Route,
   Radar,
+  Search,
   ShieldCheck,
   Star,
   TestTube2,
@@ -798,6 +799,10 @@ function Customer360Detail({
     </div>
   );
 }
+function normalizeDriverText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
+}
+
 function dateOfRegistration(value: string | null | undefined) {
   const parsed = new Date(value ?? "");
   return Number.isNaN(parsed.getTime()) ? "No disponible" :
@@ -839,6 +844,12 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
   const [customerSearchInput, setCustomerSearchInput] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerSort, setCustomerSort] = useState<"points_desc" | "recent">("points_desc");
+  const [driverSearch, setDriverSearch] = useState("");
+  const [driverStatusFilter, setDriverStatusFilter] = useState("");
+  const [driverAvailabilityFilter, setDriverAvailabilityFilter] = useState("");
+  const [driverCategoryFilter, setDriverCategoryFilter] = useState("");
+  const [driverPeriodFilter, setDriverPeriodFilter] = useState("");
+  const [driverVisibleCount, setDriverVisibleCount] = useState(25);
 
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobDetailInitialTab, setJobDetailInitialTab] = useState<"overview" | "radar">("overview");
@@ -960,13 +971,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
     queryKey: ["marketplace-drivers", projectId],
     queryFn: ({ pageParam }) =>
       supabaseServices.marketplace.listDrivers(projectId, {
-        limit: PAGE_SIZE,
+        limit: 200,
         cursor: pageParam,
       }),
     initialPageParam: null as null | { at: string; id: string },
     getNextPageParam: (page) => page.nextCursor,
     enabled: tab === "conductores",
   });
+
+  // Buscar y filtrar contra el directorio entero, no solo la primera página.
+  // La RPC existente mantiene la comprobación de permisos y la paginación segura.
+  useEffect(() => {
+    if (tab !== "conductores" || !drivers.hasNextPage || drivers.isFetching || drivers.isError) return;
+    void drivers.fetchNextPage();
+  }, [tab, drivers.hasNextPage, drivers.isFetching, drivers.isError, drivers.fetchNextPage]);
 
   const customers = useInfiniteQuery({
     queryKey: ["marketplace-customers", projectId, customerSearch, customerSort],
@@ -1371,7 +1389,35 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
 
   const driverRows = rows(drivers);
-  const driverMediaIds = driverRows.map((row) => row.userId);
+  const driverCategories = [...new Set(
+    driverRows.map((item) => item.vehicleCategoryCode).filter((code): code is string => Boolean(code)),
+  )].sort();
+  const filteredDriverRows = driverRows.filter((item) => {
+    const query = normalizeDriverText(driverSearch);
+    const phoneDigits = driverSearch.replace(/\D/g, "");
+    if (query && !normalizeDriverText(item.displayName).includes(query) &&
+        !(phoneDigits && (item.phone ?? "").replace(/\D/g, "").includes(phoneDigits))) return false;
+    if (driverStatusFilter && item.status !== driverStatusFilter) return false;
+    if (driverAvailabilityFilter === "available" && !item.isAvailable) return false;
+    if (driverAvailabilityFilter === "unavailable" && item.isAvailable) return false;
+    if (driverCategoryFilter && item.vehicleCategoryCode !== driverCategoryFilter) return false;
+    if (driverPeriodFilter) {
+      const registered = new Date(item.createdAt);
+      if (Number.isNaN(registered.getTime())) return false;
+      if (driverPeriodFilter === "today" && dateOfRegistration(item.createdAt) !==
+        new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Havana" })) return false;
+      const days = Number(driverPeriodFilter);
+      if (Number.isFinite(days) && Date.now() - registered.getTime() > days * 86_400_000) return false;
+    }
+    return true;
+  });
+  const visibleDriverRows = filteredDriverRows.slice(0, driverVisibleCount);
+  const driverMediaIds = visibleDriverRows.map((row) => row.userId);
+  const driverFiltersActive = Boolean(driverSearch || driverStatusFilter || driverAvailabilityFilter ||
+    driverCategoryFilter || driverPeriodFilter);
+  useEffect(() => {
+    setDriverVisibleCount(25);
+  }, [driverSearch, driverStatusFilter, driverAvailabilityFilter, driverCategoryFilter, driverPeriodFilter, projectId]);
   const driverMedia = useQuery({
     queryKey: ["marketplace-driver-directory-media", projectId, driverMediaIds],
     queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, driverMediaIds),
@@ -2019,15 +2065,69 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             description={
               drivers.isLoading
                 ? "Consultando conductores…"
-                : `${driverRows.length} ${
-                    driverRows.length === 1 ? "conductor mostrado" : "conductores mostrados"
-                  }`
+                : `${filteredDriverRows.length} de ${driverRows.length} conductores coinciden con la búsqueda`
             }
             icon={Users}
             tone="cyan"
             backgroundImage="/admin-premium/drivers.svg"
           >
-            {drivers.isLoading ? (
+            <div className="mb-4 space-y-3 rounded-2xl border border-cyan-400/15 bg-background/45 p-3 sm:p-4">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cyan-300" />
+                <span className="sr-only">Buscar conductor por nombre o número de celular</span>
+                <Input
+                  value={driverSearch}
+                  onChange={(event) => setDriverSearch(event.target.value)}
+                  placeholder="Buscar por nombre o número de celular"
+                  autoComplete="off"
+                  className="h-10 rounded-xl border-cyan-400/20 bg-background/70 pl-9 text-sm"
+                />
+              </label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <FilterSelect labelText="Estado del perfil" value={driverStatusFilter} onChange={setDriverStatusFilter}>
+                  <option value="">Todos los estados</option>
+                  <option value="active">Activos</option>
+                  <option value="incomplete">Incompletos</option>
+                  <option value="suspended">Suspendidos</option>
+                </FilterSelect>
+                <FilterSelect labelText="Disponibilidad" value={driverAvailabilityFilter} onChange={setDriverAvailabilityFilter}>
+                  <option value="">Todos</option>
+                  <option value="available">Disponibles</option>
+                  <option value="unavailable">No disponibles</option>
+                </FilterSelect>
+                <FilterSelect labelText="Vehículo" value={driverCategoryFilter} onChange={setDriverCategoryFilter}>
+                  <option value="">Todos los vehículos</option>
+                  {driverCategories.map((category) => (
+                    <option key={category} value={category}>{label(category)}</option>
+                  ))}
+                </FilterSelect>
+                <FilterSelect labelText="Inscripción" value={driverPeriodFilter} onChange={setDriverPeriodFilter}>
+                  <option value="">Todas las fechas</option>
+                  <option value="today">Hoy (Cuba)</option>
+                  <option value="7">Últimos 7 días</option>
+                  <option value="30">Últimos 30 días</option>
+                </FilterSelect>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span aria-live="polite">
+                  {drivers.isLoading || drivers.hasNextPage ? "Cargando directorio completo…" :
+                    `${filteredDriverRows.length} coincidencias de ${driverRows.length} conductores registrados`}
+                </span>
+                {driverFiltersActive ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => {
+                    setDriverSearch("");
+                    setDriverStatusFilter("");
+                    setDriverAvailabilityFilter("");
+                    setDriverCategoryFilter("");
+                    setDriverPeriodFilter("");
+                  }}>Limpiar filtros</Button>
+                ) : null}
+              </div>
+            </div>
+            {drivers.isError ? (
+              <EmptyMarketplaceState title="No se pudo cargar el directorio"
+                description="Reintenta la consulta antes de buscar conductores." icon={Users} />
+            ) : drivers.isLoading || drivers.hasNextPage ? (
               <LoadingState />
             ) : !driverRows.length ? (
               <EmptyMarketplaceState
@@ -2035,10 +2135,13 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 description="Todavía no existen conductores registrados en Marketplace."
                 icon={Users}
               />
+            ) : !filteredDriverRows.length ? (
+              <EmptyMarketplaceState title="No hay coincidencias"
+                description="Prueba otro nombre, número o combinación de filtros." icon={Search} />
             ) : (
               <>
                 <div className="space-y-2.5">
-                  {driverRows.map((item) => (
+                  {visibleDriverRows.map((item) => (
                     <article
                       key={item.userId}
                       className="group relative overflow-hidden rounded-[17px] border border-cyan-400/14 bg-gradient-to-r from-cyan-500/[0.055] via-background/60 to-emerald-500/[0.025] px-3 py-2.5 shadow-[0_18px_50px_-40px_rgba(34,211,238,0.9)] transition duration-200 hover:border-cyan-400/26 hover:from-cyan-500/[0.075] hover:to-emerald-500/[0.04]"
@@ -2159,7 +2262,14 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   ))}
                 </div>
 
-                <PaginationButton query={drivers} />
+                {visibleDriverRows.length < filteredDriverRows.length ? (
+                  <div className="mt-4 flex justify-center">
+                    <Button variant="outline" className="w-full sm:w-auto"
+                      onClick={() => setDriverVisibleCount((count) => count + 25)}>
+                      Mostrar más ({filteredDriverRows.length - visibleDriverRows.length} restantes)
+                    </Button>
+                  </div>
+                ) : null}
               </>
             )}
           </PremiumPanel>
