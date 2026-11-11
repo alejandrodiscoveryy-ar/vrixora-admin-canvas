@@ -806,12 +806,14 @@ function setLayerVisibility(map: mapboxgl.Map, id: string, visible: boolean) {
 
 export default function MarketplaceOperationalMap({
   projectId,
+  isVisible,
   canViewCustomers = false,
   onOpenDriver,
   onOpenCustomer,
   onOpenJob,
 }: {
   projectId: string;
+  isVisible: boolean;
   canViewCustomers?: boolean;
   onOpenDriver?: (driverUserId: string) => void;
   onOpenCustomer?: (customerId: string) => void;
@@ -851,6 +853,9 @@ export default function MarketplaceOperationalMap({
   const operational = useQuery({
     queryKey: ["marketplace-operational-map-live", projectId],
     queryFn: () => getMarketplaceOperationalMap(projectId),
+    // La pestaña Mapa conserva su estado al ocultarse, pero deja de consultar datos.
+    // Al regresar, enabled=true reanuda la sincronizacion sin reiniciar Mapbox.
+    enabled: isVisible,
     refetchInterval: (query) => ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 15_000),
     refetchIntervalInBackground: false,
   });
@@ -867,6 +872,7 @@ export default function MarketplaceOperationalMap({
   const driverAvatars = useQuery({
     queryKey: ["marketplace-operational-driver-avatars", projectId],
     queryFn: () => getMarketplaceOperationalDriverAvatars(projectId),
+    enabled: isVisible,
     staleTime: 10 * 60_000,
     refetchInterval: 10 * 60_000,
     refetchIntervalInBackground: false,
@@ -957,7 +963,7 @@ export default function MarketplaceOperationalMap({
     queryKey: ["marketplace-operational-routes-live", projectId, routeKey],
     queryFn: () => getMarketplaceOperationalRoutes(projectId),
     // Primero mostrar el mapa. Rutas en segundo plano, sin competir con los tiles.
-    enabled: Boolean(routeKey) && mapLoaded && mapViewMode === "operations" && layers.routes,
+    enabled: isVisible && Boolean(routeKey) && mapLoaded && mapViewMode === "operations" && layers.routes,
     staleTime: 25_000,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
@@ -985,7 +991,7 @@ export default function MarketplaceOperationalMap({
   const jobRecipients = useQuery({
     queryKey: ["marketplace-job-notification-recipients", projectId, selectedJobId],
     queryFn: () => getMarketplaceJobNotificationRecipients(projectId, selectedJobId!),
-    enabled: Boolean(panelOpen && agendaTab === "services" && selectedJob && customerDetailsJobId === selectedJobId),
+    enabled: isVisible && Boolean(panelOpen && agendaTab === "services" && selectedJob && customerDetailsJobId === selectedJobId),
     refetchInterval: selectedJob?.status === "published" ? 5_000 : false,
     refetchIntervalInBackground: false,
     retry: 1,
