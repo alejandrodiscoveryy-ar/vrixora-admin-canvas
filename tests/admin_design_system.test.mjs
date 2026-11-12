@@ -10,6 +10,8 @@ import { AdminDataTableShell } from "../src/components/admin/AdminDataTableShell
 import { FilterToolbar } from "../src/components/admin/FilterToolbar.tsx";
 import { DataToolbar } from "../src/components/admin/DataToolbar.tsx";
 import { EmptyState } from "../src/components/admin/EmptyState.tsx";
+import { premiumSurface, premiumHeaderSurface, premiumTableDensity, premiumTableRow } from "../src/components/admin/density.ts";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../src/components/ui/table.tsx";
 
 const render = (Component, props) => renderToStaticMarkup(h(Component, props));
 const noop = () => {};
@@ -165,4 +167,76 @@ test("DataTableShell: empty state replaces rows but preserves the toolbar", () =
   assert.ok(markup.includes("Accion de prueba"));
   assert.ok(!markup.includes("Fila no visible"));
   hasClasses(markup, "p-3", "sm:p-4", "p-4", "sm:p-5");
+});
+
+test("Premium MetricCard: layered surface, compact KPI and decorative watermark are opt-in", () => {
+  const props = {
+    label: "Total usuarios",
+    value: 162,
+    description: "Registrados en el sistema",
+    module: "clientes",
+    icon: CreditCard,
+    density: "compact",
+  };
+  const standard = render(MetricCard, props);
+  assert.equal(standard, render(MetricCard, { ...props, appearance: "standard" }));
+  assert.doesNotMatch(standard, /data-appearance=|data-watermark=/);
+  const markup = render(MetricCard, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.match(markup, /data-density="compact"/);
+  assert.ok(markup.includes("Total usuarios"));
+  assert.ok(markup.includes("162"));
+  assert.ok(markup.includes("Registrados en el sistema"));
+  const watermark = markup.match(/<svg[^>]*data-watermark="metric"[^>]*>/);
+  assert.ok(watermark);
+  assert.match(watermark[0], /aria-hidden="true"/);
+  assert.match(watermark[0], /focusable="false"/);
+  hasClasses(markup, ...premiumSurface.split(" "), "p-3", "sm:p-3", "h-px", "tabular-nums", "pointer-events-none", "opacity-[0.06]", "dark:opacity-[0.09]", "z-10");
+  assert.ok(!classTokens(markup).has("truncate"));
+  assert.ok(!classTokens(markup).has("h-7"));
+});
+
+test("Premium MetricCard: loading stays discreet and no data or watermark is exposed", () => {
+  const markup = render(MetricCard, {
+    appearance: "premium",
+    density: "compact",
+    label: "Usuarios",
+    value: "99887766",
+    icon: CreditCard,
+    isLoading: true,
+  });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.doesNotMatch(markup, /99887766|data-watermark=/);
+  hasClasses(markup, "space-y-2");
+});
+
+test("Premium table: shared surfaces, dense rows, headers and data remain intact", () => {
+  const table = h(Table, { className: premiumTableDensity },
+    h(TableHeader, { className: premiumHeaderSurface },
+      h(TableRow, null, h(TableHead, null, "Cliente"), h(TableHead, null, "Adopcion"))
+    ),
+    h(TableBody, null,
+      h(TableRow, { className: premiumTableRow },
+        h(TableCell, null, "Usuario de prueba"),
+        h(TableCell, null, "Sin actividad")
+      )
+    )
+  );
+  const props = {
+    density: "compact",
+    title: "Usuarios registrados",
+    description: "Registro y actividad",
+    actions: action,
+    children: table,
+  };
+  assert.equal(render(AdminDataTableShell, props), render(AdminDataTableShell, { ...props, appearance: "standard" }));
+  assert.doesNotMatch(render(AdminDataTableShell, props), /data-appearance=/);
+  const markup = render(AdminDataTableShell, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.ok(markup.includes("Usuarios registrados"));
+  assert.ok(markup.includes("Registro y actividad"));
+  assert.ok(markup.includes("Accion de prueba"));
+  assert.ok(markup.includes("Usuario de prueba"));
+  assert.ok(markup.includes("Sin actividad"));
+  hasClasses(markup, ...premiumSurface.split(" "), ...premiumHeaderSurface.split(" "), ...premiumTableDensity.split(" "), ...premiumTableRow.split(" "), "overflow-x-auto");
 });
