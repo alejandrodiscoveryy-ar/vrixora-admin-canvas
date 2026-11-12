@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ChevronDown, Pencil, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { premiumSurface, premiumHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import {
   Dialog,
   DialogContent,
@@ -66,8 +68,7 @@ type FormState = {
 
 const optionalNumber = (s: string): number | null =>
   s.trim() === "" ? null : Number(s.replace(",", "."));
-const inputClass =
-  "mt-1 h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground";
+const inputClass = cn("mt-1 h-11 w-full min-w-0 rounded-lg border bg-surface-1 px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring", premiumControlSurface, "dark:[&_option]:bg-[color:color-mix(in_oklab,var(--surface-3)_80%,var(--text-secondary)_20%)]");
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -210,7 +211,7 @@ export default function MarketplaceDriverVehicleEditor({
         type="button"
         size="sm"
         variant="outline"
-        className="border-cyan-400/30 bg-cyan-400/[0.04] text-cyan-100 hover:bg-cyan-400/10"
+        className="min-h-11 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
         aria-expanded={open}
         onClick={() => { setOpen((value) => !value); setForm(null); }}
       >
@@ -218,14 +219,14 @@ export default function MarketplaceDriverVehicleEditor({
         <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </Button>
       <Dialog open={open} onOpenChange={(nextOpen) => { setOpen(nextOpen); if (!nextOpen) setForm(null); }}>
-        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[980px] overflow-y-auto border-cyan-400/25 bg-[#0b151b] p-4 shadow-[0_35px_100px_-35px_rgba(0,0,0,0.95)] sm:p-6">
+        <DialogContent className={cn("max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[980px] overflow-y-auto overflow-x-hidden p-3 pt-12 sm:p-4 sm:pt-12", premiumSurface, "shadow-[var(--shadow-overlay)]")}>
           <DialogHeader className="border-b border-cyan-400/15 pb-4 text-left">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300">TukTuk · Gestión de vehículos</p>
-            <DialogTitle className="text-xl font-bold text-white sm:text-2xl">Editar vehículo completo</DialogTitle>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">TukTuk · Gestión de vehículos</p>
+            <DialogTitle className="text-xl font-bold text-text-primary sm:text-2xl">Editar vehículo completo</DialogTitle>
             <DialogDescription>Corrige categoría, capacidades y servicios. Los cambios requieren motivo administrativo y quedan auditados.</DialogDescription>
           </DialogHeader>
       {open ? (
-        <div className="mt-2 rounded-2xl border border-cyan-400/15 bg-[#101c21] p-3 sm:p-4">
+        <div className={cn("mt-2 min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumHeaderSurface)}>
           {details.isPending ? <p className="text-sm">Consultando ficha del vehículo…</p> : null}
           {details.isError ? (
             <p role="alert" className="text-sm text-amber-200">
@@ -234,10 +235,10 @@ export default function MarketplaceDriverVehicleEditor({
           ) : null}
           {details.data && form ? (
             <form
-              className="space-y-4"
+              className="min-w-0 space-y-3 max-sm:[&_button]:min-h-11"
               onSubmit={(event) => { event.preventDefault(); if (!saveDisabled) save.mutate(form); }}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300">Datos verificados del vehículo</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Datos verificados del vehículo</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Field label="Categoría del vehículo">
                   <select className={inputClass} required value={form.category} onChange={(e) => {
@@ -265,7 +266,7 @@ export default function MarketplaceDriverVehicleEditor({
                 <Field label="Modelo">
                   <input className={inputClass} required maxLength={100} value={form.model} onChange={(e) => change({ model: e.target.value })} />
                 </Field>
-                <div className="col-span-full mt-1 border-t border-cyan-400/10 pt-3 text-xs font-semibold uppercase tracking-[0.11em] text-slate-400">Datos técnicos y capacidad</div>
+                <div className="col-span-full mt-1 border-t border-cyan-400/10 pt-3 text-xs font-semibold uppercase tracking-[0.11em] text-text-secondary">Datos técnicos y capacidad</div>
                 <Field label="Año">
                   <input className={inputClass} type="number" min={1886} max={2200} step="1" value={form.year} onChange={(e) => change({ year: e.target.value })} />
                 </Field>
@@ -291,7 +292,7 @@ export default function MarketplaceDriverVehicleEditor({
                 <Field label="Carrocería">
                   <input className={inputClass} maxLength={160} value={form.bodyType} onChange={(e) => change({ bodyType: e.target.value })} />
                 </Field>
-                <div className="col-span-full mt-1 border-t border-cyan-400/10 pt-3 text-xs font-semibold uppercase tracking-[0.11em] text-slate-400">Documentación visual</div>
+                <div className="col-span-full mt-1 border-t border-cyan-400/10 pt-3 text-xs font-semibold uppercase tracking-[0.11em] text-text-secondary">Documentación visual</div>
                 <Field label="Foto principal ya registrada">
                   <select className={inputClass} value={form.photoId} onChange={(e) => change({ photoId: e.target.value })}>
                     <option value="">Seleccionar foto obligatoria</option>

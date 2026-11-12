@@ -2,23 +2,25 @@ import type { ReactNode } from "react";
 import { BriefcaseBusiness, ChevronDown, Filter, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { premiumControlSurface, type AdminAppearance } from "@/components/admin/density";
+import { premiumControlSurface, premiumColumnHeaderSurface, type AdminAppearance } from "@/components/admin/density";
 
 export function EmptyMarketplaceState({
   title,
   description,
   icon: Icon = BriefcaseBusiness,
+  appearance = "standard",
 }: {
   title: string;
   description?: string;
   icon?: typeof BriefcaseBusiness;
+  appearance?: AdminAppearance;
 }) {
   return (
-    <div className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/35 px-3 py-4 text-center sm:min-h-40 sm:rounded-2xl sm:px-6 sm:py-8">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300">
+    <div className={cn("flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/35 px-3 py-4 text-center sm:min-h-40 sm:rounded-2xl sm:px-6 sm:py-8", appearance === "premium" && cn(premiumColumnHeaderSurface, "border-solid sm:min-h-28 sm:px-4 sm:py-5"))}>
+      <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300", appearance === "premium" && cn(premiumControlSurface, "h-10 w-10 rounded-xl bg-surface-1 text-primary"))}>
         <Icon className="h-5 w-5" />
       </div>
-      <p className="mt-4 font-semibold text-foreground">{title}</p>
+      <p className={cn("mt-4 font-semibold text-foreground", appearance === "premium" && "mt-2")}>{title}</p>
       {description ? (
         <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
       ) : null}

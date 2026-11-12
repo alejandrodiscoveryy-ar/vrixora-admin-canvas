@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, FileText, Pencil, ShieldCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { premiumSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type ChecklistItem = { key: string; label: string; ok: boolean; applicable?: boolean };
@@ -207,11 +209,11 @@ export default function MarketplaceDriverManagementPanel({
   const acceptanceRate = resolved ? Math.round((stats.accepted / resolved) * 100) : null;
 
   return (
-    <div className="space-y-4" aria-label="Gestión administrativa del conductor">
-      <section className="rounded-[20px] border border-cyan-400/20 bg-cyan-400/[0.045] p-4 sm:p-5">
+    <div className="min-w-0 space-y-3 max-sm:[&_button]:min-h-11" aria-label="Gestión administrativa del conductor">
+      <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.13em] text-cyan-300">
+            <p className="text-[11px] font-bold uppercase tracking-[0.13em] text-primary">
               Gestión e inscripción
             </p>
             <h3 className="mt-1 text-lg font-semibold text-foreground">
@@ -248,7 +250,7 @@ export default function MarketplaceDriverManagementPanel({
         </div>
         {editOpen ? (
           <form
-            className="mt-4 grid gap-3 rounded-xl border border-border/60 bg-background/45 p-4 sm:grid-cols-2"
+            className={cn("mt-3 grid min-w-0 gap-3 rounded-xl border p-3 sm:grid-cols-2", premiumColumnHeaderSurface)}
             onSubmit={(event) => {
               event.preventDefault();
               save.mutate();
@@ -262,7 +264,7 @@ export default function MarketplaceDriverManagementPanel({
                 minLength={2}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                className={cn("mt-1 h-11 w-full min-w-0 rounded-lg border bg-surface-1 px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring", premiumControlSurface)}
               />
             </label>
             <label className="text-xs text-muted-foreground">
@@ -272,7 +274,7 @@ export default function MarketplaceDriverManagementPanel({
                 pattern="\+[1-9][0-9]{7,14}"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                className={cn("mt-1 h-11 w-full min-w-0 rounded-lg border bg-surface-1 px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring", premiumControlSurface)}
               />
             </label>
             <label className="text-xs text-muted-foreground sm:col-span-2">
@@ -283,7 +285,7 @@ export default function MarketplaceDriverManagementPanel({
                 maxLength={300}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                className={cn("mt-1 h-11 w-full min-w-0 rounded-lg border bg-surface-1 px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring", premiumControlSurface)}
               />
             </label>
             {save.isError ? (
@@ -301,15 +303,15 @@ export default function MarketplaceDriverManagementPanel({
             </div>
           </form>
         ) : null}
-        <details className="mt-3 rounded-lg border border-border/55 bg-background/30 p-2.5">
-          <summary className="cursor-pointer text-sm font-medium text-foreground">
+        <details className={cn("mt-3 rounded-lg border p-2.5", premiumColumnHeaderSurface)}>
+          <summary className="min-h-11 cursor-pointer text-sm font-medium text-foreground">
             Ver requisitos de inscripción ({completed}/{applicable.length})
           </summary>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {m.checklist.map((item) => (
             <div
               key={item.key}
-              className="flex items-start gap-2 rounded-lg border border-border/45 bg-background/30 px-3 py-2.5 text-xs"
+              className={cn("flex min-w-0 items-start gap-2 rounded-lg border px-3 py-2.5 text-xs", premiumColumnHeaderSurface)}
             >
               {item.applicable === false ? (
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -334,9 +336,9 @@ export default function MarketplaceDriverManagementPanel({
         </details>
       </section>
 
-      <section className="rounded-[20px] border border-border/60 bg-background/35 p-4 sm:p-5">
+      <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-cyan-300" />
+          <ShieldCheck className="h-4 w-4 text-primary" />
           <h3 className="font-semibold text-foreground">Documentos y fotografías del conductor</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -355,9 +357,9 @@ export default function MarketplaceDriverManagementPanel({
               type="button"
               disabled={openingDocument === asset.id}
               onClick={() => void viewDocument(asset)}
-              className="flex min-h-11 items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] px-3 py-3 text-left text-sm text-cyan-100 hover:bg-cyan-400/10 disabled:opacity-60"
+              className={cn("flex min-w-0 min-h-11 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm text-primary hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60", premiumColumnHeaderSurface)}
             >
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex min-w-0 items-center gap-2 break-words">
                 <FileText className="h-4 w-4" />
                 {asset.label}
               </span>
@@ -378,7 +380,7 @@ export default function MarketplaceDriverManagementPanel({
         ) : null}
       </section>
 
-      <section className="rounded-[20px] border border-border/60 bg-background/35 p-4 sm:p-5">
+      <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <h3 className="font-semibold text-foreground">Trabajos notificados y respuesta</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           Datos registrados desde {formatDate(stats.first_recorded)}. Enviado no significa leído; la
@@ -398,23 +400,23 @@ export default function MarketplaceDriverManagementPanel({
           ).map(([label, value]) => (
             <div
               key={label}
-              className="rounded-xl border border-border/50 bg-background/60 px-3 py-3"
+              className={cn("min-w-0 rounded-xl border p-3", premiumColumnHeaderSurface)}
             >
               <p className="text-[11px] text-muted-foreground">{label}</p>
-              <p className="mt-1 text-xl font-bold text-cyan-100">{value}</p>
+              <p className="mt-1 text-xl font-bold text-primary">{value}</p>
             </div>
           ))}
         </div>
         {stats.events.length ? (
-          <details className="mt-4 rounded-xl border border-border/50 bg-background/30 p-3">
-            <summary className="cursor-pointer text-sm font-medium text-foreground">
+          <details className={cn("mt-3 rounded-xl border p-3", premiumColumnHeaderSurface)}>
+            <summary className="min-h-11 cursor-pointer text-sm font-medium text-foreground">
               Últimas 30 oportunidades registradas
             </summary>
             <div className="mt-3 space-y-2">
               {stats.events.map((event) => (
                 <div
                   key={event.job_id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/45 bg-background/50 p-3"
+                  className={cn("flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border p-3", premiumSurface)}
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-foreground">
@@ -443,7 +445,7 @@ export default function MarketplaceDriverManagementPanel({
           </p>
         )}
       </section>
-      <section className="rounded-[20px] border border-border/60 bg-background/35 p-4 sm:p-5">
+      <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <h3 className="font-semibold text-foreground">Auditoría de gestión</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           Últimas actuaciones administrativas registradas para este expediente.
@@ -453,7 +455,7 @@ export default function MarketplaceDriverManagementPanel({
             {m.audit_events.map((event, index) => (
               <div
                 key={`${event.at}-${index}`}
-                className="flex flex-wrap justify-between gap-2 rounded-lg border border-border/50 bg-background/50 p-3 text-xs"
+                className={cn("flex flex-wrap justify-between gap-2 rounded-lg border p-3 text-xs", premiumColumnHeaderSurface)}
               >
                 <span className="text-foreground">
                   {event.action === "admin_edit_driver_contact"
