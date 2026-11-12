@@ -196,14 +196,14 @@ function CapabilityCard({ capability }: { capability: MapCapability }) {
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-xl border border-border/60 bg-background/45 p-2.5">
+          <div className="rounded-xl border border-border/60 bg-background/45 p-2.5 admin-graphite-inset">
             <p className="text-muted-foreground">Credencial</p>
             <p className="mt-1 font-medium text-foreground">
               {capability.primaryProviderCode ? "Consultar proveedor" : "Pendiente"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-background/45 p-2.5">
+          <div className="rounded-xl border border-border/60 bg-background/45 p-2.5 admin-graphite-inset">
             <p className="text-muted-foreground">Último chequeo</p>
             <p className="mt-1 font-medium text-foreground">
               {formatDate(capability.lastCheckedAt)}
@@ -365,7 +365,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
 
   return (
     <div className="space-y-6">
-      <ModuleHeader
+      <ModuleHeader density="compact" appearance="premium"
         title="Mapas y rutas"
         description="Administra el mapa, la geocodificación y el cálculo de rutas de TUKTUK Marketplace."
         icon={Map}
@@ -385,7 +385,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
         </PageAlert>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm admin-graphite-inset">
         <div className="flex items-center gap-3 border-b border-border/60 px-5 py-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
             <Server className="h-5 w-5" />
@@ -457,7 +457,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/55 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/55 shadow-sm admin-graphite-inset">
         <div className="border-b border-border/60 px-5 py-4">
           <h3 className="text-sm font-semibold text-foreground">Proveedores</h3>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -523,7 +523,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-xl border border-border/60 bg-background/45 p-2.5">
+                  <div className="rounded-xl border border-border/60 bg-background/45 p-2.5 admin-graphite-inset">
                     <p className="text-muted-foreground">Credenciales</p>
                     <p className="mt-1 font-medium text-foreground">
                       {provider.publicCredentialConfigured || provider.serverCredentialConfigured
@@ -532,7 +532,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-border/60 bg-background/45 p-2.5">
+                  <div className="rounded-xl border border-border/60 bg-background/45 p-2.5 admin-graphite-inset">
                     <p className="text-muted-foreground">Última comprobación</p>
                     <p className="mt-1 font-medium text-foreground">
                       {formatDate(provider.lastCheckedAt)}
@@ -617,7 +617,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
                     {summary.map(([label, value]) => (
                       <div
                         key={label}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/50 px-3 py-2.5"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/50 px-3 py-2.5 admin-graphite-inset"
                       >
                         <span className="text-xs text-muted-foreground">{label}</span>
                         <span className="max-w-[60%] truncate text-xs font-semibold text-foreground">
@@ -672,14 +672,14 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+              <div className="rounded-xl border border-border/60 bg-background/50 p-3 admin-graphite-inset">
                 <p className="text-xs text-muted-foreground">Token público / cliente</p>
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {mapbox?.publicCredentialConfigured ? "Configurado" : "Pendiente"}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+              <div className="rounded-xl border border-border/60 bg-background/50 p-3 admin-graphite-inset">
                 <p className="text-xs text-muted-foreground">Token servidor</p>
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {mapbox?.serverCredentialConfigured ? "Configurado" : "Pendiente"}
@@ -723,7 +723,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+              <div className="rounded-xl border border-border/60 bg-background/50 p-3 admin-graphite-inset">
                 <p className="text-xs text-muted-foreground">Límite administrativo</p>
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {mapbox?.quotaConfig.administrative_limit == null
@@ -732,7 +732,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+              <div className="rounded-xl border border-border/60 bg-background/50 p-3 admin-graphite-inset">
                 <p className="text-xs text-muted-foreground">Umbral de aviso</p>
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {mapbox?.quotaConfig.warning_threshold_percent == null
@@ -809,7 +809,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
                   </Button>
 
                   {result ? (
-                    <div className="mt-3 rounded-xl border border-border/60 bg-background/50 p-3 text-xs text-muted-foreground">
+                    <div className="mt-3 rounded-xl border border-border/60 bg-background/50 p-3 text-xs text-muted-foreground admin-graphite-inset">
                       <p className="font-medium text-foreground">
                         {result.ok ? "Correcto" : translateMapError(code)}
                       </p>
@@ -842,7 +842,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
         }}
       >
         {editingCapability ? (
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl admin-graphite-dialog">
             <DialogHeader className="pr-8">
               <DialogTitle>Editar configuración · {labels[editingCapability.code]}</DialogTitle>
               <DialogDescription>Modifica únicamente esta capacidad de Mapbox.</DialogDescription>
@@ -870,7 +870,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
                 </div>
               </div>
 
-              <label className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/40 p-3">
+              <label className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/40 p-3 admin-graphite-inset">
                 <div>
                   <p className="text-sm font-medium text-foreground">Capacidad activa</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
@@ -939,7 +939,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
           }
         }}
       >
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl admin-graphite-dialog">
           <DialogHeader className="pr-8">
             <DialogTitle>Credenciales de Mapbox</DialogTitle>
             <DialogDescription>
@@ -1032,7 +1032,7 @@ export default function MarketplaceMapsSection({ projectId }: { projectId: strin
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg admin-graphite-dialog">
           <DialogHeader className="pr-8">
             <DialogTitle>Límites administrativos</DialogTitle>
             <DialogDescription>
