@@ -724,3 +724,24 @@
   .admin-graphite-form button:not([aria-label*="mapa"]):not([aria-label*="Map"]):not(.mapboxgl-ctrl button) { min-height: 44px; }
   .admin-graphite-dialog { max-height: calc(100dvh - 1rem); }
 }
+
+/* Neutral labels on migrated surfaces must be legible in both themes.
+   Semantic status colors and primary/destructive buttons are intentionally untouched. */
+:is(.admin-graphite-panel, .admin-graphite-header, .admin-graphite-inset, .admin-graphite-dialog) :is(h1,h2,h3,h4,p,label).text-white {
+  color: var(--text-primary);
+}
+:is(.admin-graphite-panel, .admin-graphite-header, .admin-graphite-inset, .admin-graphite-dialog) :is(.text-slate-50,.text-slate-100,.text-slate-200) {
+  color: var(--text-primary);
+}
+:is(.admin-graphite-panel, .admin-graphite-header, .admin-graphite-inset, .admin-graphite-dialog) :is(.text-slate-300,.text-slate-400) {
+  color: var(--text-secondary);
+}
+.admin-graphite-control:focus-visible,
+.admin-graphite-nav-item:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+@media (max-width: 639px) {
+  .admin-graphite-control:is(input,select,textarea) { min-height: 44px; }
+  .admin-graphite-dialog { max-width: calc(100vw - 1rem); }
+}
