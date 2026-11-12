@@ -116,7 +116,7 @@ export default function MarketplaceTerritoryCatalog({
 
   return (
     <section aria-label="Administración del catálogo territorial" className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/55 px-4 py-3 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/55 px-4 py-3 sm:px-5 admin-graphite-inset">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/15 bg-cyan-400/[0.07] text-cyan-300">
             <Globe2 aria-hidden="true" className="h-[18px] w-[18px]" />
@@ -141,7 +141,7 @@ export default function MarketplaceTerritoryCatalog({
       {query.isPending ? <p className="text-sm text-muted-foreground">Consultando catálogos territoriales…</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-[20px] border border-border/65 bg-card/65 p-4">
+        <div className="rounded-[20px] border border-border/65 bg-card/65 p-4 admin-graphite-inset">
           <div className="flex items-center justify-between gap-2 text-muted-foreground">
             <span className="text-xs font-medium">Lugares registrados</span>
             <Database aria-hidden="true" className="h-4 w-4 text-cyan-400" />
@@ -149,7 +149,7 @@ export default function MarketplaceTerritoryCatalog({
           <p className="mt-2 text-[28px] font-semibold tracking-tight tabular-nums">{query.isPending ? "—" : numberLabel(totalPlaces)}</p>
           <p className="mt-1 text-xs text-muted-foreground">En provincias con catálogo cargado</p>
         </div>
-        <div className="rounded-[20px] border border-border/65 bg-card/65 p-4">
+        <div className="rounded-[20px] border border-border/65 bg-card/65 p-4 admin-graphite-inset">
           <div className="flex items-center justify-between gap-2 text-muted-foreground">
             <span className="text-xs font-medium">Territorios preparados</span>
             <Layers3 aria-hidden="true" className="h-4 w-4 text-cyan-400" />
@@ -157,7 +157,7 @@ export default function MarketplaceTerritoryCatalog({
           <p className="mt-2 text-[28px] font-semibold tracking-tight tabular-nums">{query.isPending ? "—" : `${loaded.length} / ${provinces.length}`}</p>
           <p className="mt-1 text-xs text-muted-foreground">Catálogo disponible, no servicio activado</p>
         </div>
-        <div className="rounded-[20px] border border-border/65 bg-card/65 p-4">
+        <div className="rounded-[20px] border border-border/65 bg-card/65 p-4 admin-graphite-inset">
           <div className="flex items-center justify-between gap-2 text-muted-foreground">
             <span className="text-xs font-medium">Solicitudes pendientes</span>
             <Clock3 aria-hidden="true" className="h-4 w-4 text-cyan-400" />
@@ -168,7 +168,7 @@ export default function MarketplaceTerritoryCatalog({
       </div>
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <article className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.07] via-card/75 to-card/65 p-5 shadow-[0_22px_55px_-45px_rgba(8,145,178,0.5)]">
+        <article className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.07] via-card/75 to-card/65 p-3 shadow-[0_22px_55px_-45px_rgba(8,145,178,0.5)] admin-graphite-panel">
           <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-cyan-400/[0.065] blur-2xl" />
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -178,7 +178,7 @@ export default function MarketplaceTerritoryCatalog({
             </div>
             <MapPin aria-hidden="true" className="h-5 w-5 shrink-0 text-cyan-400" />
           </div>
-          <div className="mt-5 rounded-2xl border border-border/50 bg-background/35 px-4 py-3">
+          <div className="mt-5 rounded-2xl border border-border/50 bg-background/35 px-4 py-3 admin-graphite-inset">
             <p className="text-3xl font-semibold tracking-tight tabular-nums">{habana ? numberLabel(habana.poi_count) : "—"}</p>
             <p className="mt-1 text-xs text-muted-foreground">lugares · Última actualización: {dateLabel(habana?.last_updated_at ?? null)}</p>
             <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -195,7 +195,7 @@ export default function MarketplaceTerritoryCatalog({
           </Button>
         </article>
 
-        <article className="rounded-[24px] border border-border/70 bg-card/70 p-5">
+        <article className="rounded-[24px] border border-border/70 bg-card/70 p-5 admin-graphite-inset">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400">02 / EXPANSIÓN TERRITORIAL</p>
@@ -209,7 +209,7 @@ export default function MarketplaceTerritoryCatalog({
           </label>
           <select
             id="tuktuk-config-province-selector"
-            className="mt-2 h-11 w-full rounded-xl border border-border bg-background/70 px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="mt-2 h-11 w-full rounded-xl border border-border bg-background/70 px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 admin-graphite-control"
             value={selectedCode}
             onChange={(event) => setProvinceCode(event.target.value)}
             disabled={!canManage || available.length === 0}
@@ -237,7 +237,7 @@ export default function MarketplaceTerritoryCatalog({
         <p className="text-xs text-muted-foreground">Tu perfil permite consultar catálogos. Las actualizaciones requieren permiso de gestión de mapas.</p>
       ) : null}
 
-      <section className="overflow-hidden rounded-[24px] border border-border/65 bg-card/55">
+      <section className="overflow-hidden rounded-[24px] border border-border/65 bg-card/55 admin-graphite-inset">
         <button
           type="button"
           aria-expanded={expanded}
@@ -256,7 +256,7 @@ export default function MarketplaceTerritoryCatalog({
             <div className="min-w-0 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Catálogos disponibles</h4>
               {loaded.map((province) => (
-                <div key={province.code} className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-border/50 bg-background/35 px-3 py-3">
+                <div key={province.code} className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-border/50 bg-background/35 px-3 py-3 admin-graphite-inset">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{province.name}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{numberLabel(province.poi_count)} lugares · {dateLabel(province.last_updated_at)}</p>
@@ -273,7 +273,7 @@ export default function MarketplaceTerritoryCatalog({
             <div className="min-w-0 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Últimas solicitudes</h4>
               {jobs.slice(0, 8).map((job) => (
-                <div key={job.id} className="rounded-2xl border border-border/50 bg-background/35 px-3 py-3">
+                <div key={job.id} className="rounded-2xl border border-border/50 bg-background/35 px-3 py-3 admin-graphite-inset">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <strong>{provinces.find((province) => province.code === job.province_code)?.name ?? job.province_code}</strong>
                     <span className={job.status === "succeeded" ? "text-emerald-400" : job.status === "failed" ? "text-rose-400" : "text-cyan-400"}>
