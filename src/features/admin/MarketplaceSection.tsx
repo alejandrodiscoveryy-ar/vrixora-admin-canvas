@@ -56,6 +56,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/admin/MetricCard";
+import { premiumSurface, premiumControlSurface } from "@/components/admin/density";
+import { cn } from "@/lib/utils";
 
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
@@ -1467,176 +1470,64 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         <TabsContent value="resumen">
           <section
             aria-label="Indicadores operativos de Pulso"
-            className="relative overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-3 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:rounded-[28px] sm:p-5 lg:p-6"
+            className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}
           >
-            <Eye aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 text-cyan-300/[0.025]" />
-            <header className="relative mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-5 sm:items-start sm:gap-3">
+            <header className="relative mb-3 flex flex-wrap items-center justify-between gap-2 sm:items-center sm:gap-3">
               <div className="flex min-w-0 items-center gap-2 sm:items-start sm:gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07] sm:h-12 sm:w-12 sm:rounded-2xl">
-                  <Eye className="h-4 w-4 sm:h-6 sm:w-6" />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-border-default bg-surface-2 text-primary">
+                  <Eye className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85 sm:block">Centro de control · Indicadores</p>
-                  <h2 className="text-base font-bold tracking-tight text-foreground sm:mt-1 sm:text-xl">Pulso operativo</h2>
-                  <p className="mt-1 hidden text-xs text-muted-foreground sm:block sm:text-sm">Actividad, equipo y gestión del Marketplace.</p>
+                  <p className="hidden text-[10px] font-semibold uppercase tracking-wide text-text-secondary sm:block">Centro de control · Indicadores</p>
+                  <h2 className="text-lg font-semibold tracking-tight text-text-primary sm:text-xl">Pulso operativo</h2>
+                  <p className="mt-0.5 hidden text-xs text-text-secondary sm:block">Actividad, equipo y gestión del Marketplace.</p>
                 </div>
               </div>
-              <span role="status" aria-label={overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando datos" : "Datos actualizados cada 30 segundos"} className="shrink-0 rounded-lg border border-border/60 bg-background/55 px-2 py-1.5 text-[10px] text-muted-foreground sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs">
+              <span role="status" aria-label={overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando datos" : "Datos actualizados cada 30 segundos"} className={cn("shrink-0 rounded-[var(--radius-control)] border px-2 py-1.5 text-xs text-text-secondary", premiumControlSurface)}>
                 <span className="sm:hidden">{overview.isError ? "Error" : overview.isFetching ? "Actualizando" : "Cada 30 s"}</span>
                 <span className="hidden sm:inline">{overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}</span>
               </span>
             </header>
             <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
-              {[
-                {
-                  label: "Conductores",
-                  detail: "Perfiles registrados",
-                  eyebrow: "Equipo",
-                  value: overview.data?.driversTotal,
-                  Icon: Users,
-                  shell:
-                    "border-cyan-400/18 bg-gradient-to-br from-cyan-500/[0.075] via-background/62 to-background/45",
-                  icon: "border-cyan-400/20 bg-cyan-500/[0.09] text-cyan-300",
-                  glow: "bg-cyan-400/[0.07]",
-                },
-                {
-                  label: "Activos",
-                  detail: "Perfiles habilitados",
-                  eyebrow: "Operación",
-                  value: overview.data?.driversActive,
-                  Icon: Users,
-                  shell:
-                    "border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.075] via-background/62 to-background/45",
-                  icon: "border-emerald-400/20 bg-emerald-500/[0.09] text-emerald-300",
-                  glow: "bg-emerald-400/[0.07]",
-                },
-                {
-                  label: "En promoción",
-                  detail: "Beneficio vigente",
-                  eyebrow: "Beneficio",
-                  value: overview.data?.driversTrialActive,
-                  Icon: BriefcaseBusiness,
-                  shell:
-                    "border-violet-400/18 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-background/45",
-                  icon: "border-violet-400/20 bg-violet-500/[0.09] text-violet-300",
-                  glow: "bg-violet-400/[0.07]",
-                },
-                {
-                  label: "Post-promoción activos",
-                  detail: "Activos tras el beneficio",
-                  eyebrow: "Comercial",
-                  value: overview.data?.driversPostTrialActive,
-                  Icon: WalletCards,
-                  shell:
-                    "border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-background/45",
-                  icon: "border-amber-400/20 bg-amber-500/[0.08] text-amber-300",
-                  glow: "bg-amber-400/[0.06]",
-                },
-                {
-                  label: "Trabajos publicados",
-                  detail: "Solicitudes publicadas",
-                  eyebrow: "Marketplace",
-                  value: overview.data?.jobsPublished,
-                  Icon: BriefcaseBusiness,
-                  shell:
-                    "border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.065] via-background/62 to-cyan-500/[0.02]",
-                  icon: "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300",
-                  glow: "bg-emerald-400/[0.06]",
-                },
-                {
-                  label: "Trabajos activos",
-                  detail: "Operaciones en desarrollo",
-                  eyebrow: "Actividad",
-                  value: overview.data?.jobsActive,
-                  Icon: BriefcaseBusiness,
-                  shell:
-                    "border-cyan-400/18 bg-gradient-to-br from-cyan-500/[0.065] via-background/62 to-violet-500/[0.02]",
-                  icon: "border-cyan-400/20 bg-cyan-500/[0.08] text-cyan-300",
-                  glow: "bg-cyan-400/[0.06]",
-                },
-                {
-                  label: "Incidencias abiertas",
-                  detail: "Pendientes de resolver",
-                  eyebrow: "Atención",
-                  value: overview.data?.jobsIncidentOpen,
-                  Icon: AlertTriangle,
-                  shell:
-                    "border-rose-400/18 bg-gradient-to-br from-rose-500/[0.07] via-background/62 to-background/45",
-                  icon: "border-rose-400/20 bg-rose-500/[0.08] text-rose-300",
-                  glow: "bg-rose-400/[0.06]",
-                },
-              ].map(({ label: metricLabel, eyebrow, detail, value, Icon, shell, icon, glow }) => (
-                <article
+              {([
+                { label: "Conductores", detail: "Perfiles registrados", eyebrow: "Equipo", value: overview.data?.driversTotal, icon: Users, module: "resumen" },
+                { label: "Activos", detail: "Perfiles habilitados", eyebrow: "Operación", value: overview.data?.driversActive, icon: Users, semanticState: "success" },
+                { label: "En promoción", detail: "Beneficio vigente", eyebrow: "Beneficio", value: overview.data?.driversTrialActive, icon: BriefcaseBusiness, module: "comercial" },
+                { label: "Post-promoción activos", detail: "Activos tras el beneficio", eyebrow: "Comercial", value: overview.data?.driversPostTrialActive, icon: WalletCards, semanticState: "warning" },
+                { label: "Trabajos publicados", detail: "Solicitudes publicadas", eyebrow: "Marketplace", value: overview.data?.jobsPublished, icon: BriefcaseBusiness, semanticState: "success" },
+                { label: "Trabajos activos", detail: "Operaciones en desarrollo", eyebrow: "Actividad", value: overview.data?.jobsActive, icon: BriefcaseBusiness, module: "resumen" },
+                { label: "Incidencias abiertas", detail: "Pendientes de resolver", eyebrow: "Atención", value: overview.data?.jobsIncidentOpen, icon: AlertTriangle, semanticState: "danger" },
+              ] as const).map(({ label: metricLabel, detail, eyebrow, value, icon, ...accent }) => (
+                <MetricCard
                   key={metricLabel}
-                  className={`group relative min-h-[126px] overflow-hidden rounded-[17px] border p-3 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 sm:min-h-[174px] sm:rounded-[23px] sm:p-4 ${!showAllPulseMetrics && ["En promoción", "Post-promoción activos", "Trabajos publicados"].includes(metricLabel) ? "hidden sm:block" : ""} ${shell}`}
-                >
-                  <div
-                    className={`pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl ${glow}`}
-                  />
-                  <Icon aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 hidden h-36 w-36 rotate-[-11deg] text-cyan-300/[0.065] sm:block" />
-
-                  <div className="relative">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:block">
-                           {eyebrow}
-                        </p>
-                        <p className="text-xs font-semibold leading-snug text-foreground sm:mt-1.5 sm:text-sm">
-                           {metricLabel}
-                        </p>
-                      </div>
-
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:h-11 sm:w-11 sm:rounded-xl ${icon}`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    </div>
-
-                    <div className="mt-2 sm:mt-5">
-                       {overview.isLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      ) : (
-                        <p className="font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                           {overview.isError ? "—" : Number(value ?? 0)}
-                        </p>
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground sm:mt-1 sm:text-[11px]">{detail}</p>
-                  </div>
-                </article>
+                  density="compact"
+                  appearance="premium"
+                  label={metricLabel}
+                  value={overview.isError ? "—" : Number(value ?? 0)}
+                  description={detail}
+                  comparison={eyebrow}
+                  icon={icon}
+                  isLoading={overview.isLoading}
+                  className={!showAllPulseMetrics && ["En promoción", "Post-promoción activos", "Trabajos publicados"].includes(metricLabel) ? "hidden sm:block" : undefined}
+                  {...accent}
+                />
               ))}
 
               {!overview.isLoading && overview.data?.pendingTopups !== null ? (
-                <article className={`group relative min-h-[126px] overflow-hidden rounded-[17px] border border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/62 to-violet-500/[0.02] p-3 shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 sm:min-h-[174px] sm:rounded-[23px] sm:p-4 ${!showAllPulseMetrics && !(Number(overview.data?.pendingTopups ?? 0) > 0) ? "hidden sm:block" : ""}`}>
-                  <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-amber-400/[0.06] blur-3xl" />
-                  <WalletCards aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-5 bottom-0 hidden h-36 w-36 rotate-[-11deg] text-amber-300/[0.065] sm:block" />
-
-                  <div className="relative">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Finanzas
-                        </p>
-                        <p className="mt-1.5 text-sm font-semibold text-foreground">
-                          Recargas pendientes
-                        </p>
-                      </div>
-
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-500/[0.08] text-amber-300 sm:h-11 sm:w-11 sm:rounded-xl">
-                        <WalletCards className="h-5 w-5" />
-                      </div>
-                    </div>
-
-                    <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground sm:mt-5 sm:text-3xl">
-                       {overview.isError ? "—" : (overview.data?.pendingTopups ?? 0)}
-                    </p>
-                    <p className="relative mt-1 text-[11px] text-muted-foreground">En revisión financiera</p>
-                  </div>
-                </article>
+                <MetricCard
+                  density="compact"
+                  appearance="premium"
+                  label="Recargas pendientes"
+                  value={overview.isError ? "—" : (overview.data?.pendingTopups ?? 0)}
+                  description="En revisión financiera"
+                  comparison="Finanzas"
+                  icon={WalletCards}
+                  semanticState="warning"
+                  className={!showAllPulseMetrics && !(Number(overview.data?.pendingTopups ?? 0) > 0) ? "hidden sm:block" : undefined}
+                />
               ) : null}
             </div>
-            <button type="button" aria-expanded={showAllPulseMetrics} onClick={() => setShowAllPulseMetrics((open) => !open)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.06] px-3 py-2 text-xs font-semibold text-cyan-100 sm:hidden">
+            <button type="button" aria-expanded={showAllPulseMetrics} onClick={() => setShowAllPulseMetrics((open) => !open)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-border-default bg-surface-2 px-3 py-2 text-xs font-semibold text-primary focus-visible:ring-2 focus-visible:ring-ring sm:hidden">
               {showAllPulseMetrics ? "Mostrar indicadores principales" : "Ver todos los indicadores"}
               <ChevronDown className={`h-4 w-4 transition-transform ${showAllPulseMetrics ? "rotate-180" : ""}`} />
             </button>
