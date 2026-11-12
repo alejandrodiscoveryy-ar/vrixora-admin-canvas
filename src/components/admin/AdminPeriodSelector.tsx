@@ -72,13 +72,13 @@ export function AdminPeriodSelector({
     <div
       className={cn(
         "inline-flex max-w-full flex-col gap-1.5 rounded-[var(--radius-compact)] border border-border-subtle bg-surface-1 p-1.5 shadow-[var(--shadow-xs)]",
-        appearance === "premium" && cn(premiumControlSurface, "min-w-0 shadow-none"),
+        appearance === "premium" && cn(premiumControlSurface, "min-w-0 gap-1 shadow-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-2"),
         className,
       )}
       data-appearance={appearance === "premium" ? "premium" : undefined}
       aria-label="Selector de período"
     >
-      <div className="flex min-w-0 items-center gap-1">
+      <div className={cn("flex min-w-0 items-center gap-1", appearance === "premium" && "w-full sm:w-auto sm:shrink-0")}>
         <Button
           type="button"
           variant="ghost"
@@ -178,7 +178,7 @@ export function AdminPeriodSelector({
       <button
         type="button"
         disabled={value !== "custom"}
-        className={cn("truncate px-2 text-left text-xs text-text-tertiary disabled:cursor-default", appearance === "premium" && "text-text-secondary")}
+        className={cn("truncate px-2 text-left text-xs text-text-tertiary disabled:cursor-default", appearance === "premium" && cn("max-w-full whitespace-normal break-words text-text-secondary sm:px-2", value === "custom" && "max-sm:min-h-11"))}
         onClick={() => setCustomOpen(true)}
       >
         {value === "all" ? "Todo el historial" : formatRange(range)}

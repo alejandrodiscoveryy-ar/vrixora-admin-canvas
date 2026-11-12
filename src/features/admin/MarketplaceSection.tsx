@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/admin/MetricCard";
-import { premiumSurface, premiumControlSurface } from "@/components/admin/density";
+import { premiumSurface, premiumControlSurface, premiumHeaderSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
@@ -186,7 +186,7 @@ const formatOperationPrice = (value: unknown, currency = "CUP") => {
 
 const operationRowClasses = (status: string | null) => {
   if (["completed", "settled", "confirmed", "reconciled"].includes(status ?? "")) {
-    return "border-emerald-500/45 border-l-4 border-l-emerald-400 bg-emerald-500/[0.10] hover:bg-emerald-500/[0.15]";
+    return "border-emerald-500/45 border-l-4 border-l-emerald-400 bg-emerald-500/[0.10] hover:bg-emerald-500/[0.15] dark:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_84%,var(--text-secondary)_16%)_93%,var(--semantic-success)_7%)] dark:hover:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_80%,var(--text-secondary)_20%)_90%,var(--semantic-success)_10%)]";
   }
 
   if (
@@ -199,7 +199,7 @@ const operationRowClasses = (status: string | null) => {
       "incident",
     ].includes(status ?? "")
   ) {
-    return "border-rose-500/45 border-l-4 border-l-rose-400 bg-rose-500/[0.10] hover:bg-rose-500/[0.15]";
+    return "border-rose-500/45 border-l-4 border-l-rose-400 bg-rose-500/[0.10] hover:bg-rose-500/[0.15] dark:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_84%,var(--text-secondary)_16%)_93%,var(--semantic-danger)_7%)] dark:hover:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_80%,var(--text-secondary)_20%)_90%,var(--semantic-danger)_10%)]";
   }
 
   if (
@@ -207,10 +207,10 @@ const operationRowClasses = (status: string | null) => {
       status ?? "",
     )
   ) {
-    return "border-amber-500/45 border-l-4 border-l-amber-400 bg-amber-500/[0.10] hover:bg-amber-500/[0.15]";
+    return "border-amber-500/45 border-l-4 border-l-amber-400 bg-amber-500/[0.10] hover:bg-amber-500/[0.15] dark:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_84%,var(--text-secondary)_16%)_93%,var(--semantic-warning)_7%)] dark:hover:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_80%,var(--text-secondary)_20%)_90%,var(--semantic-warning)_10%)]";
   }
 
-  return "border-border/60 border-l-4 border-l-border bg-background/60 hover:bg-muted/30";
+  return "border-border/60 border-l-4 border-l-border bg-surface-1 hover:bg-muted/30 dark:bg-[color:color-mix(in_oklab,var(--surface-3)_89%,var(--text-secondary)_11%)] dark:hover:bg-[color:color-mix(in_oklab,var(--surface-3)_82%,var(--text-secondary)_18%)]";
 };
 const formatDate = (value: unknown) => {
   if (!value) return "—";
@@ -1537,17 +1537,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
         <TabsContent value="trabajos" className="mt-3">
           <div className="space-y-3 sm:space-y-4">
             <MarketplaceRadarReadinessCard projectId={projectId} />
-            <section className="relative overflow-hidden rounded-[26px] border border-emerald-400/16 bg-gradient-to-br from-emerald-500/[0.055] via-background/60 to-cyan-500/[0.025] p-3 shadow-[0_24px_70px_-48px_rgba(16,185,129,0.85)] backdrop-blur-xl sm:p-4">
-              <img
-                src="/admin-premium/operations.svg"
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none absolute right-0 top-0 hidden h-60 w-[38%] object-cover object-right opacity-[0.12] mix-blend-screen md:block xl:w-[34%]"
-              />
+            <section className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
 
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/20 to-emerald-500/[0.015]" />
-
-              <div className="relative mb-2 flex flex-col gap-2 rounded-[16px] border border-emerald-400/14 bg-background/55 p-2.5 sm:mb-3 sm:gap-3 sm:rounded-[20px] sm:p-3 shadow-[0_18px_46px_-34px_rgba(16,185,129,0.75)] backdrop-blur-md xl:flex-row xl:items-center xl:justify-between">
+              <div className={cn("relative mb-2 flex min-w-0 flex-col gap-2 rounded-[var(--radius-card)] border p-3 sm:mb-3 sm:gap-3 xl:flex-row xl:flex-wrap xl:items-center xl:justify-between", premiumHeaderSurface)}>
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/[0.10] px-3 py-2 text-xs font-semibold text-emerald-100 shadow-inner shadow-emerald-500/[0.04]">
                     <BriefcaseBusiness className="h-4 w-4" />
@@ -1579,7 +1571,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:flex-wrap xl:justify-end">
-                  <FilterSelect labelText="Estado" value={status} onChange={setStatus}>
+                  <FilterSelect appearance="premium" labelText="Estado" value={status} onChange={setStatus}>
                     <option value="">Todos los estados</option>
                     {statusOptions.map((item) => (
                       <option key={item} value={item}>
@@ -1588,7 +1580,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     ))}
                   </FilterSelect>
 
-                  <FilterSelect labelText="Servicio" value={service} onChange={setService}>
+                  <FilterSelect appearance="premium" labelText="Servicio" value={service} onChange={setService}>
                     <option value="">Todos los servicios</option>
                     {[...new Set([...services, "passenger", "cargo", "courier", "tourism"])].map(
                       (item) => (
@@ -1603,11 +1595,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               {jobs.isLoading ? (
                 <LoadingState />
               ) : !jobRows.length ? (
-                <div className="relative flex min-h-44 overflow-hidden rounded-[22px] border border-dashed border-emerald-400/18 bg-gradient-to-br from-emerald-500/[0.035] via-background/42 to-cyan-500/[0.02] px-5 py-8">
-                  <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/[0.035] blur-3xl" />
+                <div className={cn("relative flex min-h-32 min-w-0 overflow-hidden rounded-[var(--radius-card)] border px-3 py-5 sm:px-4", premiumColumnHeaderSurface)}>
 
                   <div className="relative m-auto flex flex-col items-center text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/22 bg-emerald-500/[0.08] text-emerald-300 shadow-[0_14px_34px_-20px_rgba(16,185,129,0.8)]">
+                    <div className={cn("flex h-10 w-10 items-center justify-center rounded-[var(--radius-control)] border bg-surface-1 text-[var(--semantic-success)]", premiumControlSurface)}>
                       <BriefcaseBusiness className="h-5 w-5" />
                     </div>
 
@@ -1640,7 +1631,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               current === job.jobId ? null : job.jobId,
                             )
                           }
-                          className="relative flex w-full min-w-0 flex-col gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 lg:flex-row lg:items-center lg:justify-between"
+                          className="relative flex min-h-11 w-full min-w-0 flex-col gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 lg:flex-row lg:items-center lg:justify-between"
                         >
                           <div className="flex min-w-0 flex-1 flex-col gap-1.5 lg:flex-row lg:items-center lg:gap-4">
                             <div className="flex shrink-0 flex-wrap items-center gap-1.5">
@@ -1698,7 +1689,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           >
                             <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between lg:gap-3">
                               <div className="min-w-0 flex-1">
-                                <div className="rounded-xl border border-border/55 bg-background/50 p-3">
+                                <div className={cn("rounded-xl border p-3", premiumColumnHeaderSurface)}>
                                   <div className="grid gap-2.5 md:grid-cols-[1fr_auto_1fr] md:items-center">
                                     <div className="flex min-w-0 items-start gap-3">
                                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
@@ -1739,7 +1730,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 <JobNotificationReach projectId={projectId} jobId={job.jobId} compact />
 
                                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                                  <div className="rounded-xl border border-border/50 bg-background/45 p-3">
+                                  <div className={cn("rounded-xl border p-3", premiumColumnHeaderSurface)}>
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
                                         <UserRound className="h-4 w-4" />
@@ -1761,7 +1752,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     </div>
                                   </div>
 
-                                  <div className="rounded-xl border border-border/50 bg-background/45 p-3">
+                                  <div className={cn("rounded-xl border p-3", premiumColumnHeaderSurface)}>
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/15 bg-amber-500/[0.05] text-amber-300">
                                         <CarFront className="h-4 w-4" />
@@ -1783,7 +1774,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               </div>
 
                               <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[200px]">
-                              <aside className="rounded-xl border border-border/55 bg-background/55 p-2.5">
+                              <aside className={cn("rounded-xl border p-2.5", premiumColumnHeaderSurface)}>
                                 <div className="space-y-2 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
                                     <span>Programado</span>
@@ -1804,9 +1795,9 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ) : null}
                                 </div>
 
-                                <div className="mt-2 grid gap-2">
+                                <div className="mt-2 grid min-w-0 gap-2">
                                   <Button
-                                    className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-100 hover:bg-emerald-500/[0.12]"
+                                    className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-[var(--semantic-success)] hover:bg-emerald-500/[0.12] max-sm:min-h-11"
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setJobId(job.jobId)}
@@ -1820,7 +1811,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ["published", "accepted", "en_route", "pickup"]
                                     .includes(job.status) ? (
                                     <Button
-                                      className="h-auto min-h-10 w-full whitespace-normal px-2 py-2 text-center text-xs leading-snug"
+                                      className="h-auto min-h-11 w-full whitespace-normal px-2 py-2 text-center text-xs leading-snug"
                                       size="sm"
                                       variant="destructive"
                                       disabled={assistedCancelMutation.isPending}
@@ -1844,7 +1835,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                     job.status,
                                   ) ? (
                                     <Button
-                                      className="w-full"
+                                      className="w-full max-sm:min-h-11"
                                       size="sm"
                                       variant="outline"
                                       disabled={adminFinishMutation.isPending}
@@ -1863,7 +1854,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   ) : null}
                                   {job.isTest && canManageMarketplace ? (
                                     <Button
-                                      className="w-full"
+                                      className="w-full max-sm:min-h-11"
                                       size="sm"
                                       variant="destructive"
                                       disabled={deleteTestJob.isPending}

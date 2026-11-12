@@ -28,7 +28,7 @@ import type { AdminPeriodKey } from "@/components/admin/admin-period";
 
 import { SectionCard } from "@/components/admin/SectionCard";
 import { MetricCard } from "@/components/admin/MetricCard";
-import { premiumSurface, premiumHeaderSurface, premiumControlSurface } from "@/components/admin/density";
+import { premiumSurface, premiumHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import type { AdminModuleKey, SemanticState } from "@/components/admin/types";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -151,8 +151,6 @@ function ResumenPage() {
   const overview = marketplace.data;
   const recentActivity = (audit.data ?? []).slice(0, 7);
 
-  const rangeLabel = `${formatDateShort(range.start)} - ${formatDateShort(range.end)}`;
-
   return (
     <>
 
@@ -268,7 +266,7 @@ function ResumenPage() {
             </p>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center xl:justify-end">
+          <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center xl:justify-end">
             <AdminPeriodSelector appearance="premium"
               value={period}
               range={dateRange}
@@ -277,10 +275,6 @@ function ResumenPage() {
                 setDateRange(nextRange);
               }}
             />
-
-            <span className={cn("hidden rounded-[var(--radius-control)] border px-3 py-1.5 text-xs text-text-secondary lg:inline-flex", premiumControlSurface)}>
-              {rangeLabel}
-            </span>
 
             <Badge
               variant="outline"
@@ -717,13 +711,6 @@ function AttentionItem({
       </Badge>
     </div>
   );
-}
-
-function formatDateShort(date: Date) {
-  return new Intl.DateTimeFormat("es", {
-    day: "2-digit",
-    month: "short",
-  }).format(date);
 }
 
 function formatActivityDate(value: string) {

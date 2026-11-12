@@ -5,6 +5,8 @@ import {
   Loader2, MapPinned, PackageCheck, RefreshCw, Truck, Users,
 } from "lucide-react";
 import { supabaseServices, type MarketplaceDriver } from "@/lib/services";
+import { cn } from "@/lib/utils";
+import { premiumSurface, premiumHeaderSurface, premiumControlSurface, premiumMetricSurface } from "@/components/admin/density";
 import {
   FLEET_SERVICE_CODES, matchingFleetDrivers, summarizeFleet, UNCLASSIFIED_CATEGORY,
 } from "@/lib/marketplace-fleet";
@@ -18,35 +20,31 @@ interface MarketplaceFleetPulseProps {
 const SERVICE_DESIGN = {
   passenger: {
     name: "Pasajeros", Icon: Users, Watermark: CarFront,
-    frame: "border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-background/75 to-background/45 hover:border-cyan-300/45",
+    frame: "hover:border-cyan-400/45",
     focused: "ring-1 ring-cyan-400/45 border-cyan-300/50",
     symbol: "border-cyan-400/25 bg-cyan-500/[0.12] text-cyan-200",
     ink: "text-cyan-300",
-    fog: "bg-cyan-500/[0.08]",
   },
   cargo: {
     name: "Carga", Icon: Truck, Watermark: Truck,
-    frame: "border-emerald-400/20 bg-gradient-to-br from-emerald-500/[0.09] via-background/75 to-background/45 hover:border-emerald-300/45",
+    frame: "hover:border-emerald-400/45",
     focused: "ring-1 ring-emerald-400/45 border-emerald-300/50",
     symbol: "border-emerald-400/25 bg-emerald-500/[0.12] text-emerald-200",
     ink: "text-emerald-300",
-    fog: "bg-emerald-500/[0.08]",
   },
   courier: {
     name: "Mensajería", Icon: PackageCheck, Watermark: PackageCheck,
-    frame: "border-amber-400/20 bg-gradient-to-br from-amber-500/[0.09] via-background/75 to-background/45 hover:border-amber-300/45",
+    frame: "hover:border-amber-400/45",
     focused: "ring-1 ring-amber-400/45 border-amber-300/50",
     symbol: "border-amber-400/25 bg-amber-500/[0.12] text-amber-200",
     ink: "text-amber-300",
-    fog: "bg-amber-500/[0.08]",
   },
   tourism: {
     name: "Turismo", Icon: MapPinned, Watermark: MapPinned,
-    frame: "border-violet-400/20 bg-gradient-to-br from-violet-500/[0.09] via-background/75 to-background/45 hover:border-violet-300/45",
+    frame: "hover:border-violet-400/45",
     focused: "ring-1 ring-violet-400/45 border-violet-300/50",
     symbol: "border-violet-400/25 bg-violet-500/[0.12] text-violet-200",
     ink: "text-violet-300",
-    fog: "bg-violet-500/[0.08]",
   },
 } as const;
 
@@ -114,12 +112,11 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
   };
 
   return (
-    <section aria-label="Conductores por modalidad y tipo de vehículo" className="relative overflow-hidden rounded-[28px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.035] via-background/65 to-violet-500/[0.025] p-3 shadow-[0_26px_76px_-57px_rgba(34,211,238,0.4)] sm:p-5 lg:p-6">
-      <Users aria-hidden="true" className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 text-cyan-300/[0.025]" strokeWidth={1} />
-      <div className="relative mb-3 flex flex-wrap items-start justify-between gap-2 sm:mb-5 sm:gap-3">
+    <section aria-label="Conductores por modalidad y tipo de vehículo" className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+      <div className="relative mb-3 flex flex-wrap items-start justify-between gap-2 sm:mb-3 sm:gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07] sm:h-12 sm:w-12 sm:rounded-2xl">
-            <Users className="h-6 w-6" />
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.09] text-cyan-200 shadow-inner shadow-cyan-500/[0.07] sm:h-9 sm:w-9">
+            <Users className="h-5 w-5" />
           </span>
           <div>
             <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85 sm:block">Equipo · Distribución de flota</p>
@@ -127,7 +124,7 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
             <p className="mt-1 hidden text-xs text-muted-foreground sm:block sm:text-sm">Selecciona una modalidad, después un tipo de vehículo, para ver sus conductores.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/55 px-2 py-1 text-[10px] text-muted-foreground sm:px-3 sm:py-2 sm:text-xs">
+        <div className={cn("flex items-center gap-2 rounded-xl border border-border/60 bg-surface-1 px-2 py-1 text-[10px] text-muted-foreground sm:px-3 sm:py-2 sm:text-xs", premiumControlSurface)}>
           <RefreshCw className={`h-3.5 w-3.5 ${fleet.isFetching ? "animate-spin" : ""}`} />
           {fleet.isLoading ? "Consultando flota" : fleet.isError ? "Sin conexión" : "Actualización automática"}
         </div>
@@ -149,17 +146,16 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
               const Watermark = design.Watermark;
               return (
                 <button key={code} type="button" aria-expanded={active} aria-controls="marketplace-fleet-vehicle-detail" onClick={() => chooseService(code)}
-                  className={`group relative min-h-[126px] w-full overflow-hidden rounded-[17px] border p-3 text-left shadow-[0_20px_55px_-44px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:min-h-[174px] sm:rounded-[23px] sm:p-4 ${design.frame} ${active ? design.focused : ""}`}>
-                  <span aria-hidden="true" className={`pointer-events-none absolute -right-12 -top-14 h-32 w-32 rounded-full blur-3xl ${design.fog}`} />
-                  <Watermark aria-hidden="true" strokeWidth={0.7} className={`pointer-events-none absolute -right-5 bottom-0 hidden h-36 w-36 rotate-[-11deg] opacity-[0.07] sm:block ${design.ink}`} />
+                  className={cn("group relative min-w-0 min-h-11 w-full overflow-hidden rounded-[var(--radius-card)] border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400", premiumMetricSurface, design.frame, active && design.focused)}>
+                  <Watermark aria-hidden="true" strokeWidth={1.5} className={`pointer-events-none absolute bottom-2 right-2 h-12 w-12 opacity-[0.06] sm:h-16 sm:w-16 dark:opacity-[0.07] ${design.ink}`} />
                   <div className="relative flex items-start justify-between gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl border sm:h-11 sm:w-11 sm:rounded-2xl ${design.symbol}`}><Icon className="h-5 w-5" /></div>
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${design.symbol}`}><Icon className="h-5 w-5" /></div>
                     <ChevronDown className={`mt-2 h-4 w-4 text-muted-foreground transition-transform ${active ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
                   </div>
-                  <div className="relative mt-2 sm:mt-4">
+                  <div className="relative mt-1.5">
                     <p className="text-sm font-semibold text-foreground">{design.name}</p>
                     {fleet.isLoading ? <Loader2 className="mt-2 h-6 w-6 animate-spin text-muted-foreground" /> : (
-                      <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl" aria-label={`${record?.total ?? 0} conductores`}>{record?.total ?? 0}</p>
+                      <p className="mt-1 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground" aria-label={`${record?.total ?? 0} conductores`}>{record?.total ?? 0}</p>
                     )}
                     <p className="mt-1 text-[10px] leading-snug text-muted-foreground sm:text-[11px]">{record?.active ?? 0} activos · {record?.categories.length ?? 0} tipos de vehículo</p>
                   </div>
@@ -170,7 +166,7 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
 
           <div id="marketplace-fleet-vehicle-detail" className="relative">
             {service && selected && selectedDesign && !fleet.isLoading ? (
-              <div className="mt-3 overflow-hidden rounded-[18px] border border-border/60 bg-background/55 p-3 backdrop-blur-sm sm:mt-4 sm:rounded-[23px] sm:p-5">
+              <div className={cn("mt-3 min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumHeaderSurface)}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{selectedDesign.name} · Tipos de vehículo</p>
@@ -186,12 +182,12 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
                       const active = category === item.code;
                       return (
                         <button type="button" key={item.code} aria-pressed={active} onClick={() => chooseCategory(item.code)}
-                          className={`group relative overflow-hidden rounded-[18px] border p-3.5 text-left transition duration-200 hover:border-cyan-400/35 hover:bg-cyan-500/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${active ? "border-cyan-400/50 bg-cyan-500/[0.09]" : "border-border/60 bg-background/45"}`}>
-                          <VehicleIcon aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-3 -bottom-6 h-24 w-24 text-cyan-300/[0.055]" />
+                          className={cn("group relative min-w-0 min-h-11 overflow-hidden rounded-[var(--radius-card)] border p-3 text-left transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", premiumSurface, active && "ring-1 ring-primary/50 border-primary/50")}>
+                          <VehicleIcon aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute bottom-2 right-2 h-12 w-12 text-primary opacity-[0.06]" />
                           <div className="relative flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
                               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200"><VehicleIcon className="h-5 w-5" /></span>
-                              <span className="min-w-0"><span className="block truncate text-sm font-semibold text-foreground">{vehicle.name}</span><span className="text-[11px] text-muted-foreground">{item.active} activos</span></span>
+                              <span className="min-w-0"><span className="block break-words text-sm font-semibold text-foreground">{vehicle.name}</span><span className="text-[11px] text-muted-foreground">{item.active} activos</span></span>
                             </div>
                             <span className="font-mono text-xl font-bold text-foreground">{item.total}</span>
                           </div>
@@ -203,7 +199,7 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
                     })}
                   </div>
                 ) : (
-                  <p className="mt-4 rounded-xl border border-border/50 bg-background/40 p-4 text-sm text-muted-foreground">Todavía no existen vehículos asignados a esta modalidad.</p>
+                  <p className={cn("mt-3 rounded-xl border p-3 text-sm text-muted-foreground", premiumSurface)}>Todavía no existen vehículos asignados a esta modalidad.</p>
                 )}
                 {category ? (
                   <div className="mt-5 border-t border-border/50 pt-4" aria-live="polite">
@@ -213,16 +209,16 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
                         <h5 className="mt-1 text-base font-semibold text-foreground">{selectedDesign.name} / {categoryDesign(category).name}</h5>
                         <p className="mt-1 text-xs text-muted-foreground">{filtered.length} conductores coinciden con esta selección</p>
                       </div>
-                      <button type="button" onClick={() => setCategory(null)} className="rounded-lg border border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">Quitar filtro de vehículo</button>
+                      <button type="button" onClick={() => setCategory(null)} className={cn("min-h-11 rounded-lg border bg-surface-1 px-3 py-2 text-xs font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400", premiumControlSurface)}>Quitar filtro de vehículo</button>
                     </div>
                     {filtered.length ? (
                       <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                         {filtered.slice(0, visibleCount).map((person) => (
                           <button type="button" key={person.userId} onClick={() => onOpenDriver(person.userId)}
-                            className="group flex items-center gap-3 rounded-[16px] border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.045] to-background/50 p-3 text-left transition hover:border-cyan-400/35 hover:from-cyan-500/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                            className={cn("group flex min-w-0 min-h-11 items-center gap-3 rounded-[var(--radius-card)] border p-3 text-left transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", premiumSurface)}
                             aria-label={`Abrir ficha 360 de ${person.displayName}`}>
                             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-500/[0.09] text-cyan-200"><Users className="h-4 w-4" /></span>
-                            <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-foreground">{person.displayName}</span>
+                            <span className="min-w-0 flex-1"><span className="block break-words text-sm font-semibold text-foreground">{person.displayName}</span>
                               <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{person.vehicleName || categoryDesign(person.vehicleCategoryCode || UNCLASSIFIED_CATEGORY).name} · {person.status === "active" ? "Activo" : person.status === "incomplete" ? "Incompleto" : person.status === "suspended" ? "Suspendido" : "Pendiente"}</span>
                             </span>
                             {person.status === "active" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" /> : null}
@@ -230,9 +226,9 @@ export default function MarketplaceFleetPulse({ projectId, enabled, onOpenDriver
                           </button>
                         ))}
                       </div>
-                    ) : <p className="mt-3 rounded-xl border border-border/50 p-3 text-sm text-muted-foreground">No hay conductores asociados a esta combinación.</p>}
+                    ) : <p className={cn("mt-3 rounded-xl border p-3 text-sm text-muted-foreground", premiumSurface)}>No hay conductores asociados a esta combinación.</p>}
                     {visibleCount < filtered.length ? (
-                      <button type="button" className="mt-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.08] px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/[0.13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400" onClick={() => setVisibleCount((amount) => amount + 12)}>
+                      <button type="button" className={cn("mt-3 min-h-11 rounded-xl border bg-surface-1 px-4 py-2 text-sm font-semibold text-primary transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", premiumControlSurface)} onClick={() => setVisibleCount((amount) => amount + 12)}>
                         Mostrar más conductores ({filtered.length - visibleCount} restantes)
                       </button>
                     ) : null}
