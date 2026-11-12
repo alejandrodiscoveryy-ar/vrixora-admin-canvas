@@ -8,6 +8,8 @@ import {
   Loader2,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Monitor,
   Moon,
   Sun,
@@ -39,6 +41,7 @@ import type { ProjectPermission } from "@/lib/services";
 import { projectIconVariantUrl } from "@/lib/project-icon-variants";
 
 const PRICING_VIEWS = PRICING_WORKSPACE_VIEWS;
+const DESKTOP_SIDEBAR_PREFERENCE = "vrixora-admin-sidebar-collapsed";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -84,6 +87,21 @@ function AdminChrome() {
   const { data: currentProject } = useProject(currentProjectId);
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setSidebarCollapsed(localStorage.getItem(DESKTOP_SIDEBAR_PREFERENCE) === "true");
+    } catch { /* storage may be unavailable */ }
+  }, []);
+
+  function toggleDesktopSidebar() {
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    try {
+      localStorage.setItem(DESKTOP_SIDEBAR_PREFERENCE, String(next));
+    } catch { /* preference is optional */ }
+  }
 
   useEffect(() => {
     if (!loading && !user && !isLogin) {
@@ -113,11 +131,14 @@ function AdminChrome() {
           currentProjectId={currentProjectId}
           currentSection={currentSection}
           compact={compactWorkspace}
+          collapsed={sidebarCollapsed}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
             user={user}
             onMenuOpen={() => setMobileDrawerOpen(true)}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={toggleDesktopSidebar}
             project={currentProject ?? null}
           />
           <main
@@ -154,6 +175,7 @@ function ProjectNavItem({
   currentSection,
   path,
   closeDrawer,
+  collapsed = false,
 }: {
   project: {
     id: string;
@@ -167,6 +189,7 @@ function ProjectNavItem({
   currentSection: string;
   path: string;
   closeDrawer?: () => void;
+  collapsed?: boolean;
 }) {
   const isActiveProject = project.id === currentProjectId;
   const navigate = useNavigate();
@@ -218,7 +241,7 @@ function ProjectNavItem({
   return (
     <div className="space-y-1">
       <div
-        className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+        className={`group flex items-center justify-between rounded-xl text-sm font-medium transition-all ${collapsed ? "p-1" : "px-3 py-2.5"} ${
           isActiveProject
             ? "bg-primary/10 text-primary ring-1 ring-primary/25 font-semibold shadow-xs"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
@@ -228,7 +251,8 @@ function ProjectNavItem({
           to="/admin/proyectos/$id"
           params={{ id: project.id }}
           onClick={closeDrawer}
-          className="flex min-w-0 flex-1 items-center gap-3"
+          title={project.name}
+          className={`flex min-w-0 flex-1 items-center ${collapsed ? "justify-center" : "gap-3"}`}
         >
           <span
             className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors ${
@@ -247,9 +271,9 @@ function ProjectNavItem({
               <FolderKanban className="h-4 w-4" />
             )}
           </span>
-          <span className="truncate">{project.name}</span>
+          <span className={collapsed ? "sr-only" : "truncate"}>{project.name}</span>
         </Link>
-        <button
+        {!collapsed && <button
           type="button"
           onClick={(e) => {
             e.preventDefault();
@@ -262,11 +286,11 @@ function ProjectNavItem({
           <ChevronRight
             className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
           />
-        </button>
+        </button>}
       </div>
 
-      {expanded && visibleTabs.length > 0 && (
-        <div className="ml-4 pl-3 border-l border-border/60 space-y-1 my-1">
+      {(collapsed ? isActiveProject : expanded) && visibleTabs.length > 0 && (
+        <div data-nav-nested className="ml-4 pl-3 border-l border-border/60 space-y-1 my-1">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
 
@@ -276,12 +300,12 @@ function ProjectNavItem({
               return (
                 <div key="trabajos" className="space-y-1">
                   <details className="group/workspace" open={groupActive || undefined}>
-                    <summary className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all [&::-webkit-details-marker]:hidden ${groupActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
+                    <summary title="Trabajos" className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all [&::-webkit-details-marker]:hidden ${groupActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
                       <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate">Trabajos</span>
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open/workspace:rotate-90" />
+                      <span data-nav-label className="min-w-0 flex-1 truncate">Trabajos</span>
+                      <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/workspace:rotate-90" />
                     </summary>
-                    <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas de Trabajos">
+                    <div data-nav-nested className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas de Trabajos">
                       {MARKETPLACE_WORKSPACE_VIEWS.filter((view) => permissions.includes(view.permission)).map((view) => {
                         const ViewIcon = view.icon;
                         const viewActive = groupActive && (workspaceView === view.slug || (!workspaceView && view.slug === "resumen"));
@@ -291,12 +315,13 @@ function ProjectNavItem({
                             to="/admin/proyectos/$id/$section"
                             params={{ id: project.id, section: "trabajos" }}
                             search={{ vista: view.slug }}
+                            title={view.label}
                             onClick={closeDrawer}
                             aria-current={viewActive ? "page" : undefined}
                             className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${viewActive ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
                           >
                             <ViewIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{view.label}</span>
+                            <span data-nav-label className="truncate">{view.label}</span>
                           </Link>
                         );
                       })}
@@ -314,6 +339,7 @@ function ProjectNavItem({
                 <div key="centro-precios" className="space-y-1">
                   <details open={groupActive || undefined} className="group/admin">
                     <summary
+                      title="Centro de precios"
                       onClick={() => {
                         if (!groupActive) {
                           void navigate({ to: "/admin/proyectos/$id/$section", params: { id: project.id, section: "planes" }, search: { precio: "global" } });
@@ -323,10 +349,10 @@ function ProjectNavItem({
                       className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all [&::-webkit-details-marker]:hidden ${groupActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate">Centro de precios</span>
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
+                      <span data-nav-label className="min-w-0 flex-1 truncate">Centro de precios</span>
+                      <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
-                    <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas del Centro de precios">
+                    <div data-nav-nested className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas del Centro de precios">
                       {PRICING_VIEWS.map((view) => {
                         const ViewIcon = view.icon;
                         const selected = groupActive && (pricingView === view.code || (!pricingView && view.code === "global"));
@@ -336,12 +362,13 @@ function ProjectNavItem({
                             to="/admin/proyectos/$id/$section"
                             params={{ id: project.id, section: "planes" }}
                             search={{ precio: view.code }}
+                            title={view.label}
                             onClick={closeDrawer}
                             aria-current={selected ? "page" : undefined}
                             className={`flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${selected ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
                           >
                             <ViewIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{view.label}</span>
+                            <span data-nav-label className="truncate">{view.label}</span>
                           </Link>
                         );
                       })}
@@ -366,6 +393,7 @@ function ProjectNavItem({
                 <div key={tab.slug} className="space-y-1">
                   <details open={groupActive || undefined} className="group/admin">
                     <summary
+                      title={tab.label}
                       className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all [&::-webkit-details-marker]:hidden ${
                         groupActive
                           ? "bg-primary/10 text-primary font-semibold"
@@ -373,11 +401,11 @@ function ProjectNavItem({
                       }`}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate">{tab.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
+                      <span data-nav-label className="min-w-0 flex-1 truncate">{tab.label}</span>
+                      <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
 
-                    <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2">
+                    <div data-nav-nested className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2">
                       {tab.children.map((child) => {
                         const ChildIcon = child.icon;
                         const childPath = `${projectBasePath}/${child.slug}`;
@@ -394,6 +422,7 @@ function ProjectNavItem({
                               id: project.id,
                               section: child.slug,
                             }}
+                            title={child.label}
                             onClick={closeDrawer}
                             className={`flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                               childActive
@@ -402,7 +431,7 @@ function ProjectNavItem({
                             }`}
                           >
                             <ChildIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{child.label}</span>
+                            <span data-nav-label className="truncate">{child.label}</span>
                           </Link>
                         );
                       })}
@@ -422,6 +451,7 @@ function ProjectNavItem({
                 key={tab.slug || "resumen"}
                 to={tab.slug ? "/admin/proyectos/$id/$section" : "/admin/proyectos/$id"}
                 params={tab.slug ? { id: project.id, section: tab.slug } : { id: project.id }}
+                title={tab.label}
                 onClick={closeDrawer}
                 className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                   active
@@ -430,7 +460,7 @@ function ProjectNavItem({
                 }`}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{tab.label}</span>
+                <span data-nav-label className="truncate">{tab.label}</span>
               </Link>
             );
           })}
@@ -447,6 +477,7 @@ function DesktopSidebar({
   currentProjectId,
   currentSection,
   compact,
+  collapsed,
 }: {
   projects: Awaited<ReturnType<typeof useUserProjects>>["data"] | undefined;
   projectsLoading: boolean;
@@ -454,27 +485,31 @@ function DesktopSidebar({
   currentProjectId: string | null;
   currentSection: string;
   compact: boolean;
+  collapsed: boolean;
 }) {
   return (
         <aside
-      className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 lg:flex ${
-        compact ? "w-[208px]" : "w-[272px]"
+      id="admin-desktop-sidebar"
+      aria-label="Navegación principal"
+      data-state={collapsed ? "collapsed" : "expanded"}
+      className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 motion-reduce:transition-none lg:flex ${
+        collapsed ? "w-16" : compact ? "w-[208px]" : "w-[272px]"
       }`}
     >
             <div
         className={`border-b border-sidebar-border/80 ${
-          compact ? "px-3.5 py-4" : "px-5 py-5"
+          collapsed ? "px-2 py-4" : compact ? "px-3.5 py-4" : "px-5 py-5"
         }`}
       >
-        <Link to="/admin/proyectos" className={`flex items-center ${compact ? "gap-2.5" : "gap-3"}`}>
+        <Link to="/admin/proyectos" title="VRIXORA · Centro de control" aria-label="VRIXORA · Centro de control" className={`flex items-center ${collapsed ? "justify-center" : compact ? "gap-2.5" : "gap-3"}`}>
                     <div
             className={`flex items-center justify-center rounded-xl bg-black ring-1 ring-primary/30 shadow-[0_0_24px_-8px_var(--primary)] ${
-              compact ? "h-9 w-9" : "h-11 w-11"
+              collapsed || compact ? "h-9 w-9" : "h-11 w-11"
             }`}
           >
             <VrixoraLogo variant="mark" size={compact ? 24 : 28} />
           </div>
-          <div>
+          <div className={collapsed ? "sr-only" : "min-w-0"}>
             <div className="text-sm font-semibold tracking-[0.22em] text-gradient">VRIXORA</div>
             <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
               Centro de control
@@ -485,7 +520,7 @@ function DesktopSidebar({
 
             <nav
         className={`flex-1 space-y-1 overflow-y-auto ${
-          compact ? "p-2.5" : "p-3.5"
+          collapsed ? "overflow-x-hidden p-2 [&_[data-nav-nested]]:ml-0 [&_[data-nav-nested]]:border-0 [&_[data-nav-nested]]:pl-0 [&_[data-nav-label]]:sr-only [&_[data-nav-chevron]]:hidden [&_summary]:justify-center [&_summary]:gap-0 [&_summary]:px-1 [&_[data-nav-nested]_a]:justify-center [&_[data-nav-nested]_a]:gap-0 [&_[data-nav-nested]_a]:px-1" : compact ? "p-2.5" : "p-3.5"
         }`}
       >
         <DesktopLink
@@ -493,10 +528,11 @@ function DesktopSidebar({
           icon={LayoutDashboard}
           label="Proyectos"
           active={path === "/admin/proyectos"}
+          collapsed={collapsed}
         />
                 <div
           className={`px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 ${
-            compact ? "mb-2 mt-4" : "mb-2.5 mt-7"
+            collapsed ? "sr-only" : compact ? "mb-2 mt-4" : "mb-2.5 mt-7"
           }`}
         >
           Espacios de trabajo
@@ -513,6 +549,7 @@ function DesktopSidebar({
               currentProjectId={currentProjectId}
               currentSection={currentSection}
               path={path}
+              collapsed={collapsed}
             />
           ))
         )}
@@ -520,9 +557,14 @@ function DesktopSidebar({
 
             <div
         className={`border-t border-sidebar-border/80 ${
-          compact ? "p-2.5" : "p-3.5"
+          collapsed ? "p-2" : compact ? "p-2.5" : "p-3.5"
         }`}
       >
+        {collapsed ? (
+          <div title="Sistema operativo" aria-label="Sistema operativo" className="flex h-10 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] text-emerald-300">
+            <Activity className="h-4 w-4" aria-hidden="true" />
+          </div>
+        ) : (
         <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
           <div className="flex items-center gap-2 text-xs font-medium text-emerald-300">
             <Activity className="h-3.5 w-3.5" />
@@ -532,6 +574,7 @@ function DesktopSidebar({
             Datos sincronizados con Supabase
           </p>
         </div>
+        )}
       </div>
     </aside>
   );
@@ -657,10 +700,14 @@ function TopBar({
   user,
   project,
   onMenuOpen,
+  sidebarCollapsed,
+  onToggleSidebar,
 }: {
   user: NonNullable<ReturnType<typeof useSupabaseAuth>["user"]>;
   project: Awaited<ReturnType<typeof useProject>>["data"] | null;
   onMenuOpen: () => void;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 }) {
   const navigate = useNavigate();
   const { signOut } = useSupabaseAuth();
@@ -687,6 +734,19 @@ function TopBar({
         onClick={onMenuOpen}
       >
         <Menu className="h-5 w-5" />
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="hidden shrink-0 text-muted-foreground hover:text-foreground lg:inline-flex"
+        aria-controls="admin-desktop-sidebar"
+        aria-expanded={!sidebarCollapsed}
+        aria-label={sidebarCollapsed ? "Desplegar menú lateral" : "Contraer menú lateral"}
+        title={sidebarCollapsed ? "Desplegar menú lateral" : "Contraer menú lateral"}
+        onClick={onToggleSidebar}
+      >
+        {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
       </Button>
 
       <Link to="/admin/proyectos" className="flex min-w-0 items-center gap-2 lg:hidden">
@@ -753,16 +813,20 @@ function DesktopLink({
   icon: Icon,
   label,
   active,
+  collapsed,
 }: {
   to: string;
   icon: LucideIcon;
   label: string;
   active: boolean;
+  collapsed: boolean;
 }) {
   return (
     <Link
       to={to}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+      title={label}
+      aria-current={active ? "page" : undefined}
+      className={`group flex items-center rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center p-1" : "gap-3 px-3 py-2.5"} ${
         active
           ? "bg-primary/10 text-primary ring-1 ring-primary/20"
           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
@@ -775,14 +839,14 @@ function DesktopLink({
       >
         <Icon className="h-4 w-4" />
       </span>
-      <span className="truncate">{label}</span>
-      <ChevronRight
+      <span className={collapsed ? "sr-only" : "truncate"}>{label}</span>
+      {!collapsed && <ChevronRight
         className={`ml-auto h-3.5 w-3.5 transition-all ${
           active
             ? "translate-x-0 opacity-100"
             : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-60"
         }`}
-      />
+      />}
     </Link>
   );
 }

@@ -8,6 +8,7 @@ on:
       - 'src/features/admin/MarketplaceRadarReadinessCard.tsx'
       - 'src/features/admin/MarketplaceCustomerCareWorkspace.tsx'
       - 'src/routes/admin.proyectos.$id.index.tsx'
+      - 'src/routes/admin.tsx'
       - 'src/features/admin/MarketplaceOperationalMap.tsx'
       - 'src/features/admin/MarketplaceConfigurationWorkspace.tsx'
       - 'src/lib/services/types.ts'
@@ -19,6 +20,8 @@ on:
       - 'tests/marketplace_territorial_poi.test.mjs'
       - 'tests/admin_mobile_map_compact.test.mjs'
       - 'tests/admin_map_hidden_polling.test.mjs'
+      - 'tests/admin_sidebar_collapse.test.mjs'
+      - 'tests/admin_workspace_sidebar_navigation.test.mjs'
       - 'tests/admin_mobile_summary.test.mjs'
       - 'tests/admin_mobile_workspace.test.mjs'
       - 'tests/admin_customer_datetime.test.mjs'
@@ -47,7 +50,7 @@ jobs:
       - name: Pruebas geograficas
         run: python tests/test_territory_geometry.py
       - name: Pruebas de contratos
-        run: node --test tests/marketplace_territorial_poi.test.mjs tests/marketplace_config_territory_premium.test.mjs tests/marketplace_config_compacto_jerarquia.test.mjs tests/admin_mobile_map_compact.test.mjs tests/admin_map_hidden_polling.test.mjs tests/admin_mobile_summary.test.mjs tests/admin_mobile_workspace.test.mjs tests/admin_customer_datetime.test.mjs tests/admin_mobile_finances.test.mjs tests/admin_radar_compact.test.mjs tests/admin_operations_radar_card.test.mjs tests/admin_marketplace_radar_analytics.test.mjs tests/admin_job_premium_360.test.mjs tests/driver_directory_search_filters.test.mjs
+        run: node --test tests/marketplace_territorial_poi.test.mjs tests/marketplace_config_territory_premium.test.mjs tests/marketplace_config_compacto_jerarquia.test.mjs tests/admin_mobile_map_compact.test.mjs tests/admin_map_hidden_polling.test.mjs tests/admin_sidebar_collapse.test.mjs tests/admin_workspace_sidebar_navigation.test.mjs tests/admin_mobile_summary.test.mjs tests/admin_mobile_workspace.test.mjs tests/admin_customer_datetime.test.mjs tests/admin_mobile_finances.test.mjs tests/admin_radar_compact.test.mjs tests/admin_operations_radar_card.test.mjs tests/admin_marketplace_radar_analytics.test.mjs tests/admin_job_premium_360.test.mjs tests/driver_directory_search_filters.test.mjs
       - name: Setup Bun 1.4.2
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
