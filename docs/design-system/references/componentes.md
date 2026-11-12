@@ -25,3 +25,16 @@ Buscar primero en src/components, src/components/ui, rutas y estilos globales. R
 - Aplicar rúbrica de auditoria-admin.md; no afirmar que un componente existe o está migrado sin evidencia.
 
 La biblioteca de esta guía es una especificación. No crea componentes ejecutables ni cambia la aplicación por sí misma.
+
+## Fase 1 — implementación piloto (12-11-2026)
+
+Contrato de densidad compartida en `src/components/admin/density.ts`: `density="compact"` opt-in; `comfortable` conserva la presentación predeterminada. Componentes adaptados: ModuleHeader, SectionCard, MetricCard, AdminDataTableShell, FilterToolbar, DataToolbar y EmptyState. Los dos toolbars aceptan `embedded` para evitar superficie, borde, sombra y padding duplicados dentro de la cabecera de tabla. Las tarjetas compactas utilizan los tokens existentes, padding 12–16 px y no dependen de blur; las acciones de toolbar en móvil tienen objetivo de 44 px. KPI compactos permiten envolver importes y detalles, sin truncarlos deliberadamente. No se ha cambiado el componente Card base ni sus atributos globales: la normalización de data-slot queda pendiente de inventario de efectos en consumidores.
+
+Pilotos: PagosSection y ClientesSection (Usuarios app, incluidas sus ramas de proyecto). Se mantienen flujos, consultas, cálculos, filtros, permisos, acciones y contenido. Los demás módulos siguen usando el comportamiento anterior hasta su migración explícita.
+
+### Verificación obligatoria antes de extender
+- Confirmar compilación y checks del PR; comparar diffs y comprobar consumidores no migrados.
+- Revisar Pagos y Usuarios app a 360/390/768/1024/1440 px, claro y oscuro; sidebar abierta/cerrada; datos largos, filtros múltiples, tablas vacías y acciones táctiles.
+- Probar búsqueda, limpiar filtros, paginación, expansión/acciones móviles y accesos existentes. Comprobar importes y estados financieros intactos.
+- Medir cabecera, área visible, padding y filas antes/después; no emitir puntuación definitiva sin captura y prueba funcional.
+- Registrar pendientes y excepciones; la adopción de variantes no constituye certificación visual. No desplegar ni integrar sin autorización y controles vigentes.
