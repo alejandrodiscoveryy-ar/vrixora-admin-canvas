@@ -154,5 +154,8 @@ export function MetricCard({
 
 function safeMetricValue(value: string | number, fallback: string): string | number {
   if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
-  return /(?:NaN|(?:^|[^a-z])Infinity|undefined)/i.test(value) ? fallback : value;
+  // Reject invalid numeric tokens without matching parts of valid words (e.g. Finanzas).
+  return /(?:^|[^\p{L}\p{N}_])(?:NaN|[+-]?Infinity|undefined)(?=$|[^\p{L}\p{N}_])/iu.test(value)
+    ? fallback
+    : value;
 }
