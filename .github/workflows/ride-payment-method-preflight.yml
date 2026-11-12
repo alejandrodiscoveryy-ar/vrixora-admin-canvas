@@ -1,0 +1,40 @@
+name: Verify ride payment method in isolated PostgreSQL
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/drafts/ride_payment_method_20261112.sql'
+      - 'supabase/verification/ride_payment_method_isolated.sql'
+      - 'supabase/migrations/*_ride_payment_method.sql'
+      - '.github/workflows/ride-payment-method-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture_only
+          POSTGRES_DB: ride_payment_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: fixture_only
+      PGDATABASE: ride_payment_fixture
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Install PostgreSQL client if needed
+        run: command -v psql >/dev/null || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+      - name: Verify SQL and permissions on disposable database
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/ride_payment_method_isolated.sql
