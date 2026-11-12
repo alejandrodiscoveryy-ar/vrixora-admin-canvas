@@ -116,7 +116,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
   return (
     <div className="space-y-3">
       {!premium ? (
-        <ModuleHeader
+        <ModuleHeader density="compact" appearance="premium"
           title="Comunicados"
           description="Envía avisos y actualizaciones de TukTuk Control a los dispositivos Android elegibles."
           icon={Megaphone}
@@ -124,7 +124,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         />
       ) : null}
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Audiencia de notificaciones"
         description="Se incluyen clientes con licencia activa y al menos un dispositivo Android con notificaciones habilitadas."
         module="configuracion"
@@ -157,7 +157,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         )}
       </SectionCard>
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Nuevo comunicado"
         description={premium ? undefined : "El envío se registra y el backend valida nuevamente el permiso de configuración."}
         module="configuracion"
