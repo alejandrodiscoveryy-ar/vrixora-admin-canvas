@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { compactToolbarControls, compactToolbarSurface, embeddedToolbarSurface, type AdminDensity } from "./density";
+import { compactToolbarControls, compactToolbarSurface, embeddedToolbarSurface, premiumControlSurface, type AdminAppearance, type AdminDensity } from "./density";
 
 export function DataToolbar({
   searchValue,
@@ -17,6 +17,7 @@ export function DataToolbar({
   className,
   density = "comfortable",
   embedded = false,
+  appearance = "standard",
 }: {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -29,6 +30,7 @@ export function DataToolbar({
   className?: string;
   density?: AdminDensity;
   embedded?: boolean;
+  appearance?: AdminAppearance;
 }) {
   return (
     <div
@@ -50,7 +52,7 @@ export function DataToolbar({
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
-              className="pl-9"
+              className={cn("pl-9", appearance === "premium" && premiumControlSurface)}
             />
           </div>
         ) : null}
