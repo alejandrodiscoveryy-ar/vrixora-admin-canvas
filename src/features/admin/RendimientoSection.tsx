@@ -320,7 +320,7 @@ export default function RendimientoSection({
   }
 
   return (
-    <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.82)] sm:p-3">
+    <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.82)] sm:p-3 admin-graphite-inset">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/72 via-background/87 to-background/96" />
 
       <img
@@ -334,7 +334,7 @@ export default function RendimientoSection({
       <div className="pointer-events-none absolute -bottom-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-violet-500/[0.055] blur-3xl" />
 
       <div className="relative z-10 space-y-3.5 md:space-y-4">
-      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.09] via-background/60 to-violet-500/[0.055] p-3 shadow-[0_22px_64px_-46px_rgba(34,211,238,0.78)] backdrop-blur-xl">
+      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.09] via-background/60 to-violet-500/[0.055] p-3 shadow-[0_22px_64px_-46px_rgba(34,211,238,0.78)] backdrop-blur-xl admin-graphite-panel">
         <img
           src="/admin-premium/analytics.svg"
           alt=""
@@ -365,7 +365,7 @@ export default function RendimientoSection({
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center xl:justify-end">
-            <AdminPeriodSelector
+            <AdminPeriodSelector appearance="premium"
               value={period}
               range={dateRange}
               onChange={(nextPeriod, nextRange) => {
@@ -438,7 +438,7 @@ export default function RendimientoSection({
         />
       ) : null}
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Usuarios app"
         description="Registro, acceso y retorno de usuarios"
         module="rendimiento"
@@ -453,7 +453,7 @@ export default function RendimientoSection({
           className="pointer-events-none absolute -right-12 top-4 h-52 w-[48%] object-contain object-right opacity-[0.08] mix-blend-screen"
         />
         <KpiGrid columns={4} density="compact" className="relative z-10">
-          <MetricCard
+          <MetricCard density="compact" appearance="premium"
             label="Registros nuevos"
             value={currentTotals.newUsers}
             comparison={compare(
@@ -464,7 +464,7 @@ export default function RendimientoSection({
             module="rendimiento"
           />
 
-          <MetricCard
+          <MetricCard density="compact" appearance="premium"
             label="Accesos"
             value={currentTotals.logins}
             comparison={compare(
@@ -475,7 +475,7 @@ export default function RendimientoSection({
             module="rendimiento"
           />
 
-          <MetricCard
+          <MetricCard density="compact" appearance="premium"
             label="Retención 7 días"
             value={`${retention.data?.retention7Rate ?? 0}%`}
             comparison={`${retention.data?.retained7 ?? 0} de ${
@@ -485,7 +485,7 @@ export default function RendimientoSection({
             semanticState="info"
           />
 
-          <MetricCard
+          <MetricCard density="compact" appearance="premium"
             label="Retención 30 días"
             value={`${retention.data?.retention30Rate ?? 0}%`}
             comparison={`${retention.data?.retained30 ?? 0} de ${
@@ -497,7 +497,7 @@ export default function RendimientoSection({
         </KpiGrid>
       </SectionCard>
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Captación comercial"
         description="Conversión de personas interesadas a usuarios registrados"
         module="comercial"
@@ -513,7 +513,7 @@ export default function RendimientoSection({
         />
         {canViewCommercial ? (
           <KpiGrid columns={5} density="compact" className="relative z-10">
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Leads"
               value={periodLeads.length}
               comparison="Captados en el período"
@@ -521,7 +521,7 @@ export default function RendimientoSection({
               module="comercial"
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Contactados"
               value={contactedLeads}
               comparison="Con interacción"
@@ -529,7 +529,7 @@ export default function RendimientoSection({
               module="comercial"
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Interesados"
               value={interestedLeads}
               comparison="Con interés identificado"
@@ -537,7 +537,7 @@ export default function RendimientoSection({
               module="comercial"
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Registrados"
               value={registeredLeads}
               comparison="Convertidos en usuarios"
@@ -545,7 +545,7 @@ export default function RendimientoSection({
               semanticState="success"
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Conversión"
               value={
                 commercialConversion === null
@@ -558,7 +558,7 @@ export default function RendimientoSection({
             />
           </KpiGrid>
         ) : (
-          <EmptyState
+          <EmptyState density="compact" appearance="premium"
             icon={Megaphone}
             title="Sin acceso a Comercial"
             description="No tienes permisos para consultar la captación comercial."
@@ -568,7 +568,7 @@ export default function RendimientoSection({
         )}
       </SectionCard>
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Marketplace actual"
         description="Estado operativo en este momento"
         module="rendimiento"
@@ -584,7 +584,7 @@ export default function RendimientoSection({
         />
         {canViewMarketplace ? (
           <KpiGrid columns={4} density="compact" className="relative z-10">
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Conductores activos"
               value={overview?.driversActive ?? 0}
               comparison={`De ${overview?.driversTotal ?? 0} registrados`}
@@ -592,7 +592,7 @@ export default function RendimientoSection({
               semanticState="info"
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Trabajos activos"
               value={overview?.jobsActive ?? 0}
               comparison={`${overview?.jobsPublished ?? 0} publicados`}
@@ -600,7 +600,7 @@ export default function RendimientoSection({
               module="rendimiento"
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Incidencias abiertas"
               value={overview?.jobsIncidentOpen ?? 0}
               comparison={`${overview?.jobsIncidentResolved ?? 0} resueltas`}
@@ -612,7 +612,7 @@ export default function RendimientoSection({
               }
             />
 
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Recargas pendientes"
               value={overview?.pendingTopups ?? 0}
               comparison="Pendientes de gestión"
@@ -625,7 +625,7 @@ export default function RendimientoSection({
             />
           </KpiGrid>
         ) : (
-          <EmptyState
+          <EmptyState density="compact" appearance="premium"
             icon={BriefcaseBusiness}
             title="Sin acceso a Marketplace"
             description="No tienes permisos para consultar la operación."
@@ -636,7 +636,7 @@ export default function RendimientoSection({
       </SectionCard>
 
       <section className="grid gap-3 xl:grid-cols-2">
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Registros y accesos"
           description="Evolución de altas y accesos a la aplicación"
           module="rendimiento"
@@ -698,7 +698,7 @@ export default function RendimientoSection({
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact" appearance="premium"
               icon={BarChart3}
               title="Sin datos de usuarios"
               description="No hay registros o accesos para el período seleccionado."
@@ -708,7 +708,7 @@ export default function RendimientoSection({
           )}
         </SectionCard>
 
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Fuentes de captación"
           description="Origen de los leads del período seleccionado"
           module="comercial"
@@ -767,7 +767,7 @@ export default function RendimientoSection({
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact" appearance="premium"
               icon={Megaphone}
               title="Sin datos de captación"
               description="No hay fuentes comerciales para el período y filtros seleccionados."
