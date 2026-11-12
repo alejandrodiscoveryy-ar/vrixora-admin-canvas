@@ -7,6 +7,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const rateLimitCategory: Record<string, string> = {
   start_session: "session",
   services: "read",
+  working_fleet: "read",
   create_request: "request",
   publish: "publish",
   get_job: "read",
@@ -50,10 +51,55 @@ Deno.serve(async (request) => {
     const { data: settings, error: settingsError } = await supabase.from("marketplace_customer_abuse_settings").select("captcha_required,captcha_provider").eq("project_id", project.id).maybeSingle();
     if (settingsError) throw settingsError;
     if (settings?.captcha_required) await verifyCaptcha(body.captcha_token, settings.captcha_provider);
-    const identity = await hmac(`${category}:${clientIp}`, rateSecret);
+    // Separate polling from booking/search budgets; still use trusted IP limits.
+    const identity = await hmac(`${operation === "working_fleet" ? "fleet-read" : category}:${clientIp}`, rateSecret);
     const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
     const params = { ...(body.params ?? {}) };
+    if (operation === "working_fleet") {
+      // Require an existing customer session; never expose the private GPS table.
+      if (typeof params.target_session_id !== "string" ||
+          typeof params.target_session_token !== "string") {
+        throw new Error("CUSTOMER_SESSION_REQUIRED");
+      }
+      const { error: sessionError } = await supabase.rpc("list_marketplace_customer_history", {
+        target_session_id: params.target_session_id,
+        target_session_token: params.target_session_token,
+        target_limit: 1,
+      });
+      if (sessionError) throw sessionError;
+      // One current assignment per driver. Keep last GPS regardless of its age.
+      // The inner joins enforce active assignments, drivers and vehicles.
+      const { data, error } = await supabase.from("marketplace_driver_locations")
+        .select("latitude,longitude,assignment:driver_vehicle_assignments!inner(is_active,accepting_jobs,profile:driver_profiles!inner(status,activated_at,suspended_at),vehicle:vehicles!inner(marketplace_status,deleted_at))")
+        .eq("project_id", project.id)
+        .eq("assignment.is_active", true)
+        .eq("assignment.accepting_jobs", true)
+        .eq("assignment.profile.status", "active")
+        .not("assignment.profile.activated_at", "is", null)
+        .is("assignment.profile.suspended_at", null)
+        .eq("assignment.vehicle.marketplace_status", "active")
+        .is("assignment.vehicle.deleted_at", null)
+        .order("driver_user_id")
+        .order("vehicle_id")
+        .limit(1000);
+      if (error) throw error;
+      // A ~330 m grid in Cuba: approximate positions, no IDs, timestamps,
+      // assignment status or other personal fields in the response.
+      // Sort by coordinates, not driver identity; identical cells may overlap.
+      const points = (data ?? []).flatMap((row) => {
+        if (row.latitude == null || row.longitude == null) return [];
+        const lat = Number(row.latitude);
+        const lon = Number(row.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) ||
+            lat < 18 || lat > 24.5 || lon < -85.5 || lon > -73) return [];
+        return [{ latitude: Number((Math.round(lat / 0.003) * 0.003).toFixed(3)),
+          longitude: Number((Math.round(lon / 0.003) * 0.003).toFixed(3)) }];
+      }).sort((a, b) => a.latitude - b.latitude || a.longitude - b.longitude);
+      return new Response(JSON.stringify({ data: points }), {
+        headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
     // Older clients can still request transport, but their browser-supplied
     // distance cannot influence the commercial quote.
     if (operation === "create_request") {
