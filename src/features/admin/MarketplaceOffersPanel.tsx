@@ -297,7 +297,7 @@ export default function MarketplaceOffersPanel({
   return (
     <section className="space-y-6">
       <MarketplaceWelcomePolicyPanel projectId={projectId} canView={canViewPolicy} canEdit={canEditPolicy} />
-      <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-300/25 bg-gradient-to-br from-[#17152b] via-[#0e162b] to-[#0b2030] p-5 shadow-[0_24px_70px_-45px_rgba(107,70,208,0.65)] sm:p-6">
+      <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-300/25 bg-gradient-to-br from-[#17152b] via-[#0e162b] to-[#0b2030] p-3 shadow-[0_24px_70px_-45px_rgba(107,70,208,0.65)] sm:p-3 admin-graphite-panel">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
         <img
           src="/admin-premium/comercial-ofertas-hero.svg"
@@ -365,7 +365,7 @@ export default function MarketplaceOffersPanel({
 
       {editing && canEdit && (
         <form
-          className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/25 bg-gradient-to-br from-[#17142a] via-[#101627] to-[#0a1d29] p-4 shadow-[0_24px_72px_-48px_rgba(139,92,246,0.44)] sm:p-6"
+          className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/25 bg-gradient-to-br from-[#17142a] via-[#101627] to-[#0a1d29] p-4 shadow-[0_24px_72px_-48px_rgba(139,92,246,0.44)] sm:p-3 admin-graphite-panel"
           onSubmit={(event) => {
             event.preventDefault();
             save.mutate();
@@ -391,7 +391,7 @@ export default function MarketplaceOffersPanel({
               Cerrar
             </Button>
           </div>
-          <div className="grid gap-4 rounded-[22px] border border-violet-400/25 bg-[#080c1b]/85 p-4 shadow-inner shadow-violet-500/[0.05] md:grid-cols-2 sm:p-5">
+          <div className="grid gap-4 rounded-[22px] border border-violet-400/25 bg-[#080c1b]/85 p-4 shadow-inner shadow-violet-500/[0.05] md:grid-cols-2 sm:p-5 admin-graphite-control">
             <div className="flex items-center gap-3 border-b border-white/10 pb-3 md:col-span-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">01</span>
               <div><p className="text-base font-bold text-white">Identidad y vigencia</p><p className="text-xs text-slate-400">Nombre, tipo de promoción y fechas de captación.</p></div>
@@ -571,7 +571,7 @@ export default function MarketplaceOffersPanel({
               </div>
             )}
           </div>
-          <div className="rounded-[22px] border border-cyan-400/25 bg-[#08111d]/90 p-4 shadow-[0_20px_55px_-43px_rgba(34,211,238,0.28)] sm:p-5">
+          <div className="rounded-[22px] border border-cyan-400/25 bg-[#08111d]/90 p-4 shadow-[0_20px_55px_-43px_rgba(34,211,238,0.28)] sm:p-5 admin-graphite-inset">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">03</span><Users className="h-5 w-5 text-cyan-200" /> <span className="text-base font-bold text-white">Segmentación y límites avanzados</span>
             </div>
@@ -674,7 +674,7 @@ export default function MarketplaceOffersPanel({
               </div>
             </div>
           </div>
-          <div className="rounded-[22px] border border-violet-400/25 bg-[#0b0e1f]/90 p-4 sm:p-5">
+          <div className="rounded-[22px] border border-violet-400/25 bg-[#0b0e1f]/90 p-4 sm:p-5 admin-graphite-inset">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">04</span>
               <span className="text-base font-bold text-white">Condiciones y notas internas</span>
@@ -689,7 +689,7 @@ export default function MarketplaceOffersPanel({
               placeholder="Requisitos, control presupuestario, excepciones y autorización."
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-300/30 bg-[#0e281f]/75 p-4 shadow-inner shadow-emerald-400/5">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-300/30 bg-[#0e281f]/75 p-4 shadow-inner shadow-emerald-400/5 admin-graphite-control">
             <div className="flex items-center gap-2 text-sm">
               <ShieldCheck className="h-4 w-4 text-emerald-300" /> Guarda sin afectar las comisiones
               reales.
@@ -715,7 +715,7 @@ export default function MarketplaceOffersPanel({
           {errorMessage(campaignQuery.error)}
         </div>
       ) : campaigns.length === 0 ? (
-        <div className="relative flex flex-col items-center overflow-hidden rounded-[24px] border border-dashed border-violet-400/20 bg-gradient-to-br from-background/85 to-violet-500/[0.04] px-6 py-12 text-center shadow-[0_20px_65px_-50px_rgba(139,92,246,0.65)]">
+        <div className="relative flex flex-col items-center overflow-hidden rounded-[24px] border border-dashed border-violet-400/20 bg-gradient-to-br from-background/85 to-violet-500/[0.04] px-6 py-12 text-center shadow-[0_20px_65px_-50px_rgba(139,92,246,0.65)] admin-graphite-panel">
           <Gift className="h-10 w-10 text-violet-300" />
           <h3 className="mt-3 font-semibold">Todavía no hay ofertas preparadas</h3>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -730,7 +730,7 @@ export default function MarketplaceOffersPanel({
             return (
               <article
                 key={item.id}
-                className="group relative isolate overflow-hidden rounded-[26px] border border-violet-400/30 bg-gradient-to-br from-[#201838] via-[#111626] to-[#0c212b] p-5 shadow-[0_24px_70px_-45px_rgba(111,89,201,0.5)] transition-colors hover:border-cyan-300/45 sm:p-6"
+                className="group relative isolate overflow-hidden rounded-[26px] border border-violet-400/30 bg-gradient-to-br from-[#201838] via-[#111626] to-[#0c212b] p-3 shadow-[0_24px_70px_-45px_rgba(111,89,201,0.5)] transition-colors hover:border-cyan-300/45 sm:p-3 admin-graphite-panel"
               >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
                 <img
@@ -752,7 +752,7 @@ export default function MarketplaceOffersPanel({
                       {item.status === "archived" ? "Archivada" : "Borrador"}
                     </span>
                     {item.benefit_duration_days != null && (
-                      <div className="rounded-2xl border border-cyan-300/30 bg-[#062736]/80 px-5 py-3 text-right shadow-[0_16px_45px_-28px_rgba(34,211,238,0.7)]">
+                      <div className="rounded-2xl border border-cyan-300/30 bg-[#062736]/80 px-5 py-3 text-right shadow-[0_16px_45px_-28px_rgba(34,211,238,0.7)] admin-graphite-inset">
                         <div className="font-mono text-3xl font-black leading-none text-cyan-200 sm:text-4xl">{item.benefit_duration_days}<span className="ml-1 text-sm font-bold">DÍAS</span></div>
                         <p className="mt-1 text-xs font-medium text-cyan-100/80">Beneficio promocional</p>
                       </div>
