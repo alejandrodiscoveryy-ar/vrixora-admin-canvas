@@ -122,34 +122,34 @@ export default function MarketplaceTemporalDraftsV3({projectId,serviceCode,canMa
     ['dawn_pct','Madrugada · 00:00–06:00','Madrugada'],
     ['weekend_pct','Sábado y domingo','Acumulable con una franja horaria'],
   ];
-  return <section aria-label="Borradores de ajustes temporales V3" className="overflow-hidden rounded-2xl border border-cyan-500/25 bg-slate-950/70 p-4 text-slate-100 sm:p-5">
+  return <section aria-label="Borradores de ajustes temporales V3" className="overflow-hidden rounded-2xl border border-cyan-500/25 bg-slate-950/70 p-4 text-text-primary sm:p-5 admin-graphite-inset">
     <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-      <div className="flex items-center gap-2"><CalendarClock className="h-5 w-5 text-cyan-300"/><div><h3 className="font-semibold">Calendario tarifario · borradores V3</h3><p className="text-xs text-slate-400">Configura y simula sin afectar cotizaciones reales.</p></div></div>
+      <div className="flex items-center gap-2"><CalendarClock className="h-5 w-5 text-cyan-300"/><div><h3 className="font-semibold">Calendario tarifario · borradores V3</h3><p className="text-xs text-text-secondary">Configura y simula sin afectar cotizaciones reales.</p></div></div>
       <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">No publicado</span>
     </div>
     {drafts.isError ? <p role="alert" className="mb-3 text-sm text-amber-200">La gestión de borradores requiere la migración de la fase 2B en Supabase. No se han cambiado precios.</p> : null}
     <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-      <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4">
+      <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4 admin-graphite-inset">
         {modes.length===0?<p role="status" className="text-xs text-amber-200">No hay tarifas activas para este servicio.</p>:null}
-        <label className="block text-xs text-slate-300">Modalidad de {serviceLabels[serviceCode]}
-          <select value={category} disabled={modes.length===0} onChange={e=>setCategory(e.target.value)} className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white">
+        <label className="block text-xs text-text-secondary">Modalidad de {serviceLabels[serviceCode]}
+          <select value={category} disabled={modes.length===0} onChange={e=>setCategory(e.target.value)} className="mt-1 block w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-text-primary admin-graphite-inset">
             {modes.map(([code,label])=><option key={code} value={code}>{label}</option>)}
           </select>
         </label>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {fields.map(([key,label,subtitle])=><label key={key} className="rounded-lg border border-slate-700 p-2 text-xs text-slate-200">
-            <span className="block font-medium">{label}</span><span className="block text-[10px] text-slate-400">{subtitle}</span>
+          {fields.map(([key,label,subtitle])=><label key={key} className="rounded-lg border border-slate-700 p-2 text-xs text-text-primary">
+            <span className="block font-medium">{label}</span><span className="block text-[10px] text-text-secondary">{subtitle}</span>
             <span className="mt-2 flex items-center gap-1"><input disabled={!canManage} aria-label={label} type="number" min={0} max={40} step={1} value={form[key] as number}
               onChange={e=>{setSavedMessage(null);setForm(prev=>({...prev,[key]:e.target.value===''?NaN:Number(e.target.value)}));}}
-              className="w-full rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-white"/>%</span>
+              className="w-full rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-text-primary admin-graphite-inset"/>%</span>
           </label>)}
-          <label className="rounded-lg border border-slate-700 p-2 text-xs text-slate-200">Tope total
+          <label className="rounded-lg border border-slate-700 p-2 text-xs text-text-primary">Tope total
             <span className="mt-2 flex items-center gap-1"><input disabled={!canManage} aria-label="Tope de recargos" type="number" min={0} max={40} step={1} value={form.max_combined_pct}
               onChange={e=>{setSavedMessage(null);setForm(prev=>({...prev,max_combined_pct:e.target.value===''?NaN:Number(e.target.value)}));}}
-              className="w-full rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-white"/>%</span>
+              className="w-full rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-text-primary admin-graphite-inset"/>%</span>
           </label>
         </div>
-        <label className="flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-slate-200">
+        <label className="flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-text-primary">
           <input type="checkbox" aria-label="Aplicar recargo en días festivos"
             disabled={!canManage || form.holiday_dates.length===0}
             checked={form.holiday_pct>0}
@@ -157,42 +157,42 @@ export default function MarketplaceTemporalDraftsV3({projectId,serviceCode,canMa
             className="h-5 w-5 accent-cyan-400"/>
           <span className="flex flex-col gap-1">
             <strong className="text-sm">Aplicar recargo en días festivos</strong>
-            <span className="text-slate-400">{form.holiday_dates.length ?  (form.holiday_pct>0 ? 'Calendario cubano guardado · recargo del 10 %' : 'Calendario cubano guardado · recargo desactivado') : 'Calendario no disponible'}</span>
+            <span className="text-text-secondary">{form.holiday_dates.length ?  (form.holiday_pct>0 ? 'Calendario cubano guardado · recargo del 10 %' : 'Calendario cubano guardado · recargo desactivado') : 'Calendario no disponible'}</span>
           </span>
         </label>
-        <p className="flex gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 shrink-0 text-cyan-300"/>El servidor sigue usando el horario oficial de Cuba. Los porcentajes se guardan como borradores aislados del motor de cobro.</p>
+        <p className="flex gap-2 text-xs text-text-secondary"><ShieldCheck className="h-4 w-4 shrink-0 text-cyan-300"/>El servidor sigue usando el horario oficial de Cuba. Los porcentajes se guardan como borradores aislados del motor de cobro.</p>
         {!safe?<p role="alert" className="flex gap-2 text-xs text-amber-200"><AlertTriangle className="h-4 w-4 shrink-0"/>Revisa porcentajes, fechas y tope: la suma máxima posible debe ser menor o igual al tope.</p>:null}
         {formError?<p role="alert" className="text-xs text-rose-300">{formError}</p>:null}
         {savedMessage?<p className="text-xs text-emerald-300">{savedMessage}</p>:null}
         <Button disabled={!canManage||!safe||save.isPending||!drafts.isSuccess||!current} onClick={()=>save.mutate()}><Save className="mr-2 h-4 w-4"/>Guardar borrador</Button>
       </div>
-      <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4">
+      <div className="space-y-3 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4 admin-graphite-inset">
         <h4 className="text-sm font-semibold">Simulación estructural · sin publicar</h4>
-        <label className="block text-xs text-slate-300">Distancia
-          <select className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white" value={distance} onChange={e=>setDistance(Number(e.target.value))}>
+        <label className="block text-xs text-text-secondary">Distancia
+          <select className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-text-primary admin-graphite-control" value={distance} onChange={e=>setDistance(Number(e.target.value))}>
             <option value={2}>2 km</option><option value={5}>5 km</option><option value={10}>10 km</option>
           </select>
         </label>
-        <label className="block text-xs text-slate-300">Hora en Cuba
-          <select className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white" value={hour} onChange={e=>setHour(Number(e.target.value))}>
+        <label className="block text-xs text-text-secondary">Hora en Cuba
+          <select className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-text-primary admin-graphite-control" value={hour} onChange={e=>setHour(Number(e.target.value))}>
             <option value={10}>10:00 · día</option><option value={19}>19:00 · tarde</option><option value={23}>23:00 · noche</option><option value={2}>02:00 · madrugada</option>
           </select>
         </label>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={weekend} onChange={e=>setWeekend(e.target.checked)}/>Fin de semana</label>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={holiday} onChange={e=>setHoliday(e.target.checked)}/>Simular día festivo (solo vista previa)</label>
         <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3">
-          <p className="text-xs text-slate-400">Base estructural estimada · MN</p>
+          <p className="text-xs text-text-secondary">Base estructural estimada · MN</p>
           <p className="text-lg font-semibold tabular-nums">{cupText(baseCup)}</p>
-          <p className="mt-3 text-xs text-slate-300">Estimación con borrador · moneda nacional (MN)</p>
+          <p className="mt-3 text-xs text-text-secondary">Estimación con borrador · moneda nacional (MN)</p>
           <p className="text-2xl font-bold tabular-nums text-cyan-100">{cupText(projectedCup)}</p>
-          <p className="mt-3 text-[11px] text-slate-300">Cálculo interno: {baseUsd==null?'Sin tarifa':baseUsd.toFixed(2)+' USD'} → {projectedUsd==null?'No disponible':projectedUsd.toFixed(3)+' USD'}</p>
+          <p className="mt-3 text-[11px] text-text-secondary">Cálculo interno: {baseUsd==null?'Sin tarifa':baseUsd.toFixed(2)+' USD'} → {projectedUsd==null?'No disponible':projectedUsd.toFixed(3)+' USD'}</p>
           {projectedCup !== null ? (
-            <p className="mt-1 text-[11px] text-slate-300">Tasa: 1 USD = {exchangeRate.toLocaleString('es-CU')} CUP · redondeo hacia arriba cada {cupIncrement.toLocaleString('es-CU')} CUP</p>
+            <p className="mt-1 text-[11px] text-text-secondary">Tasa: 1 USD = {exchangeRate.toLocaleString('es-CU')} CUP · redondeo hacia arriba cada {cupIncrement.toLocaleString('es-CU')} CUP</p>
           ) : (
             <p role="status" className="mt-2 text-xs text-amber-200">Tasa o configuración de redondeo no disponibles. No se inventa un precio en MN.</p>
           )}
         </div>
-        <p className="text-[11px] text-slate-400">Importe simulado en CUP/MN, no cotización final. El servidor calcula el precio real en CUP; este escenario omite otros recargos activos, aeropuerto, paradas y demás componentes de la carrera.</p>
+        <p className="text-[11px] text-text-secondary">Importe simulado en CUP/MN, no cotización final. El servidor calcula el precio real en CUP; este escenario omite otros recargos activos, aeropuerto, paradas y demás componentes de la carrera.</p>
       </div>
     </div>
   </section>;
