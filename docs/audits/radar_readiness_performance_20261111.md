@@ -1,6 +1,6 @@
 # TUKTUK — diagnóstico de rendimiento del radar (11-11-2026)
 
-**Estado:** análisis y pruebas de lectura completados. **Cambio SQL NO aplicado.**
+**Estado actual:** migración aplicada y verificada en Supabase el 11-11-2026 (hora local). Las secciones previas al registro de ejecución describen la auditoría inicial.
 **Repositorio:** Vrixora Admin, rama de propuesta independiente.
 **Función actual:** `public.admin_get_marketplace_radar_readiness(uuid)`.
 
@@ -43,3 +43,20 @@ El borrador protegido está en `docs/drafts/radar_readiness_materialized_2026111
 
 ## Limitaciones
 Las pruebas se realizaron con conjuntos reales **sin modificar datos**, pero la comparación se efectuó sobre una copia lógica del SQL (no reemplazando la RPC en producción). Para confirmar el beneficio en producción es necesario desplegar la migración con autorización y repetir mediciones bajo carga comparable.
+
+## Ejecución autorizada — 11-11-2026, hora de La Habana/Nueva York (12-11 UTC)
+
+**Resultado: migración aplicada y verificada en Supabase.** La propuesta anterior y su SQL en `docs/drafts/` se conservan como registro histórico de la auditoría; ya no representan el estado remoto vigente.
+
+- Migración oficial registrada por Supabase: `20261112001335_radar_readiness_materialized`, reproducida exactamente en `supabase/migrations/20261112001335_radar_readiness_materialized.sql`.
+- Definición anterior: MD5 `ebbb7bb8ba5fab8de02bec80f352bb11`.
+- Definición posterior confirmada: MD5 `129724640d7609df76ae4089951cf629`. Única modificación de la definición: materializar el CTE work. La migración verifica hash y permisos dentro del mismo bloque y limita espera por bloqueos a 3 s.
+- Control funcional en transacción de solo lectura: RPC de producción ejecutada con rol authenticated y contexto JWT local de un miembro autorizado, comparada con la consulta anterior dentro de la misma transacción. **Payload completo idéntico** (incluidos los diez contadores, antigüedad GPS y timestamp de comprobación).
+- Seguridad posterior: propietario postgres, STABLE, SECURITY DEFINER, search_path vacío, ACL original conservada; anon sin EXECUTE, authenticated con EXECUTE y validación interna marketplace.view. Contexto simulado de usuario no autorizado: rechazo PERMISSION_DENIED, SQLSTATE 42501. No se emitieron sesiones reales ni se modificaron datos de usuarios.
+- Mediciones posteriores de la RPC real: **45,801 / 51,701 / 43,720 ms**. Son tres pruebas puntuales, sin garantía sobre picos futuros.
+- Asesor de seguridad: aviso `authenticated_security_definer_function_executable` para esta RPC; es una exposición deliberada de una función administrativa protegida por la comprobación explícita de permiso. No se amplió ningún permiso. Mantener como revisión de arquitectura separada, no retirar acceso al panel sin validar su sustitución. [Referencia](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+
+### Reversión controlada (no ejecutada)
+Si aparecen regresiones, obtener autorización para una nueva migración correctiva. Verificar primero que el hash vigente siga siendo `129724640d7609df76ae4089951cf629`. Sustituir únicamente `with work as materialized (` por `with work as (` en la definición obtenida con pg_get_functiondef, usando un bloque DO con las mismas guardas de unicidad y permisos, y verificar que el hash resultante sea `ebbb7bb8ba5fab8de02bec80f352bb11`. No restaurar bases de datos ni revertir otras migraciones.
+
+**Pendiente de cierre:** integrar el PR con la migración oficial y confirmar el funcionamiento desde Vrixora Admin. El cambio de Supabase ya es efectivo; no necesita desplegar APK ni volver a ejecutar la migración.
