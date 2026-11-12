@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { compactSectionHeader, type AdminDensity } from "./density";
 
 export interface AdminDataTableShellProps {
   title?: string;
@@ -10,6 +11,7 @@ export interface AdminDataTableShellProps {
   emptyState?: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  density?: AdminDensity;
 }
 
 export function AdminDataTableShell({
@@ -21,17 +23,20 @@ export function AdminDataTableShell({
   emptyState,
   footer,
   className,
+  density = "comfortable",
 }: AdminDataTableShellProps) {
   return (
     <Card
+      data-density={density}
       className={cn(
         "overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm",
+        density === "compact" && "min-w-0 backdrop-blur-none",
         className,
       )}
     >
       {(title || description || actions) && (
-        <CardHeader className="flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div>
+        <CardHeader className={density === "compact" ? compactSectionHeader : "flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"}>
+          <div className={density === "compact" ? "min-w-0" : undefined}>
             {title ? <CardTitle className="text-base font-semibold">{title}</CardTitle> : null}
             {description ? (
               <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -39,20 +44,20 @@ export function AdminDataTableShell({
               </CardDescription>
             ) : null}
           </div>
-          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+          {actions ? <div className={cn("flex items-center gap-2", density === "compact" && "w-full min-w-0 flex-wrap")}>{actions}</div> : null}
         </CardHeader>
       )}
 
       <CardContent className="p-0">
         {isEmpty && emptyState ? (
-          <div className="p-8">{emptyState}</div>
+          <div className={density === "compact" ? "p-3 sm:p-4" : "p-8"}>{emptyState}</div>
         ) : (
           <div className="w-full overflow-x-auto">{children}</div>
         )}
       </CardContent>
 
       {footer ? (
-        <div className="flex items-center justify-between border-t border-border-subtle bg-surface-2 px-4 py-3.5 text-xs text-text-tertiary sm:px-6">
+        <div className={cn("flex items-center justify-between border-t border-border-subtle bg-surface-2 px-4 py-3.5 text-xs text-text-tertiary sm:px-6", density === "compact" && "flex-wrap gap-2 px-3 py-2.5 sm:px-4")}>
           {footer}
         </div>
       ) : null}
