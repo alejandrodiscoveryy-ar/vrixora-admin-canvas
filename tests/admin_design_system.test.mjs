@@ -11,7 +11,8 @@ import { FilterToolbar } from "../src/components/admin/FilterToolbar.tsx";
 import { DataToolbar } from "../src/components/admin/DataToolbar.tsx";
 import { EmptyState } from "../src/components/admin/EmptyState.tsx";
 import { AdminPeriodSelector } from "../src/components/admin/AdminPeriodSelector.tsx";
-import { FilterSelect } from "../src/features/admin/MarketplaceListPrimitives.tsx";
+import { FilterSelect, EmptyMarketplaceState } from "../src/features/admin/MarketplaceListPrimitives.tsx";
+import { readFileSync } from "node:fs";
 import { premiumSurface, premiumMetricSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface, premiumTableDensity, premiumTableRow } from "../src/components/admin/density.ts";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../src/components/ui/table.tsx";
 
@@ -360,4 +361,48 @@ test("Operations FilterSelect: premium graphite and native filter values are ret
   assert.ok(markup.includes("Aceptado"));
   assert.ok(markup.includes("Estado"));
   hasClasses(markup, ...premiumControlSurface.split(" "), "min-h-11", "min-w-0", "focus-within:ring-2");
+});
+
+test("Driver directory empty state: premium graphite is opt-in and retains content", () => {
+  const props = { title: "No hay coincidencias", description: "Prueba otro nombre o número" };
+  const standard = render(EmptyMarketplaceState, props);
+  assert.equal(standard, render(EmptyMarketplaceState, { ...props, appearance: "standard" }));
+  const markup = render(EmptyMarketplaceState, { ...props, appearance: "premium" });
+  assert.ok(markup.includes(props.title));
+  assert.ok(markup.includes(props.description));
+  hasClasses(markup, ...premiumColumnHeaderSurface.split(" "), ...premiumControlSurface.split(" "), "border-solid", "sm:min-h-28");
+  assert.ok(!classTokens(markup).has("border-dashed"));
+});
+
+test("Driver premium directory and 360: responsive surfaces, contact, navigation and permission contracts", () => {
+  const source = (name) => readFileSync(new URL("../src/features/admin/" + name, import.meta.url), "utf8");
+  const panel = source("MarketplaceSection.tsx");
+  const directory = panel.slice(panel.indexOf('<TabsContent value="conductores">'), panel.indexOf('<TabsContent value="clientes">'));
+  assert.equal((directory.match(/<FilterSelect appearance="premium"/g) ?? []).length, 4);
+  assert.match(directory, /driverSearch/);
+  assert.match(directory, /driverWhatsAppLinks\(item.phone\)/);
+  assert.match(directory, /onClick=\{\(\) => setDriver360Id\(item.userId\)\}/);
+  assert.match(directory, /md:grid-cols-2 xl:grid-cols-\[minmax\(0,1\.15fr\)/);
+  assert.match(directory, /premiumColumnHeaderSurface/);
+  const record = source("MarketplaceDriver360Record.tsx");
+  assert.match(record, /<MetricCard density="compact" appearance="premium"/);
+  assert.match(record, /grid min-w-0 grid-cols-2 gap-1 sm:flex sm:flex-wrap/);
+  assert.match(record, /aria-selected=\{activeTab === id\}/);
+  assert.match(record, /canSeeFinancial/);
+  assert.match(record, /canManageDriver/);
+  assert.match(record, /onChangeSuspension/);
+  assert.match(record, /href=\{whatsApp.web\}/);
+  assert.match(record, /rounded-full border border-border-default/);
+  assert.doesNotMatch(record, /bg-\[#|bg-black/);
+  const management = source("MarketplaceDriverManagementPanel.tsx");
+  assert.match(management, /driver_document_signed_url/);
+  assert.match(management, /admin_update_marketplace_driver_contact_v1/);
+  assert.match(management, /not_accepted/);
+  assert.match(management, /premiumControlSurface/);
+  const editor = source("MarketplaceDriverVehicleEditor.tsx");
+  assert.match(editor, /admin_get_marketplace_driver_vehicle_edit_v1/);
+  assert.match(editor, /active_job/);
+  assert.match(editor, /working/);
+  assert.match(editor, /premiumControlSurface/);
+  assert.match(editor, /overflow-y-auto overflow-x-hidden/);
 });
