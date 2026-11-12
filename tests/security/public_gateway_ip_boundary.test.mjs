@@ -8,11 +8,21 @@ import { test } from 'node:test';
 
 // Run the actual handlers, including HMAC and limiter calls, without network,
 // credentials, database access, or an HTTP listener.
-async function harness() {
-  const calls = { clients: 0, providers: 0, operations: 0, identities: [] };
+async function harness({ fleetRows = [], sessionError = null } = {}) {
+  const calls = { clients: 0, providers: 0, operations: 0, identities: [], fleetQueries: [], sessionChecks: 0 };
   const buckets = new Map();
   const db = {
     from(table) {
+      if (table === 'marketplace_driver_locations') {
+        const query = {};
+        for (const method of ['select', 'eq', 'not', 'is', 'order', 'limit']) {
+          query[method] = (...args) => {
+            calls.fleetQueries.push([method, ...args]);
+            return method === 'limit' ? Promise.resolve({ data: fleetRows, error: null }) : query;
+          };
+        }
+        return query;
+      }
       const data = table === 'projects' ? { id: 'test-project' } : null;
       const query = {
         select() { return query; }, eq() { return query; },
@@ -32,6 +42,11 @@ async function harness() {
         buckets.set(identity, count);
         // Deliberately small test budget; no production SQL is executed.
         return { error: count > 2 ? new Error('CUSTOMER_RATE_LIMITED') : null };
+      }
+      if (name === 'list_marketplace_customer_history') {
+        calls.sessionChecks++;
+        assert.equal(params.target_limit, 1);
+        return { data: [], error: sessionError };
       }
       calls.operations++;
       return { data: [], error: null };
@@ -211,4 +226,47 @@ test('both gateways share the existing read budget for the same trusted IP', asy
     } else assert.equal(response.status, 200);
   }
   assert.equal(new Set(calls.identities).size, 1);
+});
+
+function fleetRequest(params = { target_session_id: 'test-session', target_session_token: 'test-token' }) {
+  return new Request('https://isolated.invalid/gateway', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.9' },
+    body: JSON.stringify({ operation: 'working_fleet', params }),
+  });
+}
+test('working fleet: validates session before reading GPS; never returns private fields', async () => {
+  const { handlers, calls } = await harness({ fleetRows: [
+    { latitude: 23.123456, longitude: -82.345678, driver_user_id: 'private-id', captured_at: '2020-01-01' },
+    { latitude: null, longitude: -82 },
+    { latitude: 90, longitude: 0 },
+  ] });
+  const response = await handlers.customer(fleetRequest());
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await response.json(), { data: [{ latitude: 23.124, longitude: -82.347 }] });
+  assert.equal(calls.sessionChecks, 1);
+  for (const filter of [
+    ['eq', 'project_id', 'test-project'], ['eq', 'assignment.is_active', true],
+    ['eq', 'assignment.accepting_jobs', true], ['eq', 'assignment.profile.status', 'active'],
+    ['not', 'assignment.profile.activated_at', 'is', null],
+    ['is', 'assignment.profile.suspended_at', null],
+    ['eq', 'assignment.vehicle.marketplace_status', 'active'],
+    ['is', 'assignment.vehicle.deleted_at', null],
+  ]) assert.ok(calls.fleetQueries.some((actual) => JSON.stringify(actual) === JSON.stringify(filter)));
+  assert.ok(!JSON.stringify(calls.fleetQueries).includes('captured_at'));
+  assert.ok(!JSON.stringify(calls.fleetQueries).includes('is_available'));
+});
+test('working fleet: missing or invalid session cannot read GPS', async () => {
+  for (const [params, sessionError] of [[{}, null], [{ target_session_id: 'bad', target_session_token: 'bad' }, new Error('SESSION_INVALID')]]) {
+    const { handlers, calls } = await harness({ sessionError });
+    assert.equal((await handlers.customer(fleetRequest(params))).status, 400);
+    assert.equal(calls.fleetQueries.length, 0);
+  }
+});
+test('working fleet: separate trusted-IP budget from booking reads', async () => {
+  const { handlers, calls } = await harness();
+  assert.equal((await handlers.customer(fleetRequest())).status, 200);
+  assert.equal((await handlers.customer(request('customer', { 'cf-connecting-ip': '203.0.113.9' }))).status, 200);
+  assert.notEqual(calls.identities[0], calls.identities[1]);
 });
