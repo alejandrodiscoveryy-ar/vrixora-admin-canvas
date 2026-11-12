@@ -1954,7 +1954,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
             tone="cyan"
             backgroundImage="/admin-premium/drivers.svg"
           >
-            <div className="mb-4 space-y-3 rounded-2xl border border-cyan-400/15 bg-background/45 p-3 sm:p-4">
+            <div className={cn("mb-3 min-w-0 space-y-2 rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cyan-300" />
                 <span className="sr-only">Buscar conductor por nombre o número de celular</span>
@@ -1963,28 +1963,28 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   onChange={(event) => setDriverSearch(event.target.value)}
                   placeholder="Buscar por nombre o número de celular"
                   autoComplete="off"
-                  className="h-10 rounded-xl border-cyan-400/20 bg-background/70 pl-9 text-sm"
+                  className={cn("h-11 min-w-0 rounded-[var(--radius-control)] bg-surface-1 pl-9 text-sm sm:h-10", premiumControlSurface)}
                 />
               </label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                <FilterSelect labelText="Estado del perfil" value={driverStatusFilter} onChange={setDriverStatusFilter}>
+                <FilterSelect appearance="premium" labelText="Estado del perfil" value={driverStatusFilter} onChange={setDriverStatusFilter}>
                   <option value="">Todos los estados</option>
                   <option value="active">Activos</option>
                   <option value="incomplete">Incompletos</option>
                   <option value="suspended">Suspendidos</option>
                 </FilterSelect>
-                <FilterSelect labelText="Disponibilidad" value={driverAvailabilityFilter} onChange={setDriverAvailabilityFilter}>
+                <FilterSelect appearance="premium" labelText="Disponibilidad" value={driverAvailabilityFilter} onChange={setDriverAvailabilityFilter}>
                   <option value="">Todos</option>
                   <option value="available">Disponibles</option>
                   <option value="unavailable">No disponibles</option>
                 </FilterSelect>
-                <FilterSelect labelText="Vehículo" value={driverCategoryFilter} onChange={setDriverCategoryFilter}>
+                <FilterSelect appearance="premium" labelText="Vehículo" value={driverCategoryFilter} onChange={setDriverCategoryFilter}>
                   <option value="">Todos los vehículos</option>
                   {driverCategories.map((category) => (
                     <option key={category} value={category}>{label(category)}</option>
                   ))}
                 </FilterSelect>
-                <FilterSelect labelText="Inscripción" value={driverPeriodFilter} onChange={setDriverPeriodFilter}>
+                <FilterSelect appearance="premium" labelText="Inscripción" value={driverPeriodFilter} onChange={setDriverPeriodFilter}>
                   <option value="">Todas las fechas</option>
                   <option value="today">Hoy (Cuba)</option>
                   <option value="7">Últimos 7 días</option>
@@ -1997,7 +1997,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                     `${filteredDriverRows.length} coincidencias de ${driverRows.length} conductores registrados`}
                 </span>
                 {driverFiltersActive ? (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => {
+                  <Button type="button" variant="ghost" size="sm" className="max-sm:min-h-11" onClick={() => {
                     setDriverSearch("");
                     setDriverStatusFilter("");
                     setDriverAvailabilityFilter("");
@@ -2008,39 +2008,38 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
               </div>
             </div>
             {drivers.isError ? (
-              <EmptyMarketplaceState title="No se pudo cargar el directorio"
+              <EmptyMarketplaceState appearance="premium" title="No se pudo cargar el directorio"
                 description="Reintenta la consulta antes de buscar conductores." icon={Users} />
             ) : drivers.isLoading || drivers.hasNextPage ? (
               <LoadingState />
             ) : !driverRows.length ? (
-              <EmptyMarketplaceState
+              <EmptyMarketplaceState appearance="premium"
                 title="No hay conductores"
                 description="Todavía no existen conductores registrados en Marketplace."
                 icon={Users}
               />
             ) : !filteredDriverRows.length ? (
-              <EmptyMarketplaceState title="No hay coincidencias"
+              <EmptyMarketplaceState appearance="premium" title="No hay coincidencias"
                 description="Prueba otro nombre, número o combinación de filtros." icon={Search} />
             ) : (
               <>
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {visibleDriverRows.map((item) => (
                     <article
                       key={item.userId}
-                      className="group relative overflow-hidden rounded-[17px] border border-cyan-400/14 bg-gradient-to-r from-cyan-500/[0.055] via-background/60 to-emerald-500/[0.025] px-3 py-2.5 shadow-[0_18px_50px_-40px_rgba(34,211,238,0.9)] transition duration-200 hover:border-cyan-400/26 hover:from-cyan-500/[0.075] hover:to-emerald-500/[0.04]"
+                      className={cn("group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border px-3 py-2.5 transition-colors hover:border-primary/40", premiumSurface)}
                     >
                       <button
                         type="button"
-                        className="absolute inset-0 z-10 cursor-pointer rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                        className="absolute inset-0 z-10 cursor-pointer rounded-[var(--radius-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
                         onClick={() => setDriver360Id(item.userId)}
                         aria-label={`Abrir ficha 360 de ${item.displayName}`}
                       />
-                      <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-cyan-400/[0.035] blur-3xl" />
 
-                      <div className="pointer-events-none relative grid gap-3 lg:grid-cols-[minmax(220px,1.15fr)_minmax(190px,0.8fr)_minmax(220px,1fr)_auto] lg:items-center">
+                      <div className="pointer-events-none relative grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto] xl:items-center">
                         <div className="min-w-0">
-                          <div className="flex items-start gap-3">
-                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
+                          <div className="flex min-w-0 items-start gap-2.5">
+                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
                               <Users className="h-5 w-5" />
                               {driverMedia.data?.[item.userId]?.avatarUrl ? (
                                 <img
@@ -2055,7 +2054,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                             </div>
 
                             <div className="min-w-0">
-                              <h4 className="truncate font-semibold text-foreground">
+                              <h4 className="break-words text-sm font-semibold text-foreground">
                                 {item.displayName}
                               </h4>
 
@@ -2072,7 +2071,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   {item.isAvailable ? "Disponible" : "No disponible"}
                                 </span>
                               </div>
-                              <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
                                 <CalendarDays className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
                                 Inscripción: {dateOfRegistration(item.createdAt)}
                               </p>
@@ -2080,24 +2079,24 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           </div>
                         </div>
 
-                        <div className="rounded-xl border border-cyan-400/10 bg-background/45 px-3 py-2.5">
+                        <div className={cn("min-w-0 rounded-[var(--radius-compact)] border px-3 py-2", premiumColumnHeaderSurface)}>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
                             WhatsApp
                           </p>
 
                           <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
                             <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
-                            <span className="truncate">{item.phone ?? "Sin WhatsApp"}</span>
+                            <span className="min-w-0 break-words">{item.phone ?? "Sin WhatsApp"}</span>
                           </p>
                         </div>
 
-                        <div className="rounded-xl border border-cyan-400/10 bg-background/45 px-3 py-2.5">
+                        <div className={cn("min-w-0 rounded-[var(--radius-compact)] border px-3 py-2", premiumColumnHeaderSurface)}>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
                             Vehículo
                           </p>
 
                           <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
-                            <span className="relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/15 bg-cyan-500/[0.04] text-cyan-300">
+                            <span className="relative flex h-9 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/15 bg-cyan-500/[0.04] text-cyan-300">
                               <CarFront className="h-4 w-4" />
                               {driverMedia.data?.[item.userId]?.vehiclePhotos[
                                 item.vehicleId ?? ""
@@ -2116,18 +2115,18 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 />
                               ) : null}
                             </span>
-                            <span className="truncate">{item.vehicleName ?? "Sin vehículo"}</span>
+                            <span className="min-w-0 break-words">{item.vehicleName ?? "Sin vehículo"}</span>
                           </p>
                         </div>
 
-                        <div className="pointer-events-none relative z-20 flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
+                        <div className="pointer-events-none relative z-20 flex flex-wrap items-center justify-end gap-2 xl:flex-nowrap">
                           {driverWhatsAppLinks(item.phone) ? (
                             <Button
                               asChild
                               type="button"
                               size="sm"
                               variant="outline"
-                              className="pointer-events-auto w-full border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-200 sm:w-auto"
+                              className="pointer-events-auto min-h-11 w-full border-emerald-500/30 bg-emerald-500/[0.08] text-[var(--semantic-success)] sm:w-auto"
                             >
                               <a
                                 href={driverWhatsAppLinks(item.phone)!.web}
@@ -2147,7 +2146,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
 
                 {visibleDriverRows.length < filteredDriverRows.length ? (
                   <div className="mt-4 flex justify-center">
-                    <Button variant="outline" className="w-full sm:w-auto"
+                    <Button variant="outline" className="min-h-11 w-full sm:w-auto"
                       onClick={() => setDriverVisibleCount((count) => count + 25)}>
                       Mostrar más ({filteredDriverRows.length - visibleDriverRows.length} restantes)
                     </Button>
