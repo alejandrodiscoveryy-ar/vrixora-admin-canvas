@@ -205,6 +205,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         "price_quote",
         "create_request",
         "driver_route",
+        "customer_tracking_route",
       ].includes(operation)
     ) throw Error("MAP_OPERATION_INVALID");
     const db = createClient(url, key, {
@@ -228,7 +229,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         ? "request"
         : "read";
     const identity = await sign(
-      `${category}:${clientIp}`,
+      `${operation === "customer_tracking_route" ? "tracking-route" : category}:${clientIp}`,
       rateSecret,
     );
     const { error: limitError } = await db.rpc(
@@ -236,6 +237,36 @@ export async function handleRequest(request: Request): Promise<Response> {
       { target_operation: category, target_derived_identity: identity },
     );
     if (limitError) throw limitError;
+    if (operation === "customer_tracking_route") {
+      // Exact GPS and target come from the server, never from browser coordinates.
+      if (projectSlug !== "tuktuk-control" ||
+          typeof body.target_session_id !== "string" ||
+          typeof body.target_session_token !== "string" ||
+          typeof body.target_job_id !== "string") throw Error("AUTHENTICATION_REQUIRED");
+      const { data: snapshot, error } = await db.rpc(
+        "get_marketplace_customer_tracking_snapshot", {
+          target_session_id: body.target_session_id,
+          target_session_token: body.target_session_token,
+          target_job_id: body.target_job_id,
+        });
+      if (error || !snapshot) throw Error("CUSTOMER_TRACKING_FORBIDDEN");
+      const stage = snapshot.status === "in_progress" ? "destination" :
+        ["accepted", "en_route"].includes(snapshot.status) ? "pickup" : null;
+      const gps = snapshot.driver_location;
+      const target = stage === "pickup" ? snapshot.route_origin : snapshot.route_destination;
+      if (!stage || !gps || !target) return reply({ data: { stage, route_points: [] } });
+      const age = Date.now() - Date.parse(String(gps.captured_at));
+      if (!Number.isFinite(age) || age < -15000 || age > 60000 ||
+          gps.accuracy_m == null || Number(gps.accuracy_m) < 0 || Number(gps.accuracy_m) > 50) {
+        return reply({ data: { stage, route_points: [] } });
+      }
+      const origin = point({ lat: gps.latitude, lon: gps.longitude });
+      const destination = point(target);
+      const route = await directions(origin, destination, mapbox);
+      return new Response(JSON.stringify({ data: { stage, ...route } }), {
+        headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
     if (operation === "geocode") {
       const query = String(body.query ?? "").trim();
       if (query.length < 3 || query.length > 160) {
@@ -626,7 +657,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       ? 413
       : message === "AUTHENTICATION_REQUIRED"
       ? 401
-      : message === "DRIVER_JOB_FORBIDDEN"
+      : message === "DRIVER_JOB_FORBIDDEN" || message === "CUSTOMER_TRACKING_FORBIDDEN"
       ? 403
       : message === "JOB_NOT_ACTIVE"
       ? 409
