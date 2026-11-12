@@ -400,7 +400,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(rows, /aria-label=\{\x60Abrir ficha 360 de/);
   assert.match(rows, /pointer-events-none relative z-20/);
   assert.match(rows, /pointer-events-auto min-h-11/);
-  assert.match(rows, /href=\{driverWhatsAppLinks\(item\.phone, welcomeDrivers \? driverWelcomeMessage\(item\.displayName\) : undefined\)!\.web\}/);
+  assert.match(rows, /href=\{driverWhatsAppLinks\(item\.phone\)!\.web\}/);
   assert.match(rows, /Ver ficha 360/);
   assert.match(rows, /xl:min-h-8/);
   const record = source("MarketplaceDriver360Record.tsx");
@@ -454,7 +454,25 @@ test("Driver welcome: scoped to TukTuk directory; 360 remains ordinary contact",
   const record = readFileSync(new URL("../src/features/admin/MarketplaceDriver360Record.tsx", import.meta.url), "utf8");
   assert.match(route, /welcomeDrivers=\{project\.slug === "tuktuk-control"\}/);
   assert.match(directory, /welcomeDrivers = false/);
-  assert.match(directory, /welcomeDrivers \? driverWelcomeMessage\(item\.displayName\) : undefined/);
+  assert.match(directory, /welcomeDrivers \? \(\) => copyDriverWelcome\(item\.displayName\) : undefined/);
   assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
   assert.doesNotMatch(record, /driverWelcomeMessage/);
+});
+
+test("Driver welcome: original WhatsApp Web URL opens independently of clipboard", () => {
+  const panel = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  const rows = panel.slice(panel.indexOf("{visibleDriverRows.map"), panel.indexOf("{visibleDriverRows.length < filteredDriverRows.length"));
+  assert.match(rows, /href=\{driverWhatsAppLinks\(item\.phone\)!\.web\}/);
+  assert.match(rows, /target="_blank"/);
+  assert.match(rows, /rel="noopener noreferrer"/);
+  assert.match(rows, /onClick=\{welcomeDrivers \? \(\) => copyDriverWelcome\(item\.displayName\) : undefined\}/);
+  assert.doesNotMatch(rows, /driverWhatsAppLinks\(item\.phone,/);
+  const handler = panel.slice(panel.indexOf("const copyDriverWelcome ="), panel.indexOf("const [jobId,"));
+  assert.match(handler, /const message = driverWelcomeMessage\(displayName\)/);
+  assert.match(handler, /navigator\.clipboard\.writeText\(message\)/);
+  assert.match(handler, /\.catch\(showDraft\)/);
+  assert.match(handler, /setWelcomeDraft\(message\)/);
+  assert.doesNotMatch(handler, /preventDefault|window\.open|await /);
+  assert.match(panel, /<Textarea aria-label="Mensaje de bienvenida" readOnly value=\{welcomeDraft \?\? ""\}/);
+  assert.match(panel, /onFocus=\{\(event\) => event\.currentTarget\.select\(\)\}/);
 });
