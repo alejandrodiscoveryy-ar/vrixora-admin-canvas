@@ -177,7 +177,7 @@ export default function MarketplacePricingLaboratoryV2({
   };
 
   return (
-    <section aria-label="Laboratorio de precios de carreras" className="rounded-2xl border border-cyan-500/20 bg-card/75 p-4 shadow-sm sm:p-5">
+    <section aria-label="Laboratorio de precios de carreras" className="rounded-2xl border border-cyan-500/20 bg-card/75 p-4 shadow-sm sm:p-5 admin-graphite-inset">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-2 text-cyan-500"><FlaskConical className="h-5 w-5" /></span>
@@ -207,7 +207,7 @@ export default function MarketplacePricingLaboratoryV2({
       {results.length ? (
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-live="polite">
           {results.map((result) => (
-            <article key={result.code} className="rounded-xl border border-border/60 bg-background/55 p-3">
+            <article key={result.code} className="rounded-xl border border-border/60 bg-background/55 p-3 admin-graphite-inset">
               <p className="text-xs font-semibold text-muted-foreground">{result.name}</p>
               {result.priceCup == null ? (
                 <p className="mt-2 text-xs text-destructive" title={result.error}>Sin cotización: {result.error}</p>
