@@ -15,7 +15,9 @@ test("WhatsApp Desktop y alternativa web con borrador de bienvenida optativo, si
   const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
   assert.match(list, /driverWhatsAppLinks\(item\.phone\)/);
   assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
-  assert.match(list, /href=\{driverWhatsAppLinks\(item\.phone, welcomeDrivers \? driverWelcomeMessage\(item\.displayName\) : undefined\)!\.web\}\s+target="_blank"/);
+  assert.match(list, /href=\{driverWhatsAppLinks\(item\.phone\)!\.web\}/);
+  assert.match(list, /onClick=\{welcomeDrivers \? \(\) => copyDriverWelcome\(item\.displayName\) : undefined\}/);
+  assert.match(list, /navigator\.clipboard\.writeText\(message\)/);
   assert.match(record, /href=\{whatsApp\.web\}\s+target="_blank"/);
 });
 
