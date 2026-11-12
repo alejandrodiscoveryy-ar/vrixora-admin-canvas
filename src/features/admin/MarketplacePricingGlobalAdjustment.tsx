@@ -55,7 +55,7 @@ const cup = (value: number | null) => value === null
 
 function Comparison({ label, before, after }: { label: string; before: string; after: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-slate-500/25 bg-background/50 px-3 py-2">
+    <div className="min-w-0 rounded-xl border border-slate-500/25 bg-background/50 px-3 py-2 admin-graphite-inset">
       <p className="mb-1 text-[11px] text-muted-foreground">{label}</p>
       <p className="text-xs text-muted-foreground line-through decoration-slate-500/50">{before}</p>
       <p className="mt-1 text-sm font-semibold text-foreground">{after}</p>
@@ -223,7 +223,7 @@ export default function MarketplacePricingGlobalAdjustment({
   return (
     <section aria-label="Ajuste general de tarifas con publicación confirmada" className="space-y-4">
       {canManage && (
-        <section aria-label="Último ajuste publicado" className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.09] via-card/95 to-cyan-500/[0.055] p-4 shadow-[0_18px_42px_-35px_rgba(16,185,129,0.45)] sm:p-5">
+        <section aria-label="Último ajuste publicado" className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.09] via-card/95 to-cyan-500/[0.055] p-4 shadow-[0_18px_42px_-35px_rgba(16,185,129,0.45)] sm:p-3 admin-graphite-panel">
           <ShieldCheck aria-hidden="true" className="pointer-events-none absolute -right-6 -top-12 z-0 h-40 w-40 -rotate-12 text-emerald-300 opacity-[0.055]" />
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -250,7 +250,7 @@ export default function MarketplacePricingGlobalAdjustment({
         </section>
       )}
 
-      <div className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.08] shadow-[0_24px_60px_-44px_rgba(0,0,0,0.75)]">
+      <div className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.08] shadow-[0_24px_60px_-44px_rgba(0,0,0,0.75)] admin-graphite-panel">
         <SlidersHorizontal aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-52 w-52 -rotate-12 text-cyan-300 opacity-[0.045]" />
         <div className="h-0.5 bg-gradient-to-r from-cyan-500 via-sky-500/60 to-transparent" />
         <div className="space-y-4 p-4 sm:p-5">
@@ -277,7 +277,7 @@ export default function MarketplacePricingGlobalAdjustment({
                 aria-label="Alcance del ajuste general"
                 value={scope}
                 onChange={(event) => { setScope(event.target.value as GlobalPricingScope); setVerified(null); setPending(null); }}
-                className="h-11 w-full rounded-xl border border-slate-500/40 bg-background px-3 text-sm text-foreground"
+                className="h-11 w-full rounded-xl border border-slate-500/40 bg-background px-3 text-sm text-foreground admin-graphite-control"
               >
                 <option value="all">Todos los servicios</option>
                 <option value="passenger">Solo pasajeros</option>
@@ -329,7 +329,7 @@ export default function MarketplacePricingGlobalAdjustment({
       </div>
 
             {canManage && reduction > 0 && (
-              <div className="space-y-3 rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.075] via-card to-card p-4 shadow-sm" aria-label="Publicación segura del ajuste global">
+              <div className="space-y-3 rounded-[22px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.075] via-card to-card p-4 shadow-sm admin-graphite-panel" aria-label="Publicación segura del ajuste global">
                 <div>
                   <h4 className="font-semibold text-foreground">Publicar la reducción general</h4>
                   <p className="mt-1 text-xs text-muted-foreground">Selecciona un porcentaje nuevo, revisa su alcance y verifica el lote en Supabase antes de publicar. Los redondeos pueden modificar el importe final.</p>
@@ -338,7 +338,7 @@ export default function MarketplacePricingGlobalAdjustment({
                 <div className="flex flex-wrap items-center gap-3">
                   <button type="button" disabled={!canValidate || reduction === 0}
                     onClick={() => void validateServer()}
-                    className="min-h-11 rounded-xl border border-cyan-500/40 bg-background px-4 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40">
+                    className="min-h-11 rounded-xl border border-cyan-500/40 bg-background px-4 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40 admin-graphite-control">
                     {busy ? 'Comprobando…' : '1. Verificar con Supabase'}
                   </button>
                   <button type="button" disabled={!isVerified || busy || !canValidate}
@@ -353,7 +353,7 @@ export default function MarketplacePricingGlobalAdjustment({
 
       {pending && canManage && (
         <Dialog open onOpenChange={(open) => { if (!open && !busy) { setPending(null); setConfirmation(''); } }}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto border-amber-500/50 bg-card sm:max-w-lg">
+          <DialogContent className="max-h-[90vh] overflow-y-auto border-amber-500/50 bg-card sm:max-w-lg admin-graphite-dialog">
             <DialogTitle>Confirmación obligatoria</DialogTitle>
             <DialogDescription>Revisa el alcance y confirma expresamente antes de modificar tarifas.</DialogDescription>
           <p className="mt-2 text-sm text-foreground">
@@ -365,7 +365,7 @@ export default function MarketplacePricingGlobalAdjustment({
           <label className="mt-3 block text-sm font-medium text-foreground">
             Escribe {pending.kind === 'apply' ? 'APLICAR' : 'REVERTIR'} para autorizar
             <input type="text" autoComplete="off" autoFocus value={confirmation} onChange={(event) => setConfirmation(event.target.value)}
-              className="mt-2 block h-11 w-full max-w-sm rounded-xl border border-border bg-background px-3" />
+              className="mt-2 block h-11 w-full max-w-sm rounded-xl border border-border bg-background px-3 admin-graphite-control" />
           </label>
           <div className="mt-4 flex flex-wrap gap-3">
             <button type="button" disabled={busy || confirmation.trim() !== (pending.kind === 'apply' ? 'APLICAR' : 'REVERTIR') ||
@@ -382,7 +382,7 @@ export default function MarketplacePricingGlobalAdjustment({
       )}
 
       {canManage && (
-        <details className="rounded-2xl border border-border/70 bg-card/75 p-4">
+        <details className="rounded-2xl border border-border/70 bg-card/75 p-4 admin-graphite-inset">
           <summary className="cursor-pointer text-sm font-semibold text-foreground">Historial y reversión · {history.length} operaciones</summary>
           <section aria-label="Historial de ajustes globales" className="mt-4 space-y-2">
           <div className="flex items-center justify-between gap-3">
@@ -409,12 +409,12 @@ export default function MarketplacePricingGlobalAdjustment({
         </details>
       )}
 
-      {reduction === 0 ? <p className="rounded-2xl border border-border/60 bg-card/40 px-4 py-3 text-xs text-muted-foreground">El desglose comparativo aparecerá cuando elijas un porcentaje de nueva reducción.</p>
+      {reduction === 0 ? <p className="rounded-2xl border border-border/60 bg-card/40 px-4 py-3 text-xs text-muted-foreground admin-graphite-inset">El desglose comparativo aparecerá cuando elijas un porcentaje de nueva reducción.</p>
         : tariffsLoading ? <p className="p-4 text-sm text-muted-foreground">Cargando tarifas vigentes…</p>
         : tariffsError ? <p role="alert" className="rounded-xl border border-rose-500/30 p-4 text-sm text-rose-500">No se pudieron consultar las tarifas. No se calcula una vista previa sin datos.</p>
         : previews.length === 0 ? <p className="rounded-xl border border-border p-4 text-sm text-muted-foreground">No existen tarifas vigentes para el ámbito seleccionado.</p>
         : (
-          <details className="rounded-2xl border border-border/70 bg-card/70 p-4">
+          <details className="rounded-2xl border border-border/70 bg-card/70 p-4 admin-graphite-inset">
             <summary className="cursor-pointer text-base font-semibold text-foreground">Desglose por modalidad · {previews.length} tarifas</summary>
             <div className="space-y-3 pt-4">
             <div className="flex flex-wrap items-start justify-between gap-3 px-1">
@@ -433,7 +433,7 @@ export default function MarketplacePricingGlobalAdjustment({
             )}
             <div className="grid gap-3 xl:grid-cols-2">
               {previews.map((row) => (
-                <article key={`${row.serviceCode}:${row.vehicleCategoryCode}`} className="rounded-2xl border border-border/70 bg-card/75 p-4 shadow-sm">
+                <article key={`${row.serviceCode}:${row.vehicleCategoryCode}`} className="rounded-2xl border border-border/70 bg-card/75 p-4 shadow-sm admin-graphite-inset">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h5 className="font-semibold text-foreground">{vehicleLabels[row.vehicleCategoryCode] ?? row.vehicleCategoryCode}</h5>
@@ -460,7 +460,7 @@ export default function MarketplacePricingGlobalAdjustment({
                 </article>
               ))}
             </div>
-            <div className="rounded-xl border border-slate-500/30 bg-background/50 p-3 text-xs leading-relaxed text-muted-foreground">
+            <div className="rounded-xl border border-slate-500/30 bg-background/50 p-3 text-xs leading-relaxed text-muted-foreground admin-graphite-inset">
               El ejemplo de 5 km es estructural (máximo entre mínimo y base + kilómetros), con la tasa consultada y redondeo ilustrativo al alza de 100 CUP. No es una cotización oficial: excluye recargos de aeropuerto, horarios, esperas, paradas, pasajeros adicionales y otras condiciones. El descuento real en CUP puede ser diferente por el redondeo. No modifica la tasa de elTOQUE ni precios ya acordados.
             </div>
             </div>
