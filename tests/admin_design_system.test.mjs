@@ -18,7 +18,7 @@ const action = h("button", { type: "button" }, "Accion de prueba");
 function classTokens(markup) {
   return new Set(
     Array.from(markup.matchAll(/class="([^"]*)"/g)).flatMap((match) =>
-      match[1].split(/\s+/),
+      match[1].replaceAll("&amp;", "&").split(/\s+/),
     ),
   );
 }
