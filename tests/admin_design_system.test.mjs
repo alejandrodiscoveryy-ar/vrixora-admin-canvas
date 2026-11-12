@@ -1,3 +1,4 @@
+import { driverWhatsAppLinks, driverWelcomeMessage, TUKTUK_DRIVER_GROUP_URL } from "../src/lib/driver-whatsapp.ts";
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 import { createElement as h } from "react";
@@ -399,7 +400,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(rows, /aria-label=\{\x60Abrir ficha 360 de/);
   assert.match(rows, /pointer-events-none relative z-20/);
   assert.match(rows, /pointer-events-auto min-h-11/);
-  assert.match(rows, /href=\{driverWhatsAppLinks\(item.phone\)!\.web\}/);
+  assert.match(rows, /href=\{driverWhatsAppLinks\(item\.phone, welcomeDrivers \? driverWelcomeMessage\(item\.displayName\) : undefined\)!\.web\}/);
   assert.match(rows, /Ver ficha 360/);
   assert.match(rows, /xl:min-h-8/);
   const record = source("MarketplaceDriver360Record.tsx");
@@ -423,4 +424,37 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(editor, /working/);
   assert.match(editor, /premiumControlSurface/);
   assert.match(editor, /overflow-y-auto overflow-x-hidden/);
+});
+
+test("Driver welcome: personalized editable draft retains the complete invitation URL", () => {
+  const draft = driverWelcomeMessage("María José");
+  assert.ok(draft.startsWith("¡Hola, María!"));
+  assert.ok(draft.includes("Agencia TukTuk"));
+  assert.ok(draft.includes(TUKTUK_DRIVER_GROUP_URL));
+  assert.equal(TUKTUK_DRIVER_GROUP_URL, "https://chat.whatsapp.com/DjmuiDfi6a0CdtqFgqujkb?s=cl&p=a&iam=2");
+  const links = driverWhatsAppLinks("+53 5555 0000", draft);
+  for (const link of [links.web, links.desktop]) {
+    const url = new URL(link);
+    assert.equal(url.searchParams.get("phone"), "5355550000");
+    assert.equal(url.searchParams.get("text"), draft);
+    assert.equal(url.searchParams.has("p"), false);
+    assert.equal(url.searchParams.has("iam"), false);
+  }
+  assert.ok(driverWelcomeMessage(null).startsWith("¡Hola!"));
+  assert.ok(driverWelcomeMessage("  ").startsWith("¡Hola!"));
+  assert.equal(driverWhatsAppLinks(null, draft), null);
+  assert.equal(driverWhatsAppLinks("abc", draft), null);
+  assert.equal(driverWhatsAppLinks("+53 5555 0000").web, "https://web.whatsapp.com/send?phone=5355550000");
+  assert.equal(driverWhatsAppLinks("+53 5555 0000", " ").desktop, "whatsapp://send?phone=5355550000");
+});
+
+test("Driver welcome: scoped to TukTuk directory; 360 remains ordinary contact", () => {
+  const route = readFileSync(new URL("../src/routes/admin.proyectos.$id.$section.tsx", import.meta.url), "utf8");
+  const directory = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  const record = readFileSync(new URL("../src/features/admin/MarketplaceDriver360Record.tsx", import.meta.url), "utf8");
+  assert.match(route, /welcomeDrivers=\{project\.slug === "tuktuk-control"\}/);
+  assert.match(directory, /welcomeDrivers = false/);
+  assert.match(directory, /welcomeDrivers \? driverWelcomeMessage\(item\.displayName\) : undefined/);
+  assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
+  assert.doesNotMatch(record, /driverWelcomeMessage/);
 });

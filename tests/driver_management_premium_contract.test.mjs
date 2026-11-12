@@ -4,16 +4,18 @@ import { test } from "node:test";
 const root = new URL("../", import.meta.url);
 const file = (path) => readFileSync(new URL(path, root), "utf8");
 
-test("WhatsApp Desktop y alternativa web sin pre-envío", () => {
+test("WhatsApp Desktop y alternativa web con borrador de bienvenida optativo, sin envío automático", () => {
   const code = file("src/lib/driver-whatsapp.ts");
   assert.match(code, /whatsapp:\/\/send\?phone=/);
   assert.match(code, /https:\/\/web\.whatsapp\.com\/send\?phone=/);
-  assert.doesNotMatch(code, /text=|window\.open/);
+  assert.match(code, /encodeURIComponent\(message\)/);
+  assert.doesNotMatch(code, /window\.open|fetch\(/);
+  assert.match(code, /const draft = message\?\.trim\(\) \?/);
   const list = file("src/features/admin/MarketplaceSection.tsx");
   const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
   assert.match(list, /driverWhatsAppLinks\(item\.phone\)/);
   assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
-  assert.match(list, /href=\{driverWhatsAppLinks\(item\.phone\)!\.web\}\s+target="_blank"/);
+  assert.match(list, /href=\{driverWhatsAppLinks\(item\.phone, welcomeDrivers \? driverWelcomeMessage\(item\.displayName\) : undefined\)!\.web\}\s+target="_blank"/);
   assert.match(record, /href=\{whatsApp\.web\}\s+target="_blank"/);
 });
 
@@ -67,7 +69,7 @@ test("La migracion de la ficha 360 reproduce el SQL corregido", () => {
 test("UX directorio de conductores: fila 360, WhatsApp único y suspensión separada", () => {
   const list = file("src/features/admin/MarketplaceSection.tsx");
   const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
-  const row = list.split("{driverRows.map((item) => (")[1]?.split("</article>")[0] ?? "";
+  const row = list.split("{visibleDriverRows.map((item) => (")[1]?.split("</article>")[0] ?? "";
   assert.match(row, /className="absolute inset-0 z-10 cursor-pointer/);
   assert.match(row, /onClick=\{\(\) => setDriver360Id\(item\.userId\)\}/);
   assert.equal((row.match(/WhatsApp\s*<\/a>/g) ?? []).length, 1);

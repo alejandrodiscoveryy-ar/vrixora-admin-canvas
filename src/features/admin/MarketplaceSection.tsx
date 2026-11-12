@@ -64,7 +64,7 @@ import { cn } from "@/lib/utils";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect, MiniMetric } from "@/features/admin/MarketplaceListPrimitives";
-import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
+import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
 
 
 
@@ -813,7 +813,7 @@ function dateOfRegistration(value: string | null | undefined) {
     parsed.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Havana" });
 }
 
-export default function MarketplaceSection({ projectId }: { projectId: string }) {
+export default function MarketplaceSection({ projectId, welcomeDrivers = false }: { projectId: string; welcomeDrivers?: boolean }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
 
   const requestedView = useRouterState({
@@ -2134,10 +2134,10 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               className="pointer-events-auto min-h-11 shrink-0 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
                             >
                               <a
-                                href={driverWhatsAppLinks(item.phone)!.web}
+                                href={driverWhatsAppLinks(item.phone, welcomeDrivers ? driverWelcomeMessage(item.displayName) : undefined)!.web}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={`Abrir WhatsApp Web con ${item.displayName}`}
+                                aria-label={welcomeDrivers ? `Preparar bienvenida por WhatsApp para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
                               >
                                 WhatsApp
                               </a>
