@@ -25,7 +25,7 @@ function ToggleRow({
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/55 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-colors">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/55 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-colors admin-graphite-inset">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground">
           {title}
@@ -476,7 +476,7 @@ export default function MarketplaceDispatchSettingsCard({
   ]);
 
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-cyan-400/35 bg-gradient-to-br from-cyan-500/[0.10] via-background/95 to-background shadow-[0_32px_95px_-48px_rgba(34,211,238,0.95)] xl:col-span-2">
+    <section className="relative overflow-hidden rounded-[28px] border border-cyan-400/35 bg-gradient-to-br from-cyan-500/[0.10] via-background/95 to-background shadow-[0_32px_95px_-48px_rgba(34,211,238,0.95)] xl:col-span-2 admin-graphite-panel">
       <img
         src="/admin-premium/dispatch-radar.svg"
         alt=""
@@ -547,7 +547,7 @@ export default function MarketplaceDispatchSettingsCard({
               </div>
 
               <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
-                <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2">
+                <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2 admin-graphite-inset">
                   <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
                     Radios
                   </p>
@@ -560,7 +560,7 @@ export default function MarketplaceDispatchSettingsCard({
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2">
+                <div className="rounded-xl border border-cyan-400/20 bg-background/60 px-3 py-2 admin-graphite-inset">
                   <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
                     Ampliación
                   </p>
@@ -571,7 +571,7 @@ export default function MarketplaceDispatchSettingsCard({
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-amber-400/20 bg-background/60 px-3 py-2">
+                <div className="rounded-xl border border-amber-400/20 bg-background/60 px-3 py-2 admin-graphite-inset">
                   <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-amber-300">
                     Preferencia
                   </p>
@@ -652,7 +652,7 @@ export default function MarketplaceDispatchSettingsCard({
                     ].map((radius) => (
                       <div
                         key={radius.number}
-                        className="rounded-xl border border-cyan-500/15 bg-background/55 p-3 shadow-sm"
+                        className="rounded-xl border border-cyan-500/15 bg-background/55 p-3 shadow-sm admin-graphite-inset"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <Label htmlFor={`dispatch-radius-${radius.number}`}>
@@ -701,7 +701,7 @@ export default function MarketplaceDispatchSettingsCard({
                     onCheckedChange={setExpansionEnabled}
                   />
 
-                  <div className="rounded-xl border border-cyan-500/15 bg-background/55 p-3">
+                  <div className="rounded-xl border border-cyan-500/15 bg-background/55 p-3 admin-graphite-inset">
                     <Label htmlFor="dispatch-expansion-seconds">
                       Tiempo para ampliar
                     </Label>
@@ -776,7 +776,7 @@ export default function MarketplaceDispatchSettingsCard({
                       onCheckedChange={setRatingPriorityEnabled}
                     />
 
-                    <div className="rounded-xl border border-amber-500/15 bg-background/55 p-3">
+                    <div className="rounded-xl border border-amber-500/15 bg-background/55 p-3 admin-graphite-inset">
                       <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">
@@ -818,7 +818,7 @@ export default function MarketplaceDispatchSettingsCard({
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-amber-500/15 bg-background/55 p-3">
+                    <div className="rounded-xl border border-amber-500/15 bg-background/55 p-3 admin-graphite-inset">
                       <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">
@@ -874,7 +874,7 @@ export default function MarketplaceDispatchSettingsCard({
                   </div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.11] via-background/80 to-background/70 p-3.5 shadow-[0_20px_55px_-38px_rgba(139,92,246,1)]">
+                <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.11] via-background/80 to-background/70 p-3.5 shadow-[0_20px_55px_-38px_rgba(139,92,246,1)] admin-graphite-panel">
                   <img
                     src="/admin-premium/test-lab.svg"
                     alt=""
