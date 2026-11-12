@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { compactToolbarControls, compactToolbarSurface, embeddedToolbarSurface, type AdminDensity } from "./density";
 
 export function DataToolbar({
   searchValue,
@@ -14,6 +15,8 @@ export function DataToolbar({
   actions,
   onReset,
   className,
+  density = "comfortable",
+  embedded = false,
 }: {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -24,17 +27,23 @@ export function DataToolbar({
   actions?: React.ReactNode;
   onReset?: () => void;
   className?: string;
+  density?: AdminDensity;
+  embedded?: boolean;
 }) {
   return (
     <div
+      data-density={density}
       className={cn(
-        "rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 p-3 shadow-[var(--shadow-xs)] sm:p-4",
+        density === "compact"
+          ? cn(compactToolbarSurface, compactToolbarControls)
+          : "rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 p-3 shadow-[var(--shadow-xs)] sm:p-4",
+        embedded && embeddedToolbarSurface,
         className,
       )}
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div className={cn("flex flex-col gap-3 lg:flex-row lg:items-center", density === "compact" && "gap-2 lg:flex-col lg:items-stretch xl:flex-row xl:flex-wrap xl:items-center")}>
         {onSearchChange ? (
-          <div className="relative min-w-0 flex-1 lg:max-w-sm">
+          <div className={cn("relative min-w-0 flex-1 lg:max-w-sm", density === "compact" && "w-full lg:max-w-none xl:min-w-48")}>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
             <Input
               value={searchValue ?? ""}
@@ -58,7 +67,7 @@ export function DataToolbar({
             </Button>
           ) : null}
         </div>
-        <div className="flex items-center justify-between gap-3 lg:justify-end">
+        <div className={cn("flex items-center justify-between gap-3 lg:justify-end", density === "compact" && "min-w-0 flex-wrap gap-2 lg:justify-between xl:justify-end")}>
           {resultCount !== undefined ? (
             <span className="whitespace-nowrap text-xs text-text-tertiary">
               {resultCount} {resultCount === 1 ? "resultado" : "resultados"}
