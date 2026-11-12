@@ -296,3 +296,14 @@ test("Premium operational KPI: error and pending values stay distinct from zero"
   assert.ok(error.includes("Finanzas"));
   assert.ok(error.includes("var(--semantic-warning)"));
 });
+
+test("MetricCard: invalid numeric tokens are sanitized without losing valid labels", () => {
+  for (const value of [NaN, Infinity, -Infinity, "NaN CUP", "Infinity%", "-Infinity CUP", "undefined"]) {
+    const markup = render(MetricCard, { label: "Importe", value, density: "compact", appearance: "premium" });
+    assert.match(markup, />0<\/span>/);
+    assert.doesNotMatch(markup, /(?:NaN|Infinity|undefined)(?: CUP|%|<)/);
+  }
+  const markup = render(MetricCard, { label: "Operación", value: "Sin datos", comparison: "Finanzas", density: "compact", appearance: "premium" });
+  assert.ok(markup.includes("Sin datos"));
+  assert.ok(markup.includes("Finanzas"));
+});
