@@ -3982,7 +3982,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
 
   return (
     <div className="min-w-0 space-y-4 sm:space-y-5">
-      <section aria-label="Identidad de la carrera" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/25 bg-gradient-to-br from-[#123b43] via-[#101d23] to-[#0a141b] p-4 shadow-[0_20px_60px_-26px_rgba(22,190,202,0.32)] sm:p-6">
+      <section aria-label="Identidad de la carrera" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/25 bg-gradient-to-br from-[#123b43] via-[#101d23] to-[#0a141b] p-4 shadow-[0_20px_60px_-26px_rgba(22,190,202,0.32)] sm:p-6 admin-graphite-panel">
         <div aria-hidden="true" className="pointer-events-none absolute -right-3 -top-12 select-none text-[130px] font-black leading-none tracking-tighter text-cyan-200/[0.055] sm:text-[180px]">360°</div>
         <div className="pointer-events-none absolute -left-20 -bottom-28 h-64 w-64 rounded-full bg-emerald-500/[0.11] blur-3xl" />
         <div className="pointer-events-none absolute right-0 top-0 h-40 w-64 rounded-full bg-cyan-400/[0.08] blur-3xl" />
@@ -4007,7 +4007,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
               <span className="font-mono text-[10px] text-slate-500" title={jobId}>ID {jobId.slice(0,13)}…</span>
             </div>
           </div>
-          <div className="relative w-full rounded-[20px] border border-emerald-300/20 bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm lg:w-60">
+          <div className="relative w-full rounded-[20px] border border-emerald-300/20 bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm lg:w-60 admin-graphite-inset">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-200/75">Valor de la carrera</p>
             <p className="mt-2 break-words text-[25px] font-black leading-none tracking-tight text-white sm:text-[28px]">{readablePrice}</p>
             <div className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-400">
@@ -4022,7 +4022,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
             { title: "Eventos", value: String(timeline.length), icon: Clock3 },
             { title: "Programación", value: serviceRequest.scheduled_for ? "Programada" : "Sin horario", icon: CalendarDays },
           ].map(({title, value, icon: Icon}) => (
-            <div key={title} className="min-w-0 rounded-xl border border-white/10 bg-[#071217]/55 px-3 py-3">
+            <div key={title} className="min-w-0 rounded-xl border border-white/10 bg-[#071217]/55 px-3 py-3 admin-graphite-inset">
               <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><Icon className="h-3.5 w-3.5 text-cyan-200" />{title}</div>
               <div className="mt-1.5 break-words text-[15px] font-bold text-white">{value}</div>
             </div>
@@ -4030,7 +4030,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
         </div>
       </section>
 
-      <nav aria-label="Secciones del expediente 360 de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30">
+      <nav aria-label="Secciones del expediente 360 de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30 admin-graphite-inset">
         <div role="tablist" aria-label="Contenido de la carrera" className="flex gap-1 overflow-x-auto pb-0.5">
           {tabs.map(({id,label:tabLabel,Icon}) => (
             <button key={id} type="button" role="tab"
@@ -4050,16 +4050,16 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
       <div id="marketplace-job-premium-panel" role="tabpanel" className="min-w-0 space-y-4">
         {activeTab === "overview" ? (
           <>
-            <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.08] via-[#101b22] to-[#0b151b] p-4 sm:p-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.08] via-[#101b22] to-[#0b151b] p-4 sm:p-5 admin-graphite-panel">
               <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-10 h-36 w-36 rounded-full bg-cyan-400/[0.08] blur-3xl" />
               {sectionTitle("01 / Recorrido", "Ruta del servicio", "Origen, destino y referencias operativas de la solicitud.")}
               <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)] lg:items-stretch">
-                <div className="rounded-[18px] border border-emerald-400/20 bg-[#080f13]/65 p-4">
+                <div className="rounded-[18px] border border-emerald-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
                   <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-400/10"><MapPin className="h-4 w-4" /></span> 01 · Punto de recogida</p>
                   <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.origin_text)}</p>
                 </div>
                 <div className="hidden items-center justify-center lg:flex"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10 text-cyan-200"><ArrowRight className="h-5 w-5" /></span></div>
-                <div className="rounded-[18px] border border-cyan-400/20 bg-[#080f13]/65 p-4">
+                <div className="rounded-[18px] border border-cyan-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
                   <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-cyan-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-cyan-400/10"><MapPin className="h-4 w-4" /></span> 02 · Destino</p>
                   <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.destination_text)}</p>
                 </div>
@@ -4067,9 +4067,9 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
             </section>
 
             <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5 admin-graphite-panel">
                 {sectionTitle("02 / Participantes", "Cliente", "Información de contacto relacionada con esta carrera.")}
-                <div className="flex gap-3 rounded-2xl border border-cyan-400/15 bg-black/20 p-3.5">
+                <div className="flex gap-3 rounded-2xl border border-cyan-400/15 bg-black/20 p-3.5 admin-graphite-inset">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-200"><UserRound className="h-5 w-5" /></span>
                   <div className="min-w-0">
                     <p className="break-words text-lg font-semibold text-white">{customer ? text(customer.display_name) : "Cliente no registrado"}</p>
@@ -4078,9 +4078,9 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
                   </div>
                 </div>
               </section>
-              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5 admin-graphite-panel">
                 {sectionTitle("03 / Asignación", "Conductor y vehículo", "Situación de la asignación vinculada al servicio.")}
-                <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-black/20 p-3.5">
+                <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-black/20 p-3.5 admin-graphite-inset">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-200"><CarFront className="h-5 w-5" /></span>
                   <div className="min-w-0">
                     <p className="text-lg font-semibold text-white">{hasDriver ? "Conductor asignado" : "Sin conductor asignado"}</p>
@@ -4091,16 +4091,16 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
               </section>
             </div>
             <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_1.1fr]">
-              <section className="rounded-[23px] border border-border/50 bg-[#0e181e] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-border/50 bg-[#0e181e] p-4 sm:p-5 admin-graphite-inset">
                 {sectionTitle("04 / Programación", "Datos de servicio", "Agenda y condiciones básicas de la carrera.")}
-                <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-black/20 p-3.5">
+                <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-black/20 p-3.5 admin-graphite-inset">
                   <CalendarDays className="mt-1 h-5 w-5 shrink-0 text-violet-300" />
                   <div><p className="text-xs text-slate-400">Hora programada</p><p className="mt-1 text-sm font-semibold text-white">{formatDate(serviceRequest.scheduled_for)}</p></div>
                 </div>
               </section>
-              <section className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0d181f] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0d181f] p-4 sm:p-5 admin-graphite-panel">
                 {sectionTitle("05 / Inteligencia operativa", "Cobertura del radar", "Consulta impactos por conductor y kilómetros registrados al aviso.")}
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3.5 py-3">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3.5 py-3 admin-graphite-inset">
                   <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><Radar className="h-5 w-5 text-cyan-300" />Análisis de distribución</div>
                   <Button type="button" size="sm" variant="outline" className="border-cyan-400/25 text-cyan-100" onClick={() => setActiveTab("radar")}>Explorar radar <ArrowRight className="ml-2 h-4 w-4" /></Button>
                 </div>
@@ -4111,7 +4111,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
 
         {activeTab === "radar" ? (
           <section aria-label="Radar y alcance de la carrera" className="space-y-4">
-            <div className="rounded-[23px] border border-cyan-400/20 bg-gradient-to-br from-[#122b33] to-[#0b161b] p-4 sm:p-5">
+            <div className="rounded-[23px] border border-cyan-400/20 bg-gradient-to-br from-[#122b33] to-[#0b161b] p-4 sm:p-5 admin-graphite-panel">
               {sectionTitle("Inteligencia operativa", "Radar y alcance real", "Ejecuciones, conductores impactados, distancias históricas y etapas de distribución.")}
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-300" />Las distancias proceden de registros históricos; nunca se sustituyen por el GPS actual.</div>
             </div>
@@ -4123,13 +4123,13 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
           <section className="space-y-4">
             {sectionTitle("Estado económico", "Finanzas de la operación", "Importe contratado, comisión y situación registrada de la reserva.")}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[23px] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[0.10] via-[#142621] to-[#0b1718] p-5">
+              <div className="rounded-[23px] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[0.10] via-[#142621] to-[#0b1718] p-5 admin-graphite-panel">
                 <Banknote className="mb-3 h-6 w-6 text-emerald-300" />
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/75">Importe de carrera</p>
                 <p className="mt-2 break-words text-3xl font-black tracking-tight text-white">{readablePrice}</p>
                 <p className="mt-3 text-xs text-slate-400">Precio registrado del servicio.</p>
               </div>
-              <div className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0c181f] p-5">
+              <div className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0c181f] p-5 admin-graphite-panel">
                 <WalletCards className="mb-3 h-6 w-6 text-cyan-200" />
                 <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200/75">Estado de comisión / reserva</p>
                 <p className="mt-2 text-xl font-bold text-white">{financial ? label(text(financial.reservation_status)) : "Sin información financiera"}</p>
@@ -4147,15 +4147,15 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
         ) : null}
 
         {activeTab === "history" ? (
-          <section className="rounded-[24px] border border-cyan-400/15 bg-gradient-to-br from-[#0e1c22] to-[#0a141b] p-4 sm:p-6">
+          <section className="rounded-[24px] border border-cyan-400/15 bg-gradient-to-br from-[#0e1c22] to-[#0a141b] p-4 sm:p-6 admin-graphite-panel">
             {sectionTitle("Auditoría del servicio", "Línea de tiempo", "Historial de cambios de estado, responsables y motivos registrados.")}
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-black/20 px-3.5 py-3">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-black/20 px-3.5 py-3 admin-graphite-inset">
               <p className="text-sm text-slate-300">Eventos registrados</p><p className="text-2xl font-bold text-cyan-200">{timeline.length}</p>
             </div>
             {timeline.length ? (
               <ol className="relative ml-2 space-y-3 border-l border-cyan-400/30 pl-6">
                 {timeline.map((event, index) => (
-                  <li key={String(event.event_id ?? index)} className="relative rounded-[18px] border border-border/50 bg-black/20 p-4">
+                  <li key={String(event.event_id ?? index)} className="relative rounded-[18px] border border-border/50 bg-black/20 p-4 admin-graphite-inset">
                     <span className="absolute -left-[32px] top-5 h-3.5 w-3.5 rounded-full border-[3px] border-[#112128] bg-cyan-300 shadow-[0_0_14px_2px_rgba(34,211,238,0.22)]" />
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-mono text-[11px] text-slate-400">{formatDate(event.created_at)}</p>
@@ -4163,7 +4163,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
                     </div>
                     <p className="mt-2 break-words text-sm font-bold text-white">{text(event.action)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-slate-300">{label(text(event.from_status))}</span>
+                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-slate-300 admin-graphite-inset">{label(text(event.from_status))}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-cyan-300" />
                       <span className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.08] px-2.5 py-1.5 font-semibold text-cyan-100">{label(text(event.to_status))}</span>
                     </div>
