@@ -71,3 +71,12 @@ El propietario aprobó la dirección visual de la captura de producción del PR 
 - Pulso operativo (trabajos/resumen): ocho indicadores existentes reutilizan MetricCard, conservan detalle y categoría, carga, error, valores y reglas de visibilidad/expansión móvil. Cabecera y panel compactos. FleetPulse queda para la siguiente migración; no se alteran categorías, vehículos, conductores, mapa, trabajos, filtros ni acciones.
 - El tratamiento compartido no modifica otros componentes por defecto. La generalización del shell no implica que todas las pantallas hayan migrado al nuevo diseño.
 - Validación: preflight de componentes y compilación, prueba de shell en rutas y mapa a pantalla completa, modo claro/oscuro, escritorio/móvil, periodos del Panel general, acceso por permisos, estados de error y expansión de Pulso. No publicar hasta autorización y no aprobar visualmente sin evidencia.
+
+### Refinamiento posterior a captura de producción del Panel general (#215)
+
+La captura de escritorio oscuro confirmó el grafito del shell y los KPI, pero el selector de período y el estado vacío de Captación mantenían fondos casi negros. Ambos componentes incorporan appearance="premium" opt-in, sin alterar los consumidores estándar.
+
+- AdminPeriodSelector: contenedor premiumControlSurface sin sombra profunda; SelectTrigger premiumColumnHeaderSurface con borde, foco existente y controles táctiles de 44 px en móvil. SelectContent y PopoverContent usan premiumHeaderSurface incluso al renderizarse en portal; calendario transparente para heredar el fondo. Mantener rango, opciones, fechas, navegación anterior/siguiente, volver al período actual, calendario personalizado y acciones.
+- EmptyState: premiumColumnHeaderSurface como recuadro interior, borde sólido discreto, icono sobre premiumControlSurface, sin sombra. Conserva densidad, mensaje, acento del módulo, acción y lógica de estado.
+- Activar ambas variantes en escritorio y móvil del Panel general; los demás consumidores mantienen su apariencia por defecto. No modificar tokens globales, datos, permisos, consultas ni lógica temporal.
+- Validar renderizado, contraste en tema claro/oscuro, navegación de períodos y calendario desplegado, texto del estado vacío, foco y layout móvil. El diseño no se considera visualmente cerrado hasta revisar la captura de producción.
