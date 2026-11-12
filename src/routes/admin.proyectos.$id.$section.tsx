@@ -138,7 +138,7 @@ function SectionPage() {
       return <AuditoriaSection projectId={id} />;
 
     case "trabajos":
-      return <MarketplaceSection projectId={id} />;
+      return <MarketplaceSection projectId={id} welcomeDrivers={project.slug === "tuktuk-control"} />;
 
     default:
       return (
