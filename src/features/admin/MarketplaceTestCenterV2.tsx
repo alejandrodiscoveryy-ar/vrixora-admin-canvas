@@ -597,7 +597,7 @@ export default function MarketplaceTestCenterV2({
   const loading = current.isPending || drivers.isPending || audience.isPending;
   return (
     <section className="tt-lab-v4 min-w-0 space-y-3 xl:col-span-2" aria-label="Centro de pruebas">
-      <div className="tt-lab-v4-header relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-500/[0.08] via-background/80 to-cyan-500/[0.055] px-4 py-3 sm:px-5">
+      <div className="tt-lab-v4-header relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-500/[0.08] via-background/80 to-cyan-500/[0.055] px-4 py-3 sm:px-5 admin-graphite-panel">
         <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-400/10">
@@ -619,7 +619,7 @@ export default function MarketplaceTestCenterV2({
               aria-controls="test-drivers-settings"
               onClick={() => setDriversOpen((v) => !v)}
               disabled={broadcastMode}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-background/55 px-3 py-2 text-xs font-semibold text-cyan-200"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-background/55 px-3 py-2 text-xs font-semibold text-cyan-200 admin-graphite-control"
             >
               <Users className="h-4 w-4" />
               {broadcastMode ? "Destinatarios: Trabajando" : `${selectedIds.length} conductores del grupo tradicional`}
@@ -629,7 +629,7 @@ export default function MarketplaceTestCenterV2({
                 <ChevronRight className="h-4 w-4" />
               )}
             </button>
-            <label className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/55 px-3 py-2 text-sm font-medium text-foreground">
+            <label className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/55 px-3 py-2 text-sm font-medium text-foreground admin-graphite-inset">
               {enabled ? "Activado" : "Desactivado"}
               <Switch
                 checked={enabled}
@@ -658,7 +658,7 @@ export default function MarketplaceTestCenterV2({
           ].map((metric) => (
             <div
               key={metric.label}
-              className="rounded-xl border border-border/45 bg-background/55 px-3 py-2"
+              className="rounded-xl border border-border/45 bg-background/55 px-3 py-2 admin-graphite-inset"
             >
               <span className="text-[11px] text-muted-foreground">{metric.label}</span>
               <p className="mt-0.5 text-lg font-bold leading-tight tabular-nums text-foreground">
@@ -691,7 +691,7 @@ export default function MarketplaceTestCenterV2({
             {!broadcastMode && (driversOpen || dirty || !configured) && (
               <section
                 id="test-drivers-settings"
-                className="tt-lab-v4-drivers min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4"
+                className="tt-lab-v4-drivers min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4 admin-graphite-inset"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -746,7 +746,7 @@ export default function MarketplaceTestCenterV2({
                         value={driverSearch}
                         onChange={(e) => setDriverSearch(e.target.value)}
                         placeholder="Buscar conductor…"
-                        className="h-10 w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 text-sm text-foreground"
+                        className="h-10 w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 text-sm text-foreground admin-graphite-control"
                       />
                     </label>
                     <div className="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
@@ -803,7 +803,7 @@ export default function MarketplaceTestCenterV2({
                 </div>
               </section>
             )}
-            <section className="tt-lab-v4-create min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4">
+            <section className="tt-lab-v4-create min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4 admin-graphite-inset">
               <h4 className="text-sm font-semibold text-foreground">Crear carrera de prueba</h4>
               <p className="mt-1 text-xs text-muted-foreground">
                 Marca el origen y después el destino en el mapa; la ruta y la tarifa se calculan
@@ -817,7 +817,7 @@ export default function MarketplaceTestCenterV2({
                       <select
                         value={legacyRecipientMode ? "advanced" : recipientMode}
                         onChange={(e) => chooseRecipientMode(e.target.value as typeof recipientMode)}
-                        className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                        className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground admin-graphite-control"
                       >
                         {legacyRecipientMode && <option value="advanced" disabled>Modo avanzado seleccionado</option>}
                         <option value="individual">Un conductor</option>
@@ -830,7 +830,7 @@ export default function MarketplaceTestCenterV2({
                         Cada conductor recibe su propia carrera. Si está ocupado, debe finalizar la anterior para aceptarla.
                       </p>
                     )}
-                    <details className="rounded-lg border border-border/40 bg-background/30">
+                    <details className="rounded-lg border border-border/40 bg-background/30 admin-graphite-inset">
                       <summary className="cursor-pointer px-2.5 py-2 text-[11px] font-medium text-muted-foreground">
                         Opciones avanzadas de destinatarios
                       </summary>
@@ -840,7 +840,7 @@ export default function MarketplaceTestCenterV2({
                           <select
                             value={legacyRecipientMode ? recipientMode : ""}
                             onChange={(e) => chooseRecipientMode(e.target.value as typeof recipientMode)}
-                            className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                            className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground admin-graphite-control"
                           >
                             <option value="" disabled>Seleccionar modo tradicional</option>
                             <option value="group">Todo el grupo autorizado</option>
@@ -865,7 +865,7 @@ export default function MarketplaceTestCenterV2({
                         <select
                           value={individualId}
                           onChange={(e) => setIndividualId(e.target.value)}
-                          className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                          className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground admin-graphite-control"
                         >
                           <option value="">Seleccionar…</option>
                           {selected.map((d) => (
@@ -886,7 +886,7 @@ export default function MarketplaceTestCenterV2({
                     <select
                       value={serviceCode}
                       onChange={(e) => setServiceCode(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground admin-graphite-control"
                     >
                       {["passenger", "cargo", "courier", "tourism"].map((s) => (
                         <option key={s} value={s}>
@@ -900,7 +900,7 @@ export default function MarketplaceTestCenterV2({
                     <select
                       value={vehicleCategory}
                       onChange={(e) => setVehicleCategory(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground"
+                      className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-foreground admin-graphite-control"
                     >
                       <option value="">Cualquier compatible</option>
                       {[
@@ -932,7 +932,7 @@ export default function MarketplaceTestCenterV2({
                         }}
                         maxLength={180}
                         placeholder="Calle y número de recogida"
-                        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground admin-graphite-control"
                       />
                       <Button
                         type="button"
@@ -946,7 +946,7 @@ export default function MarketplaceTestCenterV2({
                       </Button>
                     </div>
                     {originSuggestions.length > 0 && (
-                      <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl">
+                      <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl admin-graphite-inset">
                         {originSuggestions.map((item, i) => (
                           <button
                             key={`${i}-${item.lat}`}
@@ -984,7 +984,7 @@ export default function MarketplaceTestCenterV2({
                         }}
                         maxLength={180}
                         placeholder="Calle y número de llegada"
-                        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground admin-graphite-control"
                       />
                       <Button
                         type="button"
@@ -998,7 +998,7 @@ export default function MarketplaceTestCenterV2({
                       </Button>
                     </div>
                     {destinationSuggestions.length > 0 && (
-                      <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl">
+                      <div className="relative z-10 rounded-lg border border-border bg-background p-1 shadow-xl admin-graphite-inset">
                         {destinationSuggestions.map((item, i) => (
                           <button
                             key={`${i}-${item.lat}`}
@@ -1156,7 +1156,7 @@ export default function MarketplaceTestCenterV2({
                     </Button>
                   </div>
                 ) : null}
-                <details className="tt-lab-v4-advanced mt-3 rounded-xl border border-border/55 bg-background/40">
+                <details className="tt-lab-v4-advanced mt-3 rounded-xl border border-border/55 bg-background/40 admin-graphite-inset">
                   <summary className="cursor-pointer px-3 py-3 text-xs font-semibold text-muted-foreground">
                     Opciones avanzadas · precio manual, observaciones y comisión
                   </summary>
@@ -1166,7 +1166,7 @@ export default function MarketplaceTestCenterV2({
                       <select
                         value={priceMode}
                         onChange={(e) => setPriceMode(e.target.value as "auto" | "manual")}
-                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground admin-graphite-control"
                       >
                         <option value="auto">Automático · tarifa oficial</option>
                         <option value="manual">Manual · solo prueba</option>
@@ -1182,7 +1182,7 @@ export default function MarketplaceTestCenterV2({
                           step="1"
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
-                          className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                          className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground admin-graphite-control"
                         />
                       </label>
                     ) : (
@@ -1197,7 +1197,7 @@ export default function MarketplaceTestCenterV2({
                         onChange={(e) => setNotes(e.target.value)}
                         maxLength={1000}
                         placeholder="Añadir nota de prueba"
-                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground admin-graphite-control"
                       />
                     </label>
                     <label className="tt-lab-v4-risk flex items-center justify-between gap-3 rounded-lg border border-amber-400/15 px-3 py-2 text-xs text-amber-200">
@@ -1227,7 +1227,7 @@ export default function MarketplaceTestCenterV2({
             </section>
           </div>
           <section
-            className="tt-lab-v4-history min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4"
+            className="tt-lab-v4-history min-w-0 rounded-2xl border border-border/60 bg-background/45 p-4 admin-graphite-inset"
             aria-label="Historial de pruebas"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1262,7 +1262,7 @@ export default function MarketplaceTestCenterV2({
                         setHistoryCursors([null]);
                         setHistoryPage(0);
                       }}
-                      className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+                      className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground admin-graphite-control"
                     >
                       <option value="all">Todos</option>
                       <option value="published">Publicadas</option>
@@ -1314,7 +1314,7 @@ export default function MarketplaceTestCenterV2({
                     return (
                       <div
                         key={job.job_id}
-                        className="overflow-hidden rounded-xl border border-border/55 bg-background/55"
+                        className="overflow-hidden rounded-xl border border-border/55 bg-background/55 admin-graphite-inset"
                       >
                         <button
                           type="button"
