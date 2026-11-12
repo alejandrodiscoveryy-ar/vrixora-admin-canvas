@@ -400,7 +400,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(rows, /aria-label=\{\x60Abrir ficha 360 de/);
   assert.match(rows, /pointer-events-none relative z-20/);
   assert.match(rows, /pointer-events-auto min-h-11/);
-  assert.match(rows, /href=\{driverWhatsAppLinks\(item\.phone\)!\.web\}/);
+  assert.match(rows, /href=\{welcomeDrivers\s*\? driverWhatsAppLinks\(item\.phone, driverWelcomeMessage\(item\.displayName\)\)!\.desktop\s*:\s*driverWhatsAppLinks\(item\.phone\)!\.web\}/);
   assert.match(rows, /Ver ficha 360/);
   assert.match(rows, /xl:min-h-8/);
   const record = source("MarketplaceDriver360Record.tsx");
@@ -459,16 +459,19 @@ test("Driver welcome: scoped to TukTuk directory; 360 remains ordinary contact",
   assert.doesNotMatch(record, /driverWelcomeMessage/);
 });
 
-test("Driver WhatsApp: original navigation and clipboard welcome are independent", () => {
+test("Driver WhatsApp: installed app protocol, web alternative and clipboard are independent", () => {
   const directory = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
   const rows = directory.slice(directory.indexOf("{visibleDriverRows.map"), directory.indexOf("{visibleDriverRows.length < filteredDriverRows.length"));
-  assert.match(rows, /href=\{driverWhatsAppLinks\(item.phone\)!\.web\}/);
+  assert.match(rows, /href=\{welcomeDrivers\s*\? driverWhatsAppLinks\(item\.phone, driverWelcomeMessage\(item\.displayName\)\)!\.desktop\s*:\s*driverWhatsAppLinks\(item\.phone\)!\.web\}/);
   assert.match(rows, /if \(welcomeDrivers\) void copyDriverWelcome\(driverWelcomeMessage\(item\.displayName\)\)/);
-  assert.match(rows, /target="_blank"/);
-  assert.doesNotMatch(rows, /preventDefault|window\.open|href=\{driverWhatsAppLinks\(item.phone,/);
+  assert.match(rows, /target=\{welcomeDrivers \? undefined : "_blank"\}/);
+  assert.doesNotMatch(rows, /preventDefault|window\.open/);
   assert.match(directory, /await navigator\.clipboard\.writeText\(message\)/);
   assert.match(directory, /setWelcomeCopyFallback\(message\)/);
   assert.match(directory, /value=\{welcomeCopyFallback \?\? ""\}/);
   assert.match(directory, /onFocus=\{\(event\) => event\.currentTarget\.select\(\)\}/);
   assert.equal(driverWhatsAppLinks("+53 5555 0000").web, "https://web.whatsapp.com/send?phone=5355550000");
+  const nativeUrl = new URL(driverWhatsAppLinks("+53 5555 0000", driverWelcomeMessage("María")).desktop);
+  assert.equal(nativeUrl.protocol, "whatsapp:");
+  assert.equal(nativeUrl.searchParams.get("text"), driverWelcomeMessage("María"));
 });

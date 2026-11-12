@@ -855,7 +855,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const copyDriverWelcome = async (message: string) => {
     try {
       await navigator.clipboard.writeText(message);
-      toast.success("Bienvenida copiada. Pégala en WhatsApp.");
+      toast.success("Bienvenida copiada. Si no aparece en WhatsApp, pégala con Ctrl+V.");
     } catch {
       setWelcomeCopyFallback(message);
       toast.error("No se pudo copiar la bienvenida. Puedes copiarla manualmente desde Admin.");
@@ -2146,14 +2146,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               className="pointer-events-auto min-h-11 shrink-0 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
                             >
                               <a
-                                href={driverWhatsAppLinks(item.phone)!.web}
+                                href={welcomeDrivers
+                                  ? driverWhatsAppLinks(item.phone, driverWelcomeMessage(item.displayName))!.desktop
+                                  : driverWhatsAppLinks(item.phone)!.web}
                                 onClick={() => {
                                   if (welcomeDrivers) void copyDriverWelcome(driverWelcomeMessage(item.displayName));
                                 }}
-                                target="_blank"
+                                target={welcomeDrivers ? undefined : "_blank"}
                                 rel="noopener noreferrer"
-                                aria-label={welcomeDrivers ? `Abrir WhatsApp y copiar bienvenida para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
-                                title={welcomeDrivers ? "Abrir WhatsApp y copiar bienvenida (Ctrl+V para pegar)" : undefined}
+                                aria-label={welcomeDrivers ? `Abrir aplicación de WhatsApp con bienvenida para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
+                                title={welcomeDrivers ? "Abrir aplicación de WhatsApp; si no aparece el mensaje, pega con Ctrl+V" : undefined}
                               >
                                 WhatsApp
                               </a>
@@ -2975,7 +2977,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
         <DialogContent className={cn("max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-lg overflow-y-auto p-4", premiumSurface)}>
           <DialogHeader>
             <DialogTitle>Copiar bienvenida</DialogTitle>
-            <DialogDescription>WhatsApp se abre con el enlace habitual. Si el navegador bloqueó la copia automática, selecciona el mensaje y cópialo para pegarlo en la conversación.</DialogDescription>
+            <DialogDescription>Se ha solicitado abrir la aplicación de WhatsApp. Si el mensaje no aparece y el navegador bloqueó la copia automática, selecciona el texto y cópialo para pegarlo en la conversación.</DialogDescription>
           </DialogHeader>
           <Textarea
             readOnly
