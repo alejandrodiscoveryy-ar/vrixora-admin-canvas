@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type AdminModuleKey, moduleBorderLeftMap, moduleColorMap } from "./types";
 import { cn } from "@/lib/utils";
-import { compactSectionHeader, compactSectionContent, type AdminDensity } from "./density";
+import { compactSectionHeader, compactSectionContent, premiumSurface, premiumHeaderSurface, type AdminAppearance, type AdminDensity } from "./density";
 
 export interface SectionCardProps {
   title?: string;
@@ -13,6 +13,7 @@ export interface SectionCardProps {
   headerClassName?: string;
   contentClassName?: string;
   density?: AdminDensity;
+  appearance?: AdminAppearance;
 }
 
 export function SectionCard({
@@ -25,6 +26,7 @@ export function SectionCard({
   headerClassName,
   contentClassName,
   density = "comfortable",
+  appearance = "standard",
 }: SectionCardProps) {
   const borderClass = module ? moduleBorderLeftMap[module] : "";
   const accentColor = module ? moduleColorMap[module] : undefined;
@@ -33,10 +35,12 @@ export function SectionCard({
     <Card
       data-admin-module={module}
       data-density={density}
+      data-appearance={appearance === "premium" ? "premium" : undefined}
       className={cn(
         "overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm",
         borderClass,
         density === "compact" && "min-w-0 backdrop-blur-none",
+        appearance === "premium" && cn(premiumSurface, "backdrop-blur-none"),
         className,
       )}
     >
@@ -46,6 +50,7 @@ export function SectionCard({
             density === "compact"
               ? cn(compactSectionHeader, "sm:flex-row sm:items-center sm:justify-between")
               : "flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6",
+            appearance === "premium" && premiumHeaderSurface,
             headerClassName,
           )}
         >

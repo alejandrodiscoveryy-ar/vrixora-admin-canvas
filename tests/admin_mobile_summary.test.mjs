@@ -16,7 +16,10 @@ test("panel general prioriza cuatro indicadores en dos columnas móviles", () =>
 test("móvil dispone de acceso directo al mapa y los detalles no saturan la pantalla", () => {
   assert.match(dashboard, /search=\{\{ vista: "mapa" \}\}/);
   assert.match(dashboard, /search=\{\{ vista: "trabajos" \}\}/);
-  assert.match(dashboard, /<details className="group overflow-hidden/);
+  // Preserve both native, collapsible details regions; the premium class is now composed with cn.
+  assert.equal((dashboard.match(/<details\s+className=\{cn\("group overflow-hidden/g) ?? []).length, 2);
+  assert.equal((dashboard.match(/<summary\s+className="flex min-h-12 cursor-pointer/g) ?? []).length, 2);
+  assert.match(dashboard, /<MetricCard density="compact" appearance="premium"/);
   assert.match(dashboard, /Más indicadores/);
   assert.match(dashboard, /Actividad reciente/);
   assert.match(dashboard, /recentActivity.slice\(0, 3\)/);

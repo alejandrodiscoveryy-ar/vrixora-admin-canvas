@@ -51,7 +51,7 @@ Variante reutilizable opt-in: `appearance="premium"` en MetricCard y AdminDataTa
 
 Validación: ejecutar pruebas de renderizado y compilación del preflight. Comprobar después en WebApp autenticada, con misma resolución/zoom y datos, altura de KPI, cantidad de filas visibles, tema claro/oscuro, móvil, textos largos, filtros, estados y acciones. La aprobación visual definitiva de Usuarios app como pantalla de referencia requiere esa revisión; no confundir pruebas automáticas con captura o validación de producción.
 
-## Usuarios app — refinamiento grafito (tercera iteración, referencia candidata)
+## Usuarios app — refinamiento grafito (tercera iteración, referencia visual oficial)
 
 La captura de producción del PR #213 confirmó mayor densidad, pero mostró exceso de verde azulado y contraste casi negro entre lienzo, navegación, campos y paneles. Se conserva la estructura y se refina la jerarquía cromática. Esta sección reemplaza la mezcla con primary y las marcas de agua de la segunda iteración.
 
@@ -62,4 +62,12 @@ La captura de producción del PR #213 confirmó mayor densidad, pero mostró exc
 - Shell: aplicar el tratamiento solo al directorio /clientes mediante data-admin-reference-shell y al drawer móvil mediante data-admin-reference-drawer; no afecta Cliente 360 ni otras rutas. El logo conserva su fondo de marca. El tema claro conserva sus tokens y superficies.
 - Mantener datos, consultas, filtros, accesos, acciones, estructura de tabla, responsive y navegación. No extender al resto de Admin hasta comparar visualmente la referencia en producción en claro/oscuro y escritorio/móvil. Verificar también apertura del menú móvil, foco y contraste.
 
-La referencia se considera candidata hasta aprobación visual del propietario; las pruebas automáticas validan contratos y compilación, no certifican el acabado visual.
+El propietario aprobó la dirección visual de la captura de producción del PR #214 (12-11-2026). Usuarios app es la referencia oficial de composición grafito y densidad; la validación funcional/visual móvil y tema claro sigue pendiente. Las pruebas automáticas validan contratos y compilación, no certifican el acabado visual.
+
+## Fase 2 — shell, Panel general y Pulso operativo
+
+- Shell autenticado: los marcadores data-admin-reference-shell y data-admin-reference-drawer pasan de usuarios a graphite en todas las rutas de Admin. Se conserva la misma jerarquía de fondo/navegación/barra superior del PR #214 sin modificar tokens globales, login público, logo ni estilos internos del mapa. Sidebar abierto/contraído y drawer móvil mantienen el comportamiento.
+- Panel general: MobileDashboardStat y DashboardMetric delegan en MetricCard (compact + premium), con los mismos valores, textos, períodos, cargas y accesos. Acentos en los tokens de módulo o semántica; el fondo no tiene gradientes cromáticos. SectionCard incorpora appearance="premium" opt-in para los paneles de Captación, Operación Marketplace, Actividad reciente, Accesos rápidos y Requiere atención; contenido compacto y marcas de agua discretas. Se retira el gran fondo ornamental y los halos blur; se preservan los grupos, navegación y condiciones de visibilidad.
+- Pulso operativo (trabajos/resumen): ocho indicadores existentes reutilizan MetricCard, conservan detalle y categoría, carga, error, valores y reglas de visibilidad/expansión móvil. Cabecera y panel compactos. FleetPulse queda para la siguiente migración; no se alteran categorías, vehículos, conductores, mapa, trabajos, filtros ni acciones.
+- El tratamiento compartido no modifica otros componentes por defecto. La generalización del shell no implica que todas las pantallas hayan migrado al nuevo diseño.
+- Validación: preflight de componentes y compilación, prueba de shell en rutas y mapa a pantalla completa, modo claro/oscuro, escritorio/móvil, periodos del Panel general, acceso por permisos, estados de error y expansión de Pulso. No publicar hasta autorización y no aprobar visualmente sin evidencia.

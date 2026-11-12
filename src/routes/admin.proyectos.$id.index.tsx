@@ -27,6 +27,10 @@ import type { AdminPeriodKey } from "@/components/admin/admin-period";
 
 
 import { SectionCard } from "@/components/admin/SectionCard";
+import { MetricCard } from "@/components/admin/MetricCard";
+import { premiumSurface, premiumHeaderSurface, premiumControlSurface } from "@/components/admin/density";
+import { cn } from "@/lib/utils";
+import type { AdminModuleKey, SemanticState } from "@/components/admin/types";
 import { EmptyState } from "@/components/admin/EmptyState";
 
 import { PageAlert } from "@/components/admin/PageAlert";
@@ -153,11 +157,11 @@ function ResumenPage() {
     <>
 
       <div className="space-y-3 sm:hidden" aria-label="Panel general móvil">
-        <header className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.07] to-background/80 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan-300">VRIXORA · Panel general</p>
+        <header className={cn("rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">VRIXORA · Panel general</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <h1 className="text-lg font-semibold text-foreground">Resumen operativo</h1>
-            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[10px] text-emerald-200">{allLoading ? "Cargando" : "En vivo"}</span>
+            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[10px] text-[var(--semantic-success)]">{allLoading ? "Cargando" : "En vivo"}</span>
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">{buildFreshnessLabel(dataUpdatedAt, allLoading)}</p>
         </header>
@@ -175,19 +179,19 @@ function ResumenPage() {
         <nav className="grid grid-cols-2 gap-2" aria-label="Accesos directos">
           {canViewMarketplace ? (
             <>
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "mapa" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-2 text-xs font-semibold text-cyan-100">
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "mapa" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-2 text-xs font-semibold text-primary">
                 <MapPin className="h-4 w-4 shrink-0" /> Mapa en vivo
               </Link>
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "trabajos" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 text-xs font-semibold text-foreground">
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "trabajos" }} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border p-2 text-xs font-semibold text-foreground", premiumSurface)}>
                 <BriefcaseBusiness className="h-4 w-4 shrink-0" /> Carreras
               </Link>
             </>
           ) : null}
-          {canViewUsers ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "clientes" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 text-xs font-semibold text-foreground"><Users className="h-4 w-4 shrink-0" /> Usuarios</Link> : null}
-          {canViewCommercial ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "comercial" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 text-xs font-semibold text-foreground"><Megaphone className="h-4 w-4 shrink-0" /> Comercial</Link> : null}
+          {canViewUsers ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "clientes" }} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border p-2 text-xs font-semibold text-foreground", premiumSurface)}><Users className="h-4 w-4 shrink-0" /> Usuarios</Link> : null}
+          {canViewCommercial ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "comercial" }} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border p-2 text-xs font-semibold text-foreground", premiumSurface)}><Megaphone className="h-4 w-4 shrink-0" /> Comercial</Link> : null}
         </nav>
         {(canViewMarketplace || canViewCommercial) ? (
-          <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/35">
+          <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Más indicadores <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
             <div className="space-y-3 border-t border-border/50 p-3">
               {canViewMarketplace ? (
@@ -199,7 +203,7 @@ function ResumenPage() {
               ) : null}
               {canViewCommercial ? (
                 <section className="space-y-2" aria-label="Captación comercial">
-                  <p className="text-xs font-semibold text-violet-200">Captación del período</p>
+                  <p className="text-xs font-semibold text-[var(--module-comercial)]">Captación del período</p>
                   <div className="max-w-full overflow-x-auto">
                     <AdminPeriodSelector value={period} range={dateRange} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setDateRange(nextRange); }} />
                   </div>
@@ -215,7 +219,7 @@ function ResumenPage() {
           </details>
         ) : null}
         {canViewAudit ? (
-          <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/35">
+          <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Actividad reciente <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
             <div className="border-t border-border/50 p-3">
               {recentActivity.length ? (
@@ -231,42 +235,26 @@ function ResumenPage() {
                   ))}
                 </ol>
               ) : <p className="text-xs text-muted-foreground">Sin movimientos recientes.</p>}
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-cyan-300">Ver auditoría completa <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary">Ver auditoría completa <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           </details>
         ) : null}
       </div>
       <div className="hidden sm:block">
-    <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.85)] sm:p-3">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/72 via-background/86 to-background/95" />
+    <div className="min-w-0">
+      <div className="space-y-3 md:space-y-4">
+      <section className={cn("relative overflow-hidden rounded-[var(--radius-card)] border px-3 py-3 sm:px-4", premiumHeaderSurface)}>
 
-      <img
-        src="/admin-premium/overview.svg"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-10 top-8 h-[34rem] w-[68%] object-contain object-right-top opacity-[0.13] mix-blend-screen"
-      />
-
-      <div className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
-
-      <div className="pointer-events-none absolute -bottom-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-violet-500/[0.055] blur-3xl" />
-
-      <div className="pointer-events-none absolute left-[28%] top-[36%] h-72 w-72 rounded-full bg-emerald-400/[0.025] blur-3xl" />
-
-      <div className="relative z-10 space-y-3.5 md:space-y-4">
-      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.095] via-background/58 to-emerald-500/[0.055] px-4 py-3.5 shadow-[0_22px_64px_-44px_rgba(34,211,238,0.82)] backdrop-blur-xl sm:px-5">
-
-        <div className="pointer-events-none absolute -left-20 -top-24 h-48 w-48 rounded-full bg-cyan-400/[0.06] blur-3xl" />
 
         <div className="relative flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.09] text-cyan-200 shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.09] text-primary shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
                 <Gauge className="h-4 w-4" />
               </div>
 
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300/85">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-primary/85">
                   Panel general
                 </p>
                 <h1 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
@@ -290,7 +278,7 @@ function ResumenPage() {
               }}
             />
 
-            <span className="hidden rounded-full border border-white/10 bg-background/45 px-3 py-1.5 text-[10px] text-muted-foreground lg:inline-flex">
+            <span className={cn("hidden rounded-[var(--radius-control)] border px-3 py-1.5 text-xs text-text-secondary lg:inline-flex", premiumControlSurface)}>
               {rangeLabel}
             </span>
 
@@ -299,7 +287,7 @@ function ResumenPage() {
               className="w-fit gap-2 border-cyan-400/20 bg-cyan-500/[0.07] px-3 py-1.5 text-[10px] shadow-inner shadow-cyan-500/[0.03]"
             >
               <RefreshCw
-                className={`h-3 w-3 text-cyan-300 ${allLoading ? "animate-spin" : ""}`}
+                className={`h-3 w-3 text-primary ${allLoading ? "animate-spin" : ""}`}
               />
               {buildFreshnessLabel(dataUpdatedAt, allLoading)}
             </Badge>
@@ -391,11 +379,11 @@ function ResumenPage() {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-2">
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Captación"
           description="Recorrido comercial del período seleccionado"
           module="comercial"
-          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(139,92,246,0.8)]"
+          className="relative isolate"
           headerClassName="relative z-10 px-4 py-3 sm:px-4"
           contentClassName="p-3 sm:p-4"
         >
@@ -403,7 +391,7 @@ function ResumenPage() {
             src="/admin-premium/customers.svg"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute -right-12 top-7 h-52 w-[58%] object-contain object-right opacity-[0.10] mix-blend-screen"
+            className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
           />
 
           {periodLeads.length ? (
@@ -430,7 +418,7 @@ function ResumenPage() {
               />
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact"
               icon={Megaphone}
               title="Sin captación en el período"
               description="No hay leads comerciales registrados en las fechas seleccionadas."
@@ -440,11 +428,11 @@ function ResumenPage() {
           )}
         </SectionCard>
 
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Operación Marketplace"
           description="Situación operativa actual"
           module="resumen"
-          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.045] via-surface-1 to-background/55 shadow-[0_20px_58px_-46px_rgba(34,211,238,0.75)]"
+          className="relative isolate"
           headerClassName="relative z-10 px-4 py-3 sm:px-4"
           contentClassName="p-3 sm:p-4"
         >
@@ -452,7 +440,7 @@ function ResumenPage() {
             src="/admin-premium/operations.svg"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute -right-14 top-5 h-56 w-[60%] object-contain object-right opacity-[0.105] mix-blend-screen"
+            className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
           />
 
           {canViewMarketplace ? (
@@ -479,7 +467,7 @@ function ResumenPage() {
               />
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact"
               icon={BriefcaseBusiness}
               title="Sin acceso a Marketplace"
               description="No tienes permisos para consultar los indicadores operativos."
@@ -492,11 +480,11 @@ function ResumenPage() {
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
         {canViewAudit ? (
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Actividad reciente"
             description="Últimos movimientos administrativos"
             module="resumen"
-            className="relative isolate border-cyan-400/12 bg-gradient-to-br from-cyan-500/[0.03] via-surface-1 to-background/50"
+            className="relative isolate"
             headerClassName="relative z-10 px-4 py-3 sm:px-4"
             contentClassName="p-3.5 sm:p-4"
             actions={
@@ -515,7 +503,7 @@ function ResumenPage() {
               src="/admin-premium/activity.svg"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute -right-16 bottom-0 h-[88%] w-[52%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+              className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
             />
 
             {recentActivity.length ? (
@@ -550,7 +538,7 @@ function ResumenPage() {
                 ))}
               </ol>
             ) : (
-              <EmptyState
+              <EmptyState density="compact"
                 icon={Activity}
                 title="Sin actividad reciente"
                 description="Los próximos movimientos auditados aparecerán aquí."
@@ -562,10 +550,10 @@ function ResumenPage() {
         ) : null}
 
         <div className="space-y-4">
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Accesos rápidos"
             module="resumen"
-            className="relative isolate border-cyan-400/12 bg-gradient-to-br from-cyan-500/[0.035] via-surface-1 to-background/50"
+            className="relative isolate"
             headerClassName="relative z-10 px-4 py-3 sm:px-4"
             contentClassName="grid gap-2 p-3 sm:p-3"
           >
@@ -573,7 +561,7 @@ function ResumenPage() {
               src="/admin-premium/shortcuts.svg"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute -right-10 bottom-0 h-full w-[72%] object-contain object-right-bottom opacity-[0.085] mix-blend-screen"
+              className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
             />
             <Button asChild variant="subtle" className="relative z-10 justify-start">
               <Link
@@ -620,10 +608,10 @@ function ResumenPage() {
           ((overview?.jobsIncidentOpen ?? 0) > 0 ||
             (overview?.driversSuspended ?? 0) > 0 ||
             (overview?.pendingTopups ?? 0) > 0) ? (
-            <SectionCard
+            <SectionCard density="compact" appearance="premium"
               title="Requiere atención"
               module="resumen"
-              className="border-amber-400/18 bg-gradient-to-br from-amber-500/[0.05] via-surface-1 to-background/50"
+              className="relative isolate"
               headerClassName="px-4 py-3 sm:px-4"
               contentClassName="space-y-2 p-3 sm:p-3"
             >
@@ -663,124 +651,30 @@ function MobileDashboardStat({
 }: {
   label: string; value: number | string; note: string; icon: LucideIcon; loading: boolean; warning?: boolean;
 }) {
-  return (
-    <article className="min-w-0 rounded-xl border border-border/60 bg-card/55 p-3">
-      <div className="flex min-w-0 items-start justify-between gap-1.5">
-        <p className="min-w-0 text-[11px] font-medium leading-tight text-muted-foreground">{label}</p>
-        <Icon aria-hidden="true" className={warning ? "h-4 w-4 shrink-0 text-amber-300" : "h-4 w-4 shrink-0 text-cyan-300"} />
-      </div>
-      <p className={warning ? "mt-2 text-2xl font-bold leading-none tabular-nums text-amber-200" : "mt-2 text-2xl font-bold leading-none tabular-nums text-foreground"}>
-        {loading ? "…" : value}
-      </p>
-      <p className="mt-1.5 truncate text-[10px] text-muted-foreground">{note}</p>
-    </article>
-  );
+  return <MetricCard density="compact" appearance="premium" label={label} value={value}
+    description={note} icon={Icon} isLoading={loading}
+    semanticState={warning ? "warning" : "info"} />;
 }
 
-type DashboardTone =
-  | "cyan"
-  | "blue"
-  | "emerald"
-  | "rose"
-  | "violet"
-  | "amber";
+type DashboardTone = "cyan" | "blue" | "emerald" | "rose" | "violet" | "amber";
 
-const dashboardToneClasses: Record<
-  DashboardTone,
-  { shell: string; icon: string; glow: string }
-> = {
-  cyan: {
-    shell:
-      "border-cyan-400/16 bg-gradient-to-br from-cyan-500/[0.065] via-background/64 to-background/48",
-    icon: "border-cyan-400/20 bg-cyan-500/[0.08] text-cyan-300",
-    glow: "bg-cyan-400/[0.065]",
-  },
-  blue: {
-    shell:
-      "border-sky-400/16 bg-gradient-to-br from-sky-500/[0.065] via-background/64 to-background/48",
-    icon: "border-sky-400/20 bg-sky-500/[0.08] text-sky-300",
-    glow: "bg-sky-400/[0.065]",
-  },
-  emerald: {
-    shell:
-      "border-emerald-400/16 bg-gradient-to-br from-emerald-500/[0.065] via-background/64 to-background/48",
-    icon: "border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-300",
-    glow: "bg-emerald-400/[0.065]",
-  },
-  rose: {
-    shell:
-      "border-rose-400/18 bg-gradient-to-br from-rose-500/[0.07] via-background/64 to-background/48",
-    icon: "border-rose-400/20 bg-rose-500/[0.08] text-rose-300",
-    glow: "bg-rose-400/[0.07]",
-  },
-  violet: {
-    shell:
-      "border-violet-400/16 bg-gradient-to-br from-violet-500/[0.065] via-background/64 to-background/48",
-    icon: "border-violet-400/20 bg-violet-500/[0.08] text-violet-300",
-    glow: "bg-violet-400/[0.065]",
-  },
-  amber: {
-    shell:
-      "border-amber-400/18 bg-gradient-to-br from-amber-500/[0.07] via-background/64 to-background/48",
-    icon: "border-amber-400/20 bg-amber-500/[0.08] text-amber-300",
-    glow: "bg-amber-400/[0.07]",
-  },
+const dashboardMetricAccents: Record<DashboardTone, { module?: AdminModuleKey; semanticState?: SemanticState }> = {
+  cyan: { module: "resumen" },
+  blue: { module: "clientes" },
+  emerald: { semanticState: "success" },
+  rose: { semanticState: "danger" },
+  violet: { module: "comercial" },
+  amber: { semanticState: "warning" },
 };
 
 function DashboardMetric({
-  label,
-  value,
-  comparison,
-  icon: Icon,
-  tone,
-  isLoading,
+  label, value, comparison, icon: Icon, tone, isLoading,
 }: {
-  label: string;
-  value: number | string;
-  comparison: string;
-  icon: LucideIcon;
-  tone: DashboardTone;
-  isLoading: boolean;
+  label: string; value: number | string; comparison: string; icon: LucideIcon;
+  tone: DashboardTone; isLoading: boolean;
 }) {
-  const palette = dashboardToneClasses[tone];
-
-  return (
-    <article
-      className={`group relative min-h-[106px] overflow-hidden rounded-[20px] border px-3.5 py-3 shadow-[0_18px_50px_-42px_rgba(0,0,0,0.95)] transition duration-200 hover:-translate-y-0.5 ${palette.shell}`}
-    >
-      <div
-        className={`pointer-events-none absolute -right-9 -top-10 h-24 w-24 rounded-full blur-3xl ${palette.glow}`}
-      />
-
-      <div className="relative">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-            {label}
-          </p>
-
-          <span
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${palette.icon}`}
-          >
-            <Icon className="h-4 w-4" />
-          </span>
-        </div>
-
-        <div className="mt-2">
-          {isLoading ? (
-            <div className="h-7 w-14 animate-pulse rounded-lg bg-white/[0.06]" />
-          ) : (
-            <p className="font-mono text-2xl font-bold leading-none tracking-tight text-foreground">
-              {value}
-            </p>
-          )}
-
-          <p className="mt-2 truncate text-[11px] text-muted-foreground">
-            {comparison}
-          </p>
-        </div>
-      </div>
-    </article>
-  );
+  return <MetricCard density="compact" appearance="premium" label={label} value={value}
+    description={comparison} icon={Icon} isLoading={isLoading} {...dashboardMetricAccents[tone]} />;
 }
 function SummaryItem({
   label,
@@ -792,8 +686,7 @@ function SummaryItem({
   description: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[16px] border border-white/[0.075] bg-background/38 px-3.5 py-3 shadow-[0_14px_34px_-28px_rgba(0,0,0,0.95)] transition duration-200 hover:border-white/15 hover:bg-background/48">
-      <div className="pointer-events-none absolute -right-8 -top-10 h-20 w-20 rounded-full bg-cyan-400/[0.035] blur-2xl" />
+    <div className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-compact)] border p-3", premiumSurface, "shadow-none")}>
       <div className="relative">
         <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
           {label}

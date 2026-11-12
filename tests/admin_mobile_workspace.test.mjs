@@ -19,7 +19,12 @@ test("Pulso móvil muestra métricas críticas en dos columnas y permite abrir e
   assert.match(panel, /aria-expanded=\{showAllPulseMetrics\}/);
   assert.match(panel, /Ver todos los indicadores/);
   assert.match(panel, /Mostrar indicadores principales/);
-  assert.match(panel, /sm:min-h-\[174px\]/);
+  // Pulse intentionally no longer imposes 174px cards; it uses the compact shared KPI contract.
+  const pulse = panel.slice(panel.indexOf('aria-label="Indicadores operativos de Pulso"'), panel.indexOf("<MarketplaceFleetPulse"));
+  assert.match(pulse, /<MetricCard[\s\S]*?density="compact"[\s\S]*?appearance="premium"/);
+  assert.doesNotMatch(pulse, /sm:min-h-\[174px\]/);
+  assert.match(pulse, /value=\{overview\.isError \? "—" : Number\(value \?\? 0\)\}/);
+  assert.match(pulse, /isLoading=\{overview\.isLoading\}/);
   assert.match(panel, /label: "Incidencias abiertas"/);
   assert.match(panel, /!\(Number\(overview\.data\?\.pendingTopups \?\? 0\) > 0\)/);
   assert.match(panel, /hidden sm:block/);
