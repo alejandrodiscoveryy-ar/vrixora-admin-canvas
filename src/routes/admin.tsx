@@ -124,7 +124,7 @@ function AdminChrome() {
   return (
     <div
       className="admin-shell min-h-screen w-full bg-background"
-      data-admin-reference-shell={currentSection === "clientes" && /\/clientes\/?$/.test(path) ? "usuarios" : undefined}
+      data-admin-reference-shell="graphite"
     >
       <div className="mx-auto flex min-h-screen w-full max-w-[1920px]">
         <DesktopSidebar
@@ -622,7 +622,7 @@ function MobileDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        data-admin-reference-drawer={currentSection === "clientes" && /\/clientes\/?$/.test(path) ? "usuarios" : undefined}
+        data-admin-reference-drawer="graphite"
         className="w-[82vw] max-w-[22rem] p-0 max-md:pb-[calc(env(safe-area-inset-bottom)+1rem)]"
       >
         <SheetHeader className="border-b border-sidebar-border/80 px-5 pb-4 pt-5 text-left">
