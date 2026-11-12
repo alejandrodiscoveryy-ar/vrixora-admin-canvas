@@ -105,7 +105,7 @@ export function LicensePlansSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <ModuleHeader
+      <ModuleHeader density="compact" appearance="premium"
         title="Planes y precios"
         description="Gestión comercial de planes, tarifas, duraciones y asignación de licencias."
         icon={CreditCard}
@@ -129,7 +129,7 @@ export function LicensePlansSection({ projectId }: { projectId: string }) {
       />
 
       {planList.length === 0 ? (
-        <EmptyState
+        <EmptyState density="compact" appearance="premium"
           icon={CreditCard}
           title="Sin planes configurados"
           description="Crea planes comerciales para empezar a emitir licencias y cobros."
@@ -149,7 +149,7 @@ export function LicensePlansSection({ projectId }: { projectId: string }) {
             const isFeatured = plan.isFeatured;
 
             return (
-              <SectionCard
+              <SectionCard density="compact" appearance="premium"
                 key={plan.code}
                 module="planes"
                 className={isFeatured ? "border-amber-500/40 bg-card/95 shadow-md" : ""}
@@ -175,7 +175,7 @@ export function LicensePlansSection({ projectId }: { projectId: string }) {
                     </Badge>
                   </div>
 
-                  <div className="rounded-xl border border-border/70 bg-background/60 p-3.5">
+                  <div className="rounded-xl border border-border/70 bg-background/60 p-3.5 admin-graphite-inset">
                     <div className="text-3xl font-extrabold font-mono tracking-tight text-foreground">
                       {plan.price.toLocaleString()}{" "}
                       <span className="text-sm font-normal text-muted-foreground">
@@ -353,7 +353,7 @@ function PlanDialog({
   const selectedType = types.find((type) => type.code === value?.licenseType);
   return (
     <Dialog open={!!plan} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>{plan?.code ? "Editar plan" : "Crear plan"}</DialogTitle>
           <DialogDescription>
@@ -545,7 +545,7 @@ function AssignDialog({
   });
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Asignar licencia</DialogTitle>
           <DialogDescription>
