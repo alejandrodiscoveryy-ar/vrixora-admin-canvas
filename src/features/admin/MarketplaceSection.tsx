@@ -11,6 +11,7 @@ import {
   CarFront,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   CircleDollarSign,
   Clock3,
   Eye,
@@ -300,10 +301,10 @@ const serviceClasses = (serviceCode: string | null) => {
   return "border-border/70 bg-muted/40 text-muted-foreground";
 };
 
-function StatusBadge({ status }: { status: string | null }) {
+function StatusBadge({ status, compact = false }: { status: string | null; compact?: boolean }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClasses(
+      className={`inline-flex items-center rounded-full border ${compact ? "px-2 py-0.5 leading-tight" : "px-2.5 py-1"} text-[11px] font-semibold ${statusClasses(
         status,
       )}`}
     >
@@ -2027,19 +2028,20 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                   {visibleDriverRows.map((item) => (
                     <article
                       key={item.userId}
-                      className={cn("group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border px-3 py-2.5 transition-colors hover:border-primary/40", premiumSurface)}
+                      className={cn("group relative min-w-0 overflow-hidden rounded-[var(--radius-compact)] border px-3 py-2 transition-colors hover:border-primary/40", premiumSurface, "shadow-none")}
+                      data-driver-row="compact"
                     >
                       <button
                         type="button"
-                        className="absolute inset-0 z-10 cursor-pointer rounded-[var(--radius-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                        className="absolute inset-0 z-10 cursor-pointer rounded-[var(--radius-compact)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                         onClick={() => setDriver360Id(item.userId)}
                         aria-label={`Abrir ficha 360 de ${item.displayName}`}
                       />
 
-                      <div className="pointer-events-none relative grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto] xl:items-center">
-                        <div className="min-w-0">
-                          <div className="flex min-w-0 items-start gap-2.5">
-                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/20 bg-cyan-500/[0.07] text-cyan-200 shadow-inner shadow-cyan-500/[0.04]">
+                      <div className="pointer-events-none relative grid min-w-0 grid-cols-2 items-center gap-x-3 gap-y-2 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,0.9fr)_minmax(0,1.15fr)_7rem] xl:gap-3">
+                        <div className="col-span-2 min-w-0 xl:col-span-1">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-default bg-surface-2 text-primary">
                               <Users className="h-5 w-5" />
                               {driverMedia.data?.[item.userId]?.avatarUrl ? (
                                 <img
@@ -2053,16 +2055,17 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                               ) : null}
                             </div>
 
-                            <div className="min-w-0">
-                              <h4 className="break-words text-sm font-semibold text-foreground">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                              <h4 className="min-w-0 break-words text-sm font-semibold leading-snug text-foreground">
                                 {item.displayName}
                               </h4>
 
-                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                <StatusBadge status={item.status} />
+                              <div className="flex min-w-0 flex-wrap items-center gap-1">
+                                <StatusBadge status={item.status} compact />
 
                                 <span
-                                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-tight ${
                                     item.isAvailable
                                       ? "border-emerald-500/25 bg-emerald-500/[0.09] text-emerald-300"
                                       : "border-border/70 bg-muted/35 text-muted-foreground"
@@ -2071,7 +2074,8 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                   {item.isAvailable ? "Disponible" : "No disponible"}
                                 </span>
                               </div>
-                              <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
+                              </div>
+                              <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-text-secondary">
                                 <CalendarDays className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
                                 Inscripción: {dateOfRegistration(item.createdAt)}
                               </p>
@@ -2079,24 +2083,24 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           </div>
                         </div>
 
-                        <div className={cn("min-w-0 rounded-[var(--radius-compact)] border px-3 py-2", premiumColumnHeaderSurface)}>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium leading-tight text-text-secondary">
                             WhatsApp
                           </p>
 
-                          <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+                          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs font-medium text-foreground sm:text-sm">
                             <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
                             <span className="min-w-0 break-words">{item.phone ?? "Sin WhatsApp"}</span>
                           </p>
                         </div>
 
-                        <div className={cn("min-w-0 rounded-[var(--radius-compact)] border px-3 py-2", premiumColumnHeaderSurface)}>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium leading-tight text-text-secondary">
                             Vehículo
                           </p>
 
-                          <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
-                            <span className="relative flex h-9 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/15 bg-cyan-500/[0.04] text-cyan-300">
+                          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs font-medium text-foreground sm:text-sm">
+                            <span className="relative flex h-7 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-border-default bg-surface-2 text-primary">
                               <CarFront className="h-4 w-4" />
                               {driverMedia.data?.[item.userId]?.vehiclePhotos[
                                 item.vehicleId ?? ""
@@ -2119,14 +2123,15 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                           </p>
                         </div>
 
-                        <div className="pointer-events-none relative z-20 flex flex-wrap items-center justify-end gap-2 xl:flex-nowrap">
+                        <div className="pointer-events-none relative z-20 col-span-2 flex min-w-0 items-center justify-between gap-2 xl:col-span-1 xl:justify-end">
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary xl:hidden">Ver ficha 360 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></span>
                           {driverWhatsAppLinks(item.phone) ? (
                             <Button
                               asChild
                               type="button"
                               size="sm"
                               variant="outline"
-                              className="pointer-events-auto min-h-11 w-full border-emerald-500/30 bg-emerald-500/[0.08] text-[var(--semantic-success)] sm:w-auto"
+                              className="pointer-events-auto min-h-11 shrink-0 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
                             >
                               <a
                                 href={driverWhatsAppLinks(item.phone)!.web}
@@ -2137,7 +2142,7 @@ export default function MarketplaceSection({ projectId }: { projectId: string })
                                 WhatsApp
                               </a>
                             </Button>
-                          ) : null}
+                          ) : <ChevronRight className="hidden h-4 w-4 shrink-0 text-text-secondary xl:block" aria-hidden="true" />}
                         </div>
                       </div>
                     </article>
