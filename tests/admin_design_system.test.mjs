@@ -271,3 +271,28 @@ test("Premium DataToolbar: graphite search is opt-in and keeps search/reset cont
   hasClasses(markup, ...premiumControlSurface.split(" "));
   assert.ok(!classTokens(standard).has(premiumControlSurface.split(" ")[0]));
 });
+
+test("Premium SectionCard: opt-in graphite panel retains heading, actions and contents", () => {
+  const props = { density: "compact", title: "Operacion", description: "Datos operativos", actions: action, children: "Registro", module: "resumen" };
+  const standard = render(SectionCard, props);
+  assert.equal(standard, render(SectionCard, { ...props, appearance: "standard" }));
+  assert.doesNotMatch(standard, /data-appearance=/);
+  const markup = render(SectionCard, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.ok(markup.includes("Operacion"));
+  assert.ok(markup.includes("Datos operativos"));
+  assert.ok(markup.includes("Accion de prueba"));
+  assert.ok(markup.includes("Registro"));
+  hasClasses(markup, ...premiumSurface.split(" "), ...premiumHeaderSurface.split(" "), "p-3", "sm:p-4");
+});
+
+test("Premium operational KPI: error and pending values stay distinct from zero", () => {
+  const props = { density: "compact", appearance: "premium", label: "Recargas pendientes", description: "En revision financiera", comparison: "Finanzas", semanticState: "warning", icon: CreditCard };
+  const error = render(MetricCard, { ...props, value: "—" });
+  const zero = render(MetricCard, { ...props, value: 0 });
+  assert.match(error, />—<\/span>/);
+  assert.match(zero, />0<\/span>/);
+  assert.ok(error.includes("En revision financiera"));
+  assert.ok(error.includes("Finanzas"));
+  assert.ok(error.includes("var(--semantic-warning)"));
+});
