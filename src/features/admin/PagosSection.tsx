@@ -327,8 +327,8 @@ export default function PagosSection({ projectId }: { projectId: string }) {
   }, [search, plan, status, currency, method, operator, period, fromDate, toDate]);
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <ModuleHeader
+    <div className="space-y-3 md:space-y-4">
+      <ModuleHeader density="compact"
         title="Pagos"
         description="Gestión financiera, registro de cobros, verificación de recibos y auditoría."
         icon={CreditCard}
@@ -348,7 +348,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
       {/* 4 KPI Principales */}
       <KpiGrid columns={4} density="compact">
-        <MetricCard
+        <MetricCard density="compact"
           label="Ingresos del período"
           value={revenueDisplay}
           description="Pagos confirmados"
@@ -356,21 +356,21 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           module="pagos"
           semanticState="success"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Cobros realizados"
           value={paidRows.length}
           description="Transacciones exitosas"
           icon={CheckCircle2}
           module="pagos"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Ticket medio"
           value={formattedAvgTicket}
           description="Valor promedio por cobro"
           icon={CircleDollarSign}
           module="pagos"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Renovaciones pagadas"
           value={renewalsCount}
           description="Renovaciones registradas"
@@ -381,7 +381,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       </KpiGrid>
 
       {/* Gráfico Compacto Últimos 30 días */}
-      <SectionCard title="Evolución de ingresos (últimos 30 días)" module="pagos">
+      <SectionCard density="compact" title="Evolución de ingresos (últimos 30 días)" module="pagos">
         {revenue30d.hasRevenue ? (
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -422,7 +422,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <EmptyState
+          <EmptyState density="compact"
             title="Sin ingresos recientes"
             description="No hay pagos confirmados en los últimos 30 días para mostrar gráficos."
             module="pagos"
@@ -430,7 +430,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         )}
       </SectionCard>
 
-      <SectionCard
+      <SectionCard density="compact"
         title="Prefacturas"
         description="Cobros preparados con importe y tasa congelados durante 48 horas"
         module="pagos"
@@ -486,7 +486,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
               );
             })
           ) : (
-            <EmptyState
+            <EmptyState density="compact"
               icon={FileText}
               title="Sin prefacturas"
               description="Las prefacturas preparadas desde Cliente 360 aparecerán aquí."
@@ -497,7 +497,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       </SectionCard>
 
       {(pendingCount > 0 || missingReceiptCount > 0) && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+        <div className="rounded-[var(--radius-card)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] p-3 text-sm text-[var(--semantic-warning-foreground)]">
           <p className="font-semibold">Alertas de coherencia</p>
           <p className="mt-1 text-xs">
             {pendingCount > 0 ? `${pendingCount} pagos pendientes por confirmar.` : ""}
@@ -508,11 +508,11 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       )}
 
       {/* Tabla de Pagos con FilterToolbar & AdminDataTableShell */}
-      <AdminDataTableShell
+      <AdminDataTableShell density="compact"
         title="Historial de transacciones"
         description="Las operaciones de prueba se muestran con su marca, pero no entran en los indicadores financieros."
         actions={
-          <FilterToolbar
+          <FilterToolbar density="compact" embedded
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Buscar por correo, licencia, referencia o plan..."
@@ -591,7 +591,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         }
         isEmpty={filtered.length === 0}
         emptyState={
-          <EmptyState
+          <EmptyState density="compact"
             icon={CreditCard}
             title="Sin pagos encontrados"
             description="No hay transacciones que coincidan con los filtros aplicados."
@@ -599,9 +599,9 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           />
         }
       >
-        <div className="space-y-3 md:hidden">
+        <div className="space-y-2 p-3 md:hidden">
           {visibleMobileRows.map((payment) => (
-            <div key={payment.id} className="rounded-2xl border border-border/70 bg-card/70 p-4">
+            <div key={payment.id} className="rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 p-3 shadow-[var(--shadow-xs)]">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-base font-bold font-mono">

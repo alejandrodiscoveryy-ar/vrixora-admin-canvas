@@ -135,30 +135,30 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-5">
+    <div className="space-y-3 md:space-y-4">
       <KpiGrid columns={4} density="compact">
-        <MetricCard
+        <MetricCard density="compact"
           label="Total usuarios"
           value={allClients.length}
           description="Registrados en el sistema"
           icon={Users}
           module="clientes"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Adopción alta"
           value={adoptionSummary.high}
           description="Uso consolidado"
           icon={Users}
           semanticState="success"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Adopción media"
           value={adoptionSummary.medium}
           description="Uso en desarrollo"
           icon={Users}
           module="clientes"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Sin actividad"
           value={adoptionSummary.inactive}
           description="Sin actividad observable"
@@ -167,11 +167,11 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         />
       </KpiGrid>
 
-      <AdminDataTableShell
+      <AdminDataTableShell density="compact"
         title="Usuarios registrados"
         description="Registro y actividad de usuarios de la aplicación"
         actions={
-          <DataToolbar
+          <DataToolbar density="compact" embedded
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo o teléfono..."
@@ -217,7 +217,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         }
         isEmpty={clients.length === 0}
         emptyState={
-          <EmptyState
+          <EmptyState density="compact"
             icon={Users}
             title="Sin usuarios encontrados"
             description="No hay usuarios que coincidan con los criterios actuales."
@@ -473,8 +473,8 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <ModuleHeader
+    <div className="space-y-3 md:space-y-4">
+      <ModuleHeader density="compact"
         title="Usuarios app"
         description="Directorio de clientes, usuarios registrados y estado de sus licencias."
         icon={Users}
@@ -482,28 +482,28 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
       />
 
       <KpiGrid columns={4} density="compact">
-        <MetricCard
+        <MetricCard density="compact"
           label="Total usuarios"
           value={allClients.length}
           description="Registrados en sistema"
           icon={Users}
           module="clientes"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Activos"
           value={activeClients}
           description="Con licencia vigente"
           icon={ShieldCheck}
           semanticState="success"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="En prueba"
           value={trialClients}
           description="Plan trial activo"
           icon={KeyRound}
           module="clientes"
         />
-        <MetricCard
+        <MetricCard density="compact"
           label="Vencen en 7 días"
           value={expiringSoon}
           description="Requieren renovación"
@@ -513,11 +513,11 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
       </KpiGrid>
 
       {/* Tabla con FilterToolbar & AdminDataTableShell */}
-      <AdminDataTableShell
+      <AdminDataTableShell density="compact"
         title="Usuarios registrados"
         description="Gestión detallada de cuentas y accesos"
         actions={
-          <DataToolbar
+          <DataToolbar density="compact" embedded
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo, teléfono o licencia..."
@@ -563,7 +563,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
         }
         isEmpty={clients.length === 0}
         emptyState={
-          <EmptyState
+          <EmptyState density="compact"
             icon={Users}
             title="Sin usuarios encontrados"
             description="No hay clientes que coincidan con los criterios de búsqueda actuales."

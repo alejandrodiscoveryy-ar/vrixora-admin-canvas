@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type AdminModuleKey, moduleBorderLeftMap, moduleColorMap } from "./types";
 import { cn } from "@/lib/utils";
+import { compactSectionHeader, compactSectionContent, type AdminDensity } from "./density";
 
 export interface SectionCardProps {
   title?: string;
@@ -11,6 +12,7 @@ export interface SectionCardProps {
   className?: string;
   headerClassName?: string;
   contentClassName?: string;
+  density?: AdminDensity;
 }
 
 export function SectionCard({
@@ -22,6 +24,7 @@ export function SectionCard({
   className,
   headerClassName,
   contentClassName,
+  density = "comfortable",
 }: SectionCardProps) {
   const borderClass = module ? moduleBorderLeftMap[module] : "";
   const accentColor = module ? moduleColorMap[module] : undefined;
@@ -29,20 +32,24 @@ export function SectionCard({
   return (
     <Card
       data-admin-module={module}
+      data-density={density}
       className={cn(
         "overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm",
         borderClass,
+        density === "compact" && "min-w-0 backdrop-blur-none",
         className,
       )}
     >
       {(title || description || actions) && (
         <CardHeader
           className={cn(
-            "flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6",
+            density === "compact"
+              ? cn(compactSectionHeader, "sm:flex-row sm:items-center sm:justify-between")
+              : "flex flex-col gap-3 border-b border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6",
             headerClassName,
           )}
         >
-          <div>
+          <div className={density === "compact" ? "min-w-0" : undefined}>
             {title ? (
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base font-semibold">{title}</CardTitle>
@@ -61,11 +68,11 @@ export function SectionCard({
               </CardDescription>
             ) : null}
           </div>
-          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+          {actions ? <div className={cn("flex items-center gap-2", density === "compact" && "min-w-0 flex-wrap max-sm:[&_button]:min-h-11")}>{actions}</div> : null}
         </CardHeader>
       )}
 
-      <CardContent className={cn("p-4 sm:p-6", contentClassName)}>{children}</CardContent>
+      <CardContent className={cn(density === "compact" ? compactSectionContent : "p-4 sm:p-6", contentClassName)}>{children}</CardContent>
     </Card>
   );
 }
