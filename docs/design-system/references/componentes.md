@@ -39,7 +39,7 @@ Pilotos: PagosSection y ClientesSection (Usuarios app, incluidas sus ramas de pr
 - Medir cabecera, área visible, padding y filas antes/después; no emitir puntuación definitiva sin captura y prueba funcional.
 - Registrar pendientes y excepciones; la adopción de variantes no constituye certificación visual. No desplegar ni integrar sin autorización y controles vigentes.
 
-## Usuarios app — referencia premium (segunda iteración)
+## Usuarios app — referencia premium (segunda iteración, antecedente)
 
 Variante reutilizable opt-in: `appearance="premium"` en MetricCard y AdminDataTableShell, normalmente combinada con `density="compact"`. La apariencia predeterminada y las variantes compactas de los demás módulos permanecen intactas.
 
@@ -50,3 +50,16 @@ Variante reutilizable opt-in: `appearance="premium"` en MetricCard y AdminDataTa
 - ClientesSection activa estas variantes tanto en el directorio de TukTuk como en su vista heredada de licencias. Las cuatro métricas de adopción conservan sus datos; los iconos y acentos expresan su significado. Se elimina la cabecera Acciones donde no existía una celda de acción y se añade donde las acciones ya estaban presentes. Sin cambios de consultas, cálculos, filtros, permisos o mutaciones.
 
 Validación: ejecutar pruebas de renderizado y compilación del preflight. Comprobar después en WebApp autenticada, con misma resolución/zoom y datos, altura de KPI, cantidad de filas visibles, tema claro/oscuro, móvil, textos largos, filtros, estados y acciones. La aprobación visual definitiva de Usuarios app como pantalla de referencia requiere esa revisión; no confundir pruebas automáticas con captura o validación de producción.
+
+## Usuarios app — refinamiento grafito (tercera iteración, referencia candidata)
+
+La captura de producción del PR #213 confirmó mayor densidad, pero mostró exceso de verde azulado y contraste casi negro entre lienzo, navegación, campos y paneles. Se conserva la estructura y se refina la jerarquía cromática. Esta sección reemplaza la mezcla con primary y las marcas de agua de la segunda iteración.
+
+- Modo oscuro premium: grafito ligeramente azulado, no negro plano. Se derivan fondos de surface-3 y text-secondary; el cian primary y los colores semánticos se reservan para identidad, foco, acciones y estados, no grandes superficies. No modificar los tokens globales.
+- Capas: lienzo 5% text-secondary, navegación 7%, barra superior 10%, tabla 11%, controles 12%, encabezados de columna 15%, KPI 17%, cabecera de panel 20%. Los porcentajes restantes son surface-3; mezcla en OKLab. Mantener bordes y contrastes legibles. Hover de fila 18%, insignia inactiva 19%, sin negro puro.
+- Contrato reutilizable: premiumSurface, premiumMetricSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface y premiumInactiveBadge en density.ts. DataToolbar admite appearance="premium" para el campo de búsqueda; filtros SelectTrigger utilizan premiumControlSurface.
+- Marcas de agua: 48 px móvil, 64 px escritorio, dentro de la tarjeta (8 px desde abajo); opacidad 6% claro / 7% oscuro, sin interacción, no competir con la cifra. Conservar padding 12 px y densidad.
+- Shell: aplicar el tratamiento solo al directorio /clientes mediante data-admin-reference-shell y al drawer móvil mediante data-admin-reference-drawer; no afecta Cliente 360 ni otras rutas. El logo conserva su fondo de marca. El tema claro conserva sus tokens y superficies.
+- Mantener datos, consultas, filtros, accesos, acciones, estructura de tabla, responsive y navegación. No extender al resto de Admin hasta comparar visualmente la referencia en producción en claro/oscuro y escritorio/móvil. Verificar también apertura del menú móvil, foco y contraste.
+
+La referencia se considera candidata hasta aprobación visual del propietario; las pruebas automáticas validan contratos y compilación, no certifican el acabado visual.
