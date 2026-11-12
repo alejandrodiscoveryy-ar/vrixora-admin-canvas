@@ -38,3 +38,15 @@ Pilotos: PagosSection y ClientesSection (Usuarios app, incluidas sus ramas de pr
 - Probar búsqueda, limpiar filtros, paginación, expansión/acciones móviles y accesos existentes. Comprobar importes y estados financieros intactos.
 - Medir cabecera, área visible, padding y filas antes/después; no emitir puntuación definitiva sin captura y prueba funcional.
 - Registrar pendientes y excepciones; la adopción de variantes no constituye certificación visual. No desplegar ni integrar sin autorización y controles vigentes.
+
+## Usuarios app — referencia premium (segunda iteración)
+
+Variante reutilizable opt-in: `appearance="premium"` en MetricCard y AdminDataTableShell, normalmente combinada con `density="compact"`. La apariencia predeterminada y las variantes compactas de los demás módulos permanecen intactas.
+
+- Superficies: `premiumSurface`, `premiumHeaderSurface`, `premiumTableDensity` y `premiumTableRow` en density.ts. Se utilizan tokens existentes de superficies, bordes, sombras, texto y marca; el tema oscuro combina surface-3 con primary (12% en superficie, 18% en encabezados y 20% al pasar el cursor por las filas). No se modifican los tokens globales.
+- KPI: padding 12 px, cifra tabular con peso semibold, línea superior fina, icono de fondo decorativo (6% claro y 9% oscuro), sin blur ni movimiento al pasar el cursor. La marca de agua queda detrás del contenido, no capta interacción y se oculta durante la carga. La opacidad del 9% es una excepción local para contraste decorativo del tema oscuro.
+- Directorio: encabezado con superficie propia, filas sin altura rígida, padding vertical 6 px, avatares de 32 px en escritorio, bordes y estados legibles. El objetivo orientativo es 44–48 px para una fila sencilla; permitir que crezca si el contenido lo requiere.
+- Móvil: tarjetas de registro con padding 12 px; filtros de ancho completo en pantallas estrechas, etiquetas accesibles y acciones de ficha existentes con objetivo táctil de 44 px.
+- ClientesSection activa estas variantes tanto en el directorio de TukTuk como en su vista heredada de licencias. Las cuatro métricas de adopción conservan sus datos; los iconos y acentos expresan su significado. Se elimina la cabecera Acciones donde no existía una celda de acción y se añade donde las acciones ya estaban presentes. Sin cambios de consultas, cálculos, filtros, permisos o mutaciones.
+
+Validación: ejecutar pruebas de renderizado y compilación del preflight. Comprobar después en WebApp autenticada, con misma resolución/zoom y datos, altura de KPI, cantidad de filas visibles, tema claro/oscuro, móvil, textos largos, filtros, estados y acciones. La aprobación visual definitiva de Usuarios app como pantalla de referencia requiere esa revisión; no confundir pruebas automáticas con captura o validación de producción.

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CreditCard, Eye, Loader2, ShieldCheck, Users, KeyRound } from "lucide-react";
+import { Activity, CreditCard, Eye, Loader2, ShieldCheck, Users, UserCheck, UserRoundX, KeyRound } from "lucide-react";
 import { supabaseServices, type LicenseStatus, type ServiceClient } from "@/lib/services";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,6 +41,8 @@ import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
 import { DataToolbar } from "@/components/admin/DataToolbar";
 import { DetailList } from "@/components/admin/DetailList";
 import { KpiGrid } from "@/components/admin/KpiGrid";
+import { premiumSurface, premiumHeaderSurface, premiumTableDensity, premiumTableRow } from "@/components/admin/density";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { MobileActionsMenu } from "@/components/admin/MobileAdminSystem";
 import { Card, CardContent } from "@/components/ui/card";
@@ -135,39 +137,39 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="min-w-0 space-y-3 md:space-y-4" data-admin-module="clientes" data-admin-reference="usuarios">
       <KpiGrid columns={4} density="compact">
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Total usuarios"
           value={allClients.length}
           description="Registrados en el sistema"
           icon={Users}
           module="clientes"
         />
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Adopción alta"
           value={adoptionSummary.high}
           description="Uso consolidado"
-          icon={Users}
+          icon={UserCheck}
           semanticState="success"
         />
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Adopción media"
           value={adoptionSummary.medium}
           description="Uso en desarrollo"
-          icon={Users}
-          module="clientes"
+          icon={Activity}
+          semanticState="warning"
         />
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Sin actividad"
           value={adoptionSummary.inactive}
           description="Sin actividad observable"
-          icon={Users}
-          module="clientes"
+          icon={UserRoundX}
+          semanticState="inactive"
         />
       </KpiGrid>
 
-      <AdminDataTableShell density="compact"
+      <AdminDataTableShell density="compact" appearance="premium"
         title="Usuarios registrados"
         description="Registro y actividad de usuarios de la aplicación"
         actions={
@@ -184,7 +186,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             filters={
               <>
                 <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
-                  <SelectTrigger className="w-[155px]">
+                  <SelectTrigger aria-label="Filtrar por adopción" className="w-full min-[420px]:w-[155px]">
                     <SelectValue placeholder="Adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -197,7 +199,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 </Select>
 
                 <Select value={adoptionSort} onValueChange={setAdoptionSort}>
-                  <SelectTrigger className="w-[175px]">
+                  <SelectTrigger aria-label="Ordenar por adopción" className="w-full min-[420px]:w-[175px]">
                     <SelectValue placeholder="Ordenar adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,15 +227,15 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
           />
         }
       >
-        <div className="space-y-3 md:hidden">
+        <div className="space-y-2 p-3 md:hidden">
           {clients.map((client) => (
             <Card
               key={client.userId}
               data-admin-module="clientes"
-              className="rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]"
+              className={cn("rounded-[var(--radius-card)]", premiumSurface, "shadow-[var(--shadow-xs)]")}
             >
-              <CardContent className="space-y-3 p-4">
-                <div className="flex min-w-0 items-center gap-3">
+              <CardContent className="space-y-2 p-3">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <Avatar className="h-9 w-9 shrink-0 border border-[var(--module-border)]">
                     <AvatarImage src={client.avatarUrl ?? undefined} />
                     <AvatarFallback className="bg-[var(--module-surface)] text-xs font-semibold text-[var(--module-foreground)]">
@@ -258,9 +260,11 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                   <Badge
                     variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
                     className="gap-1.5 rounded-full"
+                    style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                   >
                     <span
-                      className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                      aria-hidden="true"
+                      className={`h-2 w-2 shrink-0 rounded-full ${adoptionDotClass(
                         client.adoptionLevel ?? "Sin actividad",
                       )}`}
                     />
@@ -277,14 +281,13 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         </div>
 
         <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
-          <Table>
-            <TableHeader>
+          <Table className={premiumTableDensity}>
+            <TableHeader className={premiumHeaderSurface}>
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Contacto</TableHead>
                 <TableHead>Adopción</TableHead>
                 <TableHead>Perfil de uso</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -292,13 +295,13 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
               {clients.map((client) => (
                 <TableRow
                   key={client.userId}
-                  className="group transition-colors hover:bg-muted/40"
+                  className={cn("group", premiumTableRow)}
                 >
                   <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border border-border/70">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar className="h-8 w-8 shrink-0 border border-border-default">
                         <AvatarImage src={client.avatarUrl ?? undefined} />
-                        <AvatarFallback className="bg-blue-500/10 text-xs font-semibold text-blue-400">
+                        <AvatarFallback className="bg-[var(--module-surface)] text-xs font-semibold text-[var(--module-foreground)]">
                           {client.displayName.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -307,14 +310,14 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                         <p className="truncate text-sm font-semibold text-foreground">
                           {client.displayName}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-xs text-text-secondary">
                           {client.email}
                         </p>
                       </div>
                     </div>
                   </TableCell>
 
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-text-secondary">
                     {client.phone || "Sin teléfono"}
                   </TableCell>
 
@@ -322,9 +325,11 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     <Badge
                       variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
                       className="gap-1.5 rounded-full"
+                    style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                     >
                       <span
-                        className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                        aria-hidden="true"
+                      className={`h-2 w-2 shrink-0 rounded-full ${adoptionDotClass(
                           client.adoptionLevel ?? "Sin actividad",
                         )}`}
                       />
@@ -332,7 +337,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                     </Badge>
                   </TableCell>
 
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-text-secondary">
                     {client.usageProfile ?? "Sin actividad"}
                   </TableCell>
                 </TableRow>
@@ -473,7 +478,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="min-w-0 space-y-3 md:space-y-4" data-admin-module="clientes" data-admin-reference="usuarios">
       <ModuleHeader density="compact"
         title="Usuarios app"
         description="Directorio de clientes, usuarios registrados y estado de sus licencias."
@@ -482,28 +487,28 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
       />
 
       <KpiGrid columns={4} density="compact">
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Total usuarios"
           value={allClients.length}
           description="Registrados en sistema"
           icon={Users}
           module="clientes"
         />
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Activos"
           value={activeClients}
           description="Con licencia vigente"
           icon={ShieldCheck}
           semanticState="success"
         />
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="En prueba"
           value={trialClients}
           description="Plan trial activo"
           icon={KeyRound}
           module="clientes"
         />
-        <MetricCard density="compact"
+        <MetricCard density="compact" appearance="premium"
           label="Vencen en 7 días"
           value={expiringSoon}
           description="Requieren renovación"
@@ -513,7 +518,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
       </KpiGrid>
 
       {/* Tabla con FilterToolbar & AdminDataTableShell */}
-      <AdminDataTableShell density="compact"
+      <AdminDataTableShell density="compact" appearance="premium"
         title="Usuarios registrados"
         description="Gestión detallada de cuentas y accesos"
         actions={
@@ -530,7 +535,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
             filters={
               <>
                 <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
-                  <SelectTrigger className="w-[155px]">
+                  <SelectTrigger aria-label="Filtrar por adopción" className="w-full min-[420px]:w-[155px]">
                     <SelectValue placeholder="Adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -543,7 +548,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                 </Select>
 
                 <Select value={adoptionSort} onValueChange={setAdoptionSort}>
-                  <SelectTrigger className="w-[175px]">
+                  <SelectTrigger aria-label="Ordenar por adopción" className="w-full min-[420px]:w-[175px]">
                     <SelectValue placeholder="Ordenar adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -571,15 +576,15 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
           />
         }
       >
-        <div className="space-y-3 md:hidden">
+        <div className="space-y-2 p-3 md:hidden">
           {clients.map((client) => (
             <Card
               key={client.userId}
               data-admin-module="clientes"
-              className="rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]"
+              className={cn("rounded-[var(--radius-card)]", premiumSurface, "shadow-[var(--shadow-xs)]")}
             >
-              <CardContent className="space-y-3 p-4">
-                <div className="flex min-w-0 items-center gap-3">
+              <CardContent className="space-y-2 p-3">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <Avatar className="h-9 w-9 shrink-0 border border-[var(--module-border)]">
                     <AvatarImage src={client.avatarUrl ?? undefined} />
                     <AvatarFallback className="bg-[var(--module-surface)] text-xs font-semibold text-[var(--module-foreground)]">
@@ -605,9 +610,11 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                   <Badge
                     variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
                     className="gap-1.5 rounded-full"
+                    style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                   >
                     <span
-                      className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                      aria-hidden="true"
+                      className={`h-2 w-2 shrink-0 rounded-full ${adoptionDotClass(
                         client.adoptionLevel ?? "Sin actividad",
                       )}`}
                     />
@@ -633,6 +640,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="min-h-11"
                     onClick={() =>
                       void navigate({
                         to: "/admin/proyectos/$id/clientes/$clientId",
@@ -654,8 +662,8 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
         </div>
 
         <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
-          <Table>
-            <TableHeader>
+          <Table className={premiumTableDensity}>
+            <TableHeader className={premiumHeaderSurface}>
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Contacto</TableHead>
@@ -663,6 +671,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                 <TableHead>Estado</TableHead>
                 <TableHead>Adopción</TableHead>
                 <TableHead>Vencimiento</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -676,13 +685,13 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                 return (
                   <TableRow
                     key={client.userId}
-                    className="group hover:bg-muted/40 transition-colors"
+                    className={cn("group", premiumTableRow)}
                   >
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 border border-border/70">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <Avatar className="h-8 w-8 shrink-0 border border-border-default">
                           <AvatarImage src={client.avatarUrl ?? undefined} />
-                          <AvatarFallback className="bg-blue-500/10 text-blue-400 text-xs font-semibold">
+                          <AvatarFallback className="bg-[var(--module-surface)] text-xs font-semibold text-[var(--module-foreground)]">
                             {client.displayName.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -690,11 +699,11 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                           <p className="font-semibold text-foreground text-sm truncate">
                             {client.displayName}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                          <p className="truncate text-xs text-text-secondary">{client.email}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="text-xs text-text-secondary">
                       <div>{client.phone || "Sin teléfono"}</div>
                     </TableCell>
                     <TableCell>
@@ -721,9 +730,11 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                             client.adoptionLevel ?? "Sin actividad",
                           )}
                           className="gap-1.5 rounded-full"
+                    style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                         >
                           <span
-                            className={`h-2 w-2 rounded-full ${adoptionDotClass(
+                            aria-hidden="true"
+                      className={`h-2 w-2 shrink-0 rounded-full ${adoptionDotClass(
                               client.adoptionLevel ?? "Sin actividad",
                             )}`}
                           />
