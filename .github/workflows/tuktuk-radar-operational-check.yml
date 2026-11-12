@@ -7,6 +7,7 @@ on:
       - 'tests/admin_marketplace_radar_readiness.test.mjs'
       - 'tests/admin_radar_performance_sql_proposal.test.mjs'
       - 'docs/drafts/radar_readiness_materialized_20261111.sql'
+      - 'supabase/migrations/20261112001335_radar_readiness_materialized.sql'
       - 'supabase/migrations/20261031230453_radar_operational_eligibility_finance_off.sql'
       - '.github/workflows/tuktuk-radar-operational-check.yml'
 permissions:
