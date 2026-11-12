@@ -256,7 +256,7 @@ export default function Cliente360Section({
     );
   if (query.isError || !data)
     return (
-      <EmptyState
+      <EmptyState density="compact" appearance="premium"
         icon={UserRound}
         title="No se pudo abrir Cliente 360"
         description={
@@ -384,7 +384,7 @@ export default function Cliente360Section({
       </section>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Resumen" description="Situación actual del cliente" module="clientes">
+        <SectionCard density="compact" appearance="premium" title="Resumen" description="Situación actual del cliente" module="clientes">
           <DetailList
             columns={2}
             items={[
@@ -408,7 +408,7 @@ export default function Cliente360Section({
           />
         </SectionCard>
 
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Adopción"
           description="Uso observable de TukTuk Control durante los últimos 30 días"
           module="clientes"
@@ -490,7 +490,7 @@ export default function Cliente360Section({
           </div>
         </SectionCard>
         {data.permissions.commercial ? (
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Comercial"
             description="Origen y seguimiento del cliente"
             module="comercial"
@@ -516,7 +516,7 @@ export default function Cliente360Section({
                 ]}
               />
             ) : (
-              <EmptyState
+              <EmptyState density="compact" appearance="premium"
                 icon={Route}
                 title="Sin seguimiento comercial"
                 description="Este cliente todavía no tiene información comercial asociada."
@@ -529,7 +529,7 @@ export default function Cliente360Section({
       </div>
 
       {data.permissions.payments ? (
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Cobros y documentos"
           description="Prefacturas, pagos y recibos en orden cronológico. Las pruebas se muestran, pero no se contabilizan."
           module="pagos"
@@ -572,7 +572,7 @@ export default function Cliente360Section({
               ))}
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact" appearance="premium"
               icon={CircleDollarSign}
               title="Sin cobros ni documentos"
               description="Todavía no hay prefacturas, pagos o recibos para este cliente."
@@ -584,7 +584,7 @@ export default function Cliente360Section({
       ) : null}
 
       {data.permissions.licenses ? (
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Licencia y dispositivos"
           description="Acceso vigente y equipos vinculados"
           module="licencias"
@@ -643,7 +643,7 @@ export default function Cliente360Section({
               </div>
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact" appearance="premium"
               icon={KeyRound}
               title="Sin licencia"
               description="Este cliente no tiene una licencia asociada al proyecto."
@@ -655,7 +655,7 @@ export default function Cliente360Section({
       ) : null}
 
       {data.permissions.commercial ? (
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Referidos"
           description={
             data.referrals
@@ -756,7 +756,7 @@ export default function Cliente360Section({
               </div>
             </div>
           ) : (
-            <EmptyState
+            <EmptyState density="compact" appearance="premium"
               icon={UsersRound}
               title="Sin referidos"
               description="No existen relaciones ni recompensas de referidos para este cliente."
@@ -767,7 +767,7 @@ export default function Cliente360Section({
         </SectionCard>
       ) : null}
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Actividad"
         description="Historia unificada y legible del cliente"
         module="auditoria"
@@ -779,7 +779,7 @@ export default function Cliente360Section({
             ))}
           </ol>
         ) : (
-          <EmptyState
+          <EmptyState density="compact" appearance="premium"
             icon={History}
             title="Sin actividad"
             description="No hay eventos disponibles para este cliente."
@@ -795,7 +795,7 @@ export default function Cliente360Section({
           if (open) setClientPhone(data.client.phone ?? "");
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>{data.client.phone ? "Editar móvil" : "Agregar móvil"}</DialogTitle>
             <DialogDescription>
@@ -845,7 +845,7 @@ export default function Cliente360Section({
         }}
       />
       <Dialog open={referrerOpen} onOpenChange={setReferrerOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>Vincular referidor</DialogTitle>
             <DialogDescription>
