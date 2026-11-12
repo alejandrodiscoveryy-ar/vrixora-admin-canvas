@@ -390,22 +390,22 @@ function PremiumPanel({
   }
 
   return (
-    <section className={`relative overflow-hidden rounded-2xl border shadow-sm ${visual.card}`}>
+    <section className={`relative min-w-0 overflow-hidden rounded-2xl border shadow-sm ${visual.card} admin-graphite-panel`}>
       {backgroundImage ? (
         <>
           <img
             src={backgroundImage}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 h-56 w-[42%] object-cover object-right opacity-[0.17] mix-blend-screen"
+            className="pointer-events-none absolute right-0 top-0 bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/5 via-background/20 to-cyan-500/[0.025]" />
+          <div className="pointer-events-none absolute inset-0" />
         </>
       ) : null}
 
       <div className={`relative z-[1] h-1 bg-gradient-to-r ${visual.strip}`} />
 
-      <div className="relative z-[1] flex flex-col gap-4 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative z-[1] flex min-w-0 flex-col gap-2 border-b border-border-default px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between admin-graphite-header">
         <div className="flex items-center gap-3">
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${visual.icon}`}
@@ -424,7 +424,7 @@ function PremiumPanel({
         {action}
       </div>
 
-      <div className="relative z-[1] p-5">{children}</div>
+      <div className="relative z-[1] min-w-0 p-3 sm:p-4">{children}</div>
     </section>
   );
 }
@@ -483,7 +483,7 @@ function Customer360Detail({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <section className="relative overflow-hidden rounded-[28px] border border-violet-500/25 bg-gradient-to-br from-violet-500/[0.12] via-background/80 to-cyan-500/[0.08] p-5 shadow-[0_24px_70px_-42px_rgba(139,92,246,0.85)] sm:p-6">
+      <section className="relative overflow-hidden rounded-[28px] border border-violet-500/25 bg-gradient-to-br from-violet-500/[0.12] via-background/80 to-cyan-500/[0.08] p-5 shadow-[0_24px_70px_-42px_rgba(139,92,246,0.85)] sm:p-6 admin-graphite-panel">
         <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-16 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
 
@@ -504,14 +504,14 @@ function Customer360Detail({
               </div>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
+            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur admin-graphite-inset">
               <CalendarDays className="h-3.5 w-3.5 text-violet-300" />
               Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)
             </div>
           </div>
 
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur">
+            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur admin-graphite-inset">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
                 <Phone className="h-4 w-4" />
               </div>
@@ -525,7 +525,7 @@ function Customer360Detail({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur">
+            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur admin-graphite-inset">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
                 <Mail className="h-4 w-4" />
               </div>
@@ -595,7 +595,7 @@ function Customer360Detail({
       </section>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-violet-500/[0.035] p-4 sm:p-5">
+        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-violet-500/[0.035] p-4 sm:p-5 admin-graphite-panel">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.07] text-violet-300">
               <Clock3 className="h-5 w-5" />
@@ -613,7 +613,7 @@ function Customer360Detail({
           </div>
         </section>
 
-        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-amber-500/[0.035] p-4 sm:p-5">
+        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-amber-500/[0.035] p-4 sm:p-5 admin-graphite-panel">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/[0.07] text-amber-300">
               <Star className="h-5 w-5" />
@@ -632,7 +632,7 @@ function Customer360Detail({
         </section>
       </div>
 
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5 admin-graphite-inset">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
             Preferencias
@@ -647,7 +647,7 @@ function Customer360Detail({
             {detail.modalities.map((item) => (
               <div
                 key={`${item.serviceCode}:${item.vehicleCategoryCode ?? "none"}`}
-                className="rounded-2xl border border-border/55 bg-background/60 p-4 transition hover:border-cyan-500/20"
+                className="rounded-2xl border border-border/55 bg-background/60 p-4 transition hover:border-cyan-500/20 admin-graphite-inset"
               >
                 <div className="flex items-center justify-between gap-3">
                   <ServiceBadge service={item.serviceCode} />
@@ -661,10 +661,10 @@ function Customer360Detail({
                     : "Sin categor\u00eda de veh\u00edculo"}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 text-xs text-muted-foreground">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 text-xs text-muted-foreground admin-graphite-inset">
                     {km(item.distanceKm)}
                   </span>
-                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 text-xs text-muted-foreground">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 text-xs text-muted-foreground admin-graphite-inset">
                     {formatAmount(item.totalSpent, detail.summary.currency)}
                   </span>
                 </div>
@@ -672,7 +672,7 @@ function Customer360Detail({
             ))}
           </div>
         ) : (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4">
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
               <CarFront className="h-5 w-5" />
             </div>
@@ -686,7 +686,7 @@ function Customer360Detail({
         )}
       </section>
 
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5">
+      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5 admin-graphite-inset">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
             Trazabilidad
@@ -697,7 +697,7 @@ function Customer360Detail({
         </div>
 
         {!history.length ? (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4">
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/15 bg-violet-500/[0.05] text-violet-300">
               <Route className="h-5 w-5" />
             </div>
@@ -715,7 +715,7 @@ function Customer360Detail({
             {history.map((item) => (
               <article
                 key={item.jobId}
-                className="relative rounded-2xl border border-border/60 bg-background/60 p-4 transition hover:border-violet-500/20"
+                className="relative rounded-2xl border border-border/60 bg-background/60 p-4 transition hover:border-violet-500/20 admin-graphite-inset"
               >
                 <span className="absolute -left-[18px] top-5 h-3 w-3 rounded-full border-2 border-background bg-violet-400 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]" />
 
@@ -728,13 +728,13 @@ function Customer360Detail({
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border/50 bg-background/55 p-3">
+                  <div className="rounded-xl border border-border/50 bg-background/55 p-3 admin-graphite-inset">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       Origen
                     </p>
                     <p className="mt-1.5 text-sm font-medium text-foreground">{item.originText}</p>
                   </div>
-                  <div className="rounded-xl border border-border/50 bg-background/55 p-3">
+                  <div className="rounded-xl border border-border/50 bg-background/55 p-3 admin-graphite-inset">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       Destino
                     </p>
@@ -745,17 +745,17 @@ function Customer360Detail({
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 admin-graphite-inset">
                     {formatAmount(item.finalPrice, item.currency)}
                   </span>
-                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 admin-graphite-inset">
                     {km(item.distanceKm)}
                   </span>
-                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                  <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 admin-graphite-inset">
                     {item.driverDisplayName ?? "Sin conductor asignado"}
                   </span>
                   {item.vehicleCategoryCode ? (
-                    <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5">
+                    <span className="rounded-lg border border-border/50 bg-background/55 px-2.5 py-1.5 admin-graphite-inset">
                       {label(item.vehicleCategoryCode)}
                     </span>
                   ) : null}
@@ -2195,18 +2195,18 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               tone="violet"
               backgroundImage="/admin-premium/customers.svg"
               action={
-                <div className="flex w-full flex-col gap-2 rounded-[18px] border border-violet-400/15 bg-background/55 p-1.5 shadow-[0_14px_45px_-32px_rgba(139,92,246,0.9)] backdrop-blur-sm sm:w-auto sm:flex-row sm:items-center">
+                <div className="flex w-full flex-col gap-2 rounded-[18px] border border-violet-400/15 bg-background/55 p-1.5 shadow-[0_14px_45px_-32px_rgba(139,92,246,0.9)] backdrop-blur-sm sm:w-auto sm:flex-row sm:items-center admin-graphite-inset">
                   <label className="relative min-w-0 sm:w-72">
                     <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300" />
                     <Input
                       value={customerSearchInput}
                       onChange={(event) => setCustomerSearchInput(event.target.value)}
                       placeholder="Buscar nombre o WhatsApp"
-                      className="h-9 rounded-xl border-violet-400/20 bg-black/20 pl-9 shadow-inner shadow-violet-500/[0.04] focus-visible:border-violet-400/40"
+                      className="h-9 rounded-xl border-violet-400/20 bg-black/20 pl-9 shadow-inner shadow-violet-500/[0.04] focus-visible:border-violet-400/40 admin-graphite-control"
                     />
                   </label>
 
-                  <div className="flex rounded-xl border border-violet-400/15 bg-black/20 p-1">
+                  <div className="flex rounded-xl border border-violet-400/15 bg-black/20 p-1 admin-graphite-inset">
                     <Button
                       size="sm"
                       variant="ghost"
@@ -2239,7 +2239,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               {customers.isLoading ? (
                 <LoadingState />
               ) : !customerRows.length ? (
-                <EmptyMarketplaceState
+                <EmptyMarketplaceState appearance="premium"
                   title={customerSearch ? "No encontramos clientes" : "No hay clientes"}
                   description={
                     customerSearch
@@ -2250,7 +2250,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 />
               ) : (
                 <>
-                  <div className="relative overflow-hidden rounded-[24px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-cyan-500/[0.025] shadow-[0_24px_65px_-44px_rgba(139,92,246,0.9)]">
+                  <div className="relative overflow-hidden rounded-[24px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-cyan-500/[0.025] shadow-[0_24px_65px_-44px_rgba(139,92,246,0.9)] admin-graphite-panel">
                     <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-violet-500/[0.055] blur-3xl" />
                     <div className="relative hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 border-b border-violet-400/18 bg-violet-500/[0.07] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200/70 backdrop-blur-sm lg:grid">
                       <span>Cliente</span>
@@ -2388,7 +2388,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   {wallets.isLoading ? (
                     <LoadingState />
                   ) : !walletRows.length ? (
-                    <EmptyMarketplaceState
+                    <EmptyMarketplaceState appearance="premium"
                       title="No hay billeteras"
                       description="No existen billeteras disponibles para mostrar."
                       icon={Wallet}
@@ -2404,7 +2404,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           return (
                             <article
                               key={wallet.userId}
-                              className="group relative overflow-hidden rounded-[17px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4"
+                              className="group relative overflow-hidden rounded-[17px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4 admin-graphite-panel"
                             >
                               <img
                                 src="/admin-premium/wallets.svg"
@@ -2446,7 +2446,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                 <p className="text-[11px] text-muted-foreground">
                                   Saldo total: <span className="font-semibold text-foreground">{formatAmount(wallet.totalBalance, wallet.currency)}</span>
                                 </p>
-                                <details className="group rounded-xl border border-border/60 bg-background/40">
+                                <details className="group rounded-xl border border-border/60 bg-background/40 admin-graphite-inset">
                                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
                                     Ver detalles de la billetera
                                     <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
@@ -2581,7 +2581,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 backgroundImage="/admin-premium/topups.svg"
                 action={
                   <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
-                    <div className="flex max-w-full flex-nowrap gap-1 overflow-x-auto overscroll-x-contain rounded-2xl border border-cyan-400/15 bg-background/60 p-1 sm:flex-wrap shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-sm">
+                    <div className="flex min-w-0 max-w-full flex-wrap gap-1 rounded-xl border border-border-default p-1 admin-graphite-inset">
                       {[
                         ["", "Todas"],
                         ["requested", "Pendientes"],
@@ -2592,7 +2592,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         <Button
                           key={value || "all"}
                           size="sm"
-                          className="shrink-0"
+                          className="min-h-11 shrink-0 sm:min-h-8"
                           variant={topupStatus === value ? "default" : "ghost"}
                           onClick={() => setTopupStatus(value)}
                         >
@@ -2619,7 +2619,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 {topups.isLoading ? (
                   <LoadingState />
                 ) : !topupRows.length ? (
-                  <EmptyMarketplaceState
+                  <EmptyMarketplaceState appearance="premium"
                     title="No hay recargas"
                     description="Cuando se registre una recarga aparecerá aquí."
                     icon={Banknote}
@@ -2635,7 +2635,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         return (
                           <article
                             key={item.topupId}
-                            className="group relative overflow-hidden rounded-[22px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.045] via-background/60 to-background/45 p-3.5 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.85)] transition-colors hover:border-cyan-400/25"
+                            className="group relative overflow-hidden rounded-[22px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.045] via-background/60 to-background/45 p-3.5 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.85)] transition-colors hover:border-cyan-400/25 admin-graphite-panel"
                           >
                             <img
                               src="/admin-premium/topups.svg"
@@ -2684,7 +2684,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                   Gestionar recarga pendiente
                                 </Button>
                               ) : null}
-                              <details className="group rounded-xl border border-border/60 bg-background/40">
+                              <details className="group rounded-xl border border-border/60 bg-background/40 admin-graphite-inset">
                                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
                                   Ver detalles de la recarga
                                   <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
@@ -2757,7 +2757,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                 </div>
                               </div>
 
-                              <div className="grid gap-2 rounded-2xl border border-border/55 bg-background/40 px-3.5 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+                              <div className="grid gap-2 rounded-2xl border border-border/55 bg-background/40 px-3.5 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] admin-graphite-inset">
                                 <p className="text-muted-foreground">
                                   Solicitada:{" "}
                                   <span className="font-medium text-foreground">
@@ -2814,7 +2814,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             </div>
 
                             {receipt ? (
-                              <div className="relative mt-3 hidden rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.075] via-emerald-500/[0.035] to-cyan-500/[0.035] px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:block">
+                              <div className="relative mt-3 hidden rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.075] via-emerald-500/[0.035] to-cyan-500/[0.035] px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:block admin-graphite-panel">
                                 <div className="flex items-center gap-2.5">
                                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300">
                                     <ShieldCheck className="h-4 w-4" />
@@ -2857,7 +2857,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             icon={AlertTriangle}
             tone="rose"
             action={
-              <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-background/50 p-1">
+              <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-background/50 p-1 admin-graphite-inset">
                 {[
                   ["open", "Abiertas"],
                   ["resolved", "Resueltas"],
@@ -2878,7 +2878,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             {incidents.isLoading ? (
               <LoadingState />
             ) : !incidentRows.length ? (
-              <EmptyMarketplaceState
+              <EmptyMarketplaceState appearance="premium"
                 title="No hay incidencias"
                 description={
                   incidentState === "open"
@@ -3011,13 +3011,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           }
         }}
       >
-        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl admin-graphite-dialog">
           <DialogHeader className="sr-only">
             <DialogTitle>Ficha 360 del conductor</DialogTitle>
             <DialogDescription>Expediente completo del conductor</DialogDescription>
           </DialogHeader>
 
-          <div className="p-4 pt-10 sm:p-6 sm:pt-10">
+          <div className="min-w-0 p-3 pt-12 sm:p-4 sm:pt-12">
             {driver360.isLoading ? (
               <LoadingState />
             ) : driver360.data ? (
@@ -3071,7 +3071,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (!open) setCustomerId(null);
         }}
       >
-        <DialogContent className="max-h-[94vh] overflow-y-auto border-violet-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl">
+        <DialogContent className="max-h-[94vh] overflow-y-auto border-violet-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl admin-graphite-dialog">
           <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
             <DialogHeader className="text-left">
               <div className="mb-1 flex items-center gap-2">
@@ -3115,7 +3115,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (typeof alertJobId === "string") dismissAlertDeepLink();
         }
       }}>
-        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl admin-graphite-dialog">
           <DialogHeader className="sr-only">
             <DialogTitle>360 de carrera</DialogTitle>
             <DialogDescription>
@@ -3138,7 +3138,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       </Dialog>
 
       <Dialog open={Boolean(driver)} onOpenChange={() => setDriver(null)}>
-        <DialogContent>
+        <DialogContent className="admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>
               {driver?.suspended ? "Suspender conductor" : "Reactivar conductor"}
@@ -3178,7 +3178,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>
               Cancelar carrera por solicitud del cliente
@@ -3255,7 +3255,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>Finalizar carrera desde Admin</DialogTitle>
             <DialogDescription>
@@ -3310,7 +3310,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
         </DialogContent>
       </Dialog>
       <Dialog open={Boolean(incident)} onOpenChange={() => setIncident(null)}>
-        <DialogContent>
+        <DialogContent className="admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>Resolver incidencia</DialogTitle>
             <DialogDescription>
@@ -3353,7 +3353,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (!open) setError(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className="admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>Registrar recarga</DialogTitle>
             <DialogDescription>
@@ -3478,7 +3478,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>Gestionar recarga de {topup?.driver}</DialogTitle>
             <DialogDescription>
@@ -3982,7 +3982,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
 
   return (
     <div className="min-w-0 space-y-4 sm:space-y-5">
-      <section aria-label="Identidad de la carrera" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/25 bg-gradient-to-br from-[#123b43] via-[#101d23] to-[#0a141b] p-4 shadow-[0_20px_60px_-26px_rgba(22,190,202,0.32)] sm:p-6">
+      <section aria-label="Identidad de la carrera" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/25 bg-gradient-to-br from-[#123b43] via-[#101d23] to-[#0a141b] p-4 shadow-[0_20px_60px_-26px_rgba(22,190,202,0.32)] sm:p-6 admin-graphite-panel">
         <div aria-hidden="true" className="pointer-events-none absolute -right-3 -top-12 select-none text-[130px] font-black leading-none tracking-tighter text-cyan-200/[0.055] sm:text-[180px]">360°</div>
         <div className="pointer-events-none absolute -left-20 -bottom-28 h-64 w-64 rounded-full bg-emerald-500/[0.11] blur-3xl" />
         <div className="pointer-events-none absolute right-0 top-0 h-40 w-64 rounded-full bg-cyan-400/[0.08] blur-3xl" />
@@ -4007,7 +4007,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
               <span className="font-mono text-[10px] text-slate-500" title={jobId}>ID {jobId.slice(0,13)}…</span>
             </div>
           </div>
-          <div className="relative w-full rounded-[20px] border border-emerald-300/20 bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm lg:w-60">
+          <div className="relative w-full rounded-[20px] border border-emerald-300/20 bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm lg:w-60 admin-graphite-inset">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-200/75">Valor de la carrera</p>
             <p className="mt-2 break-words text-[25px] font-black leading-none tracking-tight text-white sm:text-[28px]">{readablePrice}</p>
             <div className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-400">
@@ -4022,7 +4022,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
             { title: "Eventos", value: String(timeline.length), icon: Clock3 },
             { title: "Programación", value: serviceRequest.scheduled_for ? "Programada" : "Sin horario", icon: CalendarDays },
           ].map(({title, value, icon: Icon}) => (
-            <div key={title} className="min-w-0 rounded-xl border border-white/10 bg-[#071217]/55 px-3 py-3">
+            <div key={title} className="min-w-0 rounded-xl border border-white/10 bg-[#071217]/55 px-3 py-3 admin-graphite-inset">
               <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><Icon className="h-3.5 w-3.5 text-cyan-200" />{title}</div>
               <div className="mt-1.5 break-words text-[15px] font-bold text-white">{value}</div>
             </div>
@@ -4030,7 +4030,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
         </div>
       </section>
 
-      <nav aria-label="Secciones del expediente 360 de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30">
+      <nav aria-label="Secciones del expediente 360 de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30 admin-graphite-inset">
         <div role="tablist" aria-label="Contenido de la carrera" className="flex gap-1 overflow-x-auto pb-0.5">
           {tabs.map(({id,label:tabLabel,Icon}) => (
             <button key={id} type="button" role="tab"
@@ -4050,16 +4050,16 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
       <div id="marketplace-job-premium-panel" role="tabpanel" className="min-w-0 space-y-4">
         {activeTab === "overview" ? (
           <>
-            <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.08] via-[#101b22] to-[#0b151b] p-4 sm:p-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.08] via-[#101b22] to-[#0b151b] p-4 sm:p-5 admin-graphite-panel">
               <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-10 h-36 w-36 rounded-full bg-cyan-400/[0.08] blur-3xl" />
               {sectionTitle("01 / Recorrido", "Ruta del servicio", "Origen, destino y referencias operativas de la solicitud.")}
               <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)] lg:items-stretch">
-                <div className="rounded-[18px] border border-emerald-400/20 bg-[#080f13]/65 p-4">
+                <div className="rounded-[18px] border border-emerald-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
                   <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-400/10"><MapPin className="h-4 w-4" /></span> 01 · Punto de recogida</p>
                   <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.origin_text)}</p>
                 </div>
                 <div className="hidden items-center justify-center lg:flex"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10 text-cyan-200"><ArrowRight className="h-5 w-5" /></span></div>
-                <div className="rounded-[18px] border border-cyan-400/20 bg-[#080f13]/65 p-4">
+                <div className="rounded-[18px] border border-cyan-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
                   <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-cyan-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-cyan-400/10"><MapPin className="h-4 w-4" /></span> 02 · Destino</p>
                   <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.destination_text)}</p>
                 </div>
@@ -4067,9 +4067,9 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
             </section>
 
             <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5 admin-graphite-panel">
                 {sectionTitle("02 / Participantes", "Cliente", "Información de contacto relacionada con esta carrera.")}
-                <div className="flex gap-3 rounded-2xl border border-cyan-400/15 bg-black/20 p-3.5">
+                <div className="flex gap-3 rounded-2xl border border-cyan-400/15 bg-black/20 p-3.5 admin-graphite-inset">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-200"><UserRound className="h-5 w-5" /></span>
                   <div className="min-w-0">
                     <p className="break-words text-lg font-semibold text-white">{customer ? text(customer.display_name) : "Cliente no registrado"}</p>
@@ -4078,9 +4078,9 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
                   </div>
                 </div>
               </section>
-              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5 admin-graphite-panel">
                 {sectionTitle("03 / Asignación", "Conductor y vehículo", "Situación de la asignación vinculada al servicio.")}
-                <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-black/20 p-3.5">
+                <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-black/20 p-3.5 admin-graphite-inset">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-200"><CarFront className="h-5 w-5" /></span>
                   <div className="min-w-0">
                     <p className="text-lg font-semibold text-white">{hasDriver ? "Conductor asignado" : "Sin conductor asignado"}</p>
@@ -4091,16 +4091,16 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
               </section>
             </div>
             <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_1.1fr]">
-              <section className="rounded-[23px] border border-border/50 bg-[#0e181e] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-border/50 bg-[#0e181e] p-4 sm:p-5 admin-graphite-inset">
                 {sectionTitle("04 / Programación", "Datos de servicio", "Agenda y condiciones básicas de la carrera.")}
-                <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-black/20 p-3.5">
+                <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-black/20 p-3.5 admin-graphite-inset">
                   <CalendarDays className="mt-1 h-5 w-5 shrink-0 text-violet-300" />
                   <div><p className="text-xs text-slate-400">Hora programada</p><p className="mt-1 text-sm font-semibold text-white">{formatDate(serviceRequest.scheduled_for)}</p></div>
                 </div>
               </section>
-              <section className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0d181f] p-4 sm:p-5">
+              <section className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0d181f] p-4 sm:p-5 admin-graphite-panel">
                 {sectionTitle("05 / Inteligencia operativa", "Cobertura del radar", "Consulta impactos por conductor y kilómetros registrados al aviso.")}
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3.5 py-3">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3.5 py-3 admin-graphite-inset">
                   <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><Radar className="h-5 w-5 text-cyan-300" />Análisis de distribución</div>
                   <Button type="button" size="sm" variant="outline" className="border-cyan-400/25 text-cyan-100" onClick={() => setActiveTab("radar")}>Explorar radar <ArrowRight className="ml-2 h-4 w-4" /></Button>
                 </div>
@@ -4111,7 +4111,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
 
         {activeTab === "radar" ? (
           <section aria-label="Radar y alcance de la carrera" className="space-y-4">
-            <div className="rounded-[23px] border border-cyan-400/20 bg-gradient-to-br from-[#122b33] to-[#0b161b] p-4 sm:p-5">
+            <div className="rounded-[23px] border border-cyan-400/20 bg-gradient-to-br from-[#122b33] to-[#0b161b] p-4 sm:p-5 admin-graphite-panel">
               {sectionTitle("Inteligencia operativa", "Radar y alcance real", "Ejecuciones, conductores impactados, distancias históricas y etapas de distribución.")}
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-300" />Las distancias proceden de registros históricos; nunca se sustituyen por el GPS actual.</div>
             </div>
@@ -4123,13 +4123,13 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
           <section className="space-y-4">
             {sectionTitle("Estado económico", "Finanzas de la operación", "Importe contratado, comisión y situación registrada de la reserva.")}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[23px] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[0.10] via-[#142621] to-[#0b1718] p-5">
+              <div className="rounded-[23px] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[0.10] via-[#142621] to-[#0b1718] p-5 admin-graphite-panel">
                 <Banknote className="mb-3 h-6 w-6 text-emerald-300" />
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/75">Importe de carrera</p>
                 <p className="mt-2 break-words text-3xl font-black tracking-tight text-white">{readablePrice}</p>
                 <p className="mt-3 text-xs text-slate-400">Precio registrado del servicio.</p>
               </div>
-              <div className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0c181f] p-5">
+              <div className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0c181f] p-5 admin-graphite-panel">
                 <WalletCards className="mb-3 h-6 w-6 text-cyan-200" />
                 <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200/75">Estado de comisión / reserva</p>
                 <p className="mt-2 text-xl font-bold text-white">{financial ? label(text(financial.reservation_status)) : "Sin información financiera"}</p>
@@ -4147,15 +4147,15 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
         ) : null}
 
         {activeTab === "history" ? (
-          <section className="rounded-[24px] border border-cyan-400/15 bg-gradient-to-br from-[#0e1c22] to-[#0a141b] p-4 sm:p-6">
+          <section className="rounded-[24px] border border-cyan-400/15 bg-gradient-to-br from-[#0e1c22] to-[#0a141b] p-4 sm:p-6 admin-graphite-panel">
             {sectionTitle("Auditoría del servicio", "Línea de tiempo", "Historial de cambios de estado, responsables y motivos registrados.")}
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-black/20 px-3.5 py-3">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-black/20 px-3.5 py-3 admin-graphite-inset">
               <p className="text-sm text-slate-300">Eventos registrados</p><p className="text-2xl font-bold text-cyan-200">{timeline.length}</p>
             </div>
             {timeline.length ? (
               <ol className="relative ml-2 space-y-3 border-l border-cyan-400/30 pl-6">
                 {timeline.map((event, index) => (
-                  <li key={String(event.event_id ?? index)} className="relative rounded-[18px] border border-border/50 bg-black/20 p-4">
+                  <li key={String(event.event_id ?? index)} className="relative rounded-[18px] border border-border/50 bg-black/20 p-4 admin-graphite-inset">
                     <span className="absolute -left-[32px] top-5 h-3.5 w-3.5 rounded-full border-[3px] border-[#112128] bg-cyan-300 shadow-[0_0_14px_2px_rgba(34,211,238,0.22)]" />
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-mono text-[11px] text-slate-400">{formatDate(event.created_at)}</p>
@@ -4163,7 +4163,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
                     </div>
                     <p className="mt-2 break-words text-sm font-bold text-white">{text(event.action)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-slate-300">{label(text(event.from_status))}</span>
+                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-slate-300 admin-graphite-inset">{label(text(event.from_status))}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-cyan-300" />
                       <span className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.08] px-2.5 py-1.5 font-semibold text-cyan-100">{label(text(event.to_status))}</span>
                     </div>

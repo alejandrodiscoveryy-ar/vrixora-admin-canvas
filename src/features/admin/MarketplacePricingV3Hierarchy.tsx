@@ -44,38 +44,38 @@ export default function MarketplacePricingV3Hierarchy({ projectId, tariffs, exch
   const ready = rows.some(row => row.currentCup.motorcycle !== null);
   const currentMinimum = tariffs.find(t => t.serviceCode === 'passenger' && t.vehicleCategoryCode === 'tricycle')?.minimumPriceUsd;
 
-  return <section aria-label="Jerarquía tarifaria pasajeros fase 2C" className="overflow-hidden rounded-2xl border border-cyan-500/25 bg-slate-950/70 text-slate-100 shadow-lg">
+  return <section aria-label="Jerarquía tarifaria pasajeros fase 2C" className="overflow-hidden rounded-2xl border border-cyan-500/25 bg-slate-950/70 text-text-primary shadow-lg admin-graphite-inset">
     <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-700/70 p-4 sm:p-5">
       <div className="flex gap-3">
         <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/10 p-2"><ArrowRightLeft className="h-5 w-5 text-cyan-300" /></div>
         <div>
           <h3 className="font-semibold">Jerarquía de tarifas · simulador 2C</h3>
-          <p className="mt-1 text-xs text-slate-400">Compara modalidades de pasajeros a la misma distancia, en moneda nacional.</p>
+          <p className="mt-1 text-xs text-text-secondary">Compara modalidades de pasajeros a la misma distancia, en moneda nacional.</p>
         </div>
       </div>
-      <span className="flex items-center gap-1 rounded-full border border-slate-600 px-3 py-1 text-xs text-slate-300"><ShieldCheck className="h-3.5 w-3.5" /> Solo simulación</span>
+      <span className="flex items-center gap-1 rounded-full border border-slate-600 px-3 py-1 text-xs text-text-secondary"><ShieldCheck className="h-3.5 w-3.5" /> Solo simulación</span>
     </div>
 
     <div className="space-y-4 p-4 sm:p-5">
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
-          <p className="text-xs text-slate-400">Mínimo actual de triciclo</p>
+        <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 admin-graphite-inset">
+          <p className="text-xs text-text-secondary">Mínimo actual de triciclo</p>
           <p className="mt-1 font-semibold">{typeof currentMinimum === 'number' ? `${currentMinimum.toFixed(2)} USD` : 'Sin tarifa'}</p>
-          <p className="mt-1 text-[11px] text-slate-400">Parámetro interno: no es el precio final.</p>
+          <p className="mt-1 text-[11px] text-text-secondary">Parámetro interno: no es el precio final.</p>
         </div>
-        <label className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-slate-300">
+        <label className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-text-secondary">
           Mínimo hipotético de triciclo (USD)
           <input type="number" min="0.01" max="20" step="0.05" value={Number.isFinite(hypotheticalMinimum) ? hypotheticalMinimum : ''}
             onChange={e => setHypotheticalMinimum(e.target.value === '' ? NaN : Number(e.target.value))}
-            className="mt-2 block w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm font-semibold text-white" />
+            className="mt-2 block w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm font-semibold text-text-primary admin-graphite-inset" />
           <span className="mt-1 block text-[11px] text-cyan-200">Ensayo inicial de 2,30 USD; no aprobado ni guardado.</span>
         </label>
       </div>
 
       {settings.isError || (!settings.isLoading && !configValid) || !Number.isFinite(exchangeRate) || exchangeRate <= 0
         ? <p role="status" className="flex gap-2 text-xs text-amber-200"><AlertTriangle className="h-4 w-4 shrink-0" /> No se puede calcular CUP con una tasa o configuración válida. No se muestra ningún precio supuesto.</p>
-        : settings.isLoading ? <p className="text-xs text-slate-300">Consultando conversión y redondeo oficiales…</p>
-          : <p className="text-[11px] text-slate-400">Tasa registrada: 1 USD = {exchangeRate.toLocaleString('es-CU')} CUP. Redondeo configurado: {settings.data?.mode === 'up' ? 'hacia arriba' : 'no compatible'} en tramos de {settings.data?.increment.toLocaleString('es-CU')} CUP.</p>
+        : settings.isLoading ? <p className="text-xs text-text-secondary">Consultando conversión y redondeo oficiales…</p>
+          : <p className="text-[11px] text-text-secondary">Tasa registrada: 1 USD = {exchangeRate.toLocaleString('es-CU')} CUP. Redondeo configurado: {settings.data?.mode === 'up' ? 'hacia arriba' : 'no compatible'} en tramos de {settings.data?.increment.toLocaleString('es-CU')} CUP.</p>
       }
       {ready && <div className={`flex items-center gap-2 text-xs ${withInversions ? 'text-amber-200' : 'text-emerald-300'}`}>
         {withInversions ? <AlertTriangle className="h-4 w-4 shrink-0" /> : <CheckCircle2 className="h-4 w-4 shrink-0" />}
@@ -84,7 +84,7 @@ export default function MarketplacePricingV3Hierarchy({ projectId, tariffs, exch
 
       <div className="overflow-x-auto rounded-xl border border-slate-700">
         <table className="min-w-[860px] w-full text-left text-xs">
-          <thead className="bg-slate-800 text-slate-300">
+          <thead className="bg-slate-800 text-text-secondary">
             <tr>
               {['Trayecto', 'Bicitaxi', 'Motocicleta', 'Triciclo actual', 'Triciclo hipotético', 'Auto ligero', 'Orden actual'].map(h =>
                 <th key={h} scope="col" className="whitespace-nowrap px-3 py-3 font-semibold">{h}</th>)}
@@ -99,7 +99,7 @@ export default function MarketplacePricingV3Hierarchy({ projectId, tariffs, exch
               <td className="whitespace-nowrap px-3 py-3 font-semibold text-cyan-200">
                 {money(row.proposedTricycleCup)}
                 {row.tricycleDifferenceCup !== null && row.tricycleDifferenceCup !== 0 &&
-                  <span className="ml-1 text-[10px] text-slate-300">({row.tricycleDifferenceCup > 0 ? '+' : ''}{row.tricycleDifferenceCup.toLocaleString('es-CU')})</span>}
+                  <span className="ml-1 text-[10px] text-text-secondary">({row.tricycleDifferenceCup > 0 ? '+' : ''}{row.tricycleDifferenceCup.toLocaleString('es-CU')})</span>}
               </td>
               <td className="whitespace-nowrap px-3 py-3">{money(row.currentCup.light_car)}</td>
               <td className={row.invertedPairs.length || Object.values(row.currentCup).some(value => value === null) ? 'px-3 py-3 text-amber-200' : 'px-3 py-3 text-emerald-300'}>
@@ -109,7 +109,7 @@ export default function MarketplacePricingV3Hierarchy({ projectId, tariffs, exch
           </tbody>
         </table>
       </div>
-      <p className="flex gap-2 text-[11px] leading-relaxed text-slate-400"><Info className="h-4 w-4 shrink-0" /> La comparación es estructural (mínimo, base y kilómetros), convertida a CUP con la tasa y redondeo del proyecto. Excluye recargos temporales, aeropuerto, espera, paradas, peajes y otras reglas del motor. No equivale a una cotización final ni modifica tarifas vigentes. Igualdades tras redondear también se señalan para revisión.</p>
+      <p className="flex gap-2 text-[11px] leading-relaxed text-text-secondary"><Info className="h-4 w-4 shrink-0" /> La comparación es estructural (mínimo, base y kilómetros), convertida a CUP con la tasa y redondeo del proyecto. Excluye recargos temporales, aeropuerto, espera, paradas, peajes y otras reglas del motor. No equivale a una cotización final ni modifica tarifas vigentes. Igualdades tras redondear también se señalan para revisión.</p>
     </div>
   </section>;
 }

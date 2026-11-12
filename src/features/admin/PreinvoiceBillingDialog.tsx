@@ -125,7 +125,7 @@ export function PreparePreinvoiceDialog({
   };
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Preparar cobro</DialogTitle>
           <DialogDescription>
@@ -322,7 +322,7 @@ export function ConfirmPreinvoiceDialog({
   if (!invoice) return null;
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>
             {invoice.isTest ? "Confirmar operación de prueba" : "Confirmar pago y activar/renovar"}

@@ -399,7 +399,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   return (
     <section aria-label="Centro de precios" className="tuktuk-pricing-v3-sheet min-w-0">
       <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
-        <nav aria-label="Secciones del Centro de precios" className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4">
+        <nav aria-label="Secciones del Centro de precios" className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4 admin-graphite-panel">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
           <div className="relative z-10 px-2.5 pb-2 pt-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Centro de precios</p>
@@ -412,9 +412,9 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               return (
                 <Link key={view.code} to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "planes" }} search={{ precio: view.code }}
                   aria-current={selected ? "page" : undefined}
-                  className={`group relative isolate flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${selected ? "border-cyan-400/35 bg-gradient-to-r from-cyan-400/[0.11] via-cyan-400/[0.045] to-background/20 text-foreground shadow-[0_12px_30px_-24px_rgba(34,211,238,0.45)]" : "border-transparent bg-background/20 text-foreground/85 hover:border-border/65 hover:bg-muted/40"}`}>
+                  className={`group relative isolate flex admin-graphite-nav-item min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${selected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}>
                   <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 -rotate-12 ${selected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
-                  <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner ${selected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border/60 bg-background/60 text-muted-foreground"}`}>
+                  <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner ${selected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border-default bg-surface-2 text-text-secondary"}`}>
                     <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
                   </span>
                   <span className="relative z-10 min-w-0 flex-1">
@@ -430,7 +430,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           <div className="relative z-10 mt-2 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">Precios y accesos según permisos</div>
         </nav>
         <div className="min-w-0 space-y-3">
-          <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5">
+          <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
             <SelectedPricingIcon aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-44 w-44 -rotate-12 text-cyan-100 opacity-[0.06]" />
             <div className="relative z-10 grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(235px,320px)]">
               <div className="min-w-0">
@@ -441,7 +441,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 </div>
                 <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">{selectedPricingView.description}</p>
               </div>
-              <aside aria-label="Tasa USD CUP informativa integrada en Centro de precios" className="min-w-0 rounded-2xl border border-cyan-400/20 bg-slate-950/55 px-3.5 py-3 shadow-inner shadow-black/25">
+              <aside aria-label="Tasa USD CUP informativa integrada en Centro de precios" className="min-w-0 rounded-2xl border border-cyan-400/20 bg-slate-950/55 px-3.5 py-3 shadow-inner shadow-black/25 admin-graphite-control">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-2 text-[11px] font-semibold text-slate-200"><DollarSign className="h-4 w-4 text-cyan-300" />Tasa USD/CUP · API</span>
                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${exchange.isError || (exchange.data?.autoSyncEnabled && exchange.data?.lastAutoSyncStatus !== "ok") ? "border-amber-400/40 bg-amber-500/10 text-amber-200" : exchange.data?.autoSyncEnabled ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300" : "border-slate-400/30 bg-slate-500/10 text-slate-300"}`}>
@@ -459,7 +459,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           </header>
       {workspace === "service-menu" ? (
         <section aria-label="Menú de precios por modalidad" className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card/50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card/50 px-4 py-3 admin-graphite-inset">
             <p className="text-sm font-medium text-foreground">Herramientas del servicio</p>
             <p className="text-xs text-muted-foreground">{configuredCount} de {categories.length} tarifas configuradas</p>
           </div>
@@ -469,7 +469,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               return (
                 <button key={item.code} type="button"
                   onClick={() => { setWorkspace(item.code); setPricingRouteScenario(null); }}
-                  className="group relative isolate flex min-h-[135px] items-start gap-4 overflow-hidden rounded-[22px] border border-border/70 bg-card/80 p-5 text-left transition hover:border-cyan-400/65 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+                  className="group relative isolate flex min-h-[135px] items-start gap-4 overflow-hidden rounded-[22px] border border-border/70 bg-card/80 p-5 text-left transition hover:border-cyan-400/65 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 admin-graphite-inset">
                   <AreaIcon aria-hidden="true" className="pointer-events-none absolute -right-6 -top-7 z-0 h-40 w-40 -rotate-12 text-cyan-300 opacity-[0.055]" />
                   <span className="relative z-10 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-400"><AreaIcon className="h-6 w-6" /></span>
                   <span className="relative z-10 min-w-0 flex-1">
@@ -484,7 +484,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           </div>
         </section>
       ) : workspace === "global" ? null : (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/65 bg-card/65 p-3 shadow-sm sm:p-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/65 bg-card/65 p-3 shadow-sm sm:p-4 admin-graphite-inset">
           {workspace !== "global" ? (
             <Button type="button" variant="outline" className="h-10 gap-2" onClick={() => {
               setWorkspace("service-menu");
@@ -546,7 +546,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
 
       {workspace === "simulation" ? (
         <section aria-label="Prueba de precios" className="space-y-3">
-          <p className="rounded-xl border border-slate-500/35 bg-card/60 p-3 text-sm text-muted-foreground">
+          <p className="rounded-xl border border-slate-500/35 bg-card/60 p-3 text-sm text-muted-foreground admin-graphite-inset">
             Consulta tarifas vigentes marcando una ruta. Esta prueba no crea viajes ni modifica precios.
           </p>
           <MarketplacePricingMapV3
@@ -671,7 +671,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                   </div>
 
                   {!tariff ? (
-                    <div className="mt-5 rounded-xl border border-dashed border-border/80 bg-background/40 p-5 text-center">
+                    <div className="mt-5 rounded-xl border border-dashed border-border/80 bg-background/40 p-5 text-center admin-graphite-inset">
                       <p className="text-sm font-medium text-foreground">Tarifa sin configurar</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         Define la estructura comercial para esta modalidad.
@@ -821,7 +821,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         }}
       >
         {editing && draft ? (
-          <DialogContent className="tuktuk-v3-editor sm:max-w-3xl">
+          <DialogContent className="tuktuk-v3-editor sm:max-w-3xl admin-graphite-dialog">
             <DialogHeader className="pr-8">
               <div className="flex items-center gap-2">
                 <span
@@ -946,7 +946,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         }}
       >
         {adjustmentDraft ? (
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg admin-graphite-dialog">
             <DialogHeader className="pr-8">
               <DialogTitle>Regla especial · Aeropuerto José Martí</DialogTitle>
 
@@ -978,7 +978,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 </p>
               </div>
 
-              <label className="flex items-center justify-between rounded-xl border border-border/70 bg-background/40 p-3">
+              <label className="flex items-center justify-between rounded-xl border border-border/70 bg-background/40 p-3 admin-graphite-inset">
                 <div>
                   <p className="text-sm font-medium text-foreground">Regla activa</p>
 
@@ -998,7 +998,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 />
               </label>
 
-              <div className="rounded-xl border border-border/60 bg-background/35 p-3 text-xs text-muted-foreground">
+              <div className="rounded-xl border border-border/60 bg-background/35 p-3 text-xs text-muted-foreground admin-graphite-inset">
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   <span>
                     Dirección: {String(adjustmentDraft.item.conditionConfig.direction ?? "destino")}

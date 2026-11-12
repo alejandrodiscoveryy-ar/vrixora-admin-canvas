@@ -114,7 +114,7 @@ export default function MarketplaceLiteContactCard({ projectId }: { projectId: s
   });
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[26px] border border-amber-400/30 bg-gradient-to-br from-amber-500/[0.12] via-orange-500/[0.055] to-background p-4 shadow-[0_25px_70px_-43px_rgba(245,158,11,0.62)] sm:p-5" aria-label="Canal de atención">
+    <section className="relative isolate overflow-hidden rounded-[26px] border border-amber-400/30 bg-gradient-to-br from-amber-500/[0.12] via-orange-500/[0.055] to-background p-4 shadow-[0_25px_70px_-43px_rgba(245,158,11,0.62)] sm:p-3 admin-graphite-panel" aria-label="Canal de atención">
       <Headphones aria-hidden="true" className="pointer-events-none absolute -right-9 top-6 h-44 w-44 -rotate-12 text-amber-200/[0.075]" />
       <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -146,13 +146,13 @@ export default function MarketplaceLiteContactCard({ projectId }: { projectId: s
                 placeholder="+535XXXXXXX" maxLength={16} />
               <p className="text-xs text-muted-foreground">El número debe poder recibir SMS. No se modifica el teléfono de cobros.</p>
             </div>
-            <div className="flex min-h-10 items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/45 px-3 py-2">
+            <div className="flex min-h-10 items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/45 px-3 py-2 admin-graphite-control">
               <Label htmlFor="lite-enabled">Habilitar Lite</Label>
               <Switch id="lite-enabled" checked={form.liteEnabled}
                 onCheckedChange={(checked) => patch({ liteEnabled: checked })} />
             </div>
           </div>
-          <div className="rounded-xl border border-border/60 bg-background/45 p-3">
+          <div className="rounded-xl border border-border/60 bg-background/45 p-3 admin-graphite-inset">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Clock3 className="h-4 w-4 text-cyan-300" />

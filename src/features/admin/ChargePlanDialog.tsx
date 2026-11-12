@@ -124,7 +124,7 @@ export function ChargePlanDialog({
   if (receipt) return <ReceiptDialog receipt={receipt} onClose={onClose} />;
   return (
     <Dialog open={!!client} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-3xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Registrar pago y asignar plan</DialogTitle>
           <DialogDescription>
@@ -355,7 +355,7 @@ export function ReceiptDialog({
   };
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Recibo generado</DialogTitle>
           <DialogDescription>La operación se confirmó correctamente.</DialogDescription>

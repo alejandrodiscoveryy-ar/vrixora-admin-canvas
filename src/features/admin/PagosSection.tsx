@@ -328,14 +328,14 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-3 md:space-y-4">
-      <ModuleHeader density="compact"
+      <ModuleHeader appearance="premium" density="compact"
         title="Pagos"
         description="Gestión financiera, registro de cobros, verificación de recibos y auditoría."
         icon={CreditCard}
         module="pagos"
       />
 
-      <AdminPeriodSelector
+      <AdminPeriodSelector appearance="premium"
         value={period}
         range={{ from: fromDate, to: toDate }}
         options={paymentPeriodOptions}
@@ -348,7 +348,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
 
       {/* 4 KPI Principales */}
       <KpiGrid columns={4} density="compact">
-        <MetricCard density="compact"
+        <MetricCard appearance="premium" density="compact"
           label="Ingresos del período"
           value={revenueDisplay}
           description="Pagos confirmados"
@@ -356,21 +356,21 @@ export default function PagosSection({ projectId }: { projectId: string }) {
           module="pagos"
           semanticState="success"
         />
-        <MetricCard density="compact"
+        <MetricCard appearance="premium" density="compact"
           label="Cobros realizados"
           value={paidRows.length}
           description="Transacciones exitosas"
           icon={CheckCircle2}
           module="pagos"
         />
-        <MetricCard density="compact"
+        <MetricCard appearance="premium" density="compact"
           label="Ticket medio"
           value={formattedAvgTicket}
           description="Valor promedio por cobro"
           icon={CircleDollarSign}
           module="pagos"
         />
-        <MetricCard density="compact"
+        <MetricCard appearance="premium" density="compact"
           label="Renovaciones pagadas"
           value={renewalsCount}
           description="Renovaciones registradas"
@@ -381,7 +381,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       </KpiGrid>
 
       {/* Gráfico Compacto Últimos 30 días */}
-      <SectionCard density="compact" title="Evolución de ingresos (últimos 30 días)" module="pagos">
+      <SectionCard appearance="premium" density="compact" title="Evolución de ingresos (últimos 30 días)" module="pagos">
         {revenue30d.hasRevenue ? (
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -422,7 +422,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <EmptyState density="compact"
+          <EmptyState appearance="premium" density="compact"
             title="Sin ingresos recientes"
             description="No hay pagos confirmados en los últimos 30 días para mostrar gráficos."
             module="pagos"
@@ -430,7 +430,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         )}
       </SectionCard>
 
-      <SectionCard density="compact"
+      <SectionCard appearance="premium" density="compact"
         title="Prefacturas"
         description="Cobros preparados con importe y tasa congelados durante 48 horas"
         module="pagos"
@@ -486,7 +486,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
               );
             })
           ) : (
-            <EmptyState density="compact"
+            <EmptyState appearance="premium" density="compact"
               icon={FileText}
               title="Sin prefacturas"
               description="Las prefacturas preparadas desde Cliente 360 aparecerán aquí."
@@ -508,7 +508,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
       )}
 
       {/* Tabla de Pagos con FilterToolbar & AdminDataTableShell */}
-      <AdminDataTableShell density="compact"
+      <AdminDataTableShell appearance="premium" density="compact"
         title="Historial de transacciones"
         description="Las operaciones de prueba se muestran con su marca, pero no entran en los indicadores financieros."
         actions={
@@ -591,7 +591,7 @@ export default function PagosSection({ projectId }: { projectId: string }) {
         }
         isEmpty={filtered.length === 0}
         emptyState={
-          <EmptyState density="compact"
+          <EmptyState appearance="premium" density="compact"
             icon={CreditCard}
             title="Sin pagos encontrados"
             description="No hay transacciones que coincidan con los filtros aplicados."
@@ -926,7 +926,7 @@ function RegisterPaymentDialog({
   }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Registrar pago</DialogTitle>
           <DialogDescription>
@@ -1131,7 +1131,7 @@ function EditPaymentDialog({
   });
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Editar pago</DialogTitle>
           <DialogDescription>
@@ -1277,7 +1277,7 @@ function DeletePaymentDialog({
   });
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>{isConfirmed ? "Anular pago" : "Eliminar pago"}</DialogTitle>
           <DialogDescription>

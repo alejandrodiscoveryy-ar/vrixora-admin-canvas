@@ -41,7 +41,14 @@ test("Las operaciones conservan todos sus accesos y controles", () => {
   // El filtro móvil reside ahora en su componente visual reutilizable.
   assert.match(listPrimitives, /sm:min-w-52/);
   assert.match(panel, /<FilterSelect/);
-  assert.match(panel, /overflow-x-auto overscroll-x-contain/);
+  // Topup filters now wrap instead of requiring horizontal scrolling on mobile.
+  const topups = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
+  assert.match(topups, /flex min-w-0 max-w-full flex-wrap gap-1 rounded-xl border border-border-default p-1 admin-graphite-inset/);
+  assert.match(topups, /className="min-h-11 shrink-0 sm:min-h-8"/);
+  assert.match(topups, /variant=\{topupStatus === value \? "default" : "ghost"\}/);
+  assert.match(topups, /onClick=\{\(\) => setTopupStatus\(value\)\}/);
+  for (const value of ["Pendientes", "Confirmadas", "Conciliadas", "Rechazadas"]) assert.ok(topups.includes(value));
+  assert.doesNotMatch(topups, /overflow-x-auto overscroll-x-contain/);
   assert.match(panel, /customer\.jobsTotal\} trabajos · \{customer\.jobsActive\} activos/);
   assert.match(panel, /break-words text-sm font-semibold tabular-nums/);
   assert.match(panel, /rounded-2xl border p-3 sm:p-4/);

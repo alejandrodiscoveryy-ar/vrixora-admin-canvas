@@ -2,7 +2,7 @@ import { Search, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { compactToolbarControls, compactToolbarSurface, embeddedToolbarSurface, type AdminDensity } from "./density";
+import { compactToolbarControls, compactToolbarSurface, embeddedToolbarSurface, premiumSurface, premiumControlSurface, type AdminAppearance, type AdminDensity } from "./density";
 
 export interface FilterToolbarProps {
   searchValue?: string;
@@ -15,6 +15,7 @@ export interface FilterToolbarProps {
   className?: string;
   density?: AdminDensity;
   embedded?: boolean;
+  appearance?: AdminAppearance;
 }
 
 export function FilterToolbar({
@@ -28,14 +29,17 @@ export function FilterToolbar({
   className,
   density = "comfortable",
   embedded = false,
+  appearance = "standard",
 }: FilterToolbarProps) {
   return (
     <div
       data-density={density}
+      data-appearance={appearance === "premium" ? "premium" : undefined}
       className={cn(
         density === "compact"
           ? cn(compactToolbarSurface, compactToolbarControls, "flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between")
           : "flex flex-col gap-3 rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 p-3 shadow-[var(--shadow-xs)] sm:p-4 lg:flex-row lg:items-center lg:justify-between",
+        appearance === "premium" && !embedded && premiumSurface,
         embedded && embeddedToolbarSurface,
         className,
       )}
@@ -49,7 +53,7 @@ export function FilterToolbar({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
-              className="pl-9"
+              className={cn("pl-9", appearance === "premium" && premiumControlSurface)}
             />
           </div>
         ) : null}

@@ -240,8 +240,8 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <div className="flex flex-col gap-2 rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-fuchsia-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-end">
-        <AdminPeriodSelector
+      <div className="flex flex-col gap-2 rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-fuchsia-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-end admin-graphite-panel">
+        <AdminPeriodSelector appearance="premium"
           value={period}
           range={range}
           onChange={handlePeriodChange}
@@ -262,7 +262,7 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
       ) : null}
 
       <KpiGrid columns={4} density="compact">
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Operaciones"
           value={events.length}
           icon={ScrollText}
@@ -270,7 +270,7 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
           description="En el período"
           isLoading={isLoading}
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Usuarios"
           value={activeUsers}
           icon={Users}
@@ -278,7 +278,7 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
           description="Con actividad"
           isLoading={isLoading}
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Importantes"
           value={importantCount}
           icon={AlertTriangle}
@@ -286,7 +286,7 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
           description="Requieren seguimiento"
           isLoading={isLoading}
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Críticas"
           value={criticalCount}
           icon={ShieldAlert}
@@ -298,7 +298,7 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
 
       {!isLoading ? (
         attentionEvents.length > 0 ? (
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Requiere atención"
             description="Operaciones críticas o con revisión pendiente"
             module="auditoria"
@@ -322,7 +322,7 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
         )
       ) : null}
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Explorar Auditoría"
         description="Busca una operación o aplica filtros cuando sea necesario"
         module="auditoria"
@@ -458,7 +458,7 @@ function AuditSummary({
   }
 
   return (
-    <SectionCard
+    <SectionCard density="compact" appearance="premium"
       title="Actividad reciente"
       description="Operaciones del período, priorizadas por relevancia"
       module="auditoria"
@@ -481,7 +481,7 @@ function UserAuditGroup({ group }: { group: AuditGroup }) {
   const operationGroups = groupByUserCategory(group.events);
 
   return (
-    <SectionCard
+    <SectionCard density="compact" appearance="premium"
       title={group.label}
       description={`${group.subtitle ?? "Usuario"} · ${group.events.length} ${
         group.events.length === 1 ? "operación" : "operaciones"
@@ -524,7 +524,7 @@ function AreaAuditGroup({ group }: { group: AuditGroup }) {
     .join(" · ");
 
   return (
-    <SectionCard
+    <SectionCard density="compact" appearance="premium"
       title={group.label}
       description={areaSummary}
       module="auditoria"
@@ -771,7 +771,7 @@ function AuditLoader() {
 
 function AuditEmpty({ hasFilters }: { hasFilters: boolean }) {
   return (
-    <EmptyState
+    <EmptyState density="compact" appearance="premium"
       icon={ScrollText}
       title={hasFilters ? "Sin resultados" : "Sin operaciones en el período"}
       description={

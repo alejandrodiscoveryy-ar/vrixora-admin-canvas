@@ -638,3 +638,110 @@
   background-color: color-mix(in oklab, var(--surface-3) 86%, var(--text-secondary) 14%);
   border-color: var(--border-default);
 }
+
+/* Opt-in adapters for legacy Admin surfaces. Same graphite hierarchy as density.ts.
+   Explicit classes only: no global theme changes, map canvas or public routes. */
+.admin-graphite-panel,
+.admin-graphite-header,
+.admin-graphite-inset,
+.admin-graphite-control,
+.admin-graphite-dialog {
+  min-width: 0;
+  border-color: var(--border-default);
+  background-image: none;
+}
+.admin-graphite-panel,
+.admin-graphite-dialog {
+  background-color: var(--surface-1);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+}
+.admin-graphite-header,
+.admin-graphite-inset {
+  background-color: var(--surface-2);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+.admin-graphite-control {
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+.dark .admin-graphite-panel,
+.dark .admin-graphite-dialog {
+  background-color: color-mix(in oklab, var(--surface-3) 89%, var(--text-secondary) 11%);
+}
+.dark .admin-graphite-header {
+  background-color: color-mix(in oklab, var(--surface-3) 80%, var(--text-secondary) 20%);
+}
+.dark .admin-graphite-inset {
+  background-color: color-mix(in oklab, var(--surface-3) 85%, var(--text-secondary) 15%);
+}
+.dark .admin-graphite-control {
+  background-color: color-mix(in oklab, var(--surface-3) 88%, var(--text-secondary) 12%);
+}
+.admin-graphite-dialog {
+  max-height: calc(100dvh - 1rem);
+  width: calc(100vw - 1rem);
+  overflow-y: auto;
+  box-shadow: var(--shadow-overlay);
+  backdrop-filter: none;
+}
+.admin-graphite-header :is(h1, h2, h3) { color: var(--text-primary); }
+.admin-graphite-header :is(p, span).text-slate-300,
+.admin-graphite-header :is(p, span).text-slate-400 { color: var(--text-secondary); }
+.admin-graphite-header .text-slate-200 { color: var(--text-primary); }
+.admin-graphite-nav-item {
+  min-width: 0;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  transition: background-color var(--motion-interaction), border-color var(--motion-interaction);
+}
+.admin-graphite-nav-item:is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"]) {
+  border-color: var(--border-focus);
+  background: var(--module-surface, var(--surface-3));
+  box-shadow: none;
+}
+.admin-graphite-form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea):not(.mapboxgl-ctrl-geocoder input) {
+  min-width: 0;
+  max-width: 100%;
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.dark .admin-graphite-form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea):not(.mapboxgl-ctrl-geocoder input) {
+  background-color: color-mix(in oklab, var(--surface-3) 88%, var(--text-secondary) 12%);
+}
+.admin-graphite-form select option { background-color: var(--surface-2); color: var(--text-primary); }
+.admin-graphite-form :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+@media (max-width: 767px) {
+  .admin-graphite-form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea) { min-height: 44px; }
+  .admin-graphite-form button:not([aria-label*="mapa"]):not([aria-label*="Map"]):not(.mapboxgl-ctrl button) { min-height: 44px; }
+  .admin-graphite-dialog { max-height: calc(100dvh - 1rem); }
+}
+
+/* Neutral labels on migrated surfaces must be legible in both themes.
+   Semantic status colors and primary/destructive buttons are intentionally untouched. */
+:is(.admin-graphite-panel, .admin-graphite-header, .admin-graphite-inset, .admin-graphite-dialog) :is(h1,h2,h3,h4,p,label).text-white {
+  color: var(--text-primary);
+}
+:is(.admin-graphite-panel, .admin-graphite-header, .admin-graphite-inset, .admin-graphite-dialog) :is(.text-slate-50,.text-slate-100,.text-slate-200) {
+  color: var(--text-primary);
+}
+:is(.admin-graphite-panel, .admin-graphite-header, .admin-graphite-inset, .admin-graphite-dialog) :is(.text-slate-300,.text-slate-400) {
+  color: var(--text-secondary);
+}
+.admin-graphite-control:focus-visible,
+.admin-graphite-nav-item:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+@media (max-width: 639px) {
+  .admin-graphite-control:is(input,select,textarea) { min-height: 44px; }
+  .admin-graphite-dialog { max-width: calc(100vw - 1rem); }
+}

@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { type AdminModuleKey, moduleColorMap } from "./types";
 import { cn } from "@/lib/utils";
-import type { AdminDensity } from "./density";
+import { premiumHeaderSurface, type AdminAppearance, type AdminDensity } from "./density";
 
 export interface ModuleHeaderProps {
   title: string;
@@ -11,6 +11,7 @@ export interface ModuleHeaderProps {
   actions?: React.ReactNode;
   className?: string;
   density?: AdminDensity;
+  appearance?: AdminAppearance;
 }
 
 export function ModuleHeader({
@@ -21,6 +22,7 @@ export function ModuleHeader({
   actions,
   className,
   density = "comfortable",
+  appearance = "standard",
 }: ModuleHeaderProps) {
   const accentColor = module ? moduleColorMap[module] : "var(--primary)";
 
@@ -28,10 +30,12 @@ export function ModuleHeader({
     <div
       data-admin-module={module}
       data-density={density}
+      data-appearance={appearance === "premium" ? "premium" : undefined}
       className={cn(
         density === "compact"
           ? "flex min-w-0 flex-col gap-2 rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 px-3 py-3 shadow-[var(--shadow-xs)] sm:flex-row sm:items-center sm:justify-between sm:px-4"
           : "mb-4 flex flex-col gap-3 border-b border-border-subtle pb-4 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pb-6",
+        appearance === "premium" && premiumHeaderSurface,
         className,
       )}
     >

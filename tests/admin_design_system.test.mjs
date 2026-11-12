@@ -475,3 +475,51 @@ test("Driver WhatsApp: installed app protocol, web alternative and clipboard are
   assert.equal(nativeUrl.protocol, "whatsapp:");
   assert.equal(nativeUrl.searchParams.get("text"), driverWelcomeMessage("María"));
 });
+
+test("ModuleHeader premium: opt-in graphite keeps title, actions and compact spacing", () => {
+  const props = { title: "Atencion al cliente", description: "Solicitudes", actions: action, icon: CreditCard, density: "compact" };
+  const standard = render(ModuleHeader, props);
+  assert.equal(standard, render(ModuleHeader, { ...props, appearance: "standard" }));
+  const markup = render(ModuleHeader, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.match(markup, /<h1[^>]*>Atencion al cliente<\/h1>/);
+  assert.ok(markup.includes("Accion de prueba"));
+  hasClasses(markup, ...premiumHeaderSurface.split(" "), "px-3", "py-3", "max-sm:[&_button]:min-h-11");
+});
+
+test("FilterToolbar premium: opt-in graphite preserves search and embedded layout", () => {
+  const props = { density: "compact", searchValue: "recarga", searchPlaceholder: "Buscar pagos", onSearchChange: noop, showReset: true, onReset: noop };
+  const standard = render(FilterToolbar, props);
+  assert.equal(standard, render(FilterToolbar, { ...props, appearance: "standard" }));
+  const markup = render(FilterToolbar, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.match(markup, /value="recarga"/);
+  assert.match(markup, /aria-label="Buscar pagos"/);
+  assert.ok(markup.includes("Limpiar filtros"));
+  hasClasses(markup, ...premiumSurface.split(" "), ...premiumControlSurface.split(" "));
+  const embedded = render(FilterToolbar, { ...props, embedded: true, appearance: "premium" });
+  hasClasses(embedded, "bg-transparent", "border-0", "shadow-none");
+});
+
+test("Admin final rollout: migrated modules opt in to shared graphite without global theme overrides", () => {
+  const source = (name) => readFileSync(new URL("../src/features/admin/" + name + ".tsx", import.meta.url), "utf8");
+  for (const name of ["PagosSection", "PlanesPreciosSection", "ComercialSection", "LicenciasSection", "EmpleadosSection", "RendimientoSection", "AuditoriaSection", "ComunicadosSection", "IntegracionesSection", "ConfiguracionSection"]) {
+    assert.match(source(name), /appearance="premium"/, name);
+  }
+  for (const name of ["MarketplaceCustomerCareWorkspace", "MarketplaceLiteContactCard", "MarketplaceConfigurationWorkspace", "MarketplaceDispatchSettingsCard", "MarketplaceJobReminderSettingsCard", "MarketplaceTerritoryCatalog", "MarketplaceTestCenterV2", "MarketplacePricingSection", "MarketplacePricingLaboratoryV2", "MarketplacePricingV3Diagnostics", "MarketplacePricingV3Hierarchy", "MarketplaceTemporalDraftsV3", "MarketplacePricingGlobalAdjustment", "AdministrationWorkspace", "MarketplaceOffersPanel", "CommercialReferralsPanel", "MarketplaceWelcomePolicyPanel"]) {
+    assert.match(source(name), /admin-graphite-/, name);
+  }
+  const workspace = source("MarketplaceSection");
+  const wallet = workspace.slice(workspace.indexOf('<TabsContent value="billeteras"'), workspace.indexOf('<TabsContent value="configuracion"'));
+  assert.match(wallet, /admin-graphite-/);
+  assert.match(wallet, /formatAmount\(wallet.availableBalance, wallet.currency\)/);
+  assert.match(wallet, /topupStatus === value/);
+  assert.match(wallet, /setNewTopup\(true\)/);
+  const map = workspace.slice(workspace.indexOf('<TabsContent value="mapa"'), workspace.indexOf('<TabsContent value="conductores">'));
+  assert.doesNotMatch(map, /admin-graphite-/);
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const adapter = css.slice(css.indexOf("/* Opt-in adapters for legacy Admin surfaces."));
+  assert.ok(adapter.includes(".dark .admin-graphite-panel"));
+  assert.ok(adapter.includes("var(--surface-3) 89%, var(--text-secondary) 11%"));
+  assert.doesNotMatch(adapter, /--(?:primary|canvas|surface-1|background)\s*:/);
+});

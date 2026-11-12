@@ -316,7 +316,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-4 md:space-y-8">
-      <ModuleHeader
+      <ModuleHeader density="compact" appearance="premium"
         title="Licencias"
         description="Emisión, control de dispositivos, vigencias y planes de licenciamiento."
         icon={KeyRound}
@@ -332,35 +332,35 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       />
 
       <KpiGrid columns={5} density="compact">
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Activas"
           value={activeCount}
           description="Total vigentes"
           icon={KeyRound}
           semanticState="success"
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="En prueba"
           value={trialCount}
           description="Plan trial"
           icon={Activity}
           module="licencias"
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Pagadas"
           value={paidCount}
           description="Con pago confirmado"
           icon={Users}
           semanticState="success"
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Vencen en 7 días"
           value={expiring7Count}
           description="Próximas a expirar"
           icon={CalendarClock}
           semanticState="warning"
         />
-        <MetricCard
+        <MetricCard density="compact" appearance="premium"
           label="Vencidas"
           value={expiredCount}
           description="Requieren renovación"
@@ -370,7 +370,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       </KpiGrid>
 
       {/* Distribución por plan */}
-      <SectionCard title="Distribución de licencias por plan" module="licencias">
+      <SectionCard density="compact" appearance="premium" title="Distribución de licencias por plan" module="licencias">
         {planDistribution.length > 0 ? (
           <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -402,7 +402,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <EmptyState
+          <EmptyState density="compact" appearance="premium"
             title="Sin distribución"
             description="No hay licencias registradas para mostrar distribución."
             module="licencias"
@@ -411,7 +411,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
       </SectionCard>
 
       {/* Tabla con FilterToolbar & AdminDataTableShell */}
-      <AdminDataTableShell
+      <AdminDataTableShell density="compact" appearance="premium"
         title="Listado de licencias"
         description="Control y acciones de licenciamiento"
         actions={
@@ -475,7 +475,7 @@ export default function LicenciasSection({ projectId }: { projectId: string }) {
         }
         isEmpty={filteredLicenses.length === 0}
         emptyState={
-          <EmptyState
+          <EmptyState density="compact" appearance="premium"
             icon={KeyRound}
             title="Sin licencias encontradas"
             description="No hay licencias que coincidan con los filtros aplicados."
@@ -814,7 +814,7 @@ function CreateDialog({
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Crear licencia</DialogTitle>
           <DialogDescription>
@@ -1025,7 +1025,7 @@ function ManageLicenseDialog({
 
   return (
     <Dialog open={!!license} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>
             {!action
@@ -1333,7 +1333,7 @@ function DetailsDialog({
   });
   return (
     <Dialog open={!!license} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Historial y dispositivos</DialogTitle>
           <DialogDescription>

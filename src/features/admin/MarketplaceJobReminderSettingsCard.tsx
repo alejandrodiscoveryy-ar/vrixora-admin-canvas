@@ -75,7 +75,7 @@ export default function MarketplaceJobReminderSettingsCard({
   });
 
   return (
-    <section className="rounded-[24px] border border-cyan-400/25 bg-background/90 p-4 shadow-lg sm:p-5 xl:col-span-2">
+    <section className="rounded-[24px] border border-cyan-400/25 bg-background/90 p-4 shadow-lg sm:p-5 xl:col-span-2 admin-graphite-inset">
       <div className="flex items-center gap-3">
         <BellRing className="h-5 w-5 text-cyan-300" />
         <div>

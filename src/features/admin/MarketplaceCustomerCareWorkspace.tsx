@@ -607,14 +607,14 @@ export default function MarketplaceCustomerCareWorkspace({
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={`care-${kind}`}>{kind === "origin" ? "Origen de recogida" : "Destino"}</Label>
         <Button type="button" size="sm" variant={picking === kind ? "default" : "outline"}
-          onClick={() => setPicking(kind)} className="h-8 gap-1 text-xs"><MapPin className="h-3.5 w-3.5" /> Mapa</Button>
+          onClick={() => setPicking(kind)} className="h-11 gap-1 text-xs sm:h-8"><MapPin className="h-3.5 w-3.5" /> Mapa</Button>
       </div>
       <Input id={`care-${kind}`} value={value} autoComplete="off" maxLength={240}
-        className="h-11 border-teal-300/20 bg-background/80 text-sm shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-teal-400/40"
+        className="h-11 border-teal-300/20 bg-background/80 text-sm shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-teal-400/40 admin-graphite-control"
         placeholder={kind === "origin" ? "Escribe o marca dónde recoger" : "Escribe o marca el destino"}
         onChange={(event) => editStop(kind, event.target.value)} />
       {suggestions[kind].length > 0 && (
-        <div className="relative z-20 overflow-hidden rounded-xl border border-cyan-400/20 bg-background shadow-lg">
+        <div className="relative z-20 overflow-hidden rounded-xl border border-cyan-400/20 bg-background shadow-lg admin-graphite-inset">
           {suggestions[kind].map((point, index) => (
             <button key={`${kind}-${index}-${point.lat}-${point.lon}`} type="button"
               className="flex w-full items-center gap-2 border-b border-border/45 px-3 py-2.5 text-left text-sm last:border-0 hover:bg-cyan-400/[0.08]"
@@ -627,7 +627,7 @@ export default function MarketplaceCustomerCareWorkspace({
 
   return (
     <div className="min-w-0 space-y-3 sm:space-y-4" data-testid="customer-care-workspace">
-      <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/30 bg-gradient-to-br from-cyan-500/[0.15] via-background to-emerald-500/[0.065] px-4 py-4 shadow-[0_24px_58px_-37px_rgba(6,182,212,0.45)] ring-1 ring-inset ring-white/[0.035] sm:rounded-[26px] sm:px-5 sm:py-5">
+      <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/30 bg-gradient-to-br from-cyan-500/[0.15] via-background to-emerald-500/[0.065] px-4 py-4 shadow-[0_24px_58px_-37px_rgba(6,182,212,0.45)] ring-1 ring-inset ring-white/[0.035] sm:rounded-[26px] sm:px-5 sm:py-5 admin-graphite-header">
         <Headphones aria-hidden="true" className="pointer-events-none absolute -right-5 -top-10 h-28 w-28 text-cyan-300/[0.055] sm:right-12 sm:top-[-3.5rem] sm:h-44 sm:w-44" />
         <div className="relative z-10 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex items-center gap-3">
@@ -638,12 +638,12 @@ export default function MarketplaceCustomerCareWorkspace({
             </div>
           </div>
           {careTab === "requests" ? (
-            <Button size="sm" variant="outline" onClick={reset} className="gap-2"><Plus className="h-4 w-4" /> Nueva solicitud</Button>
+            <Button size="sm" variant="outline" onClick={reset} className="min-h-11 gap-2 sm:min-h-8"><Plus className="h-4 w-4" /> Nueva solicitud</Button>
           ) : null}
         </div>
       </header>
       <div role="tablist" aria-label="Secciones de Atención al cliente"
-        className="flex flex-col gap-1.5 rounded-xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.055] via-background to-background p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] sm:flex-row sm:flex-wrap">
+        className="flex flex-col gap-1.5 rounded-xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/[0.055] via-background to-background p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] sm:flex-row sm:flex-wrap admin-graphite-panel">
         <button type="button" id="care-requests-tab" role="tab" aria-controls="care-requests-panel"
           aria-selected={careTab === "requests"} tabIndex={careTab === "requests" ? 0 : -1}
           onClick={() => setCareTab("requests")} onKeyDown={onCareTabKeyDown}
@@ -666,7 +666,7 @@ export default function MarketplaceCustomerCareWorkspace({
       <div id="care-requests-panel" role="tabpanel" aria-labelledby="care-requests-tab" tabIndex={0}
         className={careTab === "requests" ? "grid min-w-0 grid-cols-1 items-start gap-3 sm:gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : "hidden"}>
         <div className="min-w-0 space-y-3 sm:space-y-4">
-          <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(16,185,129,0.55)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Recepción asistida desde WhatsApp">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(16,185,129,0.55)] ring-1 ring-inset ring-white/[0.025] sm:p-3 admin-graphite-panel" aria-label="Recepción asistida desde WhatsApp">
             <MessageCircle aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-0 h-24 w-24 text-emerald-300/[0.06] sm:h-32 sm:w-32" />
             <div className="relative z-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -689,7 +689,7 @@ export default function MarketplaceCustomerCareWorkspace({
                   Comprueba siempre los datos y selecciona las ubicaciones exactas en el mapa.
                 </p>
                 <Label htmlFor="care-whatsapp-message">Mensaje recibido</Label>
-                <Textarea id="care-whatsapp-message" rows={3} maxLength={2000} value={whatsappRawMessage} className="border-emerald-400/20 bg-background/85 text-sm leading-relaxed shadow-inner focus-visible:ring-emerald-400/40"
+                <Textarea id="care-whatsapp-message" rows={3} maxLength={2000} value={whatsappRawMessage} className="border-emerald-400/20 bg-background/85 text-sm leading-relaxed shadow-inner focus-visible:ring-emerald-400/40 admin-graphite-control"
                   placeholder="Ej.: Necesito un triciclo desde Alamar hasta el Capitolio"
                   onChange={(event) => setWhatsappRawMessage(event.target.value)} />
                 <div className="flex flex-wrap items-center gap-2">
@@ -711,14 +711,14 @@ export default function MarketplaceCustomerCareWorkspace({
                   </div>
                 ) : null}
                 {pendingWhatsAppQuotes.data?.length ? (
-                  <details className="rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+                  <details className="rounded-xl border border-border/50 bg-background/35 px-3 py-2 admin-graphite-inset">
                     <summary className="cursor-pointer text-xs font-semibold text-foreground">
                       Solicitudes en espera ({pendingWhatsAppQuotes.data.length})
                     </summary>
                     <div className="mt-2 space-y-2">
                     {pendingWhatsAppQuotes.data.slice(0, 8).map((saved) => (
                       <button type="button" key={saved.id} onClick={() => recoverWhatsAppQuote(saved)}
-                        className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-left text-xs hover:border-emerald-400/40">
+                        className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/45 px-3 py-2 text-left text-xs hover:border-emerald-400/40 admin-graphite-inset">
                         <span className="min-w-0 truncate">{saved.customer_name || saved.whatsapp_phone || "Cliente"} · {saved.origin_text} → {saved.destination_text}</span>
                         <span className="shrink-0 font-semibold text-emerald-200">{saved.status === "accepted" ? "Aceptada" : saved.status === "sent" ? "Esperando" : "Sin enviar"}</span>
                       </button>
@@ -737,14 +737,14 @@ export default function MarketplaceCustomerCareWorkspace({
             )}
             </div>
           </section>
-          <section className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(167,139,250,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Identificación del cliente">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.11] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(167,139,250,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-3 admin-graphite-panel" aria-label="Identificación del cliente">
             <UserRound aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-3 h-24 w-24 text-violet-300/[0.055] sm:h-32 sm:w-32" />
             <div className="relative z-10 space-y-3">
               <div className="mb-3 flex items-center gap-3"><span className="rounded-xl border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200"><UserRound className="h-5 w-5" /></span>
                 <div><p className="text-xs font-bold uppercase tracking-wide text-violet-300">02 · Identificar cliente</p><h3 className="text-lg font-semibold tracking-tight text-foreground">Buscar cliente por teléfono</h3></div>
               </div>
               <div className="space-y-1.5"><Label htmlFor="care-client-phone">Teléfono del cliente</Label>
-                <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+535XXXXXXX" value={clientPhone} maxLength={22} className="h-11 border-violet-300/20 bg-background/80 text-sm shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-violet-400/40" onChange={(e) => onPhone(e.target.value)} />
+                <Input id="care-client-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+535XXXXXXX" value={clientPhone} maxLength={22} className="h-11 border-violet-300/20 bg-background/80 text-sm shadow-inner placeholder:text-muted-foreground/75 focus-visible:ring-violet-400/40 admin-graphite-control" onChange={(e) => onPhone(e.target.value)} />
                 <p className="text-sm leading-relaxed text-muted-foreground">Se acepta +53, 53 o número cubano de 8 dígitos que empiece por 5.</p>
               </div>
               {validPhone(normalizedPhone) && canViewCustomers && lookup.isFetching ? <p className="text-xs text-cyan-200">Buscando en Clientes…</p> : null}
@@ -761,10 +761,10 @@ export default function MarketplaceCustomerCareWorkspace({
                   </div>
                 </div>
               ) : validPhone(normalizedPhone) && lookup.isSuccess && lookup.data?.found === false ? (
-                <div className="space-y-2 rounded-xl border border-violet-400/20 bg-background/65 p-3">
+                <div className="space-y-2 rounded-xl border border-violet-400/20 bg-background/65 p-3 admin-graphite-inset">
                   <p className="text-sm font-semibold">Teléfono sin ficha registrada</p>
                   <Label htmlFor="care-new-name">Nombre del cliente</Label>
-                  <Input id="care-new-name" maxLength={100} placeholder="Nombre y apellido" value={clientName} className="h-11 border-violet-300/20 bg-background/80 text-sm shadow-inner focus-visible:ring-violet-400/40" onChange={(e) => { setClientName(e.target.value); invalidateRequest(); }} />
+                  <Input id="care-new-name" maxLength={100} placeholder="Nombre y apellido" value={clientName} className="h-11 border-violet-300/20 bg-background/80 text-sm shadow-inner focus-visible:ring-violet-400/40 admin-graphite-control" onChange={(e) => { setClientName(e.target.value); invalidateRequest(); }} />
                   <Button type="button" size="sm" disabled={!canRegister || register.isPending} onClick={() => register.mutate()}>
                     {register.isPending ? "Registrando…" : "Registrar en Clientes"}
                   </Button>
@@ -773,30 +773,30 @@ export default function MarketplaceCustomerCareWorkspace({
               ) : <p className="text-sm leading-relaxed text-muted-foreground">Introduce un teléfono válido para recuperar la ficha 360 sin duplicados.</p>}
             </div>
           </section>
-          <section className="relative isolate overflow-hidden rounded-[22px] border border-teal-400/25 bg-gradient-to-br from-teal-500/[0.10] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(45,212,191,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-5" aria-label="Formulario de solicitud manual">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-teal-400/25 bg-gradient-to-br from-teal-500/[0.10] via-background to-background p-4 shadow-[0_16px_45px_-33px_rgba(45,212,191,0.5)] ring-1 ring-inset ring-white/[0.025] sm:p-3 admin-graphite-panel" aria-label="Formulario de solicitud manual">
             <Route aria-hidden="true" className="pointer-events-none absolute -right-2 top-8 h-24 w-24 -rotate-12 text-teal-300/[0.055] sm:h-36 sm:w-36" />
             <div className="relative z-10 mb-4 flex items-center gap-2"><Route className="h-4 w-4 text-teal-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">03 · Ruta y vehículo</h3></div>
             <div className="relative z-10 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label htmlFor="care-service">Servicio</Label>
-                  <select id="care-service" value={service} onChange={(e) => { setService(e.target.value as ServiceCode); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40">
+                  <select id="care-service" value={service} onChange={(e) => { setService(e.target.value as ServiceCode); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40 admin-graphite-control admin-graphite-control">
                     {SERVICES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5"><Label htmlFor="care-vehicle">Vehículo</Label>
-                  <select id="care-vehicle" value={vehicle} onChange={(e) => { setVehicle(e.target.value as VehicleCode); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40">
+                  <select id="care-vehicle" value={vehicle} onChange={(e) => { setVehicle(e.target.value as VehicleCode); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40 admin-graphite-control admin-graphite-control">
                     {VEHICLES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
                 </div>
               </div>
               {service === "cargo" ? <div className="space-y-1.5"><Label htmlFor="care-weight">Peso de la carga (kg)</Label>
-                <Input id="care-weight" type="number" min="0.1" max="10000" step="0.1" value={cargoWeight} className="h-11 border-teal-300/20 bg-background/80 text-sm shadow-inner" onChange={(e) => { setCargoWeight(e.target.value); invalidateRequest(); }} />
+                <Input id="care-weight" type="number" min="0.1" max="10000" step="0.1" value={cargoWeight} className="h-11 border-teal-300/20 bg-background/80 text-sm shadow-inner admin-graphite-control" onChange={(e) => { setCargoWeight(e.target.value); invalidateRequest(); }} />
               </div> : null}
               {stopField("origin", origin)}
               {stopField("destination", destination)}
               {!whatsappMode ? (
               <div className="space-y-1.5"><Label htmlFor="care-contact">Contacto preferido</Label>
-                <select id="care-contact" value={preferredContact} onChange={(e) => { setPreferredContact(e.target.value); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40">
+                <select id="care-contact" value={preferredContact} onChange={(e) => { setPreferredContact(e.target.value); invalidateRequest(); }} className="flex h-11 w-full rounded-xl border border-teal-300/20 bg-background/80 px-3 text-sm font-medium text-foreground shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40 admin-graphite-control admin-graphite-control">
                   <option value="phone">Llamada</option><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option>
                 </select>
               </div>
@@ -808,7 +808,7 @@ export default function MarketplaceCustomerCareWorkspace({
           </section>
         </div>
         <aside className="min-w-0 space-y-3 xl:sticky xl:top-4" aria-label="Mapa y resumen de la carrera">
-          <section className="relative overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-b from-cyan-500/[0.07] via-background to-background p-3 shadow-[0_20px_48px_-33px_rgba(34,211,238,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-4">
+          <section className="relative overflow-hidden rounded-[22px] border border-cyan-400/25 bg-gradient-to-b from-cyan-500/[0.07] via-background to-background p-3 shadow-[0_20px_48px_-33px_rgba(34,211,238,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-4 admin-graphite-panel">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><Navigation className="h-5 w-5 text-cyan-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">Mapa del servicio</h3></div>
               <span className="rounded-full border border-cyan-400/20 bg-cyan-400/[0.075] px-3 py-1 text-[11px] text-cyan-100">Origen → destino</span>
             </div>
@@ -821,23 +821,23 @@ export default function MarketplaceCustomerCareWorkspace({
               <Button type="button" size="sm" variant="outline" onClick={() => { setStop("origin",null); setStop("destination",null); }} className="gap-1"><Route className="h-4 w-4" /> Limpiar ruta</Button>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Marca el origen y el destino o elige las direcciones exactas en el mapa.</p>
-            <details className="mt-3 rounded-xl border border-border/45 bg-background/40 p-3">
+            <details className="mt-3 rounded-xl border border-border/45 bg-background/40 p-3 admin-graphite-inset">
               <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Estado de la flota</summary>
             <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
-              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Trabajando</span><strong>{live.data?.summary.workingDrivers ?? "—"}</strong></div>
-              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">GPS reciente</span><strong>{live.data?.summary.driversWithFreshLocation ?? "—"}</strong></div>
-              <div className="rounded-xl border border-border/60 bg-background/55 p-2"><span className="block text-muted-foreground">Activas</span><strong>{live.data?.summary.activeJobs ?? "—"}</strong></div>
+              <div className="rounded-xl border border-border/60 bg-background/55 p-2 admin-graphite-inset"><span className="block text-muted-foreground">Trabajando</span><strong>{live.data?.summary.workingDrivers ?? "—"}</strong></div>
+              <div className="rounded-xl border border-border/60 bg-background/55 p-2 admin-graphite-inset"><span className="block text-muted-foreground">GPS reciente</span><strong>{live.data?.summary.driversWithFreshLocation ?? "—"}</strong></div>
+              <div className="rounded-xl border border-border/60 bg-background/55 p-2 admin-graphite-inset"><span className="block text-muted-foreground">Activas</span><strong>{live.data?.summary.activeJobs ?? "—"}</strong></div>
             </div>
             </details>
 
           </section>
-          <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.09] via-background to-background p-4 shadow-[0_18px_46px_-33px_rgba(16,185,129,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-5">
+          <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.09] via-background to-background p-4 shadow-[0_18px_46px_-33px_rgba(16,185,129,0.42)] ring-1 ring-inset ring-white/[0.025] sm:p-3 admin-graphite-panel">
             <ShieldCheck aria-hidden="true" className="pointer-events-none absolute -right-2 top-3 h-24 w-24 text-emerald-300/[0.05] sm:h-32 sm:w-32" />
             <div className="relative z-10 mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-300" /><h3 className="text-lg font-semibold tracking-tight text-foreground">Cotización del recorrido</h3></div>
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Distancia</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
-              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tiempo</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}</strong></div>
-              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)]"><span className="block text-xs text-muted-foreground">Tarifa</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP` : "—"}</strong></div>
+              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)] admin-graphite-inset"><span className="block text-xs text-muted-foreground">Distancia</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.distanceKm.toFixed(2)} km` : "—"}</strong></div>
+              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)] admin-graphite-inset"><span className="block text-xs text-muted-foreground">Tiempo</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${Math.ceil(validQuote.durationSeconds / 60)} min` : "—"}</strong></div>
+              <div className="relative z-10 min-w-0 rounded-xl border border-emerald-400/15 bg-background/85 p-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.18)] admin-graphite-inset"><span className="block text-xs text-muted-foreground">Tarifa</span><strong className="block text-lg font-semibold tabular-nums text-foreground">{validQuote ? `${validQuote.recommendedPrice.toLocaleString("es-CU")} CUP` : "—"}</strong></div>
             </div>
             {quoteLoading ? <p className="mt-2 flex items-center gap-1 text-xs text-cyan-200"><Clock3 className="h-3.5 w-3.5" /> Calculando recorrido…</p> : null}
             {quoteError ? <p role="alert" className="mt-2 text-xs text-amber-200">{quoteError}</p> : null}

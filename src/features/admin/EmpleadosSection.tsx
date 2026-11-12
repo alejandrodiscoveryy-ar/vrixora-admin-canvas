@@ -95,7 +95,7 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
           ) : null}
         </div>
       ) : (
-      <ModuleHeader
+      <ModuleHeader density="compact" appearance="premium"
         title="Empleados"
         description="Gestión de miembros del equipo, roles y permisos operativos en el proyecto."
         icon={Users}
@@ -112,22 +112,22 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
       )}
 
       {/* Bloque Informativo: Roles del Proyecto */}
-      <SectionCard title="Roles del proyecto y permisos" module="empleados" className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.08] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}>
+      <SectionCard density="compact" appearance="premium" title="Roles del proyecto y permisos" module="empleados" className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.08] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}>
         {premium ? <Users aria-hidden="true" className="pointer-events-none absolute -right-8 -top-16 z-0 h-52 w-52 rotate-[-16deg] text-cyan-400 opacity-[0.045]" /> : null}
         <div className="relative z-10 grid gap-3 text-xs sm:grid-cols-3">
-          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1 admin-graphite-inset">
             <span className="font-bold text-foreground">Owner</span>
             <p className="text-muted-foreground">
               Acceso total, administración completa y gestión de miembros y ajustes.
             </p>
           </div>
-          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1 admin-graphite-inset">
             <span className="font-bold text-foreground">Accounting</span>
             <p className="text-muted-foreground">
               Gestión de clientes, cobros/pagos, analítica y lectura de licencias y planes.
             </p>
           </div>
-          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1">
+          <div className="rounded-xl border border-border/70 bg-card/60 p-3.5 space-y-1 admin-graphite-inset">
             <span className="font-bold text-foreground">Marketing</span>
             <p className="text-muted-foreground">
               Gestión de clientes, seguimiento comercial (leads/campañas) y analítica.
@@ -136,7 +136,7 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
         </div>
       </SectionCard>
 
-      <AdminDataTableShell
+      <AdminDataTableShell density="compact" appearance="premium"
         title="Empleados asignados"
         description={premium ? undefined : "Miembros con acceso activo al centro de control"}
         className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.06] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}
@@ -231,7 +231,7 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
 
       {/* Dialog for adding employee kept intact */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md admin-graphite-dialog">
           <DialogHeader>
             <DialogTitle>Asignar empleado</DialogTitle>
             <DialogDescription>
