@@ -205,7 +205,7 @@ function ResumenPage() {
                 <section className="space-y-2" aria-label="Captación comercial">
                   <p className="text-xs font-semibold text-[var(--module-comercial)]">Captación del período</p>
                   <div className="max-w-full overflow-x-auto">
-                    <AdminPeriodSelector value={period} range={dateRange} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setDateRange(nextRange); }} />
+                    <AdminPeriodSelector appearance="premium" value={period} range={dateRange} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setDateRange(nextRange); }} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <MobileDashboardStat label="Leads" value={periodLeads.length} note="Recibidos" icon={Megaphone} loading={commercialLeads.isLoading} />
@@ -269,7 +269,7 @@ function ResumenPage() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center xl:justify-end">
-            <AdminPeriodSelector
+            <AdminPeriodSelector appearance="premium"
               value={period}
               range={dateRange}
               onChange={(nextPeriod, nextRange) => {
@@ -418,7 +418,7 @@ function ResumenPage() {
               />
             </div>
           ) : (
-            <EmptyState density="compact"
+            <EmptyState density="compact" appearance="premium"
               icon={Megaphone}
               title="Sin captación en el período"
               description="No hay leads comerciales registrados en las fechas seleccionadas."
@@ -467,7 +467,7 @@ function ResumenPage() {
               />
             </div>
           ) : (
-            <EmptyState density="compact"
+            <EmptyState density="compact" appearance="premium"
               icon={BriefcaseBusiness}
               title="Sin acceso a Marketplace"
               description="No tienes permisos para consultar los indicadores operativos."
@@ -538,7 +538,7 @@ function ResumenPage() {
                 ))}
               </ol>
             ) : (
-              <EmptyState density="compact"
+              <EmptyState density="compact" appearance="premium"
                 icon={Activity}
                 title="Sin actividad reciente"
                 description="Los próximos movimientos auditados aparecerán aquí."
