@@ -62,32 +62,19 @@ Deno.serve(async (request) => {
           typeof params.target_session_token !== "string") {
         throw new Error("CUSTOMER_SESSION_REQUIRED");
       }
-      const { error: sessionError } = await supabase.rpc("list_marketplace_customer_history", {
+      // This role deliberately has no SELECT privilege on private driver tables.
+      // The narrowly scoped RPC verifies the customer session inside Postgres
+      // and returns only anonymized, approximate coordinates.
+      const { data, error } = await supabase.rpc("get_marketplace_customer_working_fleet", {
         target_session_id: params.target_session_id,
         target_session_token: params.target_session_token,
-        target_limit: 1,
       });
-      if (sessionError) throw sessionError;
-      // One current assignment per driver. Keep last GPS regardless of its age.
-      // The inner joins enforce active assignments, drivers and vehicles.
-      const { data, error } = await supabase.from("marketplace_driver_locations")
-        .select("latitude,longitude,assignment:driver_vehicle_assignments!inner(is_active,accepting_jobs,profile:driver_profiles!inner(status,activated_at,suspended_at),vehicle:vehicles!inner(marketplace_status,deleted_at))")
-        .eq("project_id", project.id)
-        .eq("assignment.is_active", true)
-        .eq("assignment.accepting_jobs", true)
-        .eq("assignment.profile.status", "active")
-        .not("assignment.profile.activated_at", "is", null)
-        .is("assignment.profile.suspended_at", null)
-        .eq("assignment.vehicle.marketplace_status", "active")
-        .is("assignment.vehicle.deleted_at", null)
-        .order("driver_user_id")
-        .order("vehicle_id")
-        .limit(1000);
       if (error) throw error;
+      if (!Array.isArray(data)) throw new Error("FLEET_RESPONSE_INVALID");
       // A ~330 m grid in Cuba: approximate positions, no IDs, timestamps,
       // assignment status or other personal fields in the response.
       // Sort by coordinates, not driver identity; identical cells may overlap.
-      const points = (data ?? []).flatMap((row) => {
+      const points = data.flatMap((row) => {
         if (row.latitude == null || row.longitude == null) return [];
         const lat = Number(row.latitude);
         const lon = Number(row.longitude);
