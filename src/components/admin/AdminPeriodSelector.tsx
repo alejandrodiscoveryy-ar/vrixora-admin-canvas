@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { premiumColumnHeaderSurface, premiumControlSurface, premiumHeaderSurface, type AdminAppearance } from "./density";
 import {
   adminPeriodOptions,
   periodRange,
@@ -28,12 +29,14 @@ export function AdminPeriodSelector({
   onChange,
   options = adminPeriodOptions,
   className,
+  appearance = "standard",
 }: {
   value: AdminPeriodKey;
   range: AdminDateRange;
   onChange: (value: AdminPeriodKey, range: AdminDateRange) => void;
   options?: AdminPeriodOption[];
   className?: string;
+  appearance?: AdminAppearance;
 }) {
   const [customOpen, setCustomOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>(() => toCalendarRange(range));
@@ -69,8 +72,10 @@ export function AdminPeriodSelector({
     <div
       className={cn(
         "inline-flex max-w-full flex-col gap-1.5 rounded-[var(--radius-compact)] border border-border-subtle bg-surface-1 p-1.5 shadow-[var(--shadow-xs)]",
+        appearance === "premium" && cn(premiumControlSurface, "min-w-0 shadow-none"),
         className,
       )}
+      data-appearance={appearance === "premium" ? "premium" : undefined}
       aria-label="Selector de período"
     >
       <div className="flex min-w-0 items-center gap-1">
@@ -78,7 +83,7 @@ export function AdminPeriodSelector({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0"
+          className={cn("h-9 w-9 shrink-0", appearance === "premium" && "max-sm:h-11 max-sm:w-11")}
           disabled={!canNavigate}
           aria-label="Período anterior"
           title="Período anterior"
@@ -89,11 +94,11 @@ export function AdminPeriodSelector({
 
         <Popover open={customOpen} onOpenChange={setCustomOpen}>
           <Select value={value} onValueChange={(next) => choosePeriod(next as AdminPeriodKey)}>
-            <SelectTrigger className="h-9 min-w-36 flex-1 border-0 bg-surface-2 shadow-none sm:w-44">
+            <SelectTrigger aria-label="Período" className={cn("h-9 min-w-36 flex-1 border-0 bg-surface-2 shadow-none sm:w-44", appearance === "premium" && cn(premiumColumnHeaderSurface, "min-w-0 border shadow-none max-sm:h-11 sm:min-w-36"))}>
               <CalendarDays className="h-4 w-4 text-[var(--module-foreground,var(--primary))]" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={appearance === "premium" ? premiumHeaderSurface : undefined}>
               {options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -109,9 +114,10 @@ export function AdminPeriodSelector({
               aria-label="Abrir selector de rango personalizado"
             />
           </PopoverTrigger>
-          <PopoverContent align="center" className="w-auto max-w-[calc(100vw-1rem)] p-0">
+          <PopoverContent align="center" className={cn("w-auto max-w-[calc(100vw-1rem)] p-0", appearance === "premium" && premiumHeaderSurface)}>
             <div className="overflow-x-auto p-2">
               <Calendar
+                className={appearance === "premium" ? "bg-transparent dark:bg-transparent" : undefined}
                 mode="range"
                 locale={es}
                 selected={draft}
@@ -145,7 +151,7 @@ export function AdminPeriodSelector({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0"
+          className={cn("h-9 w-9 shrink-0", appearance === "premium" && "max-sm:h-11 max-sm:w-11")}
           disabled={!canNavigate}
           aria-label="Período siguiente"
           title="Período siguiente"
@@ -159,7 +165,7 @@ export function AdminPeriodSelector({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0"
+            className={cn("h-9 w-9 shrink-0", appearance === "premium" && "max-sm:h-11 max-sm:w-11")}
             aria-label="Volver al período actual"
             title="Volver al período actual"
             onClick={() => onChange(value, currentRange)}
@@ -172,7 +178,7 @@ export function AdminPeriodSelector({
       <button
         type="button"
         disabled={value !== "custom"}
-        className="truncate px-2 text-left text-xs text-text-tertiary disabled:cursor-default"
+        className={cn("truncate px-2 text-left text-xs text-text-tertiary disabled:cursor-default", appearance === "premium" && "text-text-secondary")}
         onClick={() => setCustomOpen(true)}
       >
         {value === "all" ? "Todo el historial" : formatRange(range)}
