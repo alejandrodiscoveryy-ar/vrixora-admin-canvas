@@ -64,21 +64,21 @@ const LEGACY_SECTION_LABELS: Record<SectionKey, string> = {
   application: "Aplicación",
 };
 
-const CONFIG_CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
-const PREMIUM_CONFIG_CARD_CLASS = "relative overflow-hidden rounded-[25px] border border-cyan-400/20 bg-gradient-to-br from-[#0b171c] via-[#080f15] to-[#061a20]/90 shadow-[0_26px_70px_-42px_rgba(0,0,0,0.94)]";
+const CONFIG_CARD_CLASS = "border-border-default admin-graphite-panel";
+const PREMIUM_CONFIG_CARD_CLASS = "relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border admin-graphite-panel";
 
-const CONFIG_HEADER_CLASS = "border-b border-cyan-400/[0.12] bg-cyan-300/[0.025] px-4 py-4 sm:px-6 sm:py-4";
+const CONFIG_HEADER_CLASS = "border-b border-border-default px-3 py-3 sm:px-4 admin-graphite-header";
 
-const CONFIG_CONTENT_CLASS = "px-4 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5";
+const CONFIG_CONTENT_CLASS = "min-w-0 p-3 sm:p-4 admin-graphite-form";
 
 const CONFIG_CONTROL_CLASS =
-  "h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80 shadow-inner shadow-black/10 transition-colors hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
+  "h-11 rounded-xl border-border-default bg-surface-1 admin-graphite-control shadow-inner shadow-black/10 transition-colors hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
 
 const CONFIG_SELECT_CLASS =
-  "h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80 hover:border-cyan-300/45 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20";
+  "h-11 rounded-xl border-border-default bg-surface-1 admin-graphite-control hover:border-cyan-300/45 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20";
 
 const CONFIG_TEXTAREA_CLASS =
-  "min-h-[88px] rounded-xl border-cyan-400/20 bg-[#08141a]/80 shadow-inner shadow-black/10 hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
+  "min-h-[88px] rounded-xl border-border-default bg-surface-1 admin-graphite-control shadow-inner shadow-black/10 hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
 
 const ACTIVE_CAMPAIGN_BADGE_CLASS =
   "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]";
@@ -534,7 +534,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     key={section.key}
                     type="button"
                     onClick={() => setActiveSection(section.key)}
-                    className="group relative isolate flex min-h-[156px] min-w-0 items-center gap-5 overflow-hidden rounded-[23px] border border-cyan-400/[0.14] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.10] px-5 py-6 text-left shadow-[0_22px_58px_-43px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/45 hover:shadow-[0_26px_58px_-38px_rgba(34,211,238,0.20)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:px-6"
+                    className="group relative isolate flex min-h-11 min-w-0 items-center gap-3 overflow-hidden rounded-[var(--radius-card)] border border-cyan-400/[0.14] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.10] px-3 py-3 text-left shadow-[0_22px_58px_-43px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/45 hover:shadow-[0_26px_58px_-38px_rgba(34,211,238,0.20)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:px-6 admin-graphite-panel"
                   >
                     <Icon aria-hidden="true" className="pointer-events-none absolute -right-9 -top-11 z-0 h-40 w-40 -rotate-12 text-cyan-300 opacity-[0.055] transition-opacity group-hover:opacity-[0.10]" />
                     <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-cyan-400/25 bg-cyan-400/[0.09] text-cyan-300 shadow-inner">
@@ -543,7 +543,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                     <span className="relative z-10 min-w-0 flex-1 space-y-1">
                       <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300/75">{section.eyebrow}</span>
                       <span className="block text-lg font-semibold leading-snug tracking-tight text-foreground">{section.label}</span>
-                      <span className="block max-w-sm text-xs leading-relaxed text-slate-400">{section.description}</span>
+                      <span className="block max-w-sm text-xs leading-relaxed text-text-secondary">{section.description}</span>
                     </span>
                     <ChevronRight aria-hidden="true" className="relative z-10 h-5 w-5 shrink-0 text-cyan-300/75 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
                   </button>
@@ -569,7 +569,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                       key={section.key}
                       aria-current={visibleSection === section.key ? "page" : undefined}
                       onClick={() => setActiveSection(section.key)}
-                      className={"inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 " + (visibleSection === section.key ? "border-cyan-300/45 bg-cyan-300/12 text-cyan-100" : "border-cyan-400/15 bg-[#09161b]/70 text-slate-400 hover:border-cyan-400/35 hover:text-white")}
+                      className={"inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 " + (visibleSection === section.key ? "border-cyan-300/45 bg-cyan-300/12 text-cyan-100" : "border-border-default bg-surface-2 text-text-secondary hover:border-primary/35 hover:text-text-primary")}
                     >
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" />{section.label}
                     </button>
@@ -580,7 +580,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           ) : null}
         </>
       ) : (
-      <div className="rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-cyan-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+      <div className="rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-cyan-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl admin-graphite-panel">
         <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
           <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
             {sections.map((section) => (
@@ -626,7 +626,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       )}
       {visibleSection === "general" ? (
         <div className="space-y-3">
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Identidad del proyecto"
             description="Información principal utilizada en la administración y en los documentos."
             module="configuracion"
@@ -704,7 +704,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </div>
           </SectionCard>
 
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Marca e identidad visual"
             description="Recursos visuales utilizados por el proyecto."
             module="configuracion"
@@ -871,7 +871,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {visibleSection === "billing" ? (
         <div className="space-y-3">
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Monedas y tipo de cambio"
             description="Define las monedas y el tipo de cambio utilizados por Marketplace."
             module="configuracion"
@@ -968,7 +968,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <p className="flex items-center gap-2 rounded-xl border border-cyan-400/15 bg-cyan-300/[0.035] px-3.5 py-3 text-xs text-slate-300 md:col-span-2">
+              <p className="flex items-center gap-2 rounded-xl border border-cyan-400/15 bg-cyan-300/[0.035] px-3.5 py-3 text-xs text-text-secondary md:col-span-2">
                 Última actualización: {formatDateTime(foundationForm.rateUpdatedAt)}
               </p>
 
@@ -991,7 +991,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       {visibleSection === "referrals" ? (
         <div className="space-y-3">
           {isMarketplaceReferralProgram ? (
-            <SectionCard title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
+            <SectionCard density="compact" appearance="premium" title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
               {marketplaceReferralSettingsQuery.isError ? <PageAlert tone="error">No se pudo cargar la configuración vigente de recompensas Marketplace.</PageAlert> : null}
               <div className="grid gap-4 lg:grid-cols-[minmax(250px,1.2fr)_minmax(220px,1fr)_auto] lg:items-center">
                 <SettingToggle title="Programa de referidos" description="Activa o desactiva la recompensa vigente." checked={marketplaceRewardEnabled} onCheckedChange={setMarketplaceRewardEnabled} disabled={!canManage} />
@@ -1002,7 +1002,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </SectionCard>
           ) : null}
           {!isMarketplaceReferralProgram ? (
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Programa de referidos"
             description="Cada campaña conserva su condición y recompensa para no alterar relaciones ni beneficios históricos."
             module="configuracion"
@@ -1053,7 +1053,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           </SectionCard>
           ) : null}
           {canManage && !isMarketplaceReferralProgram ? (
-            <SectionCard
+            <SectionCard density="compact" appearance="premium"
               title="Iniciar nueva campaña"
               description="La campaña activa se cerrará al crear la nueva. Las reglas históricas no se modificarán."
               module="configuracion"
@@ -1128,7 +1128,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           ) : null}
 
           {!isMarketplaceReferralProgram ? (
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Historial de campañas"
             description="Las campañas cerradas conservan las condiciones con las que se emitieron las recompensas."
             module="configuracion"
@@ -1206,7 +1206,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           {!isMarketplaceReferralProgram ? (
             <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
           ) : null}
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
             module="configuracion"
@@ -1226,7 +1226,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </div>
           </SectionCard>
 
-          <SectionCard
+          <SectionCard density="compact" appearance="premium"
             title="Canales operativos de WhatsApp"
             description="Configura soporte y cobros de forma independiente."
             module="configuracion"
@@ -1246,7 +1246,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               <div className="space-y-5">
                 <div>
                   <p className="mb-1 text-sm font-semibold text-foreground">Números operativos</p>
-                  <p className="mb-3 text-xs text-slate-400">Cada número cumple una función distinta en la atención del Marketplace.</p>
+                  <p className="mb-3 text-xs text-text-secondary">Cada número cumple una función distinta en la atención del Marketplace.</p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="space-y-1.5">
@@ -1298,7 +1298,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
                 <div className="border-t border-cyan-400/10 pt-4">
                   <p className="mb-1 text-sm font-semibold text-foreground">Botones y mensajes</p>
-                  <p className="mb-3 text-xs text-slate-400">Textos visibles y plantillas de contacto para soporte y pagos.</p>
+                  <p className="mb-3 text-xs text-text-secondary">Textos visibles y plantillas de contacto para soporte y pagos.</p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1.5">
@@ -1348,7 +1348,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           {isMarketplaceReferralProgram ? (
             <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
           ) : null}
-        <SectionCard
+        <SectionCard density="compact" appearance="premium"
           title="Comportamiento de TukTuk Control"
           description="Parámetros administrativos que afectan el acceso y la experiencia de la aplicación."
           module="configuracion"
@@ -1406,7 +1406,7 @@ function SettingToggle({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex min-h-[90px] items-start justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4 shadow-inner shadow-black/15">
+    <div className="flex min-h-[90px] items-start justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4 shadow-inner shadow-black/15 admin-graphite-panel">
       <div className="min-w-0">
         <p className="text-sm font-medium text-text-primary">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-text-secondary">{description}</p>
@@ -1451,7 +1451,7 @@ function ReferralCampaignDetail({
   tone?: "success";
 }) {
   return (
-    <div className="rounded-2xl border border-cyan-400/18 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4">
+    <div className="rounded-2xl border border-cyan-400/18 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4 admin-graphite-panel">
       <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
       {tone === "success" ? (
         <Badge variant="outline" className={`mt-1.5 ${ACTIVE_CAMPAIGN_BADGE_CLASS}`}>
