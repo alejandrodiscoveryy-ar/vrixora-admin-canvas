@@ -10,6 +10,7 @@ import { AdminDataTableShell } from "../src/components/admin/AdminDataTableShell
 import { FilterToolbar } from "../src/components/admin/FilterToolbar.tsx";
 import { DataToolbar } from "../src/components/admin/DataToolbar.tsx";
 import { EmptyState } from "../src/components/admin/EmptyState.tsx";
+import { AdminPeriodSelector } from "../src/components/admin/AdminPeriodSelector.tsx";
 import { premiumSurface, premiumMetricSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface, premiumTableDensity, premiumTableRow } from "../src/components/admin/density.ts";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../src/components/ui/table.tsx";
 
@@ -306,4 +307,32 @@ test("MetricCard: invalid numeric tokens are sanitized without losing valid labe
   const markup = render(MetricCard, { label: "Operación", value: "Sin datos", comparison: "Finanzas", density: "compact", appearance: "premium" });
   assert.ok(markup.includes("Sin datos"));
   assert.ok(markup.includes("Finanzas"));
+});
+
+test("Premium EmptyState: neutral inset surface preserves message, action and compact density", () => {
+  const props = { density: "compact", title: "Sin captacion", description: "No hay resultados", module: "comercial", icon: CreditCard, action };
+  const normal = render(EmptyState, props);
+  assert.equal(normal, render(EmptyState, { ...props, appearance: "standard" }));
+  const markup = render(EmptyState, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.ok(markup.includes("Sin captacion"));
+  assert.ok(markup.includes("No hay resultados"));
+  assert.ok(markup.includes("Accion de prueba"));
+  hasClasses(markup, ...premiumColumnHeaderSurface.split(" "), ...premiumControlSurface.split(" "), "border-solid", "shadow-none", "p-4", "sm:p-5");
+  assert.ok(!classTokens(markup).has("border-dashed"));
+});
+
+test("Premium AdminPeriodSelector: graphite controls preserve period navigation and displayed dates", () => {
+  const props = { value: "custom", range: { from: "2026-09-30", to: "2026-10-06" }, onChange: noop };
+  const normal = render(AdminPeriodSelector, props);
+  assert.equal(normal, render(AdminPeriodSelector, { ...props, appearance: "standard" }));
+  const markup = render(AdminPeriodSelector, { ...props, appearance: "premium" });
+  assert.match(markup, /data-appearance="premium"/);
+  assert.match(markup, /aria-label="Selector de período"/);
+  for (const label of ["Período anterior", "Período siguiente", "Período", "Volver al período actual", "Abrir selector de rango personalizado"]) {
+    assert.ok(markup.includes('aria-label="' + label + '"'));
+  }
+  assert.match(markup, /30 sept.*6 oct.*2026/);
+  hasClasses(markup, ...premiumControlSurface.split(" "), ...premiumColumnHeaderSurface.split(" "), "max-sm:h-11", "max-sm:w-11");
+  assert.ok(!classTokens(normal).has(premiumControlSurface.split(" ")[0]));
 });
