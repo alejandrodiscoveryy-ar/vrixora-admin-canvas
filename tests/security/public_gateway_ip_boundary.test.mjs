@@ -14,14 +14,8 @@ async function harness({ fleetRows = [], sessionError = null } = {}) {
   const db = {
     from(table) {
       if (table === 'marketplace_driver_locations') {
-        const query = {};
-        for (const method of ['select', 'eq', 'not', 'is', 'order', 'limit']) {
-          query[method] = (...args) => {
-            calls.fleetQueries.push([method, ...args]);
-            return method === 'limit' ? Promise.resolve({ data: fleetRows, error: null }) : query;
-          };
-        }
-        return query;
+        calls.fleetQueries.push(table);
+        throw new Error('PRIVATE_TABLE_ACCESS_FORBIDDEN');
       }
       const data = table === 'projects' ? { id: 'test-project' } : null;
       const query = {
@@ -43,10 +37,10 @@ async function harness({ fleetRows = [], sessionError = null } = {}) {
         // Deliberately small test budget; no production SQL is executed.
         return { error: count > 2 ? new Error('CUSTOMER_RATE_LIMITED') : null };
       }
-      if (name === 'list_marketplace_customer_history') {
+      if (name === 'get_marketplace_customer_working_fleet') {
         calls.sessionChecks++;
-        assert.equal(params.target_limit, 1);
-        return { data: [], error: sessionError };
+        assert.deepEqual(Object.keys(params).sort(), ['target_session_id', 'target_session_token']);
+        return { data: fleetRows, error: sessionError };
       }
       calls.operations++;
       return { data: [], error: null };
@@ -246,16 +240,7 @@ test('working fleet: validates session before reading GPS; never returns private
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.deepEqual(await response.json(), { data: [{ latitude: 23.124, longitude: -82.347 }] });
   assert.equal(calls.sessionChecks, 1);
-  for (const filter of [
-    ['eq', 'project_id', 'test-project'], ['eq', 'assignment.is_active', true],
-    ['eq', 'assignment.accepting_jobs', true], ['eq', 'assignment.profile.status', 'active'],
-    ['not', 'assignment.profile.activated_at', 'is', null],
-    ['is', 'assignment.profile.suspended_at', null],
-    ['eq', 'assignment.vehicle.marketplace_status', 'active'],
-    ['is', 'assignment.vehicle.deleted_at', null],
-  ]) assert.ok(calls.fleetQueries.some((actual) => JSON.stringify(actual) === JSON.stringify(filter)));
-  assert.ok(!JSON.stringify(calls.fleetQueries).includes('captured_at'));
-  assert.ok(!JSON.stringify(calls.fleetQueries).includes('is_available'));
+  assert.equal(calls.fleetQueries.length, 0, 'never access private GPS directly');
 });
 test('working fleet: missing or invalid session cannot read GPS', async () => {
   for (const [params, sessionError] of [[{}, null], [{ target_session_id: 'bad', target_session_token: 'bad' }, new Error('SESSION_INVALID')]]) {
@@ -269,4 +254,19 @@ test('working fleet: separate trusted-IP budget from booking reads', async () =>
   assert.equal((await handlers.customer(fleetRequest())).status, 200);
   assert.equal((await handlers.customer(request('customer', { 'cf-connecting-ip': '203.0.113.9' }))).status, 200);
   assert.notEqual(calls.identities[0], calls.identities[1]);
+});
+
+test('working fleet SQL boundary: service-only wrapper and private session-authorized query', async () => {
+  const sql = await readFile(new URL('../../docs/security/customer-working-fleet-rpc.sql', import.meta.url), 'utf8');
+  assert.match(sql, /app_private\.resolve_marketplace_customer_session\(target_session_id, target_session_token\)/);
+  assert.match(sql, /SECURITY DEFINER SET search_path TO ''/i);
+  assert.match(sql, /SECURITY INVOKER SET search_path TO ''/i);
+  assert.match(sql, /REVOKE ALL ON FUNCTION public\.get_marketplace_customer_working_fleet\(uuid, text\) FROM PUBLIC, anon, authenticated;/i);
+  assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.get_marketplace_customer_working_fleet\(uuid, text\) TO service_role;/i);
+  assert.match(sql, /a\.is_active[\s\S]*a\.accepting_jobs/);
+  assert.match(sql, /d\.status = 'active'/);
+  assert.match(sql, /v\.marketplace_status = 'active'/);
+  assert.match(sql, /round\(l\.latitude \/ 0\.003\) \* 0\.003/);
+  assert.match(sql, /round\(l\.longitude \/ 0\.003\) \* 0\.003/);
+  assert.doesNotMatch(sql, /\bis_available\b|\bcaptured_at\b|GRANT\s+SELECT/i);
 });
