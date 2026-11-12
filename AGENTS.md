@@ -32,3 +32,25 @@ Verificar, cuando corresponda:
 - funcionamiento real.
 
 Si el código contradice una regla crítica del PRD, documentar la diferencia antes de modificarla.
+
+## Sistema de diseño oficial — Vrixora Design System v2.0
+
+Antes de analizar, diseñar o implementar cualquier cambio de interfaz o experiencia de usuario en Vrixora Admin, leer:
+
+- [Skill de diseño](docs/design-system/SKILL.md)
+- [Estándar premium y compacto](docs/design-system/references/admin-premium.md)
+- [Componentes compartidos](docs/design-system/references/componentes.md)
+- [Auditoría de calidad](docs/design-system/references/auditoria-admin.md)
+
+Consultar también las referencias de productos y calidad enlazadas desde la skill cuando corresponda.
+
+El PRD_MASTER.md sigue siendo la fuente oficial de requisitos y lógica de negocio. El sistema de diseño gobierna la coherencia visual y UX; no autoriza cambios de negocio, permisos, seguridad ni publicación.
+
+Reglas de intervención visual:
+- Reutilizar tokens y componentes existentes; no introducir un lenguaje visual aislado ni una biblioteca paralela.
+- Mantener estilo premium, compacto y responsive en todos los módulos, claro/oscuro y accesibilidad.
+- Revisar consumidores de componentes compartidos antes de cambiarlos; documentar excepciones y migrar por etapas.
+- Aplicar auditoría previa/posterior y rúbrica basada en evidencia. No aprobar con problemas críticos o altos, regresiones o pruebas obligatorias pendientes.
+- Distinguir propuesta, implementación, verificación y publicación. No modificar producción por una solicitud de diseño.
+
+Los valores dimensionales y umbrales nuevos se documentan como propuestas; verificar contra main y pruebas reales antes de imponer cambios globales.
