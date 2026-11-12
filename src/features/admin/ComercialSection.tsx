@@ -262,7 +262,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     }));
   }, [activeLeads]);
   return (
-    <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.16] bg-gradient-to-br from-violet-500/[0.045] via-background/85 to-cyan-500/[0.025] p-3 shadow-[0_28px_80px_-55px_rgba(139,92,246,0.68)] sm:p-4 lg:p-5">
+    <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.16] bg-gradient-to-br from-violet-500/[0.045] via-background/85 to-cyan-500/[0.025] p-3 shadow-[0_28px_80px_-55px_rgba(139,92,246,0.68)] sm:p-4 lg:p-5 admin-graphite-panel">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.065] via-background/80 to-cyan-500/[0.04]" />
       <img
         src={showOffers ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
@@ -275,7 +275,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       <div className="relative z-10 space-y-4 md:space-y-5">
       <nav
         aria-label="Áreas de Comercial"
-        className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.07] via-background/85 to-cyan-500/[0.025] px-3 py-3 shadow-[0_18px_54px_-42px_rgba(139,92,246,0.75)] backdrop-blur-xl sm:px-4"
+        className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.07] via-background/85 to-cyan-500/[0.025] px-3 py-3 shadow-[0_18px_54px_-42px_rgba(139,92,246,0.75)] backdrop-blur-xl sm:px-4 admin-graphite-panel"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/75 via-cyan-400/30 to-transparent" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
@@ -334,7 +334,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : showReferrals ? (
         <CommercialReferralsPanel projectId={projectId} />
       ) : (
-        <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 shadow-[0_28px_86px_-62px_rgba(139,92,246,0.8)] sm:p-5">
+        <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 shadow-[0_28px_86px_-62px_rgba(139,92,246,0.8)] sm:p-5 admin-graphite-panel">
           <img
             src="/admin-premium/acquisition.svg"
             alt=""
@@ -343,7 +343,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/70" />
           <div className="relative z-10 space-y-6">
-            <div className="rounded-[22px] border border-violet-400/20 bg-background/75 px-4 py-4 shadow-[0_18px_55px_-44px_rgba(139,92,246,0.7)] backdrop-blur-md sm:px-5">
+            <div className="rounded-[22px] border border-violet-400/20 bg-background/75 px-4 py-4 shadow-[0_18px_55px_-44px_rgba(139,92,246,0.7)] backdrop-blur-md sm:px-5 admin-graphite-inset">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Captación</p>
               <h2 className="mt-1 text-lg font-semibold text-foreground">Captación y seguimiento</h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
@@ -352,28 +352,28 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             </div>
           {/* 4 KPI Principales */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Leads"
               value={activeLeads.length}
               description="Personas captadas"
               icon={Megaphone}
               module="comercial"
             />
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Contactados"
               value={contactedLeads}
               description="Con interacción comercial"
               icon={History}
               module="comercial"
             />
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Registrados"
               value={registeredLeads}
               description="Convertidos en usuarios"
               icon={UsersRound}
               semanticState="success"
             />
-            <MetricCard
+            <MetricCard density="compact" appearance="premium"
               label="Conversión"
               value={`${registrationConversionRate}%`}
               description="Lead a usuario registrado"
@@ -382,7 +382,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             />
           </div>
           {/* Embudo Comercial */}
-          <SectionCard title="Embudo comercial" module="comercial">
+          <SectionCard density="compact" appearance="premium" title="Embudo comercial" module="comercial">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {funnelSteps.map((step, idx) => {
                 const firstCount = funnelSteps[0].count;
@@ -390,7 +390,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 return (
                   <div
                     key={step.label}
-                    className="relative rounded-2xl border border-border/70 bg-card/60 p-4 flex flex-col justify-between"
+                    className="relative rounded-2xl border border-border/70 bg-card/60 p-4 flex flex-col justify-between admin-graphite-inset"
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -419,7 +419,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
           {/* Origen / Fuentes & Campañas */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard title="Distribución por fuente" module="comercial">
+            <SectionCard density="compact" appearance="premium" title="Distribución por fuente" module="comercial">
               {sourceDistribution.length > 0 ? (
                 <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -447,7 +447,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <EmptyState
+                <EmptyState density="compact" appearance="premium"
                   icon={Megaphone}
                   title="Sin datos de fuentes"
                   description="No hay fuentes registradas para los leads actuales."
@@ -456,7 +456,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               )}
             </SectionCard>
 
-            <SectionCard title="Rendimiento de campañas" module="comercial">
+            <SectionCard density="compact" appearance="premium" title="Rendimiento de campañas" module="comercial">
               {campaignSummary.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
@@ -485,7 +485,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                   </Table>
                 </div>
               ) : (
-                <EmptyState
+                <EmptyState density="compact" appearance="premium"
                   icon={Layers}
                   title="Sin campañas activas"
                   description="No se registran campañas asociadas a leads en este proyecto."
@@ -496,7 +496,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           </div>
 
           {/* Tabla de Leads con FilterToolbar & AdminDataTableShell */}
-          <AdminDataTableShell
+          <AdminDataTableShell density="compact" appearance="premium"
             title="Leads y seguimiento"
             description="Listado completo y filtros de seguimiento comercial."
             actions={
@@ -543,7 +543,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             }
             isEmpty={rows.length === 0}
             emptyState={
-              <EmptyState
+              <EmptyState density="compact" appearance="premium"
                 icon={Megaphone}
                 title="Todavía no tienes leads"
                 description="Comienza creando tu primer lead comercial para realizar seguimiento y conversión."
@@ -762,7 +762,7 @@ function LeadDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Gestionar Lead Comercial</DialogTitle>
           <DialogDescription>Completa los datos de seguimiento del lead.</DialogDescription>
@@ -889,14 +889,14 @@ function HistoryDialog({
 
   return (
     <Dialog open={Boolean(lead)} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Historial de seguimiento: {lead.name}</DialogTitle>
           <DialogDescription>Eventos, notas y cambios de estado del lead.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto py-2">
           {canManage && (
-            <div className="space-y-2 rounded-xl border border-border/70 bg-card p-3">
+            <div className="space-y-2 rounded-xl border border-border/70 bg-card p-3 admin-graphite-inset">
               <Label className="text-xs">Añadir nota de seguimiento</Label>
               <Textarea
                 placeholder="Escribe una nota..."
@@ -983,7 +983,7 @@ function CampaignDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md admin-graphite-dialog">
         <DialogHeader>
           <DialogTitle>Gestionar Campaña Comercial</DialogTitle>
           <DialogDescription>Configura los canales y nombres de campaña.</DialogDescription>
