@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { FolderSearch } from "lucide-react";
 import { type AdminModuleKey, moduleColorMap } from "./types";
 import { cn } from "@/lib/utils";
-import type { AdminDensity } from "./density";
+import { premiumColumnHeaderSurface, premiumControlSurface, type AdminAppearance, type AdminDensity } from "./density";
 
 export interface EmptyStateProps {
   icon?: LucideIcon;
@@ -12,6 +12,7 @@ export interface EmptyStateProps {
   module?: AdminModuleKey;
   className?: string;
   density?: AdminDensity;
+  appearance?: AdminAppearance;
 }
 
 export function EmptyState({
@@ -22,20 +23,23 @@ export function EmptyState({
   module,
   className,
   density = "comfortable",
+  appearance = "standard",
 }: EmptyStateProps) {
   const accentColor = module ? moduleColorMap[module] : "var(--primary)";
 
   return (
     <div
       data-density={density}
+      data-appearance={appearance === "premium" ? "premium" : undefined}
       className={cn(
         "flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border-default bg-surface-2 p-8 text-center sm:p-10",
         density === "compact" && "p-4 sm:p-5",
+        appearance === "premium" && cn(premiumColumnHeaderSurface, "border-solid shadow-none"),
         className,
       )}
     >
       <div
-        className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]", density === "compact" && "mb-2.5 h-10 w-10 rounded-[var(--radius-compact)]")}
+        className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-1 shadow-[var(--shadow-xs)]", density === "compact" && "mb-2.5 h-10 w-10 rounded-[var(--radius-compact)]", appearance === "premium" && cn(premiumControlSurface, "shadow-none"))}
         style={{ color: accentColor }}
       >
         <Icon className="h-6 w-6" style={{ color: accentColor }} />
