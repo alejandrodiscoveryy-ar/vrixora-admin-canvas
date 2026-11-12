@@ -68,10 +68,12 @@ test('detalle expandido utiliza el alto necesario sin espacios artificiales', ()
   assert.match(s, /className="relative mt-2 border-t border-border\/50 pt-3"/);
   assert.match(s, /flex flex-col gap-2\.5 lg:flex-row lg:items-start lg:justify-between lg:gap-3/);
   assert.match(s, /w-full min-w-0 shrink-0 space-y-2 lg:w-\[200px\]/);
-  assert.match(s, /rounded-xl border border-border\/55 bg-background\/50 p-3/);
-  assert.match(s, /mt-2 grid gap-2 sm:grid-cols-2/);
-  assert.match(s, /rounded-xl border border-border\/50 bg-background\/45 p-3/);
-  assert.match(s, /className="mt-2 grid gap-2"/);
+  // The route, client and driver now use the same compact graphite inset.
+  const operations = s.slice(s.indexOf('<TabsContent value="trabajos"'), s.indexOf('<TabsContent value="atencion"'));
+  assert.equal((operations.match(/cn\("rounded-xl border p-3", premiumColumnHeaderSurface\)/g) ?? []).length, 3);
+  assert.match(operations, /mt-2 grid gap-2 sm:grid-cols-2/);
+  assert.match(operations, /cn\("rounded-xl border p-2\.5", premiumColumnHeaderSurface\)/);
+  assert.match(operations, /className="mt-2 grid min-w-0 gap-2"/);
   assert.match(s, /mt-2 flex flex-wrap items-center gap-x-3 gap-y-1/);
 });
 
