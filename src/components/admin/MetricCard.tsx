@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type AdminModuleKey, type SemanticState, moduleColorMap, semanticColorMap } from "./types";
 import { cn } from "@/lib/utils";
-import { premiumSurface, type AdminAppearance, type AdminDensity } from "./density";
+import { premiumMetricSurface, type AdminAppearance, type AdminDensity } from "./density";
 import { TrendingDown, TrendingUp, Minus } from "lucide-react";
 
 export interface MetricCardProps {
@@ -68,7 +68,7 @@ export function MetricCard({
       className={cn(
         "relative h-full min-h-28 overflow-hidden rounded-[var(--radius-card)] border-border-subtle bg-surface-1 shadow-[var(--shadow-card)] backdrop-blur-sm transition-[border-color,box-shadow,transform] duration-[var(--motion-interaction)] hover:-translate-y-0.5 hover:border-[var(--module-border,var(--border-default))] sm:min-h-0",
         density === "compact" && "min-h-0 backdrop-blur-none hover:translate-y-0",
-        premium && cn(premiumSurface, "isolate backdrop-blur-none hover:translate-y-0"),
+        premium && cn(premiumMetricSurface, "isolate backdrop-blur-none hover:translate-y-0"),
         className,
       )}
     >
@@ -82,7 +82,7 @@ export function MetricCard({
           aria-hidden="true"
           focusable="false"
           data-watermark="metric"
-          className="pointer-events-none absolute -bottom-2 right-1 z-0 size-20 select-none opacity-[0.06] sm:size-24 dark:opacity-[0.09]"
+          className="pointer-events-none absolute bottom-2 right-2 z-0 size-12 select-none opacity-[0.06] sm:right-3 sm:size-16 dark:opacity-[0.07]"
           style={{ color: accentColor }}
         />
       ) : null}
