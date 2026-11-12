@@ -28,3 +28,15 @@ test("El SQL sigue siendo un borrador no ejecutable automaticamente como migraci
   assert.match(sql, /NO APLICADO A SUPABASE/);
   assert.match(sql, /autorizacion expresa del propietario/);
 });
+
+const migration = readFileSync(new URL("../supabase/migrations/20261112001335_radar_readiness_materialized.sql", import.meta.url), "utf8");
+
+test("La migracion oficial conserva permisos y verifica la definicion exacta resultante", () => {
+  assert.match(migration, /ebbb7bb8ba5fab8de02bec80f352bb11/);
+  assert.match(migration, /129724640d7609df76ae4089951cf629/);
+  assert.match(migration, /RADAR_READINESS_UNEXPECTED_RESULTING_DEFINITION/);
+  assert.match(migration, /has_function_privilege\('anon', target, 'EXECUTE'\)/);
+  assert.match(migration, /has_function_privilege\('authenticated', target, 'EXECUTE'\)/);
+  assert.match(migration, /p\.prosecdef AND p\.provolatile = 's'/);
+  assert.match(migration, /EXECUTE replace\(src, old_fragment, new_fragment\)/);
+});
