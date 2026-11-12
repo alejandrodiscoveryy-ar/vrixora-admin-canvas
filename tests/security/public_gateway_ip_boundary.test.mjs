@@ -8,12 +8,12 @@ import { test } from 'node:test';
 
 // Run the actual handlers, including HMAC and limiter calls, without network,
 // credentials, database access, or an HTTP listener.
-async function harness({ fleetRows = [], sessionError = null } = {}) {
-  const calls = { clients: 0, providers: 0, operations: 0, identities: [], fleetQueries: [], sessionChecks: 0 };
+async function harness({ fleetRows = [], sessionError = null, trackingSnapshot = null, trackingError = null, customerJobs = [] } = {}) {
+  const calls = { clients: 0, providers: 0, operations: 0, identities: [], fleetQueries: [], sessionChecks: 0, trackingChecks: 0, providerPaths: [] };
   const buckets = new Map();
   const db = {
     from(table) {
-      if (table === 'marketplace_driver_locations') {
+      if (table === 'marketplace_driver_locations' || table === 'jobs') {
         calls.fleetQueries.push(table);
         throw new Error('PRIVATE_TABLE_ACCESS_FORBIDDEN');
       }
@@ -42,6 +42,12 @@ async function harness({ fleetRows = [], sessionError = null } = {}) {
         assert.deepEqual(Object.keys(params).sort(), ['target_session_id', 'target_session_token']);
         return { data: fleetRows, error: sessionError };
       }
+      if (name === 'get_marketplace_customer_job') return { data: customerJobs, error: null };
+      if (name === 'get_marketplace_customer_tracking_snapshot') {
+        calls.trackingChecks++;
+        assert.deepEqual(Object.keys(params).sort(), ['target_job_id', 'target_session_id', 'target_session_token']);
+        return { data: trackingSnapshot, error: trackingError };
+      }
       calls.operations++;
       return { data: [], error: null };
     },
@@ -61,6 +67,11 @@ async function harness({ fleetRows = [], sessionError = null } = {}) {
     fetch: async (url) => {
       assert.equal(new URL(url).hostname, 'api.mapbox.com');
       calls.providers++;
+      calls.providerPaths.push(new URL(url).pathname);
+      if (new URL(url).pathname.startsWith('/directions/')) {
+        return Response.json({ routes: [{ distance: 1000, duration: 120,
+          geometry: { coordinates: [[-82.36,23.11],[-82.35,23.12]] } }] });
+      }
       return Response.json({ features: [] });
     },
   };
@@ -269,4 +280,61 @@ test('working fleet SQL boundary: service-only wrapper and private session-autho
   assert.match(sql, /round\(l\.latitude \/ 0\.003\) \* 0\.003/);
   assert.match(sql, /round\(l\.longitude \/ 0\.003\) \* 0\.003/);
   assert.doesNotMatch(sql, /\bis_available\b|\bcaptured_at\b|GRANT\s+SELECT/i);
+});
+
+const trackingParams = { target_session_id: 'test-session', target_session_token: 'test-token', target_job_id: 'test-job' };
+function trackingRequest(operation, params = trackingParams) {
+  return new Request('https://isolated.invalid/gateway', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.9' },
+    body: JSON.stringify(operation === 'get_job' ? { operation, params } : { operation, ...params }),
+  });
+}
+function trackingFixture(status = 'en_route', captured = new Date().toISOString()) {
+  return { status, driver_location: { latitude: 23.11, longitude: -82.36,
+    accuracy_m: 12, speed_mps: 4, heading_degrees: 90, captured_at: captured },
+    route_origin: { lat: 23.12, lon: -82.35 }, route_destination: { lat: 23.15, lon: -82.31 } };
+}
+test('assigned driver GPS uses private RPC, preserves heading, and fails softly', async () => {
+  const job = { status: 'en_route', job_id: 'test-job' };
+  for (const trackingError of [null, new Error('permission denied')]) {
+    const { handlers, calls } = await harness({ customerJobs: [job], trackingSnapshot: trackingFixture(), trackingError });
+    const response = await handlers.customer(trackingRequest('get_job'));
+    assert.equal(response.status, 200);
+    const data = (await response.json()).data[0];
+    assert.equal(data.job_id, job.job_id);
+    assert.equal(data.driver_location?.heading_degrees, trackingError ? undefined : 90);
+    assert.equal(calls.trackingChecks, 1);
+    assert.equal(calls.fleetQueries.length, 0);
+  }
+});
+test('customer tracking directions use server GPS and actual stage, ignore browser coordinates', async () => {
+  for (const status of ['en_route','in_progress']) {
+    const { handlers, calls } = await harness({ trackingSnapshot: trackingFixture(status) });
+    const response = await handlers.map(trackingRequest('customer_tracking_route', { ...trackingParams, origin: {lat:0,lon:0}, destination: {lat:1,lon:1} }));
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).data.stage, status === 'in_progress' ? 'destination' : 'pickup');
+    assert.equal(calls.trackingChecks, 1);
+    assert.equal(calls.providers, 1);
+    assert.ok(calls.providerPaths[0].endsWith(status === 'in_progress' ? '-82.36,23.11;-82.31,23.15' : '-82.36,23.11;-82.35,23.12'));
+  }
+});
+test('customer tracking rejects invalid session and never requests directions for stale GPS or arrived driver', async () => {
+  for (const [snapshot, error, expected] of [[null,new Error('ACCESS_DENIED'),403],[trackingFixture('en_route','2020-01-01T00:00:00Z'),null,200],[trackingFixture('pickup'),null,200]]) {
+    const { handlers, calls } = await harness({ trackingSnapshot: snapshot, trackingError: error });
+    const response = await handlers.map(trackingRequest('customer_tracking_route'));
+    assert.equal(response.status,expected);
+    assert.equal(calls.providers,0);
+    if (expected === 200) assert.deepEqual((await response.json()).data.route_points,[]);
+  }
+});
+test('tracking SQL guards ownership, phase, freshness and service-only privileges', async () => {
+  const sql = await readFile(new URL('../../docs/security/customer-assigned-tracking-rpc.sql',import.meta.url),'utf8');
+  assert.match(sql,/resolve_marketplace_customer_session\(target_session_id, target_session_token\)/);
+  assert.match(sql,/j\.id=target_job_id AND r\.customer_id=cid/);
+  assert.match(sql,/j\.status IN \('accepted','en_route','pickup','in_progress'\)/);
+  assert.match(sql,/l\.driver_user_id=j\.assigned_driver_user_id AND l\.vehicle_id=j\.assigned_vehicle_id/);
+  assert.match(sql,/REVOKE ALL ON FUNCTION public\.get_marketplace_customer_tracking_snapshot\(uuid,text,uuid\) FROM PUBLIC, anon, authenticated;/);
+  assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.get_marketplace_customer_tracking_snapshot\(uuid,text,uuid\) TO service_role;/);
+  assert.doesNotMatch(sql,/GRANT\s+SELECT/i);
 });
