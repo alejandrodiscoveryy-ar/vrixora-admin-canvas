@@ -615,3 +615,26 @@
     backdrop-filter: none !important;
   }
 }
+
+/* Premium graphite pilot: only the Usuarios app route (including its mobile drawer).
+   The global theme, brand tokens, logo, and other modules remain unchanged. */
+.dark .admin-shell[data-admin-reference-shell="usuarios"] {
+  background-color: color-mix(in oklab, var(--surface-3) 95%, var(--text-secondary) 5%);
+}
+
+.dark .admin-shell[data-admin-reference-shell="usuarios"] > div > aside,
+.dark [data-admin-reference-drawer="usuarios"] {
+  background-color: color-mix(in oklab, var(--surface-3) 93%, var(--text-secondary) 7%);
+  border-color: var(--border-default);
+}
+
+.dark .admin-shell[data-admin-reference-shell="usuarios"] > div > div > header {
+  background-color: color-mix(in oklab, var(--surface-3) 90%, var(--text-secondary) 10%);
+  border-color: var(--border-default);
+  backdrop-filter: none;
+}
+
+.dark .admin-shell[data-admin-reference-shell="usuarios"] > div > div > header .bg-card\/50 {
+  background-color: color-mix(in oklab, var(--surface-3) 86%, var(--text-secondary) 14%);
+  border-color: var(--border-default);
+}

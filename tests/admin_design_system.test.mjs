@@ -10,7 +10,7 @@ import { AdminDataTableShell } from "../src/components/admin/AdminDataTableShell
 import { FilterToolbar } from "../src/components/admin/FilterToolbar.tsx";
 import { DataToolbar } from "../src/components/admin/DataToolbar.tsx";
 import { EmptyState } from "../src/components/admin/EmptyState.tsx";
-import { premiumSurface, premiumHeaderSurface, premiumTableDensity, premiumTableRow } from "../src/components/admin/density.ts";
+import { premiumSurface, premiumMetricSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface, premiumTableDensity, premiumTableRow } from "../src/components/admin/density.ts";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../src/components/ui/table.tsx";
 
 const render = (Component, props) => renderToStaticMarkup(h(Component, props));
@@ -191,7 +191,7 @@ test("Premium MetricCard: layered surface, compact KPI and decorative watermark 
   assert.ok(watermark);
   assert.match(watermark[0], /aria-hidden="true"/);
   assert.match(watermark[0], /focusable="false"/);
-  hasClasses(markup, ...premiumSurface.split(" "), "p-3", "sm:p-3", "h-px", "tabular-nums", "pointer-events-none", "opacity-[0.06]", "dark:opacity-[0.09]", "z-10");
+  hasClasses(markup, ...premiumMetricSurface.split(" "), "p-3", "sm:p-3", "h-px", "tabular-nums", "pointer-events-none", "opacity-[0.06]", "dark:opacity-[0.07]", "bottom-2", "size-12", "sm:size-16", "z-10");
   assert.ok(!classTokens(markup).has("truncate"));
   assert.ok(!classTokens(markup).has("h-7"));
 });
@@ -212,7 +212,7 @@ test("Premium MetricCard: loading stays discreet and no data or watermark is exp
 
 test("Premium table: shared surfaces, dense rows, headers and data remain intact", () => {
   const table = h(Table, { className: premiumTableDensity },
-    h(TableHeader, { className: premiumHeaderSurface },
+    h(TableHeader, { className: premiumColumnHeaderSurface },
       h(TableRow, null, h(TableHead, null, "Cliente"), h(TableHead, null, "Adopcion"))
     ),
     h(TableBody, null,
@@ -238,5 +238,36 @@ test("Premium table: shared surfaces, dense rows, headers and data remain intact
   assert.ok(markup.includes("Accion de prueba"));
   assert.ok(markup.includes("Usuario de prueba"));
   assert.ok(markup.includes("Sin actividad"));
-  hasClasses(markup, ...premiumSurface.split(" "), ...premiumHeaderSurface.split(" "), ...premiumTableDensity.split(" "), ...premiumTableRow.split(" "), "overflow-x-auto");
+  hasClasses(markup, ...premiumSurface.split(" "), ...premiumHeaderSurface.split(" "), ...premiumColumnHeaderSurface.split(" "), ...premiumTableDensity.split(" "), ...premiumTableRow.split(" "), "overflow-x-auto");
+});
+
+test("Premium graphite: neutral surface hierarchy keeps brand accents out of large backgrounds", () => {
+  const layers = [premiumSurface, premiumMetricSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface];
+  const backgrounds = layers.map((layer) => layer.split(" ").find((token) => token.startsWith("dark:bg-")));
+  assert.equal(new Set(backgrounds).size, layers.length);
+  for (const layer of layers) {
+    assert.match(layer, /var\(--surface-3\)/);
+    assert.match(layer, /var\(--text-secondary\)/);
+    assert.doesNotMatch(layer, /var\(--primary\)/);
+  }
+});
+
+test("Premium DataToolbar: graphite search is opt-in and keeps search/reset controls", () => {
+  const props = {
+    density: "compact",
+    embedded: true,
+    searchValue: "ana",
+    searchPlaceholder: "Buscar usuarios",
+    onSearchChange: noop,
+    onReset: noop,
+    activeFilterCount: 1,
+  };
+  const standard = render(DataToolbar, props);
+  assert.equal(standard, render(DataToolbar, { ...props, appearance: "standard" }));
+  const markup = render(DataToolbar, { ...props, appearance: "premium" });
+  assert.match(markup, /aria-label="Buscar usuarios"/);
+  assert.match(markup, /value="ana"/);
+  assert.ok(markup.includes("Limpiar"));
+  hasClasses(markup, ...premiumControlSurface.split(" "));
+  assert.ok(!classTokens(standard).has(premiumControlSurface.split(" ")[0]));
 });

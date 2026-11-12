@@ -41,7 +41,7 @@ import { AdminDataTableShell } from "@/components/admin/AdminDataTableShell";
 import { DataToolbar } from "@/components/admin/DataToolbar";
 import { DetailList } from "@/components/admin/DetailList";
 import { KpiGrid } from "@/components/admin/KpiGrid";
-import { premiumSurface, premiumHeaderSurface, premiumTableDensity, premiumTableRow } from "@/components/admin/density";
+import { premiumSurface, premiumColumnHeaderSurface, premiumControlSurface, premiumInactiveBadge, premiumTableDensity, premiumTableRow } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { MobileActionsMenu } from "@/components/admin/MobileAdminSystem";
@@ -173,7 +173,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
         title="Usuarios registrados"
         description="Registro y actividad de usuarios de la aplicación"
         actions={
-          <DataToolbar density="compact" embedded
+          <DataToolbar density="compact" appearance="premium" embedded
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo o teléfono..."
@@ -186,7 +186,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
             filters={
               <>
                 <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
-                  <SelectTrigger aria-label="Filtrar por adopción" className="w-full min-[420px]:w-[155px]">
+                  <SelectTrigger aria-label="Filtrar por adopción" className={cn("w-full min-[420px]:w-[155px]", premiumControlSurface)}>
                     <SelectValue placeholder="Adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -199,7 +199,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 </Select>
 
                 <Select value={adoptionSort} onValueChange={setAdoptionSort}>
-                  <SelectTrigger aria-label="Ordenar por adopción" className="w-full min-[420px]:w-[175px]">
+                  <SelectTrigger aria-label="Ordenar por adopción" className={cn("w-full min-[420px]:w-[175px]", premiumControlSurface)}>
                     <SelectValue placeholder="Ordenar adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -259,7 +259,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
-                    className="gap-1.5 rounded-full"
+                    className={cn("gap-1.5 rounded-full", adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" && premiumInactiveBadge)}
                     style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                   >
                     <span
@@ -282,7 +282,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
 
         <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
           <Table className={premiumTableDensity}>
-            <TableHeader className={premiumHeaderSurface}>
+            <TableHeader className={premiumColumnHeaderSurface}>
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Contacto</TableHead>
@@ -324,7 +324,7 @@ export default function ClientesSection({ projectId }: { projectId: string }) {
                   <TableCell>
                     <Badge
                       variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
-                      className="gap-1.5 rounded-full"
+                      className={cn("gap-1.5 rounded-full", adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" && premiumInactiveBadge)}
                     style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                     >
                       <span
@@ -522,7 +522,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
         title="Usuarios registrados"
         description="Gestión detallada de cuentas y accesos"
         actions={
-          <DataToolbar density="compact" embedded
+          <DataToolbar density="compact" appearance="premium" embedded
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Nombre, correo, teléfono o licencia..."
@@ -535,7 +535,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
             filters={
               <>
                 <Select value={adoptionFilter} onValueChange={setAdoptionFilter}>
-                  <SelectTrigger aria-label="Filtrar por adopción" className="w-full min-[420px]:w-[155px]">
+                  <SelectTrigger aria-label="Filtrar por adopción" className={cn("w-full min-[420px]:w-[155px]", premiumControlSurface)}>
                     <SelectValue placeholder="Adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -548,7 +548,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                 </Select>
 
                 <Select value={adoptionSort} onValueChange={setAdoptionSort}>
-                  <SelectTrigger aria-label="Ordenar por adopción" className="w-full min-[420px]:w-[175px]">
+                  <SelectTrigger aria-label="Ordenar por adopción" className={cn("w-full min-[420px]:w-[175px]", premiumControlSurface)}>
                     <SelectValue placeholder="Ordenar adopción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -609,7 +609,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                   />
                   <Badge
                     variant={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad")}
-                    className="gap-1.5 rounded-full"
+                    className={cn("gap-1.5 rounded-full", adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" && premiumInactiveBadge)}
                     style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                   >
                     <span
@@ -663,7 +663,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
 
         <div className="hidden min-w-0 overflow-hidden md:block md:overflow-x-auto">
           <Table className={premiumTableDensity}>
-            <TableHeader className={premiumHeaderSurface}>
+            <TableHeader className={premiumColumnHeaderSurface}>
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Contacto</TableHead>
@@ -729,7 +729,7 @@ export function LegacyClientesSection({ projectId }: { projectId: string }) {
                           variant={adoptionBadgeVariant(
                             client.adoptionLevel ?? "Sin actividad",
                           )}
-                          className="gap-1.5 rounded-full"
+                          className={cn("gap-1.5 rounded-full", adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" && premiumInactiveBadge)}
                     style={adoptionBadgeVariant(client.adoptionLevel ?? "Sin actividad") === "inactive" ? { color: "var(--text-secondary)" } : undefined}
                         >
                           <span
