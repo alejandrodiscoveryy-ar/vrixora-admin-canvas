@@ -849,6 +849,18 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerSort, setCustomerSort] = useState<"points_desc" | "recent">("points_desc");
   const [driverSearch, setDriverSearch] = useState("");
+  const [welcomeCopyFallback, setWelcomeCopyFallback] = useState<string | null>(null);
+
+  // Keep the original anchor navigation; clipboard work must never delay or cancel it.
+  const copyDriverWelcome = async (message: string) => {
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success("Bienvenida copiada. Pégala en WhatsApp.");
+    } catch {
+      setWelcomeCopyFallback(message);
+      toast.error("No se pudo copiar la bienvenida. Puedes copiarla manualmente desde Admin.");
+    }
+  };
   const [driverStatusFilter, setDriverStatusFilter] = useState("");
   const [driverAvailabilityFilter, setDriverAvailabilityFilter] = useState("");
   const [driverCategoryFilter, setDriverCategoryFilter] = useState("");
@@ -2134,10 +2146,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               className="pointer-events-auto min-h-11 shrink-0 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
                             >
                               <a
-                                href={driverWhatsAppLinks(item.phone, welcomeDrivers ? driverWelcomeMessage(item.displayName) : undefined)!.web}
+                                href={driverWhatsAppLinks(item.phone)!.web}
+                                onClick={() => {
+                                  if (welcomeDrivers) void copyDriverWelcome(driverWelcomeMessage(item.displayName));
+                                }}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={welcomeDrivers ? `Preparar bienvenida por WhatsApp para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
+                                aria-label={welcomeDrivers ? `Abrir WhatsApp y copiar bienvenida para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
+                                title={welcomeDrivers ? "Abrir WhatsApp y copiar bienvenida (Ctrl+V para pegar)" : undefined}
                               >
                                 WhatsApp
                               </a>
@@ -2951,6 +2967,38 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <span>{error}</span>
         </div>
       ) : null}
+
+      <Dialog
+        open={welcomeCopyFallback !== null}
+        onOpenChange={(open) => { if (!open) setWelcomeCopyFallback(null); }}
+      >
+        <DialogContent className={cn("max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-lg overflow-y-auto p-4", premiumSurface)}>
+          <DialogHeader>
+            <DialogTitle>Copiar bienvenida</DialogTitle>
+            <DialogDescription>WhatsApp se abre con el enlace habitual. Si el navegador bloqueó la copia automática, selecciona el mensaje y cópialo para pegarlo en la conversación.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            aria-label="Mensaje de bienvenida a la Agencia TukTuk"
+            value={welcomeCopyFallback ?? ""}
+            onFocus={(event) => event.currentTarget.select()}
+            className={cn("min-h-48 min-w-0 resize-y bg-surface-1 text-sm", premiumControlSurface)}
+          />
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" className="min-h-11" onClick={() => setWelcomeCopyFallback(null)}>Cerrar</Button>
+            <Button className="min-h-11" onClick={async () => {
+              if (welcomeCopyFallback === null) return;
+              try {
+                await navigator.clipboard.writeText(welcomeCopyFallback);
+                setWelcomeCopyFallback(null);
+                toast.success("Bienvenida copiada. Pégala en WhatsApp.");
+              } catch {
+                toast.error("Selecciona el mensaje y cópialo manualmente.");
+              }
+            }}>Copiar mensaje</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(driver360Id)}
