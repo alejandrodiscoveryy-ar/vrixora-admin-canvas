@@ -11,6 +11,7 @@ import { FilterToolbar } from "../src/components/admin/FilterToolbar.tsx";
 import { DataToolbar } from "../src/components/admin/DataToolbar.tsx";
 import { EmptyState } from "../src/components/admin/EmptyState.tsx";
 import { AdminPeriodSelector } from "../src/components/admin/AdminPeriodSelector.tsx";
+import { FilterSelect } from "../src/features/admin/MarketplaceListPrimitives.tsx";
 import { premiumSurface, premiumMetricSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface, premiumTableDensity, premiumTableRow } from "../src/components/admin/density.ts";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../src/components/ui/table.tsx";
 
@@ -335,4 +336,28 @@ test("Premium AdminPeriodSelector: graphite controls preserve period navigation 
   assert.match(markup, /30 sept.*6 oct.*2026/);
   hasClasses(markup, ...premiumControlSurface.split(" "), ...premiumColumnHeaderSurface.split(" "), "max-sm:h-11", "max-sm:w-11");
   assert.ok(!classTokens(normal).has(premiumControlSurface.split(" ")[0]));
+});
+
+test("Premium period selector: one range label, responsive wrap and custom touch target", () => {
+  const range = { from: "2026-09-30", to: "2026-10-06" };
+  const props = { value: "custom", range, onChange: noop, appearance: "premium" };
+  const markup = render(AdminPeriodSelector, props);
+  hasClasses(markup, "sm:flex-row", "sm:flex-wrap", "sm:items-center", "max-sm:min-h-11", "whitespace-normal", "break-words");
+  assert.equal((markup.match(/30 sept[^<]*6 oct[^<]*2026/g) || []).length, 1);
+  const standard = render(AdminPeriodSelector, { ...props, appearance: "standard" });
+  assert.ok(!classTokens(standard).has("sm:flex-wrap"));
+  const all = render(AdminPeriodSelector, { ...props, value: "all", range: { from: "", to: "" } });
+  assert.ok(all.includes("Todo el historial"));
+});
+
+test("Operations FilterSelect: premium graphite and native filter values are retained", () => {
+  const props = { labelText: "Estado", value: "accepted", onChange: noop, children: [h("option", { key: "all", value: "" }, "Todos"), h("option", { key: "accepted", value: "accepted" }, "Aceptado")] };
+  const standard = render(FilterSelect, props);
+  assert.equal(standard, render(FilterSelect, { ...props, appearance: "standard" }));
+  const markup = render(FilterSelect, { ...props, appearance: "premium" });
+  assert.match(markup, /<select/);
+  assert.match(markup, /value="accepted" selected/);
+  assert.ok(markup.includes("Aceptado"));
+  assert.ok(markup.includes("Estado"));
+  hasClasses(markup, ...premiumControlSurface.split(" "), "min-h-11", "min-w-0", "focus-within:ring-2");
 });
