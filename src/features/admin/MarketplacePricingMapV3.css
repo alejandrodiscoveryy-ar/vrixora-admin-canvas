@@ -48,3 +48,50 @@
 @media (max-width: 639px) {
   .tuktuk-price-map-v3 [role="application"] { height: 300px !important; }
 }
+
+/* Graphite treatment for the pricing workspace outside the actual map.
+   The map's rendering, marker styles, route geometry and canvas sizes above are unchanged. */
+.tuktuk-pricing-v3-sheet .tuktuk-v3-rate,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-tabs,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-secondary,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-full-tariff,
+.tuktuk-v3-editor,
+.tuktuk-v3-impact {
+  background-image: none;
+  background-color: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+}
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-rate,
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-tabs,
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-secondary,
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-full-tariff,
+.dark .tuktuk-v3-editor,
+.dark .tuktuk-v3-impact {
+  background-color: color-mix(in oklab, var(--surface-3) 89%, var(--text-secondary) 11%);
+}
+.tuktuk-pricing-v3-sheet .tuktuk-v3-metric,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-price-km,
+.tuktuk-pricing-v3-sheet .tuktuk-v3-special {
+  background-image: none;
+  background-color: var(--surface-2);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-metric,
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-price-km,
+.dark .tuktuk-pricing-v3-sheet .tuktuk-v3-special {
+  background-color: color-mix(in oklab, var(--surface-3) 83%, var(--text-secondary) 17%);
+}
+.tuktuk-pricing-v3-sheet .tuktuk-v3-special { border-color: var(--semantic-warning-border); }
+.tuktuk-v3-editor .tuktuk-v3-field {
+  min-width: 0;
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.dark .tuktuk-v3-editor .tuktuk-v3-field {
+  background-color: color-mix(in oklab, var(--surface-3) 88%, var(--text-secondary) 12%);
+}
