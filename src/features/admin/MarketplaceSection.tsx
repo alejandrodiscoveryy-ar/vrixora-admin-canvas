@@ -854,6 +854,22 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [driverCategoryFilter, setDriverCategoryFilter] = useState("");
   const [driverPeriodFilter, setDriverPeriodFilter] = useState("");
   const [driverVisibleCount, setDriverVisibleCount] = useState(25);
+  const [welcomeDraft, setWelcomeDraft] = useState<string | null>(null);
+
+  // Keep the original WhatsApp Web URL and let the browser/PWA handle navigation.
+  // Copy on the user gesture; clipboard failure must never block the anchor.
+  const copyDriverWelcome = (displayName: string) => {
+    const message = driverWelcomeMessage(displayName);
+    const showDraft = () => setWelcomeDraft(message);
+    try {
+      if (!navigator.clipboard?.writeText) { showDraft(); return; }
+      void navigator.clipboard.writeText(message).then(() => {
+        toast.success("Bienvenida copiada. Pégala en WhatsApp (Ctrl + V).", {
+          action: { label: "Ver mensaje", onClick: showDraft },
+        });
+      }).catch(showDraft);
+    } catch { showDraft(); }
+  };
 
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobDetailInitialTab, setJobDetailInitialTab] = useState<"overview" | "radar">("overview");
@@ -2134,10 +2150,12 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               className="pointer-events-auto min-h-11 shrink-0 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
                             >
                               <a
-                                href={driverWhatsAppLinks(item.phone, welcomeDrivers ? driverWelcomeMessage(item.displayName) : undefined)!.web}
+                                href={driverWhatsAppLinks(item.phone)!.web}
+                                onClick={welcomeDrivers ? () => copyDriverWelcome(item.displayName) : undefined}
+                                title={welcomeDrivers ? "Abrir WhatsApp y copiar bienvenida" : "Abrir WhatsApp Web"}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={welcomeDrivers ? `Preparar bienvenida por WhatsApp para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
+                                aria-label={welcomeDrivers ? `Abrir WhatsApp y copiar bienvenida para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
                               >
                                 WhatsApp
                               </a>
@@ -2951,6 +2969,19 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <span>{error}</span>
         </div>
       ) : null}
+
+      <Dialog open={welcomeDraft !== null} onOpenChange={(open) => { if (!open) setWelcomeDraft(null); }}>
+        <DialogContent className={cn("w-[calc(100vw-1rem)] max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto p-4", premiumSurface, "shadow-[var(--shadow-overlay)]")}>
+          <DialogHeader>
+            <DialogTitle>Bienvenida TukTuk</DialogTitle>
+            <DialogDescription>Selecciona y copia el mensaje para pegarlo en tu conversación de WhatsApp.</DialogDescription>
+          </DialogHeader>
+          <Textarea aria-label="Mensaje de bienvenida" readOnly value={welcomeDraft ?? ""}
+            onFocus={(event) => event.currentTarget.select()}
+            className={cn("min-h-48 resize-y bg-surface-1 text-sm", premiumControlSurface)} />
+          <Button className="min-h-11 w-full" onClick={() => setWelcomeDraft(null)}>Cerrar</Button>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(driver360Id)}
