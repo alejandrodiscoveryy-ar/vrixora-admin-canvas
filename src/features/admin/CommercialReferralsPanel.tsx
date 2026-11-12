@@ -138,8 +138,8 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
   ];
 
   return (
-    <section className="relative space-y-5 rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 sm:p-5">
-      <div className="rounded-[22px] border border-violet-400/20 bg-background/75 p-4 sm:p-5">
+    <section className="relative space-y-5 rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 sm:p-3 admin-graphite-panel">
+      <div className="rounded-[22px] border border-violet-400/20 bg-background/75 p-4 sm:p-5 admin-graphite-inset">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Referidos</p>
         <h2 className="mt-1 text-xl font-semibold">Quién refirió a quién</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -158,7 +158,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="min-w-0 rounded-2xl border border-violet-400/15 bg-background/75 p-4">
+          <div key={label} className="min-w-0 rounded-2xl border border-violet-400/15 bg-background/75 p-4 admin-graphite-inset">
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>{label}</span><Icon className="h-4 w-4 shrink-0 text-violet-300" />
             </div>
@@ -190,7 +190,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
             const showAll = showEveryPerson[referrer.referrer_user_id] || Boolean(search.trim());
             const visiblePeople = showAll ? people : people.slice(0, 8);
             return (
-              <article key={referrer.referrer_user_id} className="overflow-hidden rounded-2xl border border-violet-400/20 bg-background/80">
+              <article key={referrer.referrer_user_id} className="overflow-hidden rounded-2xl border border-violet-400/20 bg-background/80 admin-graphite-inset">
                 <button
                   type="button"
                   className="flex w-full flex-wrap items-center justify-between gap-3 p-4 text-left hover:bg-violet-400/5"
@@ -217,7 +217,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
                 {isOpen && (
                   <div className="space-y-2 border-t border-border/55 p-3 sm:p-4">
                     {visiblePeople.map((person) => (
-                      <div key={person.relationship_id} className="grid gap-3 rounded-xl border border-border/50 bg-background/65 p-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                      <div key={person.relationship_id} className="grid gap-3 rounded-xl border border-border/50 bg-background/65 p-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)] admin-graphite-inset">
                         <div className="min-w-0">
                           <p className="break-words text-sm font-semibold">{person.referred_name}</p>
                           <p className="mt-1 text-xs text-muted-foreground">{driverStatus(person.driver_status)}</p>
