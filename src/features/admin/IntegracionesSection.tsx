@@ -256,7 +256,7 @@ export default function IntegracionesSection({
     return (
       <div className="space-y-4 sm:space-y-6">
         {!premium ? (
-        <ModuleHeader
+        <ModuleHeader density="compact" appearance="premium"
           title="Integraciones y API"
           description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
           icon={PlugZap}
@@ -275,7 +275,7 @@ export default function IntegracionesSection({
     return (
       <div className="space-y-4 sm:space-y-6">
         {!premium ? (
-        <ModuleHeader
+        <ModuleHeader density="compact" appearance="premium"
           title="Integraciones y API"
           description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
           icon={PlugZap}
@@ -296,7 +296,7 @@ export default function IntegracionesSection({
     return (
       <div className="space-y-4 sm:space-y-6">
         {!premium ? (
-        <ModuleHeader
+        <ModuleHeader density="compact" appearance="premium"
           title="Integraciones y API"
           description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
           icon={PlugZap}
@@ -323,7 +323,7 @@ export default function IntegracionesSection({
   return (
     <div className="space-y-4 sm:space-y-6">
       {!premium ? (
-        <ModuleHeader
+        <ModuleHeader density="compact" appearance="premium"
         title="Integraciones y API"
         description="Conecta servicios externos con este proyecto sin exponer credenciales sensibles."
         icon={PlugZap}
@@ -341,7 +341,7 @@ export default function IntegracionesSection({
         </PageAlert>
       ) : null}
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="elTOQUE"
         description="Tasa referencial automática para operaciones USD/EUR → CUP."
         module="configuracion"
@@ -530,7 +530,7 @@ export default function IntegracionesSection({
         </div>
       </SectionCard>
 
-      <SectionCard
+      <SectionCard density="compact" appearance="premium"
         title="Notificación diaria de la tasa"
         description="Prepara una notificación diaria con la tasa vigente."
         module="configuracion"
