@@ -10,7 +10,11 @@ const source = readFileSync(
 test("billeteras: resumen móvil visible y desglose financiero plegable", () => {
   assert.match(source, /En móvil: resumen de los saldos críticos y desglose bajo demanda/);
   assert.match(source, /Ver detalles de la billetera/);
-  assert.match(source, /<details className="group rounded-xl border border-border\/60 bg-background\/40">/);
+  // Preserve native expansion with the new graphite inset.
+  const wallets = source.slice(source.indexOf('<TabsContent value="billeteras"'), source.indexOf('<TabsContent value="recargas"'));
+  assert.match(wallets, /<details className="group rounded-xl border border-border\/60 bg-background\/40 admin-graphite-inset">/);
+  assert.match(wallets, /<summary className="flex min-h-11 cursor-pointer/);
+  assert.match(wallets, /Ver detalles de la billetera/);
   assert.match(source, /Saldo total: <span className="font-semibold text-foreground">/);
   assert.match(source, /formatAmount\(wallet\.availableBalance, wallet\.currency\)/);
   assert.match(source, /formatAmount\(reserved, wallet\.currency\)/);
