@@ -1,0 +1,10 @@
+{
+  "application": "Vrixora Admin",
+  "release": "tuktuk-modality-icons-v1",
+  "feature_commit": "8335397ee7b55025bdaf6720e794f5db6761a5b9",
+  "features": [
+    "compact-colored-vehicle-badges",
+    "colored-map-marker-centers",
+    "independent-operational-status"
+  ]
+}
