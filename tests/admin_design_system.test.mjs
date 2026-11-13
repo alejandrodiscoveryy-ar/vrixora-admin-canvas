@@ -1,4 +1,4 @@
-import { adminNavTone, adminSubnavTone, ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, ADMINISTRATION_VIEWS } from "../src/lib/admin-navigation.ts";
+import { adminNavTone, adminSubnavTone, adminGroupDefault, ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, ADMINISTRATION_VIEWS } from "../src/lib/admin-navigation.ts";
 import { driverWhatsAppLinks, driverWelcomeMessage, TUKTUK_DRIVER_GROUP_URL } from "../src/lib/driver-whatsapp.ts";
 import assert from "node:assert/strict";
 import { test } from "bun:test";
@@ -619,4 +619,21 @@ test("Configuración replaces the Administration label without duplicate entries
   assert.doesNotMatch(workspace, />Administración<\/p>/);
   assert.match(workspace, /section: section\.slug/);
   assert.match(workspace, /permissions\.includes\(section\.permission\)/);
+});
+
+
+test("Configuration parent selects general settings or the first authorized child", () => {
+  const group = ADMIN_PROJECT_TABS.find(item => item.slug === "administracion");
+  assert.ok(group && "children" in group);
+  assert.equal(adminGroupDefault(group)?.slug, "configuracion");
+  assert.equal(adminGroupDefault({...group, children: group.children.filter(child => child.permission === "members.view")})?.slug, "empleados");
+  assert.equal(adminGroupDefault({...group, children: []}), undefined);
+  const route = readFileSync(new URL("../src/routes/admin.tsx", import.meta.url), "utf8");
+  assert.match(route, /const defaultChild = adminGroupDefault\(tab\)/);
+  assert.match(route, /params=\{\{ id: project.id, section: defaultChild.slug \}\}/);
+  assert.match(route, /setConfigurationExpanded\(true\);\s*closeDrawer\?\.\(\)/);
+  assert.match(route, /aria-controls=\{configurationGroupId\}/);
+  assert.match(route, /hidden=\{!groupOpen\}/);
+  assert.match(route, /setConfigurationExpanded\(\(value\) => !value\)/);
+  assert.match(route, /const groupOpen = collapsed \? groupActive : configurationExpanded/);
 });
