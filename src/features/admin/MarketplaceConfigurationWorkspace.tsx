@@ -1,3 +1,4 @@
+import { adminSubnavTone } from "@/lib/admin-navigation";
 import { useState } from "react";
 import {
   BellRing,
@@ -86,10 +87,11 @@ export default function MarketplaceConfigurationWorkspace({
                   key={section.id}
                   onClick={() => setActive(section.id)}
                   aria-pressed={isSelected}
+                  data-nav-tone={adminSubnavTone("configuracion", section.id)}
                   aria-controls="tuktuk-config-detail"
                   className={`group relative isolate flex admin-graphite-nav-item min-h-11 min-w-0 flex-col items-center justify-center gap-1 sm:flex-row overflow-hidden rounded-[12px] border px-1.5 py-2 text-center transition-all duration-200 sm:justify-start sm:gap-2.5 sm:rounded-[16px] sm:px-3 sm:py-3 sm:text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}
                 >
-                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
+                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "admin-nav-watermark opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
                   <span className="admin-nav-icon relative z-10" aria-hidden="true">
                     <Icon aria-hidden="true" strokeWidth={2} />
                   </span>
@@ -111,9 +113,9 @@ export default function MarketplaceConfigurationWorkspace({
 
         <div id="tuktuk-config-detail" className="min-w-0 space-y-3">
           {active !== "pruebas" ? (
-            <header className="relative isolate overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-3 text-slate-50 shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
+            <header data-nav-tone={adminSubnavTone("configuracion", active)} className="relative isolate overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-3 text-slate-50 shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_90%_10%,rgba(34,211,238,0.10),transparent_55%)]" />
-              <SelectedIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-8 z-0 h-32 w-32 rotate-[-15deg] text-cyan-100 opacity-[0.07] sm:right-4" />
+              <SelectedIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-8 z-0 h-32 w-32 rotate-[-15deg] admin-nav-watermark opacity-[0.07] sm:right-4" />
               <div className="relative z-10 flex items-center gap-3">
                 <span className="admin-workspace-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
                   <SelectedIcon aria-hidden="true" className="h-[19px] w-[19px]" />
