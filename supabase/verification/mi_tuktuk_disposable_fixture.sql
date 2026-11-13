@@ -112,6 +112,22 @@ BEGIN
  SELECT x.job_id INTO jid3 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','tricycle',gen_random_uuid(),code) x;
  UPDATE public.jobs SET status='published',published_at=now() WHERE id=jid3;
  IF (SELECT phase FROM app_private.marketplace_driver_promo_attribution WHERE job_id=jid3)<>'fleet' OR NOT EXISTS(SELECT 1 FROM fixture_offers WHERE job_id=jid3 AND driver_user_id=other) THEN RAISE EXCEPTION 'resting driver fallback failed'; END IF;
+ -- Normal rides, incompatible categories, scheduled services and disabled priority remain fleet jobs.
+ SELECT x.job_id INTO jid3 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','light_car',gen_random_uuid(),code) x;
+ IF EXISTS(SELECT 1 FROM app_private.marketplace_driver_promo_attribution WHERE job_id=jid3) THEN RAISE EXCEPTION 'incompatible category attributed'; END IF;
+ SELECT x.job_id INTO jid3 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','tricycle',gen_random_uuid(),'invalid') x;
+ IF EXISTS(SELECT 1 FROM app_private.marketplace_driver_promo_attribution WHERE job_id=jid3) THEN RAISE EXCEPTION 'invalid link attributed'; END IF;
+ UPDATE public.driver_vehicle_assignments SET accepting_jobs=true WHERE driver_user_id=driver;
+ UPDATE public.jobs SET status='published',published_at=now() WHERE id=jid3;
+ IF (SELECT count(*) FROM fixture_offers WHERE job_id=jid3)<>2 THEN RAISE EXCEPTION 'ordinary ride changed'; END IF;
+ SELECT x.job_id INTO jid3 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',now()+interval '1 hour',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','tricycle',gen_random_uuid(),code) x;
+ UPDATE public.jobs SET status='published',published_at=now() WHERE id=jid3;
+ IF (SELECT phase FROM app_private.marketplace_driver_promo_attribution WHERE job_id=jid3)<>'fleet' THEN RAISE EXCEPTION 'scheduled priority improperly enabled'; END IF;
+ UPDATE app_private.marketplace_driver_promo_settings SET priority_enabled=false WHERE project_id=pid;
+ SELECT x.job_id INTO jid3 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','tricycle',gen_random_uuid(),code) x;
+ UPDATE public.jobs SET status='published',published_at=now() WHERE id=jid3;
+ IF (SELECT phase FROM app_private.marketplace_driver_promo_attribution WHERE job_id=jid3)<>'fleet' THEN RAISE EXCEPTION 'flag off priority'; END IF;
+ UPDATE app_private.marketplace_driver_promo_settings SET priority_enabled=true WHERE project_id=pid;
  PERFORM public.set_my_marketplace_promo_profile(NULL,false,false);
  IF public.resolve_marketplace_promo_profile_v1(code) IS NOT NULL THEN RAISE EXCEPTION 'revocation failed'; END IF;
  IF public.set_my_marketplace_promo_profile('Driver',true,true)->>'code'=code THEN RAISE EXCEPTION 'revoked code reused'; END IF;
