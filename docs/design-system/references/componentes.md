@@ -122,3 +122,11 @@ Referencia visual: Usuarios app y Conductores (grafito aprobado en escritorio os
 - Sidebar contraída conserva 64 px y preferencia local. Expandida en Trabajos pasa de 208 a 232 px para evitar recortes con iconos más grandes; los demás espacios mantienen 272 px. Indentación y etiquetas adaptables; mantener navegación, permisos, agrupación, rutas y estado de mapas intactos.
 - Menús internos de Centro de precios, Configuración y Administración comparten los acentos; no modificar colores semánticos, tokens globales, logo, tarjetas de tarifas ni mapas.
 - Validación pendiente en producción: claro/oscuro, ancho estrecho, menú expandido/contraído y drawer móvil, navegación con teclado, labels largos y visualización a 200% de zoom. Las pruebas de fuente/compilación no sustituyen auditoría visual.
+
+### Submenús — diferenciación por destino
+
+`adminSubnavTone(group, child)` centraliza la identidad de cada destino sin cambiar las familias del menú principal. En Trabajos: Pulso cian, Operaciones turquesa, Atención violeta, Mapa azul verdoso, Conductores índigo, Clientes azul, Billeteras verde, Recargas verde dorado (mezcla de pagos y planes), Incidencias magenta y Configuración gris azulado. Los colores son de navegación; los estados operativos mantienen su semántica independiente.
+
+Centro de precios: Ajuste general ámbar, Pasajeros azul, Carga naranja, Mensajería turquesa. Administración: Configuración gris azulado, Empleados índigo, Comunicados violeta, Integraciones turquesa. Configuración de TukTuk: Pruebas violeta, Radar cian y Provincia turquesa. Los menús internos y las cabeceras correspondientes reutilizan esta asignación; Comercial y Atención emplean el patrón admin-subnav-tab para sus propias pestañas y conservan las condiciones de permisos y selección.
+
+Los submenús laterales mantienen la línea de jerarquía, iconos de 20 px en contenedor de 32 px y objetivo de 42 px por fila de escritorio, 44 px en móvil/contraído. La opción hija activa tiene mayor énfasis que la cabecera de su grupo; al contraer la barra permanecen etiquetas accesibles y la separación de grupos sin aumentar el ancho. Las tonalidades son derivadas de los tokens de módulos y no alteran su definición. Validar contraste, reflow, navegación por teclado y ambos temas en pantallas reales.
