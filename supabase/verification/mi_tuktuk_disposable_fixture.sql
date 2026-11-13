@@ -107,7 +107,9 @@ BEGIN
  SELECT x.job_id INTO jid2 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','tricycle',gen_random_uuid(),code) x;
  UPDATE public.jobs SET status='published',published_at=now() WHERE id=jid2;
  UPDATE app_private.marketplace_driver_promo_attribution SET priority_until=now()-interval '1 second' WHERE job_id=jid2;
- IF app_private.marketplace_promo_release_due()<>1 OR app_private.marketplace_promo_release_due()<>0 OR (SELECT count(*) FROM fixture_offers WHERE job_id=jid2)<>2 THEN RAISE EXCEPTION 'timeout fallback failed'; END IF;
+ IF app_private.marketplace_promo_release_due()<>1 THEN RAISE EXCEPTION 'timeout release count failed'; END IF;
+ IF app_private.marketplace_promo_release_due()<>0 THEN RAISE EXCEPTION 'timeout repeated release'; END IF;
+ IF (SELECT count(*) FROM fixture_offers WHERE job_id=jid2)<>2 THEN RAISE EXCEPTION 'timeout offer count failed'; END IF;
  UPDATE public.driver_vehicle_assignments SET accepting_jobs=false WHERE driver_user_id=driver;
  SELECT x.job_id INTO jid3 FROM public.create_marketplace_customer_request_promo_v1(customer,'valid','passenger','A','B',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'{}','tricycle',gen_random_uuid(),code) x;
  UPDATE public.jobs SET status='published',published_at=now() WHERE id=jid3;
