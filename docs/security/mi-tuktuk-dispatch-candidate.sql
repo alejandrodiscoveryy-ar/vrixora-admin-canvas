@@ -558,5 +558,21 @@ end;
 $function$;
 
 -- Existing function privileges and OIDs are retained by CREATE OR REPLACE.
--- A preferred job can always time out; direct explicit decline will require a
--- separate driver RPC with authenticated actor validation, not yet connected.
+-- Decline is an explicit opt-out, not a job cancellation. UI connection follows.
+CREATE FUNCTION public.decline_my_marketplace_promo_offer(target_job_id uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $
+DECLARE actor uuid:=auth.uid(); pid uuid;
+BEGIN
+  IF actor IS NULL THEN RAISE EXCEPTION 'AUTHENTICATION_REQUIRED' USING ERRCODE='42501'; END IF;
+  SELECT id INTO pid FROM public.projects WHERE slug='tuktuk-control';
+  PERFORM 1 FROM public.jobs j WHERE j.id=target_job_id AND j.project_id=pid AND j.status='published' FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+  UPDATE app_private.marketplace_driver_promo_attribution a SET phase='fleet',released_at=now(),release_reason='declined'
+  WHERE a.project_id=pid AND a.job_id=target_job_id AND a.driver_user_id=actor AND a.phase='preferred';
+  IF NOT FOUND THEN RETURN false; END IF;
+  PERFORM app_private.enqueue_marketplace_job_offer_wave(target_job_id);
+  RETURN true;
+END $;
+REVOKE ALL ON FUNCTION public.decline_my_marketplace_promo_offer(uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.decline_my_marketplace_promo_offer(uuid) TO authenticated;
+
