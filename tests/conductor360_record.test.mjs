@@ -17,7 +17,7 @@ test("historial aislado por proyecto y autorizado", () => {
 });
 
 test("expediente responsive y sin estadísticas falsas", () => {
-  assert.match(ui, /lg:grid-cols-\[1\.2fr_1fr\]/);
+  assert.match(ui, /lg:grid-cols-2/);
   assert.match(ui, /summary\?\.services \?\? "—"/);
   assert.match(ui, /Todavía no registra servicios/);
   assert.match(ui, /Información restringida por permisos/);

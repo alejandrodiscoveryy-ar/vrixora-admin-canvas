@@ -12,6 +12,9 @@ import {
   FileText,
   Phone,
   ShieldCheck,
+  Star,
+  AlertCircle,
+  Route,
   UserRound,
   Wallet,
 } from "lucide-react";
@@ -24,8 +27,8 @@ import type {
 import type { MarketplaceDirectoryDriverMedia } from "@/lib/marketplace-map";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MetricCard } from "@/components/admin/MetricCard";
-import { premiumSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
+
+import { premiumSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceDriverManagementPanel from "@/features/admin/MarketplaceDriverManagementPanel";
 import MarketplaceDriverVehicleEditor from "@/features/admin/MarketplaceDriverVehicleEditor";
@@ -86,7 +89,7 @@ function ImageWithFallback({
     <div
       className={
         variant === "portrait"
-          ? "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-default bg-surface-2 text-primary sm:h-20 sm:w-20"
+          ? "marketplace-360-avatar relative overflow-hidden"
           : "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] text-primary"
       }
     >
@@ -133,8 +136,15 @@ function RecordMetric({
   note?: string;
   tone?: "cyan" | "emerald" | "amber";
 }) {
-  return <MetricCard density="compact" appearance="premium" label={label} value={value}
-    description={note} semanticState={tone === "emerald" ? "success" : tone === "amber" ? "warning" : "info"} />;
+  const Icon = label === "Valoración" ? Star : label === "Incidencias" ? AlertCircle : label === "Completadas" || label === "Completados" ? CheckCircle2 : Route;
+  return <div className={cn("flex min-w-0 items-start gap-2 rounded-xl border p-2.5", premiumColumnHeaderSurface, "shadow-none")}>
+    <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg border", tone === "emerald" ? "border-emerald-500/20 bg-emerald-500/[0.06] marketplace-value-available" : tone === "amber" ? "border-amber-500/20 bg-amber-500/[0.06] marketplace-value-reserved" : "border-border-default marketplace-360-link")}><Icon className="h-4 w-4" aria-hidden="true" /></span>
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium leading-tight text-text-secondary">{label}</p>
+      <p className="mt-0.5 break-words text-base font-semibold tabular-nums text-foreground sm:text-lg">{value}</p>
+      {note ? <p className="mt-0.5 break-words text-xs text-text-secondary">{note}</p> : null}
+    </div>
+  </div>;
 }
 
 type DriverTab = "overview" | "vehicle" | "management" | "activity" | "financial";
@@ -206,22 +216,23 @@ export default function MarketplaceDriver360Record({
     detail.vehicles.find((entry) => entry.assignment?.isActive) ?? detail.vehicles[0];
 
   return (
-    <div className="min-w-0 space-y-3">
-      <section className={cn("relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumHeaderSurface)}>
-        <div aria-hidden="true" className="pointer-events-none absolute right-3 bottom-3 select-none text-5xl font-bold leading-none text-primary opacity-[0.06] sm:text-6xl dark:opacity-[0.07]">360°</div>
-        <div className="relative flex min-w-0 flex-wrap items-start gap-3 sm:items-center">
+    <div data-nav-tone="equipo" className="marketplace-360 marketplace-360-driver min-w-0 space-y-3">
+      <section aria-label="Identidad del conductor" className={cn("marketplace-360-hero relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+        <div aria-hidden="true" className="marketplace-360-watermark">360°</div>
+        <div className="relative flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
           <ImageWithFallback
             url={media?.avatarUrl}
             alt={`Imagen de perfil de ${displayName}`}
             variant="portrait"
           />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              Expediente del conductor
+            <p className="marketplace-360-kicker">
+              Expediente del conductor · 360
             </p>
-            <h2 className="mt-1 break-words text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {displayName}
-            </h2>
+            <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <h2 className="min-w-0 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{displayName}</h2>
+              <span className="inline-flex items-center gap-1 text-xs text-text-secondary"><CalendarDays className="h-3.5 w-3.5 shrink-0" />Alta: {date(detail.driver.activatedAt ?? detail.driver.createdAt)}</span>
+            </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span
                 className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClass(detail.driver.status)}`}
@@ -234,18 +245,18 @@ export default function MarketplaceDriver360Record({
                 </span>
               ) : null}
             </div>
-            <p className="mt-2.5 break-words text-sm text-muted-foreground">
+            <p className="mt-1 break-words text-xs text-text-secondary">
               {mainVehicle?.vehicle.name
                 ? `Vehículo principal: ${mainVehicle.vehicle.name}`
                 : "Sin vehículo principal"}
-              {" · "}Alta: {date(detail.driver.activatedAt ?? detail.driver.createdAt)}
+
             </p>
           </div>
-          <div className="flex w-full min-w-0 flex-wrap gap-2 max-sm:[&_a]:min-h-11 sm:ml-auto sm:w-auto sm:self-center">
+          <div className="flex min-w-0 flex-wrap gap-2 [&_a]:min-h-11 sm:justify-end">
             {whatsApp ? (
               <Button size="sm" variant="outline" asChild>
                 <a
-                  className="border-emerald-500/30 text-emerald-200"
+                  className="marketplace-value-available"
                   href={whatsApp.web}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -272,7 +283,7 @@ export default function MarketplaceDriver360Record({
             ) : null}
           </div>
         </div>
-        <div className="relative mt-3 grid gap-2 border-t border-cyan-400/10 pt-3 sm:grid-cols-2">
+        <div className="relative mt-3 grid min-w-0 gap-2 border-t border-border/60 pt-3 sm:grid-cols-2">
           <Fact label="Teléfono / WhatsApp" value={text(contactPhone)} />
           <Fact label="Correo" value={text(contactEmail)} />
         </div>
@@ -284,8 +295,8 @@ export default function MarketplaceDriver360Record({
       </section>
 
 
-      <nav aria-label="Secciones de la ficha 360" className={cn("min-w-0 rounded-[var(--radius-card)] border p-1.5", premiumSurface)}>
-        <div role="tablist" aria-label="Contenido del conductor" className="grid min-w-0 grid-cols-2 gap-1 sm:flex sm:flex-wrap">
+      <nav aria-label="Secciones de la ficha 360" className={cn("marketplace-360-nav min-w-0 rounded-[var(--radius-card)] border p-1.5", premiumSurface)}>
+        <div role="tablist" aria-label="Contenido del conductor" className="grid min-w-0 grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:justify-start">
           {driverTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -293,11 +304,10 @@ export default function MarketplaceDriver360Record({
               type="button"
               role="tab"
               aria-selected={activeTab === id}
+              data-state={activeTab === id ? "active" : "inactive"}
               aria-controls="driver-360-current-panel"
               onClick={() => setActiveTab(id)}
-              className={activeTab === id
-                ? "flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-primary/40 bg-primary/10 px-2 text-sm font-semibold text-primary focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
-                : "flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-transparent px-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-3 hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring sm:px-3"}
+              className="marketplace-360-tab flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}
@@ -306,14 +316,14 @@ export default function MarketplaceDriver360Record({
         </div>
       </nav>
 
-      <div id="driver-360-current-panel" role="tabpanel" aria-labelledby={"driver-tab-" + activeTab} className="min-w-0 space-y-3 max-sm:[&_button]:min-h-11">
+      <div id="driver-360-current-panel" role="tabpanel" aria-labelledby={"driver-tab-" + activeTab} className="marketplace-360-content min-w-0 space-y-3 max-sm:[&_button]:min-h-11">
       {activeTab === "overview" ? (
-        <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           <section className={cn("relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
             <div aria-hidden="true" className="pointer-events-none absolute bottom-3 right-3 select-none text-5xl font-bold leading-none text-primary opacity-[0.05]">TT</div>
             <div className="relative flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Vehículo principal</p>
+                <p className="marketplace-360-kicker">Vehículo principal</p>
                 <h3 className="mt-1 text-lg font-semibold text-text-primary">{text(mainVehicle?.vehicle.name, "Sin vehículo asociado")}</h3>
               </div>
               {mainVehicle?.assignment?.isActive ? (
@@ -330,16 +340,16 @@ export default function MarketplaceDriver360Record({
                 </div>
               </div>
             ) : <p className="relative mt-4 text-sm text-text-secondary">Este conductor aún no tiene un vehículo asociado.</p>}
-            <Button variant="outline" size="sm" className="relative mt-4 border-cyan-400/30 text-primary" onClick={() => setActiveTab("vehicle")}>Ver ficha del vehículo <ArrowUpRight className="ml-1.5 h-4 w-4" /></Button>
+            <Button variant="outline" size="sm" className="relative mt-3 marketplace-360-link" onClick={() => setActiveTab("vehicle")}>Ver ficha del vehículo <ArrowUpRight className="ml-1.5 h-4 w-4" /></Button>
           </section>
 
-          <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)} aria-label="Indicadores esenciales del conductor">
+          <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)} aria-label="Indicadores esenciales del conductor">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Vista ejecutiva</p>
+                <p className="marketplace-360-kicker">Vista ejecutiva</p>
                 <h3 className="mt-1 text-lg font-semibold text-text-primary">Actividad y reputación</h3>
               </div>
-              <Button size="sm" variant="ghost" className="text-primary" onClick={() => setActiveTab("activity")}>Detalle <ArrowUpRight className="ml-1 h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="marketplace-360-link" onClick={() => setActiveTab("activity")}>Detalle <ArrowUpRight className="ml-1 h-4 w-4" /></Button>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <RecordMetric label="Carreras reales" value={summary?.services ?? "—"} />
@@ -471,7 +481,7 @@ export default function MarketplaceDriver360Record({
       <section aria-label="Récord profesional" className="space-y-2.5">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+            <p className="marketplace-360-kicker">
               Trayectoria
             </p>
             <h3 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
@@ -528,12 +538,12 @@ export default function MarketplaceDriver360Record({
 
       <div className="min-w-0">
         <section
-          className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}
+          className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}
           aria-label="Historial de servicios"
         >
           <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border/55 pb-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              <p className="marketplace-360-kicker">
                 Actividad
               </p>
               <h3 className="mt-1 text-base font-semibold text-foreground">
@@ -603,7 +613,7 @@ export default function MarketplaceDriver360Record({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-primary"
+                      className="h-8 marketplace-360-link"
                       onClick={() => onOpenJob(job.jobId)}
                     >
                       Ver servicio <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
@@ -636,7 +646,7 @@ export default function MarketplaceDriver360Record({
       {activeTab === "financial" ? (
         <div className="min-w-0">
         <aside className="grid min-w-0 gap-4 md:grid-cols-2" aria-label="Datos del expediente">
-          <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+          <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-emerald-300" />
               <h3 className="text-sm font-semibold text-foreground">Promoción y referidos</h3>
@@ -664,7 +674,7 @@ export default function MarketplaceDriver360Record({
             </div>
           </section>
 
-          <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+          <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
             <div className="flex items-center gap-2">
               <Wallet className="h-4 w-4 text-emerald-300" />
               <h3 className="text-sm font-semibold text-foreground">Situación financiera</h3>

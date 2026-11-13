@@ -1154,6 +1154,7 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   min-inline-size: 0;
 }
 .marketplace-360-customer { --record-360-accent: var(--module-comercial); }
+.marketplace-360-driver { --record-360-accent: var(--module-empleados); }
 .marketplace-360-hero {
   border-color: color-mix(in oklab, var(--record-360-accent) 34%, var(--border-default));
   background-image: radial-gradient(ellipse at 0% 0%, color-mix(in oklab, var(--record-360-accent) 12%, transparent), transparent 70%);
