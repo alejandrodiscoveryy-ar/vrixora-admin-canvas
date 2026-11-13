@@ -1,0 +1,34 @@
+name: TukTuk Fleet Presence V2 - isolated SQL
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/security/fleet-presence-v2-candidate.sql'
+      - 'supabase/verification/fleet_presence_v2_disposable_fixture.sql'
+      - '.github/workflows/fleet-presence-v2-isolated.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fleet_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fleet_fixture"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Execute actual candidate SQL and verify contract on disposable PostgreSQL
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -w /work postgres:17 \
+            psql -h 127.0.0.1 -U postgres -d fleet_fixture -v ON_ERROR_STOP=1 \
+            -f supabase/verification/fleet_presence_v2_disposable_fixture.sql
