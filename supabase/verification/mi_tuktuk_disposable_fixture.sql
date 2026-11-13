@@ -135,3 +135,129 @@ BEGIN
  IF public.set_my_marketplace_promo_profile('Driver',true,true)->>'code'=code THEN RAISE EXCEPTION 'revoked code reused'; END IF;
 END $$;
 SELECT 'Mi TukTuk isolated SQL contract passed' AS result;
+
+-- Extend the isolated fixture with the production fields required by the
+-- automatic-card and administrative verification contract.
+ALTER TABLE public.driver_profiles
+  ADD COLUMN identity_front_asset_id uuid,
+  ADD COLUMN identity_back_asset_id uuid,
+  ADD COLUMN identity_document_type text;
+ALTER TABLE public.media_assets ADD COLUMN storage_path text;
+CREATE TABLE public.profiles(id uuid PRIMARY KEY,display_name text);
+CREATE TABLE public.audit_events(project_id uuid,actor_id uuid,action text,entity_type text,entity_id text,metadata jsonb);
+CREATE FUNCTION app_private.require_project_permission(uuid,text) RETURNS void
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF auth.uid() IS DISTINCT FROM '90000000-0000-0000-0000-000000000001'::uuid
+    OR $1 IS DISTINCT FROM '10000000-0000-0000-0000-000000000001'::uuid
+    OR $2 IS DISTINCT FROM 'marketplace.manage' THEN
+    RAISE EXCEPTION 'PERMISSION_DENIED' USING ERRCODE='42501';
+  END IF;
+END $$;
+CREATE FUNCTION app_private.marketplace_onboarding_requirements_complete(uuid,text)
+RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT true $$;
+INSERT INTO public.profiles VALUES
+ ('20000000-0000-0000-0000-000000000001','Driver'),
+ ('20000000-0000-0000-0000-000000000002','Other Driver');
+UPDATE public.media_assets SET storage_path='driver-one/photo.png'
+  WHERE id='50000000-0000-0000-0000-000000000001';
+INSERT INTO public.media_assets(id,project_id,owner_user_id,asset_kind,status,storage_bucket,storage_path) VALUES
+ ('50000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002','driver_photo','available','marketplace-media','driver-two/photo.png'),
+ ('50000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002','identity_front','available','marketplace-identity','driver-two/front.png'),
+ ('50000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002','identity_back','available','marketplace-identity','driver-two/back.png');
+UPDATE public.driver_profiles SET
+  photo_asset_id='50000000-0000-0000-0000-000000000002',
+  identity_front_asset_id='50000000-0000-0000-0000-000000000003',
+  identity_back_asset_id='50000000-0000-0000-0000-000000000004',
+  identity_document_type='national_id'
+  WHERE user_id='20000000-0000-0000-0000-000000000002';
+\i docs/security/mi-tuktuk-automatic-card-identity-review-candidate.sql
+DO $$
+DECLARE pid uuid:='10000000-0000-0000-0000-000000000001';
+  driver uuid:='20000000-0000-0000-0000-000000000001';
+  other uuid:='20000000-0000-0000-0000-000000000002';
+  admin uuid:='90000000-0000-0000-0000-000000000001';
+  front uuid:='50000000-0000-0000-0000-000000000003';
+  back uuid:='50000000-0000-0000-0000-000000000004';
+  photo uuid:='50000000-0000-0000-0000-000000000002';
+  prepared jsonb; result jsonb; draft_code text; old_code text; existing_code text;
+BEGIN
+  IF has_table_privilege('authenticated','app_private.marketplace_driver_identity_reviews','SELECT')
+    OR has_table_privilege('authenticated','app_private.marketplace_driver_promo_drafts','SELECT')
+    OR has_function_privilege('anon','public.prepare_my_marketplace_promo_card_v1()','EXECUTE')
+    OR has_function_privilege('anon','public.publish_my_marketplace_promo_card_v1(text,text,uuid)','EXECUTE')
+    OR has_function_privilege('anon','public.admin_set_marketplace_driver_identity_review_v1(uuid,uuid,boolean,text,uuid,uuid)','EXECUTE')
+    OR has_function_privilege('authenticated','app_private.marketplace_driver_identity_verified_v1(uuid,uuid)','EXECUTE')
+  THEN RAISE EXCEPTION 'automatic-card grants expose private data'; END IF;
+  PERFORM set_config('request.jwt.claim.sub','',true);
+  BEGIN PERFORM public.prepare_my_marketplace_promo_card_v1();
+    RAISE EXCEPTION 'anonymous private card'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  PERFORM set_config('request.jwt.claim.sub',driver::text,true);
+  SELECT code INTO existing_code FROM app_private.marketplace_driver_promo_profiles
+    WHERE project_id=pid AND driver_user_id=driver;
+  prepared:=public.prepare_my_marketplace_promo_card_v1();
+  IF prepared->>'code' IS DISTINCT FROM existing_code OR prepared->>'published' IS DISTINCT FROM 'true'
+    THEN RAISE EXCEPTION 'existing active link changed'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',other::text,true);
+  UPDATE public.driver_profiles SET status='pending_topup' WHERE user_id=other AND project_id=pid;
+  prepared:=public.prepare_my_marketplace_promo_card_v1();
+  draft_code:=prepared->>'code';
+  IF prepared->>'enabled' IS DISTINCT FROM 'true' OR prepared->>'published' IS DISTINCT FROM 'false'
+    OR prepared->>'can_publish' IS DISTINCT FROM 'false' OR draft_code !~ '^[0-9a-f]{32}$'
+    OR prepared->>'identity_verified' IS DISTINCT FROM 'false'
+    OR prepared->>'photo_path' IS DISTINCT FROM 'driver-two/photo.png'
+  THEN RAISE EXCEPTION 'automatic private card for complete registration failed: %',prepared; END IF;
+  IF public.resolve_marketplace_promo_profile_v1(draft_code) IS NOT NULL THEN RAISE EXCEPTION 'unshared card is public'; END IF;
+  BEGIN PERFORM public.publish_my_marketplace_promo_card_v1(draft_code,'Other Driver',photo);
+    RAISE EXCEPTION 'pending driver can publish'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  UPDATE public.driver_profiles SET status='active' WHERE user_id=other AND project_id=pid;
+  prepared:=public.prepare_my_marketplace_promo_card_v1();
+  IF prepared->>'code' IS DISTINCT FROM draft_code OR prepared->>'can_publish' IS DISTINCT FROM 'true'
+    OR prepared->>'published' IS DISTINCT FROM 'false'
+  THEN RAISE EXCEPTION 'automatic card not stable'; END IF;
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v1(pid,other,true,'Self approval forbidden',front,back);
+    RAISE EXCEPTION 'driver can self verify'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN PERFORM public.publish_my_marketplace_promo_card_v1(existing_code,'Driver',photo);
+    RAISE EXCEPTION 'driver can publish another code'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  BEGIN PERFORM public.publish_my_marketplace_promo_card_v1(draft_code,'Other Driver','50000000-0000-0000-0000-000000000001');
+    RAISE EXCEPTION 'driver can publish another photo'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v1(pid,other,true,'Reviewed but wrong document',back,front);
+    RAISE EXCEPTION 'stale review accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  result:=public.admin_set_marketplace_driver_identity_review_v1(pid,other,true,'Both sides reviewed',front,back);
+  IF result->>'verified' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'admin review failed'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',other::text,true);
+  prepared:=public.prepare_my_marketplace_promo_card_v1();
+  IF prepared->>'identity_verified' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'verified badge missing'; END IF;
+  IF public.resolve_marketplace_promo_profile_v1(draft_code) IS NOT NULL THEN RAISE EXCEPTION 'review published card'; END IF;
+  result:=public.publish_my_marketplace_promo_card_v1(draft_code,'Other Driver',photo);
+  IF result->>'published' IS DISTINCT FROM 'true' OR result->>'code' IS DISTINCT FROM draft_code
+    OR result->>'identity_verified' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'share publication failed: %',result; END IF;
+  IF public.resolve_marketplace_promo_profile_v1(draft_code)->>'public_name' IS DISTINCT FROM 'Other Driver'
+    THEN RAISE EXCEPTION 'public link not activated'; END IF;
+  IF public.publish_my_marketplace_promo_card_v1(draft_code,'Other Driver',photo)->>'code' IS DISTINCT FROM draft_code
+    THEN RAISE EXCEPTION 'repeated share rotates code'; END IF;
+  UPDATE public.media_assets SET status='pending' WHERE id=front;
+  IF public.prepare_my_marketplace_promo_card_v1()->>'identity_verified' IS DISTINCT FROM 'false'
+    THEN RAISE EXCEPTION 'missing document retained verification'; END IF;
+  UPDATE public.media_assets SET status='available' WHERE id=front;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  PERFORM public.admin_set_marketplace_driver_identity_review_v1(pid,other,false,'Review withdrawn');
+  IF NOT EXISTS(SELECT 1 FROM public.audit_events WHERE action='admin_revoke_driver_identity' AND actor_id=admin)
+    THEN RAISE EXCEPTION 'audit missing'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',other::text,true);
+  IF public.prepare_my_marketplace_promo_card_v1()->>'identity_verified' IS DISTINCT FROM 'false'
+    THEN RAISE EXCEPTION 'revoked badge retained'; END IF;
+  old_code:=draft_code;
+  PERFORM public.revoke_my_marketplace_promo_card_v1();
+  IF public.resolve_marketplace_promo_profile_v1(old_code) IS NOT NULL THEN RAISE EXCEPTION 'revoked URL resolves'; END IF;
+  prepared:=public.prepare_my_marketplace_promo_card_v1();
+  draft_code:=prepared->>'code';
+  IF draft_code IS NOT DISTINCT FROM old_code OR prepared->>'published' IS DISTINCT FROM 'false'
+    THEN RAISE EXCEPTION 'revoked card auto-published or code reused'; END IF;
+  PERFORM public.publish_my_marketplace_promo_card_v1(draft_code,'Other Driver',photo);
+  IF public.resolve_marketplace_promo_profile_v1(old_code) IS NOT NULL
+    OR public.resolve_marketplace_promo_profile_v1(draft_code)->>'public_name' IS DISTINCT FROM 'Other Driver'
+    THEN RAISE EXCEPTION 'link rotation failed'; END IF;
+END $$;
+SELECT 'Mi TukTuk automatic card and identity verification isolated SQL contract passed' AS result;
