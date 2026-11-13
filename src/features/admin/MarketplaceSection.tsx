@@ -2280,6 +2280,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               <PaginationButton query={customers} />
             </section>
           </TabsContent>
+        ) : null}
+
+        {canPayments ? (
+          <>
           <TabsContent value="billeteras" className="mt-3">
             <section aria-label="Billeteras" data-nav-tone="finanzas" className="marketplace-record-workspace min-w-0 space-y-2.5">
               <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
@@ -2394,7 +2398,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               <PaginationButton query={topups} />
             </section>
           </TabsContent>
-          <TabsContent value="incidencias">
+          </>
+        ) : null}
+
+        <TabsContent value="incidencias">
           <PremiumPanel
             headerless
             title="Incidencias"
