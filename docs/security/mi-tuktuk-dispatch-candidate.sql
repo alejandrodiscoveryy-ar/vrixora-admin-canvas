@@ -416,7 +416,7 @@ begin
     v_rating_score,
     v_tie_breaker;
 end;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION app_private.marketplace_promo_base_candidate_state(uuid,uuid,text,uuid) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -555,7 +555,7 @@ begin
 
   return total_inserted;
 end;
-$function$
+$function$;
 
 -- Existing function privileges and OIDs are retained by CREATE OR REPLACE.
 -- A preferred job can always time out; direct explicit decline will require a
