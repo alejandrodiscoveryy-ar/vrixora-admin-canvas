@@ -16,3 +16,11 @@ test("Mi TukTuk uses existing driver identity and private preview", () => {
   assert.doesNotMatch(card, /navigator\.share|window\.open|\.rpc\(|service_role/);
   assert.doesNotMatch(card, /Conductor verificado/);
 });
+
+test("El QR personal tiene un espacio dentro de la tarjeta en ambos formatos", () => {
+  assert.match(card, /data-promotion-qr-area="embedded"/);
+  assert.match(card, /format === "story" \? "w-32" : "w-24"/);
+  assert.match(card, /Escanea y viaja conmigo/);
+  assert.match(card, /QR PENDIENTE/);
+  assert.match(card, /aún no activo/);
+});
