@@ -96,8 +96,9 @@ type OperationalPinKind = "driver" | "customer" | "destination";
 // A clear difference between service, availability and old GPS is crucial in dispatch.
 type DriverPinState = "available" | "busy" | "stale" | "unavailable";
 function driverPinState(driver: MarketplaceOperationalDriver): DriverPinState {
-  if (!driver.locationFresh) return "stale";
   if (driver.activeJobId) return "busy";
+  if (!driver.acceptingJobs) return "unavailable";
+  if (!driver.locationFresh) return "stale";
   if (driver.isAvailable && driver.acceptingJobs) return "available";
   return "unavailable";
 }
@@ -822,8 +823,7 @@ export default function MarketplaceOperationalMap({
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
   // V3: conservar Operaciones como vista inicial; Cobertura es opcional.
   const [mapViewMode, setMapViewMode] = useState<MapViewMode>("operations");
-  // Operaciones prioriza GPS vigente. La ubicación antigua se consulta solo a demanda.
-  const [showStaleWorkingDrivers, setShowStaleWorkingDrivers] = useState(false);
+  // Operaciones muestra GPS reciente; toda la flota se consulta en Cobertura.
   // El móvil prioriza el mapa; las capas siguen accesibles con un toque.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
@@ -1394,7 +1394,7 @@ export default function MarketplaceOperationalMap({
     if (layers.drivers || mapViewMode === "coverage") {
       for (const driver of operational.data?.drivers ?? []) {
         if (mapViewMode === "operations" && !driver.acceptingJobs && !driver.activeJobId) continue;
-        if (mapViewMode === "operations" && !driver.locationFresh && !showStaleWorkingDrivers) continue;
+        if (mapViewMode === "operations" && !driver.locationFresh && !driver.activeJobId) continue;
         if (mapViewMode === "coverage" && !coverageDriverIds.has(driver.driverUserId)) continue;
 
         const coordinate = driverCoordinate(driver);
@@ -1439,7 +1439,7 @@ export default function MarketplaceOperationalMap({
 
         const element = marker.getElement();
         // En servicio > disponible > GPS antiguo.
-        element.style.zIndex = !driver.locationFresh ? "10" : driver.activeJobId ? "30" : driverPinState(driver) === "available" ? "20" : "15";
+        element.style.zIndex = driver.activeJobId ? "30" : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
         const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
 
         if (!pin) continue;
@@ -1456,7 +1456,7 @@ export default function MarketplaceOperationalMap({
             kind: "driver",
             key: driver.driverUserId,
             selected: Boolean(driver.activeJobId),
-            stale: !driver.locationFresh,
+            stale: driverPinState(driver) === "stale",
             driverState: driverPinState(driver),
             vehicleCategoryCode: driver.vehicleCategoryCode,
           });
@@ -1503,7 +1503,7 @@ export default function MarketplaceOperationalMap({
         markers.delete(driverUserId);
       }
     }
-  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds, showStaleWorkingDrivers]);
+  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1881,7 +1881,7 @@ export default function MarketplaceOperationalMap({
     setLayerVisibility(
       map,
       MAP_LAYERS.driversStale,
-      mapViewMode === "operations" && layers.drivers && showStaleWorkingDrivers,
+      false,
     );
     setLayerVisibility(map, MAP_LAYERS.routesPickup, mapViewMode === "operations" && layers.routes);
     setLayerVisibility(
@@ -1896,7 +1896,7 @@ export default function MarketplaceOperationalMap({
       mapViewMode === "operations" && layers.routes,
     );
     setLayerVisibility(map, MAP_LAYERS.incidents, mapViewMode === "operations" && layers.incidents);
-  }, [layers, mapLoaded, mapViewMode, showStaleWorkingDrivers]);
+  }, [layers, mapLoaded, mapViewMode]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2261,20 +2261,18 @@ export default function MarketplaceOperationalMap({
                   )}
                   <button
                     type="button"
-                    aria-pressed={showStaleWorkingDrivers}
-                    disabled={!layers.drivers || staleWorkingDriversWithLocation === 0}
-                    title="Ubicaciones antiguas de conductores trabajando. No indican una posición GPS actual."
-                    onClick={() => setShowStaleWorkingDrivers((current) => !current)}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold backdrop-blur-xl transition-colors enabled:hover:border-amber-400/50 disabled:cursor-not-allowed disabled:opacity-40 ${
-                      showStaleWorkingDrivers
-                        ? "border-amber-400/60 bg-amber-500/20 text-amber-100"
-                        : "border-white/15 bg-background/30 text-slate-200"
-                    }`}
+                    title="Consulta la última ubicación de toda la flota habilitada, no solo conductores trabajando."
+                    onClick={() => {
+                      setCoverageFilter("all");
+                      setMapViewMode("coverage");
+                      setLayers((current) => ({ ...current, drivers: true }));
+                    }}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/15 px-3 py-2 text-[11px] font-semibold text-sky-100 transition-colors hover:border-sky-400/70"
                   >
-                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                    {showStaleWorkingDrivers ? "Ocultar GPS antiguo" : "Mostrar GPS antiguo"}
-                    <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 tabular-nums text-amber-200">
-                      {staleWorkingDriversWithLocation}
+                    <span className="h-2.5 w-2.5 rounded-full bg-sky-400" />
+                    Toda la flota
+                    <span className="rounded-full bg-sky-400/15 px-1.5 py-0.5 tabular-nums text-sky-100">
+                      {operational.data?.drivers.length ?? 0}
                     </span>
                   </button>
                   {layerButton(
@@ -2335,7 +2333,6 @@ export default function MarketplaceOperationalMap({
               )}
               {mapViewMode === "operations" &&
               layers.drivers &&
-              !showStaleWorkingDrivers &&
               staleWorkingDriversWithLocation > 0 &&
               !(operational.data?.drivers ?? []).some(
                 (driver) =>
@@ -2347,7 +2344,7 @@ export default function MarketplaceOperationalMap({
                   role="status"
                   className="max-w-md rounded-xl border border-amber-400/30 bg-slate-950/85 px-3 py-2 text-[11px] text-amber-100 shadow-lg backdrop-blur-xl"
                 >
-                  Sin conductores trabajando con GPS reciente. Hay {staleWorkingDriversWithLocation} con última posición antigua; puedes consultarlos con «Mostrar GPS antiguo».
+                  Sin conductores trabajando con GPS reciente. Hay {staleWorkingDriversWithLocation} con última posición antigua; puedes consultar toda la flota en «Cobertura».
                 </p>
               ) : null}
             </div>
@@ -2610,9 +2607,11 @@ export default function MarketplaceOperationalMap({
                                           </span>
                                         ) : driver.acceptingJobs ? (
                                           <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
-                                            {driver.isAvailable
-                                              ? "Trabajando · disponible"
-                                              : "Trabajando"}
+                                            {!driver.locationFresh
+                                              ? "Trabajando · GPS sin actualizar"
+                                              : driver.isAvailable
+                                                ? "Trabajando · disponible"
+                                                : "Trabajando"}
                                           </span>
                                         ) : (
                                           <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
