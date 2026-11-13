@@ -491,18 +491,18 @@ function CustomerSummaryMetric({
   }[accent];
 
   return (
-    <div className={cn("group min-w-0 rounded-xl border p-2.5", premiumSurface, "shadow-none")}>
+    <div className={cn("flex min-w-0 items-start gap-2 rounded-xl border p-2.5", premiumColumnHeaderSurface, "shadow-none")}>
       <div
-        className={`flex h-7 w-7 items-center justify-center rounded-xl border ${accentClasses}`}
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border ${accentClasses}`}
       >
         <Icon className="h-4 w-4" />
       </div>
-      <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.11em] text-muted-foreground">
+      <div className="min-w-0"><p className="text-[11px] font-medium leading-tight text-text-secondary">
         {labelText}
       </p>
       <p className="mt-0.5 break-words text-base font-semibold tabular-nums text-foreground sm:text-lg">
         {value}
-      </p>
+      </p></div>
     </div>
   );
 }
@@ -520,7 +520,7 @@ function Customer360Detail({
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
-  onOpenJob: (id: string) => void;
+  onOpenJob?: (id: string) => void;
 }) {
   const km = (value: number | null) =>
     value == null ? "\u2014" : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
@@ -811,7 +811,7 @@ function Customer360Detail({
                   ) : null}
                 </div>
 
-                <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="ghost" className="min-h-11 marketplace-360-link" onClick={() => onOpenJob(item.jobId)}>Ver carrera <ArrowRight className="ml-1.5 h-4 w-4" /></Button></div>
+                {onOpenJob ? <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="ghost" className="min-h-11 marketplace-360-link" onClick={() => onOpenJob(item.jobId)}>Ver carrera <ArrowRight className="ml-1.5 h-4 w-4" /></Button></div> : null}
                 {item.ratingStars ? (
                   <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5 text-sm">
                     <Star className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
@@ -2658,7 +2658,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 hasMore={Boolean(customerHistory.hasNextPage)}
                 loadingMore={customerHistory.isFetchingNextPage}
                 onLoadMore={() => customerHistory.fetchNextPage()}
-                onOpenJob={(id) => { setCustomerId(null); setJobDetailInitialTab("overview"); setJobId(id); }}
+                onOpenJob={permissions.includes("marketplace.view") ? (id) => { setCustomerId(null); setJobDetailInitialTab("overview"); setJobId(id); } : undefined}
               />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
