@@ -599,3 +599,24 @@ test("Admin submenu accents remain aligned in inner navigation and preserve tab 
   assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 3);
   for (const view of ["ofertas","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
 });
+
+test("Configuración replaces the Administration label without duplicate entries or route changes", () => {
+  const group = ADMIN_PROJECT_TABS.find(item => item.slug === "administracion");
+  assert.ok(group && "children" in group);
+  assert.equal(group.label, "Configuración");
+  assert.equal(ADMIN_PROJECT_TABS.filter(item => item.label === "Configuración").length, 1);
+  assert.ok(ADMIN_PROJECT_TABS.every(item => item.label !== "Administración"));
+  assert.deepEqual(group.children.map(item => [item.slug, item.label, item.permission]), [
+    ["configuracion", "Ajustes generales", "settings.view"],
+    ["empleados", "Empleados", "members.view"],
+    ["comunicados", "Comunicados", "settings.view"],
+    ["integraciones", "Integraciones", "settings.view"],
+  ]);
+  assert.equal(MARKETPLACE_WORKSPACE_VIEWS.find(item => item.slug === "configuracion").label, "Configuración operativa");
+  const workspace = readFileSync(new URL("../src/features/admin/AdministrationWorkspace.tsx", import.meta.url), "utf8");
+  assert.match(workspace, /aria-label="Secciones de configuración del proyecto TukTuk"/);
+  assert.match(workspace, />Configuración<\/p>/);
+  assert.doesNotMatch(workspace, />Administración<\/p>/);
+  assert.match(workspace, /section: section\.slug/);
+  assert.match(workspace, /permissions\.includes\(section\.permission\)/);
+});
