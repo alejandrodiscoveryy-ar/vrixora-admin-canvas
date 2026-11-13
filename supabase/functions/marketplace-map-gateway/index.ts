@@ -628,6 +628,18 @@ export async function handleRequest(request: Request): Promise<Response> {
         delete params.target_vehicle_category_code;
       }
     }
+    // Promo attribution is accepted only through the verified route / v2 path.
+    // The SQL wrapper resolves the opaque code, checks category and service,
+    // and atomically records attribution with existing request idempotency.
+    const promoCode = params.target_promo_code;
+    delete params.target_promo_code;
+    if (promoCode != null && (typeof promoCode !== "string" || !/^[0-9a-f]{32}$/.test(promoCode))) {
+      throw Error("PROMO_CODE_INVALID");
+    }
+    if (requestRpc === "create_marketplace_customer_request_v2" && promoCode) {
+      requestRpc = "create_marketplace_customer_request_promo_v1";
+      params.target_promo_code = promoCode;
+    }
     const { data, error } = await db.rpc(requestRpc, params);
     // PostgREST returns error objects, not always Error instances.
     // Preserve the existing V8 recovery envelope for this exact error only.
