@@ -647,19 +647,17 @@ export default function MarketplaceCustomerCareWorkspace({
         <button type="button" id="care-requests-tab" role="tab" aria-controls="care-requests-panel"
           aria-selected={careTab === "requests"} tabIndex={careTab === "requests" ? 0 : -1}
           onClick={() => setCareTab("requests")} onKeyDown={onCareTabKeyDown}
-          className={careTab === "requests"
-            ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] w-full px-4 py-2.5 text-center text-sm sm:w-auto font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
-            : "rounded-lg border border-transparent w-full px-4 py-2.5 text-center text-sm sm:w-auto font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
-          Solicitudes y carreras
+          data-nav-tone="comercial" className="admin-subnav-tab w-full sm:w-auto">
+          <span className="admin-nav-icon" aria-hidden="true"><Headphones /></span>
+          <span>Solicitudes y carreras</span>
         </button>
         {canManageContact ? (
           <button type="button" id="care-lite-settings-tab" role="tab" aria-controls="care-lite-settings-panel"
             aria-selected={careTab === "lite-settings"} tabIndex={careTab === "lite-settings" ? 0 : -1}
             onClick={() => setCareTab("lite-settings")} onKeyDown={onCareTabKeyDown}
-            className={careTab === "lite-settings"
-              ? "rounded-lg border border-cyan-400/45 bg-cyan-400/[0.14] w-full px-4 py-2.5 text-center text-sm sm:w-auto font-semibold text-cyan-100 shadow-[0_8px_22px_-14px_rgba(34,211,238,0.8)]"
-              : "rounded-lg border border-transparent w-full px-4 py-2.5 text-center text-sm sm:w-auto font-medium text-muted-foreground hover:bg-cyan-400/[0.055] hover:text-foreground"}>
-            Configuración WhatsApp Lite
+            data-nav-tone="finanzas" className="admin-subnav-tab w-full sm:w-auto">
+            <span className="admin-nav-icon" aria-hidden="true"><MessageCircle /></span>
+            <span>Configuración WhatsApp Lite</span>
           </button>
         ) : null}
       </div>

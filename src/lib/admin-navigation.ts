@@ -44,8 +44,8 @@ export type AdminProjectNavItem = AdminProjectTab | AdminProjectGroup;
 export const ADMINISTRATION_VIEWS = [
   {
     slug: "configuracion",
-    label: "Configuración",
-    icon: Settings2,
+    label: "Ajustes generales",
+    icon: SlidersHorizontal,
     permission: "settings.view",
   },
   {
@@ -85,7 +85,7 @@ export const MARKETPLACE_WORKSPACE_VIEWS = [
   { slug: "billeteras", label: "Billeteras", icon: Wallet, permission: "payments.view" },
   { slug: "recargas", label: "Recargas", icon: WalletCards, permission: "payments.view" },
   { slug: "incidencias", label: "Incidencias", icon: AlertTriangle, permission: "marketplace.view" },
-  { slug: "configuracion", label: "Configuración", icon: ShieldCheck, permission: "settings.view" },
+  { slug: "configuracion", label: "Configuración operativa", icon: ShieldCheck, permission: "settings.view" },
 ] satisfies Array<AdminProjectTab>;
 
 export const ADMIN_PROJECT_TABS = [
@@ -127,7 +127,7 @@ export const ADMIN_PROJECT_TABS = [
   },
   {
     slug: "administracion",
-    label: "Administración",
+    label: "Configuración",
     icon: Settings2,
     children: ADMINISTRATION_VIEWS,
   },
@@ -140,7 +140,7 @@ export const ADMIN_PROJECT_TABS = [
 ] satisfies Array<AdminProjectNavItem>;
 
 /** Navigation families use existing module accent tokens, never operational status colors. */
-export type AdminNavTone = "trabajos" | "panel" | "usuarios" | "comercial" | "tarifas" | "analitica" | "administracion" | "auditoria" | "finanzas" | "licencias";
+export type AdminNavTone = "trabajos" | "panel" | "usuarios" | "comercial" | "tarifas" | "analitica" | "administracion" | "auditoria" | "finanzas" | "licencias" | "equipo" | "recargas" | "mapa";
 
 export function adminNavTone(section: string): AdminNavTone {
   switch (section) {
@@ -160,5 +160,47 @@ export function adminNavTone(section: string): AdminNavTone {
     case "recargas": return "finanzas";
     case "licencias": return "licencias";
     default: return "panel";
+  }
+}
+
+
+/** Child colors identify destinations, not statuses. Keep parent colors independent. */
+export function adminSubnavTone(group: "trabajos" | "precios" | "administracion" | "configuracion", child: string): AdminNavTone {
+  switch (group) {
+    case "trabajos":
+      switch (child) {
+        case "resumen": return "panel";
+        case "trabajos": return "trabajos";
+        case "atencion": return "comercial";
+        case "mapa": return "mapa";
+        case "conductores": return "equipo";
+        case "clientes": return "usuarios";
+        case "billeteras": return "finanzas";
+        case "recargas": return "recargas";
+        case "incidencias": return "auditoria";
+        case "configuracion": return "administracion";
+        default: return "trabajos";
+      }
+    case "precios":
+      switch (child) {
+        case "passenger": return "usuarios";
+        case "cargo": return "analitica";
+        case "courier": return "trabajos";
+        default: return "tarifas";
+      }
+    case "administracion":
+      switch (child) {
+        case "empleados": return "equipo";
+        case "comunicados": return "comercial";
+        case "integraciones": return "licencias";
+        default: return "administracion";
+      }
+    case "configuracion":
+      switch (child) {
+        case "pruebas": return "comercial";
+        case "operacion": return "panel";
+        case "territorio": return "trabajos";
+        default: return "administracion";
+      }
   }
 }

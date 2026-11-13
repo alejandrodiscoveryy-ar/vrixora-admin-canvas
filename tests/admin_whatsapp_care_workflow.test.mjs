@@ -148,7 +148,13 @@ test('tipografía y campos principales legibles; mapa y cotización conservan su
 test('Atención al cliente se adapta a móviles estrechos, tablets y escritorio', () => {
   assert.match(ui,/flex flex-col gap-1\.5 rounded-xl border border-cyan-400\/15/);
   assert.match(ui,/sm:flex-row sm:flex-wrap/);
-  assert.match(ui,/px-4 py-2\.5 text-center text-sm sm:w-auto/);
+  assert.equal((ui.match(/className="admin-subnav-tab w-full sm:w-auto"/g) ?? []).length, 2);
+  const styles = readFileSync('src/styles.css','utf8');
+  const tabRule = styles.match(/\.admin-subnav-tab\[data-nav-tone\]\s*\{([^}]+)\}/)?.[1] ?? '';
+  assert.match(tabRule,/min-height: 44px/);
+  assert.match(tabRule,/white-space: normal/);
+  assert.match(ui,/aria-controls="care-requests-panel"/);
+  assert.match(ui,/aria-controls="care-lite-settings-panel"/);
   assert.match(ui,/grid min-w-0 grid-cols-1 items-start/);
   assert.match(ui,/xl:grid-cols-\[minmax\(0,2fr\)_minmax\(0,3fr\)\]/);
   assert.match(ui,/sm:flex-row sm:items-center/);

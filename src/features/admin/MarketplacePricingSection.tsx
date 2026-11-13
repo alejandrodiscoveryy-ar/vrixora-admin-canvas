@@ -38,7 +38,7 @@ import {
   type MarketplacePricingTariffInput,
 } from "@/lib/services";
 import { getElToqueIntegration } from "@/lib/eltoque-integration";
-import { PRICING_WORKSPACE_VIEWS } from "@/lib/admin-navigation";
+import { PRICING_WORKSPACE_VIEWS, adminSubnavTone } from "@/lib/admin-navigation";
 import MarketplacePricingLaboratoryV2 from "@/features/admin/MarketplacePricingLaboratoryV2";
 import MarketplacePricingV3Diagnostics from "@/features/admin/MarketplacePricingV3Diagnostics";
 import MarketplacePricingV3Hierarchy from "@/features/admin/MarketplacePricingV3Hierarchy";
@@ -412,8 +412,9 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               return (
                 <Link key={view.code} to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "planes" }} search={{ precio: view.code }}
                   aria-current={selected ? "page" : undefined}
+                  data-nav-tone={adminSubnavTone("precios", view.code)}
                   className={`group relative isolate flex admin-graphite-nav-item min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${selected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}>
-                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 -rotate-12 ${selected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
+                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 -rotate-12 ${selected ? "admin-nav-watermark opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
                   <span className="admin-nav-icon relative z-10" aria-hidden="true">
                     <Icon aria-hidden="true" strokeWidth={2} />
                   </span>
@@ -430,13 +431,13 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           <div className="relative z-10 mt-2 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">Precios y accesos según permisos</div>
         </nav>
         <div className="min-w-0 space-y-3">
-          <header className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
-            <SelectedPricingIcon aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-44 w-44 -rotate-12 text-cyan-100 opacity-[0.06]" />
+          <header data-nav-tone={adminSubnavTone("precios", selectedPricingView.code)} className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
+            <SelectedPricingIcon aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-44 w-44 -rotate-12 admin-nav-watermark opacity-[0.06]" />
             <div className="relative z-10 grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(235px,320px)]">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90">{selectedPricingView.number} / {selectedPricingView.eyebrow}</p>
                 <div className="mt-2 flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/[0.08] text-cyan-200"><SelectedPricingIcon className="h-5 w-5" /></span>
+                  <span className="admin-workspace-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/[0.08] text-cyan-200"><SelectedPricingIcon className="h-5 w-5" /></span>
                   <h2 className="text-xl font-semibold tracking-tight text-white">{selectedPricingView.label}</h2>
                 </div>
                 <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">{selectedPricingView.description}</p>

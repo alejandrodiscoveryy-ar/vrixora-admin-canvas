@@ -49,7 +49,12 @@ test("El nuevo menú temático conserva accesos, estado activo y geometría cont
   assert.match(chrome, /data-nav-active=\{viewActive \? "true" : undefined\}/);
   assert.match(chrome, /aria-current=\{childActive \? "page" : undefined\}/);
   assert.match(chrome, /aria-current=\{active \? "page" : undefined\}/);
-  assert.match(chrome, /data-nav-tone=\{view\.slug === "billeteras" \|\| view\.slug === "recargas" \? "finanzas" : "trabajos"\}/);
+  assert.match(chrome, /data-nav-tone=\{adminSubnavTone\("trabajos", view\.slug\)\}/);
+  assert.match(chrome, /data-nav-tone=\{adminSubnavTone\("precios", view\.code\)\}/);
+  assert.match(chrome, /data-nav-tone=\{adminSubnavTone\("administracion", child\.slug\)\}/);
+  assert.equal((chrome.match(/data-nav-nested data-nav-submenu/g) ?? []).length, 3);
+  assert.match(chrome, /search=\{\{ precio: view\.code \}\}/);
+  assert.match(chrome, /aria-current=\{selected \? "page" : undefined\}/);
   assert.match(chrome, /visibleChildren = item\.children\.filter/);
   assert.match(chrome, /permissions\.includes\(child\.permission\)/);
 });

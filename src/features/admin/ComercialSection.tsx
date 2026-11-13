@@ -285,10 +285,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 type="button"
                 variant={showOffers ? "default" : "outline"}
                 onClick={() => setCommercialView("ofertas")}
-                className="gap-2 rounded-xl font-semibold"
+                className="admin-subnav-tab"
+                data-nav-tone="tarifas"
                 aria-pressed={showOffers}
               >
-                <Gift className="h-4 w-4" />
+                <span className="admin-nav-icon" aria-hidden="true"><Gift /></span>
                 Ofertas TukTuk
               </Button>
             )}
@@ -296,10 +297,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               type="button"
               variant={commercialView === "captacion" ? "default" : "outline"}
               onClick={() => setCommercialView("captacion")}
-              className="gap-2 rounded-xl font-semibold"
-              aria-pressed={commercialView === "captacion"}
+              className="admin-subnav-tab"
+                data-nav-tone="comercial"
+                aria-pressed={commercialView === "captacion"}
             >
-              <Megaphone className="h-4 w-4" />
+              <span className="admin-nav-icon" aria-hidden="true"><Megaphone /></span>
               Captación y campañas
             </Button>
             {isTuktukProject && (
@@ -307,10 +309,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 type="button"
                 variant={showReferrals ? "default" : "outline"}
                 onClick={() => setCommercialView("referidos")}
-                className="gap-2 rounded-xl font-semibold"
+                className="admin-subnav-tab"
+                data-nav-tone="usuarios"
                 aria-pressed={showReferrals}
               >
-                <UsersRound className="h-4 w-4" />
+                <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
                 Referidos
               </Button>
             )}

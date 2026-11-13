@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, type AdminProjectNavItem } from "@/lib/admin-navigation";
+import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, adminSubnavTone, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -72,6 +72,9 @@ function AdminChrome() {
   const requestedView = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).vista,
   });
+  const requestedPricing = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).precio,
+  });
   const isLogin = path === "/admin/login" || path === "/admin";
 
   const projectRouteMatch = useMemo(
@@ -80,6 +83,13 @@ function AdminChrome() {
   );
   const currentProjectId = projectRouteMatch?.[1] ?? null;
   const currentSection = projectRouteMatch?.[2] ?? "";
+  const workspaceTone = currentSection === "trabajos"
+    ? adminSubnavTone("trabajos", typeof requestedView === "string" ? requestedView : "resumen")
+    : currentSection === "planes"
+      ? adminSubnavTone("precios", typeof requestedPricing === "string" ? requestedPricing : "global")
+      : ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection)
+        ? adminSubnavTone("administracion", currentSection)
+        : adminNavTone(currentSection);
   const compactWorkspace = currentSection === "trabajos";
   // Solo el mapa operativo móvil elimina el espacio superior del contenedor general.
   const compactMobileMap = compactWorkspace && requestedView === "mapa";
@@ -145,7 +155,7 @@ function AdminChrome() {
             project={currentProject ?? null}
           />
           <main
-            data-nav-tone={adminNavTone(currentSection)}
+            data-nav-tone={workspaceTone}
             className={`min-w-0 flex-1 px-3 sm:px-4 md:px-6 md:py-6 ${
               compactMobileMap ? "pt-1 pb-2 sm:py-4" : "py-4"
             } ${
@@ -315,7 +325,7 @@ function ProjectNavItem({
                       <span data-nav-label className="min-w-0 flex-1 break-words">Trabajos</span>
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/workspace:rotate-90" />
                     </summary>
-                    <div data-nav-nested className="ml-2 mt-1 space-y-1 border-l border-border/60 pl-1.5" aria-label="Vistas de Trabajos">
+                    <div data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5" aria-label="Vistas de Trabajos">
                       {MARKETPLACE_WORKSPACE_VIEWS.filter((view) => permissions.includes(view.permission)).map((view) => {
                         const ViewIcon = view.icon;
                         const viewActive = groupActive && (workspaceView === view.slug || (!workspaceView && view.slug === "resumen"));
@@ -328,7 +338,7 @@ function ProjectNavItem({
                             title={view.label}
                             onClick={closeDrawer}
                             aria-current={viewActive ? "page" : undefined}
-                            data-nav-tone={view.slug === "billeteras" || view.slug === "recargas" ? "finanzas" : "trabajos"}
+                            data-nav-tone={adminSubnavTone("trabajos", view.slug)}
                             data-nav-active={viewActive ? "true" : undefined}
                             className="admin-nav-item admin-nav-secondary"
                           >
@@ -343,7 +353,7 @@ function ProjectNavItem({
               );
             }
 
-            // El centro de precios comparte el patrón de expansión de Administración.
+            // El centro de precios comparte el patrón de expansión de Configuración.
             // La ruta /planes conserva compatibilidad con enlaces previos.
             if (tab.slug === "planes" && project.slug === "tuktuk-control") {
               const groupActive = isActiveProject && currentSection === "planes";
@@ -366,7 +376,7 @@ function ProjectNavItem({
                       <span data-nav-label className="min-w-0 flex-1 break-words">Centro de precios</span>
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
-                    <div data-nav-nested className="ml-2 mt-1 space-y-1 border-l border-border/60 pl-1.5" aria-label="Vistas del Centro de precios">
+                    <div data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5" aria-label="Vistas del Centro de precios">
                       {PRICING_VIEWS.map((view) => {
                         const ViewIcon = view.icon;
                         const selected = groupActive && (pricingView === view.code || (!pricingView && view.code === "global"));
@@ -379,7 +389,7 @@ function ProjectNavItem({
                             title={view.label}
                             onClick={closeDrawer}
                             aria-current={selected ? "page" : undefined}
-                            data-nav-tone="tarifas"
+                            data-nav-tone={adminSubnavTone("precios", view.code)}
                             data-nav-active={selected ? "true" : undefined}
                             className="admin-nav-item admin-nav-secondary"
                           >
@@ -419,7 +429,7 @@ function ProjectNavItem({
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
 
-                    <div data-nav-nested className="ml-2 mt-1 space-y-1 border-l border-border/60 pl-1.5">
+                    <div data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5">
                       {tab.children.map((child) => {
                         const ChildIcon = child.icon;
                         const childPath = `${projectBasePath}/${child.slug}`;
@@ -439,7 +449,7 @@ function ProjectNavItem({
                             title={child.label}
                             onClick={closeDrawer}
                             aria-current={childActive ? "page" : undefined}
-                            data-nav-tone={adminNavTone(tab.slug)}
+                            data-nav-tone={adminSubnavTone("administracion", child.slug)}
                             data-nav-active={childActive ? "true" : undefined}
                             className="admin-nav-item admin-nav-secondary"
                           >
