@@ -72,6 +72,9 @@ function AdminChrome() {
   const requestedView = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).vista,
   });
+  const requestedPricing = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).precio,
+  });
   const isLogin = path === "/admin/login" || path === "/admin";
 
   const projectRouteMatch = useMemo(
@@ -80,6 +83,13 @@ function AdminChrome() {
   );
   const currentProjectId = projectRouteMatch?.[1] ?? null;
   const currentSection = projectRouteMatch?.[2] ?? "";
+  const workspaceTone = currentSection === "trabajos"
+    ? adminSubnavTone("trabajos", typeof requestedView === "string" ? requestedView : "resumen")
+    : currentSection === "planes"
+      ? adminSubnavTone("precios", typeof requestedPricing === "string" ? requestedPricing : "global")
+      : ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection)
+        ? adminSubnavTone("administracion", currentSection)
+        : adminNavTone(currentSection);
   const compactWorkspace = currentSection === "trabajos";
   // Solo el mapa operativo móvil elimina el espacio superior del contenedor general.
   const compactMobileMap = compactWorkspace && requestedView === "mapa";
@@ -145,7 +155,7 @@ function AdminChrome() {
             project={currentProject ?? null}
           />
           <main
-            data-nav-tone={currentSection === "trabajos" ? adminSubnavTone("trabajos", typeof requestedView === "string" ? requestedView : "resumen") : adminSubnavTone("administracion", currentSection) !== "administracion" ? adminSubnavTone("administracion", currentSection) : adminNavTone(currentSection)}
+            data-nav-tone={workspaceTone}
             className={`min-w-0 flex-1 px-3 sm:px-4 md:px-6 md:py-6 ${
               compactMobileMap ? "pt-1 pb-2 sm:py-4" : "py-4"
             } ${
