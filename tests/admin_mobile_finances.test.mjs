@@ -22,15 +22,17 @@ test("billeteras: un resumen responsive, importes críticos visibles y desglose 
   assert.match(wallets, /PaginationButton query=\{wallets\}/);
 });
 
-test("recargas: importe, estado y gestión de pendientes fuera del detalle", () => {
+test("recargas: importe y estado visibles, gestión de pendientes dentro del detalle", () => {
   assert.equal((topups.match(/filteredTopupRows\.map/g) ?? []).length, 1);
   const summary = topups.slice(0, topups.indexOf("<details"));
   assert.match(summary, /<StatusBadge status=\{item\.status\} \/>/);
   assert.match(summary, /formatAmount\(item\.amount, item\.currency\)/);
-  assert.match(summary, /Gestionar recarga pendiente/);
-  assert.match(summary, /canManagePayments && item\.status === "requested"/);
-  assert.match(summary, /setTopup\(\{/);
-  assert.match(summary, /crypto\.randomUUID\(\)/);
+  const detail = topups.slice(topups.indexOf("<details"));
+  assert.doesNotMatch(summary, /Gestionar recarga pendiente/);
+  assert.match(detail, /Gestionar recarga pendiente/);
+  assert.match(detail, /canManagePayments && item\.status === "requested"/);
+  assert.match(detail, /setTopup\(\{/);
+  assert.match(detail, /crypto\.randomUUID\(\)/);
   assert.match(topups, /Ver detalles de la recarga/);
 });
 
@@ -52,4 +54,18 @@ test("finanzas: búsqueda explícitamente local, recuperación y diseño sin dup
   assert.match(css, /marketplace-record-workspace \{ container-type: inline-size; \}/);
   assert.match(css, /@container \(min-width: 680px\)/);
   assert.match(css, /marketplace-record-summary:focus-visible/);
+});
+
+test("finanzas: filas compactas y flecha accesible sin barra adicional", () => {
+  for (const block of [wallets, topups]) {
+    assert.match(block, /<span className="sr-only">Ver detalles de la/);
+    assert.match(block, /group-open:rotate-180/);
+    assert.match(block, /marketplace-finance-row/);
+  }
+  assert.match(css, /\.marketplace-finance-row\s*\{\s*position: relative;\s*display: block;/);
+  assert.match(css, /\.marketplace-finance-row \.marketplace-record-summary\s*\{\s*position: absolute;/);
+  assert.match(css, /inline-size: 44px;\s*min-block-size: 44px;/);
+  assert.match(css, /\.marketplace-finance-row \.marketplace-record-details\[open\]/);
+  assert.match(css, /@container \(min-width: 600px\)/);
+  assert.doesNotMatch(css, /repeat\(auto-fill, minmax\(min\(100%, 22rem\), 1fr\)\)/);
 });

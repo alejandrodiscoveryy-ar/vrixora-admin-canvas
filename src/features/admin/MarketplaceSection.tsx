@@ -2314,7 +2314,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                       </div>
                       <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-                          Ver detalles de la billetera
+                          <span className="sr-only">Ver detalles de la billetera</span>
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -2367,17 +2367,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           <RecordMetric labelText="Importe" value={formatAmount(item.amount, item.currency)} tone="accent" />
                           <StatusBadge status={item.status} />
                         </div>
-                        {canManagePayments && item.status === "requested" ? (
-                          <Button size="sm" className="min-h-11 w-full sm:w-auto" onClick={() => {
-                            setError(null);
-                            setTopup({ id: item.topupId, driver: item.driverDisplayName, confirmationKey: crypto.randomUUID() });
-                            setReason("");
-                          }}>Gestionar recarga pendiente</Button>
-                        ) : null}
+
                       </div>
                       <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-                          Ver detalles de la recarga
+                          <span className="sr-only">Ver detalles de la recarga</span>
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -2390,6 +2384,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           {item.rejectedAt ? <RecordMetric labelText="Rechazada" value={<time dateTime={item.rejectedAt}>{formatDate(item.rejectedAt)}</time>} /> : null}
                           {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante" value={receipt.documentNumber} tone="available" /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
                         </div>
+                        {canManagePayments && item.status === "requested" ? (
+                          <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
+                            setError(null);
+                            setTopup({ id: item.topupId, driver: item.driverDisplayName, confirmationKey: crypto.randomUUID() });
+                            setReason("");
+                          }}>Gestionar recarga pendiente</Button>
+                        ) : null}
                       </details>
                     </article>;
                   })}
