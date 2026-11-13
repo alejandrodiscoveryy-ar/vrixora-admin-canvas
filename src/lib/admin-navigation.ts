@@ -140,7 +140,7 @@ export const ADMIN_PROJECT_TABS = [
 ] satisfies Array<AdminProjectNavItem>;
 
 /** Navigation families use existing module accent tokens, never operational status colors. */
-export type AdminNavTone = "trabajos" | "panel" | "usuarios" | "comercial" | "tarifas" | "analitica" | "administracion" | "auditoria" | "finanzas" | "licencias" | "equipo" | "recargas";
+export type AdminNavTone = "trabajos" | "panel" | "usuarios" | "comercial" | "tarifas" | "analitica" | "administracion" | "auditoria" | "finanzas" | "licencias" | "equipo" | "recargas" | "mapa";
 
 export function adminNavTone(section: string): AdminNavTone {
   switch (section) {
@@ -172,7 +172,7 @@ export function adminSubnavTone(group: "trabajos" | "precios" | "administracion"
         case "resumen": return "panel";
         case "trabajos": return "trabajos";
         case "atencion": return "comercial";
-        case "mapa": return "licencias";
+        case "mapa": return "mapa";
         case "conductores": return "equipo";
         case "clientes": return "usuarios";
         case "billeteras": return "finanzas";
