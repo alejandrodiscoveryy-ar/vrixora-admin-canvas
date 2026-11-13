@@ -745,3 +745,110 @@
   .admin-graphite-control:is(input,select,textarea) { min-height: 44px; }
   .admin-graphite-dialog { max-width: calc(100vw - 1rem); }
 }
+
+/* Thematic Admin navigation. Only accents, not operational status or global theme tokens.
+   Existing module palette provides light/dark variants. */
+[data-nav-tone="trabajos"], [data-nav-tone="licencias"] { --nav-accent: var(--module-licencias); }
+[data-nav-tone="panel"] { --nav-accent: var(--module-resumen); }
+[data-nav-tone="usuarios"] { --nav-accent: var(--module-clientes); }
+[data-nav-tone="comercial"] { --nav-accent: var(--module-comercial); }
+[data-nav-tone="tarifas"] { --nav-accent: var(--module-planes); }
+[data-nav-tone="analitica"] { --nav-accent: var(--module-rendimiento); }
+[data-nav-tone="administracion"] { --nav-accent: var(--module-configuracion); }
+[data-nav-tone="auditoria"] { --nav-accent: var(--module-auditoria); }
+[data-nav-tone="finanzas"] { --nav-accent: var(--module-pagos); }
+
+.admin-nav-item {
+  --nav-ink: color-mix(in oklab, var(--nav-accent, var(--primary)) 80%, var(--text-primary) 20%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 6px 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-compact);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text-secondary);
+  transition: background-color var(--motion-interaction), border-color var(--motion-interaction), color var(--motion-interaction);
+}
+.admin-nav-item.admin-nav-primary { font-weight: 600; }
+.admin-nav-item.admin-nav-secondary { font-size: 12px; min-height: 40px; }
+.admin-nav-item > [data-nav-label] { overflow-wrap: anywhere; }
+.admin-nav-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-control);
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 11%, var(--surface-2));
+  color: var(--nav-ink);
+}
+.admin-nav-icon > svg { width: 22px; height: 22px; }
+.admin-nav-secondary .admin-nav-icon { width: 30px; height: 30px; }
+.admin-nav-secondary .admin-nav-icon > svg { width: 19px; height: 19px; }
+.admin-nav-item:hover {
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 7%, var(--surface-2));
+  color: var(--text-primary);
+}
+.admin-nav-item:is([data-nav-active="true"], [aria-current="page"]) {
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 12%, var(--surface-2));
+  border-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 32%, var(--border-default));
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.admin-nav-item:is([data-nav-active="true"], [aria-current="page"])::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 999px;
+  background-color: var(--nav-accent, var(--primary));
+  pointer-events: none;
+}
+.admin-nav-item:is([data-nav-active="true"], [aria-current="page"]) > .admin-nav-icon {
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 19%, var(--surface-2));
+}
+.admin-nav-item:focus-visible,
+[data-nav-tone] .admin-graphite-nav-item:focus-visible {
+  outline: 2px solid var(--nav-ink, var(--nav-accent, var(--border-focus)));
+  outline-offset: -2px;
+}
+#admin-desktop-sidebar[data-state="collapsed"] .admin-nav-item {
+  justify-content: center;
+  gap: 0;
+  padding: 3px;
+  min-height: 44px;
+}
+#admin-desktop-sidebar[data-state="collapsed"] .admin-nav-icon { width: 34px; height: 34px; }
+#admin-desktop-sidebar[data-state="collapsed"] .admin-nav-icon > svg { width: 23px; height: 23px; }
+#admin-desktop-sidebar[data-state="collapsed"] .admin-nav-item > [data-nav-chevron] { display: none; }
+
+[data-admin-reference-drawer="graphite"] .admin-nav-item { min-height: 44px; }
+[data-admin-reference-drawer="graphite"] .admin-nav-secondary { min-height: 44px; }
+
+/* Inner configuration/pricing/administration navigation inherits its workspace family. */
+[data-nav-tone] .admin-graphite-nav-item {
+  --nav-ink: color-mix(in oklab, var(--nav-accent, var(--primary)) 80%, var(--text-primary) 20%);
+}
+[data-nav-tone] .admin-graphite-nav-item:is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"]) {
+  border-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 36%, var(--border-default));
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 10%, var(--surface-2));
+}
+[data-nav-tone] .admin-graphite-nav-item .admin-nav-icon { width: 36px; height: 36px; }
+[data-nav-tone] .admin-graphite-nav-item .admin-nav-icon > svg { width: 22px; height: 22px; }
+[data-nav-tone] .admin-graphite-nav-item [data-nav-chevron] { color: var(--nav-ink); }
+main[data-nav-tone] header.admin-graphite-header > div .admin-workspace-icon {
+  color: color-mix(in oklab, var(--nav-accent, var(--primary)) 80%, var(--text-primary) 20%);
+  border-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 30%, var(--border-default));
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 12%, var(--surface-2));
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-nav-item, .admin-nav-icon, [data-nav-tone] .admin-graphite-nav-item { transition: none; }
+}
