@@ -12,6 +12,7 @@ import {
   FileText,
   Phone,
   ShieldCheck,
+  Share2,
   Star,
   AlertCircle,
   Route,
@@ -32,6 +33,7 @@ import { premiumSurface, premiumColumnHeaderSurface, premiumControlSurface } fro
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceDriverManagementPanel from "@/features/admin/MarketplaceDriverManagementPanel";
 import MarketplaceDriverVehicleEditor from "@/features/admin/MarketplaceDriverVehicleEditor";
+import MarketplaceDriverPromotionPreview from "@/features/admin/MarketplaceDriverPromotionPreview";
 
 const date = (value: string | null | undefined) => {
   if (!value) return "—";
@@ -147,13 +149,14 @@ function RecordMetric({
   </div>;
 }
 
-type DriverTab = "overview" | "vehicle" | "management" | "activity" | "financial";
+type DriverTab = "overview" | "vehicle" | "management" | "activity" | "financial" | "promotion";
 const driverTabs = [
   { id: "overview", label: "Resumen", icon: LayoutDashboard },
   { id: "vehicle", label: "Vehículo", icon: CarFront },
   { id: "management", label: "Expediente", icon: FileText },
   { id: "activity", label: "Actividad", icon: Clock3 },
   { id: "financial", label: "Finanzas", icon: Wallet },
+  { id: "promotion", label: "Mi TukTuk", icon: Share2 },
 ] as const;
 
 export default function MarketplaceDriver360Record({
@@ -317,6 +320,9 @@ export default function MarketplaceDriver360Record({
       </nav>
 
       <div id="driver-360-current-panel" role="tabpanel" aria-labelledby={"driver-tab-" + activeTab} className="marketplace-360-content min-w-0 space-y-3 max-sm:[&_button]:min-h-11">
+      {activeTab === "promotion" ? (
+        <MarketplaceDriverPromotionPreview displayName={displayName} avatarUrl={media?.avatarUrl} categoryCode={mainVehicle?.vehicle.categoryCode} serviceCodes={mainVehicle?.assignment?.isActive ? mainVehicle.services : []} active={detail.driver.status === "active"} />
+      ) : null}
       {activeTab === "overview" ? (
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           <section className={cn("relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
