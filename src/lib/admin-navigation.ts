@@ -44,8 +44,8 @@ export type AdminProjectNavItem = AdminProjectTab | AdminProjectGroup;
 export const ADMINISTRATION_VIEWS = [
   {
     slug: "configuracion",
-    label: "Configuración",
-    icon: Settings2,
+    label: "Ajustes generales",
+    icon: SlidersHorizontal,
     permission: "settings.view",
   },
   {
@@ -85,7 +85,7 @@ export const MARKETPLACE_WORKSPACE_VIEWS = [
   { slug: "billeteras", label: "Billeteras", icon: Wallet, permission: "payments.view" },
   { slug: "recargas", label: "Recargas", icon: WalletCards, permission: "payments.view" },
   { slug: "incidencias", label: "Incidencias", icon: AlertTriangle, permission: "marketplace.view" },
-  { slug: "configuracion", label: "Configuración", icon: ShieldCheck, permission: "settings.view" },
+  { slug: "configuracion", label: "Configuración operativa", icon: ShieldCheck, permission: "settings.view" },
 ] satisfies Array<AdminProjectTab>;
 
 export const ADMIN_PROJECT_TABS = [
@@ -127,7 +127,7 @@ export const ADMIN_PROJECT_TABS = [
   },
   {
     slug: "administracion",
-    label: "Administración",
+    label: "Configuración",
     icon: Settings2,
     children: ADMINISTRATION_VIEWS,
   },
