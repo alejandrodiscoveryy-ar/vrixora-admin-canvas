@@ -101,3 +101,29 @@ test('no se pierden controles, rutas ni información de la operación', () => {
   assert.match(s, /Finalizar carrera/);
   assert.match(s, /Eliminar prueba/);
 });
+
+test('Cliente 360 y Carrera 360 comparten identidad premium y pestañas accesibles', () => {
+  const customer = s.slice(s.indexOf('function Customer360Detail('), s.indexOf('function normalizeDriverText'));
+  const job = s.slice(s.indexOf('function JobDetail('));
+  for (const block of [customer, job]) {
+    assert.match(block, /marketplace-360-hero/);
+    assert.match(block, /marketplace-360-watermark/);
+    assert.match(block, /<TabsList aria-label=/);
+    assert.match(block, /<TabsTrigger key=\{id\} value=\{id\}/);
+    assert.match(block, /marketplace-360-tab min-h-11/);
+    assert.match(block, /grid-cols-2 gap-1 bg-transparent p-0 sm:flex sm:flex-wrap/);
+    assert.match(block, /<TabsContent value="overview"/);
+    assert.match(block, /<TabsContent value="history"/);
+  }
+  assert.match(customer, /<TabsContent value="activity"/);
+  assert.match(customer, /<TabsContent value="modalities"/);
+  assert.match(customer, /formatCustomerDateTime\(detail.customer.createdAt\)/);
+  assert.match(customer, /href=\{whatsapp.web\}/);
+  assert.match(customer, /onOpenJob\(item.jobId\)/);
+  assert.match(s, /onOpenJob=\{permissions.includes\("marketplace.view"\) \?/);
+  assert.match(job, /<TabsContent value="radar"/);
+  assert.match(job, /<TabsContent value="finance"/);
+  assert.match(job, /<JobNotificationReach projectId=\{projectId\} jobId=\{jobId\}/);
+  assert.match(job, /timeline.map/);
+  assert.match(job, /financial.reservation_status/);
+});
