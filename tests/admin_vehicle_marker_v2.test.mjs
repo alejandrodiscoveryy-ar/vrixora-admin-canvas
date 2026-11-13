@@ -85,3 +85,20 @@ test("La transparencia se limita a badges de interfaz; el mapa conserva colores 
   assert.match(pin, /kind === "driver" \? vehicleModeColor\(vehicleCategoryCode\) :/);
   assert.doesNotMatch(pin, /vehicleModeColor\(vehicleCategoryCode\)\}38/);
 });
+
+
+test("La gota de conductor se compacta sin reducir el pictograma interno", () => {
+  const pin = src.slice(src.indexOf("function operationalPinSvg("), src.indexOf("function OperationalPinLegend("));
+  assert.match(pin, /compactDriverPin = kind === "driver"/);
+  assert.match(pin, /compactDriverPin \? \(legend \? 32 : selected \? 26 : 23\)/);
+  assert.match(pin, /compactDriverPin \? \(legend \? 36 : selected \? 29 : 26\)/);
+  assert.match(pin, /compactDriverPin \? "8 5 32 36" : "0 0 48 60"/);
+  assert.match(pin, /M24 6C15\.7 6 9 12\.7 9 21/);
+  assert.match(pin, /r="11\.5"/);
+  assert.match(src, /translate\(14\.64 11\.64\) scale\(\.78\)/);
+  // Match the previous glyph pixel scale (34/48 and 39/48) within 3 percent.
+  assert.ok(Math.abs((23 / 32) / (34 / 48) - 1) < 0.03);
+  assert.ok(Math.abs((26 / 32) / (39 / 48) - 1) < 0.03);
+  assert.match(src, /pin\.style\.width = "30px";\s*pin\.style\.height = "32px";/);
+  assert.match(src, /anchor: "bottom"/);
+});
