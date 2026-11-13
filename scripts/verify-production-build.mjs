@@ -47,6 +47,17 @@ function walk(dir) {
 
 walk(publicDir);
 
+const releaseProof = path.join(publicDir, "tuktuk-admin-release.json");
+if (!fs.existsSync(releaseProof)) fail("No existe el identificador público de versión.");
+const release = JSON.parse(fs.readFileSync(releaseProof, "utf8"));
+if (release.release !== "tuktuk-modality-icons-v1") fail("Identificador de versión incorrecto.");
+const hasApprovedIcons = files.some((file) => {
+  const source = fs.readFileSync(file, "utf8");
+  return source.includes("#c2410c") && source.includes("#4d7c0f") && source.includes("#7c3aed");
+});
+if (!hasApprovedIcons) fail("No están presentes los colores aprobados de modalidad.");
+console.log("ADMIN_RELEASE_PROOF=" + release.release);
+
 if (files.length === 0) {
   fail("No hay assets del navegador para comprobar.");
 }
