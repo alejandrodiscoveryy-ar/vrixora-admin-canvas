@@ -31,8 +31,10 @@ test("los filtros se muestran a demanda en móvil y permanecen visibles en escri
 
 test("acceso directo a toda la flota y acciones de operación", () => {
   assert.match(source, /Toda la flota/);
-  assert.match(source, /setCoverageFilter\("all"\)/);
-  assert.match(source, /setMapViewMode\("coverage"\)/);
+  assert.match(source, /setShowAllFleetInOperations\(\(current\) => !current\)/);
+  assert.doesNotMatch(source, /setMapViewMode\("coverage"\)/);
+  assert.match(source, /onClick=\{\(\) => setMapViewMode\(mode\)\}/);
+  assert.match(source, /onClick=\{\(\) => setCoverageFilter\(filter\)\}/);
   assert.match(source, /Trabajando · GPS sin actualizar/);
   assert.match(source, /onClick=\{\(\) => void operational\.refetch\(\)\}/);
   assert.match(source, /setAgendaCollapsed/);
@@ -56,10 +58,21 @@ test("el mapa comienza debajo de la cabecera en móvil, sin alterar las otras vi
 
 
 test("Operaciones muestra jornadas abiertas con GPS antiguo sin mezclar descansando", () => {
-  assert.match(source, /if \(mapViewMode === "operations" && !driver\.acceptingJobs && !driver\.activeJobId\) continue;/);
+  assert.match(source, /if \(mapViewMode === "operations" && !showAllFleetInOperations && !driver\.acceptingJobs && !driver\.activeJobId\) continue;/);
   assert.doesNotMatch(source, /if \(mapViewMode === "operations" && !driver\.locationFresh && !driver\.activeJobId\) continue;/);
   assert.match(source, /if \(driver\.activeJobId\) return "busy";/);
   assert.match(source, /if \(!driver\.locationFresh\) return "stale";/);
   assert.match(source, /const coordinate = driverCoordinate\(driver\);\s*if \(!coordinate\) continue;/);
   assert.match(source, /Se muestran \{staleWorkingDriversWithLocation\} con última posición antigua, en ámbar/);
+});
+
+
+test("Toda la flota es una capa de Operaciones independiente de Cobertura", () => {
+  assert.match(source, /const \[showAllFleetInOperations, setShowAllFleetInOperations\] = useState\(false\)/);
+  assert.match(source, /aria-pressed=\{layers\.drivers && showAllFleetInOperations\}/);
+  assert.match(source, /setShowAllFleetInOperations\(false\);\s*setLayers\(\(current\) => \(\{ \.\.\.current, drivers: showAllFleetInOperations \|\| !current\.drivers \}\)\)/);
+  assert.match(source, /if \(mapViewMode === "coverage" && !coverageDriverIds\.has\(driver\.driverUserId\)\) continue;/);
+  assert.match(source, /if \(mapViewMode !== "coverage"\) return;/);
+  assert.match(source, /Con posición: \{\(operational\.data\?\.drivers \?\? \[\]\)\.filter\(\(driver\) => driverCoordinate\(driver\) != null\)\.length\}/);
+  assert.match(source, /mapViewMode === "operations" && layers\.routes/);
 });

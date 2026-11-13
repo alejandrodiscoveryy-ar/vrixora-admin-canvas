@@ -823,7 +823,8 @@ export default function MarketplaceOperationalMap({
   const [layers, setLayers] = useState<LayerState>(defaultLayers);
   // V3: conservar Operaciones como vista inicial; Cobertura es opcional.
   const [mapViewMode, setMapViewMode] = useState<MapViewMode>("operations");
-  // Operaciones muestra GPS reciente; toda la flota se consulta en Cobertura.
+  // Operaciones alterna jornadas abiertas y toda la flota; Cobertura conserva sus propios filtros.
+  const [showAllFleetInOperations, setShowAllFleetInOperations] = useState(false);
   // El móvil prioriza el mapa; las capas siguen accesibles con un toque.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
@@ -1393,7 +1394,7 @@ export default function MarketplaceOperationalMap({
 
     if (layers.drivers || mapViewMode === "coverage") {
       for (const driver of operational.data?.drivers ?? []) {
-        if (mapViewMode === "operations" && !driver.acceptingJobs && !driver.activeJobId) continue;
+        if (mapViewMode === "operations" && !showAllFleetInOperations && !driver.acceptingJobs && !driver.activeJobId) continue;
         if (mapViewMode === "coverage" && !coverageDriverIds.has(driver.driverUserId)) continue;
 
         const coordinate = driverCoordinate(driver);
@@ -1438,7 +1439,7 @@ export default function MarketplaceOperationalMap({
 
         const element = marker.getElement();
         // En servicio > disponible > GPS antiguo.
-        element.style.zIndex = driver.activeJobId ? "30" : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
+        element.style.zIndex = driver.activeJobId ? "30" : !driver.acceptingJobs ? "5" : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
         const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
 
         if (!pin) continue;
@@ -1475,7 +1476,7 @@ export default function MarketplaceOperationalMap({
         )} - ${driverPinStateLabel[driverPinState(driver)]}`;
 
         element.style.cursor =
-          driver.activeJobId || mapViewMode === "coverage" ? "pointer" : "default";
+          driver.activeJobId || mapViewMode === "coverage" || showAllFleetInOperations ? "pointer" : "default";
 
         element.onclick = driver.activeJobId
           ? (event) => {
@@ -1485,7 +1486,7 @@ export default function MarketplaceOperationalMap({
               setAgendaTab("services");
               setAgendaCollapsed(false);
             }
-          : mapViewMode === "coverage"
+          : mapViewMode === "coverage" || showAllFleetInOperations
             ? (event) => {
                 event.stopPropagation();
                 setAgendaTab("drivers");
@@ -1502,7 +1503,7 @@ export default function MarketplaceOperationalMap({
         markers.delete(driverUserId);
       }
     }
-  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds]);
+  }, [operational.data?.drivers, layers.drivers, mapLoaded, mapViewMode, coverageDriverIds, showAllFleetInOperations]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2063,13 +2064,22 @@ export default function MarketplaceOperationalMap({
             ? "Servicio con incidencia activa"
             : statusLabel(selectedJob.status);
 
-  const layerButton = (key: LayerKey, label: string, dotClass: string, activeClass: string) => (
+  const layerButton = (key: LayerKey, label: string, dotClass: string, activeClass: string) => {
+    const active = layers[key] && (key !== "drivers" || !showAllFleetInOperations);
+    return (
     <button
       type="button"
-      aria-pressed={layers[key]}
-      onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}
+      aria-pressed={active}
+      onClick={() => {
+        if (key === "drivers") {
+          setShowAllFleetInOperations(false);
+          setLayers((current) => ({ ...current, drivers: showAllFleetInOperations || !current.drivers }));
+        } else {
+          setLayers((current) => ({ ...current, [key]: !current[key] }));
+        }
+      }}
       className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-semibold backdrop-blur-xl transition-all duration-200 ${
-        layers[key]
+        active
           ? `${activeClass} shadow-[0_12px_30px_-18px_rgba(0,0,0,0.9)]`
           : "border-white/10 bg-background/25 text-muted-foreground opacity-65 hover:bg-background/40 hover:opacity-90"
       }`}
@@ -2077,7 +2087,8 @@ export default function MarketplaceOperationalMap({
       <span className={`h-2.5 w-2.5 rounded-full shadow-sm ${dotClass}`} />
       {label}
     </button>
-  );
+    );
+  };
 
   return (
     <div className={rootClass}>
@@ -2260,13 +2271,13 @@ export default function MarketplaceOperationalMap({
                   )}
                   <button
                     type="button"
-                    title="Consulta la última ubicación de toda la flota habilitada, no solo conductores trabajando."
+                    aria-pressed={layers.drivers && showAllFleetInOperations}
+                    title="Muestra toda la flota con ubicación conocida en Operaciones, sin cambiar los filtros de Cobertura."
                     onClick={() => {
-                      setCoverageFilter("all");
-                      setMapViewMode("coverage");
+                      setShowAllFleetInOperations((current) => !current);
                       setLayers((current) => ({ ...current, drivers: true }));
                     }}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/15 px-3 py-2 text-[11px] font-semibold text-sky-100 transition-colors hover:border-sky-400/70"
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold transition-colors ${layers.drivers && showAllFleetInOperations ? "border-sky-400/60 bg-sky-500/25 text-sky-100" : "border-white/10 bg-background/25 text-muted-foreground hover:bg-background/40"}`}
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-sky-400" />
                     Toda la flota
@@ -2330,6 +2341,11 @@ export default function MarketplaceOperationalMap({
                   </span>
                 </div>
               )}
+              {mapViewMode === "operations" && layers.drivers && showAllFleetInOperations ? (
+                <span className="rounded-lg border border-sky-400/25 bg-slate-950/85 px-2.5 py-1.5 text-[11px] text-sky-100 shadow-lg">
+                  Con posición: {(operational.data?.drivers ?? []).filter((driver) => driverCoordinate(driver) != null).length}/{operational.data?.drivers.length ?? 0}
+                </span>
+              ) : null}
               {mapViewMode === "operations" &&
               layers.drivers &&
               staleWorkingDriversWithLocation > 0 &&
