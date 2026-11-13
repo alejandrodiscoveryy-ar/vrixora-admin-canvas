@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserRound, Share2, QrCode } from "lucide-react";
+import { UserRound, Share2, QrCode, MapPin, Users } from "lucide-react";
 
 const modalityLabels: Record<string, string> = {
   motorcycle: "Moto", bicitaxi: "Bicitaxi", tricycle: "Triciclo",
@@ -84,23 +84,39 @@ export default function MarketplaceDriverPromotionPreview({
         <section className="min-w-0 space-y-2 rounded-xl border border-border/60 bg-background/50 p-3" aria-label="Vista previa de la entrada personalizada del cliente">
           <h4 className="text-sm font-semibold">Así te verá el cliente</h4>
           <p className="text-xs text-muted-foreground">El enlace y el QR abrirán la misma entrada en TukTuk Cliente.</p>
-          <div className="space-y-3 rounded-xl bg-slate-950 p-3 text-white">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-orange-400/60 bg-slate-800">
-                <UserRound className="h-7 w-7 text-slate-400" aria-hidden="true"/>
+          <div data-promotion-entry-preview="approved" className="space-y-5 rounded-2xl bg-[#141d29] p-4 text-white">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-2xl font-black tracking-tight text-orange-400">TukTuk</span>
+              <span className="text-sm font-semibold text-slate-400">Mi TukTuk</span>
+            </div>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-800">
+                <UserRound className="h-12 w-12 text-slate-400" aria-hidden="true"/>
                 {portrait ? <img src={portrait} alt={`Foto de ${displayName}`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" onError={event => { event.currentTarget.style.display = "none"; }}/> : null}
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-orange-400">TukTuk Cliente</p>
-                <p className="break-words text-lg font-bold">Viaja con {displayName}</p>
-                <p className="text-xs text-slate-300">{modality}</p>
+              <p className="break-words text-2xl font-bold">Viaja con {displayName}</p>
+              <p className="text-sm font-semibold text-slate-300">{modality}</p>
+              {/* The public landing will display the confirmed service location and
+                  verified badge only from authoritative public profile data. */}
+            </div>
+            <div className="space-y-3 border-t border-slate-600 pt-4">
+              <p className="text-center text-lg font-bold">¿A dónde vamos hoy?</p>
+              <div className="flex items-center gap-3 rounded-xl bg-[#1e293b] px-3 py-4 text-sm font-semibold text-slate-300">
+                <MapPin className="h-5 w-5 shrink-0 text-cyan-400" aria-hidden="true"/>
+                Punto de recogida
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-[#1e293b] px-3 py-4 text-sm font-semibold text-slate-300">
+                <MapPin className="h-5 w-5 shrink-0 text-orange-400" aria-hidden="true"/>
+                ¿Cuál es tu destino?
+              </div>
+              <div className="rounded-xl bg-orange-600 px-3 py-4 text-center text-base font-bold">Solicitar transporte</div>
+              <div className="flex items-start gap-2 text-sm text-slate-300">
+                <Users className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" aria-hidden="true"/>
+                <p>Intentaremos localizar primero a {displayName}. Si no está disponible, buscaremos otro conductor de TukTuk para ti.</p>
               </div>
             </div>
-            <p className="text-xs text-slate-300">Buscaremos primero a tu conductor. Si no puede atenderte, te conectaremos con la flota compatible.</p>
-            <div className="rounded-lg bg-orange-600 px-3 py-2 text-center text-sm font-semibold">Solicitar transporte</div>
-            <div className="rounded-lg border border-white/15 px-3 py-2 text-center text-xs text-slate-300">Buscar en toda la flota</div>
-            <p className="text-center text-[10px] text-slate-400">Vista ilustrativa · todavía no enlazada</p>
           </div>
+          <p className="text-center text-[10px] text-muted-foreground">Vista ilustrativa privada · todavía no enlazada. Ubicación y verificación se mostrarán cuando estén confirmadas.</p>
         </section>
       </div>
       <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3 text-xs text-muted-foreground">
