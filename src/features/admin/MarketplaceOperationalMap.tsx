@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import mapboxgl, { type CircleLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -712,6 +713,7 @@ export default function MarketplaceOperationalMap({
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
   const [expanded, setExpanded] = useState(false);
+  const [desktopToolbarTarget, setDesktopToolbarTarget] = useState<HTMLElement | null>(null);
   // Agenda de cristal: sin pestaña activa se muestra la leyenda.
   const [agendaTab, setAgendaTab] = useState<OperationalAgendaTab | null>(null);
   const [agendaCollapsed, setAgendaCollapsed] = useState(true);
@@ -734,6 +736,22 @@ export default function MarketplaceOperationalMap({
   const mapInitRetryRef = useRef(0);
   const lastFocusedJobIdRef = useRef<string | null>(null);
   const featureSignatureRef = useRef({ points: "", routes: "" });
+
+  // Move the desktop toolbar only when the map is active and the header has room.
+  // Narrow windows and fullscreen keep their own in-map toolbar.
+  useEffect(() => {
+    if (!isVisible || expanded) {
+      setDesktopToolbarTarget(null);
+      return;
+    }
+    const slot = document.getElementById("vrixora-admin-map-toolbar-slot");
+    if (!slot) return;
+    const measure = () => setDesktopToolbarTarget(slot.clientWidth >= 560 ? slot : null);
+    const observer = new ResizeObserver(measure);
+    observer.observe(slot);
+    measure();
+    return () => observer.disconnect();
+  }, [isVisible, expanded]);
 
   const operational = useQuery({
     queryKey: ["marketplace-operational-map-live", projectId],
@@ -966,7 +984,7 @@ export default function MarketplaceOperationalMap({
       visualViewport?.removeEventListener("resize", measure);
       window.cancelAnimationFrame(frame);
     };
-  }, [expanded, panelOpen, operationalReady]);
+  }, [expanded, panelOpen, operationalReady, desktopToolbarTarget]);
 
   useEffect(() => {
     const node = mapNodeRef.current;
@@ -1974,6 +1992,79 @@ export default function MarketplaceOperationalMap({
     );
   };
 
+  const desktopToolbar = (
+    <div className={desktopToolbarTarget ? "flex w-full min-w-0 items-center justify-between gap-2" : "hidden flex-wrap items-center justify-between gap-2 border-b border-border/55 px-3 py-1.5 sm:flex xl:flex-nowrap"}>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                EN VIVO · {liveAt}
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/[0.06] px-2.5 py-1.5 text-[10px] text-orange-200">
+                Trabajando
+                <strong className="text-foreground">{data.summary.workingDrivers}</strong>
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1.5 text-[10px] text-emerald-200">
+                Con señal
+                <strong className="text-foreground">{data.summary.driversWithFreshLocation}</strong>
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-2.5 py-1.5 text-[10px] text-cyan-200">
+                Servicios
+                <strong className="text-foreground">{data.summary.activeJobs}</strong>
+              </span>
+
+              <span className={desktopToolbarTarget ? "hidden" : "hidden text-[10px] text-muted-foreground 2xl:inline"}>
+                {data.summary.activeJobs ? "Actualización cada 5 s" : "Actualización cada 15 s"}
+              </span>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
+              <Button
+                size="sm"
+                variant="outline"
+                aria-pressed={panelOpen}
+                aria-label={panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
+                title={panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
+                className={desktopToolbarTarget ? "h-8 w-8 px-0" : ""}
+                onClick={() => setAgendaCollapsed((collapsed) => !collapsed)}
+              >
+                {panelOpen ? (
+                  <PanelRightClose className={desktopToolbarTarget ? "h-4 w-4" : "mr-2 h-3.5 w-3.5"} />
+                ) : (
+                  <PanelRightOpen className={desktopToolbarTarget ? "h-4 w-4" : "mr-2 h-3.5 w-3.5"} />
+                )}
+                {!desktopToolbarTarget && (panelOpen ? "Ocultar agenda" : "Mostrar agenda")}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Actualizar mapa"
+                title="Actualizar mapa"
+                className={desktopToolbarTarget ? "h-8 w-8 px-0" : ""}
+                disabled={operational.isFetching}
+                onClick={() => void operational.refetch()}
+              >
+                <RefreshCw
+                  className={`${desktopToolbarTarget ? "h-4 w-4" : "mr-2 h-3.5 w-3.5"} ${operational.isFetching ? "animate-spin" : ""}`}
+                />
+                {!desktopToolbarTarget && "Actualizar"}
+              </Button>
+
+              <Button size="sm" variant="outline" aria-label={expanded ? "Salir de pantalla completa" : "Pantalla completa"} title={expanded ? "Salir de pantalla completa" : "Pantalla completa"} aria-pressed={expanded} className={desktopToolbarTarget ? "h-8 w-8 px-0" : ""} onClick={() => setExpanded((value) => !value)}>
+                {expanded ? (
+                  <Minimize2 className={desktopToolbarTarget ? "h-4 w-4" : "mr-2 h-3.5 w-3.5"} />
+                ) : (
+                  <Maximize2 className={desktopToolbarTarget ? "h-4 w-4" : "mr-2 h-3.5 w-3.5"} />
+                )}
+                {!desktopToolbarTarget && (expanded ? "Salir de pantalla completa" : "Pantalla completa")}
+              </Button>
+            </div>
+          </div>
+  );
+
   return (
     <div className={rootClass}>
       <div className={expanded ? "h-full min-w-0" : "min-w-0"}>
@@ -2033,70 +2124,7 @@ export default function MarketplaceOperationalMap({
             </div>
           </div>
 
-          <div className="hidden flex-wrap items-center justify-between gap-2 border-b border-border/55 px-3 py-2.5 sm:flex xl:flex-nowrap">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[11px] font-semibold text-emerald-300">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                EN VIVO · {liveAt}
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/[0.06] px-2.5 py-1.5 text-[10px] text-orange-200">
-                Trabajando
-                <strong className="text-foreground">{data.summary.workingDrivers}</strong>
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1.5 text-[10px] text-emerald-200">
-                Con señal
-                <strong className="text-foreground">{data.summary.driversWithFreshLocation}</strong>
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-2.5 py-1.5 text-[10px] text-cyan-200">
-                Servicios
-                <strong className="text-foreground">{data.summary.activeJobs}</strong>
-              </span>
-
-              <span className="hidden text-[10px] text-muted-foreground 2xl:inline">
-                {data.summary.activeJobs ? "Actualización cada 5 s" : "Actualización cada 15 s"}
-              </span>
-            </div>
-
-            <div className="flex shrink-0 flex-wrap items-center gap-1.5 xl:flex-nowrap">
-              <Button
-                size="sm"
-                variant="outline"
-                aria-pressed={panelOpen}
-                onClick={() => setAgendaCollapsed((collapsed) => !collapsed)}
-              >
-                {panelOpen ? (
-                  <PanelRightClose className="mr-2 h-3.5 w-3.5" />
-                ) : (
-                  <PanelRightOpen className="mr-2 h-3.5 w-3.5" />
-                )}
-                {panelOpen ? "Ocultar agenda" : "Mostrar agenda"}
-              </Button>
-
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={operational.isFetching}
-                onClick={() => void operational.refetch()}
-              >
-                <RefreshCw
-                  className={`mr-2 h-3.5 w-3.5 ${operational.isFetching ? "animate-spin" : ""}`}
-                />
-                Actualizar
-              </Button>
-
-              <Button size="sm" variant="outline" onClick={() => setExpanded((value) => !value)}>
-                {expanded ? (
-                  <Minimize2 className="mr-2 h-3.5 w-3.5" />
-                ) : (
-                  <Maximize2 className="mr-2 h-3.5 w-3.5" />
-                )}
-                {expanded ? "Salir de pantalla completa" : "Pantalla completa"}
-              </Button>
-            </div>
-          </div>
+          {desktopToolbarTarget && isVisible && !expanded ? createPortal(desktopToolbar, desktopToolbarTarget) : desktopToolbar}
 
           <div
             ref={mapViewportRef}
@@ -2109,7 +2137,7 @@ export default function MarketplaceOperationalMap({
               expanded ? "min-h-0 flex-1" : "min-h-[320px] flex-none"
             }`}
           >
-            <div className="absolute left-2 top-2 z-20 flex w-[calc(100%-4.25rem)] max-w-[820px] flex-col items-start gap-1.5 sm:left-3 sm:top-3 sm:w-[calc(100%-5rem)] sm:gap-2">
+            <div className="absolute left-2 top-2 z-20 flex w-fit max-w-[calc(100%-4.25rem)] flex-col items-start gap-1.5 sm:left-3 sm:top-3 sm:max-w-[calc(100%-5rem)] sm:gap-2">
               <div className="flex w-full items-center gap-1 sm:w-auto">
                 <div
                   className="flex shrink-0 items-center gap-1 rounded-xl border border-white/20 bg-slate-950/85 p-0.5 shadow-lg backdrop-blur-xl sm:rounded-2xl sm:p-1"
@@ -2146,7 +2174,7 @@ export default function MarketplaceOperationalMap({
                 </button>
               </div>
               {mapViewMode === "operations" ? (
-                <div id="tuktuk-map-mobile-filters" className={`${mobileFiltersOpen ? "flex" : "hidden"} w-full max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin] sm:flex`}>
+                <div id="tuktuk-map-mobile-filters" className={`${mobileFiltersOpen ? "flex" : "hidden"} w-fit max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-background/65 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin] sm:flex`}>
                   {layerButton(
                     "drivers",
                     "Conductores",
@@ -2197,7 +2225,7 @@ export default function MarketplaceOperationalMap({
               ) : (
                 <div
                   id="tuktuk-map-mobile-filters"
-                  className={`${mobileFiltersOpen ? "flex" : "hidden"} w-full max-w-full flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin] sm:flex`}
+                  className={`${mobileFiltersOpen ? "flex" : "hidden"} w-fit max-w-full flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain rounded-[20px] border border-white/10 bg-slate-950/75 p-2 shadow-lg backdrop-blur-xl [scrollbar-width:thin] sm:flex`}
                   role="group"
                   aria-label="Filtros de cobertura"
                 >

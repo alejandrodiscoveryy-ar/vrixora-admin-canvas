@@ -94,3 +94,16 @@ test("Agenda de conductores usa filas compactas y detalle desplegable", () => {
   assert.match(source, /onOpenDriver\(driver\.driverUserId\)/);
   assert.match(source, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
 });
+
+
+test("La cabecera de escritorio aprovecha el espacio libre sin duplicar controles del mapa", () => {
+  const layout = readFileSync(new URL("../src/routes/admin.tsx", import.meta.url), "utf8");
+  assert.match(layout, /id="vrixora-admin-map-toolbar-slot"/);
+  assert.match(source, /slot\.clientWidth >= 560 \? slot : null/);
+  assert.match(source, /if \(!isVisible \|\| expanded\)/);
+  assert.match(source, /desktopToolbarTarget && isVisible && !expanded \? createPortal\(desktopToolbar, desktopToolbarTarget\) : desktopToolbar/);
+  assert.match(source, /\[expanded, panelOpen, operationalReady, desktopToolbarTarget\]/);
+  assert.match(source, /w-fit max-w-full flex-nowrap gap-2 overflow-x-auto/);
+  assert.match(source, /w-fit max-w-full flex-nowrap items-center gap-1\.5 overflow-x-auto/);
+  assert.match(layout, /compactMobileMap \? "lg:px-5 lg:py-2"/);
+});

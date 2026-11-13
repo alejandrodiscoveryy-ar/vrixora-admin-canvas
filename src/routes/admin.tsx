@@ -159,7 +159,7 @@ function AdminChrome() {
             className={`min-w-0 flex-1 px-3 sm:px-4 md:px-6 md:py-6 ${
               compactMobileMap ? "pt-1 pb-2 sm:py-4" : "py-4"
             } ${
-              compactWorkspace ? "lg:px-5 lg:py-5" : "lg:px-8 lg:py-8"
+              compactMobileMap ? "lg:px-5 lg:py-2" : compactWorkspace ? "lg:px-5 lg:py-5" : "lg:px-8 lg:py-8"
             }`}
           >
             <div className={`mx-auto w-full ${compactWorkspace ? "max-w-none" : "max-w-[1480px]"}`}>
@@ -852,7 +852,9 @@ function TopBar({
         </div>
       </Link>
 
-      <div className="ml-auto flex items-center gap-3">
+      {/* Desktop map controls are mounted only while the authorized map is visible. */}
+      <div id="vrixora-admin-map-toolbar-slot" className="hidden min-w-0 flex-1 items-center xl:flex" />
+      <div className="ml-auto flex shrink-0 items-center gap-3">
         {/* Operations badge is securely mounted by the authorized project layout. */}
         <span id="vrixora-admin-operational-alarm-slot" className="inline-flex shrink-0 items-center" />
         <ThemeToggle />
