@@ -25,8 +25,11 @@ test('La navegación lateral respeta permisos y selecciona vista por URL en escr
 });
 
 test('El Marketplace mantiene diez contenidos, sin barra superior duplicada', () => {
-  assert.doesNotMatch(section, /<TabsList/);
-  assert.doesNotMatch(section, /<TabsTrigger/);
+  // Only the main workspace navigation is sidebar-owned; nested 360 dialogs may have tabs.
+  const root = section.slice(section.indexOf("export default function MarketplaceSection"), section.indexOf("<Dialog", section.indexOf("export default function MarketplaceSection")));
+  assert.ok(root.includes('<TabsContent value="trabajos"'));
+  assert.doesNotMatch(root, /<TabsList/);
+  assert.doesNotMatch(root, /<TabsTrigger/);
   assert.match(section, /const tab = activeView\?\.slug \?\? \"resumen\"/);
   assert.match(section, /permissions\.includes\(view\.permission\)/);
   for (const slug of ['resumen','trabajos','atencion','conductores','clientes','billeteras','recargas','incidencias','configuracion']) {
