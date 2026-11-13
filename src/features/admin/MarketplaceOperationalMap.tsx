@@ -210,21 +210,25 @@ function operationalPinSvg({
 
   const [top, middle, bottom, edge] = colors;
 
-  const selectedShadow = selected
-    ? "drop-shadow(0 0 5px rgba(255,255,255,0.68)) drop-shadow(0 9px 8px rgba(0,0,0,0.45))"
-    : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
+  const compactDriverPin = kind === "driver";
+  const selectedShadow = compactDriverPin
+    ? selected ? "drop-shadow(0 0 3px rgba(255,255,255,0.65)) drop-shadow(0 3px 2px rgba(0,0,0,0.4))" : "drop-shadow(0 3px 2px rgba(0,0,0,0.4))"
+    : selected ? "drop-shadow(0 0 5px rgba(255,255,255,0.68)) drop-shadow(0 9px 8px rgba(0,0,0,0.45))" : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
 
   const markerOpacity = kind === "driver" && stale ? "0.90" : "1";
 
   // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
-  const pinWidth = legend ? 48 : kind === "driver" ? (selected ? 39 : 34) : selected ? 38 : 32;
-  const pinHeight = legend ? 60 : kind === "driver" ? (selected ? 49 : 43) : selected ? 48 : 40;
+  // Crop the driver silhouette around the existing 24x24 glyph. Keep its
+  // rendered scale (~0.72), so only the surrounding status pin shrinks.
+  const pinWidth = compactDriverPin ? (legend ? 32 : selected ? 26 : 23) : legend ? 48 : selected ? 38 : 32;
+  const pinHeight = compactDriverPin ? (legend ? 36 : selected ? 29 : 26) : legend ? 60 : selected ? 48 : 40;
+  const pinViewBox = compactDriverPin ? "8 5 32 36" : "0 0 48 60";
 
   return `
     <svg
       width="${pinWidth}"
       height="${pinHeight}"
-      viewBox="0 0 48 60"
+      viewBox="${pinViewBox}"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       style="overflow:visible;filter:${selectedShadow};opacity:${markerOpacity}"
@@ -233,9 +237,9 @@ function operationalPinSvg({
         <linearGradient
           id="${bodyId}"
           x1="9"
-          y1="3"
+          y1="${compactDriverPin ? 6 : 3}"
           x2="38"
-          y2="54"
+          y2="${compactDriverPin ? 40 : 54}"
           gradientUnits="userSpaceOnUse"
         >
           <stop offset="0" stop-color="${top}"/>
@@ -270,15 +274,15 @@ function operationalPinSvg({
 
       <ellipse
         cx="24"
-        cy="57.1"
-        rx="10.2"
-        ry="2.5"
+        cy="${compactDriverPin ? 39.8 : 57.1}"
+        rx="${compactDriverPin ? 5.5 : 10.2}"
+        ry="${compactDriverPin ? 1.2 : 2.5}"
         fill="#020617"
         opacity="0.32"
       />
 
       <path
-        d="M24 2.2C12.35 2.2 3 11.45 3 23c0 15.9 21 34.8 21 34.8S45 38.9 45 23C45 11.45 35.65 2.2 24 2.2Z"
+        d="${compactDriverPin ? "M24 6C15.7 6 9 12.7 9 21c0 9.5 8.1 15.7 15 19 6.9-3.3 15-9.5 15-19C39 12.7 32.3 6 24 6Z" : "M24 2.2C12.35 2.2 3 11.45 3 23c0 15.9 21 34.8 21 34.8S45 38.9 45 23C45 11.45 35.65 2.2 24 2.2Z"}"
         fill="url(#${bodyId})"
         stroke="${selected ? "#ffffff" : edge}"
         stroke-width="${selected ? "2.5" : "1.7"}"
@@ -286,16 +290,16 @@ function operationalPinSvg({
       />
 
       <path
-        d="M7 29.1C11.5 42 24 54.5 24 54.5S36.5 42 41 29.1c-4.6 5.8-10.3 8.7-17 8.7S11.6 34.9 7 29.1Z"
+        d="${compactDriverPin ? "M13 29c3 5 7 8 11 10 4-2 8-5 11-10-3 3-7 5-11 5s-8-2-11-5Z" : "M7 29.1C11.5 42 24 54.5 24 54.5S36.5 42 41 29.1c-4.6 5.8-10.3 8.7-17 8.7S11.6 34.9 7 29.1Z"}"
         fill="#020617"
         opacity="0.15"
       />
 
-      <path
+      ${!compactDriverPin ? `<path
         d="M8.7 20.1C10.7 10.8 18.5 5.9 28.4 6.9c-7.1 1.2-12.5 5.3-15.4 11.7-1.2 2.5-4.8 3.5-4.3 1.5Z"
         fill="#ffffff"
         opacity="0.38"
-      />
+      />` : ""}
 
       <circle
         cx="24"
@@ -358,11 +362,13 @@ function OperationalPinLegend({
       aria-hidden="true"
     >
       <span
-        className="pointer-events-none absolute block h-[60px] w-[48px]"
+        className="pointer-events-none absolute block"
         style={{
+          width: kind === "driver" ? 32 : 48,
+          height: kind === "driver" ? 36 : 60,
           left: "50%",
           top: "50%",
-          transform: "translate(-50%, -50%) scale(0.38)",
+          transform: kind === "driver" ? "translate(-50%, -50%) scale(0.62)" : "translate(-50%, -50%) scale(0.38)",
         }}
         dangerouslySetInnerHTML={{ __html: markup }}
       />
@@ -1292,8 +1298,8 @@ export default function MarketplaceOperationalMap({
 
           const pin = document.createElement("div");
           pin.dataset.role = "driver-pin";
-          pin.style.width = "42px";
-          pin.style.height = "53px";
+          pin.style.width = "30px";
+          pin.style.height = "32px";
           pin.style.display = "flex";
           pin.style.alignItems = "flex-end";
           pin.style.justifyContent = "center";
