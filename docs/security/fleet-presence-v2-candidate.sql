@@ -21,7 +21,7 @@ REVOKE ALL ON app_private.marketplace_driver_presence_v2 FROM PUBLIC, anon, auth
 -- under the same assignment lock so a concurrent cleanup cannot race a fresh fix.
 CREATE FUNCTION app_private.lock_marketplace_presence_assignment_v2()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $$
 DECLARE working boolean;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.projects p WHERE p.id=NEW.project_id AND p.slug='tuktuk-control') THEN
@@ -47,7 +47,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION app_private.lock_marketplace_presence_assignment_v2() FROM PUBLIC,anon,authenticated,service_role;
 CREATE TRIGGER marketplace_presence_v2_lock
 BEFORE INSERT OR UPDATE OF latitude,longitude,captured_at,received_at ON public.marketplace_driver_locations
