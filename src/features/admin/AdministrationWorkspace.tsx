@@ -51,16 +51,16 @@ export default function AdministrationWorkspace({
   const SelectedIcon = selected?.icon ?? ShieldCheck;
 
   return (
-    <section aria-label="Administración de TukTuk" className="min-w-0 space-y-3">
+    <section aria-label="Configuración del proyecto TukTuk" className="min-w-0 space-y-3">
       <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
         <nav data-nav-tone="administracion"
-          aria-label="Secciones de administración de TukTuk"
+          aria-label="Secciones de configuración del proyecto TukTuk"
           className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4 admin-graphite-panel"
         >
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
           <div className="relative z-10 px-2.5 pb-2 pt-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Administración</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Áreas de gestión de TukTuk</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Configuración</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Ajustes, equipo y servicios de TukTuk</p>
           </div>
 
           <div className="relative z-10 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-1">
