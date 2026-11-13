@@ -187,6 +187,39 @@ AS $$ SELECT app_private.marketplace_customer_fleet_presence_v2(target_session_i
 REVOKE ALL ON FUNCTION public.get_marketplace_customer_fleet_presence_v2(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.get_marketplace_customer_fleet_presence_v2(uuid,text) TO service_role;
 
+-- Admin-only map fallback: do not turn a coverage cell into fresh GPS.
+DO $admin_map$
+DECLARE ddl text; fn_oid oid;
+BEGIN
+  SELECT p.oid INTO STRICT fn_oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public' AND p.proname='admin_get_marketplace_operational_map';
+  ddl:=pg_get_functiondef(fn_oid);
+  IF position('l.latitude as last_latitude' IN ddl)=0
+     OR position('l.longitude as last_longitude' IN ddl)=0
+     OR position('l.accuracy_m as last_accuracy_m' IN ddl)=0
+     OR position('l.captured_at,' IN ddl)=0
+     OR position($anchor$     and l.vehicle_id = a.vehicle_id
+    cross join lateral ($anchor$ IN ddl)=0 THEN
+    RAISE EXCEPTION 'PRESENCE_V2_ADMIN_MAP_ANCHOR_MISSING';
+  END IF;
+  ddl:=replace(ddl,'l.latitude as last_latitude','coalesce(l.latitude,s.coverage_latitude) as last_latitude');
+  ddl:=replace(ddl,'l.longitude as last_longitude','coalesce(l.longitude,s.coverage_longitude) as last_longitude');
+  ddl:=replace(ddl,'l.accuracy_m as last_accuracy_m','coalesce(l.accuracy_m,case when s.coverage_latitude is not null then 1500::numeric end) as last_accuracy_m');
+  ddl:=replace(ddl,$anchor$      l.captured_at,
+      freshness.freshness_seconds,$anchor$,$replacement$      coalesce(l.captured_at,s.coverage_captured_at) as captured_at,
+      freshness.freshness_seconds,$replacement$);
+  ddl:=replace(ddl,$anchor$     and l.vehicle_id = a.vehicle_id
+    cross join lateral ($anchor$,$replacement$     and l.vehicle_id = a.vehicle_id
+    left join app_private.marketplace_driver_presence_v2 s
+      on s.project_id=target_project_id and s.driver_user_id=a.driver_user_id and s.vehicle_id=a.vehicle_id
+    cross join lateral ($replacement$);
+  IF position('coalesce(l.captured_at,s.coverage_captured_at) as captured_at' IN ddl)=0 THEN
+    RAISE EXCEPTION 'PRESENCE_V2_ADMIN_MAP_TIMESTAMP_ANCHOR_MISSING';
+  END IF;
+  EXECUTE ddl;
+END;
+$admin_map$;
+
 COMMIT;
 
 -- Before activation:
