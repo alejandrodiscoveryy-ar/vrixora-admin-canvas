@@ -1,23 +1,37 @@
-name: Diagnostico temporal de version Admin publicada
+name: Diagnostico temporal Cloudflare Admin
 on:
   pull_request:
     branches: [main]
+    types: [opened, reopened, synchronize]
     paths: ['.github/workflows/diagnostic-admin-production-icons.yml']
 permissions:
   contents: read
+  checks: read
+  statuses: read
+  deployments: read
 jobs:
   inspect:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - name: Consultar sitio publico sin credenciales
+      - name: Consultar registros de despliegue GitHub y archivo publico
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          set -eu
-          for url in 'https://admin.vrixora.com/' 'https://admin.vrixora.com/licenses/mdi.txt' 'https://admin.vrixora.com/licenses/mdi.txt?diagnostic=8335397'; do
-            printf '\nURL %s\n' "$url"
-            curl -sS -L --max-time 25 -D /tmp/headers -o /tmp/body "$url" || { echo "FETCH_FAILED"; continue; }
-            grep -iE '^(HTTP/|content-type:|cf-cache-status:|age:|cache-control:|etag:|last-modified:|location:)' /tmp/headers || true
-            if grep -Fq 'Material Design Icons by the Pictogrammers' /tmp/body && grep -Fq 'Compact' /tmp/body; then echo 'NEW_LICENSE_PRESENT'; elif grep -Fq 'Material Design Icons by the Pictogrammers' /tmp/body; then echo 'MDI_LICENSE_PRESENT'; else echo 'MDI_LICENSE_NOT_PRESENT'; fi
-            if grep -Fq 'Vrixora' /tmp/body; then echo 'ADMIN_HTML_PRESENT'; fi
+          set -u
+          SHA=8335397ee7b55025bdaf6720e794f5db6761a5b9
+          echo '=== CHECK RUNS ==='
+          gh api "repos/$GH_REPO/commits/$SHA/check-runs" --jq '.check_runs[] | {name,app:.app.slug,status,conclusion,details_url,output:{title:.output.title,summary:.output.summary}}' || true
+          echo '=== STATUS ==='
+          gh api "repos/$GH_REPO/commits/$SHA/status" --jq '{state,statuses:[.statuses[]|{context,state,description,target_url}]}' || true
+          echo '=== DEPLOYMENTS ==='
+          gh api "repos/$GH_REPO/deployments?per_page=10" --jq '.[]|{id,sha,ref,environment,created_at,description}' || true
+          for id in $(gh api "repos/$GH_REPO/deployments?per_page=4" --jq '.[].id' 2>/dev/null); do
+            echo "deployment $id"
+            gh api "repos/$GH_REPO/deployments/$id/statuses?per_page=1" --jq '.[]|{state,description,environment_url,log_url,created_at}' || true
           done
+          echo '=== PUBLIC RELEASE FILE ==='
+          curl -sS -L --max-time 20 -o /tmp/license -w 'HTTP %{http_code}\n' 'https://admin.vrixora.com/licenses/mdi.txt?diagnostic=8335397-2'
+          if grep -Fq 'Material Design Icons by the Pictogrammers' /tmp/license; then echo 'MDI_LICENSE_PRESENT'; else echo 'MDI_LICENSE_NOT_PRESENT'; fi
