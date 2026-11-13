@@ -972,3 +972,84 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 #admin-desktop-sidebar[data-state="collapsed"] .admin-nav-config-parent { padding: 0 3px; }
 #admin-desktop-sidebar[data-state="collapsed"] .admin-nav-config-link { justify-content: center; gap: 0; }
 [data-admin-reference-drawer="graphite"] .admin-nav-config-toggle { width: 44px; }
+
+/* Shared compact Marketplace directory: one responsive record, no duplicated desktop/mobile card. */
+.marketplace-record-workspace { container-type: inline-size; }
+.marketplace-record-toolbar { min-width: 0; }
+.marketplace-record-toolbar label:has(input) { min-width: min(100%, 15rem); }
+.marketplace-record {
+  --record-accent: var(--nav-accent, var(--primary));
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-compact);
+  transition: border-color var(--motion-interaction), background-color var(--motion-interaction);
+}
+.marketplace-record:hover {
+  border-color: color-mix(in oklab, var(--record-accent) 35%, var(--border-default));
+}
+.marketplace-record-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--record-accent) 25%, var(--border-default));
+  background-color: color-mix(in oklab, var(--record-accent) 10%, var(--surface-2));
+  color: color-mix(in oklab, var(--record-accent) 75%, var(--text-primary) 25%);
+}
+.marketplace-record .marketplace-value-accent,
+.marketplace-value-accent { color: color-mix(in oklab, var(--nav-accent, var(--primary)) 72%, var(--text-primary) 28%); }
+.marketplace-value-available { color: color-mix(in oklab, var(--semantic-success) 72%, var(--text-primary) 28%); }
+.marketplace-value-reserved { color: color-mix(in oklab, var(--semantic-warning) 68%, var(--text-primary) 32%); }
+.marketplace-deposit-state {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 7px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.marketplace-deposit-ok {
+  color: color-mix(in oklab, var(--semantic-success) 65%, var(--text-primary) 35%);
+  background-color: color-mix(in oklab, var(--semantic-success) 9%, var(--surface-2));
+}
+.marketplace-deposit-pending {
+  color: color-mix(in oklab, var(--semantic-warning) 65%, var(--text-primary) 35%);
+  background-color: color-mix(in oklab, var(--semantic-warning) 9%, var(--surface-2));
+}
+.marketplace-wallet-summary, .marketplace-topup-summary {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+.marketplace-record-details { min-width: 0; border-top: 1px solid var(--border-default); }
+.marketplace-record-summary { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.marketplace-record-summary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+.marketplace-record-summary:hover { color: var(--text-primary); }
+.marketplace-record-detail-grid { border-top: 1px solid var(--border-subtle); padding: 10px 0 4px; min-width: 0; overflow-wrap: anywhere; }
+.marketplace-record-filter { border: 1px solid transparent; color: var(--text-secondary); }
+.marketplace-record-filter[aria-pressed="true"] {
+  border-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 38%, var(--border-default));
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 14%, var(--surface-2));
+  color: var(--text-primary);
+}
+@container (min-width: 680px) {
+  .marketplace-wallet-summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); }
+  .marketplace-topup-summary { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto; }
+  .marketplace-record-summary { min-height: 32px; }
+}
+@container (min-width: 850px) {
+  .marketplace-customer-row { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.5fr) minmax(0, .8fr); align-items: center; gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .marketplace-record { transition: none; } }
