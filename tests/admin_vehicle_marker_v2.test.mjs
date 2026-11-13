@@ -40,13 +40,23 @@ test('La misma familia SVG representa cada modalidad en agenda, leyenda y mapa',
 });
 
 
-test("El bicitaxi cubano conserva bicicleta, pedales y cabina de pasajeros", () => {
+test("El bicitaxi compacto conserva bicicleta y cabina de pasajeros", () => {
   const start = src.indexOf('if (vehicleCategoryCode === "bicitaxi")');
   const end = src.indexOf('\n  return filled(', start);
   const pedicab = src.slice(start, end);
-  assert.match(pedicab, /Cuban passenger pedicab: front bicycle, rear covered bench and visible pedals/);
-  assert.match(pedicab, /M12 7\.5V6/);
-  assert.match(pedicab, /M4\.5 18\.5 7\.5 11/);
-  assert.match(pedicab, /M11\.2 18\.5V20h1\.7/);
-  assert.match(pedicab, /fill-rule="evenodd"/);
+  assert.match(pedicab, /Compact Cuban pedicab/);
+  assert.match(pedicab, /M11 7V4H19L21 7Z/);
+  assert.match(pedicab, /M5 18L8 10L12 18H5/);
+  assert.match(pedicab, /circle cx="5" cy="18" r="3\.2"/);
+  assert.match(pedicab, /circle cx="18\.5" cy="18" r="3\.2"/);
+});
+test("Modalidades usan badges de color aprobados sin modificar el estado del mapa", () => {
+  for (const [code, color] of Object.entries({ motorcycle: "#7c3aed", tricycle: "#c2410c", bicitaxi: "#4d7c0f", light_car: "#0369a1", van: "#4338ca", truck: "#475569" })) {
+    assert.ok(src.includes('case "' + code + '": return "' + color + '"'));
+  }
+  assert.match(src, /style=\{\{ backgroundColor: vehicleModeColor\(code\) \}\}/);
+  assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\} className="h-7 w-7"/);
+  assert.match(src, /className="h-3\/4 w-3\/4"/);
+  assert.match(src, /color="#1e293b">\$\{vehicleModeGlyph\(vehicleCategoryCode\)\}/);
+  assert.match(src, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
 });
