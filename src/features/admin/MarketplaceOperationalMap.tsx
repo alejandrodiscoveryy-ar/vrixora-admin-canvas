@@ -148,38 +148,24 @@ function operationalPinIconSvg(
   return `<g transform="translate(15.4 12.4) scale(.72)" color="#1e293b">${vehicleModeGlyph(vehicleCategoryCode)}</g>`;
 }
 
-// Original TukTuk pictograms: one side-view family, rounded strokes,
-// no emoji, external assets or platform-specific glyphs.
+// Material Design Icons by Pictogrammers (Apache-2.0); see public/licenses/mdi.txt.
+// The passenger pedicab is a TukTuk-specific silhouette, not a generic bicycle.
 function vehicleModeGlyph(vehicleCategoryCode: string | null) {
-  const wrap = (shape: string) => `<g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${shape}</g>`;
-  if (vehicleCategoryCode === "tricycle") {
-    return wrap(`<path d="M3 17V9l3-4h10l4 7v5h-3M7 17h7M3 9h13l3 4H12V9M6 9v5h6M16 5v4"/>
-      <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="17" cy="18.5" r="2.5"/>
-      <path d="M8.5 21h6"/>`);
-  }
-  if (vehicleCategoryCode === "motorcycle") {
-    return wrap(`<circle cx="5" cy="17.5" r="3"/><circle cx="19" cy="17.5" r="3"/>
-      <path d="M5 17.5l4-6h5l5 6M9 11.5l3 6h3l2-10h3M7 10h5l2 1.5M10.5 14h3.5"/>
-      <path d="M16 8h-2"/>`);
-  }
+  const filled = (d: string) => `<path fill="currentColor" fill-rule="evenodd" d="${d}"/>`;
+  // mdi:motorbike (d826a15ebb1c1e9f5d6a9be18a4afaa8208544d7)
+  if (vehicleCategoryCode === "motorcycle") return filled("M17.42,10L13.41,6H9V8H12.59L14.59,10H6.5C4,10 2,12 2,14.5C2,17 4,19 6.5,19C8.72,19 10.56,17.38 10.92,15.27L13.04,14C13,14.17 13,14.33 13,14.5C13,17 15,19 17.5,19C20,19 22,17 22,14.5C22,12 20,10 17.5,10M8.84,15.26C8.5,16.27 7.58,17 6.47,17C5.09,17 3.97,15.88 3.97,14.5C3.97,13.12 5.09,12 6.47,12C7.59,12 8.5,12.74 8.84,13.75H6V15.25L8.84,15.26M17.47,17C16.09,17 14.97,15.88 14.97,14.5C14.97,13.12 16.09,12 17.47,12A2.5,2.5 0 0,1 19.97,14.5A2.5,2.5 0 0,1 17.47,17Z");
+  // mdi:rickshaw (741432765a0b5b6c413efc99d06f0acffe9a3db2)
+  if (vehicleCategoryCode === "tricycle") return filled("M20 14.05V12.73C20 12.26 19.84 11.8 19.54 11.44L15.6 6.72C15.22 6.26 14.66 6 14.06 6H4C2.9 6 2 6.9 2 8V15C2 16.1 2.9 17 4 17H4.05C4.28 18.14 5.29 19 6.5 19S8.72 18.14 8.95 17H17.05C17.28 18.14 18.29 19 19.5 19C20.88 19 22 17.88 22 16.5C22 15.29 21.14 14.28 20 14.05M3.5 8C3.5 7.73 3.73 7.5 4 7.5H7V12H3.5V8M6.5 17.5C5.95 17.5 5.5 17.05 5.5 16.5S5.95 15.5 6.5 15.5 7.5 15.95 7.5 16.5 7.05 17.5 6.5 17.5M13 15.5H9V14H11V12H9V7.5H13V15.5M15 8.34L18.05 12H15V8.34M19.5 17.5C18.95 17.5 18.5 17.05 18.5 16.5S18.95 15.5 19.5 15.5 20.5 15.95 20.5 16.5 20.05 17.5 19.5 17.5Z");
+  // mdi:car-side (57dadd4ca00f81c7a98ec0b86113e5ca46225489)
+  if (vehicleCategoryCode === "light_car") return filled("M16,6L19,10H21C22.11,10 23,10.89 23,12V15H21A3,3 0 0,1 18,18A3,3 0 0,1 15,15H9A3,3 0 0,1 6,18A3,3 0 0,1 3,15H1V12C1,10.89 1.89,10 3,10L6,6H16M10.5,7.5H6.75L4.86,10H10.5V7.5M12,7.5V10H17.14L15.25,7.5H12M6,13.5A1.5,1.5 0 0,0 4.5,15A1.5,1.5 0 0,0 6,16.5A1.5,1.5 0 0,0 7.5,15A1.5,1.5 0 0,0 6,13.5M18,13.5A1.5,1.5 0 0,0 16.5,15A1.5,1.5 0 0,0 18,16.5A1.5,1.5 0 0,0 19.5,15A1.5,1.5 0 0,0 18,13.5Z");
+  // mdi:van-passenger (93836045dd1fd1fa6c8be17447bd2caf9a8696db)
+  if (vehicleCategoryCode === "van") return filled("M3,7C1.89,7 1,7.89 1,9V17H3A3,3 0 0,0 6,20A3,3 0 0,0 9,17H15A3,3 0 0,0 18,20A3,3 0 0,0 21,17H23V13C23,11.89 22.11,11 21,11L18,7H3M3,8.5H7V11H3V8.5M9,8.5H13V11H9V8.5M15,8.5H17.5L19.46,11H15V8.5M6,15.5A1.5,1.5 0 0,1 7.5,17A1.5,1.5 0 0,1 6,18.5A1.5,1.5 0 0,1 4.5,17A1.5,1.5 0 0,1 6,15.5M18,15.5A1.5,1.5 0 0,1 19.5,17A1.5,1.5 0 0,1 18,18.5A1.5,1.5 0 0,1 16.5,17A1.5,1.5 0 0,1 18,15.5Z");
+  // mdi:truck (8dc619d368c42db863e5fb0f35164fc4d082b998)
+  if (vehicleCategoryCode === "truck") return filled("M18,18.5A1.5,1.5 0 0,1 16.5,17A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 19.5,17A1.5,1.5 0 0,1 18,18.5M19.5,9.5L21.46,12H17V9.5M6,18.5A1.5,1.5 0 0,1 4.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,17A1.5,1.5 0 0,1 6,18.5M20,8H17V4H3C1.89,4 1,4.89 1,6V17H3A3,3 0 0,0 6,20A3,3 0 0,0 9,17H15A3,3 0 0,0 18,20A3,3 0 0,0 21,17H23V12L20,8Z");
   if (vehicleCategoryCode === "bicitaxi") {
-    return wrap(`<circle cx="4.5" cy="18" r="2.8"/><circle cx="19.5" cy="18" r="2.8"/>
-      <path d="M4.5 18l5-8 4.5 8H4.5M9.5 10l-1-3H6M13.5 18h3.2M14 7h7l1 4H13l1-4zM14 11v5h6v-5M19.5 16v2"/>
-      <path d="M12 5h10"/>`);
+    return filled("M2 5H11L14 9V15H16L19 9H22V11H20L19.6 14.1A4 4 0 1 1 16.1 18H9.9A4 4 0 1 1 4 14.1V7H2ZM6 7V12H12V9.8L9.9 7ZM6 16A2 2 0 1 0 6 20A2 2 0 1 0 6 16ZM20 16A2 2 0 1 0 20 20A2 2 0 1 0 20 16Z");
   }
-  if (vehicleCategoryCode === "light_car") {
-    return wrap(`<path d="M3 17v-5l4-1 3-5h7l4 5 1 2v4h-3M8 17h8M7 11h14M13 6v5"/>
-      <circle cx="6" cy="17.5" r="2.5"/><circle cx="18" cy="17.5" r="2.5"/>`);
-  }
-  if (vehicleCategoryCode === "van") {
-    return wrap(`<path d="M3 17V6h12l5 5 2 1v5h-3M8 17h8M4 8h7v5H4M13 8h2l4 5h-6z"/>
-      <circle cx="6" cy="17.5" r="2.5"/><circle cx="18" cy="17.5" r="2.5"/>`);
-  }
-  if (vehicleCategoryCode === "truck") {
-    return wrap(`<path d="M2 16V5h12v11M14 8h4l4 5v4h-3M8 17h8M2 17h2M17 9v4h4"/>
-      <circle cx="6" cy="17.5" r="2.5"/><circle cx="18" cy="17.5" r="2.5"/>`);
-  }
-  return wrap(`<path d="M3 10l9-5 9 5v8l-9 5-9-5zM3 10l9 5 9-5M12 15v8M7.5 7.5l9 5"/>`);
+  return filled("M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L10.11,5.22L16,8.61L17.96,7.5L12,4.15M6.04,7.5L12,10.85L13.96,9.75L8.08,6.35L6.04,7.5M5,15.91L11,19.29V12.58L5,9.21V15.91M19,15.91V9.21L13,12.58V19.29L19,15.91Z");
 }
 
 function operationalPinSvg({
