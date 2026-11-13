@@ -143,7 +143,7 @@ begin
     where a.project_id=pid and a.driver_user_id=actor and a.is_active
       and vv.deleted_at is null and vv.marketplace_status in ('active','onboarding')
     order by vv.id limit 1;
-  if not found or not coalesce(app_private.marketplace_onboarding_requirements_complete(actor,v.id),false) then
+  if not found or (d.status<>'active' and not coalesce(app_private.marketplace_onboarding_requirements_complete(actor,v.id),false)) then
     return jsonb_build_object('enabled',false);
   end if;
   select array_agg(distinct vs.service_code order by vs.service_code) into services
@@ -209,4 +209,18 @@ begin
 end $$;
 revoke all on function public.publish_my_marketplace_promo_card_v1(text,text,uuid) from public,anon,authenticated;
 grant execute on function public.publish_my_marketplace_promo_card_v1(text,text,uuid) to authenticated;
+-- Serialize the new UI's revocation with first publication. Existing
+-- clients retain the old RPC contract and existing public links.
+create or replace function public.revoke_my_marketplace_promo_card_v1()
+returns jsonb language plpgsql security definer set search_path='' as $$
+declare actor uuid:=auth.uid(); pid uuid;
+begin
+  if actor is null then raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501'; end if;
+  select id into pid from public.projects where slug='tuktuk-control';
+  perform 1 from public.driver_profiles where project_id=pid and user_id=actor for update;
+  if not found then raise exception 'DRIVER_PROFILE_NOT_FOUND' using errcode='42501'; end if;
+  return public.set_my_marketplace_promo_profile(null,false,false);
+end $$;
+revoke all on function public.revoke_my_marketplace_promo_card_v1() from public,anon,authenticated;
+grant execute on function public.revoke_my_marketplace_promo_card_v1() to authenticated;
 commit;
