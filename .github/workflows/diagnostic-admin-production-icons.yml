@@ -1,4 +1,4 @@
-name: Diagnostico temporal Cloudflare Admin
+name: Comprobar nueva version publica de Admin
 on:
   pull_request:
     branches: [main]
@@ -8,30 +8,27 @@ permissions:
   contents: read
   checks: read
   statuses: read
-  deployments: read
 jobs:
   inspect:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - name: Consultar registros de despliegue GitHub y archivo publico
-        shell: bash
+      - name: Verificar version exacta y Cloudflare
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -u
-          SHA=8335397ee7b55025bdaf6720e794f5db6761a5b9
-          echo '=== CHECK RUNS ==='
-          gh api "repos/$GH_REPO/commits/$SHA/check-runs" --jq '.check_runs[] | {name,app:.app.slug,status,conclusion,details_url,output:{title:.output.title,summary:.output.summary}}' || true
-          echo '=== STATUS ==='
-          gh api "repos/$GH_REPO/commits/$SHA/status" --jq '{state,statuses:[.statuses[]|{context,state,description,target_url}]}' || true
-          echo '=== DEPLOYMENTS ==='
-          gh api "repos/$GH_REPO/deployments?per_page=10" --jq '.[]|{id,sha,ref,environment,created_at,description}' || true
-          for id in $(gh api "repos/$GH_REPO/deployments?per_page=4" --jq '.[].id' 2>/dev/null); do
-            echo "deployment $id"
-            gh api "repos/$GH_REPO/deployments/$id/statuses?per_page=1" --jq '.[]|{state,description,environment_url,log_url,created_at}' || true
+          SHA=d2c02df9a8db331ee9486b1afd641d94358eb4d6
+          for attempt in 1 2 3 4; do
+            echo "ATTEMPT=$attempt"
+            gh api "repos/$GH_REPO/commits/$SHA/check-runs?per_page=100" --jq '.check_runs[] | {name,app:.app.slug,status,conclusion,details_url}' || true
+            code=$(curl -sS -L --max-time 12 -o /tmp/release -w '%{http_code}' "https://admin.vrixora.com/tuktuk-admin-release.json?release=$SHA-$attempt") || code=FETCH_FAILED
+            echo "PUBLIC_RELEASE_HTTP=$code"
+            if [ "$code" = 200 ] && jq -e '.release=="tuktuk-modality-icons-v1" and .feature_commit=="8335397ee7b55025bdaf6720e794f5db6761a5b9"' /tmp/release >/dev/null 2>&1; then
+              echo 'PUBLIC_RELEASE_VERIFIED'
+              exit 0
+            fi
+            if [ "$attempt" != 4 ]; then sleep 8; fi
           done
-          echo '=== PUBLIC RELEASE FILE ==='
-          curl -sS -L --max-time 20 -o /tmp/license -w 'HTTP %{http_code}\n' 'https://admin.vrixora.com/licenses/mdi.txt?diagnostic=8335397-2'
-          if grep -Fq 'Material Design Icons by the Pictogrammers' /tmp/license; then echo 'MDI_LICENSE_PRESENT'; else echo 'MDI_LICENSE_NOT_PRESENT'; fi
+          echo 'PUBLIC_RELEASE_NOT_VERIFIED'
