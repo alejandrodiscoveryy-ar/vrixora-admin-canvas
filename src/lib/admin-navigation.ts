@@ -204,3 +204,8 @@ export function adminSubnavTone(group: "trabajos" | "precios" | "administracion"
       }
   }
 }
+
+/** Group entry must be an authorized destination; callers pass permission-filtered children. */
+export function adminGroupDefault(group: AdminProjectGroup): AdminProjectTab | undefined {
+  return group.children.find((child) => child.slug === "configuracion") ?? group.children[0];
+}
