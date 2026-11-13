@@ -30,6 +30,11 @@ test("El mensaje compartido y la entrada personalizada muestran el mismo recorri
   assert.match(card, /Enlace personal pendiente de activación/);
   assert.match(card, /El enlace y el QR abrirán la misma entrada en TukTuk Cliente/);
   assert.match(card, /Viaja con \{displayName\}/);
-  assert.match(card, /Buscar en toda la flota/);
+  assert.doesNotMatch(card, /Buscar en toda la flota/);
+  assert.match(card, /data-promotion-entry-preview="approved"/);
+  assert.match(card, /Punto de recogida/);
+  assert.match(card, /¿Cuál es tu destino\?/);
+  assert.match(card, /¿A dónde vamos hoy\?/);
+  assert.match(card, /Intentaremos localizar primero a \{displayName\}/);
   assert.match(card, /todavía no enlazada/);
 });
