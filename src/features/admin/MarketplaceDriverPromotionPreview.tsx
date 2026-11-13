@@ -1,0 +1,73 @@
+import { useState } from "react";
+import { UserRound, Share2, QrCode } from "lucide-react";
+
+const modalityLabels: Record<string, string> = {
+  motorcycle: "Moto", bicitaxi: "Bicitaxi", tricycle: "Triciclo",
+  light_car: "Auto", van: "Furgoneta", truck: "Camión", other: "Otro",
+};
+
+export default function MarketplaceDriverPromotionPreview({
+  displayName, avatarUrl, categoryCode, active,
+}: {
+  displayName: string;
+  avatarUrl: string | null | undefined;
+  categoryCode: string | null | undefined;
+  active: boolean;
+}) {
+  const [format, setFormat] = useState<"square" | "story">("square");
+  const modality = categoryCode ? modalityLabels[categoryCode] ?? "Transporte" : "Transporte";
+  const portrait = avatarUrl?.startsWith("https://") ? avatarUrl : null;
+  return (
+    <section aria-label="Mi TukTuk, vista previa interna" className="min-w-0 space-y-3 rounded-2xl border border-border/60 bg-card/60 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-foreground">Mi TukTuk</h3>
+          <p className="text-xs text-muted-foreground">Promoción personal · Vista previa privada</p>
+        </div>
+        <div role="group" aria-label="Formato de tarjeta" className="flex gap-1 rounded-lg border border-border/60 p-1">
+          {(["square", "story"] as const).map((item) => (
+            <button key={item} type="button" aria-pressed={format === item}
+              onClick={() => setFormat(item)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${format === item ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}>
+              {item === "square" ? "Cuadrado" : "Historia"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mx-auto w-full max-w-[360px]">
+        <div className={`relative isolate flex w-full flex-col items-center justify-evenly overflow-hidden rounded-2xl border border-orange-400/30 bg-slate-950 p-4 text-white shadow-xl ${format === "square" ? "aspect-square" : "aspect-[9/16]"}`}>
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"/>
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"/>
+          <div className="relative flex w-full items-center justify-between gap-2">
+            <span className="text-2xl font-black tracking-tight text-orange-400">TukTuk</span>
+            <span className="text-xs text-slate-300">Mi TukTuk</span>
+          </div>
+          <div className="relative flex w-full flex-col items-center gap-1.5">
+            <div className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-orange-400/70 bg-slate-800 ${format === "square" ? "h-20 w-20" : "h-28 w-28"}`}>
+              <UserRound className="h-9 w-9 text-slate-400" aria-hidden="true"/>
+              {portrait ? <img src={portrait} alt={`Foto de ${displayName}`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" onError={event => { event.currentTarget.style.display = "none"; }}/> : null}
+            </div>
+            <p className="max-w-full break-words text-center text-xl font-bold leading-tight">{displayName}</p>
+            <p className="text-sm font-medium text-orange-200">{modality}</p>
+          </div>
+          <div className="relative space-y-1 text-center">
+            <p className="text-sm font-semibold">¡Viaja conmigo!</p>
+            <p className="text-xs text-slate-300">Tu conductor de confianza. Toda una flota a tu disposición.</p>
+          </div>
+          <div className="relative flex w-full items-center gap-2 rounded-xl border border-white/15 bg-white/5 p-2">
+            <QrCode className="h-7 w-7 shrink-0 text-orange-300" aria-hidden="true"/>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold">Solicitar transporte</p>
+              <p className="text-[10px] text-slate-300">QR y enlace personal pendientes de activación</p>
+            </div>
+          </div>
+          <span className="relative text-[10px] font-medium uppercase tracking-wider text-slate-400">Borrador · No publicar</span>
+        </div>
+      </div>
+      <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3 text-xs text-muted-foreground">
+        <Share2 className="mt-0.5 h-4 w-4 shrink-0"/>
+        <p>{!active ? "El conductor no está activo. " : ""}Esta vista previa no publica fotos, no genera enlaces activos ni modifica carreras. Compartir, descargar y publicar se habilitarán después del consentimiento del conductor y de conectar el despacho preferente.</p>
+      </div>
+    </section>
+  );
+}
