@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, type AdminProjectNavItem } from "@/lib/admin-navigation";
+import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -145,6 +145,7 @@ function AdminChrome() {
             project={currentProject ?? null}
           />
           <main
+            data-nav-tone={adminNavTone(currentSection)}
             className={`min-w-0 flex-1 px-3 sm:px-4 md:px-6 md:py-6 ${
               compactMobileMap ? "pt-1 pb-2 sm:py-4" : "py-4"
             } ${
@@ -170,6 +171,11 @@ function AdminChrome() {
       />
     </div>
   );
+}
+
+/** Shared icon treatment for the desktop rail and mobile drawer. */
+function AdminNavIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return <span className="admin-nav-icon" aria-hidden="true"><Icon strokeWidth={2} /></span>;
 }
 
 function ProjectNavItem({
@@ -258,7 +264,7 @@ function ProjectNavItem({
           className={`flex min-w-0 flex-1 items-center ${collapsed ? "justify-center" : "gap-3"}`}
         >
           <span
-            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors ${
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors ${
               isActiveProject
                 ? "bg-primary/15 text-primary"
                 : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
@@ -271,7 +277,7 @@ function ProjectNavItem({
                 className="h-6 w-6 rounded-md object-contain"
               />
             ) : (
-              <FolderKanban className="h-4 w-4" />
+              <FolderKanban className="h-5 w-5" />
             )}
           </span>
           <span className={collapsed ? "sr-only" : "truncate"}>{project.name}</span>
@@ -283,8 +289,9 @@ function ProjectNavItem({
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-md hover:bg-sidebar-accent text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Expandir proyecto"
+          className="grid min-h-11 w-7 shrink-0 place-items-center rounded-md hover:bg-sidebar-accent text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={expanded ? "Contraer proyecto" : "Expandir proyecto"}
+          aria-expanded={expanded}
         >
           <ChevronRight
             className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
@@ -293,7 +300,7 @@ function ProjectNavItem({
       </div>
 
       {(collapsed ? isActiveProject : expanded) && visibleTabs.length > 0 && (
-        <div data-nav-nested className="ml-4 pl-3 border-l border-border/60 space-y-1 my-1">
+        <div data-nav-nested className="ml-1 pl-1 border-l border-border/60 space-y-1 my-1">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
 
@@ -303,12 +310,12 @@ function ProjectNavItem({
               return (
                 <div key="trabajos" className="space-y-1">
                   <details className="group/workspace" open={groupActive || undefined}>
-                    <summary title="Trabajos" className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all [&::-webkit-details-marker]:hidden ${groupActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span data-nav-label className="min-w-0 flex-1 truncate">Trabajos</span>
+                    <summary title="Trabajos" data-nav-tone="trabajos" data-nav-active={groupActive ? "true" : undefined} className="admin-nav-item admin-nav-primary cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                      <AdminNavIcon icon={Icon} />
+                      <span data-nav-label className="min-w-0 flex-1 break-words">Trabajos</span>
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/workspace:rotate-90" />
                     </summary>
-                    <div data-nav-nested className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas de Trabajos">
+                    <div data-nav-nested className="ml-2 mt-1 space-y-1 border-l border-border/60 pl-1.5" aria-label="Vistas de Trabajos">
                       {MARKETPLACE_WORKSPACE_VIEWS.filter((view) => permissions.includes(view.permission)).map((view) => {
                         const ViewIcon = view.icon;
                         const viewActive = groupActive && (workspaceView === view.slug || (!workspaceView && view.slug === "resumen"));
@@ -321,10 +328,12 @@ function ProjectNavItem({
                             title={view.label}
                             onClick={closeDrawer}
                             aria-current={viewActive ? "page" : undefined}
-                            className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${viewActive ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+                            data-nav-tone={view.slug === "billeteras" || view.slug === "recargas" ? "finanzas" : "trabajos"}
+                            data-nav-active={viewActive ? "true" : undefined}
+                            className="admin-nav-item admin-nav-secondary"
                           >
-                            <ViewIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span data-nav-label className="truncate">{view.label}</span>
+                            <AdminNavIcon icon={ViewIcon} />
+                            <span data-nav-label className="min-w-0 flex-1 break-words">{view.label}</span>
                           </Link>
                         );
                       })}
@@ -349,13 +358,15 @@ function ProjectNavItem({
                           closeDrawer?.();
                         }
                       }}
-                      className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all [&::-webkit-details-marker]:hidden ${groupActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+                      data-nav-tone="tarifas"
+                      data-nav-active={groupActive ? "true" : undefined}
+                      className="admin-nav-item admin-nav-primary cursor-pointer list-none [&::-webkit-details-marker]:hidden"
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span data-nav-label className="min-w-0 flex-1 truncate">Centro de precios</span>
+                      <AdminNavIcon icon={Icon} />
+                      <span data-nav-label className="min-w-0 flex-1 break-words">Centro de precios</span>
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
-                    <div data-nav-nested className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2" aria-label="Vistas del Centro de precios">
+                    <div data-nav-nested className="ml-2 mt-1 space-y-1 border-l border-border/60 pl-1.5" aria-label="Vistas del Centro de precios">
                       {PRICING_VIEWS.map((view) => {
                         const ViewIcon = view.icon;
                         const selected = groupActive && (pricingView === view.code || (!pricingView && view.code === "global"));
@@ -368,10 +379,12 @@ function ProjectNavItem({
                             title={view.label}
                             onClick={closeDrawer}
                             aria-current={selected ? "page" : undefined}
-                            className={`flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${selected ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}
+                            data-nav-tone="tarifas"
+                            data-nav-active={selected ? "true" : undefined}
+                            className="admin-nav-item admin-nav-secondary"
                           >
-                            <ViewIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span data-nav-label className="truncate">{view.label}</span>
+                            <AdminNavIcon icon={ViewIcon} />
+                            <span data-nav-label className="min-w-0 flex-1 break-words">{view.label}</span>
                           </Link>
                         );
                       })}
@@ -397,18 +410,16 @@ function ProjectNavItem({
                   <details open={groupActive || undefined} className="group/admin">
                     <summary
                       title={tab.label}
-                      className={`flex min-h-9 cursor-pointer list-none items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all [&::-webkit-details-marker]:hidden ${
-                        groupActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                      }`}
+                      data-nav-tone={adminNavTone(tab.slug)}
+                      data-nav-active={groupActive ? "true" : undefined}
+                      className="admin-nav-item admin-nav-primary cursor-pointer list-none [&::-webkit-details-marker]:hidden"
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span data-nav-label className="min-w-0 flex-1 truncate">{tab.label}</span>
+                      <AdminNavIcon icon={Icon} />
+                      <span data-nav-label className="min-w-0 flex-1 break-words">{tab.label}</span>
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
 
-                    <div data-nav-nested className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-2">
+                    <div data-nav-nested className="ml-2 mt-1 space-y-1 border-l border-border/60 pl-1.5">
                       {tab.children.map((child) => {
                         const ChildIcon = child.icon;
                         const childPath = `${projectBasePath}/${child.slug}`;
@@ -427,14 +438,13 @@ function ProjectNavItem({
                             }}
                             title={child.label}
                             onClick={closeDrawer}
-                            className={`flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
-                              childActive
-                                ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30"
-                                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                            }`}
+                            aria-current={childActive ? "page" : undefined}
+                            data-nav-tone={adminNavTone(tab.slug)}
+                            data-nav-active={childActive ? "true" : undefined}
+                            className="admin-nav-item admin-nav-secondary"
                           >
-                            <ChildIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span data-nav-label className="truncate">{child.label}</span>
+                            <AdminNavIcon icon={ChildIcon} />
+                            <span data-nav-label className="min-w-0 flex-1 break-words">{child.label}</span>
                           </Link>
                         );
                       })}
@@ -456,14 +466,13 @@ function ProjectNavItem({
                 params={tab.slug ? { id: project.id, section: tab.slug } : { id: project.id }}
                 title={tab.label}
                 onClick={closeDrawer}
-                className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
-                  active
-                    ? "bg-primary/15 text-primary font-semibold ring-1 ring-primary/30"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                }`}
+                aria-current={active ? "page" : undefined}
+                data-nav-tone={adminNavTone(tab.slug)}
+                data-nav-active={active ? "true" : undefined}
+                className="admin-nav-item admin-nav-primary"
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span data-nav-label className="truncate">{tab.label}</span>
+                <AdminNavIcon icon={Icon} />
+                <span data-nav-label className="min-w-0 flex-1 break-words">{tab.label}</span>
               </Link>
             );
           })}
@@ -496,7 +505,7 @@ function DesktopSidebar({
       aria-label="Navegación principal"
       data-state={collapsed ? "collapsed" : "expanded"}
       className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 motion-reduce:transition-none lg:flex ${
-        collapsed ? "w-16" : compact ? "w-[208px]" : "w-[272px]"
+        collapsed ? "w-16" : compact ? "w-[232px]" : "w-[272px]"
       }`}
     >
             <div
@@ -830,19 +839,11 @@ function DesktopLink({
       to={to}
       title={label}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center p-1" : "gap-3 px-3 py-2.5"} ${
-        active
-          ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
-      }`}
+      data-nav-tone="panel"
+      data-nav-active={active ? "true" : undefined}
+      className="admin-nav-item admin-nav-primary group"
     >
-      <span
-        className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
-          active ? "bg-primary/15" : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
-        }`}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
+      <AdminNavIcon icon={Icon} />
       <span className={collapsed ? "sr-only" : "truncate"}>{label}</span>
       {!collapsed && <ChevronRight
         className={`ml-auto h-3.5 w-3.5 transition-all ${
@@ -873,14 +874,14 @@ function DrawerLink({
       <Link
         to={to}
         onClick={closeDrawer}
-        className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-          active
-            ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-        }`}
+        title={label}
+        aria-current={active ? "page" : undefined}
+        data-nav-tone="panel"
+        data-nav-active={active ? "true" : undefined}
+        className="admin-nav-item admin-nav-primary"
       >
-        <Icon className="h-4 w-4" />
-        <span className="truncate">{label}</span>
+        <AdminNavIcon icon={Icon} />
+        <span className="min-w-0 flex-1 break-words">{label}</span>
       </Link>
     </SheetClose>
   );
