@@ -53,3 +53,13 @@ test("el mapa comienza debajo de la cabecera en móvil, sin alterar las otras vi
   assert.match(marketplace, /TabsContent value="mapa" forceMount className="mt-0 sm:mt-3/);
   assert.match(layout, /compactWorkspace \? "lg:px-5 lg:py-5"/);
 });
+
+
+test("Operaciones muestra jornadas abiertas con GPS antiguo sin mezclar descansando", () => {
+  assert.match(source, /if \(mapViewMode === "operations" && !driver\.acceptingJobs && !driver\.activeJobId\) continue;/);
+  assert.doesNotMatch(source, /if \(mapViewMode === "operations" && !driver\.locationFresh && !driver\.activeJobId\) continue;/);
+  assert.match(source, /if \(driver\.activeJobId\) return "busy";/);
+  assert.match(source, /if \(!driver\.locationFresh\) return "stale";/);
+  assert.match(source, /const coordinate = driverCoordinate\(driver\);\s*if \(!coordinate\) continue;/);
+  assert.match(source, /Se muestran \{staleWorkingDriversWithLocation\} con última posición antigua, en ámbar/);
+});

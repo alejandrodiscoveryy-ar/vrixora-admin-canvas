@@ -1394,7 +1394,6 @@ export default function MarketplaceOperationalMap({
     if (layers.drivers || mapViewMode === "coverage") {
       for (const driver of operational.data?.drivers ?? []) {
         if (mapViewMode === "operations" && !driver.acceptingJobs && !driver.activeJobId) continue;
-        if (mapViewMode === "operations" && !driver.locationFresh && !driver.activeJobId) continue;
         if (mapViewMode === "coverage" && !coverageDriverIds.has(driver.driverUserId)) continue;
 
         const coordinate = driverCoordinate(driver);
@@ -2344,7 +2343,7 @@ export default function MarketplaceOperationalMap({
                   role="status"
                   className="max-w-md rounded-xl border border-amber-400/30 bg-slate-950/85 px-3 py-2 text-[11px] text-amber-100 shadow-lg backdrop-blur-xl"
                 >
-                  Sin conductores trabajando con GPS reciente. Hay {staleWorkingDriversWithLocation} con última posición antigua; puedes consultar toda la flota en «Cobertura».
+                  Sin conductores trabajando con GPS reciente. Se muestran {staleWorkingDriversWithLocation} con última posición antigua, en ámbar.
                 </p>
               ) : null}
             </div>
