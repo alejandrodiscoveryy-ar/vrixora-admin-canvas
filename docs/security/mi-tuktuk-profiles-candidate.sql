@@ -93,7 +93,7 @@ CREATE FUNCTION app_private.resolve_marketplace_promo_profile(target_code text)
 RETURNS TABLE(project_id uuid,driver_user_id uuid,public_name text,photo_asset_id uuid,vehicle_id text,category_code text,service_codes text[])
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $$
   SELECT p.project_id,p.driver_user_id,p.public_name,
-    CASE WHEN p.consent_photo_asset_id=d.photo_asset_id AND EXISTS(SELECT 1 FROM public.media_assets m WHERE m.id=d.photo_asset_id AND m.project_id=d.project_id AND m.owner_user_id=d.user_id AND m.asset_kind='driver_photo' AND m.status='available' AND m.storage_bucket='marketplace-media') THEN d.photo_asset_id END,
+    CASE WHEN p.consent_photo_asset_id=d.photo_asset_id AND EXISTS(SELECT 1 FROM public.media_assets m WHERE m.id=d.photo_asset_id AND m.project_id=p.project_id AND m.owner_user_id=p.driver_user_id AND m.asset_kind='driver_photo' AND m.status='available' AND m.storage_bucket='marketplace-media') THEN d.photo_asset_id END,
     v.id,v.category_code,array_agg(DISTINCT vs.service_code ORDER BY vs.service_code)
   FROM app_private.marketplace_driver_promo_profiles p
   JOIN app_private.marketplace_driver_promo_settings s ON s.project_id=p.project_id AND s.profiles_enabled
