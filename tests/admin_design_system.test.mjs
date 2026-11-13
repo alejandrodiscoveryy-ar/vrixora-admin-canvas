@@ -1,3 +1,4 @@
+import { adminNavTone, ADMIN_PROJECT_TABS } from "../src/lib/admin-navigation.ts";
 import { driverWhatsAppLinks, driverWelcomeMessage, TUKTUK_DRIVER_GROUP_URL } from "../src/lib/driver-whatsapp.ts";
 import assert from "node:assert/strict";
 import { test } from "bun:test";
@@ -522,4 +523,36 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
   assert.ok(adapter.includes(".dark .admin-graphite-panel"));
   assert.ok(adapter.includes("var(--surface-3) 89%, var(--text-secondary) 11%"));
   assert.doesNotMatch(adapter, /--(?:primary|canvas|surface-1|background)\s*:/);
+});
+
+
+test("Admin navigation: thematic families reuse palette and preserve group membership", () => {
+  const expected = { trabajos: "trabajos", "": "panel", clientes: "usuarios", comercial: "comercial", planes: "tarifas", rendimiento: "analitica", administracion: "administracion", auditoria: "auditoria" };
+  for (const tab of ADMIN_PROJECT_TABS) assert.equal(adminNavTone(tab.slug), expected[tab.slug]);
+  for (const slug of ["configuracion","empleados","comunicados","integraciones"]) assert.equal(adminNavTone(slug), "administracion");
+  for (const slug of ["pagos","billeteras","recargas"]) assert.equal(adminNavTone(slug), "finanzas");
+  assert.equal(adminNavTone("licencias"), "licencias");
+  assert.equal(adminNavTone("unknown"), "panel");
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  for (const [tone, token] of Object.entries({trabajos:"licencias",panel:"resumen",usuarios:"clientes",comercial:"comercial",tarifas:"planes",analitica:"rendimiento",administracion:"configuracion",auditoria:"auditoria",finanzas:"pagos"})) {
+    assert.ok(css.includes('[data-nav-tone="' + tone + '"]'), tone);
+    assert.ok(css.includes("--nav-accent: var(--module-" + token + ")"), token);
+  }
+  const styles = css.slice(css.indexOf("/* Thematic Admin navigation."));
+  assert.match(styles, /\.admin-nav-icon > svg \{ width: 22px; height: 22px; \}/);
+  assert.match(styles, /#admin-desktop-sidebar\[data-state="collapsed"\] \.admin-nav-icon > svg \{ width: 23px; height: 23px; \}/);
+  assert.match(styles, /\.admin-nav-item:focus-visible/);
+  assert.match(styles, /\[data-admin-reference-drawer="graphite"\] \.admin-nav-item \{ min-height: 44px; \}/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
+  assert.doesNotMatch(styles, /--(?:primary|canvas|surface-1|background|semantic-success)\s*:/);
+});
+
+test("Admin thematic inner menus keep selected links and larger icons", () => {
+  for (const [name,tone] of [["MarketplacePricingSection","tarifas"], ["AdministrationWorkspace","administracion"], ["MarketplaceConfigurationWorkspace","administracion"]]) {
+    const component = readFileSync(new URL("../src/features/admin/" + name + ".tsx", import.meta.url), "utf8");
+    assert.ok(component.includes('data-nav-tone="' + tone + '"'), name);
+    assert.match(component, /admin-graphite-nav-item/);
+    assert.match(component, /className="admin-nav-icon relative z-10" aria-hidden="true"/);
+    assert.match(component, /aria-(?:current|pressed)=/);
+  }
 });

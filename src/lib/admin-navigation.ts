@@ -138,3 +138,27 @@ export const ADMIN_PROJECT_TABS = [
     permission: "audit.view",
   },
 ] satisfies Array<AdminProjectNavItem>;
+
+/** Navigation families use existing module accent tokens, never operational status colors. */
+export type AdminNavTone = "trabajos" | "panel" | "usuarios" | "comercial" | "tarifas" | "analitica" | "administracion" | "auditoria" | "finanzas" | "licencias";
+
+export function adminNavTone(section: string): AdminNavTone {
+  switch (section) {
+    case "trabajos": return "trabajos";
+    case "clientes": return "usuarios";
+    case "comercial": return "comercial";
+    case "planes": return "tarifas";
+    case "rendimiento": return "analitica";
+    case "administracion":
+    case "configuracion":
+    case "empleados":
+    case "comunicados":
+    case "integraciones": return "administracion";
+    case "auditoria": return "auditoria";
+    case "pagos":
+    case "billeteras":
+    case "recargas": return "finanzas";
+    case "licencias": return "licencias";
+    default: return "panel";
+  }
+}

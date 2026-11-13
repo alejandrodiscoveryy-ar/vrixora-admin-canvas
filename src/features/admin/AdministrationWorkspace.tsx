@@ -53,7 +53,7 @@ export default function AdministrationWorkspace({
   return (
     <section aria-label="Administración de TukTuk" className="min-w-0 space-y-3">
       <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
-        <nav
+        <nav data-nav-tone="administracion"
           aria-label="Secciones de administración de TukTuk"
           className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4 admin-graphite-panel"
         >
@@ -78,15 +78,15 @@ export default function AdministrationWorkspace({
                   className={`group relative isolate flex admin-graphite-nav-item min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}
                 >
                   <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "text-cyan-300 opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
-                  <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-inner ${isSelected ? "border-cyan-400/30 bg-cyan-400/[0.11] text-cyan-300" : "border-border-default bg-surface-2 text-text-secondary"}`}>
-                    <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
+                  <span className="admin-nav-icon relative z-10" aria-hidden="true">
+                    <Icon aria-hidden="true" strokeWidth={2} />
                   </span>
                   <span className="relative z-10 min-w-0 flex-1">
                     <span className="block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{meta.number}</span>
                     <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">{section.label}</span>
                     <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{meta.subtitle}</span>
                   </span>
-                  <ChevronRight aria-hidden="true" className={`relative z-10 hidden h-4 w-4 shrink-0 xl:block ${isSelected ? "text-cyan-300" : "text-muted-foreground/45"}`} />
+                  <ChevronRight data-nav-chevron aria-hidden="true" className="relative z-10 hidden h-4 w-4 shrink-0 xl:block" />
                 </Link>
               );
             })}
@@ -104,7 +104,7 @@ export default function AdministrationWorkspace({
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_90%_10%,rgba(34,211,238,0.10),transparent_55%)]" />
               <SelectedIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-8 z-0 h-32 w-32 rotate-[-15deg] text-cyan-100 opacity-[0.07] sm:right-4" />
               <div className="relative z-10 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
+                <span className="admin-workspace-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
                   <SelectedIcon aria-hidden="true" className="h-[19px] w-[19px]" />
                 </span>
                 <div className="min-w-0">
