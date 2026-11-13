@@ -6,16 +6,23 @@ const modalityLabels: Record<string, string> = {
   light_car: "Auto", van: "Furgoneta", truck: "Camión", other: "Otro",
 };
 
+const serviceLabels: Record<string, string> = {
+  passenger: "Pasajeros", cargo: "Carga", courier: "Mensajería", tourism: "Turismo",
+};
+
 export default function MarketplaceDriverPromotionPreview({
-  displayName, avatarUrl, categoryCode, active,
+  displayName, avatarUrl, categoryCode, serviceCodes, active,
 }: {
   displayName: string;
   avatarUrl: string | null | undefined;
   categoryCode: string | null | undefined;
+  serviceCodes: string[];
   active: boolean;
 }) {
   const [format, setFormat] = useState<"square" | "story">("square");
   const modality = categoryCode ? modalityLabels[categoryCode] ?? "Transporte" : "Transporte";
+  const services = [...new Set(serviceCodes)].map(code => serviceLabels[code]).filter(Boolean);
+  const serviceSummary = services.join(" · ");
   const portrait = avatarUrl?.startsWith("https://") ? avatarUrl : null;
   return (
     <section aria-label="Mi TukTuk, vista previa interna" className="min-w-0 space-y-3 rounded-2xl border border-border/60 bg-card/60 p-3 sm:p-4">
@@ -48,7 +55,7 @@ export default function MarketplaceDriverPromotionPreview({
               {portrait ? <img src={portrait} alt={`Foto de ${displayName}`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" onError={event => { event.currentTarget.style.display = "none"; }}/> : null}
             </div>
             <p className="max-w-full break-words text-center text-xl font-bold leading-tight">{displayName}</p>
-            <p className="text-sm font-medium text-orange-200">{modality}</p>
+            <p className="text-sm font-medium text-orange-200">{modality}{serviceSummary ? ` · ${serviceSummary}` : ""}</p>
           </div>
           <div className="relative space-y-1 text-center">
             <p className="text-sm font-semibold">¡Viaja conmigo!</p>
@@ -95,7 +102,7 @@ export default function MarketplaceDriverPromotionPreview({
                 {portrait ? <img src={portrait} alt={`Foto de ${displayName}`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" onError={event => { event.currentTarget.style.display = "none"; }}/> : null}
               </div>
               <p className="break-words text-2xl font-bold">Viaja con {displayName}</p>
-              <p className="text-sm font-semibold text-slate-300">{modality}</p>
+              <p className="text-sm font-semibold text-slate-300">{modality}{serviceSummary ? ` · ${serviceSummary}` : ""}</p>
               {/* The public landing will display the confirmed service location and
                   verified badge only from authoritative public profile data. */}
             </div>
