@@ -512,7 +512,8 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
   }
   const workspace = source("MarketplaceSection");
   const wallet = workspace.slice(workspace.indexOf('<TabsContent value="billeteras"'), workspace.indexOf('<TabsContent value="configuracion"'));
-  assert.match(wallet, /admin-graphite-/);
+  assert.match(wallet, /marketplace-record-workspace/);
+  assert.match(wallet, /premiumSurface/);
   assert.match(wallet, /formatAmount\(wallet.availableBalance, wallet.currency\)/);
   assert.match(wallet, /topupStatus === value/);
   assert.match(wallet, /setNewTopup\(true\)/);
@@ -636,4 +637,38 @@ test("Configuration parent selects general settings or the first authorized chil
   assert.match(route, /hidden=\{!groupOpen\}/);
   assert.match(route, /setConfigurationExpanded\(\(value\) => !value\)/);
   assert.match(route, /const groupOpen = collapsed \? groupActive : configurationExpanded/);
+});
+
+test("Marketplace compact directories share one responsive row and preserve actions", () => {
+  const panel = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  const start = panel.indexOf('<TabsContent value="clientes"');
+  const end = panel.indexOf('<TabsContent value="incidencias"', start);
+  const block = panel.slice(start, end);
+  for (const kind of ["customer","wallet","topup"]) assert.ok(block.includes('data-marketplace-record="' + kind + '"'));
+  assert.equal((block.match(/marketplace-record-workspace/g) ?? []).length, 3);
+  assert.doesNotMatch(block, /sm:hidden|lg:hidden|hidden grid-cols|bg-gradient-to-br|mix-blend-screen/);
+  assert.match(block, /setCustomerId\(customer\.customerId\)/);
+  assert.match(block, /customerSearchInput/);
+  assert.match(block, /setCustomerSort/);
+  assert.match(block, /walletSearch/);
+  assert.match(block, /topupSearch/);
+  assert.match(block, /setTopup\(/);
+  assert.match(block, /canManagePayments/);
+  assert.match(block, /PaginationButton query=\{customers\}/);
+  assert.match(panel, /receiptsByTopup = useMemo/);
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(css, /@container \(min-width: 850px\)/);
+  assert.match(css, /marketplace-record-icon/);
+  assert.match(css, /marketplace-record-summary:focus-visible/);
+  assert.match(css, /marketplace-record-filter\[aria-pressed="true"\]/);
+});
+
+test("Compact Marketplace tabs preserve separate customer and payment permission gates", () => {
+  const panel = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  assert.match(panel, /\{canCustomers \? \(\s*<TabsContent value="clientes">/);
+  assert.match(panel, /<\/TabsContent>\s*\) : null\}\s*\{canPayments \? \(\s*<>\s*<TabsContent value="billeteras"/);
+  assert.match(panel, /<\/TabsContent>\s*<\/>\s*\) : null\}\s*<TabsContent value="incidencias">/);
+  assert.match(panel, /enabled: tab === "clientes" && canCustomers/);
+  assert.match(panel, /enabled: tab === "billeteras" && canPayments/);
+  assert.match(panel, /enabled: tab === "recargas" && canPayments/);
 });

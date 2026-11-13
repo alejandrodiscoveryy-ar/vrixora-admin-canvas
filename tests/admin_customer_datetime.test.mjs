@@ -9,7 +9,9 @@ const source = readFileSync(
 
 test("la fecha de registro se presenta en lista móvil y escritorio", () => {
   const count = source.split("Registrado: <time dateTime={customer.createdAt}>").length - 1;
-  assert.equal(count, 2);
+  // One responsive row is shared by desktop and mobile.
+  assert.equal(count, 1);
+  assert.match(source, /data-marketplace-record="customer"/);
   assert.match(source, /formatCustomerDateTime\(customer\.createdAt\)/);
   assert.match(source, /formatCustomerDateTime\(detail\.customer\.createdAt\)/);
 });
@@ -34,7 +36,8 @@ test("la hora es la de Cuba y se maneja dato inválido sin inventarlo", () => {
 });
 
 test("última carrera usa horario cubano y no se inventa si está vacía", () => {
-  assert.match(source, /Última carrera: <time dateTime=\{customer\.lastJobAt\}>/);
-  assert.match(source, /customer\.lastJobAt\s*\?\s*formatCustomerDateTime\(customer\.lastJobAt\)\s*:\s*"Sin actividad"/);
+  assert.match(source, /Última carrera<\/p>/);
+  assert.match(source, /<time dateTime=\{customer\.lastJobAt\}>/);
+  assert.match(source, /customer\.lastJobAt\s*\?\s*<time dateTime=\{customer\.lastJobAt\}>\{formatCustomerDateTime\(customer\.lastJobAt\)\}<\/time>\s*:\s*"Sin actividad"/);
   assert.match(source, /Cliente desde \{formatCustomerDateTime\(detail\.customer\.createdAt\)\} \(Cuba\)/);
 });

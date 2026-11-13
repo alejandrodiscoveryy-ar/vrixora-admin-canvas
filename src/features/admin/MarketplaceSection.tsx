@@ -15,7 +15,6 @@ import {
   CircleDollarSign,
   Clock3,
   Eye,
-  Filter,
   Loader2,
   Mail,
   MapPin,
@@ -63,7 +62,7 @@ import { cn } from "@/lib/utils";
 
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
-import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect, MiniMetric } from "@/features/admin/MarketplaceListPrimitives";
+import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
 
 
@@ -304,6 +303,7 @@ const serviceClasses = (serviceCode: string | null) => {
 function StatusBadge({ status, compact = false }: { status: string | null; compact?: boolean }) {
   return (
     <span
+      data-marketplace-status={status ?? "unknown"}
       className={`inline-flex items-center rounded-full border ${compact ? "px-2 py-0.5 leading-tight" : "px-2.5 py-1"} text-[11px] font-semibold ${statusClasses(
         status,
       )}`}
@@ -429,6 +429,48 @@ function PremiumPanel({
   );
 }
 
+// Shared, responsive record presentation; no duplicated desktop/mobile markup.
+function recordMatches(search: string, ...values: (string | null | undefined)[]) {
+  const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+  const query = normalized(search.trim());
+  if (!query) return true;
+  const digits = query.replace(/\D/g, "");
+  return values.some((value) => value && (normalized(value).includes(query) ||
+    (digits.length >= 3 && /^[+\d\s().-]+$/.test(query) && value.replace(/\D/g, "").includes(digits))));
+}
+
+function RecordMetric({ labelText, value, tone }: { labelText: string; value: ReactNode; tone?: "available" | "reserved" | "accent" | "danger" }) {
+  return <div className="min-w-0">
+    <p className="text-[11px] font-medium leading-tight text-text-secondary">{labelText}</p>
+    <p className={cn("mt-0.5 break-words text-sm font-semibold tabular-nums text-foreground", tone === "available" && "marketplace-value-available", tone === "reserved" && "marketplace-value-reserved", tone === "accent" && "marketplace-value-accent", tone === "danger" && "marketplace-value-danger")}>{value}</p>
+  </div>;
+}
+
+function RecordIdentity({ icon: Icon, name, children }: { icon: typeof UserRound; name: string; children?: ReactNode }) {
+  return <div className="flex min-w-0 items-center gap-2.5">
+    <span className="marketplace-record-icon" aria-hidden="true"><Icon className="h-5 w-5" /></span>
+    <div className="min-w-0 flex-1">
+      <p className="break-words text-sm font-semibold leading-snug text-foreground">{name}</p>
+      <div className="mt-0.5 min-w-0 space-y-0.5 text-xs text-text-secondary">{children}</div>
+    </div>
+  </div>;
+}
+
+function RecordSearch({ value, onChange, placeholder, labelText }: { value: string; onChange: (value: string) => void; placeholder: string; labelText: string }) {
+  return <label className="relative block min-w-0 flex-1">
+    <span className="sr-only">{labelText}</span>
+    <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={cn("min-h-11 min-w-0 pl-9", premiumControlSurface)} />
+  </label>;
+}
+
+function RecordLoadError({ onRetry }: { onRetry: () => void }) {
+  return <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-default bg-surface-2 px-3 py-2 text-sm text-foreground">
+    <span className="flex min-w-0 items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" /> No se pudo actualizar la lista.</span>
+    <Button size="sm" variant="outline" onClick={onRetry}>Reintentar</Button>
+  </div>;
+}
+
 function CustomerSummaryMetric({
   icon: Icon,
   labelText,
@@ -449,16 +491,16 @@ function CustomerSummaryMetric({
   }[accent];
 
   return (
-    <div className="group rounded-2xl border border-border/60 bg-background/55 p-3.5 shadow-sm transition hover:border-violet-500/20 hover:bg-background/70 sm:p-4">
+    <div className={cn("group min-w-0 rounded-xl border p-2.5", premiumSurface, "shadow-none")}>
       <div
-        className={`flex h-8 w-8 items-center justify-center rounded-xl border ${accentClasses}`}
+        className={`flex h-7 w-7 items-center justify-center rounded-xl border ${accentClasses}`}
       >
         <Icon className="h-4 w-4" />
       </div>
-      <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.11em] text-muted-foreground">
+      <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.11em] text-muted-foreground">
         {labelText}
       </p>
-      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+      <p className="mt-0.5 break-words text-base font-semibold tabular-nums text-foreground sm:text-lg">
         {value}
       </p>
     </div>
@@ -482,58 +524,56 @@ function Customer360Detail({
     value == null ? "\u2014" : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <section className="relative overflow-hidden rounded-[28px] border border-violet-500/25 bg-gradient-to-br from-violet-500/[0.12] via-background/80 to-cyan-500/[0.08] p-5 shadow-[0_24px_70px_-42px_rgba(139,92,246,0.85)] sm:p-6 admin-graphite-panel">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-500/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-16 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl" />
+    <div data-nav-tone="usuarios" className="space-y-3">
+      <section className="relative overflow-hidden rounded-2xl border border-border-default p-3 admin-graphite-panel">
 
         <div className="relative">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-400/25 bg-violet-500/10 text-violet-200 shadow-inner shadow-violet-500/10">
-                <UserRound className="h-7 w-7" />
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-start gap-2.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-default bg-surface-2 marketplace-value-accent">
+                <UserRound className="h-5 w-5" />
               </div>
 
               <div className="min-w-0">
-                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] marketplace-value-accent">
                   Cliente Marketplace
                 </div>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
                   {detail.customer.displayName}
                 </h3>
               </div>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur admin-graphite-inset">
-              <CalendarDays className="h-3.5 w-3.5 text-violet-300" />
+            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground  admin-graphite-inset">
+              <CalendarDays className="h-3.5 w-3.5 marketplace-value-accent" />
               Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)
             </div>
           </div>
 
-          <div className="mt-5 grid gap-2 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] marketplace-value-available">
                 <Phone className="h-4 w-4" />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                   WhatsApp
                 </p>
-                <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
                   {detail.customer.whatsappPhone}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3 backdrop-blur admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
+            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] marketplace-value-accent">
                 <Mail className="h-4 w-4" />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                   Correo
                 </p>
-                <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
                   {detail.customer.email ?? "Sin correo registrado"}
                 </p>
               </div>
@@ -545,7 +585,7 @@ function Customer360Detail({
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
               Resumen
             </p>
             <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
@@ -595,9 +635,9 @@ function Customer360Detail({
       </section>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-violet-500/[0.035] p-4 sm:p-5 admin-graphite-panel">
+        <section className="rounded-xl border border-border/60 bg-gradient-to-br from-background/75 to-violet-500/[0.035] p-3 admin-graphite-panel">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.07] text-violet-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/[0.07] marketplace-value-accent">
               <Clock3 className="h-5 w-5" />
             </div>
             <div>
@@ -613,7 +653,7 @@ function Customer360Detail({
           </div>
         </section>
 
-        <section className="rounded-[22px] border border-border/60 bg-gradient-to-br from-background/75 to-amber-500/[0.035] p-4 sm:p-5 admin-graphite-panel">
+        <section className="rounded-xl border border-border/60 bg-gradient-to-br from-background/75 to-amber-500/[0.035] p-3 admin-graphite-panel">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/[0.07] text-amber-300">
               <Star className="h-5 w-5" />
@@ -632,9 +672,9 @@ function Customer360Detail({
         </section>
       </div>
 
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5 admin-graphite-inset">
+      <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Preferencias
           </p>
           <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
@@ -643,11 +683,11 @@ function Customer360Detail({
         </div>
 
         {detail.modalities.length ? (
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-2 grid gap-3 md:grid-cols-2">
             {detail.modalities.map((item) => (
               <div
                 key={`${item.serviceCode}:${item.vehicleCategoryCode ?? "none"}`}
-                className="rounded-2xl border border-border/55 bg-background/60 p-4 transition hover:border-cyan-500/20 admin-graphite-inset"
+                className="rounded-2xl border border-border/55 bg-background/60 p-3 transition hover:border-cyan-500/20 admin-graphite-inset"
               >
                 <div className="flex items-center justify-between gap-3">
                   <ServiceBadge service={item.serviceCode} />
@@ -672,8 +712,8 @@ function Customer360Detail({
             ))}
           </div>
         ) : (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
+          <div className="mt-2 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] marketplace-value-accent">
               <CarFront className="h-5 w-5" />
             </div>
             <div>
@@ -686,9 +726,9 @@ function Customer360Detail({
         )}
       </section>
 
-      <section className="rounded-[24px] border border-border/60 bg-background/35 p-4 sm:p-5 admin-graphite-inset">
+      <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Trazabilidad
           </p>
           <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
@@ -697,8 +737,8 @@ function Customer360Detail({
         </div>
 
         {!history.length ? (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/15 bg-violet-500/[0.05] text-violet-300">
+          <div className="mt-2 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/15 bg-violet-500/[0.05] marketplace-value-accent">
               <Route className="h-5 w-5" />
             </div>
             <div>
@@ -709,13 +749,13 @@ function Customer360Detail({
             </div>
           </div>
         ) : (
-          <div className="relative mt-4 space-y-3 pl-5">
+          <div className="relative mt-2 space-y-3 pl-5">
             <div className="absolute bottom-3 left-[6px] top-3 w-px bg-gradient-to-b from-violet-400/45 via-border/50 to-transparent" />
 
             {history.map((item) => (
               <article
                 key={item.jobId}
-                className="relative rounded-2xl border border-border/60 bg-background/60 p-4 transition hover:border-violet-500/20 admin-graphite-inset"
+                className="relative rounded-2xl border border-border/60 bg-background/60 p-3 transition hover:border-violet-500/20 admin-graphite-inset"
               >
                 <span className="absolute -left-[18px] top-5 h-3 w-3 rounded-full border-2 border-background bg-violet-400 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]" />
 
@@ -727,7 +767,7 @@ function Customer360Detail({
                   </span>
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-border/50 bg-background/55 p-3 admin-graphite-inset">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       Origen
@@ -781,7 +821,7 @@ function Customer360Detail({
         )}
 
         {hasMore ? (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-2 flex justify-center">
             <Button
               className="w-full sm:w-auto"
               variant="outline"
@@ -911,6 +951,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   } | null>(null);
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("");
+  const [walletSearch, setWalletSearch] = useState("");
+  const [topupSearch, setTopupSearch] = useState("");
   const [topupDriver, setTopupDriver] = useState("");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("");
@@ -1453,6 +1495,15 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
+  const filteredWalletRows = walletRows.filter((wallet) => recordMatches(walletSearch, wallet.driverDisplayName, wallet.driverPhone));
+  const filteredTopupRows = topupRows.filter((item) => recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference));
+  const receiptsByTopup = useMemo(() => {
+    const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
+    for (const document of financialDocuments.data ?? []) {
+      if (document.topupId && !byTopup.has(document.topupId)) byTopup.set(document.topupId, document);
+    }
+    return byTopup;
+  }, [financialDocuments.data]);
   const selectedPaymentMethod = paymentMethods.data?.find((item) => item.code === method);
   const paymentMethodLabel = (code: string) =>
     paymentMethods.data?.find((item) => item.code === code)?.name ?? code;
@@ -2181,665 +2232,172 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
         </TabsContent>
         {canCustomers ? (
           <TabsContent value="clientes">
-            <PremiumPanel
-              headerless
-              title="Clientes"
-              description={
-                customers.isLoading
-                  ? "Consultando clientes…"
-                  : `${customerRows.length} ${
-                      customerRows.length === 1 ? "cliente mostrado" : "clientes mostrados"
-                    }`
-              }
-              icon={UserRound}
-              tone="violet"
-              backgroundImage="/admin-premium/customers.svg"
-              action={
-                <div className="flex w-full flex-col gap-2 rounded-[18px] border border-violet-400/15 bg-background/55 p-1.5 shadow-[0_14px_45px_-32px_rgba(139,92,246,0.9)] backdrop-blur-sm sm:w-auto sm:flex-row sm:items-center admin-graphite-inset">
-                  <label className="relative min-w-0 sm:w-72">
-                    <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300" />
-                    <Input
-                      value={customerSearchInput}
-                      onChange={(event) => setCustomerSearchInput(event.target.value)}
-                      placeholder="Buscar nombre o WhatsApp"
-                      className="h-9 rounded-xl border-violet-400/20 bg-black/20 pl-9 shadow-inner shadow-violet-500/[0.04] focus-visible:border-violet-400/40 admin-graphite-control"
-                    />
-                  </label>
-
-                  <div className="flex rounded-xl border border-violet-400/15 bg-black/20 p-1 admin-graphite-inset">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className={
-                        customerSort === "points_desc"
-                          ? "border border-violet-400/25 bg-violet-500/20 text-violet-100 shadow-[0_8px_24px_-14px_rgba(139,92,246,0.95)] hover:bg-violet-500/25 hover:text-violet-50"
-                          : "text-muted-foreground hover:bg-violet-500/[0.08] hover:text-violet-100"
-                      }
-                      onClick={() => setCustomerSort("points_desc")}
-                    >
-                      Más puntos
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className={
-                        customerSort === "recent"
-                          ? "border border-violet-400/25 bg-violet-500/20 text-violet-100 shadow-[0_8px_24px_-14px_rgba(139,92,246,0.95)] hover:bg-violet-500/25 hover:text-violet-50"
-                          : "text-muted-foreground hover:bg-violet-500/[0.08] hover:text-violet-100"
-                      }
-                      onClick={() => setCustomerSort("recent")}
-                    >
-                      Más recientes
-                    </Button>
-                  </div>
+            <section aria-label="Clientes" data-nav-tone="usuarios" className="marketplace-record-workspace min-w-0 space-y-2.5">
+              <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <RecordSearch value={customerSearchInput} onChange={setCustomerSearchInput} placeholder="Buscar nombre o WhatsApp" labelText="Buscar clientes" />
+                  <FilterSelect appearance="premium" labelText="Ordenar" value={customerSort} onChange={(value) => setCustomerSort(value === "recent" ? "recent" : "points_desc")}>
+                    <option value="points_desc">Más puntos</option>
+                    <option value="recent">Más recientes</option>
+                  </FilterSelect>
                 </div>
-              }
-            >
-              {customers.isLoading ? (
-                <LoadingState />
-              ) : !customerRows.length ? (
-                <EmptyMarketplaceState appearance="premium"
-                  title={customerSearch ? "No encontramos clientes" : "No hay clientes"}
-                  description={
-                    customerSearch
-                      ? "Prueba con otro nombre o número de WhatsApp."
-                      : "Todavía no existen clientes registrados en Marketplace."
-                  }
-                  icon={UserRound}
-                />
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+                  <span aria-live="polite">{customers.isLoading ? "Consultando clientes…" : `${customerRows.length} clientes cargados`}</span>
+                  {customerSearchInput || customerSort !== "points_desc" ? <Button variant="ghost" size="sm" onClick={() => { setCustomerSearchInput(""); setCustomerSort("points_desc"); }}>Limpiar filtros</Button> : null}
+                </div>
+              </div>
+              {customers.isError ? <RecordLoadError onRetry={() => void customers.refetch()} /> : null}
+              {customers.isLoading ? <LoadingState /> : !customerRows.length ? (
+                !customers.isError ? <EmptyMarketplaceState appearance="premium" title={customerSearch ? "No encontramos clientes" : "No hay clientes"} description={customerSearch ? "Prueba con otro nombre o número de WhatsApp." : "Todavía no existen clientes registrados en Marketplace."} icon={UserRound} /> : null
               ) : (
-                <>
-                  <div className="relative overflow-hidden rounded-[24px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.075] via-background/62 to-cyan-500/[0.025] shadow-[0_24px_65px_-44px_rgba(139,92,246,0.9)] admin-graphite-panel">
-                    <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-violet-500/[0.055] blur-3xl" />
-                    <div className="relative hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 border-b border-violet-400/18 bg-violet-500/[0.07] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200/70 backdrop-blur-sm lg:grid">
-                      <span>Cliente</span>
-                      <span>Ranking</span>
-                      <span>Trabajos</span>
-                      <span>Activos</span>
-                      <span>Liquidados</span>
-                      <span>Última actividad</span>
-                      <span />
-                    </div>
-
-                    <div className="relative divide-y divide-violet-400/[0.09]">
-                      {customerRows.map((customer) => (
-                        <button
-                          key={customer.customerId}
-                          type="button"
-                          onClick={() => setCustomerId(customer.customerId)}
-                          className="group relative w-full px-3 py-2.5 text-left transition duration-200 sm:px-4 sm:py-3.5 hover:bg-gradient-to-r hover:from-violet-500/[0.085] hover:via-violet-500/[0.035] hover:to-cyan-500/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400/50"
-                        >
-                          <div className="hidden grid-cols-[minmax(240px,1.5fr)_130px_80px_80px_80px_minmax(150px,0.9fr)_36px] items-center gap-3 lg:grid">
-                            <div className="min-w-0">
-                              <p className="truncate font-semibold text-foreground">
-                                {customer.displayName}
-                              </p>
-                              <p className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                                <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
-                                {customer.whatsappPhone}
-                              </p>
-                              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-violet-300" />
-                                <span>Registrado: <time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span>
-                              </p>
-                            </div>
-
-                            <div className="inline-flex w-fit min-w-[104px] items-center gap-2 rounded-xl border border-violet-400/16 bg-violet-500/[0.065] px-3 py-2 shadow-inner shadow-violet-500/[0.04]">
-                              <Star className="h-4 w-4 shrink-0 text-violet-300" />
-                              <div>
-                                <p className="font-semibold text-violet-100">
-                                  {customer.points.toLocaleString("es")} pt
-                                </p>
-                                <p className="mt-0.5 text-[10px] text-muted-foreground">
-                                  {customer.distanceKm.toLocaleString("es", {
-                                    maximumFractionDigits: 1,
-                                  })}{" "}
-                                  km
-                                </p>
-                              </div>
-                            </div>
-
-                            <p className="font-semibold text-foreground">{customer.jobsTotal}</p>
-
-                            <p className="font-semibold text-cyan-200">{customer.jobsActive}</p>
-
-                            <p className="font-semibold text-emerald-200">{customer.jobsSettled}</p>
-
-                            <p className="text-xs text-muted-foreground">
-                              {customer.lastJobAt
-                                ? formatCustomerDateTime(customer.lastJobAt)
-                                : "Sin actividad"}
-                            </p>
-
-                            <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-400/15 bg-violet-500/[0.06] text-violet-300 transition group-hover:border-violet-400/30 group-hover:bg-violet-500/[0.12]">
-                              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                            </span>
-                          </div>
-
-                          <div className="lg:hidden">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate font-semibold text-foreground">
-                                  {customer.displayName}
-                                </p>
-                                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                  <Phone className="h-3.5 w-3.5 text-emerald-300" />
-                                  {customer.whatsappPhone}
-                                </p>
-                              </div>
-
-                              <div className="shrink-0 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-3 py-2 text-right">
-                                <p className="font-semibold text-violet-200">
-                                  {customer.points.toLocaleString("es")} pt
-                                </p>
-                                <p className="text-[10px] text-muted-foreground">
-                                  {customer.distanceKm.toLocaleString("es", {
-                                    maximumFractionDigits: 1,
-                                  })}{" "}
-                                  km
-                                </p>
-                              </div>
-                            </div>
-
-                            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-violet-300" />
-                              <span>Registrado: <time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span>
-                            </p>
-                            <p className="mt-1.5 text-[11px] text-muted-foreground sm:hidden">
-                              {customer.jobsTotal} trabajos · {customer.jobsActive} activos · {customer.jobsSettled} liquidados
-                            </p>
-                            {customer.lastJobAt ? (
-                              <p className="mt-1 text-[11px] text-muted-foreground sm:hidden">
-                                Última carrera: <time dateTime={customer.lastJobAt}>{formatCustomerDateTime(customer.lastJobAt)}</time>
-                              </p>
-                            ) : null}
-                            <div className="mt-3 hidden grid-cols-2 gap-2 sm:grid sm:grid-cols-4">
-                              <MiniMetric labelText="Trabajos" value={customer.jobsTotal} />
-                              <MiniMetric labelText="Activos" value={customer.jobsActive} />
-                              <MiniMetric labelText="Liquidados" value={customer.jobsSettled} />
-                              <MiniMetric
-                                labelText="Última actividad"
-                                value={
-                                  customer.lastJobAt
-                                    ? formatCustomerDateTime(customer.lastJobAt)
-                                    : "Sin actividad"
-                                }
-                              />
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <PaginationButton query={customers} />
-                </>
+                <div className="space-y-2" aria-label="Directorio de clientes">
+                  {customerRows.map((customer) => (
+                    <button key={customer.customerId} type="button" onClick={() => setCustomerId(customer.customerId)}
+                      aria-label={`Abrir ficha 360 de ${customer.displayName}`}
+                      className={cn("marketplace-record marketplace-customer-row w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", premiumSurface, "shadow-none")}
+                      data-marketplace-record="customer">
+                      <RecordIdentity icon={UserRound} name={customer.displayName}>
+                        <p className="flex items-center gap-1.5 break-words"><Phone className="h-3.5 w-3.5 shrink-0" />{customer.whatsappPhone || "Sin teléfono registrado"}</p>
+                        <p className="flex flex-wrap items-center gap-1"><CalendarDays className="h-3.5 w-3.5 shrink-0" /><span>Registrado: <time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span></p>
+                      </RecordIdentity>
+                      <div className="marketplace-record-metrics grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
+                        <RecordMetric labelText="Puntos" value={`${customer.points.toLocaleString("es")} pt`} tone="accent" />
+                        <RecordMetric labelText="Km" value={customer.distanceKm.toLocaleString("es", { maximumFractionDigits: 1 })} />
+                        <RecordMetric labelText="Trabajos" value={customer.jobsTotal} />
+                        <RecordMetric labelText="Activos / liquidados" value={`${customer.jobsActive} / ${customer.jobsSettled}`} />
+                      </div>
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-text-secondary">Última carrera</p>
+                          <p className="break-words text-xs font-medium text-foreground">{customer.lastJobAt ? <time dateTime={customer.lastJobAt}>{formatCustomerDateTime(customer.lastJobAt)}</time> : "Sin actividad"}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 shrink-0 text-text-secondary" aria-hidden="true" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
-            </PremiumPanel>
+              <PaginationButton query={customers} />
+            </section>
           </TabsContent>
         ) : null}
 
         {canPayments ? (
           <>
-            <TabsContent value="billeteras" className="mt-3">
-              <section aria-label="Billeteras" className="min-w-0">
-                <div className="min-w-0">
-                  {wallets.isLoading ? (
-                    <LoadingState />
-                  ) : !walletRows.length ? (
-                    <EmptyMarketplaceState appearance="premium"
-                      title="No hay billeteras"
-                      description="No existen billeteras disponibles para mostrar."
-                      icon={Wallet}
-                    />
-                  ) : (
-                    <>
-                      <div className="space-y-2.5">
-                        {walletRows.map((wallet) => {
-                          const reserved =
-                            Number(wallet.realReservedBalance) +
-                            Number(wallet.promotionalReservedBalance);
-
-                          return (
-                            <article
-                              key={wallet.userId}
-                              className="group relative overflow-hidden rounded-[17px] border border-amber-400/12 bg-gradient-to-r from-amber-500/[0.035] via-background/58 to-background/48 p-3 shadow-[0_16px_48px_-40px_rgba(245,158,11,0.85)] transition hover:border-amber-400/22 hover:bg-background/65 sm:p-4 admin-graphite-panel"
-                            >
-                              <img
-                                src="/admin-premium/wallets.svg"
-                                alt=""
-                                aria-hidden="true"
-                                className="pointer-events-none absolute right-0 top-1/2 hidden h-[115%] w-48 -translate-y-1/2 object-cover object-right opacity-[0.035] mix-blend-screen sm:block xl:w-56 xl:opacity-[0.045]"
-                              />
-                              <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-amber-400/[0.03] blur-3xl" />
-
-                              {/* En móvil: resumen de los saldos críticos y desglose bajo demanda. */}
-                              <div className="relative min-w-0 space-y-2.5 sm:hidden">
-                                <div className="flex min-w-0 items-start justify-between gap-2">
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-semibold text-foreground">{wallet.driverDisplayName}</p>
-                                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                                      {wallet.driverPhone || "Sin teléfono registrado"}
-                                    </p>
-                                  </div>
-                                  <span className={wallet.initialDepositConfirmed
-                                    ? "shrink-0 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-200"
-                                    : "shrink-0 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-200"}>
-                                    {wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="min-w-0 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] p-2.5">
-                                    <p className="text-[10px] font-semibold text-emerald-300">Disponible</p>
-                                    <p className="mt-1 break-words text-base font-bold tabular-nums text-foreground">
-                                      {formatAmount(wallet.availableBalance, wallet.currency)}
-                                    </p>
-                                  </div>
-                                  <div className="min-w-0 rounded-xl border border-rose-400/20 bg-rose-500/[0.045] p-2.5">
-                                    <p className="text-[10px] font-semibold text-rose-300">Reservado</p>
-                                    <p className="mt-1 break-words text-base font-bold tabular-nums text-foreground">
-                                      {formatAmount(reserved, wallet.currency)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <p className="text-[11px] text-muted-foreground">
-                                  Saldo total: <span className="font-semibold text-foreground">{formatAmount(wallet.totalBalance, wallet.currency)}</span>
-                                </p>
-                                <details className="group rounded-xl border border-border/60 bg-background/40 admin-graphite-inset">
-                                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
-                                    Ver detalles de la billetera
-                                    <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
-                                  </summary>
-                                  <div className="space-y-2 border-t border-border/50 px-3 py-3 text-xs text-muted-foreground">
-                                    <div className="flex justify-between gap-2">
-                                      <span>Saldo real</span>
-                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.realBalance, wallet.currency)}</strong>
-                                    </div>
-                                    <div className="flex justify-between gap-2">
-                                      <span>Saldo promocional</span>
-                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.promotionalBalance, wallet.currency)}</strong>
-                                    </div>
-                                    <div className="flex justify-between gap-2">
-                                      <span>Promocional disponible</span>
-                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.promotionalAvailableBalance, wallet.currency)}</strong>
-                                    </div>
-                                    <div className="flex justify-between gap-2">
-                                      <span>Real reservado</span>
-                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.realReservedBalance, wallet.currency)}</strong>
-                                    </div>
-                                    <div className="flex justify-between gap-2">
-                                      <span>Promocional reservado</span>
-                                      <strong className="text-right font-semibold text-foreground">{formatAmount(wallet.promotionalReservedBalance, wallet.currency)}</strong>
-                                    </div>
-                                    <p className="border-t border-border/50 pt-2 text-[11px]">
-                                      Última actualización: {formatDate(wallet.updatedAt)}
-                                    </p>
-                                  </div>
-                                </details>
-                              </div>
-
-                              <div className="relative hidden gap-3 sm:grid lg:grid-cols-[minmax(200px,0.9fr)_minmax(0,3.1fr)] lg:items-center">
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                    Conductor
-                                  </p>
-                                  <p className="mt-1 truncate font-semibold text-foreground">
-                                    {wallet.driverDisplayName}
-                                  </p>
-                                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                    {wallet.driverPhone || "Sin teléfono registrado"}
-                                  </p>
-                                  <div className="mt-2">
-                                    <span
-                                      className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${
-                                        wallet.initialDepositConfirmed
-                                          ? "border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300"
-                                          : "border-amber-500/20 bg-amber-500/[0.07] text-amber-300"
-                                      }`}
-                                    >
-                                      {wallet.initialDepositConfirmed
-                                        ? "DEPÓSITO INICIAL OK"
-                                        : "DEPÓSITO INICIAL PENDIENTE"}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
-                                  <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5">
-                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                      Total
-                                    </p>
-                                    <p className="mt-1 break-words text-sm font-semibold tabular-nums text-foreground sm:text-lg">
-                                      {formatAmount(wallet.totalBalance, wallet.currency)}
-                                    </p>
-                                  </div>
-
-                                  <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-3 py-2.5">
-                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                      Disponible
-                                    </p>
-                                    <p className="mt-1 break-words text-sm font-semibold tabular-nums text-foreground sm:text-lg">
-                                      {formatAmount(wallet.availableBalance, wallet.currency)}
-                                    </p>
-                                  </div>
-
-                                  <div className="rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-2.5">
-                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                      Promocional
-                                    </p>
-                                    <p className="mt-1 font-semibold text-foreground">
-                                      {formatAmount(wallet.promotionalBalance, wallet.currency)}
-                                    </p>
-                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                      Disp.{" "}
-                                      {formatAmount(
-                                        wallet.promotionalAvailableBalance,
-                                        wallet.currency,
-                                      )}
-                                    </p>
-                                  </div>
-
-                                  <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.035] px-3 py-2.5">
-                                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                                      Reservado
-                                    </p>
-                                    <p className="mt-1 font-semibold text-foreground">
-                                      {formatAmount(reserved, wallet.currency)}
-                                    </p>
-                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                      Real{" "}
-                                      {formatAmount(wallet.realReservedBalance, wallet.currency)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-
-                      <PaginationButton query={wallets} />
-                    </>
-                  )}
+          <TabsContent value="billeteras" className="mt-3">
+            <section aria-label="Billeteras" data-nav-tone="finanzas" className="marketplace-record-workspace min-w-0 space-y-2.5">
+              <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
+                  {walletSearch ? <Button variant="ghost" size="sm" onClick={() => setWalletSearch("")}>Limpiar</Button> : null}
                 </div>
-              </section>
-            </TabsContent>
-            <TabsContent value="recargas">
-              <PremiumPanel
-                headerless
-                title="Recargas"
-                description={
-                  topups.isLoading
-                    ? "Consultando recargas…"
-                    : `${topupRows.length} ${
-                        topupRows.length === 1 ? "recarga cargada" : "recargas cargadas"
-                      }`
-                }
-                icon={Banknote}
-                tone="cyan"
-                backgroundImage="/admin-premium/topups.svg"
-                action={
-                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
-                    <div className="flex min-w-0 max-w-full flex-wrap gap-1 rounded-xl border border-border-default p-1 admin-graphite-inset">
-                      {[
-                        ["", "Todas"],
-                        ["requested", "Pendientes"],
-                        ["confirmed", "Confirmadas"],
-                        ["reconciled", "Conciliadas"],
-                        ["rejected", "Rechazadas"],
-                      ].map(([value, name]) => (
-                        <Button
-                          key={value || "all"}
-                          size="sm"
-                          className="min-h-11 shrink-0 sm:min-h-8"
-                          variant={topupStatus === value ? "default" : "ghost"}
-                          onClick={() => setTopupStatus(value)}
-                        >
-                          {name}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {canManagePayments ? (
-                      <Button
-                        className="rounded-xl border border-cyan-300/20 shadow-[0_0_26px_-12px_rgba(34,211,238,0.95)]"
-                        onClick={() => {
-                          setError(null);
-                          setNewTopup(true);
-                        }}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Registrar recarga
-                      </Button>
-                    ) : null}
-                  </div>
-                }
-              >
-                {topups.isLoading ? (
-                  <LoadingState />
-                ) : !topupRows.length ? (
-                  <EmptyMarketplaceState appearance="premium"
-                    title="No hay recargas"
-                    description="Cuando se registre una recarga aparecerá aquí."
-                    icon={Banknote}
-                  />
-                ) : (
-                  <>
-                    <div className="space-y-3">
-                      {topupRows.map((item) => {
-                        const receipt = financialDocuments.data?.find(
-                          (document) => document.topupId === item.topupId,
-                        );
-
-                        return (
-                          <article
-                            key={item.topupId}
-                            className="group relative overflow-hidden rounded-[22px] border border-cyan-400/15 bg-gradient-to-br from-cyan-500/[0.045] via-background/60 to-background/45 p-3.5 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.85)] transition-colors hover:border-cyan-400/25 admin-graphite-panel"
-                          >
-                            <img
-                              src="/admin-premium/topups.svg"
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none absolute right-0 top-0 h-full w-64 object-cover object-right opacity-[0.055] mix-blend-screen"
-                            />
-                            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-cyan-400/[0.035] blur-3xl" />
-
-                            {/* En móvil: importe, estado y gestión pendientes siempre visibles. */}
-                            <div className="relative min-w-0 space-y-2.5 sm:hidden">
-                              <div className="flex min-w-0 items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <h4 className="truncate text-sm font-semibold text-foreground">{item.driverDisplayName}</h4>
-                                  <p className="mt-1 text-[11px] text-muted-foreground">
-                                    Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time>
-                                  </p>
-                                </div>
-                                <StatusBadge status={item.status} />
-                              </div>
-                              <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.045] p-2.5">
-                                <div className="min-w-0">
-                                  <p className="text-[10px] uppercase tracking-wide text-cyan-300">Importe</p>
-                                  <p className="mt-0.5 break-words text-lg font-bold tabular-nums text-foreground">
-                                    {formatAmount(item.amount, item.currency)}
-                                  </p>
-                                </div>
-                                <p className="min-w-0 text-right text-[11px] text-muted-foreground">
-                                  {paymentMethodLabel(item.method)}
-                                </p>
-                              </div>
-                              {canManagePayments && item.status === "requested" ? (
-                                <Button
-                                  size="sm"
-                                  className="min-h-11 w-full"
-                                  onClick={() => {
-                                    setError(null);
-                                    setTopup({
-                                      id: item.topupId,
-                                      driver: item.driverDisplayName,
-                                      confirmationKey: crypto.randomUUID(),
-                                    });
-                                    setReason("");
-                                  }}
-                                >
-                                  Gestionar recarga pendiente
-                                </Button>
-                              ) : null}
-                              <details className="group rounded-xl border border-border/60 bg-background/40 admin-graphite-inset">
-                                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-semibold text-cyan-200 [&::-webkit-details-marker]:hidden">
-                                  Ver detalles de la recarga
-                                  <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
-                                </summary>
-                                <div className="space-y-2 border-t border-border/50 px-3 py-3 text-xs text-muted-foreground">
-                                  {item.driverPhone ? <p>Teléfono: <span className="text-foreground">{item.driverPhone}</span></p> : null}
-                                  <p>Método: <span className="text-foreground">{paymentMethodLabel(item.method)}</span></p>
-                                  {item.reference ? <p className="break-words">Referencia: <span className="text-foreground">{item.reference}</span></p> : null}
-                                  {item.notes ? <p className="break-words">Notas: <span className="text-foreground">{item.notes}</span></p> : null}
-                                  {item.rejectionReason ? <p className="break-words text-rose-300">Motivo: {item.rejectionReason}</p> : null}
-                                  {item.confirmedAt ? <p>Confirmada: <time dateTime={item.confirmedAt} className="text-foreground">{formatDate(item.confirmedAt)}</time></p> : null}
-                                  {item.rejectedAt ? <p>Rechazada: <time dateTime={item.rejectedAt} className="text-foreground">{formatDate(item.rejectedAt)}</time></p> : null}
-                                  {receipt ? (
-                                    <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/[0.05] p-2.5">
-                                      <p className="font-semibold text-emerald-200">Comprobante {receipt.documentNumber}</p>
-                                      <p className="mt-1">Emitido: {formatDate(receipt.issuedAt)}</p>
-                                    </div>
-                                  ) : null}
-                                </div>
-                              </details>
-                            </div>
-
-                            <div className="relative hidden gap-3 sm:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(250px,0.72fr)_auto] lg:items-start">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h4 className="font-semibold text-foreground">
-                                    {item.driverDisplayName}
-                                  </h4>
-                                  <StatusBadge status={item.status} />
-                                </div>
-
-                                <div className="mt-2 space-y-1.5 text-sm">
-                                  <p className="text-muted-foreground">
-                                    Método:{" "}
-                                    <span className="font-medium text-foreground">
-                                      {paymentMethodLabel(item.method)}
-                                    </span>
-                                  </p>
-
-                                  {item.driverPhone ? (
-                                    <p className="text-muted-foreground">
-                                      Teléfono:{" "}
-                                      <span className="font-medium text-foreground">
-                                        {item.driverPhone}
-                                      </span>
-                                    </p>
-                                  ) : null}
-
-                                  {item.reference ? (
-                                    <p className="text-muted-foreground">
-                                      Referencia:{" "}
-                                      <span className="text-foreground">{item.reference}</span>
-                                    </p>
-                                  ) : null}
-
-                                  {item.notes ? (
-                                    <p className="text-muted-foreground">
-                                      Notas: <span className="text-foreground">{item.notes}</span>
-                                    </p>
-                                  ) : null}
-
-                                  {item.rejectionReason ? (
-                                    <p className="text-muted-foreground">
-                                      Motivo:{" "}
-                                      <span className="text-foreground">
-                                        {item.rejectionReason}
-                                      </span>
-                                    </p>
-                                  ) : null}
-                                </div>
-                              </div>
-
-                              <div className="grid gap-2 rounded-2xl border border-border/55 bg-background/40 px-3.5 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] admin-graphite-inset">
-                                <p className="text-muted-foreground">
-                                  Solicitada:{" "}
-                                  <span className="font-medium text-foreground">
-                                    {formatDate(item.requestedAt)}
-                                  </span>
-                                </p>
-
-                                {item.confirmedAt ? (
-                                  <p className="text-muted-foreground">
-                                    Confirmada:{" "}
-                                    <span className="font-medium text-foreground">
-                                      {formatDate(item.confirmedAt)}
-                                    </span>
-                                  </p>
-                                ) : null}
-
-                                {item.rejectedAt ? (
-                                  <p className="text-muted-foreground">
-                                    Rechazada:{" "}
-                                    <span className="font-medium text-foreground">
-                                      {formatDate(item.rejectedAt)}
-                                    </span>
-                                  </p>
-                                ) : null}
-                              </div>
-
-                              <div className="flex items-center justify-between gap-3 lg:flex-col lg:items-end">
-                                <div className="min-w-[112px] rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.055] px-3.5 py-2.5 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cyan-300">
-                                    Importe
-                                  </p>
-                                  <p className="mt-0.5 text-xl font-semibold tracking-tight text-foreground">
-                                    {formatAmount(item.amount, item.currency)}
-                                  </p>
-                                </div>
-
-                                {canManagePayments && item.status === "requested" ? (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      setError(null);
-                                      setTopup({
-                                        id: item.topupId,
-                                        driver: item.driverDisplayName,
-                                        confirmationKey: crypto.randomUUID(),
-                                      });
-                                      setReason("");
-                                    }}
-                                  >
-                                    Gestionar
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </div>
-
-                            {receipt ? (
-                              <div className="relative mt-3 hidden rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.075] via-emerald-500/[0.035] to-cyan-500/[0.035] px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] sm:block admin-graphite-panel">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300">
-                                    <ShieldCheck className="h-4 w-4" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold text-emerald-300">
-                                      Comprobante {receipt.documentNumber}
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-muted-foreground">
-                                      Emitido {formatDate(receipt.issuedAt)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : null}
-                          </article>
-                        );
-                      })}
-                    </div>
-
-                    <PaginationButton query={topups} />
-                  </>
-                )}
-              </PremiumPanel>
-            </TabsContent>
+                <p className="mt-2 text-xs text-text-secondary" aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</p>
+              </div>
+              {wallets.isError ? <RecordLoadError onRetry={() => void wallets.refetch()} /> : null}
+              {wallets.isLoading ? <LoadingState /> : !filteredWalletRows.length ? (
+                !wallets.isError ? <EmptyMarketplaceState appearance="premium" title={walletSearch ? "Sin coincidencias en billeteras cargadas" : "No hay billeteras"} description={walletSearch ? "Prueba otro nombre o teléfono; puedes cargar más registros." : "No existen billeteras disponibles para mostrar."} icon={Wallet} /> : null
+              ) : (
+                <div className="space-y-2">
+                  {filteredWalletRows.map((wallet) => {
+                    const reserved = Number(wallet.realReservedBalance) + Number(wallet.promotionalReservedBalance);
+                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet">
+                      <div className="marketplace-wallet-summary">
+                        <RecordIdentity icon={Wallet} name={wallet.driverDisplayName}>
+                          <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
+                          <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}</span>
+                        </RecordIdentity>
+                        <div className="marketplace-record-metrics grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                          <RecordMetric labelText="Disponible" value={formatAmount(wallet.availableBalance, wallet.currency)} tone="available" />
+                          <RecordMetric labelText="Reservado" value={formatAmount(reserved, wallet.currency)} tone="reserved" />
+                          <RecordMetric labelText="Saldo total" value={formatAmount(wallet.totalBalance, wallet.currency)} />
+                        </div>
+                      </div>
+                      <details className="marketplace-record-details group">
+                        <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                          Ver detalles de la billetera
+                          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+                        </summary>
+                        <div className="marketplace-record-detail-grid grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          <RecordMetric labelText="Saldo real" value={formatAmount(wallet.realBalance, wallet.currency)} />
+                          <RecordMetric labelText="Saldo promocional" value={formatAmount(wallet.promotionalBalance, wallet.currency)} />
+                          <RecordMetric labelText="Promocional disponible" value={formatAmount(wallet.promotionalAvailableBalance, wallet.currency)} />
+                          <RecordMetric labelText="Real reservado" value={formatAmount(wallet.realReservedBalance, wallet.currency)} />
+                          <RecordMetric labelText="Promocional reservado" value={formatAmount(wallet.promotionalReservedBalance, wallet.currency)} />
+                          <RecordMetric labelText="Última actualización" value={formatDate(wallet.updatedAt)} />
+                        </div>
+                      </details>
+                    </article>;
+                  })}
+                </div>
+              )}
+              <PaginationButton query={wallets} />
+            </section>
+          </TabsContent>
+          <TabsContent value="recargas">
+            <section aria-label="Recargas" data-nav-tone="recargas" className="marketplace-record-workspace min-w-0 space-y-2.5">
+              <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <RecordSearch value={topupSearch} onChange={setTopupSearch} placeholder="Buscar conductor, teléfono o referencia" labelText="Buscar recargas cargadas" />
+                  {canManagePayments ? <Button className="min-h-11" onClick={() => { setError(null); setNewTopup(true); }}><Plus className="mr-2 h-4 w-4" />Registrar recarga</Button> : null}
+                </div>
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
+                  {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
+                    <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+                  <span aria-live="polite">{filteredTopupRows.length} de {topupRows.length} recargas cargadas{topups.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
+                  {topupSearch || topupStatus ? <Button variant="ghost" size="sm" onClick={() => { setTopupSearch(""); setTopupStatus(""); }}>Limpiar filtros</Button> : null}
+                </div>
+              </div>
+              {topups.isError ? <RecordLoadError onRetry={() => void topups.refetch()} /> : null}
+              {topups.isLoading ? <LoadingState /> : !filteredTopupRows.length ? (
+                !topups.isError ? <EmptyMarketplaceState appearance="premium" title={topupSearch || topupStatus ? "No hay recargas con estos filtros" : "No hay recargas"} description={topupSearch ? "La búsqueda se aplica a los registros cargados. Puedes cargar más." : "Cuando se registre una recarga aparecerá aquí."} icon={Banknote} /> : null
+              ) : (
+                <div className="space-y-2">
+                  {filteredTopupRows.map((item) => {
+                    const receipt = receiptsByTopup.get(item.topupId);
+                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row", premiumSurface, "shadow-none")} data-marketplace-record="topup">
+                      <div className="marketplace-topup-summary">
+                        <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
+                          <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
+                          <p className="break-words">{paymentMethodLabel(item.method)}</p>
+                        </RecordIdentity>
+                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
+                          <RecordMetric labelText="Importe" value={formatAmount(item.amount, item.currency)} tone="accent" />
+                          <StatusBadge status={item.status} />
+                        </div>
+                        {canManagePayments && item.status === "requested" ? (
+                          <Button size="sm" className="min-h-11 w-full sm:w-auto" onClick={() => {
+                            setError(null);
+                            setTopup({ id: item.topupId, driver: item.driverDisplayName, confirmationKey: crypto.randomUUID() });
+                            setReason("");
+                          }}>Gestionar recarga pendiente</Button>
+                        ) : null}
+                      </div>
+                      <details className="marketplace-record-details group">
+                        <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                          Ver detalles de la recarga
+                          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+                        </summary>
+                        <div className="marketplace-record-detail-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {item.driverPhone ? <RecordMetric labelText="Teléfono" value={item.driverPhone} /> : null}
+                          <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
+                          {item.reference ? <RecordMetric labelText="Referencia" value={item.reference} /> : null}
+                          {item.notes ? <RecordMetric labelText="Notas" value={item.notes} /> : null}
+                          {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="danger" /> : null}
+                          {item.confirmedAt ? <RecordMetric labelText="Confirmada" value={<time dateTime={item.confirmedAt}>{formatDate(item.confirmedAt)}</time>} /> : null}
+                          {item.rejectedAt ? <RecordMetric labelText="Rechazada" value={<time dateTime={item.rejectedAt}>{formatDate(item.rejectedAt)}</time>} /> : null}
+                          {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante" value={receipt.documentNumber} tone="available" /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
+                        </div>
+                      </details>
+                    </article>;
+                  })}
+                </div>
+              )}
+              <PaginationButton query={topups} />
+            </section>
+          </TabsContent>
           </>
         ) : null}
 
@@ -3071,8 +2629,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (!open) setCustomerId(null);
         }}
       >
-        <DialogContent className="max-h-[94vh] overflow-y-auto border-violet-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-5xl admin-graphite-dialog">
-          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-5 py-4 pr-14 backdrop-blur-xl sm:px-6 sm:py-5">
+        <DialogContent className="max-h-[94dvh] overflow-y-auto border-border-default p-0 sm:max-w-5xl admin-graphite-dialog">
+          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-3 py-3 pr-12 admin-graphite-header">
             <DialogHeader className="text-left">
               <div className="mb-1 flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.75)]" />
@@ -3080,7 +2638,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   Perfil de cliente
                 </span>
               </div>
-              <DialogTitle className="text-xl tracking-tight sm:text-2xl">
+              <DialogTitle className="text-lg tracking-tight">
                 Ficha 360 del cliente
               </DialogTitle>
               <DialogDescription className="max-w-2xl">
@@ -3089,7 +2647,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             </DialogHeader>
           </div>
 
-          <div className="p-4 sm:p-6">
+          <div className="p-3">
             {customer360.isLoading ? (
               <LoadingState />
             ) : customer360.data ? (
