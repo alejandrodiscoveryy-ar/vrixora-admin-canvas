@@ -57,6 +57,19 @@ test("Modalidades usan badges de color aprobados sin modificar el estado del map
   assert.match(src, /style=\{\{ backgroundColor: vehicleModeColor\(code\) \}\}/);
   assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\} className="h-7 w-7"/);
   assert.match(src, /className="h-3\/4 w-3\/4"/);
-  assert.match(src, /color="#1e293b">\$\{vehicleModeGlyph\(vehicleCategoryCode\)\}/);
+  assert.match(src, /color="#ffffff">\$\{vehicleModeGlyph\(vehicleCategoryCode\)\}/);
   assert.match(src, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
+});
+
+
+test("Marcadores flotantes y leyenda muestran color de modalidad dentro del pin de estado", () => {
+  const pin = src.slice(src.indexOf("function operationalPinSvg("), src.indexOf("function OperationalPinLegend("));
+  assert.match(pin, /kind === "driver" \? vehicleModeColor\(vehicleCategoryCode\) :/);
+  assert.match(pin, /fill="url\(#\$\{bodyId\}\)"/);
+  assert.match(pin, /driverState === "available"/);
+  assert.match(pin, /driverState === "busy"/);
+  assert.match(pin, /driverState === "stale"/);
+  assert.match(pin, /operationalPinIconSvg\(kind, vehicleCategoryCode\)/);
+  assert.match(src, /translate\(14\.64 11\.64\) scale\(\.78\)/);
+  assert.match(src, /vehicleCategoryCode: driver\.vehicleCategoryCode/);
 });
