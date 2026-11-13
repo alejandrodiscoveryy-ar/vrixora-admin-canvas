@@ -8,6 +8,7 @@ const rateLimitCategory: Record<string, string> = {
   start_session: "session",
   services: "read",
   working_fleet: "read",
+  fleet_presence_v2: "read",
   create_request: "request",
   publish: "publish",
   get_job: "read",
@@ -52,11 +53,12 @@ Deno.serve(async (request) => {
     if (settingsError) throw settingsError;
     if (settings?.captcha_required) await verifyCaptcha(body.captcha_token, settings.captcha_provider);
     // Separate polling from booking/search budgets; still use trusted IP limits.
-    const identity = await hmac(`${operation === "working_fleet" ? "fleet-read" : category}:${clientIp}`, rateSecret);
+    const identity = await hmac(`${(operation === "working_fleet" || operation === "fleet_presence_v2") ? "fleet-read" : category}:${clientIp}`, rateSecret);
     const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
     const params = { ...(body.params ?? {}) };
-    if (operation === "working_fleet") {
+    if (operation === "working_fleet" || operation === "fleet_presence_v2") {
+      const v2 = operation === "fleet_presence_v2";
       // Require an existing customer session; never expose the private GPS table.
       if (typeof params.target_session_id !== "string" ||
           typeof params.target_session_token !== "string") {
@@ -65,7 +67,7 @@ Deno.serve(async (request) => {
       // This role deliberately has no SELECT privilege on private driver tables.
       // The narrowly scoped RPC verifies the customer session inside Postgres
       // and returns only anonymized, approximate coordinates.
-      const { data, error } = await supabase.rpc("get_marketplace_customer_working_fleet", {
+      const { data, error } = await supabase.rpc(v2 ? "get_marketplace_customer_fleet_presence_v2" : "get_marketplace_customer_working_fleet", {
         target_session_id: params.target_session_id,
         target_session_token: params.target_session_token,
       });
@@ -80,8 +82,13 @@ Deno.serve(async (request) => {
         const lon = Number(row.longitude);
         if (!Number.isFinite(lat) || !Number.isFinite(lon) ||
             lat < 18 || lat > 24.5 || lon < -85.5 || lon > -73) return [];
-        return [{ latitude: Number((Math.round(lat / 0.003) * 0.003).toFixed(3)),
-          longitude: Number((Math.round(lon / 0.003) * 0.003).toFixed(3)) }];
+        const live = v2 && row.available_now === true;
+        const grid = v2 && !live ? 0.01 : 0.003;
+        const point = {
+          latitude: Number((Math.round(lat / grid) * grid).toFixed(3)),
+          longitude: Number((Math.round(lon / grid) * grid).toFixed(3)),
+        };
+        return [v2 ? { ...point, available_now: live } : point];
       }).sort((a, b) => a.latitude - b.latitude || a.longitude - b.longitude);
       return new Response(JSON.stringify({ data: points }), {
         headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },

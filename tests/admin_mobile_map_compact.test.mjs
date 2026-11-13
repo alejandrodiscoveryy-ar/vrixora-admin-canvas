@@ -29,9 +29,11 @@ test("los filtros se muestran a demanda en móvil y permanecen visibles en escri
   assert.match(source, /"coverage", "Cobertura"/);
 });
 
-test("siguen presentes filtros GPS antiguo y acciones de operación", () => {
-  assert.match(source, /showStaleWorkingDrivers/);
-  assert.match(source, /Mostrar GPS antiguo/);
+test("acceso directo a toda la flota y acciones de operación", () => {
+  assert.match(source, /Toda la flota/);
+  assert.match(source, /setCoverageFilter\("all"\)/);
+  assert.match(source, /setMapViewMode\("coverage"\)/);
+  assert.match(source, /Trabajando · GPS sin actualizar/);
   assert.match(source, /onClick=\{\(\) => void operational\.refetch\(\)\}/);
   assert.match(source, /setAgendaCollapsed/);
   assert.match(source, /setExpanded/);
