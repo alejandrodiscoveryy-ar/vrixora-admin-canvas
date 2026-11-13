@@ -53,3 +53,11 @@ test("finanzas: búsqueda explícitamente local, recuperación y diseño sin dup
   assert.match(css, /@container \(min-width: 680px\)/);
   assert.match(css, /marketplace-record-summary:focus-visible/);
 });
+
+ test("finanzas: tarjetas acotadas, rejilla adaptativa y consultas por tarjeta", () => {
+  assert.match(css, /grid-template-columns: repeat\(auto-fill, minmax\(min\(100%, 22rem\), 1fr\)\)/);
+  assert.match(css, /max-inline-size: 36rem;\s*container-type: inline-size;/);
+  assert.match(css, /\.marketplace-finance-row \.marketplace-topup-summary\s*\{\s*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(css, /@container \(min-width: 300px\)/);
+  assert.match(css, /@container \(max-width: 260px\)/);
+});
