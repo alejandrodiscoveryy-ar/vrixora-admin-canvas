@@ -34,7 +34,7 @@ test('La misma familia SVG representa cada modalidad en agenda, leyenda y mapa',
   assert.match(icon, /viewBox="0 0 24 24"/);
   assert.match(icon, /vehicleModeGlyph\(code\)/);
   assert.doesNotMatch(icon, /🛺|<Bike|<CarFront|<Truck/);
-  assert.match(src, /stroke="currentColor" stroke-width="1\.9"/);
+  assert.match(src, /fill="currentColor" fill-rule="evenodd"/);
   assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\}/);
   assert.match(src, /<VehicleModeBadge code=\{job\.vehicleCategoryCode\}/);
 });
