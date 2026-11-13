@@ -1,0 +1,23 @@
+name: Diagnostico temporal de version Admin publicada
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/diagnostic-admin-production-icons.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Consultar sitio publico sin credenciales
+        shell: bash
+        run: |
+          set -eu
+          for url in 'https://admin.vrixora.com/' 'https://admin.vrixora.com/licenses/mdi.txt' 'https://admin.vrixora.com/licenses/mdi.txt?diagnostic=8335397'; do
+            printf '\nURL %s\n' "$url"
+            curl -sS -L --max-time 25 -D /tmp/headers -o /tmp/body "$url" || { echo "FETCH_FAILED"; continue; }
+            grep -iE '^(HTTP/|content-type:|cf-cache-status:|age:|cache-control:|etag:|last-modified:|location:)' /tmp/headers || true
+            if grep -Fq 'Material Design Icons by the Pictogrammers' /tmp/body && grep -Fq 'Compact' /tmp/body; then echo 'NEW_LICENSE_PRESENT'; elif grep -Fq 'Material Design Icons by the Pictogrammers' /tmp/body; then echo 'MDI_LICENSE_PRESENT'; else echo 'MDI_LICENSE_NOT_PRESENT'; fi
+            if grep -Fq 'Vrixora' /tmp/body; then echo 'ADMIN_HTML_PRESENT'; fi
+          done
