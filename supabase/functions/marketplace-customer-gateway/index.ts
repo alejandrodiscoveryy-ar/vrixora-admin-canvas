@@ -7,6 +7,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const rateLimitCategory: Record<string, string> = {
   start_session: "session",
   services: "read",
+  promo_profile: "read",
   working_fleet: "read",
   fleet_presence_v2: "read",
   create_request: "request",
@@ -57,6 +58,31 @@ Deno.serve(async (request) => {
     const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
     const params = { ...(body.params ?? {}) };
+    if (operation === "promo_profile") {
+      // Public promotional profile: opaque link only, rate limited above.
+      const code = params.target_code;
+      if (typeof code !== "string" || !/^[0-9a-f]{32}$/.test(code)) return json({ data: null });
+      const { data: profile, error } = await supabase.rpc("resolve_marketplace_promo_profile_v1", { target_code: code });
+      if (error) throw error;
+      if (!profile) return json({ data: null });
+      let photoUrl: string | null = null;
+      if (profile.photo_asset_id) {
+        const { data: asset, error: assetError } = await supabase.from("media_assets")
+          .select("storage_bucket,storage_path")
+          .eq("project_id", project.id).eq("id", profile.photo_asset_id)
+          .eq("asset_kind", "driver_photo").eq("status", "available").maybeSingle();
+        if (!assetError && asset?.storage_bucket === "marketplace-media") {
+          const { data: signed } = await supabase.storage.from(asset.storage_bucket).createSignedUrl(asset.storage_path, 120);
+          photoUrl = signed?.signedUrl ?? null;
+        }
+      }
+      return new Response(JSON.stringify({ data: {
+        public_name: profile.public_name,
+        category_code: profile.category_code,
+        service_codes: profile.service_codes,
+        photo_url: photoUrl,
+      } }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    }
     if (operation === "working_fleet" || operation === "fleet_presence_v2") {
       const v2 = operation === "fleet_presence_v2";
       // Require an existing customer session; never expose the private GPS table.
