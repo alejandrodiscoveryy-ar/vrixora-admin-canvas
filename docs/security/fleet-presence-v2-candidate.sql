@@ -16,6 +16,43 @@ CREATE TABLE app_private.marketplace_driver_presence_v2 (
 ALTER TABLE app_private.marketplace_driver_presence_v2 ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON app_private.marketplace_driver_presence_v2 FROM PUBLIC, anon, authenticated, service_role;
 
+-- Serialize GPS writes with expiration, explicit Work/Rest and job acceptance.
+-- Existing GPS RPC remains the first authorization boundary; recheck eligibility
+-- under the same assignment lock so a concurrent cleanup cannot race a fresh fix.
+CREATE FUNCTION app_private.lock_marketplace_presence_assignment_v2()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+DECLARE working boolean;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.projects p WHERE p.id=NEW.project_id AND p.slug='tuktuk-control') THEN
+    RETURN NEW;
+  END IF;
+  SELECT a.accepting_jobs INTO working
+  FROM public.driver_vehicle_assignments a
+  JOIN public.driver_profiles d ON d.project_id=a.project_id AND d.user_id=a.driver_user_id
+  JOIN public.vehicles v ON v.project_id=a.project_id AND v.id=a.vehicle_id
+  WHERE a.project_id=NEW.project_id AND a.driver_user_id=NEW.driver_user_id AND a.vehicle_id=NEW.vehicle_id
+    AND a.is_active AND d.status='active' AND d.activated_at IS NOT NULL AND d.suspended_at IS NULL
+    AND v.marketplace_status='active' AND v.deleted_at IS NULL
+  FOR UPDATE OF a;
+  IF NOT FOUND THEN RAISE EXCEPTION 'DRIVER_LOCATION_NOT_ALLOWED' USING ERRCODE='42501'; END IF;
+  IF NOT working AND NOT EXISTS (
+    SELECT 1 FROM public.jobs j
+    LEFT JOIN public.marketplace_incident_resolutions r ON r.project_id=j.project_id AND r.job_id=j.id
+    WHERE j.project_id=NEW.project_id AND j.assigned_driver_user_id=NEW.driver_user_id
+      AND j.assigned_vehicle_id=NEW.vehicle_id AND j.test_deleted_at IS NULL
+      AND (j.status IN ('accepted','en_route','pickup','in_progress') OR (j.status='incident' AND r.id IS NULL))
+  ) THEN
+    RAISE EXCEPTION 'DRIVER_LOCATION_NOT_ALLOWED' USING ERRCODE='42501';
+  END IF;
+  RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION app_private.lock_marketplace_presence_assignment_v2() FROM PUBLIC,anon,authenticated,service_role;
+CREATE TRIGGER marketplace_presence_v2_lock
+BEFORE INSERT OR UPDATE OF latitude,longitude,captured_at,received_at ON public.marketplace_driver_locations
+FOR EACH ROW EXECUTE FUNCTION app_private.lock_marketplace_presence_assignment_v2();
+
 -- Store only a coarse coverage cell, independently of the operational GPS row.
 -- Existing explicit clearing of the operational location remains unchanged.
 CREATE FUNCTION app_private.capture_marketplace_presence_v2()
