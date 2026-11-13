@@ -1145,3 +1145,63 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Shared 360 records: neutral graphite surfaces, restrained module identity. */
+.marketplace-360 {
+  --record-360-accent: var(--module-licencias);
+  --record-360-ink: color-mix(in oklab, var(--record-360-accent) 66%, var(--text-primary));
+  min-inline-size: 0;
+}
+.marketplace-360-customer { --record-360-accent: var(--module-comercial); }
+.marketplace-360-hero {
+  border-color: color-mix(in oklab, var(--record-360-accent) 34%, var(--border-default));
+  background-image: radial-gradient(ellipse at 0% 0%, color-mix(in oklab, var(--record-360-accent) 12%, transparent), transparent 70%);
+}
+.marketplace-360-watermark {
+  position: absolute;
+  inset-block-start: -0.35em;
+  inset-inline-end: 0.05em;
+  color: var(--record-360-accent);
+  opacity: .09;
+  font-size: clamp(5rem, 16vw, 10rem);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -.08em;
+  pointer-events: none;
+  user-select: none;
+}
+.marketplace-360-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 999px;
+  color: var(--record-360-ink);
+  border: 1px solid color-mix(in oklab, var(--record-360-accent) 40%, var(--border-default));
+  background-color: color-mix(in oklab, var(--record-360-accent) 14%, var(--surface-2));
+}
+.marketplace-360-kicker {
+  color: var(--record-360-ink);
+  font-size: 10px;
+  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.marketplace-360-tab {
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  text-align: center;
+}
+.marketplace-360-tab[data-state="active"] {
+  color: var(--record-360-ink);
+  border-color: color-mix(in oklab, var(--record-360-accent) 40%, var(--border-default));
+  background-color: color-mix(in oklab, var(--record-360-accent) 12%, var(--surface-2));
+  box-shadow: none;
+}
+.marketplace-360-tab:hover { background-color: var(--surface-3); }
+.marketplace-360-link { color: var(--record-360-ink); }
+.marketplace-360-panel { min-inline-size: 0; }
+.marketplace-360-content { min-inline-size: 0; overflow-wrap: anywhere; }
