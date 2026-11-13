@@ -8,9 +8,6 @@ if (typeof window !== "undefined") {
 }
 import {
   AlertTriangle,
-  Bike,
-  Boxes,
-  CarFront,
   Copy,
   Clock3,
   ChevronDown,
@@ -25,7 +22,6 @@ import {
   RefreshCw,
   Route,
   SlidersHorizontal,
-  Truck,
   UserRound,
   Users,
 } from "lucide-react";
@@ -148,154 +144,32 @@ function operationalPinIconSvg(
     `;
   }
 
-  // Deterministic vector icon; no OS-dependent emoji glyphs in map markers.
-  if (vehicleCategoryCode === "tricycle") {
-    return `
-      <path d="M19 15.8h10l3.2 5.4V26H15.8v-4.8l3.2-5.4Z"
-        fill="none" stroke="#1e293b" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M19.5 16.6h9l1.5 5.6h-12l1.5-5.6Z"
-        fill="#cbd5e1" stroke="#1e293b" stroke-width="1.3" stroke-linejoin="round"/>
-      <path d="M24 17.6V22m-5.5 1.5h11" fill="none" stroke="#1e293b" stroke-width="1.3"/>
-      <circle cx="17.5" cy="27.2" r="2.1" fill="#1e293b"/>
-      <circle cx="30.5" cy="27.2" r="2.1" fill="#1e293b"/>
-      <circle cx="24" cy="29.3" r="1.7" fill="#1e293b"/>
-    `;
-  }
+  // One deterministic 24x24 glyph system for the map, legend and agenda.
+  return `<g transform="translate(14.64 11.64) scale(.78)" color="#ffffff">${vehicleModeGlyph(vehicleCategoryCode)}</g>`;
+}
 
-  if (vehicleCategoryCode === "motorcycle") {
-    return `
-      <circle
-        cx="17.5"
-        cy="27"
-        r="2.8"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-      />
-      <circle
-        cx="30.5"
-        cy="27"
-        r="2.8"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-      />
-      <path
-        d="M17.5 27l4.3-6.2h4.3l4.4 6.2M21.8 20.8l3 6.2M24.8 27l3.5-8.8h3"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    `;
-  }
-
+// Material Design Icons by Pictogrammers (Apache-2.0); see public/licenses/mdi.txt.
+// Motorbike and fallback package use MDI; other compact silhouettes are TukTuk-specific.
+function vehicleModeGlyph(vehicleCategoryCode: string | null) {
+  const filled = (d: string) => `<path fill="currentColor" fill-rule="evenodd" d="${d}"/>`;
+  // mdi:motorbike (d826a15ebb1c1e9f5d6a9be18a4afaa8208544d7)
+  if (vehicleCategoryCode === "motorcycle") return filled("M17.42,10L13.41,6H9V8H12.59L14.59,10H6.5C4,10 2,12 2,14.5C2,17 4,19 6.5,19C8.72,19 10.56,17.38 10.92,15.27L13.04,14C13,14.17 13,14.33 13,14.5C13,17 15,19 17.5,19C20,19 22,17 22,14.5C22,12 20,10 17.5,10M8.84,15.26C8.5,16.27 7.58,17 6.47,17C5.09,17 3.97,15.88 3.97,14.5C3.97,13.12 5.09,12 6.47,12C7.59,12 8.5,12.74 8.84,13.75H6V15.25L8.84,15.26M17.47,17C16.09,17 14.97,15.88 14.97,14.5C14.97,13.12 16.09,12 17.47,12A2.5,2.5 0 0,1 19.97,14.5A2.5,2.5 0 0,1 17.47,17Z");
+  // Compact square silhouettes approved for small UI badges.
+  if (vehicleCategoryCode === "tricycle") return filled("M5 4H16L21 11V18H20V21H16V18H8V21H4V18H3V7Q3 4 5 4ZM5 7V12H10V7ZM12 7V12H18L15 7Z");
+  if (vehicleCategoryCode === "light_car") return filled("M5 5H19L22 12V19H19V21H16V19H8V21H5V19H2V12ZM6 7L4.5 11H19.5L18 7ZM5 14V16H8V14ZM16 14V16H19V14Z");
+  if (vehicleCategoryCode === "van") return filled("M3 5H17L22 11V18H20A3 3 0 0 1 14 18H9A3 3 0 0 1 3 18H1V7ZM4 7V11H8V7ZM10 7V11H14V7ZM16 7V11H19.5L16.5 7ZM6 16A2 2 0 1 0 6 20A2 2 0 0 0 6 16ZM17 16A2 2 0 1 0 17 20A2 2 0 0 0 17 16Z");
+  if (vehicleCategoryCode === "truck") return filled("M2 4H14V8H19L23 13V18H21A3.5 3.5 0 0 1 14 18H10A3.5 3.5 0 0 1 3 18H1V5ZM16 10V13H20L18 10ZM6.5 16A2 2 0 1 0 6.5 20A2 2 0 0 0 6.5 16ZM17.5 16A2 2 0 1 0 17.5 20A2 2 0 0 0 17.5 16Z");
   if (vehicleCategoryCode === "bicitaxi") {
-    return `
-      <circle
-        cx="16.5"
-        cy="27.2"
-        r="2.4"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.5"
-      />
-      <circle
-        cx="31.5"
-        cy="27.2"
-        r="2.4"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.5"
-      />
-      <path
-        d="M18.8 27.2h10.3l-1.3-8H20l-1.2 8Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M19.9 19.2h8.3M23.9 19.2v-3.5M21.7 15.7h4.5"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.5"
-        stroke-linecap="round"
-      />
-    `;
+    // Compact Cuban pedicab: bicycle front, passenger canopy, two wheels in profile.
+    return `<g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 7V4H19L21 7Z" fill="currentColor"/>
+      <path d="M13 7V15H20V7M13 12H20"/>
+      <circle cx="5" cy="18" r="3.2"/>
+      <circle cx="18.5" cy="18" r="3.2"/>
+      <path d="M5 18L8 10L12 18H5M8 10L7 7H9M12 18H18.5M10 10H13M12 18V21H14"/>
+    </g>`;
   }
-
-  if (vehicleCategoryCode === "light_car") {
-    return `
-      <path
-        d="M16 23.8l2.3-6.1h11.4l2.3 6.1v4H16v-4Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M19.2 18.2h9.6l1.4 4.2H17.8l1.4-4.2Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.2"
-      />
-      <circle cx="19" cy="28.2" r="1.7" fill="#1e293b"/>
-      <circle cx="29" cy="28.2" r="1.7" fill="#1e293b"/>
-    `;
-  }
-
-  if (vehicleCategoryCode === "van") {
-    return `
-      <rect x="16" y="16" width="16" height="11.3" rx="2"
-        fill="none" stroke="#1e293b" stroke-width="1.7"/>
-      <path d="M18 18.2h5v4.3h-5zm6.7 0h5.2v4.3h-5.2z"
-        fill="#cbd5e1" stroke="#1e293b" stroke-width="1"/>
-      <path d="M16.5 24.9h15" stroke="#1e293b" stroke-width="1.1"/>
-      <circle cx="19.5" cy="28" r="1.8" fill="#1e293b"/>
-      <circle cx="28.5" cy="28" r="1.8" fill="#1e293b"/>
-    `;
-  }
-
-  if (vehicleCategoryCode === "truck") {
-    return `
-      <path
-        d="M15.5 17.5h10v9.8h-10z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-      />
-      <path
-        d="M25.5 20h4.2l2.8 3.2v4.1h-7V20Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-        stroke-linejoin="round"
-      />
-      <circle cx="19" cy="28.1" r="1.8" fill="#1e293b"/>
-      <circle cx="29" cy="28.1" r="1.8" fill="#1e293b"/>
-    `;
-  }
-
-  return `
-    <circle
-      cx="24"
-      cy="21.5"
-      r="6.2"
-      fill="none"
-      stroke="#1e293b"
-      stroke-width="2"
-    />
-    <circle cx="24" cy="21.5" r="1.6" fill="#1e293b"/>
-    <path
-      d="M24 19.8v-4M22.3 22.8l-3.7 2.8M25.7 22.8l3.7 2.8"
-      fill="none"
-      stroke="#1e293b"
-      stroke-width="1.9"
-      stroke-linecap="round"
-    />
-  `;
+  return filled("M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L10.11,5.22L16,8.61L17.96,7.5L12,4.15M6.04,7.5L12,10.85L13.96,9.75L8.08,6.35L6.04,7.5M5,15.91L11,19.29V12.58L5,9.21V15.91M19,15.91V9.21L13,12.58V19.29L19,15.91Z");
 }
 
 function operationalPinSvg({
@@ -435,23 +309,23 @@ function operationalPinSvg({
         cx="24"
         cy="21"
         r="11.5"
-        fill="url(#${innerId})"
+        fill="${kind === "driver" ? vehicleModeColor(vehicleCategoryCode) : `url(#${innerId})`}"
         stroke="#ffffff"
         stroke-width="1.4"
         stroke-opacity="0.96"
         filter="url(#${innerShadowId})"
       />
 
-      <path
+      ${kind !== "driver" ? `<path
         d="M17.2 17.5c1.7-3.2 4.5-4.8 8.3-4.8"
         fill="none"
         stroke="#ffffff"
         stroke-width="1.25"
         stroke-linecap="round"
         opacity="0.72"
-      />
+      />` : ""}
 
-      <g transform="${kind === "driver" ? "translate(24 22) scale(1.20) translate(-24 -22)" : ""}">
+      <g>
         ${operationalPinIconSvg(kind, vehicleCategoryCode)}
       </g>
     </svg>
@@ -496,45 +370,47 @@ function OperationalPinLegend({
   );
 }
 
+// Modality colors are separate from driver availability / GPS state.
+function vehicleModeColor(code: string | null): string {
+  switch (code) {
+    case "motorcycle": return "#7c3aed";
+    case "tricycle": return "#c2410c";
+    case "bicitaxi": return "#4d7c0f";
+    case "light_car": return "#0369a1";
+    case "van": return "#4338ca";
+    case "truck": return "#475569";
+    default: return "#475569";
+  }
+}
+
 function VehicleModeIcon({
   code,
-  className = "h-4 w-4",
+  className = "h-7 w-7",
 }: {
   code: string | null;
   className?: string;
 }) {
-  switch (code) {
-    case "light_car":
-      return <CarFront className={className} />;
-    case "motorcycle":
-    case "bicitaxi":
-      return <Bike className={className} />;
-    case "tricycle":
-      return (
-        <span
-          className={`${className} inline-flex items-center justify-center text-[14px] leading-none`}
-          aria-hidden="true"
-        >
-          🛺
-        </span>
-      );
-    case "van":
-    case "truck":
-      return <Truck className={className} />;
-    case "other":
-      return <Boxes className={className} />;
-    default:
-      return <Package className={className} />;
-  }
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-md text-white ${className}`}
+      style={{ backgroundColor: vehicleModeColor(code) }}
+      title={vehicleCategoryLabel(code)}
+      role="img"
+      aria-label={vehicleCategoryLabel(code)}
+    >
+      <svg viewBox="0 0 24 24" className="h-3/4 w-3/4" aria-hidden="true"
+        dangerouslySetInnerHTML={{ __html: vehicleModeGlyph(code) }} />
+    </span>
+  );
 }
 
 function VehicleModeBadge({ code }: { code: string | null }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/20 bg-orange-500/[0.06] px-2 py-1 text-[10px] font-semibold text-orange-200"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 text-[10px] font-semibold text-slate-200"
       title={`Modalidad: ${vehicleCategoryLabel(code)}`}
     >
-      <VehicleModeIcon code={code} className="h-3.5 w-3.5" />
+      <VehicleModeIcon code={code} className="h-5 w-5" />
       {vehicleCategoryLabel(code)}
     </span>
   );
@@ -2562,7 +2438,7 @@ export default function MarketplaceOperationalMap({
                                   >
                                     <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
                                     <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">{driver.driverDisplayName || "Conductor"}</span>
-                                    <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-3.5 w-3.5 shrink-0 text-orange-300" />
+                                    <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-7 w-7" />
                                     <span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} role="img" aria-label={stateLabel} title={stateLabel} />
                                     <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${rowExpanded ? "rotate-180" : ""}`} />
                                   </button>
