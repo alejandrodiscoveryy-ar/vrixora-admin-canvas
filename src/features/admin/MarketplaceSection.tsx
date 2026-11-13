@@ -55,7 +55,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { premiumSurface, premiumControlSurface, premiumHeaderSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
@@ -513,75 +513,81 @@ function Customer360Detail({
   hasMore,
   loadingMore,
   onLoadMore,
+  onOpenJob,
 }: {
   detail: MarketplaceCustomer360;
   history: MarketplaceCustomerHistoryItem[];
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  onOpenJob: (id: string) => void;
 }) {
   const km = (value: number | null) =>
     value == null ? "\u2014" : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
 
+  const phone = detail.customer.whatsappPhone?.trim() || "";
+  const whatsapp = phone ? driverWhatsAppLinks(phone) : null;
+  const sections = [
+    { id: "overview", label: "Resumen", Icon: Eye },
+    { id: "activity", label: "Actividad", Icon: BriefcaseBusiness },
+    { id: "modalities", label: "Modalidades", Icon: CarFront },
+    { id: "history", label: "Historial", Icon: Clock3 },
+  ] as const;
   return (
-    <div data-nav-tone="usuarios" className="space-y-3">
-      <section className="relative overflow-hidden rounded-2xl border border-border-default p-3 admin-graphite-panel">
-
-        <div className="relative">
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-start gap-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-default bg-surface-2 marketplace-value-accent">
-                <UserRound className="h-5 w-5" />
-              </div>
-
-              <div className="min-w-0">
-                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] marketplace-value-accent">
-                  Cliente Marketplace
-                </div>
-                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                  {detail.customer.displayName}
-                </h3>
-              </div>
-            </div>
-
-            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground  admin-graphite-inset">
-              <CalendarDays className="h-3.5 w-3.5 marketplace-value-accent" />
-              Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)
-            </div>
+    <div data-nav-tone="usuarios" className="marketplace-360 marketplace-360-customer min-w-0 space-y-3">
+      <section aria-label="Identidad del cliente" className={cn("marketplace-360-hero relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+        <span aria-hidden="true" className="marketplace-360-watermark">360°</span>
+        <div className="relative flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="marketplace-360-avatar"><UserRound className="h-7 w-7" aria-hidden="true" /></div>
+          <div className="min-w-0 flex-1">
+            <p className="marketplace-360-kicker">Expediente 360 · Cliente</p>
+            <h2 className="mt-1 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{detail.customer.displayName}</h2>
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary"><CalendarDays className="h-3.5 w-3.5" />Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)</p>
           </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] marketplace-value-available">
-                <Phone className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  WhatsApp
-                </p>
-                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
-                  {detail.customer.whatsappPhone}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] marketplace-value-accent">
-                <Mail className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  Correo
-                </p>
-                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
-                  {detail.customer.email ?? "Sin correo registrado"}
-                </p>
-              </div>
-            </div>
+          <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
+            {whatsapp ? <Button variant="outline" size="sm" asChild><a href={whatsapp.web} target="_blank" rel="noopener noreferrer" className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />WhatsApp</a></Button> : null}
+            {phone ? <Button variant="outline" size="sm" asChild><a href={`tel:${phone}`} className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />Llamar</a></Button> : null}
+            {detail.customer.email ? <Button variant="outline" size="sm" asChild><a href={`mailto:${detail.customer.email}`} className="min-h-11"><Mail className="mr-1.5 h-4 w-4" />Correo</a></Button> : null}
           </div>
         </div>
+        <div className="relative mt-3 grid min-w-0 gap-2 border-t border-border/60 pt-3 sm:grid-cols-2">
+          <RecordMetric labelText="Teléfono / WhatsApp" value={phone || "No registrado"} />
+          <RecordMetric labelText="Correo" value={detail.customer.email ?? "Sin correo registrado"} />
+        </div>
       </section>
-
+      <Tabs defaultValue="overview" className="min-w-0">
+        <nav aria-label="Secciones de la ficha 360 del cliente" className={cn("marketplace-360-nav rounded-[var(--radius-card)] border p-1.5", premiumSurface)}>
+          <TabsList aria-label="Contenido del cliente" className="grid h-auto w-full grid-cols-2 gap-1 bg-transparent p-0 sm:flex sm:flex-wrap sm:justify-start">
+            {sections.map(({ id, label: tabLabel, Icon }) => (
+              <TabsTrigger key={id} value={id} className="marketplace-360-tab min-h-11 min-w-0 gap-1.5 whitespace-normal px-2 sm:px-3">
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{tabLabel}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </nav>
+        <TabsContent value="overview" className="marketplace-360-content space-y-3">
+          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+            <section aria-label="Indicadores esenciales del cliente" className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+              <p className="marketplace-360-kicker">Vista ejecutiva</p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">Actividad y consumo</h3>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <CustomerSummaryMetric icon={BriefcaseBusiness} labelText="Viajes completados" value={detail.summary.tripsCompleted} />
+                <CustomerSummaryMetric icon={Route} labelText="Km recorridos" value={km(detail.summary.distanceKm)} accent="cyan" />
+                <CustomerSummaryMetric icon={Banknote} labelText="Gasto total" value={formatAmount(detail.summary.totalSpent, detail.summary.currency)} accent="emerald" />
+                <CustomerSummaryMetric icon={CircleDollarSign} labelText="Ticket medio" value={formatAmount(detail.summary.averageTicket, detail.summary.currency)} accent="amber" />
+              </div>
+            </section>
+            <section aria-label="Reputación del cliente" className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+              <p className="marketplace-360-kicker">Relación con TukTuk</p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">Último servicio y valoración</h3>
+              <div className="mt-3 space-y-2">
+                <CustomerSummaryMetric icon={Clock3} labelText="Último servicio" value={detail.summary.lastServiceAt ? formatDate(detail.summary.lastServiceAt) : "Sin viajes completados"} />
+                <CustomerSummaryMetric icon={Star} labelText="Valoraciones realizadas" value={detail.ratings.givenCount ? `${detail.ratings.averageGiven.toFixed(1)} / 5 · ${detail.ratings.givenCount}` : "Sin valoraciones"} accent="amber" />
+              </div>
+            </section>
+          </div>
+        </TabsContent>
+        <TabsContent value="activity" className="marketplace-360-content space-y-3">
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
@@ -672,7 +678,9 @@ function Customer360Detail({
         </section>
       </div>
 
-      <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
+        </TabsContent>
+        <TabsContent value="modalities" className="marketplace-360-content">
+      <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Preferencias
@@ -726,7 +734,9 @@ function Customer360Detail({
         )}
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
+        </TabsContent>
+        <TabsContent value="history" className="marketplace-360-content">
+      <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Trazabilidad
@@ -801,6 +811,7 @@ function Customer360Detail({
                   ) : null}
                 </div>
 
+                <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="ghost" className="min-h-11 marketplace-360-link" onClick={() => onOpenJob(item.jobId)}>Ver carrera <ArrowRight className="ml-1.5 h-4 w-4" /></Button></div>
                 {item.ratingStars ? (
                   <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5 text-sm">
                     <Star className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
@@ -840,6 +851,8 @@ function Customer360Detail({
           </div>
         ) : null}
       </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -2630,25 +2643,12 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (!open) setCustomerId(null);
         }}
       >
-        <DialogContent className="max-h-[94dvh] overflow-y-auto border-border-default p-0 sm:max-w-5xl admin-graphite-dialog">
-          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-3 py-3 pr-12 admin-graphite-header">
-            <DialogHeader className="text-left">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.75)]" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                  Perfil de cliente
-                </span>
-              </div>
-              <DialogTitle className="text-lg tracking-tight">
-                Ficha 360 del cliente
-              </DialogTitle>
-              <DialogDescription className="max-w-2xl">
-                Actividad, consumo, modalidades e historial real de servicios en Marketplace.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-
-          <div className="p-3">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-border-default bg-background/95 p-0 sm:max-w-6xl admin-graphite-dialog">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Ficha 360 del cliente</DialogTitle>
+            <DialogDescription>Actividad, consumo, modalidades e historial de servicios.</DialogDescription>
+          </DialogHeader>
+          <div className="min-w-0 p-3 pt-12 sm:p-4 sm:pt-12">
             {customer360.isLoading ? (
               <LoadingState />
             ) : customer360.data ? (
@@ -2658,6 +2658,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 hasMore={Boolean(customerHistory.hasNextPage)}
                 loadingMore={customerHistory.isFetchingNextPage}
                 onLoadMore={() => customerHistory.fetchNextPage()}
+                onOpenJob={(id) => { setCustomerId(null); setJobDetailInitialTab("overview"); setJobId(id); }}
               />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
