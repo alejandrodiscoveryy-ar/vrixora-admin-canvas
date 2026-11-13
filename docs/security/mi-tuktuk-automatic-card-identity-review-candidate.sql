@@ -99,6 +99,10 @@ begin
   else
     update app_private.marketplace_driver_identity_reviews set revoked_at=coalesce(revoked_at,now())
       where project_id=d.project_id and driver_user_id=d.user_id;
+    update app_private.marketplace_driver_promo_profiles set revoked_at=coalesce(revoked_at,now())
+      where project_id=d.project_id and driver_user_id=d.user_id;
+    update app_private.marketplace_driver_promo_attribution set phase='fleet',released_at=now(),release_reason='revoked'
+      where project_id=d.project_id and driver_user_id=d.user_id and phase='preferred';
   end if;
   insert into public.audit_events(project_id,actor_id,action,entity_type,entity_id,metadata)
     values(d.project_id,auth.uid(),case when target_verified then 'admin_verify_driver_identity' else 'admin_revoke_driver_identity' end,
