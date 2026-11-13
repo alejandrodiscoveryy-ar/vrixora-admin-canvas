@@ -8,9 +8,6 @@ if (typeof window !== "undefined") {
 }
 import {
   AlertTriangle,
-  Bike,
-  Boxes,
-  CarFront,
   Copy,
   Clock3,
   ChevronDown,
@@ -25,7 +22,6 @@ import {
   RefreshCw,
   Route,
   SlidersHorizontal,
-  Truck,
   UserRound,
   Users,
 } from "lucide-react";
@@ -148,154 +144,42 @@ function operationalPinIconSvg(
     `;
   }
 
-  // Deterministic vector icon; no OS-dependent emoji glyphs in map markers.
+  // One deterministic 24x24 glyph system for the map, legend and agenda.
+  return `<g transform="translate(15.4 12.4) scale(.72)" color="#1e293b">${vehicleModeGlyph(vehicleCategoryCode)}</g>`;
+}
+
+// Original TukTuk pictograms: one side-view family, rounded strokes,
+// no emoji, external assets or platform-specific glyphs.
+function vehicleModeGlyph(vehicleCategoryCode: string | null) {
+  const wrap = (shape: string) => `<g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${shape}</g>`;
   if (vehicleCategoryCode === "tricycle") {
-    return `
-      <path d="M19 15.8h10l3.2 5.4V26H15.8v-4.8l3.2-5.4Z"
-        fill="none" stroke="#1e293b" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M19.5 16.6h9l1.5 5.6h-12l1.5-5.6Z"
-        fill="#cbd5e1" stroke="#1e293b" stroke-width="1.3" stroke-linejoin="round"/>
-      <path d="M24 17.6V22m-5.5 1.5h11" fill="none" stroke="#1e293b" stroke-width="1.3"/>
-      <circle cx="17.5" cy="27.2" r="2.1" fill="#1e293b"/>
-      <circle cx="30.5" cy="27.2" r="2.1" fill="#1e293b"/>
-      <circle cx="24" cy="29.3" r="1.7" fill="#1e293b"/>
-    `;
+    return wrap(`<path d="M3 17V9l3-4h10l4 7v5h-3M7 17h7M3 9h13l3 4H12V9M6 9v5h6M16 5v4"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="17" cy="18.5" r="2.5"/>
+      <path d="M8.5 21h6"/>`);
   }
-
   if (vehicleCategoryCode === "motorcycle") {
-    return `
-      <circle
-        cx="17.5"
-        cy="27"
-        r="2.8"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-      />
-      <circle
-        cx="30.5"
-        cy="27"
-        r="2.8"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-      />
-      <path
-        d="M17.5 27l4.3-6.2h4.3l4.4 6.2M21.8 20.8l3 6.2M24.8 27l3.5-8.8h3"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    `;
+    return wrap(`<circle cx="5" cy="17.5" r="3"/><circle cx="19" cy="17.5" r="3"/>
+      <path d="M5 17.5l4-6h5l5 6M9 11.5l3 6h3l2-10h3M7 10h5l2 1.5M10.5 14h3.5"/>
+      <path d="M16 8h-2"/>`);
   }
-
   if (vehicleCategoryCode === "bicitaxi") {
-    return `
-      <circle
-        cx="16.5"
-        cy="27.2"
-        r="2.4"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.5"
-      />
-      <circle
-        cx="31.5"
-        cy="27.2"
-        r="2.4"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.5"
-      />
-      <path
-        d="M18.8 27.2h10.3l-1.3-8H20l-1.2 8Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M19.9 19.2h8.3M23.9 19.2v-3.5M21.7 15.7h4.5"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.5"
-        stroke-linecap="round"
-      />
-    `;
+    return wrap(`<circle cx="4.5" cy="18" r="2.8"/><circle cx="19.5" cy="18" r="2.8"/>
+      <path d="M4.5 18l5-8 4.5 8H4.5M9.5 10l-1-3H6M13.5 18h3.2M14 7h7l1 4H13l1-4zM14 11v5h6v-5M19.5 16v2"/>
+      <path d="M12 5h10"/>`);
   }
-
   if (vehicleCategoryCode === "light_car") {
-    return `
-      <path
-        d="M16 23.8l2.3-6.1h11.4l2.3 6.1v4H16v-4Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.7"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M19.2 18.2h9.6l1.4 4.2H17.8l1.4-4.2Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.2"
-      />
-      <circle cx="19" cy="28.2" r="1.7" fill="#1e293b"/>
-      <circle cx="29" cy="28.2" r="1.7" fill="#1e293b"/>
-    `;
+    return wrap(`<path d="M3 17v-5l4-1 3-5h7l4 5 1 2v4h-3M8 17h8M7 11h14M13 6v5"/>
+      <circle cx="6" cy="17.5" r="2.5"/><circle cx="18" cy="17.5" r="2.5"/>`);
   }
-
   if (vehicleCategoryCode === "van") {
-    return `
-      <rect x="16" y="16" width="16" height="11.3" rx="2"
-        fill="none" stroke="#1e293b" stroke-width="1.7"/>
-      <path d="M18 18.2h5v4.3h-5zm6.7 0h5.2v4.3h-5.2z"
-        fill="#cbd5e1" stroke="#1e293b" stroke-width="1"/>
-      <path d="M16.5 24.9h15" stroke="#1e293b" stroke-width="1.1"/>
-      <circle cx="19.5" cy="28" r="1.8" fill="#1e293b"/>
-      <circle cx="28.5" cy="28" r="1.8" fill="#1e293b"/>
-    `;
+    return wrap(`<path d="M3 17V6h12l5 5 2 1v5h-3M8 17h8M4 8h7v5H4M13 8h2l4 5h-6z"/>
+      <circle cx="6" cy="17.5" r="2.5"/><circle cx="18" cy="17.5" r="2.5"/>`);
   }
-
   if (vehicleCategoryCode === "truck") {
-    return `
-      <path
-        d="M15.5 17.5h10v9.8h-10z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-      />
-      <path
-        d="M25.5 20h4.2l2.8 3.2v4.1h-7V20Z"
-        fill="none"
-        stroke="#1e293b"
-        stroke-width="1.6"
-        stroke-linejoin="round"
-      />
-      <circle cx="19" cy="28.1" r="1.8" fill="#1e293b"/>
-      <circle cx="29" cy="28.1" r="1.8" fill="#1e293b"/>
-    `;
+    return wrap(`<path d="M2 16V5h12v11M14 8h4l4 5v4h-3M8 17h8M2 17h2M17 9v4h4"/>
+      <circle cx="6" cy="17.5" r="2.5"/><circle cx="18" cy="17.5" r="2.5"/>`);
   }
-
-  return `
-    <circle
-      cx="24"
-      cy="21.5"
-      r="6.2"
-      fill="none"
-      stroke="#1e293b"
-      stroke-width="2"
-    />
-    <circle cx="24" cy="21.5" r="1.6" fill="#1e293b"/>
-    <path
-      d="M24 19.8v-4M22.3 22.8l-3.7 2.8M25.7 22.8l3.7 2.8"
-      fill="none"
-      stroke="#1e293b"
-      stroke-width="1.9"
-      stroke-linecap="round"
-    />
-  `;
+  return wrap(`<path d="M3 10l9-5 9 5v8l-9 5-9-5zM3 10l9 5 9-5M12 15v8M7.5 7.5l9 5"/>`);
 }
 
 function operationalPinSvg({
@@ -503,29 +387,10 @@ function VehicleModeIcon({
   code: string | null;
   className?: string;
 }) {
-  switch (code) {
-    case "light_car":
-      return <CarFront className={className} />;
-    case "motorcycle":
-    case "bicitaxi":
-      return <Bike className={className} />;
-    case "tricycle":
-      return (
-        <span
-          className={`${className} inline-flex items-center justify-center text-[14px] leading-none`}
-          aria-hidden="true"
-        >
-          🛺
-        </span>
-      );
-    case "van":
-    case "truck":
-      return <Truck className={className} />;
-    case "other":
-      return <Boxes className={className} />;
-    default:
-      return <Package className={className} />;
-  }
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: vehicleModeGlyph(code) }} />
+  );
 }
 
 function VehicleModeBadge({ code }: { code: string | null }) {
