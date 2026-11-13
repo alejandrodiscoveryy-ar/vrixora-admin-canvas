@@ -15,7 +15,6 @@ import {
   CircleDollarSign,
   Clock3,
   Eye,
-  Filter,
   Loader2,
   Mail,
   MapPin,
@@ -63,7 +62,7 @@ import { cn } from "@/lib/utils";
 
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
-import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect, MiniMetric } from "@/features/admin/MarketplaceListPrimitives";
+import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
 
 
@@ -304,6 +303,7 @@ const serviceClasses = (serviceCode: string | null) => {
 function StatusBadge({ status, compact = false }: { status: string | null; compact?: boolean }) {
   return (
     <span
+      data-marketplace-status={status ?? "unknown"}
       className={`inline-flex items-center rounded-full border ${compact ? "px-2 py-0.5 leading-tight" : "px-2.5 py-1"} text-[11px] font-semibold ${statusClasses(
         status,
       )}`}
@@ -439,10 +439,10 @@ function recordMatches(search: string, ...values: (string | null | undefined)[])
     (digits.length >= 3 && /^[+\d\s().-]+$/.test(query) && value.replace(/\D/g, "").includes(digits))));
 }
 
-function RecordMetric({ labelText, value, tone }: { labelText: string; value: ReactNode; tone?: "available" | "reserved" | "accent" }) {
+function RecordMetric({ labelText, value, tone }: { labelText: string; value: ReactNode; tone?: "available" | "reserved" | "accent" | "danger" }) {
   return <div className="min-w-0">
     <p className="text-[11px] font-medium leading-tight text-text-secondary">{labelText}</p>
-    <p className={cn("mt-0.5 break-words text-sm font-semibold tabular-nums text-foreground", tone === "available" && "marketplace-value-available", tone === "reserved" && "marketplace-value-reserved", tone === "accent" && "marketplace-value-accent")}>{value}</p>
+    <p className={cn("mt-0.5 break-words text-sm font-semibold tabular-nums text-foreground", tone === "available" && "marketplace-value-available", tone === "reserved" && "marketplace-value-reserved", tone === "accent" && "marketplace-value-accent", tone === "danger" && "marketplace-value-danger")}>{value}</p>
   </div>;
 }
 
@@ -535,7 +535,7 @@ function Customer360Detail({
               </div>
 
               <div className="min-w-0">
-                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] marketplace-value-accent">
                   Cliente Marketplace
                 </div>
                 <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
@@ -552,28 +552,28 @@ function Customer360Detail({
 
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] marketplace-value-available">
                 <Phone className="h-4 w-4" />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                   WhatsApp
                 </p>
-                <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
                   {detail.customer.whatsappPhone}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] marketplace-value-accent">
                 <Mail className="h-4 w-4" />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                   Correo
                 </p>
-                <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
                   {detail.customer.email ?? "Sin correo registrado"}
                 </p>
               </div>
@@ -674,7 +674,7 @@ function Customer360Detail({
 
       <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Preferencias
           </p>
           <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
@@ -713,7 +713,7 @@ function Customer360Detail({
           </div>
         ) : (
           <div className="mt-2 flex items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-background/40 p-4 admin-graphite-inset">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] text-cyan-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.05] marketplace-value-accent">
               <CarFront className="h-5 w-5" />
             </div>
             <div>
@@ -2381,7 +2381,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
                           {item.reference ? <RecordMetric labelText="Referencia" value={item.reference} /> : null}
                           {item.notes ? <RecordMetric labelText="Notas" value={item.notes} /> : null}
-                          {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="reserved" /> : null}
+                          {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="danger" /> : null}
                           {item.confirmedAt ? <RecordMetric labelText="Confirmada" value={<time dateTime={item.confirmedAt}>{formatDate(item.confirmedAt)}</time>} /> : null}
                           {item.rejectedAt ? <RecordMetric labelText="Rechazada" value={<time dateTime={item.rejectedAt}>{formatDate(item.rejectedAt)}</time>} /> : null}
                           {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante" value={receipt.documentNumber} tone="available" /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
