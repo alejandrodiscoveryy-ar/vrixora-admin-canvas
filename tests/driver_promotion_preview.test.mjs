@@ -24,3 +24,12 @@ test("El QR personal tiene un espacio dentro de la tarjeta en ambos formatos", (
   assert.match(card, /QR PENDIENTE/);
   assert.match(card, /aún no activo/);
 });
+
+test("El mensaje compartido y la entrada personalizada muestran el mismo recorrido", () => {
+  assert.match(card, /Mensaje para compartir/);
+  assert.match(card, /Enlace personal pendiente de activación/);
+  assert.match(card, /El enlace y el QR abrirán la misma entrada en TukTuk Cliente/);
+  assert.match(card, /Viaja con \{displayName\}/);
+  assert.match(card, /Buscar en toda la flota/);
+  assert.match(card, /todavía no enlazada/);
+});
