@@ -1053,3 +1053,15 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   .marketplace-customer-row { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.5fr) minmax(0, .8fr); align-items: center; gap: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .marketplace-record { transition: none; } }
+
+.marketplace-value-danger { color: color-mix(in oklab, var(--semantic-danger) 72%, var(--text-primary) 28%); }
+.marketplace-record [data-marketplace-status] {
+  --record-status-accent: var(--text-secondary);
+  border-color: color-mix(in oklab, var(--record-status-accent) 30%, var(--border-default));
+  background-color: color-mix(in oklab, var(--record-status-accent) 10%, var(--surface-2));
+  color: color-mix(in oklab, var(--record-status-accent) 65%, var(--text-primary) 35%);
+}
+.marketplace-record [data-marketplace-status="requested"] { --record-status-accent: var(--semantic-warning); }
+.marketplace-record [data-marketplace-status="confirmed"],
+.marketplace-record [data-marketplace-status="reconciled"] { --record-status-accent: var(--semantic-success); }
+.marketplace-record [data-marketplace-status="rejected"] { --record-status-accent: var(--semantic-danger); }
