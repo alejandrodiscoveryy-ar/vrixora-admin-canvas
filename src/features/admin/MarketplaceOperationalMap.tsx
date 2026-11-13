@@ -385,7 +385,7 @@ function vehicleModeColor(code: string | null): string {
 
 function VehicleModeIcon({
   code,
-  className = "h-7 w-7",
+  className = "h-6 w-6",
 }: {
   code: string | null;
   className?: string;
@@ -393,7 +393,7 @@ function VehicleModeIcon({
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded-md text-white ${className}`}
-      style={{ backgroundColor: vehicleModeColor(code) }}
+      style={{ backgroundColor: `${vehicleModeColor(code)}38`, boxShadow: `inset 0 0 0 1px ${vehicleModeColor(code)}66` }}
       title={vehicleCategoryLabel(code)}
       role="img"
       aria-label={vehicleCategoryLabel(code)}
@@ -2438,7 +2438,7 @@ export default function MarketplaceOperationalMap({
                                   >
                                     <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
                                     <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">{driver.driverDisplayName || "Conductor"}</span>
-                                    <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-7 w-7" />
+                                    <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-6 w-6" />
                                     <span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} role="img" aria-label={stateLabel} title={stateLabel} />
                                     <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${rowExpanded ? "rotate-180" : ""}`} />
                                   </button>

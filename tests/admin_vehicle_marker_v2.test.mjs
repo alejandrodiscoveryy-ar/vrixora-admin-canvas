@@ -54,8 +54,9 @@ test("Modalidades usan badges de color aprobados sin modificar el estado del map
   for (const [code, color] of Object.entries({ motorcycle: "#7c3aed", tricycle: "#c2410c", bicitaxi: "#4d7c0f", light_car: "#0369a1", van: "#4338ca", truck: "#475569" })) {
     assert.ok(src.includes('case "' + code + '": return "' + color + '"'));
   }
-  assert.match(src, /style=\{\{ backgroundColor: vehicleModeColor\(code\) \}\}/);
-  assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\} className="h-7 w-7"/);
+  assert.match(src, /backgroundColor: `\$\{vehicleModeColor\(code\)\}38`/);
+  assert.match(src, /boxShadow: `inset 0 0 0 1px \$\{vehicleModeColor\(code\)\}66`/);
+  assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\} className="h-6 w-6"/);
   assert.match(src, /className="h-3\/4 w-3\/4"/);
   assert.match(src, /color="#ffffff">\$\{vehicleModeGlyph\(vehicleCategoryCode\)\}/);
   assert.match(src, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
@@ -72,4 +73,15 @@ test("Marcadores flotantes y leyenda muestran color de modalidad dentro del pin 
   assert.match(pin, /operationalPinIconSvg\(kind, vehicleCategoryCode\)/);
   assert.match(src, /translate\(14\.64 11\.64\) scale\(\.78\)/);
   assert.match(src, /vehicleCategoryCode: driver\.vehicleCategoryCode/);
+});
+
+
+test("La transparencia se limita a badges de interfaz; el mapa conserva colores opacos", () => {
+  const icon = src.slice(src.indexOf("function VehicleModeIcon("), src.indexOf("function VehicleModeBadge("));
+  const pin = src.slice(src.indexOf("function operationalPinSvg("), src.indexOf("function OperationalPinLegend("));
+  assert.match(icon, /className = "h-6 w-6"/);
+  assert.match(icon, /rounded-md text-white/);
+  assert.match(icon, /backgroundColor: `\$\{vehicleModeColor\(code\)\}38`/);
+  assert.match(pin, /kind === "driver" \? vehicleModeColor\(vehicleCategoryCode\) :/);
+  assert.doesNotMatch(pin, /vehicleModeColor\(vehicleCategoryCode\)\}38/);
 });
