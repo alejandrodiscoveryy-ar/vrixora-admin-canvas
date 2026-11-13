@@ -541,8 +541,10 @@ function Customer360Detail({
           <div className="marketplace-360-avatar"><UserRound className="h-7 w-7" aria-hidden="true" /></div>
           <div className="min-w-0 flex-1">
             <p className="marketplace-360-kicker">Expediente 360 · Cliente</p>
-            <h2 className="mt-1 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{detail.customer.displayName}</h2>
-            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary"><CalendarDays className="h-3.5 w-3.5" />Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)</p>
+            <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <h2 className="min-w-0 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{detail.customer.displayName}</h2>
+              <span className="inline-flex min-w-0 items-center gap-1 text-xs text-text-secondary"><CalendarDays className="h-3.5 w-3.5 shrink-0" />Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)</span>
+            </div>
           </div>
           <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
             {whatsapp ? <Button variant="outline" size="sm" asChild><a href={whatsapp.web} target="_blank" rel="noopener noreferrer" className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />WhatsApp</a></Button> : null}
@@ -2270,8 +2272,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                       className={cn("marketplace-record marketplace-customer-row w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", premiumSurface, "shadow-none")}
                       data-marketplace-record="customer">
                       <RecordIdentity icon={UserRound} name={customer.displayName}>
-                        <p className="flex items-center gap-1.5 break-words"><Phone className="h-3.5 w-3.5 shrink-0" />{customer.whatsappPhone || "Sin teléfono registrado"}</p>
-                        <p className="flex flex-wrap items-center gap-1"><CalendarDays className="h-3.5 w-3.5 shrink-0" /><span>Registrado: <time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span></p>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5">
+                          <span className="inline-flex min-w-0 items-center gap-1 break-words"><Phone className="h-3.5 w-3.5 shrink-0" />{customer.whatsappPhone || "Sin teléfono registrado"}</span>
+                          <span className="inline-flex min-w-0 items-center gap-1" title="Fecha de registro (Cuba)"><CalendarDays className="h-3.5 w-3.5 shrink-0" /><span><span className="sr-only">Registrado: </span><time dateTime={customer.createdAt}>{formatCustomerDateTime(customer.createdAt)}</time></span></span>
+                        </div>
                       </RecordIdentity>
                       <div className="marketplace-record-metrics grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
                         <RecordMetric labelText="Puntos" value={`${customer.points.toLocaleString("es")} pt`} tone="accent" />
