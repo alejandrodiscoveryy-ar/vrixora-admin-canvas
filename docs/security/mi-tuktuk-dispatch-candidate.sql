@@ -560,7 +560,7 @@ $function$;
 -- Existing function privileges and OIDs are retained by CREATE OR REPLACE.
 -- Decline is an explicit opt-out, not a job cancellation. UI connection follows.
 CREATE FUNCTION public.decline_my_marketplace_promo_offer(target_job_id uuid)
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
 DECLARE actor uuid:=auth.uid(); pid uuid;
 BEGIN
   IF actor IS NULL THEN RAISE EXCEPTION 'AUTHENTICATION_REQUIRED' USING ERRCODE='42501'; END IF;
@@ -572,7 +572,7 @@ BEGIN
   IF NOT FOUND THEN RETURN false; END IF;
   PERFORM app_private.enqueue_marketplace_job_offer_wave(target_job_id);
   RETURN true;
-END $;
+END $$;
 REVOKE ALL ON FUNCTION public.decline_my_marketplace_promo_offer(uuid) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.decline_my_marketplace_promo_offer(uuid) TO authenticated;
 
