@@ -40,3 +40,15 @@ test("editor en ventana independiente sin cambios de RPC", () => {
   assert.match(editor, /!form\.photoId/);
   assert.match(parent, /Ficha 360 del conductor/);
 });
+
+test("conductor comparte el sistema visual 360 sin perder datos ni acciones", () => {
+  for (const token of ["marketplace-360-driver","marketplace-360-hero","marketplace-360-watermark","marketplace-360-avatar","marketplace-360-nav","marketplace-360-tab","marketplace-360-content"]) assert.ok(record.includes(token), token);
+  assert.match(record, /data-state=\{activeTab === id \? "active" : "inactive"\}/);
+  assert.match(record, /media\?\.avatarUrl/);
+  assert.match(record, /detail.driver.activatedAt \?\? detail.driver.createdAt/);
+  assert.match(record, /canManageDriver && activeTab === "management"/);
+  assert.match(record, /!canSeeFinancial/);
+  assert.match(record, /financial.wallet.realAvailableBalance/);
+  const css = read("src/styles.css");
+  assert.match(css, /\.marketplace-360-driver \{ --record-360-accent: var\(--module-empleados\); \}/);
+});
