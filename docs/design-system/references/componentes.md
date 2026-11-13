@@ -134,3 +134,7 @@ Los submenús laterales mantienen la línea de jerarquía, iconos de 20 px en co
 ### Nombre definitivo del grupo de configuración
 
 Por decisión del propietario, el grupo lateral visible antes llamado Administración se llama **Configuración**. Sus cuatro destinos son Ajustes generales, Empleados, Comunicados e Integraciones, en el mismo orden y con los mismos permisos y enlaces existentes. La primera opción lleva el icono de ajustes deslizantes, evitando duplicar nombre e icono del grupo padre. La vista operativa dentro de Trabajos se identifica como **Configuración operativa** (Centro de pruebas, Radar y Provincia), sin moverla ni cambiar su URL. El identificador interno del grupo `administracion` y sus contratos de tonos, rutas y permisos se conservan para compatibilidad. La navegación interior y su encabezado adoptan el mismo nombre visible.
+
+### Accesos directos en grupos de navegación
+
+Configuración y Trabajos comparten el patrón de cabecera con dos acciones independientes: el nombre/icono es un enlace a la vista predeterminada (Ajustes generales, con alternativa autorizada, o Pulso mediante vista=resumen); la flecha controla exclusivamente la expansión. Mantener los destinos hijos, permisos, estado activo y colores, cierre del drawer al navegar y acceso en barra contraída. El grupo activo se abre al entrar desde otra sección; los submenús se pueden contraer sin abandonar la pantalla. No introducir botones anidados ni alterar las reglas operativas o el estado del mapa.
