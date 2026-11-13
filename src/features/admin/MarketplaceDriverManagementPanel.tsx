@@ -93,6 +93,7 @@ export default function MarketplaceDriverManagementPanel({
   const [openingDocument, setOpeningDocument] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewReason, setReviewReason] = useState("");
+  const [reviewDocumentType, setReviewDocumentType] = useState("");
   const [promoOpen, setPromoOpen] = useState(false);
   const [authorizationReference, setAuthorizationReference] = useState("");
   const [authorizationConfirmed, setAuthorizationConfirmed] = useState(false);
@@ -129,11 +130,11 @@ export default function MarketplaceDriverManagementPanel({
   });
 
   const reviewMutation = useMutation({
-    mutationFn: async ({ verified, front, back }: {
-      verified: boolean; front: string | null; back: string | null;
+    mutationFn: async ({ verified, front, back, documentType }: {
+      verified: boolean; front: string | null; back: string | null; documentType: string | null;
     }) => {
       const { error } = await getSupabaseClient().rpc(
-        "admin_set_marketplace_driver_identity_review_v1",
+        "admin_set_marketplace_driver_identity_review_v2",
         {
           target_project_id: projectId,
           target_driver_user_id: driverUserId,
@@ -141,6 +142,7 @@ export default function MarketplaceDriverManagementPanel({
           target_reason: reviewReason.trim(),
           target_front_asset_id: front,
           target_back_asset_id: back,
+          target_document_type: documentType,
         },
       );
       if (error) throw error;
@@ -152,6 +154,7 @@ export default function MarketplaceDriverManagementPanel({
       ]);
       setReviewOpen(false);
       setReviewReason("");
+      setReviewDocumentType("");
     },
   });
 
@@ -275,7 +278,8 @@ export default function MarketplaceDriverManagementPanel({
   const acceptanceRate = resolved ? Math.round((stats.accepted / resolved) * 100) : null;
   const front = m.document_assets.find((asset) => asset.kind === "identity_front")?.id ?? null;
   const back = m.document_assets.find((asset) => asset.kind === "identity_back")?.id ?? null;
-  const canVerify = Boolean(front && back && (m.driver.identity_type === "national_id" || m.driver.identity_type === "driver_license") && m.driver.status !== "suspended");
+  const canVerify = Boolean(front && back && m.driver.status !== "suspended");
+  const documentTypeKnown = m.driver.identity_type === "national_id" || m.driver.identity_type === "driver_license";
 
   return (
     <div className="min-w-0 space-y-3 max-sm:[&_button]:min-h-11" aria-label="Gestión administrativa del conductor">
@@ -463,14 +467,14 @@ export default function MarketplaceDriverManagementPanel({
             {review.data && (
               <Button type="button" size="sm" variant="outline"
                 disabled={reviewMutation.isPending || (!review.data.verified && !canVerify)}
-                onClick={() => { setReviewReason(""); setReviewOpen((open) => !open); }}>
+                onClick={() => { setReviewReason(""); setReviewDocumentType(documentTypeKnown ? m.driver.identity_type! : ""); setReviewOpen((open) => !open); }}>
                 {review.data.verified ? "Retirar verificación" : "Verificar identidad"}
               </Button>
             )}
           </div>
           {review.isError && <p className="mt-2 text-xs text-muted-foreground">La verificación administrativa aún no está disponible.</p>}
           {review.data && !review.data.verified && !canVerify && (
-            <p className="mt-2 text-xs text-muted-foreground">Para conceder la insignia se necesitan el tipo y ambas caras del documento. Esto no impide que el conductor tenga su tarjeta.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Para conceder la insignia se necesitan ambas caras del documento y un conductor no suspendido.</p>
           )}
           {review.data && (
             <div className="mt-3 border-t pt-3">
@@ -519,8 +523,21 @@ export default function MarketplaceDriverManagementPanel({
           {reviewOpen && review.data && (
             <form className="mt-3 space-y-2" onSubmit={(event) => {
               event.preventDefault();
-              reviewMutation.mutate({ verified: !review.data!.verified, front, back });
+              reviewMutation.mutate({ verified: !review.data!.verified, front, back, documentType: review.data!.verified ? null : reviewDocumentType });
             }}>
+              {!review.data.verified && (
+                <label className="block text-xs text-muted-foreground">
+                  Tipo de documento revisado
+                  <select required value={reviewDocumentType} disabled={documentTypeKnown}
+                    onChange={(event) => setReviewDocumentType(event.target.value)}
+                    className={cn("mt-1 h-11 w-full rounded-lg border bg-surface-1 px-3 text-sm text-foreground", premiumControlSurface)}>
+                    <option value="">Selecciona el tipo de documento</option>
+                    <option value="national_id">Carnet de identidad</option>
+                    <option value="driver_license">Licencia de conducción</option>
+                  </select>
+                  {!documentTypeKnown && <span className="mt-1 block">El expediente antiguo no indica el tipo. Selecciónalo después de revisar ambas imágenes; se guardará junto a la aprobación.</span>}
+                </label>
+              )}
               <label className="block text-xs text-muted-foreground">
                 Motivo de la revisión administrativa
                 <input required minLength={5} maxLength={300} value={reviewReason}
@@ -532,7 +549,7 @@ export default function MarketplaceDriverManagementPanel({
               )}
               {reviewMutation.isError && <p role="alert" className="text-xs text-rose-200">No se pudo guardar la revisión. Comprueba los permisos y que los documentos sigan vigentes.</p>}
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={reviewMutation.isPending || reviewReason.trim().length < 5 || (!review.data.verified && !canVerify)}>
+                <Button type="submit" disabled={reviewMutation.isPending || reviewReason.trim().length < 5 || (!review.data.verified && (!canVerify || !reviewDocumentType))}>
                   {reviewMutation.isPending ? "Guardando…" : review.data.verified ? "Confirmar retirada" : "Confirmar identidad"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>Cancelar</Button>
