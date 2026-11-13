@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, FileText, Pencil, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CheckCircle2, FileText, Pencil, ShieldCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { premiumSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
@@ -91,6 +91,8 @@ export default function MarketplaceDriverManagementPanel({
   const [reason, setReason] = useState("");
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [openingDocument, setOpeningDocument] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewReason, setReviewReason] = useState("");
 
   const data = useQuery({
     queryKey: ["driver-management-360", projectId, driverUserId],
@@ -107,6 +109,47 @@ export default function MarketplaceDriverManagementPanel({
     },
     retry: 1,
     staleTime: 20_000,
+  });
+
+  const review = useQuery({
+    queryKey: ["driver-identity-review", projectId, driverUserId],
+    queryFn: async () => {
+      const { data: payload, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_driver_identity_review_v1",
+        { target_project_id: projectId, target_driver_user_id: driverUserId },
+      );
+      if (error) throw error;
+      return payload as { verified: boolean; verified_at: string | null };
+    },
+    retry: 1,
+    staleTime: 0,
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: async ({ verified, front, back }: {
+      verified: boolean; front: string | null; back: string | null;
+    }) => {
+      const { error } = await getSupabaseClient().rpc(
+        "admin_set_marketplace_driver_identity_review_v1",
+        {
+          target_project_id: projectId,
+          target_driver_user_id: driverUserId,
+          target_verified: verified,
+          target_reason: reviewReason.trim(),
+          target_front_asset_id: front,
+          target_back_asset_id: back,
+        },
+      );
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["driver-management-360", projectId, driverUserId] }),
+      ]);
+      setReviewOpen(false);
+      setReviewReason("");
+    },
   });
 
   const save = useMutation({
@@ -207,6 +250,9 @@ export default function MarketplaceDriverManagementPanel({
   const stats = m.notifications;
   const resolved = stats.accepted + stats.not_accepted;
   const acceptanceRate = resolved ? Math.round((stats.accepted / resolved) * 100) : null;
+  const front = m.document_assets.find((asset) => asset.kind === "identity_front")?.id ?? null;
+  const back = m.document_assets.find((asset) => asset.kind === "identity_back")?.id ?? null;
+  const canVerify = Boolean(front && back && (m.driver.identity_type === "national_id" || m.driver.identity_type === "driver_license") && m.driver.status !== "suspended");
 
   return (
     <div className="min-w-0 space-y-3 max-sm:[&_button]:min-h-11" aria-label="Gestión administrativa del conductor">
@@ -378,6 +424,55 @@ export default function MarketplaceDriverManagementPanel({
             {documentError}
           </p>
         ) : null}
+        <div className={cn("mt-4 rounded-xl border p-3", premiumColumnHeaderSurface)}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                <BadgeCheck className={cn("h-5 w-5 shrink-0", review.data?.verified ? "fill-blue-500 text-white" : "text-muted-foreground")} />
+                {review.data?.verified ? "Conductor verificado" : "Verificación de identidad"}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {review.data?.verified
+                  ? `Identidad revisada el ${formatDate(review.data.verified_at)}. La insignia se muestra en Mi TukTuk.`
+                  : "Revisa el carnet o licencia y confirma la identidad. La inscripción activa no equivale a una identidad verificada."}
+              </p>
+            </div>
+            {review.data && (
+              <Button type="button" size="sm" variant="outline"
+                disabled={reviewMutation.isPending || (!review.data.verified && !canVerify)}
+                onClick={() => { setReviewReason(""); setReviewOpen((open) => !open); }}>
+                {review.data.verified ? "Retirar verificación" : "Verificar identidad"}
+              </Button>
+            )}
+          </div>
+          {review.isError && <p className="mt-2 text-xs text-muted-foreground">La verificación administrativa aún no está disponible.</p>}
+          {review.data && !review.data.verified && !canVerify && (
+            <p className="mt-2 text-xs text-muted-foreground">Para conceder la insignia se necesitan el tipo y ambas caras del documento. Esto no impide que el conductor tenga su tarjeta.</p>
+          )}
+          {reviewOpen && review.data && (
+            <form className="mt-3 space-y-2" onSubmit={(event) => {
+              event.preventDefault();
+              reviewMutation.mutate({ verified: !review.data!.verified, front, back });
+            }}>
+              <label className="block text-xs text-muted-foreground">
+                Motivo de la revisión administrativa
+                <input required minLength={5} maxLength={300} value={reviewReason}
+                  onChange={(event) => setReviewReason(event.target.value)}
+                  className={cn("mt-1 h-11 w-full rounded-lg border bg-surface-1 px-3 text-sm text-foreground", premiumControlSurface)} />
+              </label>
+              {!review.data.verified && (
+                <p className="text-xs text-muted-foreground">Confirma solo después de comprobar que el documento corresponde a este conductor.</p>
+              )}
+              {reviewMutation.isError && <p role="alert" className="text-xs text-rose-200">No se pudo guardar la revisión. Comprueba los permisos y que los documentos sigan vigentes.</p>}
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={reviewMutation.isPending || reviewReason.trim().length < 5 || (!review.data.verified && !canVerify)}>
+                  {reviewMutation.isPending ? "Guardando…" : review.data.verified ? "Confirmar retirada" : "Confirmar identidad"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>Cancelar</Button>
+              </div>
+            </form>
+          )}
+        </div>
       </section>
 
       <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
@@ -458,7 +553,11 @@ export default function MarketplaceDriverManagementPanel({
                 className={cn("flex flex-wrap justify-between gap-2 rounded-lg border p-3 text-xs", premiumColumnHeaderSurface)}
               >
                 <span className="text-foreground">
-                  {event.action === "admin_edit_driver_contact"
+                  {event.action === "admin_verify_driver_identity"
+                    ? "Identidad verificada"
+                    : event.action === "admin_revoke_driver_identity"
+                      ? "Verificación retirada"
+                    : event.action === "admin_edit_driver_contact"
                     ? "Contacto modificado"
                     : event.action === "admin_edit_driver_vehicle"
                       ? "Datos del vehículo modificados"
