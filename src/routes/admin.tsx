@@ -415,7 +415,14 @@ function ProjectNavItem({
               const groupActive = tab.children.some((child) => {
                 const childPath = `${projectBasePath}/${child.slug}`;
 
-                const defaultChild = adminGroupDefault(tab);
+                return (
+                  path === childPath ||
+                  path === `${childPath}/` ||
+                  path.startsWith(`${childPath}/`)
+                );
+              });
+
+              const defaultChild = adminGroupDefault(tab);
               if (!defaultChild) return null;
               const groupOpen = collapsed ? groupActive : configurationExpanded;
 
