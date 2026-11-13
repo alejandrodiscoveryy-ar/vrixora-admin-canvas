@@ -58,3 +58,20 @@ test("El nuevo menú temático conserva accesos, estado activo y geometría cont
   assert.match(chrome, /visibleChildren = item\.children\.filter/);
   assert.match(chrome, /permissions\.includes\(child\.permission\)/);
 });
+
+test("Trabajos abre Pulso y su flecha controla el submenú sin navegar", () => {
+  const block = chrome.slice(chrome.indexOf('if (tab.slug === "trabajos")'), chrome.indexOf("// El centro de precios"));
+  assert.match(block, /params=\{\{ id: project\.id, section: "trabajos" \}\}/);
+  assert.match(block, /search=\{\{ vista: "resumen" \}\}/);
+  assert.match(block, /title="Trabajos"/);
+  assert.match(block, /setTrabajosExpanded\(true\);\s*closeDrawer\?\.\(\)/);
+  assert.match(block, /const trabajosOpen = collapsed \? groupActive : trabajosExpanded/);
+  assert.match(block, /aria-controls=\{trabajosGroupId\}/);
+  assert.match(block, /aria-expanded=\{trabajosOpen\}/);
+  assert.match(block, /onClick=\{\(\) => setTrabajosExpanded\(\(value\) => !value\)\}/);
+  assert.match(block, /id=\{trabajosGroupId\} hidden=\{!trabajosOpen\}/);
+  assert.match(block, /MARKETPLACE_WORKSPACE_VIEWS\.filter\(\(view\) => permissions\.includes\(view\.permission\)\)/);
+  assert.match(block, /search=\{\{ vista: view\.slug \}\}/);
+  assert.match(block, /aria-current=\{viewActive \? "page" : undefined\}/);
+  assert.doesNotMatch(block, /<summary|<details/);
+});
