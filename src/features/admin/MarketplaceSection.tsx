@@ -55,7 +55,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { premiumSurface, premiumControlSurface, premiumHeaderSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
@@ -491,18 +491,18 @@ function CustomerSummaryMetric({
   }[accent];
 
   return (
-    <div className={cn("group min-w-0 rounded-xl border p-2.5", premiumSurface, "shadow-none")}>
+    <div className={cn("flex min-w-0 items-start gap-2 rounded-xl border p-2.5", premiumColumnHeaderSurface, "shadow-none")}>
       <div
-        className={`flex h-7 w-7 items-center justify-center rounded-xl border ${accentClasses}`}
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border ${accentClasses}`}
       >
         <Icon className="h-4 w-4" />
       </div>
-      <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.11em] text-muted-foreground">
+      <div className="min-w-0"><p className="text-[11px] font-medium leading-tight text-text-secondary">
         {labelText}
       </p>
       <p className="mt-0.5 break-words text-base font-semibold tabular-nums text-foreground sm:text-lg">
         {value}
-      </p>
+      </p></div>
     </div>
   );
 }
@@ -513,75 +513,81 @@ function Customer360Detail({
   hasMore,
   loadingMore,
   onLoadMore,
+  onOpenJob,
 }: {
   detail: MarketplaceCustomer360;
   history: MarketplaceCustomerHistoryItem[];
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  onOpenJob?: (id: string) => void;
 }) {
   const km = (value: number | null) =>
     value == null ? "\u2014" : `${value.toLocaleString("es", { maximumFractionDigits: 1 })} km`;
 
+  const phone = detail.customer.whatsappPhone?.trim() || "";
+  const whatsapp = phone ? driverWhatsAppLinks(phone) : null;
+  const sections = [
+    { id: "overview", label: "Resumen", Icon: Eye },
+    { id: "activity", label: "Actividad", Icon: BriefcaseBusiness },
+    { id: "modalities", label: "Modalidades", Icon: CarFront },
+    { id: "history", label: "Historial", Icon: Clock3 },
+  ] as const;
   return (
-    <div data-nav-tone="usuarios" className="space-y-3">
-      <section className="relative overflow-hidden rounded-2xl border border-border-default p-3 admin-graphite-panel">
-
-        <div className="relative">
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-start gap-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-default bg-surface-2 marketplace-value-accent">
-                <UserRound className="h-5 w-5" />
-              </div>
-
-              <div className="min-w-0">
-                <div className="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] marketplace-value-accent">
-                  Cliente Marketplace
-                </div>
-                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                  {detail.customer.displayName}
-                </h3>
-              </div>
-            </div>
-
-            <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground  admin-graphite-inset">
-              <CalendarDays className="h-3.5 w-3.5 marketplace-value-accent" />
-              Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)
-            </div>
+    <div data-nav-tone="usuarios" className="marketplace-360 marketplace-360-customer min-w-0 space-y-3">
+      <section aria-label="Identidad del cliente" className={cn("marketplace-360-hero relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+        <span aria-hidden="true" className="marketplace-360-watermark">360°</span>
+        <div className="relative flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="marketplace-360-avatar"><UserRound className="h-7 w-7" aria-hidden="true" /></div>
+          <div className="min-w-0 flex-1">
+            <p className="marketplace-360-kicker">Expediente 360 · Cliente</p>
+            <h2 className="mt-1 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{detail.customer.displayName}</h2>
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary"><CalendarDays className="h-3.5 w-3.5" />Cliente desde {formatCustomerDateTime(detail.customer.createdAt)} (Cuba)</p>
           </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] marketplace-value-available">
-                <Phone className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  WhatsApp
-                </p>
-                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
-                  {detail.customer.whatsappPhone}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-border/55 bg-background/55 px-3.5 py-3  admin-graphite-inset">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] marketplace-value-accent">
-                <Mail className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  Correo
-                </p>
-                <p className="mt-0.5 break-words text-sm font-medium text-foreground">
-                  {detail.customer.email ?? "Sin correo registrado"}
-                </p>
-              </div>
-            </div>
+          <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
+            {whatsapp ? <Button variant="outline" size="sm" asChild><a href={whatsapp.web} target="_blank" rel="noopener noreferrer" className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />WhatsApp</a></Button> : null}
+            {phone ? <Button variant="outline" size="sm" asChild><a href={`tel:${phone}`} className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />Llamar</a></Button> : null}
+            {detail.customer.email ? <Button variant="outline" size="sm" asChild><a href={`mailto:${detail.customer.email}`} className="min-h-11"><Mail className="mr-1.5 h-4 w-4" />Correo</a></Button> : null}
           </div>
         </div>
+        <div className="relative mt-3 grid min-w-0 gap-2 border-t border-border/60 pt-3 sm:grid-cols-2">
+          <RecordMetric labelText="Teléfono / WhatsApp" value={phone || "No registrado"} />
+          <RecordMetric labelText="Correo" value={detail.customer.email ?? "Sin correo registrado"} />
+        </div>
       </section>
-
+      <Tabs defaultValue="overview" className="min-w-0">
+        <nav aria-label="Secciones de la ficha 360 del cliente" className={cn("marketplace-360-nav rounded-[var(--radius-card)] border p-1.5", premiumSurface)}>
+          <TabsList aria-label="Contenido del cliente" className="grid h-auto w-full grid-cols-2 gap-1 bg-transparent p-0 sm:flex sm:flex-wrap sm:justify-start">
+            {sections.map(({ id, label: tabLabel, Icon }) => (
+              <TabsTrigger key={id} value={id} className="marketplace-360-tab min-h-11 min-w-0 gap-1.5 whitespace-normal px-2 sm:px-3">
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{tabLabel}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </nav>
+        <TabsContent value="overview" className="marketplace-360-content space-y-3">
+          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+            <section aria-label="Indicadores esenciales del cliente" className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+              <p className="marketplace-360-kicker">Vista ejecutiva</p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">Actividad y consumo</h3>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <CustomerSummaryMetric icon={BriefcaseBusiness} labelText="Viajes completados" value={detail.summary.tripsCompleted} />
+                <CustomerSummaryMetric icon={Route} labelText="Km recorridos" value={km(detail.summary.distanceKm)} accent="cyan" />
+                <CustomerSummaryMetric icon={Banknote} labelText="Gasto total" value={formatAmount(detail.summary.totalSpent, detail.summary.currency)} accent="emerald" />
+                <CustomerSummaryMetric icon={CircleDollarSign} labelText="Ticket medio" value={formatAmount(detail.summary.averageTicket, detail.summary.currency)} accent="amber" />
+              </div>
+            </section>
+            <section aria-label="Reputación del cliente" className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+              <p className="marketplace-360-kicker">Relación con TukTuk</p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">Último servicio y valoración</h3>
+              <div className="mt-3 space-y-2">
+                <CustomerSummaryMetric icon={Clock3} labelText="Último servicio" value={detail.summary.lastServiceAt ? formatDate(detail.summary.lastServiceAt) : "Sin viajes completados"} />
+                <CustomerSummaryMetric icon={Star} labelText="Valoraciones realizadas" value={detail.ratings.givenCount ? `${detail.ratings.averageGiven.toFixed(1)} / 5 · ${detail.ratings.givenCount}` : "Sin valoraciones"} accent="amber" />
+              </div>
+            </section>
+          </div>
+        </TabsContent>
+        <TabsContent value="activity" className="marketplace-360-content space-y-3">
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
@@ -672,7 +678,9 @@ function Customer360Detail({
         </section>
       </div>
 
-      <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
+        </TabsContent>
+        <TabsContent value="modalities" className="marketplace-360-content">
+      <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Preferencias
@@ -726,7 +734,9 @@ function Customer360Detail({
         )}
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-background/35 p-3 admin-graphite-inset">
+        </TabsContent>
+        <TabsContent value="history" className="marketplace-360-content">
+      <section className={cn("marketplace-360-panel min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] marketplace-value-accent">
             Trazabilidad
@@ -801,6 +811,7 @@ function Customer360Detail({
                   ) : null}
                 </div>
 
+                {onOpenJob ? <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="ghost" className="min-h-11 marketplace-360-link" onClick={() => onOpenJob(item.jobId)}>Ver carrera <ArrowRight className="ml-1.5 h-4 w-4" /></Button></div> : null}
                 {item.ratingStars ? (
                   <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2.5 text-sm">
                     <Star className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
@@ -840,6 +851,8 @@ function Customer360Detail({
           </div>
         ) : null}
       </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -2630,25 +2643,12 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (!open) setCustomerId(null);
         }}
       >
-        <DialogContent className="max-h-[94dvh] overflow-y-auto border-border-default p-0 sm:max-w-5xl admin-graphite-dialog">
-          <div className="sticky top-0 z-20 border-b border-border/55 bg-background/90 px-3 py-3 pr-12 admin-graphite-header">
-            <DialogHeader className="text-left">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.75)]" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                  Perfil de cliente
-                </span>
-              </div>
-              <DialogTitle className="text-lg tracking-tight">
-                Ficha 360 del cliente
-              </DialogTitle>
-              <DialogDescription className="max-w-2xl">
-                Actividad, consumo, modalidades e historial real de servicios en Marketplace.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-
-          <div className="p-3">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-border-default bg-background/95 p-0 sm:max-w-6xl admin-graphite-dialog">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Ficha 360 del cliente</DialogTitle>
+            <DialogDescription>Actividad, consumo, modalidades e historial de servicios.</DialogDescription>
+          </DialogHeader>
+          <div className="min-w-0 p-3 pt-12 sm:p-4 sm:pt-12">
             {customer360.isLoading ? (
               <LoadingState />
             ) : customer360.data ? (
@@ -2658,6 +2658,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 hasMore={Boolean(customerHistory.hasNextPage)}
                 loadingMore={customerHistory.isFetchingNextPage}
                 onLoadMore={() => customerHistory.fetchNextPage()}
+                onOpenJob={permissions.includes("marketplace.view") ? (id) => { setCustomerId(null); setJobDetailInitialTab("overview"); setJobId(id); } : undefined}
               />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
@@ -2674,7 +2675,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (typeof alertJobId === "string") dismissAlertDeepLink();
         }
       }}>
-        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-[#081116]/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl admin-graphite-dialog">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1180px] overflow-y-auto border-cyan-500/20 bg-background/95 p-0 shadow-[0_30px_90px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-w-6xl admin-graphite-dialog">
           <DialogHeader className="sr-only">
             <DialogTitle>360 de carrera</DialogTitle>
             <DialogDescription>
@@ -2682,7 +2683,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-4 pt-10 sm:p-6 sm:pt-10">
+          <div className="min-w-0 p-3 pt-12 sm:p-4 sm:pt-12">
             {detail.isLoading ? (
               <LoadingState />
             ) : detail.data ? (
@@ -3532,20 +3533,18 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
     { id: "history", label: "Trazabilidad", Icon: Clock3 },
   ] as const;
   const sectionTitle = (eyebrow: string, title: string, description: string) => (
-    <div className="mb-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-cyan-300">{eyebrow}</p>
-      <h3 className="mt-1 text-lg font-bold tracking-tight text-white sm:text-xl">{title}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-slate-400 sm:text-sm">{description}</p>
+    <div className="mb-3">
+      <p className="marketplace-360-kicker">{eyebrow}</p>
+      <h3 className="mt-1 text-base font-semibold tracking-tight text-foreground sm:text-lg">{title}</h3>
+      <p className="mt-1 text-xs leading-relaxed text-text-secondary">{description}</p>
     </div>
   );
 
   return (
-    <div className="min-w-0 space-y-4 sm:space-y-5">
-      <section aria-label="Identidad de la carrera" className="relative isolate overflow-hidden rounded-[26px] border border-cyan-400/25 bg-gradient-to-br from-[#123b43] via-[#101d23] to-[#0a141b] p-4 shadow-[0_20px_60px_-26px_rgba(22,190,202,0.32)] sm:p-6 admin-graphite-panel">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-3 -top-12 select-none text-[130px] font-black leading-none tracking-tighter text-cyan-200/[0.055] sm:text-[180px]">360°</div>
-        <div className="pointer-events-none absolute -left-20 -bottom-28 h-64 w-64 rounded-full bg-emerald-500/[0.11] blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-0 h-40 w-64 rounded-full bg-cyan-400/[0.08] blur-3xl" />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div data-nav-tone="trabajos" className="marketplace-360 marketplace-360-job min-w-0 space-y-3">
+      <section aria-label="Identidad de la carrera" className={cn("marketplace-360-hero relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+        <div aria-hidden="true" className="marketplace-360-watermark">360°</div>
+        <div className="relative flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/25 bg-cyan-400/[0.08] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.13em] text-cyan-200">
@@ -3554,186 +3553,178 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
               <StatusBadge status={state} />
               <ServiceBadge service={text(serviceRequest.service_code)} />
             </div>
-            <h2 className="mt-4 max-w-2xl text-[23px] font-bold leading-tight tracking-tight text-white sm:text-[30px]">
+            <h2 className="mt-2 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               Carrera <span className="text-cyan-200">#{jobId.slice(0,8).toUpperCase()}</span>
             </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
-              Control integral del servicio, la asignación, el alcance del radar y sus eventos.
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
               <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />{formatDate(job.created_at)}</span>
               <span className="inline-flex items-center gap-1.5"><Route className="h-3.5 w-3.5" />{label(text(serviceRequest.service_code))}</span>
               <span className="font-mono text-[10px] text-slate-500" title={jobId}>ID {jobId.slice(0,13)}…</span>
             </div>
           </div>
-          <div className="relative w-full rounded-[20px] border border-emerald-300/20 bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm lg:w-60 admin-graphite-inset">
+          <div className={cn("relative w-full min-w-0 rounded-xl border p-3 sm:w-56 sm:shrink-0", premiumColumnHeaderSurface)}>
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-200/75">Valor de la carrera</p>
-            <p className="mt-2 break-words text-[25px] font-black leading-none tracking-tight text-white sm:text-[28px]">{readablePrice}</p>
-            <div className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-400">
+            <p className="mt-1 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{readablePrice}</p>
+            <div className="mt-2 border-t border-border/60 pt-2 text-xs text-text-secondary">
               {closed ? "Servicio con estado cerrado" : "Servicio bajo seguimiento operativo"}
             </div>
           </div>
         </div>
-        <div className="relative mt-5 grid grid-cols-2 gap-2 border-t border-cyan-400/15 pt-4 md:grid-cols-4">
+        <div className="relative mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 md:grid-cols-4">
           {[
             { title: "Estado", value: label(state), icon: CheckCircle2 },
             { title: "Conductor", value: hasDriver ? "Asignado" : "Sin asignar", icon: CarFront },
             { title: "Eventos", value: String(timeline.length), icon: Clock3 },
             { title: "Programación", value: serviceRequest.scheduled_for ? "Programada" : "Sin horario", icon: CalendarDays },
           ].map(({title, value, icon: Icon}) => (
-            <div key={title} className="min-w-0 rounded-xl border border-white/10 bg-[#071217]/55 px-3 py-3 admin-graphite-inset">
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><Icon className="h-3.5 w-3.5 text-cyan-200" />{title}</div>
-              <div className="mt-1.5 break-words text-[15px] font-bold text-white">{value}</div>
+            <div key={title} className={cn("min-w-0 rounded-xl border px-2.5 py-2", premiumColumnHeaderSurface)}>
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary"><Icon className="h-3.5 w-3.5 text-cyan-200" />{title}</div>
+              <div className="mt-1.5 break-words text-[15px] font-bold text-foreground">{value}</div>
             </div>
           ))}
         </div>
       </section>
 
-      <nav aria-label="Secciones del expediente 360 de carrera" className="rounded-2xl border border-cyan-400/15 bg-[#0b151b] p-1.5 shadow-inner shadow-black/30 admin-graphite-inset">
-        <div role="tablist" aria-label="Contenido de la carrera" className="flex gap-1 overflow-x-auto pb-0.5">
-          {tabs.map(({id,label:tabLabel,Icon}) => (
-            <button key={id} type="button" role="tab"
-              aria-selected={activeTab === id}
-              aria-controls="marketplace-job-premium-panel"
-              onClick={() => setActiveTab(id)}
-              className={activeTab === id
-                ? "flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-3.5 text-xs font-bold text-white shadow-[0_0_18px_-8px_rgba(34,211,238,0.38)] sm:text-sm"
-                : "flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-medium text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white sm:text-sm"}>
-              <Icon className="h-4 w-4" />{tabLabel}
-              {id === "history" ? <span className="rounded-full bg-white/10 px-1.5 text-[10px]">{timeline.length}</span> : null}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <div id="marketplace-job-premium-panel" role="tabpanel" className="min-w-0 space-y-4">
-        {activeTab === "overview" ? (
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="min-w-0">
+        <nav aria-label="Secciones del expediente 360 de carrera" className={cn("marketplace-360-nav rounded-[var(--radius-card)] border p-1.5", premiumSurface)}>
+          <TabsList aria-label="Contenido de la carrera" className="grid h-auto w-full grid-cols-2 gap-1 bg-transparent p-0 sm:flex sm:flex-wrap sm:justify-start">
+            {tabs.map(({ id, label: tabLabel, Icon }) => (
+              <TabsTrigger key={id} value={id} className="marketplace-360-tab min-h-11 min-w-0 gap-1.5 whitespace-normal px-2 sm:px-3">
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{tabLabel}
+                {id === "history" ? <span className="rounded-full bg-surface-3 px-1.5 text-[10px]">{timeline.length}</span> : null}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </nav>
+        <div className="marketplace-360-content min-w-0 space-y-3">
+        <TabsContent value="overview" className="min-w-0 space-y-3">
           <>
-            <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.08] via-[#101b22] to-[#0b151b] p-4 sm:p-5 admin-graphite-panel">
+            <section className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
               <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-10 h-36 w-36 rounded-full bg-cyan-400/[0.08] blur-3xl" />
               {sectionTitle("01 / Recorrido", "Ruta del servicio", "Origen, destino y referencias operativas de la solicitud.")}
               <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)] lg:items-stretch">
-                <div className="rounded-[18px] border border-emerald-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
+                <div className="rounded-xl border border-emerald-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
                   <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-400/10"><MapPin className="h-4 w-4" /></span> 01 · Punto de recogida</p>
-                  <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.origin_text)}</p>
+                  <p className="break-words text-base font-semibold leading-relaxed text-foreground">{text(serviceRequest.origin_text)}</p>
                 </div>
                 <div className="hidden items-center justify-center lg:flex"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10 text-cyan-200"><ArrowRight className="h-5 w-5" /></span></div>
-                <div className="rounded-[18px] border border-cyan-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
-                  <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-cyan-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-cyan-400/10"><MapPin className="h-4 w-4" /></span> 02 · Destino</p>
-                  <p className="break-words text-base font-semibold leading-relaxed text-white">{text(serviceRequest.destination_text)}</p>
+                <div className="rounded-xl border border-cyan-400/20 bg-[#080f13]/65 p-4 admin-graphite-inset">
+                  <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-orange-300"><span className="grid h-8 w-8 place-items-center rounded-xl bg-orange-400/10"><MapPin className="h-4 w-4" /></span> 02 · Destino</p>
+                  <p className="break-words text-base font-semibold leading-relaxed text-foreground">{text(serviceRequest.destination_text)}</p>
                 </div>
               </div>
             </section>
 
             <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5 admin-graphite-panel">
+              <section className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
                 {sectionTitle("02 / Participantes", "Cliente", "Información de contacto relacionada con esta carrera.")}
                 <div className="flex gap-3 rounded-2xl border border-cyan-400/15 bg-black/20 p-3.5 admin-graphite-inset">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-200"><UserRound className="h-5 w-5" /></span>
                   <div className="min-w-0">
-                    <p className="break-words text-lg font-semibold text-white">{customer ? text(customer.display_name) : "Cliente no registrado"}</p>
-                    <p className="mt-1 text-sm text-slate-400">{customerPhone || "Teléfono no disponible"}</p>
+                    <p className="break-words text-lg font-semibold text-foreground">{customer ? text(customer.display_name) : "Cliente no registrado"}</p>
+                    <p className="mt-1 text-sm text-text-secondary">{customerPhone || "Teléfono no disponible"}</p>
                     {customerPhone ? <a href={`tel:${customerPhone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-200 hover:underline"><Phone className="h-3.5 w-3.5" />Llamar al cliente</a> : null}
                   </div>
                 </div>
               </section>
-              <section className="rounded-[23px] border border-border/50 bg-gradient-to-br from-[#101c22] to-[#0b141a] p-4 sm:p-5 admin-graphite-panel">
+              <section className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
                 {sectionTitle("03 / Asignación", "Conductor y vehículo", "Situación de la asignación vinculada al servicio.")}
                 <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-black/20 p-3.5 admin-graphite-inset">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-200"><CarFront className="h-5 w-5" /></span>
                   <div className="min-w-0">
-                    <p className="text-lg font-semibold text-white">{hasDriver ? "Conductor asignado" : "Sin conductor asignado"}</p>
-                    {driverCode ? <p className="mt-1 break-all font-mono text-[11px] text-slate-400">ID conductor: {driverCode}</p> : <p className="mt-1 text-sm text-slate-400">No se ha registrado una asignación.</p>}
-                    {vehicleCode ? <p className="mt-1 break-all text-xs text-slate-400">Vehículo: {vehicleCode}</p> : null}
+                    <p className="text-lg font-semibold text-foreground">{hasDriver ? "Conductor asignado" : "Sin conductor asignado"}</p>
+                    {driverCode ? <p className="mt-1 break-all font-mono text-[11px] text-text-secondary">ID conductor: {driverCode}</p> : <p className="mt-1 text-sm text-text-secondary">No se ha registrado una asignación.</p>}
+                    {vehicleCode ? <p className="mt-1 break-all text-xs text-text-secondary">Vehículo: {vehicleCode}</p> : null}
                   </div>
                 </div>
               </section>
             </div>
             <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_1.1fr]">
-              <section className="rounded-[23px] border border-border/50 bg-[#0e181e] p-4 sm:p-5 admin-graphite-inset">
+              <section className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
                 {sectionTitle("04 / Programación", "Datos de servicio", "Agenda y condiciones básicas de la carrera.")}
                 <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-black/20 p-3.5 admin-graphite-inset">
                   <CalendarDays className="mt-1 h-5 w-5 shrink-0 text-violet-300" />
-                  <div><p className="text-xs text-slate-400">Hora programada</p><p className="mt-1 text-sm font-semibold text-white">{formatDate(serviceRequest.scheduled_for)}</p></div>
+                  <div><p className="text-xs text-text-secondary">Hora programada</p><p className="mt-1 text-sm font-semibold text-foreground">{formatDate(serviceRequest.scheduled_for)}</p></div>
                 </div>
               </section>
-              <section className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0d181f] p-4 sm:p-5 admin-graphite-panel">
+              <section className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
                 {sectionTitle("05 / Inteligencia operativa", "Cobertura del radar", "Consulta impactos por conductor y kilómetros registrados al aviso.")}
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3.5 py-3 admin-graphite-inset">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-black/20 px-3 py-2.5 admin-graphite-inset">
                   <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><Radar className="h-5 w-5 text-cyan-300" />Análisis de distribución</div>
                   <Button type="button" size="sm" variant="outline" className="border-cyan-400/25 text-cyan-100" onClick={() => setActiveTab("radar")}>Explorar radar <ArrowRight className="ml-2 h-4 w-4" /></Button>
                 </div>
               </section>
             </div>
           </>
-        ) : null}
+        </TabsContent>
 
-        {activeTab === "radar" ? (
+        <TabsContent value="radar" className="min-w-0 space-y-3">
           <section aria-label="Radar y alcance de la carrera" className="space-y-4">
-            <div className="rounded-[23px] border border-cyan-400/20 bg-gradient-to-br from-[#122b33] to-[#0b161b] p-4 sm:p-5 admin-graphite-panel">
+            <div className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
               {sectionTitle("Inteligencia operativa", "Radar y alcance real", "Ejecuciones, conductores impactados, distancias históricas y etapas de distribución.")}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-300" />Las distancias proceden de registros históricos; nunca se sustituyen por el GPS actual.</div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-300" />Las distancias proceden de registros históricos; nunca se sustituyen por el GPS actual.</div>
             </div>
             <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
           </section>
-        ) : null}
+        </TabsContent>
 
-        {activeTab === "finance" ? (
+        <TabsContent value="finance" className="min-w-0 space-y-3">
           <section className="space-y-4">
             {sectionTitle("Estado económico", "Finanzas de la operación", "Importe contratado, comisión y situación registrada de la reserva.")}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[23px] border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[0.10] via-[#142621] to-[#0b1718] p-5 admin-graphite-panel">
+              <div className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
                 <Banknote className="mb-3 h-6 w-6 text-emerald-300" />
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/75">Importe de carrera</p>
-                <p className="mt-2 break-words text-3xl font-black tracking-tight text-white">{readablePrice}</p>
-                <p className="mt-3 text-xs text-slate-400">Precio registrado del servicio.</p>
+                <p className="mt-2 break-words text-3xl font-black tracking-tight text-foreground">{readablePrice}</p>
+                <p className="mt-3 text-xs text-text-secondary">Precio registrado del servicio.</p>
               </div>
-              <div className="rounded-[23px] border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.07] to-[#0c181f] p-5 admin-graphite-panel">
+              <div className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
                 <WalletCards className="mb-3 h-6 w-6 text-cyan-200" />
                 <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200/75">Estado de comisión / reserva</p>
-                <p className="mt-2 text-xl font-bold text-white">{financial ? label(text(financial.reservation_status)) : "Sin información financiera"}</p>
-                <p className="mt-3 text-xs text-slate-400">No equivale a un cargo liquidado si todavía no consta en el sistema.</p>
+                <p className="mt-2 text-xl font-bold text-foreground">{financial ? label(text(financial.reservation_status)) : "Sin información financiera"}</p>
+                <p className="mt-3 text-xs text-text-secondary">No equivale a un cargo liquidado si todavía no consta en el sistema.</p>
               </div>
             </div>
             {incidentResolution ? (
-              <div className="rounded-[22px] border border-rose-400/25 bg-rose-400/[0.06] p-4">
+              <div className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-rose-200"><AlertTriangle className="h-4 w-4" />Resolución de incidencia</p>
-                <p className="mt-2 font-medium text-white">{label(text(incidentResolution.resolution))}</p>
-                <p className="mt-1 text-sm text-slate-300">{text(incidentResolution.resolution_note)}</p>
+                <p className="mt-2 font-medium text-foreground">{label(text(incidentResolution.resolution))}</p>
+                <p className="mt-1 text-sm text-text-secondary">{text(incidentResolution.resolution_note)}</p>
               </div>
             ) : null}
           </section>
-        ) : null}
+        </TabsContent>
 
-        {activeTab === "history" ? (
-          <section className="rounded-[24px] border border-cyan-400/15 bg-gradient-to-br from-[#0e1c22] to-[#0a141b] p-4 sm:p-6 admin-graphite-panel">
+        <TabsContent value="history" className="min-w-0 space-y-3">
+          <section className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
             {sectionTitle("Auditoría del servicio", "Línea de tiempo", "Historial de cambios de estado, responsables y motivos registrados.")}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-black/20 px-3.5 py-3 admin-graphite-inset">
-              <p className="text-sm text-slate-300">Eventos registrados</p><p className="text-2xl font-bold text-cyan-200">{timeline.length}</p>
+              <p className="text-sm text-text-secondary">Eventos registrados</p><p className="text-2xl font-bold text-cyan-200">{timeline.length}</p>
             </div>
             {timeline.length ? (
               <ol className="relative ml-2 space-y-3 border-l border-cyan-400/30 pl-6">
                 {timeline.map((event, index) => (
-                  <li key={String(event.event_id ?? index)} className="relative rounded-[18px] border border-border/50 bg-black/20 p-4 admin-graphite-inset">
+                  <li key={String(event.event_id ?? index)} className="relative rounded-xl border border-border/50 bg-black/20 p-4 admin-graphite-inset">
                     <span className="absolute -left-[32px] top-5 h-3.5 w-3.5 rounded-full border-[3px] border-[#112128] bg-cyan-300 shadow-[0_0_14px_2px_rgba(34,211,238,0.22)]" />
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-mono text-[11px] text-slate-400">{formatDate(event.created_at)}</p>
-                      {event.actor_kind ? <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-300">Actor: {text(event.actor_kind)}</span> : null}
+                      <p className="font-mono text-[11px] text-text-secondary">{formatDate(event.created_at)}</p>
+                      {event.actor_kind ? <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-text-secondary">Actor: {text(event.actor_kind)}</span> : null}
                     </div>
-                    <p className="mt-2 break-words text-sm font-bold text-white">{text(event.action)}</p>
+                    <p className="mt-2 break-words text-sm font-bold text-foreground">{text(event.action)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-slate-300 admin-graphite-inset">{label(text(event.from_status))}</span>
+                      <span className="rounded-lg border border-border/50 bg-black/20 px-2.5 py-1.5 text-text-secondary admin-graphite-inset">{label(text(event.from_status))}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-cyan-300" />
                       <span className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.08] px-2.5 py-1.5 font-semibold text-cyan-100">{label(text(event.to_status))}</span>
                     </div>
-                    {event.reason ? <p className="mt-3 rounded-lg border border-amber-400/10 bg-amber-400/[0.035] p-2.5 text-xs leading-relaxed text-slate-300">Motivo: {text(event.reason)}</p> : null}
+                    {event.reason ? <p className="mt-3 rounded-lg border border-amber-400/10 bg-amber-400/[0.035] p-2.5 text-xs leading-relaxed text-text-secondary">Motivo: {text(event.reason)}</p> : null}
                   </li>
                 ))}
               </ol>
-            ) : <div className="rounded-xl border border-dashed border-border/50 p-5 text-sm text-slate-400">No constan eventos registrados.</div>}
+            ) : <div className="rounded-xl border border-dashed border-border/50 p-5 text-sm text-text-secondary">No constan eventos registrados.</div>}
           </section>
-        ) : null}
-      </div>
+        </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
