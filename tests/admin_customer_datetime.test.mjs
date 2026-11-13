@@ -8,7 +8,7 @@ const source = readFileSync(
 );
 
 test("la fecha de registro se presenta en lista móvil y escritorio", () => {
-  const count = source.split("Registrado: <time dateTime={customer.createdAt}>").length - 1;
+  const count = source.split("<time dateTime={customer.createdAt}>").length - 1;
   // One responsive row is shared by desktop and mobile.
   assert.equal(count, 1);
   assert.match(source, /data-marketplace-record="customer"/);
@@ -40,4 +40,12 @@ test("última carrera usa horario cubano y no se inventa si está vacía", () =>
   assert.match(source, /<time dateTime=\{customer\.lastJobAt\}>/);
   assert.match(source, /customer\.lastJobAt\s*\?\s*<time dateTime=\{customer\.lastJobAt\}>\{formatCustomerDateTime\(customer\.lastJobAt\)\}<\/time>\s*:\s*"Sin actividad"/);
   assert.match(source, /Cliente desde \{formatCustomerDateTime\(detail\.customer\.createdAt\)\} \(Cuba\)/);
+});
+
+test("registro junto al teléfono y al nombre sin una fila adicional", () => {
+  const row = source.slice(source.indexOf('data-marketplace-record="customer"'), source.indexOf('</RecordIdentity>', source.indexOf('data-marketplace-record="customer"')));
+  assert.match(row, /flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0\.5/);
+  assert.match(row, /customer\.whatsappPhone[\s\S]*?<time dateTime=\{customer.createdAt\}/);
+  assert.doesNotMatch(row, /<p[^>]*>.*Registrado:/);
+  assert.match(source, /flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0\.5[\s\S]*?detail.customer.displayName[\s\S]*?Cliente desde \{formatCustomerDateTime\(detail.customer.createdAt\)\}/);
 });
