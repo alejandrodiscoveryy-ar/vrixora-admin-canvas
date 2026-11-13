@@ -353,7 +353,7 @@ function ProjectNavItem({
               );
             }
 
-            // El centro de precios comparte el patrón de expansión de Administración.
+            // El centro de precios comparte el patrón de expansión de Configuración.
             // La ruta /planes conserva compatibilidad con enlaces previos.
             if (tab.slug === "planes" && project.slug === "tuktuk-control") {
               const groupActive = isActiveProject && currentSection === "planes";
