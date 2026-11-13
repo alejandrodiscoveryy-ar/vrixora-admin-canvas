@@ -1068,8 +1068,8 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 
 
 /* Finance cards use their own available width, not the full workspace width. */
-.marketplace-record-workspace:has([data-marketplace-record="wallet"]),
-.marketplace-record-workspace:has([data-marketplace-record="topup"]) {
+.marketplace-record-workspace[aria-label="Billeteras"],
+.marketplace-record-workspace[aria-label="Recargas"] {
   max-inline-size: 76rem;
 }
 .marketplace-record-workspace > div:has(> .marketplace-finance-row) {
