@@ -1,7 +1,7 @@
 Material Design Icons by the Pictogrammers
 https://github.com/Templarian/MaterialDesign
-Icons used: motorbike, rickshaw, car-side, van-passenger, truck, package-variant-closed.
-SVG path data reproduced unchanged; rendering uses currentColor and a shared viewBox. The bicitaxi pictogram is original to TukTuk.
+Icons used: motorbike, package-variant-closed.
+SVG path data reproduced unchanged; rendering uses currentColor and a shared viewBox. The compact triciclo, bicitaxi, auto, van and truck pictograms are original TukTuk adaptations.
 
 Pictogrammers Free License
 --------------------------
