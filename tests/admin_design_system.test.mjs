@@ -662,3 +662,13 @@ test("Marketplace compact directories share one responsive row and preserve acti
   assert.match(css, /marketplace-record-summary:focus-visible/);
   assert.match(css, /marketplace-record-filter\[aria-pressed="true"\]/);
 });
+
+test("Compact Marketplace tabs preserve separate customer and payment permission gates", () => {
+  const panel = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  assert.match(panel, /\{canCustomers \? \(\s*<TabsContent value="clientes">/);
+  assert.match(panel, /<\/TabsContent>\s*\) : null\}\s*\{canPayments \? \(\s*<>\s*<TabsContent value="billeteras"/);
+  assert.match(panel, /<\/TabsContent>\s*<\/>\s*\) : null\}\s*<TabsContent value="incidencias">/);
+  assert.match(panel, /enabled: tab === "clientes" && canCustomers/);
+  assert.match(panel, /enabled: tab === "billeteras" && canPayments/);
+  assert.match(panel, /enabled: tab === "recargas" && canPayments/);
+});
