@@ -70,6 +70,39 @@ export default function MarketplaceDriverPromotionPreview({
           <span className="relative text-[10px] font-medium uppercase tracking-wider text-slate-400">Borrador · No publicar</span>
         </div>
       </div>
+      <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+        <section className="min-w-0 space-y-2 rounded-xl border border-border/60 bg-background/50 p-3" aria-label="Vista previa del mensaje para compartir">
+          <h4 className="text-sm font-semibold">Mensaje para compartir</h4>
+          <p className="text-xs text-muted-foreground">La imagen llevará el QR; este texto acompañará la publicación con el enlace clicable.</p>
+          <div className="space-y-2 rounded-lg bg-muted/30 p-3 text-sm">
+            <p>¡Viaja conmigo! Soy {displayName}, conductor de TukTuk.</p>
+            <p>Solicita tu transporte desde mi enlace personal. Si no estoy disponible, otro conductor de nuestra flota podrá atenderte.</p>
+            <p className="font-medium text-primary">Solicita aquí: <span className="break-words text-muted-foreground">[Enlace personal pendiente de activación]</span></p>
+            <p className="text-xs text-muted-foreground">Tu conductor de confianza. Toda una flota a tu disposición.</p>
+          </div>
+        </section>
+        <section className="min-w-0 space-y-2 rounded-xl border border-border/60 bg-background/50 p-3" aria-label="Vista previa de la entrada personalizada del cliente">
+          <h4 className="text-sm font-semibold">Así te verá el cliente</h4>
+          <p className="text-xs text-muted-foreground">El enlace y el QR abrirán la misma entrada en TukTuk Cliente.</p>
+          <div className="space-y-3 rounded-xl bg-slate-950 p-3 text-white">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-orange-400/60 bg-slate-800">
+                <UserRound className="h-7 w-7 text-slate-400" aria-hidden="true"/>
+                {portrait ? <img src={portrait} alt={`Foto de ${displayName}`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" onError={event => { event.currentTarget.style.display = "none"; }}/> : null}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-orange-400">TukTuk Cliente</p>
+                <p className="break-words text-lg font-bold">Viaja con {displayName}</p>
+                <p className="text-xs text-slate-300">{modality}</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-300">Buscaremos primero a tu conductor. Si no puede atenderte, te conectaremos con la flota compatible.</p>
+            <div className="rounded-lg bg-orange-600 px-3 py-2 text-center text-sm font-semibold">Solicitar transporte</div>
+            <div className="rounded-lg border border-white/15 px-3 py-2 text-center text-xs text-slate-300">Buscar en toda la flota</div>
+            <p className="text-center text-[10px] text-slate-400">Vista ilustrativa · todavía no enlazada</p>
+          </div>
+        </section>
+      </div>
       <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3 text-xs text-muted-foreground">
         <Share2 className="mt-0.5 h-4 w-4 shrink-0"/>
         <p>{!active ? "El conductor no está activo. " : ""}Esta vista previa no publica fotos, no genera enlaces activos ni modifica carreras. Compartir, descargar y publicar se habilitarán después del consentimiento del conductor y de conectar el despacho preferente.</p>
