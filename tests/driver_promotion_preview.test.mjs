@@ -38,3 +38,9 @@ test("El mensaje compartido y la entrada personalizada muestran el mismo recorri
   assert.match(card, /Intentaremos localizar primero a \{displayName\}/);
   assert.match(card, /todavía no enlazada/);
 });
+
+test("La promoción usa modalidad y servicios reales del vehículo operativo", () => {
+  assert.match(record, /serviceCodes=\{mainVehicle\?\.assignment\?\.isActive \? mainVehicle\.services : \[\]\}/);
+  assert.match(card, /serviceCodes: string\[\]/);
+  assert.match(card, /const serviceSummary = services\.join/);
+});
