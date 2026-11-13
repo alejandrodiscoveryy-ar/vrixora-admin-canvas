@@ -1,4 +1,4 @@
-import { adminNavTone, ADMIN_PROJECT_TABS } from "../src/lib/admin-navigation.ts";
+import { adminNavTone, adminSubnavTone, ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, ADMINISTRATION_VIEWS } from "../src/lib/admin-navigation.ts";
 import { driverWhatsAppLinks, driverWelcomeMessage, TUKTUK_DRIVER_GROUP_URL } from "../src/lib/driver-whatsapp.ts";
 import assert from "node:assert/strict";
 import { test } from "bun:test";
@@ -555,4 +555,47 @@ test("Admin thematic inner menus keep selected links and larger icons", () => {
     assert.match(component, /className="admin-nav-icon relative z-10" aria-hidden="true"/);
     assert.match(component, /aria-(?:current|pressed)=/);
   }
+});
+
+
+test("Admin submenus: every destination has a stable thematic accent without changing parent groups", () => {
+  const groups = {
+    trabajos: {resumen:"panel", trabajos:"trabajos", atencion:"comercial", mapa:"mapa", conductores:"equipo", clientes:"usuarios", billeteras:"finanzas", recargas:"recargas", incidencias:"auditoria", configuracion:"administracion"},
+    precios: {global:"tarifas", passenger:"usuarios", cargo:"analitica", courier:"trabajos"},
+    administracion: {configuracion:"administracion", empleados:"equipo", comunicados:"comercial", integraciones:"licencias"},
+    configuracion: {pruebas:"comercial", operacion:"panel", territorio:"trabajos"},
+  };
+  assert.deepEqual(MARKETPLACE_WORKSPACE_VIEWS.map(v => v.slug), Object.keys(groups.trabajos));
+  assert.deepEqual(PRICING_WORKSPACE_VIEWS.map(v => v.code), Object.keys(groups.precios));
+  assert.deepEqual(ADMINISTRATION_VIEWS.map(v => v.slug), Object.keys(groups.administracion));
+  for (const [group, children] of Object.entries(groups)) {
+    for (const [slug, tone] of Object.entries(children)) assert.equal(adminSubnavTone(group, slug), tone);
+    assert.equal(new Set(Object.values(children)).size, Object.keys(children).length);
+  }
+  assert.equal(adminNavTone("trabajos"), "trabajos");
+  assert.equal(adminNavTone("planes"), "tarifas");
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(css, /data-nav-tone="equipo".*--module-empleados/);
+  assert.match(css, /data-nav-tone="recargas".*--module-pagos.*--module-planes/);
+  assert.match(css, /data-nav-tone="mapa".*--module-clientes.*--module-licencias/);
+  assert.match(css, /admin-nav-secondary \.admin-nav-icon > svg \{ width: 20px; height: 20px; \}/);
+  assert.match(css, /data-nav-submenu/);
+  assert.match(css, /admin-nav-secondary\[aria-current="page"\]/);
+});
+
+test("Admin submenu accents remain aligned in inner navigation and preserve tab controls", () => {
+  for (const [name,group] of [["MarketplacePricingSection","precios"],["AdministrationWorkspace","administracion"],["MarketplaceConfigurationWorkspace","configuracion"]]) {
+    const component = readFileSync(new URL("../src/features/admin/" + name + ".tsx", import.meta.url), "utf8");
+    assert.ok(component.includes('data-nav-tone={adminSubnavTone("' + group + '",'), name);
+    assert.match(component, /admin-nav-watermark/);
+    assert.match(component, /admin-workspace-icon/);
+  }
+  const care = readFileSync(new URL("../src/features/admin/MarketplaceCustomerCareWorkspace.tsx", import.meta.url), "utf8");
+  assert.match(care, /data-nav-tone="comercial" className="admin-subnav-tab/);
+  assert.match(care, /data-nav-tone="finanzas" className="admin-subnav-tab/);
+  assert.match(care, /onKeyDown=\{onCareTabKeyDown\}/);
+  assert.match(care, /canManageContact \?/);
+  const commercial = readFileSync(new URL("../src/features/admin/ComercialSection.tsx", import.meta.url), "utf8");
+  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 3);
+  for (const view of ["ofertas","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
 });
