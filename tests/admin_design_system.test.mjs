@@ -405,7 +405,9 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(rows, /Ver ficha 360/);
   assert.match(rows, /xl:min-h-8/);
   const record = source("MarketplaceDriver360Record.tsx");
-  assert.match(record, /<MetricCard density="compact" appearance="premium"/);
+  assert.match(record, /marketplace-360-hero/);
+  assert.match(record, /flex min-w-0 items-start gap-2 rounded-xl border p-2.5/);
+  assert.match(record, /premiumColumnHeaderSurface/);
   assert.match(record, /grid min-w-0 grid-cols-2 gap-1 sm:flex sm:flex-wrap/);
   assert.match(record, /aria-selected=\{activeTab === id\}/);
   assert.match(record, /canSeeFinancial/);
