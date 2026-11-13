@@ -414,7 +414,10 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(record, /canManageDriver/);
   assert.match(record, /onChangeSuspension/);
   assert.match(record, /href=\{whatsApp.web\}/);
-  assert.match(record, /rounded-full border border-border-default/);
+  assert.match(record, /marketplace-360-avatar relative overflow-hidden/);
+  const avatarCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(avatarCss, /\.marketplace-360-avatar\s*\{[^}]*border-radius: 999px;/);
+  assert.match(avatarCss, /\.marketplace-360-avatar\s*\{[^}]*border: 1px solid/);
   assert.doesNotMatch(record, /bg-\[#|bg-black/);
   const management = source("MarketplaceDriverManagementPanel.tsx");
   assert.match(management, /driver_document_signed_url/);
