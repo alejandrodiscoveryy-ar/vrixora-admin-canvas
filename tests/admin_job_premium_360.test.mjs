@@ -10,7 +10,10 @@ test('expediente premium y ventana ancha',()=>{
  assert.match(file,/Radar y cobertura/);
  assert.match(file,/Finanzas/);
  assert.match(file,/Trazabilidad/);
- assert.match(file,/role="tablist"/);
+ const job = file.slice(file.indexOf("function JobDetail("));
+ assert.match(job, /<TabsList aria-label="Contenido de la carrera"/);
+ assert.match(job, /<TabsTrigger key=\{id\} value=\{id\}/);
+ assert.match(job, /<Tabs value=\{activeTab\} onValueChange=/);
 });
 test('preserva eventos, cancelacion y origen de radar',()=>{
  assert.match(file,/<JobNotificationReach projectId=\{projectId\} jobId=\{jobId\}/);
