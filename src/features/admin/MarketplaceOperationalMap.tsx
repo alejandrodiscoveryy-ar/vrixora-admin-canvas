@@ -145,7 +145,7 @@ function operationalPinIconSvg(
   }
 
   // One deterministic 24x24 glyph system for the map, legend and agenda.
-  return `<g transform="translate(15.4 12.4) scale(.72)" color="#1e293b">${vehicleModeGlyph(vehicleCategoryCode)}</g>`;
+  return `<g transform="translate(14.64 11.64) scale(.78)" color="#ffffff">${vehicleModeGlyph(vehicleCategoryCode)}</g>`;
 }
 
 // Material Design Icons by Pictogrammers (Apache-2.0); see public/licenses/mdi.txt.
@@ -309,23 +309,23 @@ function operationalPinSvg({
         cx="24"
         cy="21"
         r="11.5"
-        fill="url(#${innerId})"
+        fill="${kind === "driver" ? vehicleModeColor(vehicleCategoryCode) : `url(#${innerId})`}"
         stroke="#ffffff"
         stroke-width="1.4"
         stroke-opacity="0.96"
         filter="url(#${innerShadowId})"
       />
 
-      <path
+      ${kind !== "driver" ? `<path
         d="M17.2 17.5c1.7-3.2 4.5-4.8 8.3-4.8"
         fill="none"
         stroke="#ffffff"
         stroke-width="1.25"
         stroke-linecap="round"
         opacity="0.72"
-      />
+      />` : ""}
 
-      <g transform="${kind === "driver" ? "translate(24 22) scale(1.20) translate(-24 -22)" : ""}">
+      <g>
         ${operationalPinIconSvg(kind, vehicleCategoryCode)}
       </g>
     </svg>
