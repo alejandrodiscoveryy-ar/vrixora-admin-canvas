@@ -35,7 +35,7 @@ export default function MarketplaceDriverPromotionPreview({
         </div>
       </div>
       <div className="mx-auto w-full max-w-[360px]">
-        <div className={`relative isolate flex w-full flex-col items-center justify-evenly overflow-hidden rounded-2xl border border-orange-400/30 bg-slate-950 p-4 text-white shadow-xl ${format === "square" ? "aspect-square" : "aspect-[9/16]"}`}>
+        <div className={`relative isolate flex w-full flex-col items-center justify-evenly gap-2 overflow-hidden rounded-2xl border border-orange-400/30 bg-slate-950 p-3 text-white shadow-xl ${format === "square" ? "aspect-square" : "aspect-[9/16]"}`}>
           <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"/>
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"/>
           <div className="relative flex w-full items-center justify-between gap-2">
@@ -43,7 +43,7 @@ export default function MarketplaceDriverPromotionPreview({
             <span className="text-xs text-slate-300">Mi TukTuk</span>
           </div>
           <div className="relative flex w-full flex-col items-center gap-1.5">
-            <div className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-orange-400/70 bg-slate-800 ${format === "square" ? "h-20 w-20" : "h-28 w-28"}`}>
+            <div className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-orange-400/70 bg-slate-800 ${format === "square" ? "h-16 w-16" : "h-28 w-28"}`}>
               <UserRound className="h-9 w-9 text-slate-400" aria-hidden="true"/>
               {portrait ? <img src={portrait} alt={`Foto de ${displayName}`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" onError={event => { event.currentTarget.style.display = "none"; }}/> : null}
             </div>
@@ -54,11 +54,17 @@ export default function MarketplaceDriverPromotionPreview({
             <p className="text-sm font-semibold">¡Viaja conmigo!</p>
             <p className="text-xs text-slate-300">Tu conductor de confianza. Toda una flota a tu disposición.</p>
           </div>
-          <div className="relative flex w-full items-center gap-2 rounded-xl border border-white/15 bg-white/5 p-2">
-            <QrCode className="h-7 w-7 shrink-0 text-orange-300" aria-hidden="true"/>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold">Solicitar transporte</p>
-              <p className="text-[10px] text-slate-300">QR y enlace personal pendientes de activación</p>
+          {/* The QR belongs inside the shareable artwork, not outside in Admin.
+              Until a consented public link exists, do not render a fake scannable code. */}
+          <div data-promotion-qr-area="embedded" className={`relative flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white/5 p-2 ${format === "story" ? "flex-col text-center" : ""}`}>
+            <div role="img" aria-label="Espacio reservado para el QR personal, aún no activo" className={`flex aspect-square shrink-0 flex-col items-center justify-center gap-1 rounded-lg bg-white p-2 text-slate-700 ${format === "story" ? "w-32" : "w-24"}`}>
+              <QrCode className="h-9 w-9 text-slate-400" aria-hidden="true"/>
+              <span className="text-center text-[9px] font-semibold leading-tight">QR PENDIENTE</span>
+            </div>
+            <div className="min-w-0 space-y-1">
+              <p className="text-sm font-bold">Escanea y viaja conmigo</p>
+              <p className="text-[10px] leading-snug text-slate-300">Si no estoy disponible, TukTuk busca otro conductor para ti.</p>
+              <p className="text-[10px] text-orange-200">QR y enlace personal pendientes de activación</p>
             </div>
           </div>
           <span className="relative text-[10px] font-medium uppercase tracking-wider text-slate-400">Borrador · No publicar</span>
