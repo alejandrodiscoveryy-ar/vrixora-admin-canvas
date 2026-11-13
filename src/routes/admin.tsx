@@ -213,6 +213,14 @@ function ProjectNavItem({
   const isActiveProject = project.id === currentProjectId;
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(isActiveProject);
+  const trabajosGroupId = useId();
+  const trabajosRouteActive = isActiveProject && currentSection === "trabajos";
+  const [trabajosExpanded, setTrabajosExpanded] = useState(trabajosRouteActive);
+
+  useEffect(() => {
+    if (trabajosRouteActive) setTrabajosExpanded(true);
+  }, [trabajosRouteActive]);
+
   const configurationGroupId = useId();
   const configurationRouteActive = isActiveProject && ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection);
   const [configurationExpanded, setConfigurationExpanded] = useState(configurationRouteActive);
@@ -324,15 +332,40 @@ function ProjectNavItem({
             // Areas de Trabajos: mismo panel, URL navegable y sin barra horizontal.
             if (tab.slug === "trabajos") {
               const groupActive = isActiveProject && currentSection === "trabajos";
+              const trabajosOpen = collapsed ? groupActive : trabajosExpanded;
               return (
-                <div key="trabajos" className="space-y-1">
-                  <details className="group/workspace" open={groupActive || undefined}>
-                    <summary title="Trabajos" data-nav-tone="trabajos" data-nav-active={groupActive ? "true" : undefined} className="admin-nav-item admin-nav-primary cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <div key="trabajos" className="admin-nav-config-group space-y-1">
+                  <div data-nav-tone="trabajos"
+                    data-nav-active={groupActive ? "true" : undefined}
+                    className="admin-nav-item admin-nav-primary admin-nav-config-parent">
+                    <Link
+                      to="/admin/proyectos/$id/$section"
+                      params={{ id: project.id, section: "trabajos" }}
+                      search={{ vista: "resumen" }}
+                      title="Trabajos"
+                      aria-label="Trabajos"
+                      onClick={() => {
+                        setTrabajosExpanded(true);
+                        closeDrawer?.();
+                      }}
+                      className="admin-nav-config-link"
+                    >
                       <AdminNavIcon icon={Icon} />
                       <span data-nav-label className="min-w-0 flex-1 break-words">Trabajos</span>
-                      <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/workspace:rotate-90" />
-                    </summary>
-                    <div data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5" aria-label="Vistas de Trabajos">
+                    </Link>
+                    {!collapsed && (
+                      <button type="button" data-nav-chevron
+                        className="admin-nav-config-toggle"
+                        aria-label={trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos"}
+                        aria-expanded={trabajosOpen}
+                        aria-controls={trabajosGroupId}
+                        onClick={() => setTrabajosExpanded((value) => !value)}
+                      >
+                        <ChevronRight aria-hidden="true" className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${trabajosOpen ? "rotate-90" : ""}`} />
+                      </button>
+                    )}
+                  </div>
+                  <div id={trabajosGroupId} hidden={!trabajosOpen} data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5" aria-label="Vistas de Trabajos">
                       {MARKETPLACE_WORKSPACE_VIEWS.filter((view) => permissions.includes(view.permission)).map((view) => {
                         const ViewIcon = view.icon;
                         const viewActive = groupActive && (workspaceView === view.slug || (!workspaceView && view.slug === "resumen"));
@@ -354,8 +387,7 @@ function ProjectNavItem({
                           </Link>
                         );
                       })}
-                    </div>
-                  </details>
+                  </div>
                 </div>
               );
             }
