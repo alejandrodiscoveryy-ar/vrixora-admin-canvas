@@ -76,3 +76,21 @@ test("Toda la flota es una capa de Operaciones independiente de Cobertura", () =
   assert.match(source, /Con posición: \{\(operational\.data\?\.drivers \?\? \[\]\)\.filter\(\(driver\) => driverCoordinate\(driver\) != null\)\.length\}/);
   assert.match(source, /mapViewMode === "operations" && layers\.routes/);
 });
+
+
+test("Agenda de conductores usa filas compactas y detalle desplegable", () => {
+  assert.match(source, /const \[expandedDriverId, setExpandedDriverId\] = useState<string \| null>\(null\)/);
+  assert.match(source, /aria-expanded=\{rowExpanded\}/);
+  assert.match(source, /rowExpanded \? "rotate-180" : ""/);
+  assert.match(source, /min-h-10 w-full min-w-0 items-center gap-1\.5/);
+  assert.match(source, /min-w-0 flex-1 truncate text-\[12px\]/);
+  assert.match(source, /agendaTab === "drivers" \? "min\(342px, calc\(100% - 24px\)\)"/);
+  assert.match(source, /sticky top-0 z-20 grid grid-cols-2 gap-1/);
+  assert.match(source, /<span className="truncate">Trabajando<\/span>\s*<strong[^>]*>\{data\.summary\.workingDrivers\}/);
+  assert.match(source, /<span className="truncate">Descansando<\/span>\s*<strong[^>]*>\{data\.summary\.inactiveDrivers\}/);
+  assert.match(source, /rowExpanded \? \(\s*<div id=\{\x60operational-driver-detail-/);
+  assert.match(source, /timeZone: "America\/Havana", dateStyle: "short", timeStyle: "medium"/);
+  assert.match(source, /setShowAllFleetInOperations\(true\)/);
+  assert.match(source, /onOpenDriver\(driver\.driverUserId\)/);
+  assert.match(source, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
+});

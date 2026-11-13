@@ -13,6 +13,7 @@ import {
   CarFront,
   Copy,
   Clock3,
+  ChevronDown,
   MapPin,
   MessageCircle,
   Package,
@@ -552,7 +553,7 @@ const driverInitials = (name: string | null) => {
 
 function DriverAvatar({ name, url }: { name: string | null; url: string | null }) {
   return (
-    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background shadow-sm">
+    <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background shadow-sm">
       <div className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
         {driverInitials(name)}
       </div>
@@ -840,6 +841,7 @@ export default function MarketplaceOperationalMap({
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const [mapViewportHeight, setMapViewportHeight] = useState<number | null>(null);
   const [driverListMode, setDriverListMode] = useState<"working" | "resting">("working");
+  const [expandedDriverId, setExpandedDriverId] = useState<string | null>(null);
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -2419,7 +2421,7 @@ export default function MarketplaceOperationalMap({
             )}
             <div
               className="pointer-events-none absolute inset-y-3 right-3 z-30 flex min-h-0 items-stretch"
-              style={{ width: panelOpen ? "min(420px, calc(100% - 24px))" : "44px" }}
+              style={{ width: panelOpen ? (agendaTab === "drivers" ? "min(342px, calc(100% - 24px))" : "min(420px, calc(100% - 24px))") : "44px" }}
             >
               {panelOpen ? (
                 <aside
@@ -2509,171 +2511,99 @@ export default function MarketplaceOperationalMap({
                           Leyenda
                         </button>
                       </div>
-                      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
-                        <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2 [scrollbar-color:rgba(148,163,184,0.4)_transparent] [scrollbar-width:thin]">
+                        <div className="sticky top-0 z-20 grid grid-cols-2 gap-1 bg-slate-950/95 py-2">
                           <button
                             type="button"
                             aria-pressed={driverListMode === "working"}
-                            onClick={() => setDriverListMode("working")}
-                            className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                              driverListMode === "working"
-                                ? "border-emerald-400/45 bg-emerald-500/[0.11] shadow-[0_10px_28px_-20px_rgba(52,211,153,0.8)]"
-                                : "border-emerald-500/15 bg-emerald-500/[0.035] hover:border-emerald-400/30"
-                            }`}
+                            onClick={() => { setDriverListMode("working"); setExpandedDriverId(null); }}
+                            className={`flex min-w-0 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-medium transition ${driverListMode === "working" ? "border-emerald-400/45 bg-emerald-500/15 text-emerald-200" : "border-white/10 text-slate-300 hover:bg-white/5"}`}
                           >
-                            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-300">
-                              Trabajando
-                            </p>
-                            <p className="mt-1 text-xl font-semibold text-foreground">
-                              {data.summary.workingDrivers}
-                            </p>
+                            <span className="truncate">Trabajando</span>
+                            <strong className="shrink-0 tabular-nums text-foreground">{data.summary.workingDrivers}</strong>
                           </button>
-
                           <button
                             type="button"
                             aria-pressed={driverListMode === "resting"}
-                            onClick={() => setDriverListMode("resting")}
-                            className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                              driverListMode === "resting"
-                                ? "border-slate-400/40 bg-slate-500/[0.12] shadow-[0_10px_28px_-20px_rgba(148,163,184,0.55)]"
-                                : "border-white/10 bg-background/35 hover:border-white/20"
-                            }`}
+                            onClick={() => { setDriverListMode("resting"); setExpandedDriverId(null); }}
+                            className={`flex min-w-0 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-medium transition ${driverListMode === "resting" ? "border-slate-400/40 bg-slate-500/20 text-slate-100" : "border-white/10 text-slate-300 hover:bg-white/5"}`}
                           >
-                            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                              Descansando
-                            </p>
-                            <p className="mt-1 text-xl font-semibold text-foreground">
-                              {data.summary.inactiveDrivers}
-                            </p>
+                            <span className="truncate">Descansando</span>
+                            <strong className="shrink-0 tabular-nums text-foreground">{data.summary.inactiveDrivers}</strong>
                           </button>
                         </div>
-
-                        <div className="mt-2.5 space-y-1.5 pr-1">
+                        <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-background/25">
                           {filteredDrivers.length ? (
                             filteredDrivers.map((driver) => {
                               const hasLastPosition = driverCoordinate(driver) != null;
+                              const rowExpanded = expandedDriverId === driver.driverUserId;
+                              const pinState = driverPinState(driver);
+                              const stateLabel = driver.activeJobId
+                                ? "En servicio"
+                                : !driver.acceptingJobs
+                                  ? "Descansando"
+                                  : !driver.locationFresh
+                                    ? "Trabajando · GPS sin actualizar"
+                                    : driver.isAvailable ? "Trabajando · disponible" : "Trabajando · no disponible";
+                              const stateColor = pinState === "busy" ? "bg-emerald-400" : pinState === "available" ? "bg-sky-400" : pinState === "stale" ? "bg-amber-400" : "bg-slate-400";
+                              const capturedDate = driver.capturedAt ? new Date(driver.capturedAt) : null;
+                              const lastSignal = capturedDate && Number.isFinite(capturedDate.getTime())
+                                ? new Intl.DateTimeFormat("es-CU", { timeZone: "America/Havana", dateStyle: "short", timeStyle: "medium" }).format(capturedDate)
+                                : "Sin ubicación registrada";
                               return (
-                                <div
-                                  key={driver.driverUserId}
-                                  className="relative rounded-xl border border-white/10 bg-background/38 px-2.5 py-2 shadow-[0_10px_28px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md transition-colors hover:border-cyan-400/35 hover:bg-background/55"
-                                >
-                                  {onOpenDriver ? (
-                                    <button
-                                      type="button"
-                                      aria-label={`Abrir ficha 360 de ${driver.driverDisplayName || "Conductor"}`}
-                                      onClick={() => {
-                                        setExpanded(false);
-                                        onOpenDriver(driver.driverUserId);
-                                      }}
-                                      className="absolute inset-0 z-10 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
-                                    />
-                                  ) : null}
-                                  <div className="flex min-w-0 items-start gap-2">
-                                    <DriverAvatar
-                                      name={driver.driverDisplayName}
-                                      url={
-                                        driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null
-                                      }
-                                    />
-
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex items-start justify-between gap-2">
-                                        <p
-                                          title={driver.driverDisplayName || "Conductor"}
-                                          className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground"
-                                        >
-                                          {driver.driverDisplayName || "Conductor"}
-                                        </p>
-
-                                        <span
-                                          className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
-                                            driver.locationFresh
-                                              ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.75)]"
-                                              : hasLastPosition
-                                                ? "bg-amber-400"
-                                                : "bg-muted-foreground/40"
-                                          }`}
-                                          title={
-                                            driver.locationFresh
-                                              ? "Ubicación en línea"
-                                              : signalAgeLabel(driver.capturedAt, data.serverTime)
-                                          }
-                                        />
+                                <div key={driver.driverUserId} className={rowExpanded ? "bg-cyan-500/[0.05]" : ""}>
+                                  <button
+                                    type="button"
+                                    aria-expanded={rowExpanded}
+                                    aria-controls={`operational-driver-detail-${driver.driverUserId}`}
+                                    title={`${driver.driverDisplayName || "Conductor"} · ${stateLabel}`}
+                                    onClick={() => setExpandedDriverId((current) => current === driver.driverUserId ? null : driver.driverUserId)}
+                                    className="flex min-h-10 w-full min-w-0 items-center gap-1.5 px-2 py-1 text-left transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
+                                  >
+                                    <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
+                                    <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                    <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-3.5 w-3.5 shrink-0 text-orange-300" />
+                                    <span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} role="img" aria-label={stateLabel} title={stateLabel} />
+                                    <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${rowExpanded ? "rotate-180" : ""}`} />
+                                  </button>
+                                  {rowExpanded ? (
+                                    <div id={`operational-driver-detail-${driver.driverUserId}`} className="space-y-1.5 border-t border-white/5 px-2 pb-2 pt-1.5 pl-10 text-[11px]">
+                                      <p className="break-words font-medium text-slate-200">{vehicleCategoryLabel(driver.vehicleCategoryCode)} · {driver.vehicleName || driver.vehicleId}</p>
+                                      <p className="flex items-center gap-1.5 text-slate-200"><span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} />{stateLabel}{driver.activeJobId ? ` · ${statusLabel(driver.activeJobStatus)}` : ""}</p>
+                                      <div className="text-slate-400">
+                                        <p>{signalAgeLabel(driver.capturedAt, data.serverTime)}</p>
+                                        <p className="tabular-nums">{lastSignal}</p>
                                       </div>
-
-                                      <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
-                                        <VehicleModeIcon
-                                          code={driver.vehicleCategoryCode}
-                                          className="h-3.5 w-3.5 shrink-0 text-orange-300"
-                                        />
-                                        <span className="font-medium text-orange-200">
-                                          {vehicleCategoryLabel(driver.vehicleCategoryCode)}
-                                        </span>
-                                        <span className="text-muted-foreground/60">·</span>
-                                        <span className="min-w-0 break-words">
-                                          {driver.vehicleName || driver.vehicleId}
-                                        </span>
-                                      </div>
-
-                                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                        {driver.activeJobId ? (
-                                          <span className="inline-flex rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-cyan-200">
-                                            En servicio · {statusLabel(driver.activeJobStatus)}
-                                          </span>
-                                        ) : driver.acceptingJobs ? (
-                                          <span className="inline-flex rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">
-                                            {!driver.locationFresh
-                                              ? "Trabajando · GPS sin actualizar"
-                                              : driver.isAvailable
-                                                ? "Trabajando · disponible"
-                                                : "Trabajando"}
-                                          </span>
-                                        ) : (
-                                          <span className="inline-flex rounded-full border border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                            Descansando
-                                          </span>
-                                        )}
-
-                                        {!driver.locationFresh ? (
-                                          <span
-                                            className={`text-[10px] ${
-                                              hasLastPosition
-                                                ? "text-amber-300"
-                                                : "text-muted-foreground"
-                                            }`}
-                                          >
-                                            {signalAgeLabel(driver.capturedAt, data.serverTime)}
-                                          </span>
-                                        ) : null}
+                                      <div className="flex flex-wrap gap-1">
                                         <button
                                           type="button"
                                           disabled={!hasLastPosition}
-                                          className="relative z-20 rounded-md border border-orange-400/20 px-1.5 py-0.5 text-[10px] text-orange-200 enabled:hover:bg-orange-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                          className="rounded-md border border-orange-400/25 px-2 py-1 text-orange-200 enabled:hover:bg-orange-400/10 disabled:opacity-40"
                                           onClick={() => {
                                             const coordinate = driverCoordinate(driver);
                                             const liveMap = mapRef.current;
                                             if (coordinate && liveMap) {
-                                              liveMap.easeTo({
-                                                center: coordinate,
-                                                zoom: Math.max(13, liveMap.getZoom()),
-                                                duration: 450,
-                                              });
+                                              setLayers((current) => ({ ...current, drivers: true }));
+                                              if (!driver.acceptingJobs && !driver.activeJobId) {
+                                                if (mapViewMode === "operations") setShowAllFleetInOperations(true);
+                                                else setCoverageFilter("resting");
+                                              } else if (mapViewMode === "coverage") setCoverageFilter("all");
+                                              liveMap.easeTo({ center: coordinate, zoom: Math.max(13, liveMap.getZoom()), duration: 450 });
                                             }
                                           }}
-                                        >
-                                          Ver en mapa
-                                        </button>
+                                        >Ver en mapa</button>
+                                        {onOpenDriver ? (
+                                          <button type="button" className="rounded-md border border-cyan-400/25 px-2 py-1 text-cyan-200 hover:bg-cyan-400/10" onClick={() => { setExpanded(false); onOpenDriver(driver.driverUserId); }}>Ficha 360</button>
+                                        ) : null}
                                       </div>
                                     </div>
-                                  </div>
+                                  ) : null}
                                 </div>
                               );
                             })
                           ) : (
-                            <p className="text-sm text-muted-foreground">
-                              {driverListMode === "working"
-                                ? "No hay conductores trabajando."
-                                : "No hay conductores descansando."}
+                            <p className="px-2 py-3 text-xs text-muted-foreground">
+                              {driverListMode === "working" ? "No hay conductores trabajando." : "No hay conductores descansando."}
                             </p>
                           )}
                         </div>
