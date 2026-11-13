@@ -51,3 +51,7 @@ Cliente (tuktuk-cliente): leer parámetro conductor antes de inicializar sesión
 ## Entrega actual
 
 Vista previa privada de la tarjeta en ficha 360 con foto registrada y modalidad real. Dos formatos, advertencia de borrador, sin QR funcional o enlaces ni publicación de fotos. El resto de este documento define la siguiente implementación y sus criterios de aceptación. No se han aplicado migraciones, cambios de tarifas ni cambios de despacho.
+
+### QR dentro de la imagen compartida (requisito explícito)
+
+El QR personal no es un accesorio separado del administrador. Debe estar renderizado dentro de cada PNG descargable (1080×1080 y 1080×1920), junto al mensaje «Escanea y viaja conmigo». Codifica exactamente el mismo enlace opaco autorizado que se comparte como texto. Usar módulos negros sobre blanco, margen blanco de al menos cuatro módulos, sin logo superpuesto, tamaño inicial de 300 px en la exportación de 1080 px y corrección de errores M o Q. Verificar lectura de los PNG exportados y de imágenes recomprimidas por WhatsApp y Facebook. El enlace debe ser corto mediante ruta propia verificada, si se necesita reducir densidad. No generar una imagen descargable con QR ficticio: en la vista privada todavía se muestra un espacio reservado, inequívocamente pendiente. El conductor puede compartir la imagen con su enlace clicable en el texto adjunto para usuarios que la ven en el mismo teléfono. Si se revoca el perfil, el mismo QR sigue llevando a una pantalla segura de búsqueda general, sin atribuir ni exponer la identidad revocada.
