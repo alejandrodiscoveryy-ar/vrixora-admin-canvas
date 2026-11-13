@@ -38,3 +38,15 @@ test('La misma familia SVG representa cada modalidad en agenda, leyenda y mapa',
   assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\}/);
   assert.match(src, /<VehicleModeBadge code=\{job\.vehicleCategoryCode\}/);
 });
+
+
+test("El bicitaxi cubano conserva bicicleta, pedales y cabina de pasajeros", () => {
+  const start = src.indexOf('if (vehicleCategoryCode === "bicitaxi")');
+  const end = src.indexOf('\n  return filled(', start);
+  const pedicab = src.slice(start, end);
+  assert.match(pedicab, /Cuban passenger pedicab: front bicycle, rear covered bench and visible pedals/);
+  assert.match(pedicab, /M12 7\.5V6/);
+  assert.match(pedicab, /M4\.5 18\.5 7\.5 11/);
+  assert.match(pedicab, /M11\.2 18\.5V20h1\.7/);
+  assert.match(pedicab, /fill-rule="evenodd"/);
+});
