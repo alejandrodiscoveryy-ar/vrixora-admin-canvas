@@ -258,3 +258,44 @@ BEGIN
   IF public.resolve_marketplace_promo_profile_v1(code) IS NOT NULL THEN RAISE EXCEPTION 'driver opt-out ignored'; END IF;
 END $$;
 SELECT 'Mi TukTuk administrative activation isolated SQL contract passed' AS result;
+
+-- Historical drivers may have both reviewed images but no recorded type.
+\i docs/security/mi-tuktuk-legacy-identity-review-candidate.sql
+DO $$
+DECLARE pid uuid:='10000000-0000-0000-0000-000000000001';
+  admin uuid:='90000000-0000-0000-0000-000000000001';
+  other uuid:='20000000-0000-0000-0000-000000000002';
+  front uuid:='50000000-0000-0000-0000-000000000003';
+  back uuid:='50000000-0000-0000-0000-000000000004';
+  result jsonb;
+BEGIN
+  IF has_function_privilege('anon','public.admin_set_marketplace_driver_identity_review_v2(uuid,uuid,boolean,text,uuid,uuid,text)','EXECUTE')
+    THEN RAISE EXCEPTION 'anonymous review allowed'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  UPDATE public.driver_profiles SET identity_document_type=null WHERE project_id=pid AND user_id=other;
+  PERFORM set_config('request.jwt.claim.sub',other::text,true);
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Self review forbidden',front,back,'national_id');
+    RAISE EXCEPTION 'self review allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Incorrect document',back,front,'national_id');
+    RAISE EXCEPTION 'incorrect images accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Missing document type',front,back,null);
+    RAISE EXCEPTION 'missing type accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  UPDATE public.media_assets SET status='pending' WHERE id=front;
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Unavailable document',front,back,'national_id');
+    RAISE EXCEPTION 'unavailable document accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  IF (SELECT identity_document_type FROM public.driver_profiles WHERE project_id=pid AND user_id=other) IS NOT NULL
+    THEN RAISE EXCEPTION 'failed review persisted classification'; END IF;
+  UPDATE public.media_assets SET status='available' WHERE id=front;
+  result:=public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Reviewed original historical documents',front,back,'national_id');
+  IF result->>'verified' IS DISTINCT FROM 'true'
+    OR (SELECT identity_document_type FROM public.driver_profiles WHERE project_id=pid AND user_id=other) IS DISTINCT FROM 'national_id'
+    THEN RAISE EXCEPTION 'legacy review failed'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.audit_events WHERE action='admin_classify_driver_identity' AND actor_id=admin AND metadata->>'document_type'='national_id')
+    THEN RAISE EXCEPTION 'classification audit missing'; END IF;
+  BEGIN PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Attempt to change existing type',front,back,'driver_license');
+    RAISE EXCEPTION 'existing type overwritten'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,false,'Revoke reviewed identity',null,null,null);
+  IF app_private.marketplace_driver_identity_verified_v1(pid,other) THEN RAISE EXCEPTION 'review not revoked'; END IF;
+END $$;
+SELECT 'Legacy identity review contract passed' AS result;
