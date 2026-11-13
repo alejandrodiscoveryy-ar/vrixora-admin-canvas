@@ -928,3 +928,47 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 @media (prefers-reduced-motion: reduce) {
   .admin-subnav-tab { transition: none; }
 }
+
+/* Configuration is a direct destination and has a separate accessible disclosure. */
+.admin-nav-item.admin-nav-config-parent {
+  gap: 2px;
+  padding: 0 3px 0 7px;
+}
+.admin-nav-config-link {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  gap: 8px;
+  color: inherit;
+  border-radius: var(--radius-control);
+}
+.admin-nav-config-toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  min-height: 44px;
+  color: var(--text-secondary);
+  border-radius: var(--radius-control);
+}
+.admin-nav-config-toggle:hover {
+  background-color: var(--surface-3);
+  color: var(--text-primary);
+}
+.admin-nav-config-link:focus-visible,
+.admin-nav-config-toggle:focus-visible {
+  outline: 2px solid var(--nav-ink, var(--border-focus));
+  outline-offset: -2px;
+}
+.admin-nav-config-group:has(> [data-nav-submenu]:not([hidden]) [aria-current="page"]) > .admin-nav-config-parent[data-nav-active="true"] {
+  background-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 7%, var(--surface-2));
+  border-color: color-mix(in oklab, var(--nav-accent, var(--primary)) 18%, var(--border-default));
+}
+.admin-nav-config-group:has(> [data-nav-submenu]:not([hidden]) [aria-current="page"]) > .admin-nav-config-parent[data-nav-active="true"]::before {
+  opacity: .45;
+}
+#admin-desktop-sidebar[data-state="collapsed"] .admin-nav-config-parent { padding: 0 3px; }
+#admin-desktop-sidebar[data-state="collapsed"] .admin-nav-config-link { justify-content: center; gap: 0; }
+[data-admin-reference-drawer="graphite"] .admin-nav-config-toggle { width: 44px; }

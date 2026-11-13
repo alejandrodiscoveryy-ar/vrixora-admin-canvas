@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, adminSubnavTone, type AdminProjectNavItem } from "@/lib/admin-navigation";
+import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, adminSubnavTone, adminGroupDefault, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -213,6 +213,13 @@ function ProjectNavItem({
   const isActiveProject = project.id === currentProjectId;
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(isActiveProject);
+  const configurationGroupId = useId();
+  const configurationRouteActive = isActiveProject && ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection);
+  const [configurationExpanded, setConfigurationExpanded] = useState(configurationRouteActive);
+
+  useEffect(() => {
+    if (configurationRouteActive) setConfigurationExpanded(true);
+  }, [configurationRouteActive, currentSection]);
 
   useEffect(() => {
     if (isActiveProject) {
@@ -415,21 +422,43 @@ function ProjectNavItem({
                 );
               });
 
+              const defaultChild = adminGroupDefault(tab);
+              if (!defaultChild) return null;
+              const groupOpen = collapsed ? groupActive : configurationExpanded;
+
               return (
-                <div key={tab.slug} className="space-y-1">
-                  <details open={groupActive || undefined} className="group/admin">
-                    <summary
+                <div key={tab.slug} className="admin-nav-config-group space-y-1">
+                  <div data-nav-tone={adminNavTone(tab.slug)}
+                    data-nav-active={groupActive ? "true" : undefined}
+                    className="admin-nav-item admin-nav-primary admin-nav-config-parent">
+                    <Link
+                      to="/admin/proyectos/$id/$section"
+                      params={{ id: project.id, section: defaultChild.slug }}
                       title={tab.label}
-                      data-nav-tone={adminNavTone(tab.slug)}
-                      data-nav-active={groupActive ? "true" : undefined}
-                      className="admin-nav-item admin-nav-primary cursor-pointer list-none [&::-webkit-details-marker]:hidden"
+                      aria-label={tab.label}
+                      onClick={() => {
+                        setConfigurationExpanded(true);
+                        closeDrawer?.();
+                      }}
+                      className="admin-nav-config-link"
                     >
                       <AdminNavIcon icon={Icon} />
                       <span data-nav-label className="min-w-0 flex-1 break-words">{tab.label}</span>
-                      <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
-                    </summary>
+                    </Link>
+                    {!collapsed && (
+                      <button type="button" data-nav-chevron
+                        className="admin-nav-config-toggle"
+                        aria-label={groupOpen ? "Contraer Configuración" : "Desplegar Configuración"}
+                        aria-expanded={groupOpen}
+                        aria-controls={configurationGroupId}
+                        onClick={() => setConfigurationExpanded((value) => !value)}
+                      >
+                        <ChevronRight aria-hidden="true" className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${groupOpen ? "rotate-90" : ""}`} />
+                      </button>
+                    )}
+                  </div>
 
-                    <div data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5">
+                  <div id={configurationGroupId} hidden={!groupOpen} data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5">
                       {tab.children.map((child) => {
                         const ChildIcon = child.icon;
                         const childPath = `${projectBasePath}/${child.slug}`;
@@ -458,8 +487,7 @@ function ProjectNavItem({
                           </Link>
                         );
                       })}
-                    </div>
-                  </details>
+                  </div>
                 </div>
               );
             }
