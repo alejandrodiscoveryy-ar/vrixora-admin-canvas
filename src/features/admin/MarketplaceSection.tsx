@@ -1497,7 +1497,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const topupRows = rows(topups);
   const filteredWalletRows = walletRows.filter((wallet) => recordMatches(walletSearch, wallet.driverDisplayName, wallet.driverPhone));
   const filteredTopupRows = topupRows.filter((item) => recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference));
-  const receiptsByTopup = useMemo(() => new Map((financialDocuments.data ?? []).filter((document) => document.topupId).map((document) => [document.topupId, document])), [financialDocuments.data]);
+  const receiptsByTopup = useMemo(() => {
+    const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
+    for (const document of financialDocuments.data ?? []) {
+      if (document.topupId && !byTopup.has(document.topupId)) byTopup.set(document.topupId, document);
+    }
+    return byTopup;
+  }, [financialDocuments.data]);
   const selectedPaymentMethod = paymentMethods.data?.find((item) => item.code === method);
   const paymentMethodLabel = (code: string) =>
     paymentMethods.data?.find((item) => item.code === code)?.name ?? code;
@@ -2263,7 +2269,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                       <div className="flex min-w-0 items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-[11px] text-text-secondary">Última carrera</p>
-                          <p className="break-words text-xs font-medium text-foreground">{customer.lastJobAt ? formatCustomerDateTime(customer.lastJobAt) : "Sin actividad"}</p>
+                          <p className="break-words text-xs font-medium text-foreground">{customer.lastJobAt ? <time dateTime={customer.lastJobAt}>{formatCustomerDateTime(customer.lastJobAt)}</time> : "Sin actividad"}</p>
                         </div>
                         <ChevronRight className="h-5 w-5 shrink-0 text-text-secondary" aria-hidden="true" />
                       </div>
