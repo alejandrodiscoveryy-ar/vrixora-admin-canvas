@@ -1,0 +1,47 @@
+name: TukTuk wallet credit engine - isolated
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/security/tuktuk-wallet-credit-*-candidate.sql'
+      - 'supabase/verification/wallet_credit_engine_fixture.sql'
+      - '.github/workflows/wallet-credit-engine-isolated.yml'
+permissions:
+  contents: read
+jobs:
+  wallet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wallet_credit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d wallet_credit"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Extract exact baseline adapters
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          source=Path('docs/security/mi-tuktuk-impulsa-finance-adapter-candidate.sql').read_text()
+          classifier=re.search(r'CREATE OR REPLACE FUNCTION app_private\.marketplace_classify_wallet_transaction\(\)[\s\S]*?\$function\$\s*;',source)
+          assert classifier
+          checks='\n'.join(re.findall(r'ALTER TABLE public\.wallet_transactions ADD CONSTRAINT [\s\S]*?;',source))
+          Path('/tmp/impulsa-wallet-adapter.sql').write_text(checks+'\n'+classifier.group(0))
+          functions=[]
+          for name in ['public.accept_job','app_private.finish_marketplace_job_core','public.list_my_marketplace_available_jobs']:
+              match=re.search(r'CREATE OR REPLACE FUNCTION '+re.escape(name)+r'\([\s\S]*?\$function\$\s*;',source)
+              assert match, name
+              functions.append(match.group(0))
+          Path('/tmp/impulsa-acceptance-adapter.sql').write_text(Path('supabase/verification/impulsa_finance_reservation_baseline.sql').read_text()+'\n'+'\n'.join(functions))
+          PY
+      - name: Exercise production-shaped wallet and actual acceptance/settlement RPCs
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -v /tmp/impulsa-wallet-adapter.sql:/tmp/impulsa-wallet-adapter.sql:ro -v /tmp/impulsa-acceptance-adapter.sql:/tmp/impulsa-acceptance-adapter.sql:ro -w /work postgres:17 psql -h 127.0.0.1 -U postgres -d wallet_credit -v ON_ERROR_STOP=1 -f supabase/verification/wallet_credit_engine_fixture.sql
