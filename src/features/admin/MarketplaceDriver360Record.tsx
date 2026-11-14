@@ -321,7 +321,7 @@ export default function MarketplaceDriver360Record({
 
       <div id="driver-360-current-panel" role="tabpanel" aria-labelledby={"driver-tab-" + activeTab} className="marketplace-360-content min-w-0 space-y-3 max-sm:[&_button]:min-h-11">
       {activeTab === "promotion" ? (
-        <MarketplaceDriverPromotionPreview displayName={displayName} avatarUrl={media?.avatarUrl} categoryCode={mainVehicle?.vehicle.categoryCode} serviceCodes={mainVehicle?.assignment?.isActive ? mainVehicle.services : []} active={detail.driver.status === "active"} />
+        <MarketplaceDriverPromotionPreview key={driverUserId} projectId={projectId} driverUserId={driverUserId} active={detail.driver.status === "active"} />
       ) : null}
       {activeTab === "overview" ? (
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
