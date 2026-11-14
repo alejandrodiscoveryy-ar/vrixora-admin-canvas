@@ -1,0 +1,31 @@
+name: Wallet transition policy - isolated
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/security/tuktuk-wallet-transition-policy-candidate.sql'
+      - 'supabase/verification/wallet_transition_policy_fixture.sql'
+      - 'src/features/admin/MarketplaceImpulsaTransitionPanel.tsx'
+      - '.github/workflows/wallet-transition-policy-isolated.yml'
+permissions:
+  contents: read
+jobs:
+  policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wallet_policy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d wallet_policy"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Test draft policy and referral safety
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -w /work postgres:17 psql -h 127.0.0.1 -U postgres -d wallet_policy -v ON_ERROR_STOP=1 -f supabase/verification/wallet_transition_policy_fixture.sql
