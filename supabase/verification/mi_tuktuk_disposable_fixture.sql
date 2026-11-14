@@ -326,8 +326,9 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',other::text,true);
   IF public.my_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM 'viaja-conmigo'
     OR public.resolve_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM code
-    OR public.resolve_marketplace_promo_alias_v1(old_alias) IS DISTINCT FROM code
-    THEN RAISE EXCEPTION 'custom alias or previous alias lost'; END IF;
+    OR public.resolve_marketplace_promo_alias_v1(old_alias) IS NOT NULL
+    OR public.get_marketplace_promo_primary_alias_v1(code) IS DISTINCT FROM 'viaja-conmigo'
+    THEN RAISE EXCEPTION 'custom alias or primary alias invalid'; END IF;
   BEGIN PERFORM public.my_marketplace_promo_alias_v1('admin');
     RAISE EXCEPTION 'reserved name accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   BEGIN PERFORM public.admin_marketplace_promo_alias_v1(pid,driver,'stolen');
