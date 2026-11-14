@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Layers,
   UsersRound,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -53,6 +54,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
+import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import CommercialReferralsPanel from "@/features/admin/CommercialReferralsPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { FilterToolbar } from "@/components/admin/FilterToolbar";
@@ -98,7 +100,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
-  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas" | "referidos">("ofertas");
+  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas" | "referidos" | "impulsa">("ofertas");
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
     queryFn: async () => {
@@ -115,6 +117,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const isTuktukProject = projectIdentity.data?.slug === "tuktuk-control";
   const showOffers = isTuktukProject && commercialView === "ofertas";
   const showReferrals = isTuktukProject && commercialView === "referidos";
+  const showImpulsa = isTuktukProject && commercialView === "impulsa";
+  const canViewImpulsa = permissions.includes("settings.view");
+  const canEditImpulsa = canViewImpulsa && permissions.includes("settings.manage") && canManage && permissions.includes("payments.manage");
   const adminMembership = useQuery({
     queryKey: ["commercial-admin-membership", projectId, user?.id],
     queryFn: async () => {
@@ -265,7 +270,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.16] bg-gradient-to-br from-violet-500/[0.045] via-background/85 to-cyan-500/[0.025] p-3 shadow-[0_28px_80px_-55px_rgba(139,92,246,0.68)] sm:p-4 lg:p-5 admin-graphite-panel">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.065] via-background/80 to-cyan-500/[0.04]" />
       <img
-        src={showOffers ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
+        src={showOffers || showImpulsa ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute -right-8 top-20 hidden h-[24rem] w-[38%] object-contain object-right-top opacity-[0.045] mix-blend-screen lg:block"
@@ -293,6 +298,19 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 Ofertas TukTuk
               </Button>
             )}
+            {isTuktukProject && (
+              <Button
+                type="button"
+                variant={showImpulsa ? "default" : "outline"}
+                onClick={() => setCommercialView("impulsa")}
+                className="admin-subnav-tab"
+                data-nav-tone="finanzas"
+                aria-pressed={showImpulsa}
+              >
+                <span className="admin-nav-icon" aria-hidden="true"><TrendingUp /></span>
+                TukTuk Impulsa
+              </Button>
+            )}
             <Button
               type="button"
               variant={commercialView === "captacion" ? "default" : "outline"}
@@ -318,7 +336,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               </Button>
             )}
           </div>
-          {canManage && !showOffers && !showReferrals && (
+          {canManage && !showOffers && !showReferrals && !showImpulsa && (
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
                 Nueva campaña
@@ -334,6 +352,15 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       {showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
+      ) : showImpulsa ? (
+        canViewImpulsa ? (
+          <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
+        ) : (
+          <section className="rounded-xl border border-border/70 bg-card/60 p-4 admin-graphite-panel" aria-label="TukTuk Impulsa">
+            <h2 className="font-semibold">TukTuk Impulsa</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Necesitas permisos de configuración para consultar la política comercial.</p>
+          </section>
+        )
       ) : showReferrals ? (
         <CommercialReferralsPanel projectId={projectId} />
       ) : (

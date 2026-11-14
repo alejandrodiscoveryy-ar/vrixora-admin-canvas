@@ -45,3 +45,14 @@ test("Comercial incluye la pestaña Referidos sin alterar Ofertas y Captación",
   assert.match(ui, /admin_get_commercial_referral_network_v1/);
   assert.match(ui, /Buscar referente, referido o código/);
 });
+
+test("Impulsa has its own commercial tab, permission gates and no duplicate in Offers", () => {
+  const offers = read("src/features/admin/MarketplaceOffersPanel.tsx");
+  assert.match(comercial, /setCommercialView\("impulsa"\)/);
+  assert.match(comercial, /aria-pressed=\{showImpulsa\}/);
+  assert.match(comercial, /showImpulsa \? \(/);
+  assert.match(comercial, /<MarketplaceImpulsaPolicyPanel projectId=\{projectId\} canView=\{canViewImpulsa\} canEdit=\{canEditImpulsa\}/);
+  assert.match(comercial, /const canEditImpulsa = canViewImpulsa && permissions.includes\("settings.manage"\) && canManage && permissions.includes\("payments.manage"\)/);
+  assert.match(comercial, /!showOffers && !showReferrals && !showImpulsa/);
+  assert.doesNotMatch(offers, /MarketplaceImpulsaPolicyPanel/);
+});
