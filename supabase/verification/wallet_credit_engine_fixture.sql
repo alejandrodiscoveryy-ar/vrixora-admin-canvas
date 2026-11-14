@@ -445,7 +445,8 @@ BEGIN
  PERFORM pg_temp.check_true(app_private.impulsa_process_one()='empty','partial repayment no reward');
  PERFORM pg_temp.confirm_topup(driver,50);
  PERFORM pg_temp.check_true(app_private.wallet_debt(pid,driver)=0 AND app_private.wallet_cash_collected(pid,(SELECT ledger_transaction_id FROM public.commission_reservations WHERE job_id=fleet))=150,'full cash repayment');
- PERFORM pg_temp.check_true(app_private.impulsa_process_one()='credited' AND app_private.wallet_impulsa_balance(pid,promoter)=50,'commercial reward after actual cash');
+ PERFORM pg_temp.check_true(app_private.impulsa_process_one()='credited','commercial worker after actual cash');
+ PERFORM pg_temp.check_true(app_private.wallet_impulsa_balance(pid,promoter)=50,'commercial reward after actual cash');
  PERFORM pg_temp.check_true(app_private.impulsa_process_one()='empty','one commercial payment');
  PERFORM pg_temp.check_true(NOT app_private.wallet_credit_unused(pid,driver),'credit never renewed after payoff');
  PERFORM public.accept_job(nextj,'v2',gen_random_uuid()); PERFORM pg_temp.finish_driver(nextj,driver);
