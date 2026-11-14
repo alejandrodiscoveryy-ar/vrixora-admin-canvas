@@ -17,6 +17,6 @@ jobs:
         with:
           deno-version: v2.5.6
       - name: Type check public endpoint
-        run: deno check supabase/functions/marketplace-impulsa-social/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/marketplace-impulsa-social/index.ts
       - name: Render PNG and validate public projection
-        run: deno test --allow-read --allow-net --allow-env supabase/functions/marketplace-impulsa-social/social-card.test.ts
+        run: deno test --node-modules-dir=auto --allow-read --allow-net --allow-env supabase/functions/marketplace-impulsa-social/social-card.test.ts
