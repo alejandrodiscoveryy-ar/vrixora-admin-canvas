@@ -602,8 +602,8 @@ test("Admin submenu accents remain aligned in inner navigation and preserve tab 
   assert.match(care, /onKeyDown=\{onCareTabKeyDown\}/);
   assert.match(care, /canManageContact \?/);
   const commercial = readFileSync(new URL("../src/features/admin/ComercialSection.tsx", import.meta.url), "utf8");
-  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 3);
-  for (const view of ["ofertas","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
+  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 4);
+  for (const view of ["ofertas","impulsa","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
 });
 
 test("Configuración replaces the Administration label without duplicate entries or route changes", () => {
