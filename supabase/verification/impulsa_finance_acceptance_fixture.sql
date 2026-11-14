@@ -3,6 +3,7 @@
 -- available offers, wallet reservation and service settlement dependencies.
 -- Same production functions, real Postgres, no real accounts or network.
 ALTER TABLE public.project_marketplace_financial_settings ADD COLUMN wallet_currency text NOT NULL DEFAULT 'CUP';
+ALTER TABLE public.commission_reservations ALTER COLUMN status SET DEFAULT 'open', ADD COLUMN consumed_at timestamptz;
 ALTER TABLE public.jobs ADD COLUMN service_code text DEFAULT 'passenger', ADD COLUMN pricing_vehicle_category_code text DEFAULT 'tricycle',
  ADD COLUMN recommended_price numeric DEFAULT 1000, ADD COLUMN expires_at timestamptz, ADD COLUMN created_at timestamptz DEFAULT now(),
  ADD COLUMN assigned_vehicle_id text, ADD COLUMN state_version bigint NOT NULL DEFAULT 1, ADD COLUMN test_force_wallet_commission boolean NOT NULL DEFAULT false;
