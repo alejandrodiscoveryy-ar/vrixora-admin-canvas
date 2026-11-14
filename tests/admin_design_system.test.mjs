@@ -380,7 +380,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   const source = (name) => readFileSync(new URL("../src/features/admin/" + name, import.meta.url), "utf8");
   const panel = source("MarketplaceSection.tsx");
   const directory = panel.slice(panel.indexOf('<TabsContent value="conductores">'), panel.indexOf('<TabsContent value="clientes">'));
-  assert.equal((directory.match(/<FilterSelect appearance="premium"/g) ?? []).length, 4);
+  assert.equal((directory.match(/<FilterSelect appearance="premium"/g) ?? []).length, 5);
   assert.match(directory, /driverSearch/);
   assert.match(directory, /driverWhatsAppLinks\(item.phone\)/);
   assert.match(directory, /onClick=\{\(\) => setDriver360Id\(item.userId\)\}/);
