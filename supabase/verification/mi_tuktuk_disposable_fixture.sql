@@ -324,8 +324,8 @@ BEGIN
   IF old_alias IS DISTINCT FROM 'other' OR public.resolve_marketplace_promo_alias_v1(old_alias) IS DISTINCT FROM code
     THEN RAISE EXCEPTION 'automatic alias unavailable'; END IF;
   PERFORM set_config('request.jwt.claim.sub',other::text,true);
-  IF public.my_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM 'viaja-conmigo'
-    OR public.resolve_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM code
+  IF public.my_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM 'viaja-conmigo' THEN RAISE EXCEPTION 'custom alias update failed'; END IF;
+  IF public.resolve_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM code
     OR public.resolve_marketplace_promo_alias_v1(old_alias) IS NOT NULL
     OR public.get_marketplace_promo_primary_alias_v1(code) IS DISTINCT FROM 'viaja-conmigo'
     THEN RAISE EXCEPTION 'custom alias or primary alias invalid'; END IF;
