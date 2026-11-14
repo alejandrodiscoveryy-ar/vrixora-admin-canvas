@@ -91,7 +91,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
 $$;
 CREATE OR REPLACE FUNCTION app_private.wallet_can_finance(pid uuid,uid uuid,jid uuid,charge numeric) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
- SELECT charge>0 AND app_private.wallet_debt(pid,uid)=0 AND (
+ SELECT charge>0 AND app_private.wallet_debt(pid,uid)=0 AND NOT EXISTS(SELECT 1 FROM public.commission_reservations r WHERE r.project_id=pid AND r.user_id=uid AND r.status='open' AND r.credit_reserved_amount>0) AND (
  app_private.marketplace_wallet_available_balance(pid,uid)>=charge
  OR EXISTS(SELECT 1 FROM app_private.marketplace_wallet_transition_policy p
  JOIN public.project_marketplace_financial_settings f ON f.project_id=p.project_id AND f.commission_enabled
@@ -251,7 +251,7 @@ BEGIN
  'promotional_balance',b.promotional_balance,'impulsa_balance',app_private.wallet_impulsa_balance(pid,uid),'impulsa_available',ia,'withdrawal_reserved',ih,
  'withdrawal_minimum_cup',coalesce(p.withdrawal_minimum_cup,5000),'withdrawals_enabled',coalesce(p.withdrawals_enabled AND p.engine_ready AND p.activated_at IS NOT NULL,false),
  'can_withdraw',coalesce(p.engine_ready AND p.activated_at IS NOT NULL AND p.withdrawals_enabled AND debt=0 AND ia>=p.withdrawal_minimum_cup AND NOT pending,false),
- 'credit_available',coalesce(p.engine_ready AND p.activated_at IS NOT NULL AND p.credit_enabled AND debt=0 AND app_private.wallet_credit_unused(pid,uid),false),
+ 'credit_available',coalesce(p.engine_ready AND p.activated_at IS NOT NULL AND p.credit_enabled AND debt=0 AND app_private.wallet_credit_unused(pid,uid) AND EXISTS(SELECT 1 FROM public.project_marketplace_financial_settings f WHERE f.project_id=pid AND f.commission_enabled) AND NOT EXISTS(SELECT 1 FROM public.commission_reservations r WHERE r.project_id=pid AND r.user_id=uid AND r.status='open'),false),
  'credit_limit_cup',coalesce(p.credit_limit_cup,500),'reversal_pending',pending,
  'withdrawals',coalesce((SELECT jsonb_agg(to_jsonb(w) - 'request_key' - 'resolution_key' - 'resolved_by' ORDER BY w.requested_at DESC) FROM (SELECT * FROM app_private.marketplace_impulsa_withdrawals x WHERE x.project_id=pid AND x.user_id=uid ORDER BY requested_at DESC LIMIT 20) w),'[]'::jsonb));
 END $$;
