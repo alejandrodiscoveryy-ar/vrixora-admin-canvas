@@ -61,6 +61,8 @@ import { premiumSurface, premiumControlSurface, premiumHeaderSurface, premiumCol
 import { cn } from "@/lib/utils";
 
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
+import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
+import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
@@ -1486,6 +1488,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   });
   const visibleDriverRows = filteredDriverRows.slice(0, driverVisibleCount);
   const driverMediaIds = visibleDriverRows.map((row) => row.userId);
+  const driverVerifications = useDriverVerifications(projectId, driverMediaIds, tab === "conductores");
   const driverFiltersActive = Boolean(driverSearch || driverStatusFilter || driverAvailabilityFilter ||
     driverCategoryFilter || driverPeriodFilter);
   useEffect(() => {
@@ -2113,7 +2116,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         type="button"
                         className="absolute inset-0 z-10 cursor-pointer rounded-[var(--radius-compact)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                         onClick={() => setDriver360Id(item.userId)}
-                        aria-label={`Abrir ficha 360 de ${item.displayName}`}
+                        aria-label={`Abrir ficha 360 de ${item.displayName}${driverVerifications.data?.[item.userId]?.verified === true ? ", conductor verificado" : ""}`}
                       />
 
                       <div className="pointer-events-none relative grid min-w-0 grid-cols-2 items-center gap-x-3 gap-y-2 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,0.9fr)_minmax(0,1.15fr)_7rem] xl:gap-3">
@@ -2138,6 +2141,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               <h4 className="min-w-0 break-words text-sm font-semibold leading-snug text-foreground">
                                 {item.displayName}
                               </h4>
+                              {driverVerifications.data?.[item.userId]?.verified === true && <DriverVerifiedBadge compact />}
 
                               <div className="flex min-w-0 flex-wrap items-center gap-1">
                                 <StatusBadge status={item.status} compact />
@@ -2598,6 +2602,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               <LoadingState />
             ) : driver360.data ? (
               <MarketplaceDriver360Record
+                key={driver360Id!}
                 projectId={projectId}
                 driverUserId={driver360Id!}
                 detail={driver360.data}
