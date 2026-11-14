@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import MarketplaceImpulsaEarnings from "@/features/admin/MarketplaceImpulsaEarnings";
 import { Copy, ExternalLink, RefreshCw, ShieldCheck, Share2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
@@ -145,5 +146,6 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
       </div>
     </> : null}
     {actionMessage && <p role="status" className="text-xs text-muted-foreground">{actionMessage}</p>}
+  {canManage && <MarketplaceImpulsaEarnings projectId={projectId} driverUserId={driverUserId} />}
   </section>;
 }

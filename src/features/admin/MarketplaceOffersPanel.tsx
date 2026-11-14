@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MarketplaceWelcomePolicyPanel from "@/features/admin/MarketplaceWelcomePolicyPanel";
+import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -297,6 +298,7 @@ export default function MarketplaceOffersPanel({
   return (
     <section className="space-y-6">
       <MarketplaceWelcomePolicyPanel projectId={projectId} canView={canViewPolicy} canEdit={canEditPolicy} />
+        <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewPolicy} canEdit={canEditPolicy} />
       <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-300/25 bg-gradient-to-br from-[#17152b] via-[#0e162b] to-[#0b2030] p-3 shadow-[0_24px_70px_-45px_rgba(107,70,208,0.65)] sm:p-3 admin-graphite-panel">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
         <img
