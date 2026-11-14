@@ -299,3 +299,51 @@ BEGIN
   IF app_private.marketplace_driver_identity_verified_v1(pid,other) THEN RAISE EXCEPTION 'review not revoked'; END IF;
 END $$;
 SELECT 'Legacy identity review contract passed' AS result;
+
+-- Alias contract against already installed consent and identity gates.
+\i docs/security/mi-tuktuk-short-aliases-candidate.sql
+DO $$
+DECLARE pid uuid:='10000000-0000-0000-0000-000000000001';
+  admin uuid:='90000000-0000-0000-0000-000000000001';
+  other uuid:='20000000-0000-0000-0000-000000000002';
+  driver uuid:='20000000-0000-0000-0000-000000000001';
+  front uuid:='50000000-0000-0000-0000-000000000003';
+  back uuid:='50000000-0000-0000-0000-000000000004';
+  code text; old_alias text; next_code text; next_alias text;
+BEGIN
+  IF has_table_privilege('anon','app_private.marketplace_driver_promo_aliases','SELECT')
+    OR has_table_privilege('authenticated','app_private.marketplace_driver_promo_aliases','SELECT')
+    OR has_function_privilege('anon','public.my_marketplace_promo_alias_v1(text)','EXECUTE')
+    OR has_function_privilege('authenticated','public.resolve_marketplace_promo_alias_v1(text)','EXECUTE')
+    OR NOT has_function_privilege('service_role','public.resolve_marketplace_promo_alias_v1(text)','EXECUTE')
+  THEN RAISE EXCEPTION 'alias grants invalid'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  PERFORM public.admin_set_marketplace_driver_identity_review_v2(pid,other,true,'Both sides reviewed again',front,back,'national_id');
+  code:=public.admin_activate_marketplace_promo_card_v1(pid,other,true,'Registration record')->>'code';
+  old_alias:=public.admin_marketplace_promo_alias_v1(pid,other);
+  IF old_alias IS DISTINCT FROM 'other' OR public.resolve_marketplace_promo_alias_v1(old_alias) IS DISTINCT FROM code
+    THEN RAISE EXCEPTION 'automatic alias unavailable'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',other::text,true);
+  IF public.my_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM 'viaja-conmigo'
+    OR public.resolve_marketplace_promo_alias_v1('viaja-conmigo') IS DISTINCT FROM code
+    OR public.resolve_marketplace_promo_alias_v1(old_alias) IS DISTINCT FROM code
+    THEN RAISE EXCEPTION 'custom alias or previous alias lost'; END IF;
+  BEGIN PERFORM public.my_marketplace_promo_alias_v1('admin');
+    RAISE EXCEPTION 'reserved name accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  BEGIN PERFORM public.admin_marketplace_promo_alias_v1(pid,driver,'stolen');
+    RAISE EXCEPTION 'driver impersonated admin'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  PERFORM public.revoke_my_marketplace_promo_card_v1();
+  IF public.resolve_marketplace_promo_alias_v1(old_alias) IS NOT NULL OR public.resolve_marketplace_promo_alias_v1('viaja-conmigo') IS NOT NULL
+    THEN RAISE EXCEPTION 'revoked alias still resolves'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  next_code:=public.admin_activate_marketplace_promo_card_v1(pid,other,true,'New documented consent')->>'code';
+  next_alias:=public.admin_marketplace_promo_alias_v1(pid,other);
+  IF next_code IS NOT DISTINCT FROM code OR next_alias IS DISTINCT FROM 'other2'
+    OR public.resolve_marketplace_promo_alias_v1(old_alias) IS NOT NULL
+    OR public.resolve_marketplace_promo_alias_v1(next_alias) IS DISTINCT FROM next_code
+    THEN RAISE EXCEPTION 'old alias reused after reactivation'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',other::text,true);
+  BEGIN PERFORM public.my_marketplace_promo_alias_v1('viaja-conmigo');
+    RAISE EXCEPTION 'old alias reassigned'; EXCEPTION WHEN unique_violation THEN NULL; END;
+END $$;
+SELECT 'Mi TukTuk permanent aliases isolated SQL contract passed' AS result;
