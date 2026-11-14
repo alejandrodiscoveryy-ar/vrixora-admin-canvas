@@ -63,6 +63,7 @@ import { cn } from "@/lib/utils";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
+import { matchesDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
@@ -1475,7 +1476,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const verificationFilterUnavailable = Boolean(driverVerificationFilter) &&
     !drivers.isLoading && !drivers.hasNextPage && !verificationFilterLoading &&
     (driverVerifications.isError || !verificationComplete);
-  const verifiedDriverCount = verificationComplete
+  const verifiedDriverCount = verificationComplete && !drivers.isLoading && !drivers.hasNextPage && !drivers.isError && !driverVerifications.isError
     ? driverRows.filter((row) => driverVerifications.data?.[row.userId]?.verified === true).length : null;
   const driverCategories = [...new Set(
     driverRows.map((item) => item.vehicleCategoryCode).filter((code): code is string => Boolean(code)),
@@ -1486,8 +1487,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     if (query && !normalizeDriverText(item.displayName).includes(query) &&
         !(phoneDigits && (item.phone ?? "").replace(/\D/g, "").includes(phoneDigits))) return false;
     if (driverStatusFilter && item.status !== driverStatusFilter) return false;
-    if (driverVerificationFilter === "verified" && driverVerifications.data?.[item.userId]?.verified !== true) return false;
-    if (driverVerificationFilter === "unverified" && driverVerifications.data?.[item.userId]?.verified !== false) return false;
+    if (!matchesDriverVerification(driverVerificationFilter, driverVerifications.data?.[item.userId]?.verified)) return false;
     if (driverAvailabilityFilter === "available" && !item.isAvailable) return false;
     if (driverAvailabilityFilter === "unavailable" && item.isAvailable) return false;
     if (driverCategoryFilter && item.vehicleCategoryCode !== driverCategoryFilter) return false;
