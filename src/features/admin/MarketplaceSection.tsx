@@ -2030,6 +2030,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 projectId={projectId}
                 isVisible={tab === "mapa"}
                 canViewCustomers={canCustomers}
+                canManageMarketplace={canManageMarketplace}
                 onOpenDriver={setDriver360Id}
                 onOpenCustomer={setCustomerId}
                 onOpenJob={setJobId}

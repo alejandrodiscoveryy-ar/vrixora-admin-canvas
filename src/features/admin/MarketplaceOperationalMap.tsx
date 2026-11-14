@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSupabaseClient } from "@/lib/supabase";
+import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import mapboxgl, { type CircleLayerSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -67,6 +69,7 @@ const defaultLayers: LayerState = {
 const statusLabel = (status: string | null) =>
   ({
     published: "Buscando conductor",
+    expired: "Vencida · sin conductor",
     accepted: "Aceptado",
     en_route: "En camino",
     pickup: "Recogida",
@@ -693,6 +696,7 @@ export default function MarketplaceOperationalMap({
   projectId,
   isVisible,
   canViewCustomers = false,
+  canManageMarketplace = false,
   onOpenDriver,
   onOpenCustomer,
   onOpenJob,
@@ -700,6 +704,7 @@ export default function MarketplaceOperationalMap({
   projectId: string;
   isVisible: boolean;
   canViewCustomers?: boolean;
+  canManageMarketplace?: boolean;
   onOpenDriver?: (driverUserId: string) => void;
   onOpenCustomer?: (customerId: string) => void;
   onOpenJob?: (jobId: string) => void;
@@ -761,6 +766,40 @@ export default function MarketplaceOperationalMap({
     enabled: isVisible,
     refetchInterval: (query) => ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 15_000),
     refetchIntervalInBackground: false,
+  });
+
+  const queryClient = useQueryClient();
+  const republishJob = useMutation({
+    mutationFn: async ({ jobId, key }: { jobId: string; key: string }) => {
+      const { data, error } = await getSupabaseClient().rpc("admin_republish_marketplace_job", {
+        target_project_id: projectId,
+        target_job_id: jobId,
+        target_idempotency_key: key,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async () => {
+      toast.success("Carrera republicada. Buscando conductor nuevamente.");
+      await Promise.all([
+        operational.refetch(),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-jobs", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-overview", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-job-detail", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-job-notification-recipients", projectId] }),
+      ]);
+    },
+    onError: (error: unknown) => {
+      const message = String((error as { message?: string })?.message ?? error);
+      toast.error(message.includes("JOB_REPUBLISH_COOLDOWN")
+        ? "Esta carrera se publicó hace menos de un minuto."
+        : message.includes("JOB_NOT_REPUBLISHABLE")
+          ? "La carrera ya no puede republicarse. Comprueba su estado."
+          : message.includes("JOB_SCHEDULE_PAST")
+            ? "La hora programada ya pasó. Crea una nueva solicitud."
+            : "No se pudo republicar la carrera. Actualiza e inténtalo de nuevo.");
+      void operational.refetch();
+    },
   });
 
   const operationalReady = Boolean(operational.data);
@@ -2532,7 +2571,7 @@ export default function MarketplaceOperationalMap({
                             Servicios activos
                           </h4>
                           <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-cyan-200">
-                            {operationalJobs.length}
+                            {data.summary.activeJobs}
                           </span>
                         </div>
                         <button
@@ -2586,7 +2625,9 @@ export default function MarketplaceOperationalMap({
                                       className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
                                         job.status === "incident"
                                           ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
-                                          : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                                          : job.status === "expired"
+                                            ? "border-amber-400/30 bg-amber-500/10 text-amber-200"
+                                            : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
                                       }`}
                                     >
                                       {statusLabel(job.status)}
@@ -2632,6 +2673,25 @@ export default function MarketplaceOperationalMap({
                                   >
                                     Ver en mapa y detalles
                                   </button>
+                                  {canManageMarketplace && !job.driverUserId &&
+                                    ["published", "expired"].includes(job.status) ? (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="mt-1 min-h-11 w-full justify-center border-cyan-400/40 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25"
+                                      disabled={republishJob.isPending}
+                                      onClick={() => {
+                                        if (!window.confirm("¿El cliente sigue necesitando el servicio? Republicar renueva la vigencia y vuelve a buscar conductores, sin cambiar el precio.")) return;
+                                        republishJob.mutate({ jobId: job.jobId, key: crypto.randomUUID() });
+                                      }}
+                                    >
+                                      <RefreshCw className={`mr-2 h-4 w-4 ${republishJob.isPending && republishJob.variables?.jobId === job.jobId ? "animate-spin" : ""}`} />
+                                      {republishJob.isPending && republishJob.variables?.jobId === job.jobId
+                                        ? "Republicando…"
+                                        : "Republicar carrera"}
+                                    </Button>
+                                  ) : null}
                                 </div>
                               );
                             })
