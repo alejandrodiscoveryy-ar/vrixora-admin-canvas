@@ -8,6 +8,7 @@ const rateLimitCategory: Record<string, string> = {
   start_session: "session",
   services: "read",
   promo_profile: "read",
+  promo_alias: "read",
   working_fleet: "read",
   fleet_presence_v2: "read",
   create_request: "request",
@@ -58,6 +59,15 @@ Deno.serve(async (request) => {
     const { error: limitError } = await supabase.rpc("marketplace_customer_gateway_rate_limit", { target_operation: category, target_derived_identity: identity });
     if (limitError) throw limitError;
     const params = { ...(body.params ?? {}) };
+    if (operation === "promo_alias") {
+      const alias = params.target_alias;
+      if (typeof alias !== "string" || !/^[a-z0-9][a-z0-9-]{1,31}$/.test(alias) || alias.endsWith("-")) return json({ data: null });
+      const { data: code, error } = await supabase.rpc("resolve_marketplace_promo_alias_v1", { target_alias: alias });
+      if (error) throw error;
+      return new Response(JSON.stringify({ data: typeof code === "string" && /^[0-9a-f]{32}$/.test(code) ? { code } : null }), {
+        headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
     if (operation === "promo_profile") {
       // Public promotional profile: opaque link only, rate limited above.
       const code = params.target_code;
