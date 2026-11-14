@@ -75,6 +75,9 @@ Deno.serve(async (request) => {
       const { data: profile, error } = await supabase.rpc("resolve_marketplace_promo_profile_v1", { target_code: code });
       if (error) throw error;
       if (!profile) return json({ data: null });
+      const { data: primaryAlias } = profile.verified === true
+        ? await supabase.rpc("get_marketplace_promo_primary_alias_v1", { target_code: code })
+        : { data: null };
       let photoUrl: string | null = null;
       if (profile.photo_asset_id) {
         const { data: asset, error: assetError } = await supabase.from("media_assets")
@@ -88,6 +91,7 @@ Deno.serve(async (request) => {
       }
       return new Response(JSON.stringify({ data: {
         public_name: profile.public_name,
+        promo_alias: typeof primaryAlias === "string" && /^[a-z0-9][a-z0-9-]{1,31}$/.test(primaryAlias) && !primaryAlias.endsWith("-") ? primaryAlias : null,
         verified: profile.verified === true,
         category_code: profile.category_code,
         service_codes: profile.service_codes,
