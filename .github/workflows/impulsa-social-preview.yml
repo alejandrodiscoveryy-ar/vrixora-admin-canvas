@@ -1,0 +1,22 @@
+name: Impulsa social preview
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/marketplace-impulsa-social/**'
+      - 'supabase/functions/_shared/gateway-client-ip.ts'
+      - '.github/workflows/impulsa-social-preview.yml'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - name: Type check public endpoint
+        run: deno check --node-modules-dir=auto supabase/functions/marketplace-impulsa-social/index.ts
+      - name: Render PNG and validate public projection
+        run: deno test --node-modules-dir=auto --allow-read --allow-net --allow-env supabase/functions/marketplace-impulsa-social/social-card.test.ts
