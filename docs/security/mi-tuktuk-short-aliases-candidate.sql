@@ -118,19 +118,19 @@ create function public.resolve_marketplace_promo_alias_v1(target_alias text)
 returns text language sql stable security definer set search_path='' as $$
   select a.promo_code from app_private.marketplace_driver_promo_aliases a
   cross join lateral app_private.resolve_marketplace_promo_profile(a.promo_code) p
-  where a.alias=lower(btrim(target_alias))
+  where a.alias=lower(btrim(target_alias)) and a.is_primary
     and app_private.marketplace_driver_identity_verified_v1(p.project_id,p.driver_user_id)
 $$;
 revoke all on function public.resolve_marketplace_promo_alias_v1(text) from public,anon,authenticated;
 grant execute on function public.resolve_marketplace_promo_alias_v1(text) to service_role;
 -- Read the canonical alias for both public artwork and the authenticated card.
 create function public.get_marketplace_promo_primary_alias_v1(target_code text)
-returns text language sql stable security definer set search_path='' as $
+returns text language sql stable security definer set search_path='' as $$
   select a.alias from app_private.marketplace_driver_promo_aliases a
   cross join lateral app_private.resolve_marketplace_promo_profile(a.promo_code) p
   where a.promo_code=target_code and a.is_primary
     and app_private.marketplace_driver_identity_verified_v1(p.project_id,p.driver_user_id)
-$;
+$$;
 revoke all on function public.get_marketplace_promo_primary_alias_v1(text) from public,anon,authenticated;
 grant execute on function public.get_marketplace_promo_primary_alias_v1(text) to service_role;
 commit;
