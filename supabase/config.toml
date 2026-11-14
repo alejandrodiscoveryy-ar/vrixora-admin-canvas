@@ -421,3 +421,6 @@ verify_jwt = true
 
 [functions.send-push-notifications]
 verify_jwt = false
+
+[functions.marketplace-impulsa-social]
+verify_jwt = false
