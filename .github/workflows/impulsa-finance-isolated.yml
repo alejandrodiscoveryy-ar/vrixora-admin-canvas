@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths:
       - 'docs/security/mi-tuktuk-impulsa-finance-*-candidate.sql'
-      - 'supabase/verification/impulsa_finance_disposable_fixture.sql'
+      - 'supabase/verification/impulsa_finance*.sql'
       - 'src/features/admin/MarketplaceImpulsa*.tsx'
       - '.github/workflows/impulsa-finance-isolated.yml'
 permissions:
@@ -38,8 +38,16 @@ jobs:
           checks='\n'.join(re.findall(r'ALTER TABLE public\.wallet_transactions ADD CONSTRAINT [\s\S]*?;',source))
           assert 'impulsa_credit' in checks and 'impulsa_reversal' in checks
           Path('/tmp/impulsa-wallet-adapter.sql').write_text(checks+'\n'+classifier.group(0))
+          names=['public.accept_job','app_private.finish_marketplace_job_core','public.list_my_marketplace_available_jobs']
+          functions=[]
+          for name in names:
+              match=re.search(r'CREATE OR REPLACE FUNCTION '+re.escape(name)+r'\([\s\S]*?\$function\$\s*;',source)
+              assert match, name
+              functions.append(match.group(0))
+          reservation=Path('supabase/verification/impulsa_finance_reservation_baseline.sql').read_text()
+          Path('/tmp/impulsa-acceptance-adapter.sql').write_text(reservation+'\n'+'\n'.join(functions))
           PY
       - name: Validate core and real classifier in disposable Postgres
         run: |
-          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -v /tmp/impulsa-wallet-adapter.sql:/tmp/impulsa-wallet-adapter.sql:ro -w /work postgres:17 \
-            psql -h 127.0.0.1 -U postgres -d impulsa_fixture -v ON_ERROR_STOP=1 -f supabase/verification/impulsa_finance_disposable_fixture.sql
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -v /tmp/impulsa-wallet-adapter.sql:/tmp/impulsa-wallet-adapter.sql:ro -v /tmp/impulsa-acceptance-adapter.sql:/tmp/impulsa-acceptance-adapter.sql:ro -w /work postgres:17 \
+            psql -h 127.0.0.1 -U postgres -d impulsa_fixture -v ON_ERROR_STOP=1 -f supabase/verification/impulsa_finance_disposable_fixture.sql -f supabase/verification/impulsa_finance_acceptance_fixture.sql
