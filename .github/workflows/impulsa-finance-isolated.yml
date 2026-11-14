@@ -1,0 +1,45 @@
+name: Impulsa commercial finance - isolated
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/security/mi-tuktuk-impulsa-finance-*-candidate.sql'
+      - 'supabase/verification/impulsa_finance_disposable_fixture.sql'
+      - 'src/features/admin/MarketplaceImpulsa*.tsx'
+      - '.github/workflows/impulsa-finance-isolated.yml'
+permissions:
+  contents: read
+jobs:
+  finance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: impulsa_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d impulsa_fixture"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Extract exact wallet adapter and checks for disposable fixture
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          source=Path('docs/security/mi-tuktuk-impulsa-finance-adapter-candidate.sql').read_text()
+          classifier=re.search(r'CREATE OR REPLACE FUNCTION app_private\.marketplace_classify_wallet_transaction\(\)[\s\S]*?\$function\$\s*;',source)
+          assert classifier, 'wallet classifier missing'
+          checks='\n'.join(re.findall(r'ALTER TABLE public\.wallet_transactions ADD CONSTRAINT [\s\S]*?;',source))
+          assert 'impulsa_credit' in checks and 'impulsa_reversal' in checks
+          Path('/tmp/impulsa-wallet-adapter.sql').write_text(checks+'\n'+classifier.group(0))
+          PY
+      - name: Validate core and real classifier in disposable Postgres
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -v /tmp/impulsa-wallet-adapter.sql:/tmp/impulsa-wallet-adapter.sql:ro -w /work postgres:17 \
+            psql -h 127.0.0.1 -U postgres -d impulsa_fixture -v ON_ERROR_STOP=1 -f supabase/verification/impulsa_finance_disposable_fixture.sql
