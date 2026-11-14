@@ -187,8 +187,16 @@ BEGIN
   IF NOT FOUND OR db>0 THEN RAISE EXCEPTION 'WALLET_SOURCE_RESERVATION_NOT_FOUND_OR_DEBT'; END IF;
   NEW.real_delta:=-cr.real_reserved_amount; NEW.promotional_delta:=-cr.promotional_reserved_amount; NEW.impulsa_delta:=-cr.impulsa_reserved_amount;
   NEW.debt_delta:=cr.credit_reserved_amount;
-  IF NEW.debt_delta>0 THEN NEW.debt_job_id:=cr.job_id; END IF;
+  -- A confirmed topup/referral/earning received during the trip can cover
+  -- more of the originally unfunded amount. Never take someone else's hold.
   rh:=rh-cr.real_reserved_amount; ph:=ph-cr.promotional_reserved_amount; ih:=ih-cr.impulsa_reserved_amount;
+  repay:=least(NEW.debt_delta,pb-cr.promotional_reserved_amount-ph);
+  NEW.promotional_delta:=NEW.promotional_delta-repay; NEW.debt_delta:=NEW.debt_delta-repay;
+  repay:=least(NEW.debt_delta,rb-ib-(cr.real_reserved_amount-cr.impulsa_reserved_amount)-(rh-ih));
+  NEW.real_delta:=NEW.real_delta-repay; NEW.debt_delta:=NEW.debt_delta-repay;
+  repay:=least(NEW.debt_delta,ib-cr.impulsa_reserved_amount-ih);
+  NEW.real_delta:=NEW.real_delta-repay; NEW.impulsa_delta:=NEW.impulsa_delta-repay; NEW.debt_delta:=NEW.debt_delta-repay;
+  IF NEW.debt_delta>0 THEN NEW.debt_job_id:=cr.job_id; END IF;
  ELSIF NEW.transaction_type='reversal' THEN
   IF NEW.amount_delta<=0 OR NEW.source_type<>'job_commission_reversal' THEN RAISE EXCEPTION 'WALLET_SOURCE_INVALID_REVERSAL'; END IF;
   SELECT * INTO orig FROM public.wallet_transactions t WHERE t.id=(NEW.metadata->>'original_ledger_transaction_id')::uuid AND t.project_id=NEW.project_id AND t.user_id=NEW.user_id AND t.transaction_type='commission' AND t.source_id=NEW.source_id AND t.source_type='job_commission';
