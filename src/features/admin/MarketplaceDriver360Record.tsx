@@ -34,6 +34,8 @@ import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceDriverManagementPanel from "@/features/admin/MarketplaceDriverManagementPanel";
 import MarketplaceDriverVehicleEditor from "@/features/admin/MarketplaceDriverVehicleEditor";
 import MarketplaceDriverPromotionPreview from "@/features/admin/MarketplaceDriverPromotionPreview";
+import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
+import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 
 const date = (value: string | null | undefined) => {
   if (!value) return "—";
@@ -156,7 +158,7 @@ const driverTabs = [
   { id: "management", label: "Expediente", icon: FileText },
   { id: "activity", label: "Actividad", icon: Clock3 },
   { id: "financial", label: "Finanzas", icon: Wallet },
-  { id: "promotion", label: "Mi TukTuk", icon: Share2 },
+  { id: "promotion", label: "Impulsa", icon: Share2 },
 ] as const;
 
 export default function MarketplaceDriver360Record({
@@ -185,6 +187,8 @@ export default function MarketplaceDriver360Record({
   onChangeSuspension: (suspend: boolean) => void;
 }) {
   const [activeTab, setActiveTab] = useState<DriverTab>("overview");
+  const verification = useDriverVerifications(projectId, [driverUserId]);
+  const identity = verification.data?.[driverUserId];
   const record = useInfiniteQuery({
     queryKey: ["marketplace-driver-360-record", projectId, driverUserId],
     queryFn: ({ pageParam }) =>
@@ -234,6 +238,7 @@ export default function MarketplaceDriver360Record({
             </p>
             <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
               <h2 className="min-w-0 break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{displayName}</h2>
+              {identity?.verified === true && <DriverVerifiedBadge />}
               <span className="inline-flex items-center gap-1 text-xs text-text-secondary"><CalendarDays className="h-3.5 w-3.5 shrink-0" />Alta: {date(detail.driver.activatedAt ?? detail.driver.createdAt)}</span>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -248,6 +253,7 @@ export default function MarketplaceDriver360Record({
                 </span>
               ) : null}
             </div>
+            <p className="mt-1 text-xs text-text-secondary">{identity?.verified === true ? `Identidad revisada: ${date(identity.verified_at)}` : identity?.verified === false ? "Identidad pendiente de verificación" : "Verificación no confirmada"}</p>
             <p className="mt-1 break-words text-xs text-text-secondary">
               {mainVehicle?.vehicle.name
                 ? `Vehículo principal: ${mainVehicle.vehicle.name}`
@@ -321,7 +327,7 @@ export default function MarketplaceDriver360Record({
 
       <div id="driver-360-current-panel" role="tabpanel" aria-labelledby={"driver-tab-" + activeTab} className="marketplace-360-content min-w-0 space-y-3 max-sm:[&_button]:min-h-11">
       {activeTab === "promotion" ? (
-        <MarketplaceDriverPromotionPreview key={driverUserId} projectId={projectId} driverUserId={driverUserId} active={detail.driver.status === "active"} />
+        <MarketplaceDriverPromotionPreview key={driverUserId} projectId={projectId} driverUserId={driverUserId} active={detail.driver.status === "active"} canManage={canManageDriver} verified={identity?.verified === true} onOpenExpediente={() => setActiveTab("management")} />
       ) : null}
       {activeTab === "overview" ? (
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
@@ -458,6 +464,7 @@ export default function MarketplaceDriver360Record({
           projectId={projectId}
           driverUserId={driverUserId}
           onOpenJob={onOpenJob}
+          onOpenImpulsa={() => setActiveTab("promotion")}
         />
       ) : null}
 
