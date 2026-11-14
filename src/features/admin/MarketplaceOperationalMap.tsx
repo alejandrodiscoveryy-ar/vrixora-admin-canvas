@@ -783,7 +783,10 @@ export default function MarketplaceOperationalMap({
       toast.success("Carrera republicada. Buscando conductor nuevamente.");
       await Promise.all([
         operational.refetch(),
-        queryClient.invalidateQueries({ queryKey: ["marketplace"] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-jobs", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-overview", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-job-detail", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-job-notification-recipients", projectId] }),
       ]);
     },
     onError: (error: unknown) => {
