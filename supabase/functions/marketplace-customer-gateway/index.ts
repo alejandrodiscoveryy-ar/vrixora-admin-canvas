@@ -78,6 +78,7 @@ Deno.serve(async (request) => {
       }
       return new Response(JSON.stringify({ data: {
         public_name: profile.public_name,
+        verified: profile.verified === true,
         category_code: profile.category_code,
         service_codes: profile.service_codes,
         photo_url: photoUrl,
