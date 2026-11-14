@@ -13,7 +13,9 @@ test("Mi TukTuk usa el generador compartido y el conductor correcto", () => {
   assert.match(card, /reference.trim\(\).length < 5/);
   assert.match(card, /IDENTITY_NOT_VERIFIED/);
   assert.match(card, /promo_card=/);
-  assert.match(card, /cliente\/tuk\/\?conductor=/);
+  assert.match(card, /https:\/\/www\.vrixora\.com\/tuk\//);
+  assert.match(card, /admin_marketplace_promo_alias_v1/);
+  assert.match(card, /target_alias: chosen/);
   assert.match(card, /Tarjetas reales de Mi TukTuk/);
   assert.doesNotMatch(card, /QR PENDIENTE|service_role/);
 });
