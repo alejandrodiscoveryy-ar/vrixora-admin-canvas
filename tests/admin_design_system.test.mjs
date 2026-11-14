@@ -380,7 +380,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   const source = (name) => readFileSync(new URL("../src/features/admin/" + name, import.meta.url), "utf8");
   const panel = source("MarketplaceSection.tsx");
   const directory = panel.slice(panel.indexOf('<TabsContent value="conductores">'), panel.indexOf('<TabsContent value="clientes">'));
-  assert.equal((directory.match(/<FilterSelect appearance="premium"/g) ?? []).length, 4);
+  assert.equal((directory.match(/<FilterSelect appearance="premium"/g) ?? []).length, 5);
   assert.match(directory, /driverSearch/);
   assert.match(directory, /driverWhatsAppLinks\(item.phone\)/);
   assert.match(directory, /onClick=\{\(\) => setDriver360Id\(item.userId\)\}/);
@@ -676,4 +676,24 @@ test("Compact Marketplace tabs preserve separate customer and payment permission
   assert.match(panel, /enabled: tab === "clientes" && canCustomers/);
   assert.match(panel, /enabled: tab === "billeteras" && canPayments/);
   assert.match(panel, /enabled: tab === "recargas" && canPayments/);
+});
+
+test("Conductores: verification filters distinguish false from unknown and include the entire directory", async () => {
+  const { matchesDriverVerification } = await import("../src/features/admin/driver-verification-filter.ts");
+  const drivers = Array.from({ length: 82 }, (_, index) => ({
+    id: index, verified: index === 30 || index === 81,
+  }));
+  assert.deepEqual(drivers.filter(d => matchesDriverVerification("verified", d.verified)).map(d => d.id), [30, 81]);
+  assert.equal(drivers.filter(d => matchesDriverVerification("unverified", d.verified)).length, 80);
+  assert.equal(matchesDriverVerification("unverified", undefined), false);
+  assert.equal(matchesDriverVerification("verified", undefined), false);
+  assert.equal(matchesDriverVerification("", undefined), true);
+  const directory = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  assert.match(directory, /useDriverVerifications\(projectId, driverRows\.map/);
+  assert.ok(directory.indexOf("useDriverVerifications(projectId, driverRows.map") < directory.indexOf("const filteredDriverRows"));
+  assert.ok(directory.indexOf("const filteredDriverRows") < directory.indexOf("const visibleDriverRows = filteredDriverRows.slice"));
+  assert.match(directory, /matchesDriverVerification\(driverVerificationFilter,/);
+  assert.match(directory, /labelText="Verificación"/);
+  assert.match(directory, /setDriverVerificationFilter\(""\)/);
+  assert.match(directory, /verificationFilterUnavailable/);
 });

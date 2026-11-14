@@ -63,6 +63,7 @@ import { cn } from "@/lib/utils";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
+import { matchesDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
@@ -922,6 +923,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [driverAvailabilityFilter, setDriverAvailabilityFilter] = useState("");
   const [driverCategoryFilter, setDriverCategoryFilter] = useState("");
   const [driverPeriodFilter, setDriverPeriodFilter] = useState("");
+  const [driverVerificationFilter, setDriverVerificationFilter] = useState("");
   const [driverVisibleCount, setDriverVisibleCount] = useState(25);
 
   const [jobId, setJobId] = useState<string | null>(null);
@@ -1464,6 +1466,18 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
 
 
   const driverRows = rows(drivers);
+  // Fetch verification for the entire loaded directory before applying filters or slicing visible rows.
+  const driverVerifications = useDriverVerifications(projectId, driverRows.map((row) => row.userId),
+    tab === "conductores" && !drivers.hasNextPage && !drivers.isLoading && !drivers.isError);
+  const verificationComplete = driverRows.every((row) =>
+    typeof driverVerifications.data?.[row.userId]?.verified === "boolean");
+  const verificationFilterLoading = Boolean(driverVerificationFilter) &&
+    driverVerifications.isFetching && !verificationComplete;
+  const verificationFilterUnavailable = Boolean(driverVerificationFilter) &&
+    !drivers.isLoading && !drivers.hasNextPage && !verificationFilterLoading &&
+    (driverVerifications.isError || !verificationComplete);
+  const verifiedDriverCount = verificationComplete && !drivers.isLoading && !drivers.hasNextPage && !drivers.isError && !driverVerifications.isError
+    ? driverRows.filter((row) => driverVerifications.data?.[row.userId]?.verified === true).length : null;
   const driverCategories = [...new Set(
     driverRows.map((item) => item.vehicleCategoryCode).filter((code): code is string => Boolean(code)),
   )].sort();
@@ -1473,6 +1487,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     if (query && !normalizeDriverText(item.displayName).includes(query) &&
         !(phoneDigits && (item.phone ?? "").replace(/\D/g, "").includes(phoneDigits))) return false;
     if (driverStatusFilter && item.status !== driverStatusFilter) return false;
+    if (!matchesDriverVerification(driverVerificationFilter, driverVerifications.data?.[item.userId]?.verified)) return false;
     if (driverAvailabilityFilter === "available" && !item.isAvailable) return false;
     if (driverAvailabilityFilter === "unavailable" && item.isAvailable) return false;
     if (driverCategoryFilter && item.vehicleCategoryCode !== driverCategoryFilter) return false;
@@ -1488,12 +1503,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   });
   const visibleDriverRows = filteredDriverRows.slice(0, driverVisibleCount);
   const driverMediaIds = visibleDriverRows.map((row) => row.userId);
-  const driverVerifications = useDriverVerifications(projectId, driverMediaIds, tab === "conductores");
   const driverFiltersActive = Boolean(driverSearch || driverStatusFilter || driverAvailabilityFilter ||
-    driverCategoryFilter || driverPeriodFilter);
+    driverCategoryFilter || driverPeriodFilter || driverVerificationFilter);
   useEffect(() => {
     setDriverVisibleCount(25);
-  }, [driverSearch, driverStatusFilter, driverAvailabilityFilter, driverCategoryFilter, driverPeriodFilter, projectId]);
+  }, [driverSearch, driverStatusFilter, driverAvailabilityFilter, driverCategoryFilter, driverPeriodFilter, driverVerificationFilter, projectId]);
   const driverMedia = useQuery({
     queryKey: ["marketplace-driver-directory-media", projectId, driverMediaIds],
     queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, driverMediaIds),
@@ -2028,8 +2042,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             headerless
             title="Conductores"
             description={
-              drivers.isLoading
+              drivers.isLoading || drivers.hasNextPage || verificationFilterLoading
                 ? "Consultando conductores…"
+                : verificationFilterUnavailable ? "No se pudo confirmar la verificación del directorio"
                 : `${filteredDriverRows.length} de ${driverRows.length} conductores coinciden con la búsqueda`
             }
             icon={Users}
@@ -2048,7 +2063,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   className={cn("h-11 min-w-0 rounded-[var(--radius-control)] bg-surface-1 pl-9 text-sm sm:h-10", premiumControlSurface)}
                 />
               </label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
                 <FilterSelect appearance="premium" labelText="Estado del perfil" value={driverStatusFilter} onChange={setDriverStatusFilter}>
                   <option value="">Todos los estados</option>
                   <option value="active">Activos</option>
@@ -2066,6 +2081,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     <option key={category} value={category}>{label(category)}</option>
                   ))}
                 </FilterSelect>
+                <FilterSelect appearance="premium" labelText="Verificación" value={driverVerificationFilter} onChange={setDriverVerificationFilter}>
+                  <option value="">Todos</option>
+                  <option value="verified">Verificados{verifiedDriverCount !== null ? ` (${verifiedDriverCount})` : ""}</option>
+                  <option value="unverified">No verificados{verifiedDriverCount !== null ? ` (${driverRows.length - verifiedDriverCount})` : ""}</option>
+                </FilterSelect>
                 <FilterSelect appearance="premium" labelText="Inscripción" value={driverPeriodFilter} onChange={setDriverPeriodFilter}>
                   <option value="">Todas las fechas</option>
                   <option value="today">Hoy (Cuba)</option>
@@ -2075,7 +2095,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span aria-live="polite">
-                  {drivers.isLoading || drivers.hasNextPage ? "Cargando directorio completo…" :
+                  {drivers.isLoading || drivers.hasNextPage || verificationFilterLoading ? "Cargando directorio completo…" :
+                    verificationFilterUnavailable ? "Verificación no disponible" :
                     `${filteredDriverRows.length} coincidencias de ${driverRows.length} conductores registrados`}
                 </span>
                 {driverFiltersActive ? (
@@ -2085,6 +2106,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     setDriverAvailabilityFilter("");
                     setDriverCategoryFilter("");
                     setDriverPeriodFilter("");
+                    setDriverVerificationFilter("");
                   }}>Limpiar filtros</Button>
                 ) : null}
               </div>
@@ -2092,8 +2114,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             {drivers.isError ? (
               <EmptyMarketplaceState appearance="premium" title="No se pudo cargar el directorio"
                 description="Reintenta la consulta antes de buscar conductores." icon={Users} />
-            ) : drivers.isLoading || drivers.hasNextPage ? (
+            ) : drivers.isLoading || drivers.hasNextPage || verificationFilterLoading ? (
               <LoadingState />
+            ) : verificationFilterUnavailable ? (
+              <div role="alert" className={cn("rounded-xl border p-4 text-sm", premiumSurface)}>
+                <p>No se pudo confirmar la verificación de todos los conductores. No se mostrarán resultados incompletos.</p>
+                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => void driverVerifications.refetch()}>Reintentar verificación</Button>
+              </div>
             ) : !driverRows.length ? (
               <EmptyMarketplaceState appearance="premium"
                 title="No hay conductores"

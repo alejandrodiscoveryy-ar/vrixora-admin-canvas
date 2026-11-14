@@ -20,10 +20,10 @@ test("busca sobre el directorio completo y conserva paginación visual", () => {
 });
 
 test("filtros combinables, responsive y entrada a ficha 360", () => {
-  for (const filter of ["Estado del perfil", "Disponibilidad", "Vehículo", "Inscripción"]) {
+  for (const filter of ["Estado del perfil", "Disponibilidad", "Vehículo", "Verificación", "Inscripción"]) {
     assert.ok(panel.includes(`labelText="${filter}"`), filter);
   }
-  assert.match(panel, /sm:grid-cols-2 xl:grid-cols-4/);
+  assert.match(panel, /sm:grid-cols-2 xl:grid-cols-5/);
   assert.match(panel, /dateOfRegistration\(item\.createdAt\)/);
   assert.match(panel, /No hay coincidencias/);
   assert.match(panel, /setDriver360Id\(item\.userId\)/);
