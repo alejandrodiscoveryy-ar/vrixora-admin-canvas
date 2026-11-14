@@ -382,3 +382,40 @@ BEGIN
   THEN RAISE EXCEPTION 'deactivation changed identity or failed audit'; END IF;
 END $$;
 SELECT 'Driver360 verification and Impulsa administration contract passed' AS result;
+
+\i supabase/migrations/20261114014530_marketplace_promo_verified_response.sql
+
+-- Reproduce the old resolver's behavior before replacing its query plan.
+DO $$
+BEGIN
+  PERFORM set_config('request.jwt.claim.sub','90000000-0000-0000-0000-000000000001',true);
+  PERFORM public.admin_activate_marketplace_promo_card_v1('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002',true,'Resolver regression fixture');
+END $$;
+CREATE TEMP TABLE promo_old_contract AS
+SELECT q.code,public.resolve_marketplace_promo_profile_v1(q.code) AS payload,
+  public.get_marketplace_promo_primary_alias_v1(q.code) AS alias
+FROM app_private.marketplace_driver_promo_profiles q;
+\i docs/security/mi-tuktuk-profile-timeout-candidate.sql
+DO $$
+DECLARE item record; current_payload jsonb; code text;
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM promo_old_contract WHERE payload IS NOT NULL) THEN RAISE EXCEPTION 'no active regression fixture'; END IF;
+  FOR item IN SELECT * FROM promo_old_contract LOOP
+    current_payload:=public.resolve_marketplace_promo_profile_v1(item.code);
+    IF (current_payload-'promo_alias') IS DISTINCT FROM item.payload
+      OR current_payload->>'promo_alias' IS DISTINCT FROM item.alias
+    THEN RAISE EXCEPTION 'optimized profile differs from previous contract'; END IF;
+  END LOOP;
+  IF public.resolve_marketplace_promo_profile_v1('invalid') IS NOT NULL OR public.resolve_marketplace_promo_profile_v1(repeat('f',32)) IS NOT NULL
+  THEN RAISE EXCEPTION 'invalid profile lookup succeeded'; END IF;
+  IF has_function_privilege('anon','public.resolve_marketplace_promo_profile_v1(text)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.resolve_marketplace_promo_profile_v1(text)','EXECUTE')
+  THEN RAISE EXCEPTION 'profile RPC grants changed'; END IF;
+  SELECT p.code INTO code FROM app_private.marketplace_driver_promo_profiles p WHERE p.driver_user_id='20000000-0000-0000-0000-000000000002';
+  UPDATE public.driver_profiles SET suspended_at=now() WHERE user_id='20000000-0000-0000-0000-000000000002';
+  IF public.resolve_marketplace_promo_profile_v1(code) IS NOT NULL THEN RAISE EXCEPTION 'suspended profile exposed'; END IF;
+  UPDATE public.driver_profiles SET suspended_at=null WHERE user_id='20000000-0000-0000-0000-000000000002';
+  UPDATE public.vehicle_services SET enabled=false WHERE vehicle_id=(SELECT v.vehicle_id FROM app_private.resolve_marketplace_promo_profile(code) v);
+  IF public.resolve_marketplace_promo_profile_v1(code) IS NOT NULL THEN RAISE EXCEPTION 'unpublished or disabled service exposed'; END IF;
+END $$;
+SELECT 'Optimized Impulsa resolver matches original contract' AS result;

@@ -75,9 +75,7 @@ Deno.serve(async (request) => {
       const { data: profile, error } = await supabase.rpc("resolve_marketplace_promo_profile_v1", { target_code: code });
       if (error) throw error;
       if (!profile) return json({ data: null });
-      const { data: primaryAlias } = profile.verified === true
-        ? await supabase.rpc("get_marketplace_promo_primary_alias_v1", { target_code: code })
-        : { data: null };
+      const primaryAlias = profile.verified === true ? profile.promo_alias : null;
       let photoUrl: string | null = null;
       if (profile.photo_asset_id) {
         const { data: asset, error: assetError } = await supabase.from("media_assets")
