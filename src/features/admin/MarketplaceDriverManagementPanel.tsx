@@ -79,10 +79,12 @@ export default function MarketplaceDriverManagementPanel({
   projectId,
   driverUserId,
   onOpenJob,
+  onOpenImpulsa,
 }: {
   projectId: string;
   driverUserId: string;
   onOpenJob: (jobId: string) => void;
+  onOpenImpulsa: () => void;
 }) {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
@@ -94,9 +96,6 @@ export default function MarketplaceDriverManagementPanel({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewReason, setReviewReason] = useState("");
   const [reviewDocumentType, setReviewDocumentType] = useState("");
-  const [promoOpen, setPromoOpen] = useState(false);
-  const [authorizationReference, setAuthorizationReference] = useState("");
-  const [authorizationConfirmed, setAuthorizationConfirmed] = useState(false);
 
   const data = useQuery({
     queryKey: ["driver-management-360", projectId, driverUserId],
@@ -150,31 +149,12 @@ export default function MarketplaceDriverManagementPanel({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-verifications", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["driver-management-360", projectId, driverUserId] }),
       ]);
       setReviewOpen(false);
       setReviewReason("");
       setReviewDocumentType("");
-    },
-  });
-
-  const activatePromo = useMutation({
-    mutationFn: async () => {
-      const { error } = await getSupabaseClient().rpc(
-        "admin_activate_marketplace_promo_card_v1", {
-          target_project_id: projectId,
-          target_driver_user_id: driverUserId,
-          target_authorization_confirmed: authorizationConfirmed,
-          target_authorization_reference: authorizationReference.trim(),
-        },
-      );
-      if (error) throw error;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] });
-      setPromoOpen(false);
-      setAuthorizationConfirmed(false);
-      setAuthorizationReference("");
     },
   });
 
@@ -201,6 +181,8 @@ export default function MarketplaceDriverManagementPanel({
           queryKey: ["marketplace-driver-360", projectId, driverUserId],
         }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-drivers", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-verifications", projectId] }),
       ]);
       setEditOpen(false);
       setReason("");
@@ -476,48 +458,10 @@ export default function MarketplaceDriverManagementPanel({
           {review.data && !review.data.verified && !canVerify && (
             <p className="mt-2 text-xs text-muted-foreground">Para conceder la insignia se necesitan ambas caras del documento y un conductor no suspendido.</p>
           )}
-          {review.data && (
-            <div className="mt-3 border-t pt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-sm">Mi TukTuk</p>
-                  <p className="text-xs text-muted-foreground">
-                    {review.data.promo_active ? "Perfil promocional activado. Las dos tarjetas están disponibles para el conductor."
-                      : review.data.verified ? "Identidad aprobada. Activa la ficha para entregar automáticamente sus tarjetas."
-                      : "Pendiente de verificar la identidad."}
-                  </p>
-                </div>
-                {!review.data.promo_active && (
-                  <Button type="button" size="sm" disabled={!review.data.verified || m.driver.status !== "active" || activatePromo.isPending}
-                    onClick={() => { setPromoOpen((open) => !open); setAuthorizationConfirmed(false); setAuthorizationReference(""); }}>
-                    Activar Mi TukTuk
-                  </Button>
-                )}
-              </div>
-              {promoOpen && review.data.verified && !review.data.promo_active && (
-                <form className="mt-3 space-y-3" onSubmit={(event) => {
-                  event.preventDefault();
-                  activatePromo.mutate();
-                }}>
-                  <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                    <input type="checkbox" checked={authorizationConfirmed} onChange={(event) => setAuthorizationConfirmed(event.target.checked)} />
-                    <span>He comprobado que el conductor autorizó el uso promocional de su nombre y fotografía.</span>
-                  </label>
-                  <label className="block text-xs text-muted-foreground">
-                    Referencia de la autorización documentada (inscripción o expediente)
-                    <input required minLength={5} maxLength={300} value={authorizationReference}
-                      onChange={(event) => setAuthorizationReference(event.target.value)}
-                      className={cn("mt-1 h-11 w-full rounded-lg border bg-surface-1 px-3 text-sm text-foreground", premiumControlSurface)} />
-                  </label>
-                  {activatePromo.isError && <p role="alert" className="text-xs text-rose-200">No se pudo activar. Comprueba la verificación, el servicio operativo y los permisos.</p>}
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="submit" disabled={activatePromo.isPending || !authorizationConfirmed || authorizationReference.trim().length < 5}>
-                      {activatePromo.isPending ? "Activando…" : "Activar y entregar ficha"}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => setPromoOpen(false)}>Cancelar</Button>
-                  </div>
-                </form>
-              )}
+          {review.data?.verified && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+              <p className="text-xs text-muted-foreground">Gestiona el perfil público y las tarjetas en Impulsa.</p>
+              <Button type="button" size="sm" variant="outline" onClick={onOpenImpulsa}>Abrir Impulsa</Button>
             </div>
           )}
           {reviewOpen && review.data && (

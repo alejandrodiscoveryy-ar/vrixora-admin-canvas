@@ -5,7 +5,7 @@ const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8"
 const card = read("src/features/admin/MarketplaceDriverPromotionPreview.tsx");
 const record = read("src/features/admin/MarketplaceDriver360Record.tsx");
 test("Mi TukTuk usa el generador compartido y el conductor correcto", () => {
-  assert.match(record, /label: "Mi TukTuk"/);
+  assert.match(record, /label: "Impulsa"/);
   assert.match(record, /projectId=\{projectId\} driverUserId=\{driverUserId\}/);
   assert.match(card, /admin_activate_marketplace_promo_card_v1/);
   assert.match(card, /target_authorization_confirmed: false/);
@@ -18,4 +18,25 @@ test("Mi TukTuk usa el generador compartido y el conductor correcto", () => {
   assert.match(card, /target_alias: chosen/);
   assert.match(card, /Tarjetas reales de Mi TukTuk/);
   assert.doesNotMatch(card, /QR PENDIENTE|service_role/);
+});
+
+test("Impulsa centraliza la promoción y no modifica la identidad", () => {
+  const management = read("src/features/admin/MarketplaceDriverManagementPanel.tsx");
+  const directory = read("src/features/admin/MarketplaceSection.tsx");
+  const hook = read("src/hooks/useDriverVerifications.ts");
+  const badge = read("src/features/admin/DriverVerifiedBadge.tsx");
+  assert.match(card, /Nombre de usuario comercial/);
+  assert.match(card, /admin_deactivate_marketplace_promo_card_v1/);
+  assert.match(card, /Confirmar desactivación/);
+  assert.match(card, /Copiar enlace/);
+  assert.match(card, /verified !== true/);
+  assert.match(card, /!canManage/);
+  assert.match(record, /identity\?\.verified === true && <DriverVerifiedBadge/);
+  assert.match(directory, /driverVerifications\.data\?\.\[item\.userId\]\?\.verified === true && <DriverVerifiedBadge compact/);
+  assert.match(hook, /admin_get_marketplace_driver_verifications_v1/);
+  assert.match(hook, /slice\(i, i \+ 200\)/);
+  assert.match(badge, /Conductor verificado/);
+  assert.match(management, /marketplace-driver-verifications/);
+  assert.match(management, /onOpenImpulsa/);
+  assert.doesNotMatch(management, /admin_activate_marketplace_promo_card_v1/);
 });

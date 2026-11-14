@@ -150,7 +150,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
   IF auth.uid() IS DISTINCT FROM '90000000-0000-0000-0000-000000000001'::uuid
     OR $1 IS DISTINCT FROM '10000000-0000-0000-0000-000000000001'::uuid
-    OR $2 IS DISTINCT FROM 'marketplace.manage' THEN
+    OR $2 NOT IN ('marketplace.manage','marketplace.view') THEN
     RAISE EXCEPTION 'PERMISSION_DENIED' USING ERRCODE='42501';
   END IF;
 END $$;
@@ -348,3 +348,37 @@ BEGIN
     RAISE EXCEPTION 'old alias reassigned'; EXCEPTION WHEN unique_violation THEN NULL; END;
 END $$;
 SELECT 'Mi TukTuk permanent aliases isolated SQL contract passed' AS result;
+
+\i docs/security/mi-tuktuk-driver360-verification-candidate.sql
+DO $$
+DECLARE pid uuid:='10000000-0000-0000-0000-000000000001';
+  admin uuid:='90000000-0000-0000-0000-000000000001';
+  other uuid:='20000000-0000-0000-0000-000000000002';
+  driver uuid:='20000000-0000-0000-0000-000000000001';
+  front uuid:='50000000-0000-0000-0000-000000000003';
+  code text;
+BEGIN
+  IF has_function_privilege('anon','public.admin_get_marketplace_driver_verifications_v1(uuid,uuid[])','EXECUTE')
+    OR has_function_privilege('anon','public.admin_deactivate_marketplace_promo_card_v1(uuid,uuid,text)','EXECUTE')
+  THEN RAISE EXCEPTION 'anonymous verification access'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  IF NOT EXISTS(SELECT 1 FROM public.admin_get_marketplace_driver_verifications_v1(pid,ARRAY[other,driver]) v
+     WHERE v.driver_user_id=other AND v.verified AND v.verified_at IS NOT NULL)
+  THEN RAISE EXCEPTION 'verified driver missing from batch'; END IF;
+  UPDATE public.media_assets SET status='pending' WHERE id=front;
+  IF EXISTS(SELECT 1 FROM public.admin_get_marketplace_driver_verifications_v1(pid,ARRAY[other]) v WHERE v.verified)
+  THEN RAISE EXCEPTION 'invalid identity still shown as verified'; END IF;
+  UPDATE public.media_assets SET status='available' WHERE id=front;
+  SELECT p.code INTO code FROM app_private.marketplace_driver_promo_profiles p WHERE p.project_id=pid AND p.driver_user_id=other;
+  PERFORM set_config('request.jwt.claim.sub',driver::text,true);
+  BEGIN PERFORM public.admin_get_marketplace_driver_verifications_v1(pid,ARRAY[other]); RAISE EXCEPTION 'unauthorized batch'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN PERFORM public.admin_deactivate_marketplace_promo_card_v1(pid,other,'Unauthorized request'); RAISE EXCEPTION 'unauthorized deactivation'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+  BEGIN PERFORM public.admin_deactivate_marketplace_promo_card_v1(pid,other,'x'); RAISE EXCEPTION 'short reason accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  PERFORM public.admin_deactivate_marketplace_promo_card_v1(pid,other,'Administrative test');
+  IF public.resolve_marketplace_promo_profile_v1(code) IS NOT NULL
+    OR NOT app_private.marketplace_driver_identity_verified_v1(pid,other)
+    OR NOT EXISTS(SELECT 1 FROM public.audit_events WHERE action='admin_deactivate_driver_promo' AND actor_id=admin)
+  THEN RAISE EXCEPTION 'deactivation changed identity or failed audit'; END IF;
+END $$;
+SELECT 'Driver360 verification and Impulsa administration contract passed' AS result;
