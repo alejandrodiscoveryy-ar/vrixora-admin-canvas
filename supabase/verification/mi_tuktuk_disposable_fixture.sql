@@ -383,6 +383,8 @@ BEGIN
 END $$;
 SELECT 'Driver360 verification and Impulsa administration contract passed' AS result;
 
+\i supabase/migrations/20261114014530_marketplace_promo_verified_response.sql
+
 -- Reproduce the old resolver's behavior before replacing its query plan.
 DO $$
 BEGIN
