@@ -2600,7 +2600,14 @@ export default function MarketplaceOperationalMap({
                             prioritizedJobs.map((job) => {
                               const selected = job.jobId === selectedJobId;
                               return (
-                                <div key={job.jobId} className="space-y-1">
+                                <div
+                                  key={job.jobId}
+                                  className={`min-w-0 overflow-hidden rounded-2xl border transition ${
+                                    selected
+                                      ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
+                                      : "border-white/10 bg-background/20 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
+                                  }`}
+                                >
                                   <button
                                     type="button"
                                     aria-label={`Abrir ficha 360 del servicio de ${job.customerDisplayName || "Cliente"}`}
@@ -2614,12 +2621,8 @@ export default function MarketplaceOperationalMap({
                                         focusJob(job);
                                       }
                                     }}
-                                  className={`w-full rounded-2xl border p-3 text-left transition ${
-                                    selected
-                                      ? "border-cyan-400/45 bg-cyan-500/[0.08] shadow-sm"
-                                      : "border-white/10 bg-background/20 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md hover:border-cyan-400/30 hover:bg-background/55"
-                                  }`}
-                                >
+                                    className="block w-full min-w-0 rounded-t-2xl p-3 pb-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/70"
+                                  >
                                   <div className="flex items-center justify-between gap-2">
                                     <span
                                       className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
@@ -2660,6 +2663,7 @@ export default function MarketplaceOperationalMap({
                                     </p>
                                   ) : null}
                                   </button>
+                                  <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-3 py-2">
                                   <button
                                     type="button"
                                     aria-label={`Ver en mapa y consultar detalles del servicio de ${job.customerDisplayName || "Cliente"}`}
@@ -2669,7 +2673,7 @@ export default function MarketplaceOperationalMap({
                                       setCustomerDetailsJobId(opening ? job.jobId : null);
                                       if (opening) focusJob(job);
                                     }}
-                                    className="rounded-lg border border-cyan-400/20 px-2 py-1 text-[10px] font-medium text-cyan-200 hover:bg-cyan-500/10"
+                                    className="inline-flex min-h-10 flex-1 basis-[8rem] items-center justify-center rounded-lg border border-cyan-400/20 px-2 py-1.5 text-center text-[10px] font-medium leading-tight text-cyan-200 hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
                                   >
                                     Ver en mapa y detalles
                                   </button>
@@ -2679,19 +2683,20 @@ export default function MarketplaceOperationalMap({
                                       type="button"
                                       size="sm"
                                       variant="outline"
-                                      className="mt-1 min-h-11 w-full justify-center border-cyan-400/40 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25"
+                                      className="h-auto min-h-10 flex-1 basis-[8rem] justify-center whitespace-normal rounded-lg border-cyan-400/40 bg-cyan-500/15 px-2 py-1.5 text-center text-[10px] leading-tight text-cyan-100 hover:bg-cyan-500/25"
                                       disabled={republishJob.isPending}
                                       onClick={() => {
                                         if (!window.confirm("¿El cliente sigue necesitando el servicio? Republicar renueva la vigencia y vuelve a buscar conductores, sin cambiar el precio.")) return;
                                         republishJob.mutate({ jobId: job.jobId, key: crypto.randomUUID() });
                                       }}
                                     >
-                                      <RefreshCw className={`mr-2 h-4 w-4 ${republishJob.isPending && republishJob.variables?.jobId === job.jobId ? "animate-spin" : ""}`} />
+                                      <RefreshCw className={`mr-1 h-3.5 w-3.5 shrink-0 ${republishJob.isPending && republishJob.variables?.jobId === job.jobId ? "animate-spin" : ""}`} />
                                       {republishJob.isPending && republishJob.variables?.jobId === job.jobId
                                         ? "Republicando…"
                                         : "Republicar carrera"}
                                     </Button>
                                   ) : null}
+                                  </div>
                                 </div>
                               );
                             })
