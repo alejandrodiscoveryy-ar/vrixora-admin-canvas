@@ -1824,6 +1824,15 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                   </div>
                                 </div>
 
+                                {canManageMarketplace && !job.isTest && !job.driverUserId && job.status === "published" ? (
+                                  <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-2.5 sm:flex-row sm:items-center sm:justify-between">
+                                    <p className="text-xs font-medium text-foreground">Compartir este servicio con conductores</p>
+                                    <div className="w-full sm:w-auto sm:min-w-[200px]">
+                                      <MarketplaceServiceShareButton key={job.jobId} projectId={projectId} jobId={job.jobId} />
+                                    </div>
+                                  </div>
+                                ) : null}
+
                                 <JobNotificationReach projectId={projectId} jobId={job.jobId} compact />
 
                                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -1902,10 +1911,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                     <Eye className="mr-2 h-4 w-4" />
                                     Abrir detalle
                                   </Button>
-
-                                  {canManageMarketplace && !job.isTest && !job.driverUserId && job.status === "published" ? (
-                                    <MarketplaceServiceShareButton projectId={projectId} jobId={job.jobId} />
-                                  ) : null}
 
                                   {canManageMarketplace &&
                                   assistedJobIds.data?.has(job.jobId) &&
