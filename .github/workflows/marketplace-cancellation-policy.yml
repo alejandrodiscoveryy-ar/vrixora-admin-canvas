@@ -1,0 +1,58 @@
+name: Verificar políticas de cancelación TukTuk
+on:
+  pull_request:
+    paths:
+      - 'supabase/proposals/marketplace_cancellation_policy.sql'
+      - 'supabase/migrations/*_marketplace_cancellation_policy.sql'
+      - 'supabase/verification/marketplace_cancellation_policy_fixture.sql'
+      - '.github/workflows/marketplace-cancellation-policy.yml'
+      - 'src/features/admin/Marketplace*Cancellation*.tsx'
+      - 'src/features/admin/MarketplaceSection.tsx'
+      - 'src/features/admin/MarketplaceConfigurationWorkspace.tsx'
+      - 'src/features/admin/MarketplaceDriver360Record.tsx'
+      - 'tests/marketplace_cancellation_policy.test.mjs'
+      - 'supabase/functions/marketplace-customer-gateway/index.ts'
+      - 'supabase/functions/send-push-notifications/index.ts'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cancellation_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cancellation_fixture"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.76.8
+      - name: Generate and compare migration
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem 'supabase/migrations/*_marketplace_cancellation_policy.sql')
+          if ($files.Count -eq 0) {
+            supabase migration new --help
+            if ($LASTEXITCODE -ne 0) { throw "CLI unavailable" }
+            supabase migration new marketplace_cancellation_policy
+            if ($LASTEXITCODE -ne 0) { throw "Migration generation failed" }
+            $files = @(Get-ChildItem 'supabase/migrations/*_marketplace_cancellation_policy.sql')
+            Copy-Item 'supabase/proposals/marketplace_cancellation_policy.sql' $files[0].FullName -Force
+          }
+          if ($files.Count -ne 1) { throw "Expected one migration" }
+          if ((Get-FileHash $files[0].FullName).Hash -ne (Get-FileHash 'supabase/proposals/marketplace_cancellation_policy.sql').Hash) { throw "SQL mismatch" }
+          Write-Output "CANCELLATION_MIGRATION_FILE=$($files[0].Name)"
+      - name: Verify isolated PostgreSQL cancellation policy
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -w /work postgres:17 \
+            psql -h 127.0.0.1 -U postgres -d cancellation_fixture -v ON_ERROR_STOP=1 -f supabase/verification/marketplace_cancellation_policy_fixture.sql
+      - name: Verify admin and gateway contracts
+        run: node --test tests/marketplace_cancellation_policy.test.mjs tests/marketplace_config_compacto_jerarquia.test.mjs tests/admin_mobile_workspace.test.mjs
