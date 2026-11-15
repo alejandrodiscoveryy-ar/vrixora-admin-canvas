@@ -1,3 +1,4 @@
+import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -2677,6 +2678,9 @@ export default function MarketplaceOperationalMap({
                                     >
                                       Ver en mapa y detalles
                                     </button>
+                                    {canManageMarketplace && !job.driverUserId && job.status === "published" ? (
+                                      <MarketplaceServiceShareButton projectId={projectId} jobId={job.jobId} compact />
+                                    ) : null}
                                     {canManageMarketplace && !job.driverUserId &&
                                       ["published", "expired"].includes(job.status) ? (
                                       <Button
