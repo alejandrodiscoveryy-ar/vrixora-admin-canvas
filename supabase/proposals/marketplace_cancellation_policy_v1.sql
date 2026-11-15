@@ -36,7 +36,7 @@ begin
  end if;
  new.metadata:=coalesce(new.metadata,'{}'::jsonb)||jsonb_build_object('no_show_wait_verified',true,'wait_minutes',minutes,'arrival_at',arrived);
  return new;
-end $;
+end $$;
 revoke all on function app_private.marketplace_no_show_guard() from public,anon,authenticated;
 drop trigger if exists marketplace_no_show_guard on public.job_events;
 create trigger marketplace_no_show_guard before insert on public.job_events for each row execute function app_private.marketplace_no_show_guard();
