@@ -1,3 +1,4 @@
+import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
 import { lazy, Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1901,6 +1902,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                     <Eye className="mr-2 h-4 w-4" />
                                     Abrir detalle
                                   </Button>
+
+                                  {canManageMarketplace && !job.isTest && !job.driverUserId && job.status === "published" ? (
+                                    <MarketplaceServiceShareButton projectId={projectId} jobId={job.jobId} />
+                                  ) : null}
 
                                   {canManageMarketplace &&
                                   assistedJobIds.data?.has(job.jobId) &&
