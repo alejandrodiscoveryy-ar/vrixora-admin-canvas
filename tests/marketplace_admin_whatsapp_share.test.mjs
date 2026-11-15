@@ -43,7 +43,18 @@ test("server enforces eligibility and permission; both admin surfaces use the sa
   assert.match(component, /await loadPayload\(projectId, jobId\)/);
   assert.match(component, /navigator\.clipboard\.writeText/);
   assert.match(component, /!reviewed/);
-  for (const file of ["MarketplaceSection.tsx", "MarketplaceOperationalMap.tsx"]) {
-    assert.match(readFileSync(new URL("../src/features/admin/" + file, import.meta.url), "utf8"), /<MarketplaceServiceShareButton projectId=\{projectId\} jobId=\{job\.jobId\}/);
-  }
+  const operations = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+  const map = readFileSync(new URL("../src/features/admin/MarketplaceOperationalMap.tsx", import.meta.url), "utf8");
+  assert.match(operations, /<MarketplaceServiceShareButton key=\{job\.jobId\} projectId=\{projectId\} jobId=\{job\.jobId\}/);
+  assert.match(map, /<MarketplaceServiceShareButton key=\{selectedJob\.jobId\} projectId=\{projectId\} jobId=\{selectedJob\.jobId\}/);
+  const expanded = operations.indexOf("{expandedOperationId === job.jobId ? (");
+  const operationShare = operations.indexOf("<MarketplaceServiceShareButton", expanded);
+  assert.ok(expanded >= 0 && operationShare > expanded && operationShare < operations.indexOf("<JobNotificationReach", expanded));
+  const list = map.indexOf("prioritizedJobs.map((job)");
+  const detail = map.indexOf("selectedJob.jobId === job.jobId && customerDetailsJobId === job.jobId", list);
+  const mapShare = map.indexOf("<MarketplaceServiceShareButton", detail);
+  assert.ok(list >= 0 && detail > list && mapShare > detail && mapShare < map.indexOf("No hay servicios activos ahora.", list));
+  assert.match(map.slice(list, detail), /aria-expanded=\{selected && customerDetailsJobId === job\.jobId\}/);
+  assert.match(map.slice(list, detail), /setCustomerDetailsJobId\(opening \? job\.jobId : null\)/);
+  assert.match(map.slice(detail, map.indexOf("No hay servicios activos ahora.", list)), /onOpenJob\?\.\(selectedJob\.jobId\)/);
 });
