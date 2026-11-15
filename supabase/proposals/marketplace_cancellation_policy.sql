@@ -64,6 +64,25 @@ revoke all on function app_private.marketplace_guard_no_show_event() from public
 create trigger marketplace_guard_no_show_event before insert on public.job_events
 for each row execute function app_private.marketplace_guard_no_show_event();
 
+-- Driver-facing availability for the no-show reason. All other reasons remain available.
+create or replace function public.get_my_marketplace_job_cancellation_options(target_job_id uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $
+declare j public.jobs%rowtype; arrived timestamptz; wait_minutes integer; remaining integer;
+begin
+ if auth.uid() is null then raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501'; end if;
+ select job.* into j from public.jobs job join public.projects p on p.id=job.project_id
+ where p.slug='tuktuk-control' and job.id=target_job_id and job.assigned_driver_user_id=auth.uid()
+ and job.test_deleted_at is null;
+ if not found then raise exception 'JOB_NOT_ASSIGNED_TO_ACTOR' using errcode='42501'; end if;
+ select coalesce((select s.no_show_wait_minutes from app_private.marketplace_cancellation_settings s where s.project_id=j.project_id),5) into wait_minutes;
+ select max(e.created_at) into arrived from public.job_events e where e.project_id=j.project_id and e.job_id=j.id and e.action='mark_pickup' and e.to_status='pickup';
+ remaining:=case when arrived is null then null else greatest(0,ceil(extract(epoch from (arrived+make_interval(mins=>wait_minutes)-now())))::integer) end;
+ return jsonb_build_object('can_report_no_show',j.status='pickup' and arrived is not null and remaining=0,
+ 'arrival_recorded',j.status='pickup' and arrived is not null,'wait_minutes',wait_minutes,'remaining_seconds',remaining);
+end $;
+revoke all on function public.get_my_marketplace_job_cancellation_options(uuid) from public,anon,authenticated;
+grant execute on function public.get_my_marketplace_job_cancellation_options(uuid) to authenticated;
+
 -- No previously cancelling driver may take a replacement in this chain.
 create or replace function app_private.marketplace_replacement_driver_excluded(pid uuid,jid uuid,uid uuid)
 returns boolean language sql stable security definer set search_path='' as $$
