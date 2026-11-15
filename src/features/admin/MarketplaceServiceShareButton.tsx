@@ -67,7 +67,7 @@ export default function MarketplaceServiceShareButton({ projectId, jobId, compac
       <Copy className="mr-1.5 h-4 w-4 shrink-0" /> Copiar para WhatsApp
     </Button>
     <Dialog open={open} onOpenChange={(value) => { if (!busy) { setOpen(value); if (!value) reset(); } }}>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent overlayClassName="z-[110]" className="z-[120] max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Compartir servicio con conductores</DialogTitle>
           <DialogDescription>Revisa el mensaje antes de copiar. No compartas nombres, teléfonos ni detalles personales del cliente.</DialogDescription>
