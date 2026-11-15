@@ -34,6 +34,7 @@ create or replace function public.admin_set_marketplace_cancellation_settings(ta
 returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  perform app_private.require_project_permission(target_project_id,'marketplace.manage');
+ perform app_private.require_project_permission(target_project_id,'settings.manage');
  if target_no_show_wait_minutes is null or target_no_show_wait_minutes not between 1 and 60 or target_replacement_enabled is null then raise exception 'CANCELLATION_SETTINGS_INVALID' using errcode='22023'; end if;
  insert into app_private.marketplace_cancellation_settings(project_id,no_show_wait_minutes,replacement_enabled)
  values(target_project_id,target_no_show_wait_minutes,target_replacement_enabled)
@@ -175,3 +176,24 @@ begin
 end $$;
 revoke all on function public.admin_replace_marketplace_cancelled_job(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.admin_replace_marketplace_cancelled_job(uuid,uuid) to authenticated;
+
+-- Operational cancellation alert for the assigned driver. Do not use the
+-- new-offer sound or the separate Cliente exchange-rate subscriber audience.
+create or replace function app_private.marketplace_queue_cancellation_notice()
+returns trigger language plpgsql security definer set search_path='' as $$
+declare j public.jobs%rowtype;
+begin
+ if new.action<>'cancel_by_customer' or new.to_status<>'cancelled_by_customer' then return new; end if;
+ select * into j from public.jobs where project_id=new.project_id and id=new.job_id;
+ if not found or j.is_test or j.test_deleted_at is not null or j.assigned_driver_user_id is null then return new; end if;
+ insert into public.notification_outbox(project_id,user_id,kind,notification_date,dedupe_key,title,body,data)
+ values(j.project_id,j.assigned_driver_user_id,'marketplace_job_cancelled',current_date,
+ 'marketplace-cancelled:'||j.id::text,'Servicio cancelado','El cliente canceló tu servicio. Consulta Trabajos para ver el estado actualizado.',
+ jsonb_build_object('kind','marketplace_job_cancelled','job_id',j.id::text,'target_audience','client'))
+ on conflict(project_id,user_id,kind,dedupe_key) do nothing;
+ perform app_private.kick_admin_operational_push();
+ return new;
+end $$;
+revoke all on function app_private.marketplace_queue_cancellation_notice() from public,anon,authenticated;
+create trigger marketplace_queue_cancellation_notice after insert on public.job_events
+for each row execute function app_private.marketplace_queue_cancellation_notice();
