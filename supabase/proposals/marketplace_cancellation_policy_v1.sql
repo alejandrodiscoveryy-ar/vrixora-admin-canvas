@@ -34,8 +34,9 @@ begin
  if new.from_status<>'pickup' or arrived is null or now()<arrived+make_interval(mins=>minutes) then
    raise exception 'MARKETPLACE_NO_SHOW_WAIT_REQUIRED' using errcode='22023';
  end if;
+ new.metadata:=coalesce(new.metadata,'{}'::jsonb)||jsonb_build_object('no_show_wait_verified',true,'wait_minutes',minutes,'arrival_at',arrived);
  return new;
-end $$;
+end $;
 revoke all on function app_private.marketplace_no_show_guard() from public,anon,authenticated;
 drop trigger if exists marketplace_no_show_guard on public.job_events;
 create trigger marketplace_no_show_guard before insert on public.job_events for each row execute function app_private.marketplace_no_show_guard();
@@ -180,9 +181,39 @@ begin
  values(j.project_id,j.assigned_driver_user_id,'marketplace_job_cancelled',current_date,'cancel:'||j.id::text,'Servicio cancelado','El cliente canceló el servicio. Consulta Trabajos.',jsonb_build_object('event_type','marketplace_job_cancelled','job_id',j.id))
  on conflict(project_id,user_id,kind,dedupe_key) do nothing;
  end if;
- perform app_private.enqueue_admin_marketplace_event(j.project_id,'admin_marketplace_cancellation',j.id,'Servicio cancelado','Consulta el motivo en la ficha de la carrera.');
+ insert into public.notification_outbox(project_id,user_id,kind,notification_date,dedupe_key,title,body,data)
+ select j.project_id,recipient.user_id,'admin_marketplace_cancellation',current_date,'admin-op:cancel:'||j.id::text,
+ 'Servicio cancelado','Consulta el motivo en la ficha de la carrera.',
+ jsonb_build_object('kind','admin_marketplace_cancellation','event_type','admin_marketplace_cancellation','target_audience','admin','project_id',j.project_id,'job_id',j.id,'url','/admin/proyectos/'||j.project_id::text||'/trabajos')
+ from (select p.owner_id as user_id from public.projects p where p.id=j.project_id
+ union select m.user_id from public.project_members m join public.project_role_permissions rp on rp.role_code=m.role
+ where m.project_id=j.project_id and rp.permission_code='marketplace.view') recipient
+ where exists(select 1 from public.push_device_tokens t where t.project_id=j.project_id and t.user_id=recipient.user_id and t.app_scope='admin' and t.platform='web' and t.enabled)
+ on conflict(project_id,user_id,kind,dedupe_key) do nothing;
+ -- A cancellation must not fail because the push dispatcher is unavailable.
+ begin perform app_private.kick_admin_operational_push(); exception when others then null; end;
  return new;
 end $$;
 revoke all on function app_private.marketplace_cancellation_notice() from public,anon,authenticated;
 drop trigger if exists marketplace_cancellation_notice on public.job_events;
 create trigger marketplace_cancellation_notice after insert on public.job_events for each row execute function app_private.marketplace_cancellation_notice();
+
+-- Indicators are descriptive, never an automatic financial penalty or an adjudication.
+create or replace function public.admin_get_marketplace_driver_cancellation_summary(target_project_id uuid,target_driver_user_id uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $$
+begin
+ perform app_private.require_project_permission(target_project_id,'marketplace.view');
+ return (select jsonb_build_object(
+  'driver_cancelled',count(*) filter(where e.action='cancel_by_driver'),
+  'customer_cancelled',count(*) filter(where e.action='cancel_by_customer'),
+  'verified_wait',count(*) filter(where e.action='cancel_by_driver' and lower(btrim(e.reason)) in ('cliente no se presentó','cliente no se presento') and e.metadata->>'no_show_wait_verified'='true'),
+  'reported_justified',count(*) filter(where e.action='cancel_by_driver' and lower(btrim(e.reason)) in ('problema con el vehículo','emergencia','acuerdo con el cliente')),
+  'review_required',count(*) filter(where e.action='cancel_by_driver' and not (lower(btrim(coalesce(e.reason,''))) in ('problema con el vehículo','emergencia','acuerdo con el cliente') or (lower(btrim(coalesce(e.reason,''))) in ('cliente no se presentó','cliente no se presento') and coalesce(e.metadata->>'no_show_wait_verified','false')='true'))),
+  'customer_reported_driver_request',count(*) filter(where e.action='cancel_by_customer' and lower(btrim(e.reason))='el conductor me pidió cancelar')
+ )
+ from public.job_events e join public.jobs j on j.project_id=e.project_id and j.id=e.job_id
+ where e.project_id=target_project_id and j.assigned_driver_user_id=target_driver_user_id and not j.is_test and j.test_deleted_at is null
+ and e.action in ('cancel_by_driver','cancel_by_customer'));
+end $$;
+revoke all on function public.admin_get_marketplace_driver_cancellation_summary(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.admin_get_marketplace_driver_cancellation_summary(uuid,uuid) to authenticated;
