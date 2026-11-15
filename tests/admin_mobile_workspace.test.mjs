@@ -67,7 +67,7 @@ test("Flota, radar, atención y configuración usan estructuras móviles compact
   assert.match(care, /min-w-0 space-y-3 sm:space-y-4/);
   assert.match(care, /data-testid="customer-care-workspace"/);
   assert.match(care, /Publicar carrera real/);
-  assert.match(settings, /grid grid-cols-3 gap-1 sm:gap-1.5 xl:grid-cols-1/);
+  assert.match(settings, /grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-1.5 xl:grid-cols-1/);
   assert.match(settings, /min-h-11/);
   assert.match(settings, /canManageSettings && canManageMarketplace/);
   assert.doesNotMatch(settings, /sm:p-2\.5-\[/);
