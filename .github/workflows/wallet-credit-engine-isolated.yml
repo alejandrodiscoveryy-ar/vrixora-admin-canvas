@@ -5,6 +5,8 @@ on:
     paths:
       - 'docs/security/tuktuk-wallet-credit-*-candidate.sql'
       - 'supabase/verification/wallet_credit_engine_fixture.sql'
+      - 'supabase/verification/impulsa_priority_fixture.sql'
+      - 'supabase/migrations/*_marketplace_impulsa_priority*.sql'
       - '.github/workflows/wallet-credit-engine-isolated.yml'
 permissions:
   contents: read
@@ -45,3 +47,8 @@ jobs:
       - name: Exercise production-shaped wallet and actual acceptance/settlement RPCs
         run: |
           docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -v /tmp/impulsa-wallet-adapter.sql:/tmp/impulsa-wallet-adapter.sql:ro -v /tmp/impulsa-acceptance-adapter.sql:/tmp/impulsa-acceptance-adapter.sql:ro -w /work postgres:17 psql -h 127.0.0.1 -U postgres -d wallet_credit -v ON_ERROR_STOP=1 -f supabase/verification/wallet_credit_engine_fixture.sql
+
+      - name: Exercise exclusive Impulsa priority and staged rates
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres postgres:17 psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE impulsa_priority;'
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/work:ro" -w /work postgres:17 psql -h 127.0.0.1 -U postgres -d impulsa_priority -v ON_ERROR_STOP=1 -f supabase/verification/impulsa_priority_fixture.sql
