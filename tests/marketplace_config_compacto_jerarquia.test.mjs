@@ -8,14 +8,15 @@ const territory = readFileSync('src/features/admin/MarketplaceTerritoryCatalog.t
 const section = readFileSync('src/features/admin/MarketplaceSection.tsx','utf8');
 
 const definitions = workspace.match(/const SECTIONS = \[[\s\S]*?\] as const;/)?.[0] ?? '';
-const order = [...definitions.matchAll(/id: "(pruebas|operacion|territorio)",\s*number: "(\d\d)",\s*title: "([^"]+)"/g)]
+const order = [...definitions.matchAll(/id: "(pruebas|operacion|territorio|cancelaciones)",\s*number: "(\d\d)",\s*title: "([^"]+)"/g)]
   .map(m => [m[1], m[2], m[3]]);
 
-test('orden correcto 01 Centro de pruebas, 02 Radar, 03 Provincia', () => {
+test('orden correcto 01 Centro de pruebas, 02 Radar, 03 Provincia, 04 Cancelaciones', () => {
   assert.deepEqual(order, [
     ['pruebas', '01', 'Centro de pruebas'],
     ['operacion', '02', 'Radar'],
     ['territorio', '03', 'Provincia'],
+    ['cancelaciones', '04', 'Cancelaciones'],
   ]);
   assert.match(workspace, /useState<SectionId>\("pruebas"\)/);
   assert.doesNotMatch(definitions, /title: "Mapas y provincias"|title: "Operación y avisos"/);
@@ -55,6 +56,6 @@ test('interfaz compacta premium, marca de agua tenue y accesibilidad', () => {
   assert.match(workspace, /aria-controls="tuktuk-config-detail"/);
   assert.match(workspace, /text-white/);
   // Las tres áreas se muestran en columnas también en teléfono; escritorio conserva la barra lateral.
-  assert.match(workspace, /grid grid-cols-3 gap-1 sm:gap-1\.5 xl:grid-cols-1/);
+  assert.match(workspace, /grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-1\.5 xl:grid-cols-1/);
   assert.match(workspace, /aria-controls="tuktuk-config-detail"/);
 });

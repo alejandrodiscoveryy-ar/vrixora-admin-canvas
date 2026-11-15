@@ -1304,6 +1304,24 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     onError: (e) => setAssistedCancelError(errorText(e)),
   });
 
+  const assistedReplacementMutation = useMutation({
+    mutationFn: async (previousJobId: string) => {
+      const { data, error } = await getSupabaseClient().rpc("admin_replace_marketplace_cancelled_job", {
+        target_project_id: projectId, target_job_id: previousJobId,
+      });
+      if (error) throw error;
+      const row = data as unknown as { job_id?: string; repeated?: boolean };
+      if (!row?.job_id) throw new Error("REPLACEMENT_RESULT_MISSING");
+      return row;
+    },
+    onSuccess: (row) => {
+      toast.success(row.repeated ? "Ya existe un intento de reemplazo para este servicio." : "Buscando otro conductor, con el mismo precio y recorrido.");
+      void invalidate("marketplace-jobs", "marketplace-overview", "marketplace-job-detail", "marketplace-operational-map-live", "marketplace-assisted-job-ids");
+      if (row.job_id) setJobId(row.job_id);
+    },
+    onError: (err) => toast.error(errorText(err)),
+  });
+
   const resolve = useMutation({
     mutationFn: () =>
       supabaseServices.marketplace.resolveIncident(projectId, {
@@ -1911,6 +1929,21 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                     <Eye className="mr-2 h-4 w-4" />
                                     Abrir detalle
                                   </Button>
+
+                                  {canManageMarketplace && permissions.includes("customers.view") &&
+                                  !job.isTest && assistedJobIds.data?.has(job.jobId) &&
+                                  job.status === "cancelled_by_driver" ? (
+                                    <Button size="sm" variant="outline" className="h-auto min-h-11 w-full whitespace-normal px-2 py-2"
+                                      disabled={assistedReplacementMutation.isPending}
+                                      onClick={() => {
+                                        if (window.confirm("¿El cliente confirma que desea otro conductor para este mismo servicio y precio?")) {
+                                          assistedReplacementMutation.mutate(job.jobId);
+                                        }
+                                      }}>
+                                      <Search className="mr-2 h-4 w-4 shrink-0" />
+                                      Buscar otro conductor
+                                    </Button>
+                                  ) : null}
 
                                   {canManageMarketplace &&
                                   assistedJobIds.data?.has(job.jobId) &&

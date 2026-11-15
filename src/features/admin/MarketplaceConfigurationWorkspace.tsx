@@ -13,6 +13,7 @@ import MarketplaceTerritoryCatalog from "@/features/admin/MarketplaceTerritoryCa
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
+import MarketplaceCancellationSettingsCard from "@/features/admin/MarketplaceCancellationSettingsCard";
 
 const SECTIONS = [
   {
@@ -41,6 +42,15 @@ const SECTIONS = [
     eyebrow: "DATOS TERRITORIALES",
     description: "Actualiza La Habana, prepara otras provincias y consulta el historial de las importaciones.",
     icon: Globe2,
+  },
+  {
+    id: "cancelaciones",
+    number: "04",
+    title: "Cancelaciones",
+    subtitle: "Políticas de servicio y espera",
+    eyebrow: "CONTINUIDAD DEL SERVICIO",
+    description: "Configura la espera de clientes y la búsqueda de otro conductor.",
+    icon: ShieldCheck,
   },
 ] as const;
 
@@ -77,7 +87,7 @@ export default function MarketplaceConfigurationWorkspace({
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Configuración</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Áreas de control de TukTuk</p>
           </div>
-          <div className="relative z-10 grid grid-cols-3 gap-1 sm:gap-1.5 xl:grid-cols-1">
+          <div className="relative z-10 grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-1.5 xl:grid-cols-1">
             {SECTIONS.map((section) => {
               const Icon = section.icon;
               const isSelected = section.id === active;
@@ -149,6 +159,10 @@ export default function MarketplaceConfigurationWorkspace({
                 <span>Los permisos y validaciones de despacho y avisos se mantienen.</span>
               </div>
             </div>
+          ) : null}
+
+          {active === "cancelaciones" ? (
+            <MarketplaceCancellationSettingsCard projectId={projectId} canManage={canManageSettings && canManageMarketplace} />
           ) : null}
 
           {active === "territorio" ? (

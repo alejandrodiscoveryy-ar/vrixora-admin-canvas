@@ -34,6 +34,7 @@ import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceDriverManagementPanel from "@/features/admin/MarketplaceDriverManagementPanel";
 import MarketplaceDriverVehicleEditor from "@/features/admin/MarketplaceDriverVehicleEditor";
 import MarketplaceDriverPromotionPreview from "@/features/admin/MarketplaceDriverPromotionPreview";
+import MarketplaceDriverCancellationReview from "@/features/admin/MarketplaceDriverCancellationReview";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 
@@ -548,6 +549,8 @@ export default function MarketplaceDriver360Record({
           </p>
         ) : null}
       </section>
+
+      <MarketplaceDriverCancellationReview projectId={projectId} driverUserId={driverUserId} canManage={canManageDriver} onOpenJob={onOpenJob} />
 
       <div className="min-w-0">
         <section
