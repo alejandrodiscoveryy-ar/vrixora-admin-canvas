@@ -197,3 +197,65 @@ end $$;
 revoke all on function app_private.marketplace_queue_cancellation_notice() from public,anon,authenticated;
 create trigger marketplace_queue_cancellation_notice after insert on public.job_events
 for each row execute function app_private.marketplace_queue_cancellation_notice();
+
+-- Administrative judgement is recorded separately from the immutable event.
+-- No automatic commission, balance or suspension changes.
+create table app_private.marketplace_cancellation_reviews(
+ project_id uuid not null,job_id uuid not null,
+ decision text not null check(decision in ('justified','unjustified')),
+ review_note text not null check(char_length(btrim(review_note)) between 8 and 500),
+ reviewed_by uuid not null,reviewed_at timestamptz not null default now(),
+ primary key(project_id,job_id),
+ foreign key(project_id,job_id) references public.jobs(project_id,id)
+);
+alter table app_private.marketplace_cancellation_reviews enable row level security;
+revoke all on app_private.marketplace_cancellation_reviews from public,anon,authenticated;
+
+create or replace function public.admin_get_marketplace_driver_cancellation_reviews(target_project_id uuid,target_driver_user_id uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare result jsonb;
+begin
+ perform app_private.require_project_permission(target_project_id,'marketplace.view');
+ with cases as (
+  select j.id as job_id,j.status,e.from_status,e.reason,e.created_at,
+   coalesce(r.decision,'pending') as decision,r.review_note,r.reviewed_at
+  from public.jobs j
+  join lateral(select ev.from_status,ev.reason,ev.created_at from public.job_events ev
+    where ev.project_id=j.project_id and ev.job_id=j.id and ev.action in ('cancel_by_driver','cancel_by_customer')
+    order by ev.created_at desc limit 1) e on true
+  left join app_private.marketplace_cancellation_reviews r on r.project_id=j.project_id and r.job_id=j.id
+  where j.project_id=target_project_id and j.assigned_driver_user_id=target_driver_user_id
+    and not j.is_test and j.test_deleted_at is null
+    and (j.status='cancelled_by_driver' or
+      (j.status='cancelled_by_customer' and lower(btrim(coalesce(e.reason,'')))='el conductor me pidió cancelar'))
+ )
+ select jsonb_build_object('pending',count(*) filter(where decision='pending'),
+   'justified',count(*) filter(where decision='justified'),
+   'unjustified',count(*) filter(where decision='unjustified'),
+   'items',coalesce((select jsonb_agg(to_jsonb(x) order by x.created_at desc) from
+      (select * from cases order by created_at desc limit 50) x),'[]'::jsonb))
+ into result from cases;
+ return result;
+end $$;
+create or replace function public.admin_review_marketplace_cancellation(target_project_id uuid,target_job_id uuid,target_decision text,target_note text)
+returns jsonb language plpgsql security definer set search_path='' as $$
+declare actor uuid; j public.jobs%rowtype; note text:=nullif(btrim(target_note),'');
+begin
+ actor:=app_private.require_project_permission(target_project_id,'marketplace.manage');
+ if target_decision is null or target_decision not in ('justified','unjustified') or note is null or char_length(note) not between 8 and 500 then
+ raise exception 'CANCELLATION_REVIEW_INVALID' using errcode='22023'; end if;
+ select * into j from public.jobs where project_id=target_project_id and id=target_job_id for update;
+ if not found or j.is_test or j.test_deleted_at is not null or j.assigned_driver_user_id is null
+ or not (j.status='cancelled_by_driver' or (j.status='cancelled_by_customer' and exists(
+   select 1 from public.job_events e where e.project_id=j.project_id and e.job_id=j.id
+   and e.action='cancel_by_customer' and lower(btrim(coalesce(e.reason,'')))='el conductor me pidió cancelar')))
+ then raise exception 'CANCELLATION_REVIEW_NOT_ALLOWED' using errcode='22023'; end if;
+ insert into app_private.marketplace_cancellation_reviews(project_id,job_id,decision,review_note,reviewed_by)
+ values(target_project_id,target_job_id,target_decision,note,actor)
+ on conflict(project_id,job_id) do update set decision=excluded.decision,review_note=excluded.review_note,reviewed_by=excluded.reviewed_by,reviewed_at=now();
+ insert into public.job_events(project_id,job_id,from_status,to_status,action,actor_kind,actor_user_id,operation_idempotency_key,reason,metadata)
+ values(target_project_id,target_job_id,j.status,j.status,'review_cancellation','admin',actor,gen_random_uuid(),note,jsonb_build_object('decision',target_decision));
+ return jsonb_build_object('job_id',target_job_id,'decision',target_decision);
+end $$;
+revoke all on function public.admin_get_marketplace_driver_cancellation_reviews(uuid,uuid),public.admin_review_marketplace_cancellation(uuid,uuid,text,text) from public,anon,authenticated;
+grant execute on function public.admin_get_marketplace_driver_cancellation_reviews(uuid,uuid),public.admin_review_marketplace_cancellation(uuid,uuid,text,text) to authenticated;
