@@ -35,6 +35,8 @@ const ALLOWED_KINDS = [
   "app_update",
   "new_subscription",
   "marketplace_job_available",
+  "marketplace_job_cancelled",
+  "admin_marketplace_cancellation",
   "admin_marketplace_new_job",
   "admin_marketplace_new_driver",
   "admin_marketplace_pending_job",

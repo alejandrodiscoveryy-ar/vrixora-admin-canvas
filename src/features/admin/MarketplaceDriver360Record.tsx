@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { getSupabaseClient } from "@/lib/supabase";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -201,6 +202,17 @@ export default function MarketplaceDriver360Record({
     retry: 1,
   });
 
+  const cancellations = useQuery({
+    queryKey: ["marketplace-driver-cancellations", projectId, driverUserId],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_driver_cancellation_summary", {
+        target_project_id: projectId, target_driver_user_id: driverUserId,
+      });
+      if (error) throw new Error(error.message);
+      return data as unknown as { driver_cancelled: number; customer_cancelled: number; verified_wait: number; reported_justified: number; review_required: number; customer_reported_driver_request: number };
+    },
+    retry: 1,
+  });
   const summary: MarketplaceDriverRecordSummary | null = record.data?.pages[0]?.summary ?? null;
   const history = record.data?.pages.flatMap((page) => page.items) ?? [];
   const displayName = text(detail.account?.displayName, "Conductor");
@@ -538,6 +550,21 @@ export default function MarketplaceDriver360Record({
             note={summary ? `${summary.cancelled} cancelaciones` : "Consultando…"}
           />
         </div>
+        <section className="rounded-xl border border-border/60 bg-card/60 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold">Cancelaciones y cumplimiento</h3>
+            <span className="text-xs text-muted-foreground">Sin multas automáticas</span>
+          </div>
+          {cancellations.isError ? <p className="text-xs text-muted-foreground">No se pudo consultar el detalle de cancelaciones.</p> : <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+            <RecordMetric label="Por conductor" value={cancellations.data?.driver_cancelled ?? "—"} />
+            <RecordMetric label="Por cliente" value={cancellations.data?.customer_cancelled ?? "—"} />
+            <RecordMetric label="Espera comprobada" value={cancellations.data?.verified_wait ?? "—"} />
+            <RecordMetric label="Causas justificadas declaradas" value={cancellations.data?.reported_justified ?? "—"} />
+            <RecordMetric label="Pendientes de revisión" value={cancellations.data?.review_required ?? "—"} />
+            <RecordMetric label="Pidió cancelar al cliente" value={cancellations.data?.customer_reported_driver_request ?? "—"} />
+          </div>}
+          <p className="text-xs text-muted-foreground">Los motivos declarados no son una decisión de responsabilidad. Las incidencias requieren revisión de la agencia.</p>
+        </section>
         {summary && summary.testServices > 0 ? (
           <p className="text-xs text-muted-foreground">
             Además, {summary.testServices}{" "}

@@ -278,7 +278,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     let disposed = false;
     let unsubscribe: (() => void) | null = null;
     void listenAdminPush(projectId, (message: AdminPushEvent) => {
-      const id = message.job_id ? `${message.kind === "admin_marketplace_pickup" ? "arrival" : message.kind === "admin_marketplace_pending_job" ? message.stage === "pending_10m" ? "pending10" : "pending" : "job"}:${message.job_id}` :
+      const id = message.job_id ? `${message.kind === "admin_marketplace_pickup" ? "arrival" : message.kind === "admin_marketplace_cancellation" ? "cancellation" : message.kind === "admin_marketplace_pending_job" ? message.stage === "pending_10m" ? "pending10" : "pending" : "job"}:${message.job_id}` :
         message.driver_id ? `driver:${message.driver_id}` : `push:${message.kind}`;
       let known: string[] = [];
       try { known = JSON.parse(localStorage.getItem(storageKey) || "[]") as string[]; } catch { /* optional */ }

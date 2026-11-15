@@ -1,4 +1,5 @@
 import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
+import MarketplaceRecoverServiceButton from "@/features/admin/MarketplaceRecoverServiceButton";
 import { lazy, Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1831,6 +1832,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                       <MarketplaceServiceShareButton key={job.jobId} projectId={projectId} jobId={job.jobId} />
                                     </div>
                                   </div>
+                                ) : null}
+
+                                {canManageMarketplace && permissions.includes("customers.view") && !job.isTest && job.status === "cancelled_by_driver" ? (
+                                  <MarketplaceRecoverServiceButton key={job.jobId} projectId={projectId} jobId={job.jobId} onRecovered={setJobId} />
                                 ) : null}
 
                                 <JobNotificationReach projectId={projectId} jobId={job.jobId} compact />

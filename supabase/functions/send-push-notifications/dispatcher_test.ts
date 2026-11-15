@@ -11,7 +11,7 @@ Deno.env.set("FIREBASE_SERVICE_ACCOUNT_JSON", JSON.stringify({ project_id: "synt
   client_email: "synthetic@example.invalid", private_key: "-----BEGIN PRIVATE KEY-----\n" + encoded + "\n-----END PRIVATE KEY-----" }));
 Deno.env.set("TUKTUK_PUSH_DISPATCH_SECRET", "synthetic-dispatch-secret");
 const kinds = ["daily_exchange_rate", "exchange_rate_update", "app_announcement", "app_update", "new_subscription", "marketplace_job_available"];
-const allowedKinds = [...kinds, "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup"];
+const allowedKinds = [...kinds, "marketplace_job_cancelled", "admin_marketplace_cancellation", "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup"];
 const originalFetch = globalThis.fetch;
 function setup(events = kinds) {
   const db = new FakeAdmin(), messages: Record<string, any>[] = [], order: string[] = [];
@@ -68,6 +68,21 @@ Deno.test("dispatcher: six operative events preserve payload and default admin/c
       equal(message.android.notification.channel_id,
         message.data.kind === "marketplace_job_available" ? "tuktuk_nuevas_carreras_v1" : "tuktuk_general");
     }
+  } finally { globalThis.fetch = originalFetch; }
+});
+Deno.test("dispatcher: cancellation alerts use correct audience and never new-job channel", async () => {
+  const { db, messages } = setup(["marketplace_job_cancelled", "admin_marketplace_cancellation"]);
+  db.tables.notification_outbox[0].data = { job_id: "12345678-1234-4123-8123-123456789012" };
+  db.tables.notification_outbox[1].data = { target_audience: "admin", job_id: "12345678-1234-4123-8123-123456789012" };
+  db.tables.push_device_tokens[0].platform = "web";
+  try {
+    equal((await (await run(db)).json()).sent, 2);
+    const driver = messages.find(message => message.data.kind === "marketplace_job_cancelled");
+    const admin = messages.find(message => message.data.kind === "admin_marketplace_cancellation");
+    equal(driver?.token, "synthetic-client");
+    equal(driver?.android.notification.channel_id, "tuktuk_general");
+    equal(admin?.token, "synthetic-admin");
+    ok(admin?.webpush);
   } finally { globalThis.fetch = originalFetch; }
 });
 Deno.test("dispatcher: audience and platform override preserve current v16 filters", async () => {

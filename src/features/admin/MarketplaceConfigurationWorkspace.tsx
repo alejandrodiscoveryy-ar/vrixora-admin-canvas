@@ -13,6 +13,7 @@ import MarketplaceTerritoryCatalog from "@/features/admin/MarketplaceTerritoryCa
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
+import MarketplaceCancellationPolicyCard from "@/features/admin/MarketplaceCancellationPolicyCard";
 
 const SECTIONS = [
   {
@@ -41,6 +42,15 @@ const SECTIONS = [
     eyebrow: "DATOS TERRITORIALES",
     description: "Actualiza La Habana, prepara otras provincias y consulta el historial de las importaciones.",
     icon: Globe2,
+  },
+  {
+    id: "cancelaciones",
+    number: "04",
+    title: "Cancelaciones",
+    subtitle: "Políticas de servicio",
+    eyebrow: "CONFIANZA Y CONTINUIDAD",
+    description: "Controla la espera, los reemplazos y la supervisión de cancelaciones.",
+    icon: ShieldCheck,
   },
 ] as const;
 
@@ -149,6 +159,10 @@ export default function MarketplaceConfigurationWorkspace({
                 <span>Los permisos y validaciones de despacho y avisos se mantienen.</span>
               </div>
             </div>
+          ) : null}
+
+          {active === "cancelaciones" ? (
+            <MarketplaceCancellationPolicyCard projectId={projectId} canManage={canManageSettings && canManageMarketplace} />
           ) : null}
 
           {active === "territorio" ? (
