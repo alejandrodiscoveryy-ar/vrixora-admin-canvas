@@ -1,3 +1,4 @@
+import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -2610,16 +2611,14 @@ export default function MarketplaceOperationalMap({
                                 >
                                   <button
                                     type="button"
-                                    aria-label={`Abrir ficha 360 del servicio de ${job.customerDisplayName || "Cliente"}`}
+                                    aria-label={`Desplegar o plegar servicio de ${job.customerDisplayName || "Cliente"}`}
+                                    aria-expanded={selected && customerDetailsJobId === job.jobId}
+                                    aria-controls={`map-service-details-${job.jobId}`}
                                     onClick={() => {
-                                      if (onOpenJob) {
-                                        setExpanded(false);
-                                        onOpenJob(job.jobId);
-                                      } else {
-                                        setSelectedJobId(job.jobId);
-                                        setCustomerDetailsJobId(job.jobId);
-                                        focusJob(job);
-                                      }
+                                      const opening = customerDetailsJobId !== job.jobId;
+                                      setSelectedJobId(job.jobId);
+                                      setCustomerDetailsJobId(opening ? job.jobId : null);
+                                      if (opening) focusJob(job);
                                     }}
                                     className="block w-full min-w-0 rounded-t-2xl p-3 pb-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/70"
                                   >
@@ -2697,6 +2696,252 @@ export default function MarketplaceOperationalMap({
                                       </Button>
                                     ) : null}
                                   </div>
+                                  {selectedJob && selectedJob.jobId === job.jobId && customerDetailsJobId === job.jobId ? (
+                                    <section id={`map-service-details-${job.jobId}`} className="mx-2 mb-2 rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/22 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+                                      <div className="mb-2 flex justify-end">
+                                        <button
+                                          type="button"
+                                          onClick={() => setCustomerDetailsJobId(null)}
+                                          aria-label="Plegar ficha del servicio"
+                                          className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
+                                        >
+                                          Plegar ficha
+                                        </button>
+                                      </div>
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex min-w-0 items-start gap-2.5">
+                                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
+                                            <UserRound className="h-4 w-4" />
+                                          </div>
+
+                                          <div className="min-w-0">
+                                            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-300">
+                                              Cliente del servicio
+                                            </p>
+
+                                            <h4 className="mt-0.5 truncate text-sm font-semibold text-foreground">
+                                              {customer?.displayName ||
+                                                selectedJob.customerDisplayName ||
+                                                "Cliente"}
+                                            </h4>
+
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                              {selectedCustomer.isLoading
+                                                ? "Consultando contacto…"
+                                                : customerPhone || "Contacto no disponible"}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <span
+                                          className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${
+                                            selectedJob.status === "incident"
+                                              ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
+                                              : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
+                                          }`}
+                                        >
+                                          {statusLabel(selectedJob.status)}
+                                        </span>
+                                      </div>
+
+                                      <div className="mt-3 rounded-xl border border-white/10 bg-background/40 p-2.5">
+                                        <div className="flex items-start gap-2">
+                                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
+                                          <p className="text-xs leading-relaxed text-muted-foreground">
+                                            {selectedJob.originText}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-1.5 flex items-start gap-2">
+                                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
+                                          <p className="text-xs leading-relaxed text-muted-foreground">
+                                            {selectedJob.destinationText}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                          <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2 py-1 text-[10px] font-medium text-cyan-200">
+                                            {formatDistance(selectedJob.estimatedDistanceKm)}
+                                          </span>
+
+                                          <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2 py-1 text-[10px] font-medium text-violet-200">
+                                            {formatDuration(selectedJob.routeDurationSeconds)}
+                                          </span>
+
+                                          <VehicleModeBadge code={selectedJob.vehicleCategoryCode} />
+                                        </div>
+                                      </div>
+
+                                      {canManageMarketplace && !selectedJob.driverUserId && selectedJob.status === "published" ? (
+                                        <div className="mt-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-2">
+                                          <MarketplaceServiceShareButton key={selectedJob.jobId} projectId={projectId} jobId={selectedJob.jobId} />
+                                          <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">Comparte este servicio con el grupo de conductores.</p>
+                                        </div>
+                                      ) : null}
+
+                                      <div className="mt-2.5 rounded-xl border border-orange-500/15 bg-orange-500/[0.04] px-3 py-2">
+                                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-orange-300">
+                                          Conductor
+                                        </p>
+
+                                        <p className="mt-1 truncate text-xs font-medium text-foreground">
+                                          {selectedJob.driverDisplayName || "Pendiente de asignación"}
+                                          {selectedJob.vehicleName ? ` · ${selectedJob.vehicleName}` : ""}
+                                        </p>
+
+                                        <p className="mt-1 text-[10px] text-muted-foreground">
+                                          {selectedJob.driverUserId
+                                            ? selectedDriverPoint
+                                              ? selectedDriver?.locationFresh
+                                                ? "Ubicación en vivo"
+                                                : "Mostrando última ubicación conocida"
+                                              : "Sin ubicación disponible del conductor"
+                                            : "Todavía sin conductor asignado"}
+                                        </p>
+                                      </div>
+
+                                      <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] px-3 py-2.5">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
+                                            Conductores notificados / prueba
+                                          </p>
+                                          {jobRecipients.data ? (
+                                            <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+                                              {jobRecipients.data.length}
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                        {jobRecipients.isError ? (
+                                          <p className="mt-2 text-[11px] text-amber-300">No se pudo consultar el registro de notificaciones.</p>
+                                        ) : jobRecipients.isPending ? (
+                                          <p className="mt-2 text-[11px] text-muted-foreground">Consultando destinatarios…</p>
+                                        ) : jobRecipients.data.length === 0 ? (
+                                          <p className="mt-2 text-[11px] text-muted-foreground">Aún no hay notificaciones registradas para esta carrera.</p>
+                                        ) : (
+                                          <ul className="mt-2 max-h-44 space-y-1.5 overflow-y-auto pr-1">
+                                            {jobRecipients.data.map((recipient) => (
+                                              <li key={recipient.driverUserId} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-background/35 px-2.5 py-2">
+                                                <span className="min-w-0 truncate text-[11px] font-medium text-foreground">
+                                                  {recipient.driverDisplayName}
+                                                  {selectedJob.driverUserId === recipient.driverUserId ? (
+                                                    <strong className="ml-1.5 font-semibold text-emerald-300">(Aceptó)</strong>
+                                                  ) : null}
+                                                </span>
+                                                <span className="shrink-0 text-[10px] font-medium text-cyan-200">
+                                                  {recipient.isTestRecipient ? "Simulado" : recipient.deliveryStatus === "sent" ? "Despachada" : recipient.deliveryStatus === "failed" ? "Error" : recipient.deliveryStatus === "processing" ? "Procesando" : "En cola"}
+                                                  {recipient.distanceKm != null ? " · " + recipient.distanceKm.toFixed(2) + " km" : ""}
+                                                </span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        )}
+                                        <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                                          «Despachada» indica procesamiento por el sistema push, no confirma recepción en el teléfono.
+                                        </p>
+                                      </div>
+
+                                      {selectedPhase ? (
+                                        <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-white/10 bg-background/35 px-3 py-2">
+                                          <Clock3 className="h-3.5 w-3.5 shrink-0 text-violet-300" />
+                                          <span className="text-[11px] font-medium text-foreground">
+                                            {selectedPhase}
+                                          </span>
+                                        </div>
+                                      ) : null}
+
+                                      <div className="mt-2.5 grid grid-cols-2 gap-2">
+                                        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
+                                          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-orange-300">
+                                            Chofer → cliente
+                                          </p>
+
+                                          <p className="mt-1 text-[11px] font-medium text-foreground">
+                                            {selectedPickupRoute
+                                              ? `${formatDistance(selectedPickupRoute.distanceKm)} · ${formatDuration(
+                                                  selectedPickupRoute.durationSeconds,
+                                                )}`
+                                              : selectedJob.driverUserId
+                                                ? "Pendiente de GPS"
+                                                : "Pendiente de conductor"}
+                                          </p>
+                                        </div>
+
+                                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5">
+                                          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-yellow-300">
+                                            Cliente → destino
+                                          </p>
+
+                                          <p className="mt-1 text-[11px] font-medium text-foreground">
+                                            {selectedTripRoute
+                                              ? `${formatDistance(selectedTripRoute.distanceKm)} · ${formatDuration(
+                                                  selectedTripRoute.durationSeconds,
+                                                )}`
+                                              : `${formatDistance(selectedJob.estimatedDistanceKm)} · ${formatDuration(
+                                                  selectedJob.routeDurationSeconds,
+                                                )}`}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={!whatsappUrl}
+                                          onClick={() => {
+                                            if (whatsappUrl) {
+                                              window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+                                            }
+                                          }}
+                                        >
+                                          <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                                          WhatsApp
+                                        </Button>
+
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={!customerPhone}
+                                          onClick={() => {
+                                            if (customerPhone && navigator.clipboard) {
+                                              void navigator.clipboard.writeText(customerPhone);
+                                            }
+                                          }}
+                                        >
+                                          <Copy className="mr-1.5 h-3.5 w-3.5" />
+                                          Copiar
+                                        </Button>
+
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={
+                                            !canViewCustomers || !selectedJob.customerId || !onOpenCustomer
+                                          }
+                                          onClick={() => {
+                                            if (selectedJob.customerId) {
+                                              setExpanded(false);
+                                              onOpenCustomer?.(selectedJob.customerId);
+                                            }
+                                          }}
+                                        >
+                                          Cliente 360
+                                        </Button>
+
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={!onOpenJob}
+                                          onClick={() => {
+                                            setExpanded(false);
+                                            onOpenJob?.(selectedJob.jobId);
+                                          }}
+                                        >
+                                          Ver servicio
+                                        </Button>
+                                      </div>
+                                    </section>
+                                  ) : null}
                                 </div>
                               );
                             })
@@ -2706,245 +2951,6 @@ export default function MarketplaceOperationalMap({
                             </p>
                           )}
                         </div>
-                        {selectedJob && customerDetailsJobId === selectedJob.jobId ? (
-                          <section className="rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-background/22 to-cyan-500/[0.03] p-3 shadow-[0_14px_34px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-                            <div className="mb-2 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => setCustomerDetailsJobId(null)}
-                                aria-label="Plegar ficha del servicio"
-                                className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
-                              >
-                                Plegar ficha
-                              </button>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex min-w-0 items-start gap-2.5">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-200">
-                                  <UserRound className="h-4 w-4" />
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-300">
-                                    Cliente del servicio
-                                  </p>
-
-                                  <h4 className="mt-0.5 truncate text-sm font-semibold text-foreground">
-                                    {customer?.displayName ||
-                                      selectedJob.customerDisplayName ||
-                                      "Cliente"}
-                                  </h4>
-
-                                  <p className="mt-1 text-xs text-muted-foreground">
-                                    {selectedCustomer.isLoading
-                                      ? "Consultando contacto…"
-                                      : customerPhone || "Contacto no disponible"}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <span
-                                className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${
-                                  selectedJob.status === "incident"
-                                    ? "border-red-500/25 bg-red-500/[0.08] text-red-300"
-                                    : "border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-300"
-                                }`}
-                              >
-                                {statusLabel(selectedJob.status)}
-                              </span>
-                            </div>
-
-                            <div className="mt-3 rounded-xl border border-white/10 bg-background/40 p-2.5">
-                              <div className="flex items-start gap-2">
-                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
-                                <p className="text-xs leading-relaxed text-muted-foreground">
-                                  {selectedJob.originText}
-                                </p>
-                              </div>
-
-                              <div className="mt-1.5 flex items-start gap-2">
-                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
-                                <p className="text-xs leading-relaxed text-muted-foreground">
-                                  {selectedJob.destinationText}
-                                </p>
-                              </div>
-
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                <span className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.055] px-2 py-1 text-[10px] font-medium text-cyan-200">
-                                  {formatDistance(selectedJob.estimatedDistanceKm)}
-                                </span>
-
-                                <span className="rounded-lg border border-violet-500/20 bg-violet-500/[0.055] px-2 py-1 text-[10px] font-medium text-violet-200">
-                                  {formatDuration(selectedJob.routeDurationSeconds)}
-                                </span>
-
-                                <VehicleModeBadge code={selectedJob.vehicleCategoryCode} />
-                              </div>
-                            </div>
-
-                            <div className="mt-2.5 rounded-xl border border-orange-500/15 bg-orange-500/[0.04] px-3 py-2">
-                              <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-orange-300">
-                                Conductor
-                              </p>
-
-                              <p className="mt-1 truncate text-xs font-medium text-foreground">
-                                {selectedJob.driverDisplayName || "Pendiente de asignación"}
-                                {selectedJob.vehicleName ? ` · ${selectedJob.vehicleName}` : ""}
-                              </p>
-
-                              <p className="mt-1 text-[10px] text-muted-foreground">
-                                {selectedJob.driverUserId
-                                  ? selectedDriverPoint
-                                    ? selectedDriver?.locationFresh
-                                      ? "Ubicación en vivo"
-                                      : "Mostrando última ubicación conocida"
-                                    : "Sin ubicación disponible del conductor"
-                                  : "Todavía sin conductor asignado"}
-                              </p>
-                            </div>
-
-                            <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] px-3 py-2.5">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
-                                  Conductores notificados / prueba
-                                </p>
-                                {jobRecipients.data ? (
-                                  <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
-                                    {jobRecipients.data.length}
-                                  </span>
-                                ) : null}
-                              </div>
-                              {jobRecipients.isError ? (
-                                <p className="mt-2 text-[11px] text-amber-300">No se pudo consultar el registro de notificaciones.</p>
-                              ) : jobRecipients.isPending ? (
-                                <p className="mt-2 text-[11px] text-muted-foreground">Consultando destinatarios…</p>
-                              ) : jobRecipients.data.length === 0 ? (
-                                <p className="mt-2 text-[11px] text-muted-foreground">Aún no hay notificaciones registradas para esta carrera.</p>
-                              ) : (
-                                <ul className="mt-2 max-h-44 space-y-1.5 overflow-y-auto pr-1">
-                                  {jobRecipients.data.map((recipient) => (
-                                    <li key={recipient.driverUserId} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-background/35 px-2.5 py-2">
-                                      <span className="min-w-0 truncate text-[11px] font-medium text-foreground">
-                                        {recipient.driverDisplayName}
-                                        {selectedJob.driverUserId === recipient.driverUserId ? (
-                                          <strong className="ml-1.5 font-semibold text-emerald-300">(Aceptó)</strong>
-                                        ) : null}
-                                      </span>
-                                      <span className="shrink-0 text-[10px] font-medium text-cyan-200">
-                                        {recipient.isTestRecipient ? "Simulado" : recipient.deliveryStatus === "sent" ? "Despachada" : recipient.deliveryStatus === "failed" ? "Error" : recipient.deliveryStatus === "processing" ? "Procesando" : "En cola"}
-                                        {recipient.distanceKm != null ? " · " + recipient.distanceKm.toFixed(2) + " km" : ""}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                              <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-                                «Despachada» indica procesamiento por el sistema push, no confirma recepción en el teléfono.
-                              </p>
-                            </div>
-
-                            {selectedPhase ? (
-                              <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-white/10 bg-background/35 px-3 py-2">
-                                <Clock3 className="h-3.5 w-3.5 shrink-0 text-violet-300" />
-                                <span className="text-[11px] font-medium text-foreground">
-                                  {selectedPhase}
-                                </span>
-                              </div>
-                            ) : null}
-
-                            <div className="mt-2.5 grid grid-cols-2 gap-2">
-                              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-2.5">
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-orange-300">
-                                  Chofer → cliente
-                                </p>
-
-                                <p className="mt-1 text-[11px] font-medium text-foreground">
-                                  {selectedPickupRoute
-                                    ? `${formatDistance(selectedPickupRoute.distanceKm)} · ${formatDuration(
-                                        selectedPickupRoute.durationSeconds,
-                                      )}`
-                                    : selectedJob.driverUserId
-                                      ? "Pendiente de GPS"
-                                      : "Pendiente de conductor"}
-                                </p>
-                              </div>
-
-                              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5">
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-yellow-300">
-                                  Cliente → destino
-                                </p>
-
-                                <p className="mt-1 text-[11px] font-medium text-foreground">
-                                  {selectedTripRoute
-                                    ? `${formatDistance(selectedTripRoute.distanceKm)} · ${formatDuration(
-                                        selectedTripRoute.durationSeconds,
-                                      )}`
-                                    : `${formatDistance(selectedJob.estimatedDistanceKm)} · ${formatDuration(
-                                        selectedJob.routeDurationSeconds,
-                                      )}`}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 grid grid-cols-2 gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={!whatsappUrl}
-                                onClick={() => {
-                                  if (whatsappUrl) {
-                                    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-                                  }
-                                }}
-                              >
-                                <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                                WhatsApp
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={!customerPhone}
-                                onClick={() => {
-                                  if (customerPhone && navigator.clipboard) {
-                                    void navigator.clipboard.writeText(customerPhone);
-                                  }
-                                }}
-                              >
-                                <Copy className="mr-1.5 h-3.5 w-3.5" />
-                                Copiar
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  !canViewCustomers || !selectedJob.customerId || !onOpenCustomer
-                                }
-                                onClick={() => {
-                                  if (selectedJob.customerId) {
-                                    setExpanded(false);
-                                    onOpenCustomer?.(selectedJob.customerId);
-                                  }
-                                }}
-                              >
-                                Cliente 360
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={!onOpenJob}
-                                onClick={() => {
-                                  setExpanded(false);
-                                  onOpenJob?.(selectedJob.jobId);
-                                }}
-                              >
-                                Ver servicio
-                              </Button>
-                            </div>
-                          </section>
-                        ) : null}
                         {selectedJob?.status === "incident" ? (
                           <section className="rounded-[24px] border border-red-500/25 bg-red-500/[0.05] p-4">
                             <div className="flex items-center gap-2 text-red-300">

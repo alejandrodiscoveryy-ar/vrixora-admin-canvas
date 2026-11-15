@@ -1,3 +1,4 @@
+import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
 import { lazy, Suspense, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1822,6 +1823,15 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                     </div>
                                   </div>
                                 </div>
+
+                                {canManageMarketplace && !job.isTest && !job.driverUserId && job.status === "published" ? (
+                                  <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-2.5 sm:flex-row sm:items-center sm:justify-between">
+                                    <p className="text-xs font-medium text-foreground">Compartir este servicio con conductores</p>
+                                    <div className="w-full sm:w-auto sm:min-w-[200px]">
+                                      <MarketplaceServiceShareButton key={job.jobId} projectId={projectId} jobId={job.jobId} />
+                                    </div>
+                                  </div>
+                                ) : null}
 
                                 <JobNotificationReach projectId={projectId} jobId={job.jobId} compact />
 
