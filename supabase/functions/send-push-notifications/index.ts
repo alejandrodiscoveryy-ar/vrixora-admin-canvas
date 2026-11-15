@@ -35,6 +35,7 @@ const ALLOWED_KINDS = [
   "app_update",
   "new_subscription",
   "marketplace_job_available",
+  "marketplace_job_cancelled",
   "admin_marketplace_new_job",
   "admin_marketplace_new_driver",
   "admin_marketplace_pending_job",
@@ -251,6 +252,24 @@ export default {
             await finishRow(admin, row, "skipped", "Marketplace reminder recipient no longer eligible");
             return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
           }
+        }
+      }
+      if (row.kind === "marketplace_job_cancelled") {
+        const jobId = typeof row.data?.job_id === "string" ? row.data.job_id : null;
+        if (!jobId) {
+          await finishRow(admin, row, "skipped", "Missing cancellation job id");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+        const { data: job, error } = await admin.from("jobs")
+          .select("status,assigned_driver_user_id,is_test,test_deleted_at")
+          .eq("project_id", row.project_id).eq("id", jobId).maybeSingle();
+        if (error) {
+          await releaseForRetry(admin, row, "Could not verify cancellation status");
+          return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
+        }
+        if (!job || job.status !== "cancelled_by_customer" || job.assigned_driver_user_id !== row.user_id || job.is_test || job.test_deleted_at) {
+          await finishRow(admin, row, "skipped", "Cancellation recipient or status no longer valid");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
         }
       }
       const targetPlatform = typeof row.data?.target_platform === "string" ? row.data.target_platform : null;
