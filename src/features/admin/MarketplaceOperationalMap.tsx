@@ -1,4 +1,6 @@
 import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
+import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
+import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -856,6 +858,14 @@ export default function MarketplaceOperationalMap({
     refetchIntervalInBackground: false,
     retry: 1,
   });
+
+  // Reuse the same verified-identity contract as Driver 360 and the directory.
+  // The hook batches IDs, refreshes only while visible and never guesses status.
+  const operationalDriverIds = useMemo(
+    () => (operational.data?.drivers ?? []).map((driver) => driver.driverUserId),
+    [operational.data?.drivers],
+  );
+  const driverVerifications = useDriverVerifications(projectId, operationalDriverIds, isVisible);
 
   const filteredDrivers = useMemo(() => {
     const filtered = (operational.data?.drivers ?? []).filter((driver) =>
@@ -2531,6 +2541,7 @@ export default function MarketplaceOperationalMap({
                                     ? "Trabajando · GPS sin actualizar"
                                     : driver.isAvailable ? "Trabajando · disponible" : "Trabajando · no disponible";
                               const stateColor = pinState === "busy" ? "bg-emerald-400" : pinState === "available" ? "bg-sky-400" : pinState === "stale" ? "bg-amber-400" : "bg-slate-400";
+                              const verified = !driverVerifications.isError && driverVerifications.data?.[driver.driverUserId]?.verified === true;
                               const working = driver.acceptingJobs || Boolean(driver.activeJobId);
                               const duration = working ? workingDurationLabel(driver.workingSince, data.serverTime) : null;
                               const started = working ? workingStartLabel(driver.workingSince) : null;
@@ -2545,13 +2556,16 @@ export default function MarketplaceOperationalMap({
                                     type="button"
                                     aria-expanded={rowExpanded}
                                     aria-controls={`operational-driver-detail-${driver.driverUserId}`}
-                                    title={`${driver.driverDisplayName || "Conductor"} · ${stateLabel}`}
+                                    title={`${driver.driverDisplayName || "Conductor"}${verified ? " · Verificado" : ""} · ${stateLabel}`}
                                     onClick={() => setExpandedDriverId((current) => current === driver.driverUserId ? null : driver.driverUserId)}
                                     className="flex min-h-10 w-full min-w-0 items-center gap-1.5 px-2 py-1 text-left transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
                                   >
                                     <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
                                     <span className="min-w-0 flex-1">
-                                      <span className="block truncate text-[12px] font-semibold leading-tight text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                      <span className="flex min-w-0 items-center gap-1">
+                                        <span className="min-w-0 truncate text-[12px] font-semibold leading-tight text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                        {verified && <DriverVerifiedBadge iconOnly />}
+                                      </span>
                                       {working && (
                                         <span className="block truncate text-[10px] leading-tight tabular-nums text-muted-foreground"
                                           title={started ? `Inicio: ${started} · hora de Cuba` : "Inicio de jornada no registrado"}>
