@@ -33,6 +33,7 @@ type Vehicle = {
   cargo_height_cm: number | null;
   body_type: string | null;
   main_photo_asset_id: string | null;
+  comfort_approved: boolean;
 };
 type EditorPayload = {
   vehicle: Vehicle;
@@ -91,6 +92,7 @@ export default function MarketplaceDriverVehicleEditor({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState | null>(null);
+  const [comfortReason, setComfortReason] = useState("");
   const details = useQuery({
     queryKey: ["driver-vehicle-editor", projectId, driverUserId, vehicleId],
     enabled: open,
@@ -173,6 +175,27 @@ export default function MarketplaceDriverVehicleEditor({
       ]);
       setOpen(false);
       setForm(null);
+    },
+  });
+
+  const comfortReview = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { error } = await getSupabaseClient().rpc("admin_set_marketplace_vehicle_comfort_v1", {
+        target_project_id: projectId,
+        target_driver_user_id: driverUserId,
+        target_vehicle_id: vehicleId,
+        target_enabled: enabled,
+        target_reason: comfortReason.trim(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setComfortReason("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["driver-vehicle-editor", projectId, driverUserId, vehicleId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-360", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-drivers", projectId] }),
+      ]);
     },
   });
 
@@ -300,6 +323,33 @@ export default function MarketplaceDriverVehicleEditor({
                   </select>
                 </Field>
               </div>
+              {details.data.vehicle.category_code === "light_car" ? (
+                <div className="rounded-xl border border-blue-400/25 bg-blue-500/[0.05] p-3" data-comfort-auto-review>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">Confort · modalidad adicional de Auto</p>
+                      <p className="text-xs text-muted-foreground">Solo autos aprobados por la agencia. Mantiene sus carreras normales de Auto.</p>
+                    </div>
+                    <span className={`text-xs font-semibold ${details.data.vehicle.comfort_approved ? "text-blue-400" : "text-muted-foreground"}`}>
+                      {details.data.vehicle.comfort_approved ? "Aprobado" : "Sin aprobar"}
+                    </span>
+                  </div>
+                  <label className="mt-2 block text-xs text-muted-foreground">
+                    Motivo administrativo de la revisión (5 a 300 caracteres)
+                    <input className={inputClass} value={comfortReason} maxLength={300}
+                      onChange={(e) => setComfortReason(e.target.value)}
+                      placeholder="Comprobación de condiciones y equipamiento del auto" />
+                  </label>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Button type="button" size="sm" variant="outline"
+                      disabled={comfortReason.trim().length < 5 || comfortReview.isPending}
+                      onClick={() => comfortReview.mutate(!details.data.vehicle.comfort_approved)}>
+                      {comfortReview.isPending ? "Actualizando…" : details.data.vehicle.comfort_approved ? "Retirar aprobación Confort" : "Aprobar auto para Confort"}
+                    </Button>
+                    {comfortReview.isError && <span role="alert" className="text-xs text-rose-300">No se pudo guardar la aprobación.</span>}
+                  </div>
+                </div>
+              ) : null}
               {unpublishedForSelected.length > 0 ? (
                 <p role="status" className="rounded-lg border border-amber-400/25 bg-amber-500/[0.07] px-3 py-2 text-xs text-amber-100">
                   Hay modalidades no publicadas para esta categoría. Corregir el vehículo no las publica ni las habilita a clientes.
