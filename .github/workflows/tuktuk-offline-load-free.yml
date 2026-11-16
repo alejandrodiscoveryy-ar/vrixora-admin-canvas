@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/tuktuk-offline-load-free.yml"
       - "tests/tuktuk_offline_load_safety.test.mjs"
+      - "tests/tuktuk_offline_concurrency.test.mjs"
   workflow_dispatch:
 
 permissions:
@@ -35,4 +36,7 @@ jobs:
             tests/marketplace_parallel_cycle_preflight.test.mjs \
             tests/marketplace_test_lab_two_taps.test.mjs
       - name: Simulacion sintética progresiva (sin red)
-        run: node --test tests/tuktuk_offline_load_safety.test.mjs
+        run: |
+          node --test \
+            tests/tuktuk_offline_load_safety.test.mjs \
+            tests/tuktuk_offline_concurrency.test.mjs
