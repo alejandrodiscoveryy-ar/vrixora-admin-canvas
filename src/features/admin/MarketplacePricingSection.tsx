@@ -110,6 +110,7 @@ const serviceVisuals: Record<
 
 const vehicleVisuals: Record<string, string> = {
   light_car: "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  comfort: "border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-400",
   bicitaxi: "border-cyan-500/25 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
   bicycle: "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   motorcycle: "border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-400",
@@ -119,7 +120,7 @@ const vehicleVisuals: Record<string, string> = {
   other: "border-slate-500/25 bg-slate-500/10 text-slate-600 dark:text-slate-400",
 };
 
-const passengerCategories = ["light_car", "bicitaxi", "motorcycle", "tricycle"] as const;
+const passengerCategories = ["light_car", "comfort", "bicitaxi", "motorcycle", "tricycle"] as const;
 
 const cargoCategories = [
   "light_car",
@@ -218,6 +219,7 @@ function categoryLabel(code: string) {
     (
       {
         light_car: "Auto ligero",
+        comfort: "Confort · Auto",
         bicitaxi: "Bicitaxi",
         bicycle: "Bicicleta",
         motorcycle: "Motocicleta",
@@ -234,6 +236,7 @@ function VehicleIcon({ code }: { code: string }) {
   const className = "h-5 w-5";
   switch (code) {
     case "light_car":
+    case "comfort":
       return <CarFront className={className} />;
     case "motorcycle":
     case "bicycle":
@@ -638,6 +641,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                         </h4>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {serviceLabel(selectedService)}
+                          {vehicleCategoryCode === "comfort" ? " · Solo autos aprobados" : ""}
                         </p>
                       </div>
                     </div>
