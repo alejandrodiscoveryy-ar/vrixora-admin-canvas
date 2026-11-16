@@ -142,7 +142,7 @@ Deno.serve(async (request) => {
       const serviceCode = String(params.target_service_code ?? "").trim();
       if (serviceCode === "passenger") {
         const vehicleCategory = String(params.target_vehicle_category_code ?? "").trim();
-        if (!["motorcycle", "bicitaxi", "tricycle", "light_car"].includes(vehicleCategory)) {
+        if (!["motorcycle", "bicitaxi", "tricycle", "light_car", "comfort"].includes(vehicleCategory)) {
           throw new Error("PASSENGER_VEHICLE_CATEGORY_REQUIRED");
         }
         throw new Error("PASSENGER_ROUTE_VERIFICATION_REQUIRED");
