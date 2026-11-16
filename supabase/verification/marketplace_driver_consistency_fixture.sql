@@ -77,7 +77,7 @@ INSERT INTO public.audit_events(project_id,actor_id,entity_type,action,metadata,
 -- Install the actual production migration only after the synthetic schema is ready.
 \i /repo/supabase/migrations/20261116222332_marketplace_driver_consistency_readonly.sql
 
-DO $
+DO $$
 DECLARE
   data jsonb;
   a jsonb;
