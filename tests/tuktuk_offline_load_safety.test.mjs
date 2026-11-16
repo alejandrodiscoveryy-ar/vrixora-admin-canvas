@@ -38,9 +38,9 @@ function readOnlySnapshot(index) {
 test("el contrato vigente distingue pruebas de solicitudes reales y deja la comision real apagada", () => {
   const sql = readFileSync(new URL("../supabase/migrations/20261013233000_marketplace_test_lab_runtime.sql", import.meta.url), "utf8");
   const ui = readFileSync(new URL("../src/features/admin/MarketplaceTestCenterV2.tsx", import.meta.url), "utf8");
-  assert.match(sql, /new\\.is_test := false;/);
+  assert.match(sql, /new\.is_test := false;/);
   assert.match(sql, /target_force_wallet_commission boolean default false/);
-  assert.match(ui, /const \\[forceRealCommission, setForceRealCommission\\] = useState\\(false\\)/);
+  assert.match(ui, /const \[forceRealCommission, setForceRealCommission\] = useState\(false\)/);
   assert.match(ui, /CONFIRMACIÓN FINANCIERA/);
 });
 
@@ -85,9 +85,9 @@ test("carga de lectura sintética escalonada, sin escrituras ni mensajes push", 
 test("el laboratorio no importa librerias ni invoca servicios externos", () => {
   const self = readFileSync(new URL(import.meta.url), "utf8");
   assert.doesNotMatch(self, /from ["'](?:https?:|@supabase|firebase|mapbox)/);
-  assert.doesNotMatch(self, /\\b(?:fetch|https?\\.request|execSync|spawnSync)\\s*\\(/);
+  assert.doesNotMatch(self, /\b(?:fetch|https?\.request|execSync|spawnSync)\s*\(/);
   const workflow = readFileSync(new URL("../.github/workflows/tuktuk-offline-load-free.yml", import.meta.url), "utf8");
-  assert.match(workflow, /runs-on: ubuntu-24\\.04/);
-  assert.doesNotMatch(workflow, /\\$\\{\\{\\s*secrets\\./);
-  assert.doesNotMatch(workflow, /\\b(?:curl|wget|wrangler|supabase\\s+db|deploy)\\b/i);
+  assert.match(workflow, /runs-on: ubuntu-24\.04/);
+  assert.doesNotMatch(workflow, /\$\{\{\s*secrets\./);
+  assert.doesNotMatch(workflow, /\b(?:curl|wget|wrangler|supabase\s+db|deploy)\b/i);
 });
