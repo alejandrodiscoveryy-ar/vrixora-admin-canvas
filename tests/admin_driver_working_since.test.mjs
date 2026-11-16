@@ -30,3 +30,16 @@ test("inicio y GPS se muestran por separado, sin cambiar estado operativo", () =
   assert.match(migration, /NEW.working_since := statement_timestamp\(\)/);
   assert.match(migration, /'marketplace.view'/);
 });
+
+test("la hora de inicio cubana es visible en la fila sin desplegar", () => {
+  const startMatch = map.match(/const workingStartTimeLabel = \(workingSince: string \| null \| undefined\) => \{([\s\S]*?)\n\};/);
+  assert.ok(startMatch);
+  const startTime = new Function("workingSince", startMatch[1]);
+  assert.equal(startTime("2026-11-16T12:00:00Z"), "07:00");
+  assert.equal(startTime("2026-07-16T11:00:00Z"), "07:00");
+  assert.equal(startTime(null), null);
+  assert.equal(startTime("invalid"), null);
+  const compactRow = map.slice(map.indexOf("const startTime = working && duration"), map.indexOf("{rowExpanded ? (", map.indexOf("const startTime = working && duration")));
+  assert.ok(compactRow.includes("Desde ${startTime}"));
+  assert.ok(compactRow.includes('duration ?? "—"'));
+});
