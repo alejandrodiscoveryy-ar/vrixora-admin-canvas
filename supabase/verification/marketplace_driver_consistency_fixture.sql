@@ -74,7 +74,10 @@ INSERT INTO public.audit_events(project_id,actor_id,entity_type,action,metadata,
  -- La actividad de otro proyecto no puede contaminar la clasificación.
  ('99999999-9999-4999-8999-999999999999','cccccccc-3333-4333-8333-333333333333','driver_vehicle_assignments','marketplace_accepting_jobs_changed','{"accepting_jobs":true}',now()-interval '1 hour');
 
-DO $$
+-- Install the actual production migration only after the synthetic schema is ready.
+\i /repo/supabase/migrations/20261116222332_marketplace_driver_consistency_readonly.sql
+
+DO $
 DECLARE
   data jsonb;
   a jsonb;
