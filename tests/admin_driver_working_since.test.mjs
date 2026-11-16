@@ -43,3 +43,16 @@ test("la hora de inicio cubana es visible en la fila sin desplegar", () => {
   assert.ok(compactRow.includes("Desde ${startTime}"));
   assert.ok(compactRow.includes('duration ?? "—"'));
 });
+
+test("la fila usa la misma verificación real que el directorio, sin confundirla con GPS o jornada", () => {
+  const badge = readFileSync("src/features/admin/DriverVerifiedBadge.tsx", "utf8");
+  const hook = readFileSync("src/hooks/useDriverVerifications.ts", "utf8");
+  assert.match(map, /useDriverVerifications\(projectId, operationalDriverIds, isVisible\)/);
+  assert.match(map, /!driverVerifications\.isError && driverVerifications\.data\?\.\[driver\.driverUserId\]\?\.verified === true/);
+  assert.match(map, /verified && <DriverVerifiedBadge iconOnly \/>/);
+  assert.match(badge, /if \(iconOnly\)/);
+  assert.match(badge, /aria-label="Conductor verificado"/);
+  assert.match(badge, /fill-\[#1D9BF0\] text-white/);
+  assert.match(hook, /admin_get_marketplace_driver_verifications_v1/);
+  assert.match(hook, /slice\(i, i \+ 200\)/);
+});
