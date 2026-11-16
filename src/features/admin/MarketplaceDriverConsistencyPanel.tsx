@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Clock3, LocateFixed, RefreshCw, ShieldCheck, Trophy, UserRound } from "lucide-react";
+import { BarChart3, ChevronDown, Clock3, LocateFixed, RefreshCw, Trophy, UserRound } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import type { MarketplaceOperationalDriver } from "@/lib/marketplace-map";
@@ -76,6 +76,8 @@ export default function MarketplaceDriverConsistencyPanel({
 }) {
   const [days, setDays] = useState<PeriodDays>(30);
   const [ranking, setRanking] = useState<RankingMode>("days");
+  // Una sola ficha abierta; por defecto toda la lista queda compacta.
+  const [expandedDriverId, setExpandedDriverId] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["marketplace-driver-consistency", projectId, days],
     queryFn: () => getConsistency(projectId, days),
@@ -121,16 +123,16 @@ export default function MarketplaceDriverConsistencyPanel({
             {([7, 30] as const).map((period) => (
               <button key={period} type="button" aria-pressed={days === period}
                 className={`rounded-md px-2 py-1.5 text-[11px] font-semibold ${days === period ? "bg-cyan-500/20 text-cyan-100" : "text-slate-300 hover:bg-white/5"}`}
-                onClick={() => setDays(period)}>{period} días</button>
+                onClick={() => { setDays(period); setExpandedDriverId(null); }}>{period} días</button>
             ))}
           </div>
           <div role="group" aria-label="Criterio de clasificación" className="grid grid-cols-2 gap-1 rounded-lg border border-white/10 bg-black/25 p-1">
             <button type="button" aria-pressed={ranking === "days"}
               className={`rounded-md px-1 py-1.5 text-[11px] font-semibold ${ranking === "days" ? "bg-cyan-500/20 text-cyan-100" : "text-slate-300 hover:bg-white/5"}`}
-              onClick={() => setRanking("days")}>Frecuencia</button>
+              onClick={() => { setRanking("days"); setExpandedDriverId(null); }}>Frecuencia</button>
             <button type="button" aria-pressed={ranking === "hours"}
               className={`rounded-md px-1 py-1.5 text-[11px] font-semibold ${ranking === "hours" ? "bg-cyan-500/20 text-cyan-100" : "text-slate-300 hover:bg-white/5"}`}
-              onClick={() => setRanking("hours")}>Horas</button>
+              onClick={() => { setRanking("hours"); setExpandedDriverId(null); }}>Horas</button>
           </div>
         </div>
       </div>
@@ -153,52 +155,84 @@ export default function MarketplaceDriverConsistencyPanel({
                 (live.lastLatitude != null && live.lastLongitude != null)
               );
               const verified = isVerified(driver.driverUserId);
+              const rowExpanded = expandedDriverId === driver.driverUserId;
+              const detailsId = `consistency-driver-details-${driver.driverUserId}`;
+              const mainMetric = ranking === "days"
+                ? `${driver.activeDays} días`
+                : `${driver.estimatedHours.toLocaleString("es-CU", { maximumFractionDigits: 1 })} h`;
+              const secondaryMetric = ranking === "days"
+                ? `${driver.estimatedHours.toLocaleString("es-CU", { maximumFractionDigits: 1 })} h estimadas`
+                : `${driver.activeDays} días de inicio`;
               return (
-                <article key={driver.driverUserId} className="rounded-xl border border-white/10 bg-white/[0.035] p-2.5 hover:bg-white/[0.06]">
-                  <div className="flex items-center gap-2">
+                <article key={driver.driverUserId} className={`overflow-hidden rounded-lg border transition-colors ${rowExpanded ? "border-cyan-400/30 bg-cyan-500/[0.06]" : "border-white/10 bg-white/[0.035]"}`}>
+                  <button
+                    type="button"
+                    aria-expanded={rowExpanded}
+                    aria-controls={detailsId}
+                    aria-label={`${driver.driverName}, puesto ${index + 1}, ${mainMetric}. ${rowExpanded ? "Contraer" : "Desplegar"} información`}
+                    onClick={() => setExpandedDriverId((current) => current === driver.driverUserId ? null : driver.driverUserId)}
+                    className="flex min-h-12 w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
+                  >
                     <span className="w-5 shrink-0 text-center text-xs font-bold tabular-nums text-amber-200">{index + 1}</span>
-                    <div aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/10 text-[11px] font-bold text-cyan-100">{initials(driver.driverName)}</div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1">
-                        <strong className="truncate text-xs font-semibold text-white">{driver.driverName}</strong>
+                    <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/10 text-[10px] font-bold text-cyan-100">{initials(driver.driverName)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-1">
+                        <strong title={driver.driverName} className="min-w-0 truncate text-xs font-semibold leading-snug text-white">{driver.driverName}</strong>
                         {verified && <DriverVerifiedBadge iconOnly />}
-                      </div>
-                      <p className="truncate text-[10px] text-slate-400">{vehicleLabel(driver.vehicleCategoryCode)}{driver.vehicleName ? ` · ${driver.vehicleName}` : ""}</p>
-                    </div>
-                    {live?.locationFresh && live.acceptingJobs ? (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-sky-400" title="Trabajando, con GPS reciente" aria-label="Trabajando, GPS reciente" />
+                      </span>
+                      <span className="block truncate text-[10px] leading-snug text-slate-400">{secondaryMetric}</span>
+                    </span>
+                    {live?.locationFresh && live.acceptingJobs && !live.activeJobId ? (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-sky-400" title="Disponible, GPS reciente" aria-label="Disponible, GPS reciente" />
                     ) : null}
-                  </div>
-                  <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
-                    <div className="rounded-md bg-black/20 px-1 py-1.5">
-                      <div className="text-sm font-bold tabular-nums text-cyan-100">{driver.activeDays}</div>
-                      <div className="text-[9px] leading-tight text-slate-400">Días de inicio</div>
-                    </div>
-                    <div className="rounded-md bg-black/20 px-1 py-1.5">
-                      <div className="text-sm font-bold tabular-nums text-amber-100">{driver.estimatedHours.toLocaleString("es-CU", {maximumFractionDigits: 1})} h</div>
-                      <div className="text-[9px] leading-tight text-slate-400">Jornada estimada</div>
-                    </div>
-                    <div className="rounded-md bg-black/20 px-1 py-1.5">
-                      <div className="text-sm font-bold tabular-nums text-slate-100">{driver.completedSessions}</div>
-                      <div className="text-[9px] leading-tight text-slate-400">Jornadas cerradas</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap justify-end gap-1.5">
-                    <button type="button" disabled={!canLocate}
-                      onClick={() => onFocusDriver(driver.driverUserId)}
-                      className="inline-flex items-center gap-1 rounded-md border border-orange-400/25 px-2 py-1 text-[10px] font-medium text-orange-200 enabled:hover:bg-orange-400/10 disabled:opacity-35">
-                      <LocateFixed className="h-3 w-3" /> Mapa
-                    </button>
-                    {onOpenDriver && (
-                      <button type="button" onClick={() => onOpenDriver(driver.driverUserId)}
-                        className="inline-flex items-center gap-1 rounded-md border border-cyan-400/25 px-2 py-1 text-[10px] font-medium text-cyan-100 hover:bg-cyan-400/10">
-                        <UserRound className="h-3 w-3" /> Ficha 360
-                      </button>
-                    )}
+                    <span className="shrink-0 whitespace-nowrap text-right text-xs font-semibold tabular-nums text-cyan-100">{mainMetric}</span>
+                    <ChevronDown aria-hidden="true" className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${rowExpanded ? "rotate-180" : ""}`} />
+                  </button>
+                  <div id={detailsId} hidden={!rowExpanded} className="border-t border-white/10 px-3 pb-2.5 pt-2">
+                    {rowExpanded ? (
+                      <>
+                        <p className="mb-2 break-words text-xs font-medium text-slate-200">
+                          {driver.driverName}
+                          <span className="ml-1.5 font-normal text-slate-400">
+                            · {vehicleLabel(driver.vehicleCategoryCode)}{driver.vehicleName ? ` · ${driver.vehicleName}` : ""}
+                          </span>
+                        </p>
+                        <div className="grid grid-cols-3 gap-1.5 text-center">
+                          <div className="rounded-md bg-black/20 px-1 py-1.5">
+                            <div className="text-sm font-bold tabular-nums text-cyan-100">{driver.activeDays}</div>
+                            <div className="text-[10px] leading-tight text-slate-400">Días de inicio</div>
+                          </div>
+                          <div className="rounded-md bg-black/20 px-1 py-1.5">
+                            <div className="flex items-center justify-center gap-1 text-sm font-bold tabular-nums text-amber-100">
+                              <Clock3 className="h-3 w-3" aria-hidden="true" />
+                              {driver.estimatedHours.toLocaleString("es-CU", { maximumFractionDigits: 1 })} h
+                            </div>
+                            <div className="text-[10px] leading-tight text-slate-400">Jornada estimada</div>
+                          </div>
+                          <div className="rounded-md bg-black/20 px-1 py-1.5">
+                            <div className="text-sm font-bold tabular-nums text-slate-100">{driver.completedSessions}</div>
+                            <div className="text-[10px] leading-tight text-slate-400">Jornadas cerradas</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap justify-end gap-1.5">
+                          <button type="button" disabled={!canLocate}
+                            onClick={() => onFocusDriver(driver.driverUserId)}
+                            className="inline-flex min-h-9 items-center gap-1 rounded-md border border-orange-400/25 px-2.5 py-1 text-[11px] font-medium text-orange-200 enabled:hover:bg-orange-400/10 disabled:opacity-35">
+                            <LocateFixed className="h-3.5 w-3.5" /> Mapa
+                          </button>
+                          {onOpenDriver && (
+                            <button type="button" onClick={() => onOpenDriver(driver.driverUserId)}
+                              className="inline-flex min-h-9 items-center gap-1 rounded-md border border-cyan-400/25 px-2.5 py-1 text-[11px] font-medium text-cyan-100 hover:bg-cyan-400/10">
+                              <UserRound className="h-3.5 w-3.5" /> Ficha 360
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 </article>
               );
-            })}
+
           </div>
         )}
       </div>
