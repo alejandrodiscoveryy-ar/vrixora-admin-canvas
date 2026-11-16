@@ -509,6 +509,18 @@ const workingStartLabel = (workingSince: string | null | undefined) => {
   }).format(start);
 };
 
+const workingStartTimeLabel = (workingSince: string | null | undefined) => {
+  if (!workingSince) return null;
+  const start = new Date(workingSince);
+  if (!Number.isFinite(start.getTime())) return null;
+  return new Intl.DateTimeFormat("es-CU", {
+    timeZone: "America/Havana",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(start);
+};
+
 const signalAgeLabel = (capturedAt: string | null, serverTime: string) => {
   if (!capturedAt) return "Sin ubicación";
   const captured = new Date(capturedAt).getTime();
@@ -2522,6 +2534,7 @@ export default function MarketplaceOperationalMap({
                               const working = driver.acceptingJobs || Boolean(driver.activeJobId);
                               const duration = working ? workingDurationLabel(driver.workingSince, data.serverTime) : null;
                               const started = working ? workingStartLabel(driver.workingSince) : null;
+                              const startTime = working && duration ? workingStartTimeLabel(driver.workingSince) : null;
                               const capturedDate = driver.capturedAt ? new Date(driver.capturedAt) : null;
                               const lastSignal = capturedDate && Number.isFinite(capturedDate.getTime())
                                 ? new Intl.DateTimeFormat("es-CU", { timeZone: "America/Havana", dateStyle: "short", timeStyle: "medium" }).format(capturedDate)
@@ -2537,7 +2550,15 @@ export default function MarketplaceOperationalMap({
                                     className="flex min-h-10 w-full min-w-0 items-center gap-1.5 px-2 py-1 text-left transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
                                   >
                                     <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
-                                    <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                    <span className="min-w-0 flex-1">
+                                      <span className="block truncate text-[12px] font-semibold leading-tight text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                      {working && (
+                                        <span className="block truncate text-[10px] leading-tight tabular-nums text-muted-foreground"
+                                          title={started ? `Inicio: ${started} · hora de Cuba` : "Inicio de jornada no registrado"}>
+                                          {startTime ? `Desde ${startTime}` : "Sin inicio registrado"}
+                                        </span>
+                                      )}
+                                    </span>
                                     {working && (
                                       <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[11px] tabular-nums text-muted-foreground"
                                         title={duration && started ? `Jornada: ${duration} · Desde ${started} (Cuba)` : "Inicio de jornada no registrado"}
