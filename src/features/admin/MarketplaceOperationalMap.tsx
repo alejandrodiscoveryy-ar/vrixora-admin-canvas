@@ -1,5 +1,6 @@
 import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
+import MarketplaceDriverConsistencyPanel from "@/features/admin/MarketplaceDriverConsistencyPanel";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +31,7 @@ import {
   SlidersHorizontal,
   UserRound,
   Users,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabaseServices } from "@/lib/services";
@@ -114,7 +116,7 @@ const driverPinStateLabel: Record<DriverPinState, string> = {
 };
 type MapViewMode = "operations" | "coverage";
 type CoverageFilter = "all" | "available" | "busy" | "stale" | "resting";
-type OperationalAgendaTab = "drivers" | "services" | "clients";
+type OperationalAgendaTab = "drivers" | "consistency" | "services" | "clients";
 
 function operationalPinIconSvg(
   kind: OperationalPinKind,
@@ -2635,6 +2637,26 @@ export default function MarketplaceOperationalMap({
                       </div>
                     </section>
                   ) : null}
+                  {agendaTab === "consistency" ? (
+                    <MarketplaceDriverConsistencyPanel
+                      projectId={projectId}
+                      enabled={isVisible && panelOpen}
+                      drivers={operational.data?.drivers ?? []}
+                      isVerified={(driverUserId) => !driverVerifications.isError && driverVerifications.data?.[driverUserId]?.verified === true}
+                      onOpenDriver={onOpenDriver ? (driverUserId) => { setExpanded(false); onOpenDriver(driverUserId); } : undefined}
+                      onFocusDriver={(driverUserId) => {
+                        const driver = operational.data?.drivers.find((item) => item.driverUserId === driverUserId);
+                        if (!driver) return;
+                        const coordinate = driverCoordinate(driver);
+                        if (!coordinate) return;
+                        setLayers((current) => ({ ...current, drivers: true }));
+                        if (mapViewMode === "operations") setShowAllFleetInOperations(true);
+                        else setCoverageFilter("all");
+                        const liveMap = mapRef.current;
+                        if (liveMap) liveMap.easeTo({ center: coordinate, zoom: Math.max(13, liveMap.getZoom()), duration: 450 });
+                      }}
+                    />
+                  ) : null}
                   {agendaTab === "services" ? (
                     <section
                       aria-label="Servicios activos"
@@ -3148,6 +3170,11 @@ export default function MarketplaceOperationalMap({
                     icon: <Users className="h-4 w-4" />,
                   },
                   {
+                    id: "consistency" as const,
+                    title: "Constantes",
+                    icon: <Trophy className="h-4 w-4" />,
+                  },
+                  {
                     id: "services" as const,
                     title: "Servicios",
                     icon: <Route className="h-4 w-4" />,
@@ -3169,7 +3196,7 @@ export default function MarketplaceOperationalMap({
                       setAgendaCollapsed(false);
                       setAgendaTab(current ? null : tab.id);
                     }}
-                    className={`relative flex min-h-[92px] shrink-0 flex-col items-center justify-center gap-1 rounded-r-lg border border-l-0 px-1.5 py-2 text-slate-100 transition-colors ${panelOpen && agendaTab === tab.id ? "border-cyan-300/55 bg-cyan-800/80 text-white shadow-sm" : "border-white/15 bg-slate-800/95 hover:bg-slate-700"}`}
+                    className={`relative flex min-h-[76px] shrink-0 flex-col items-center justify-center gap-1 rounded-r-lg border border-l-0 px-1.5 py-2 text-slate-100 transition-colors ${panelOpen && agendaTab === tab.id ? "border-cyan-300/55 bg-cyan-800/80 text-white shadow-sm" : "border-white/15 bg-slate-800/95 hover:bg-slate-700"}`}
                   >
                     {tab.icon}
                     <span className="[writing-mode:vertical-rl] text-[11px] font-semibold tracking-[0.04em]">
