@@ -51,7 +51,7 @@ BEGIN
    VALUES(target_project_id,target_vehicle_id,actor,reason)
    ON CONFLICT(project_id,vehicle_id) DO UPDATE SET approved_at=now(),approved_by=excluded.approved_by,revoked_at=NULL,reason=excluded.reason;
  ELSE
-   UPDATE app_private.marketplace_comfort_vehicle_approvals SET revoked_at=now(),reason=reason
+   UPDATE app_private.marketplace_comfort_vehicle_approvals SET revoked_at=now(),reason=btrim(target_reason)
    WHERE project_id=target_project_id AND vehicle_id=target_vehicle_id AND revoked_at IS NULL;
  END IF;
  INSERT INTO public.audit_events(project_id,actor_id,action,entity_type,entity_id,metadata)
