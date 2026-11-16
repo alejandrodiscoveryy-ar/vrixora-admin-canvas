@@ -232,7 +232,7 @@ export default function MarketplaceDriverConsistencyPanel({
                   </div>
                 </article>
               );
-
+            })}
           </div>
         )}
       </div>
