@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const sql = readFileSync(new URL("../supabase/migrations/20261013233000_marketplace_test_lab_runtime.sql", import.meta.url), "utf8");
 const ui = readFileSync(new URL("../src/features/admin/MarketplaceTestCenterV2.tsx", import.meta.url), "utf8");
-const section = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
+const workspace = readFileSync(new URL("../src/features/admin/MarketplaceConfigurationWorkspace.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/features/admin/MarketplaceTestCenterPremium.css", import.meta.url), "utf8");
 
 test("modo real jamás se etiqueta automáticamente como prueba", () => {
@@ -52,8 +52,8 @@ test("UX: selector múltiple, individual/grupo, historial responsive y limpieza 
   assert.match(ui, /onClick=\{\(\) => save\.mutate\(\)\}/);
   assert.match(css, /@media\s*\(min-width:\s*1050px\)/);
   assert.match(css, /grid-template-columns:\s*minmax\(0,\s*0\.82fr\)\s+minmax\(0,\s*1\.18fr\)/);
-  assert.match(section, /<MarketplaceTestCenterV2/);
-  assert.match(section, /canManagePayments=\{canManagePayments\}/);
+  assert.match(workspace, /<MarketplaceTestCenterV2/);
+  assert.match(workspace, /canManagePayments=\{canManagePayments\}/);
 });
 test("sin migración destructiva o publicación automática", () => {
   assert.doesNotMatch(sql,/\b(drop\s+table|truncate\s+table|delete\s+from\s+public\.jobs|alter\s+table\s+public\.jobs)\b/i);
