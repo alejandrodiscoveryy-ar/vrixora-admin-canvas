@@ -83,7 +83,10 @@ test("Agenda de conductores usa filas compactas y detalle desplegable", () => {
   assert.match(source, /aria-expanded=\{rowExpanded\}/);
   assert.match(source, /rowExpanded \? "rotate-180" : ""/);
   assert.match(source, /min-h-10 w-full min-w-0 items-center gap-1\.5/);
-  assert.match(source, /min-w-0 flex-1 truncate text-\[12px\]/);
+  // Preserve the compact name column while allowing the start-time subline and badge.
+  assert.match(source, /min-w-0 flex-1">\s*<span className="flex min-w-0 items-center gap-1">/);
+  assert.match(source, /min-w-0 truncate text-\[12px\] font-semibold leading-tight/);
+  assert.match(source, /block truncate text-\[10px\] leading-tight tabular-nums/);
   assert.match(source, /agendaTab === "drivers" \? "min\(342px, calc\(100% - 24px\)\)"/);
   assert.match(source, /sticky top-0 z-20 grid grid-cols-2 gap-1/);
   assert.match(source, /<span className="truncate">Trabajando<\/span>\s*<strong[^>]*>\{data\.summary\.workingDrivers\}/);

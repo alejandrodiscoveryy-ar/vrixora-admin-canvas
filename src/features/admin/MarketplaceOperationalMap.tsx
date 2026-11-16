@@ -1,4 +1,6 @@
 import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
+import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
+import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -486,6 +488,41 @@ const formatDuration = (value: number | null) => {
   return `${hours} h ${minutes} min`;
 };
 
+const workingDurationLabel = (workingSince: string | null | undefined, serverTime: string) => {
+  if (!workingSince) return null;
+  const start = Date.parse(workingSince);
+  const server = Date.parse(serverTime);
+  if (!Number.isFinite(start) || !Number.isFinite(server) || start > server) return null;
+  const minutes = Math.floor((server - start) / 60000);
+  if (minutes < 1) return "<1 min";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours ? `${hours} h${rest ? ` ${rest} min` : ""}` : `${minutes} min`;
+};
+
+const workingStartLabel = (workingSince: string | null | undefined) => {
+  if (!workingSince) return null;
+  const start = new Date(workingSince);
+  if (!Number.isFinite(start.getTime())) return null;
+  return new Intl.DateTimeFormat("es-CU", {
+    timeZone: "America/Havana",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(start);
+};
+
+const workingStartTimeLabel = (workingSince: string | null | undefined) => {
+  if (!workingSince) return null;
+  const start = new Date(workingSince);
+  if (!Number.isFinite(start.getTime())) return null;
+  return new Intl.DateTimeFormat("es-CU", {
+    timeZone: "America/Havana",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(start);
+};
+
 const signalAgeLabel = (capturedAt: string | null, serverTime: string) => {
   if (!capturedAt) return "Sin ubicación";
   const captured = new Date(capturedAt).getTime();
@@ -821,6 +858,14 @@ export default function MarketplaceOperationalMap({
     refetchIntervalInBackground: false,
     retry: 1,
   });
+
+  // Reuse the same verified-identity contract as Driver 360 and the directory.
+  // The hook batches IDs, refreshes only while visible and never guesses status.
+  const operationalDriverIds = useMemo(
+    () => (operational.data?.drivers ?? []).map((driver) => driver.driverUserId),
+    [operational.data?.drivers],
+  );
+  const driverVerifications = useDriverVerifications(projectId, operationalDriverIds, isVisible);
 
   const filteredDrivers = useMemo(() => {
     const filtered = (operational.data?.drivers ?? []).filter((driver) =>
@@ -2496,6 +2541,11 @@ export default function MarketplaceOperationalMap({
                                     ? "Trabajando · GPS sin actualizar"
                                     : driver.isAvailable ? "Trabajando · disponible" : "Trabajando · no disponible";
                               const stateColor = pinState === "busy" ? "bg-emerald-400" : pinState === "available" ? "bg-sky-400" : pinState === "stale" ? "bg-amber-400" : "bg-slate-400";
+                              const verified = !driverVerifications.isError && driverVerifications.data?.[driver.driverUserId]?.verified === true;
+                              const working = driver.acceptingJobs || Boolean(driver.activeJobId);
+                              const duration = working ? workingDurationLabel(driver.workingSince, data.serverTime) : null;
+                              const started = working ? workingStartLabel(driver.workingSince) : null;
+                              const startTime = working && duration ? workingStartTimeLabel(driver.workingSince) : null;
                               const capturedDate = driver.capturedAt ? new Date(driver.capturedAt) : null;
                               const lastSignal = capturedDate && Number.isFinite(capturedDate.getTime())
                                 ? new Intl.DateTimeFormat("es-CU", { timeZone: "America/Havana", dateStyle: "short", timeStyle: "medium" }).format(capturedDate)
@@ -2506,12 +2556,31 @@ export default function MarketplaceOperationalMap({
                                     type="button"
                                     aria-expanded={rowExpanded}
                                     aria-controls={`operational-driver-detail-${driver.driverUserId}`}
-                                    title={`${driver.driverDisplayName || "Conductor"} · ${stateLabel}`}
+                                    title={`${driver.driverDisplayName || "Conductor"}${verified ? " · Verificado" : ""} · ${stateLabel}`}
                                     onClick={() => setExpandedDriverId((current) => current === driver.driverUserId ? null : driver.driverUserId)}
                                     className="flex min-h-10 w-full min-w-0 items-center gap-1.5 px-2 py-1 text-left transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
                                   >
                                     <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
-                                    <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                    <span className="min-w-0 flex-1">
+                                      <span className="flex min-w-0 items-center gap-1">
+                                        <span className="min-w-0 truncate text-[12px] font-semibold leading-tight text-foreground">{driver.driverDisplayName || "Conductor"}</span>
+                                        {verified && <DriverVerifiedBadge iconOnly />}
+                                      </span>
+                                      {working && (
+                                        <span className="block truncate text-[10px] leading-tight tabular-nums text-muted-foreground"
+                                          title={started ? `Inicio: ${started} · hora de Cuba` : "Inicio de jornada no registrado"}>
+                                          {startTime ? `Desde ${startTime}` : "Sin inicio registrado"}
+                                        </span>
+                                      )}
+                                    </span>
+                                    {working && (
+                                      <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[11px] tabular-nums text-muted-foreground"
+                                        title={duration && started ? `Jornada: ${duration} · Desde ${started} (Cuba)` : "Inicio de jornada no registrado"}
+                                        aria-label={duration ? `Tiempo trabajando: ${duration}` : "Inicio de jornada no registrado"}>
+                                        <Clock3 className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                        {duration ?? "—"}
+                                      </span>
+                                    )}
                                     <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-6 w-6" />
                                     <span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} role="img" aria-label={stateLabel} title={stateLabel} />
                                     <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${rowExpanded ? "rotate-180" : ""}`} />
@@ -2520,6 +2589,12 @@ export default function MarketplaceOperationalMap({
                                     <div id={`operational-driver-detail-${driver.driverUserId}`} className="space-y-1.5 border-t border-white/5 px-2 pb-2 pt-1.5 pl-10 text-[11px]">
                                       <p className="break-words font-medium text-slate-200">{vehicleCategoryLabel(driver.vehicleCategoryCode)} · {driver.vehicleName || driver.vehicleId}</p>
                                       <p className="flex items-center gap-1.5 text-slate-200"><span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} />{stateLabel}{driver.activeJobId ? ` · ${statusLabel(driver.activeJobStatus)}` : ""}</p>
+                                      {working && (
+                                        <div className="space-y-0.5 text-muted-foreground">
+                                          <p className="flex items-center gap-1"><Clock3 className="h-3 w-3" aria-hidden="true" />Jornada: <strong className="tabular-nums text-foreground">{duration ?? "Sin inicio registrado"}</strong></p>
+                                          {started && <p className="tabular-nums">Desde {started} · hora de Cuba</p>}
+                                        </div>
+                                      )}
                                       <div className="text-slate-400">
                                         <p>{signalAgeLabel(driver.capturedAt, data.serverTime)}</p>
                                         <p className="tabular-nums">{lastSignal}</p>

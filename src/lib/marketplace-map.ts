@@ -282,6 +282,7 @@ export interface MarketplaceOperationalDriver {
   vehicleName: string | null;
   vehicleCategoryCode: string | null;
   acceptingJobs: boolean;
+  workingSince?: string | null;
   isAvailable: boolean;
   activeJobId: string | null;
   activeJobStatus: string | null;
@@ -427,6 +428,7 @@ export async function getMarketplaceOperationalMap(
         vehicleName: nullableString(row.vehicle_name),
         vehicleCategoryCode: nullableString(row.vehicle_category_code),
         acceptingJobs: Boolean(row.accepting_jobs),
+        workingSince: nullableString(row.working_since),
         isAvailable: Boolean(row.is_available),
         activeJobId: nullableString(row.active_job_id),
         activeJobStatus: nullableString(row.active_job_status),
