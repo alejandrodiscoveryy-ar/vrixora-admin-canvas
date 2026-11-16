@@ -1,0 +1,38 @@
+name: "TukTuk · laboratorio offline sin costo"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/tuktuk-offline-load-free.yml"
+      - "tests/tuktuk_offline_load_safety.test.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tuktuk-offline-safe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  laboratorio-local:
+    name: "Solo memoria y contratos; ninguna llamada a produccion"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener codigo sin conservar credenciales
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Pruebas de contratos (archivos locales)
+        run: |
+          node --test \
+            tests/marketplace_test_lab_foundation.test.mjs \
+            tests/marketplace_test_lab_runtime.test.mjs \
+            tests/marketplace_test_lab_premium_v3.test.mjs \
+            tests/marketplace_test_broadcast_preflight.test.mjs \
+            tests/marketplace_parallel_cycle_preflight.test.mjs \
+            tests/marketplace_test_lab_two_taps.test.mjs
+      - name: Simulacion sintética progresiva (sin red)
+        run: node --test tests/tuktuk_offline_load_safety.test.mjs
