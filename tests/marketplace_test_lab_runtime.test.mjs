@@ -45,7 +45,7 @@ test("cliente sintético y carrera administrativa con identidad, auditoría e id
 });
 test("UX: selector múltiple, individual/grupo, historial responsive y limpieza protegida", () => {
   for(const marker of ["type=\"checkbox\"", "onClick={() => save.mutate()}", "Un conductor", "Todo el grupo",
-    "Enviar carrera de prueba", "Historial de pruebas", "Limpiar pruebas", "sm:grid-cols-2", "tt-lab-v4-workspace", "Crear UNA carrera"])
+    "Enviar carrera de prueba", "Historial de pruebas", "Limpiar pruebas", "sm:grid-cols-2", "tt-lab-v4-workspace", "Crear carrera de prueba"])
     assert.ok(ui.includes(marker),marker);
   assert.match(ui, /admin_set_marketplace_test_audience/);
   assert.match(ui, /supabaseServices\.marketplace\.setTestMode/);
