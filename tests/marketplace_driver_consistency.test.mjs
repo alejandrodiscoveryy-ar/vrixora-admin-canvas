@@ -40,3 +40,28 @@ test("RPC administrativo solo lectura con permiso y sin alcance anon", () => {
   assert.match(sql, /interval '5 minutes'/);
   assert.doesNotMatch(sql, /\b(?:INSERT INTO|UPDATE\s+public\.|DELETE FROM|TRUNCATE|net\.http_post|pg_cron|ALTER TABLE)\b/i);
 });
+
+
+test("Constantes presenta lista compacta y despliega datos únicamente al seleccionar una fila", () => {
+  // Un único registro desplegado; tocar el mismo vuelve a contraerlo.
+  assert.match(panel, /useState<string \| null>\(null\)/);
+  assert.match(panel, /expandedDriverId === driver\.driverUserId/);
+  assert.match(panel, /setExpandedDriverId\(\(current\) => current === driver\.driverUserId \? null : driver\.driverUserId\)/);
+  assert.match(panel, /aria-expanded=\{rowExpanded\}/);
+  assert.match(panel, /aria-controls=\{detailsId\}/);
+  assert.match(panel, /id=\{detailsId\} hidden=\{!rowExpanded\}/);
+  assert.match(panel, /rowExpanded \? \(/);
+  assert.match(panel, /min-h-12/); // Zona táctil >= 48 px, con contenido resumido.
+  assert.match(panel, /rotate-180/);
+  assert.match(panel, /const mainMetric = ranking === "days"/);
+  assert.match(panel, /const secondaryMetric = ranking === "days"/);
+  // Cambiar periodo o ranking debe cerrar detalles para mostrar más filas.
+  assert.match(panel, /setDays\(period\); setExpandedDriverId\(null\)/);
+  assert.match(panel, /setRanking\("days"\); setExpandedDriverId\(null\)/);
+  assert.match(panel, /setRanking\("hours"\); setExpandedDriverId\(null\)/);
+  // Datos y acciones de la antigua tarjeta no se pierden.
+  for (const marker of ["Días de inicio", "Jornada estimada", "Jornadas cerradas", "Ficha 360", "Mapa", "DriverVerifiedBadge"]) {
+    assert.ok(panel.includes(marker), marker);
+  }
+  assert.doesNotMatch(panel, /\.rpc\("accept_job"|\.rpc\("admin_republish_marketplace_job"/);
+});
