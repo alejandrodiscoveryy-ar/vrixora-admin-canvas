@@ -18,7 +18,8 @@ type Channel = {channel: string; campaign: string | null; shares: number; clicks
 type Trend = {day: string; shares: number; clicks: number; quotes: number; requests: number};
 type Reason = {reason: string; total: number};
 type PriceBand = {price_band: string; quoted_sessions: number; sessions_with_request: number};
-type Report = {days: PeriodDays; measured_since: string | null; totals: Numbers;
+type Organic = {app_opens:number;quotes:number;requests_created:number};
+type Report = {days: PeriodDays; measured_since: string | null; totals: Numbers; organic_totals: Organic;
   drivers: Promoter[]; channels: Channel[]; trend: Trend[]; reasons: Reason[]; price_segments: PriceBand[]};
 
 const channelLabels: Record<string,string> = {
@@ -57,6 +58,10 @@ async function fetchReport(projectId: string, days: PeriodDays): Promise<Report>
   return {
     days,measured_since:typeof d.measured_since==="string"?d.measured_since:null,
     totals:Object.fromEntries(Object.keys(zero).map(k=>[k,number(o[k])])) as unknown as Numbers,
+    organic_totals:(() => {
+      const raw=d.organic_totals && typeof d.organic_totals==="object" ? d.organic_totals as Record<string,unknown> : {};
+      return {app_opens:number(raw.app_opens),quotes:number(raw.quotes),requests_created:number(raw.requests_created)};
+    })(),
     drivers:(Array.isArray(d.drivers)?d.drivers:[]) as Promoter[],
     channels:(Array.isArray(d.channels)?d.channels:[]) as Channel[],
     trend:(Array.isArray(d.trend)?d.trend:[]) as Trend[],
@@ -157,6 +162,12 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
              })}
            </div>
            <p className="mt-2 text-[10px] text-muted-foreground">Los eventos representan etapas registradas, no necesariamente la misma audiencia. El gráfico no certifica conversión hasta reconciliar las sesiones.</p>
+           <div className="mt-2 rounded-md border border-border/40 bg-muted/10 p-2 text-[10px] text-muted-foreground">
+             Sin enlace Impulsa: <strong>{fmt(d!.organic_totals.app_opens)}</strong> entradas,
+             {" "}<strong>{fmt(d!.organic_totals.quotes)}</strong> cotizaciones y
+             {" "}<strong>{fmt(d!.organic_totals.requests_created)}</strong> solicitudes.
+             Se muestran aparte para no atribuirlas a los conductores.
+           </div>
          </div>
        </div>
 
