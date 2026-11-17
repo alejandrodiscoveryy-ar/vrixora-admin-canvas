@@ -129,6 +129,12 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
     ["Precio consultado",t.quotes],["Solicitud iniciada",t.requests_started],
     ["Solicitud señalada",t.requests_created],
   ] as const;
+  const metrics: Array<{label:string;value:number;Icon:typeof Share2}> = [
+    {label:"Compartidos intentados",value:t.share_attempts,Icon:Share2},
+    {label:"Aperturas registradas",value:t.link_opens,Icon:MousePointerClick},
+    {label:"Sesiones del enlace",value:t.visitor_sessions,Icon:Users},
+    {label:"Solicitudes señaladas",value:t.requests_created,Icon:BarChart3},
+  ];
   return <section aria-label="TukTuk enlace oficial y campañas"
       className="space-y-3 rounded-xl border border-orange-400/25 bg-background/50 p-3 sm:p-4">
     <header className="flex flex-wrap items-center gap-2">
@@ -198,12 +204,7 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
         No se pudieron leer las estadísticas.
         <button type="button" onClick={()=>void query.refetch()} className="ml-2 underline">Reintentar</button></p>:<>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {[
-          ["Compartidos intentados",t.share_attempts,Share2],
-          ["Aperturas registradas",t.link_opens,MousePointerClick],
-          ["Sesiones del enlace",t.visitor_sessions,Users],
-          ["Solicitudes señaladas",t.requests_created,BarChart3],
-        ].map(([label,value,Icon])=><div key={String(label)} className="rounded-lg border border-border/50 p-3">
+        {metrics.map(({label,value,Icon})=><div key={label} className="rounded-lg border border-border/50 p-3">
           <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground">
             <span>{String(label)}</span><Icon className="h-4 w-4"/>
           </div><p className="mt-1 text-xl font-bold tabular-nums">{fmt(value)}</p>
