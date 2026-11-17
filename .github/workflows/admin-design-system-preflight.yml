@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'src/components/**'
+      - 'public/sw.js'
+      - 'tests/admin_windows_delivery_regression.test.mjs'
+      - 'tests/admin_pwa_cache_refresh.test.mjs'
       - 'src/features/admin/**'
       - 'src/routes/admin*.tsx'
       - 'src/routes/__root.tsx'
@@ -40,6 +43,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Probar el contrato de componentes premium
         run: bun test tests/admin_design_system.test.mjs
+      - name: Validar actualizaciones PWA y alertas push
+        run: node --test tests/admin_windows_delivery_regression.test.mjs tests/admin_pwa_cache_refresh.test.mjs
       - name: Compilar y verificar bundle de prueba (sin desplegar)
         env:
           VITE_SUPABASE_URL: https://example.supabase.co

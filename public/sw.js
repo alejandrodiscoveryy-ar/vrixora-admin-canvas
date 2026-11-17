@@ -1,5 +1,5 @@
 // VRIXORA PWA cache + dedicated, authenticated-admin FCM push notifications.
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
 const ADMIN_PUSH_KINDS = new Set([
   "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation",
@@ -158,13 +158,29 @@ self.addEventListener("fetch", (event) => {
       (await caches.match("/offline.html")) || Response.error()));
     return;
   }
-  const cacheableDestinations = new Set(["style", "script", "font", "worker"]);
+  // App scripts/styles must check the network before the PWA cache.
+  // Otherwise a cached old bundle can keep showing a previous release.
+  if (request.destination === "script" || request.destination === "style") {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(APP_CACHE);
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        return (await caches.match(request)) || Response.error();
+      }
+    })());
+    return;
+  }
+  // Fonts and other fixed offline assets remain cache-first.
+  const cacheableDestinations = new Set(["font", "worker"]);
   if (!cacheableDestinations.has(request.destination) && !ESSENTIAL_ASSETS.includes(url.pathname)) return;
   event.respondWith(caches.match(request).then((cached) => cached || fetch(request)
     .then((response) => {
       if (response?.ok) caches.open(APP_CACHE).then((cache) => cache.put(request, response.clone()));
       return response;
-    }).catch(async () => request.destination === "image"
-      ? (await caches.match("/favicon.png")) || Response.error()
-      : Response.error())));
+    }).catch(() => Response.error())));
 });

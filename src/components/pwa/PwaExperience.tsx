@@ -162,10 +162,21 @@ export function PwaExperience() {
     }
   };
 
-  const handleUpdate = () => {
-    refreshRequestedRef.current = true;
+  const handleUpdate = async () => {
     setUpdateAvailable(false);
-    navigator.serviceWorker.controller?.postMessage({ type: "SKIP_WAITING" });
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/");
+      if (registration?.waiting) {
+        refreshRequestedRef.current = true;
+        registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      } else {
+        // skipWaiting may already have activated the new worker. A message to
+        // the active controller would not fire controllerchange or reload.
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
   };
 
   useEffect(() => {
