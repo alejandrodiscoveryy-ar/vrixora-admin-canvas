@@ -14,7 +14,7 @@ type Numbers = {
 type Promoter = {driver_user_id: string; name: string; active: boolean;
   shares: number; copies: number; downloads: number; clicks: number; sessions: number;
   quotes: number; requests: number; attributed_real: number; completed_real: number};
-type Channel = {channel: string; shares: number; clicks: number; sessions: number; quotes: number; requests: number};
+type Channel = {channel: string; campaign: string | null; shares: number; clicks: number; sessions: number; quotes: number; requests: number};
 type Trend = {day: string; shares: number; clicks: number; quotes: number; requests: number};
 type Reason = {reason: string; total: number};
 type PriceBand = {price_band: string; quoted_sessions: number; sessions_with_request: number};
@@ -164,8 +164,8 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          <div className="rounded-xl border border-border/50 p-3">
            <h4 className="mb-2 text-sm font-semibold">Origen declarado del enlace</h4>
            {d!.channels.length ? <div className="space-y-2 text-xs">
-             {d!.channels.map(x=><div key={x.channel} className="flex items-center justify-between gap-3 border-b border-border/30 pb-1">
-               <span className="min-w-0 truncate">{channelLabels[x.channel]??x.channel}</span>
+             {d!.channels.map(x=><div key={`${x.channel}:${x.campaign??""}`} className="flex items-center justify-between gap-3 border-b border-border/30 pb-1">
+               <span className="min-w-0 truncate">{channelLabels[x.channel]??x.channel}{x.campaign ? ` · ${x.campaign}` : ""}</span>
                <span className="shrink-0 text-right tabular-nums"><strong>{fmt(number(x.clicks))}</strong> clics
                  <span className="ml-2 text-muted-foreground">{fmt(number(x.shares))} dif.</span></span>
              </div>)}
