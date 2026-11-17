@@ -14,6 +14,9 @@ test("la solicitud propia no concede verificación ni abre el perfil promocional
   assert.match(sql, /f.asset_kind='identity_front'/);
   assert.match(sql, /b.asset_kind='identity_back'/);
   assert.match(sql, /status='pending'/);
+  assert.match(sql, /withdraw_my_marketplace_impulsa_application_v1/);
+  assert.match(sql, /status='withdrawn'/);
+  assert.match(sql, /existing.submitted_display_name is not distinct from public_name/);
   assert.match(sql, /security definer set search_path=''/);
   assert.match(sql, /revoke all on app_private.marketplace_impulsa_applications from public, anon, authenticated/);
   const driverRequest = sql.split("create or replace function public.request_my_marketplace_impulsa_verification_v1")[1]
