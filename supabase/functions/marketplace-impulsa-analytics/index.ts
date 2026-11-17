@@ -47,10 +47,12 @@ Deno.serve(async (req) => {
     const code = b.promo_code === null || b.promo_code === undefined || b.promo_code === ""
       ? null : String(b.promo_code);
     const channel = String(b.channel ?? "unknown");
+    const campaign = b.campaign === null || b.campaign === undefined || b.campaign === "" ? null : String(b.campaign);
     const reason = b.reason === null || b.reason === undefined ? null : String(b.reason);
     const price = b.price_cup === null || b.price_cup === undefined ? null : Number(b.price_cup);
     if (!eventNames.has(event) || !sessionPattern.test(sessionId) ||
       (code !== null && !codePattern.test(code)) || !channels.has(channel) ||
+      (campaign !== null && !/^[a-z0-9_-]{1,32}$/.test(campaign)) ||
       (reason !== null && !reasons.has(reason)) ||
       (event === "survey_answer" && reason === null) ||
       (reason !== null && event !== "survey_answer") ||
@@ -72,7 +74,7 @@ Deno.serve(async (req) => {
     if (limit.error) return reply(429,origin);
     const outcome = await client.rpc("record_public_marketplace_impulsa_event_v1",{
       target_event:event,target_session_id:sessionId,target_promo_code:code,
-      target_channel:channel,target_reason:reason,target_price_cup:price,
+      target_channel:channel,target_campaign:campaign,target_reason:reason,target_price_cup:price,
     });
     if (outcome.error) {
       console.error("impulsa-analytics ingest unavailable",outcome.error.code ?? "UNKNOWN");
