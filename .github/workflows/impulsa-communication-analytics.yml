@@ -10,6 +10,10 @@ on:
       - "supabase/functions/marketplace-impulsa-analytics/**"
       - "supabase/config.toml"
       - "tests/impulsa_communication_contract.test.mjs"
+      - "tests/tuktuk_official_communication_contract.test.mjs"
+      - "src/features/admin/MarketplaceTuktukOfficialAnalytics.tsx"
+      - "supabase/migrations/20261117090000_tuktuk_official_communication_campaign.sql"
+      - "supabase/verification/tuktuk_official_communication_fixture.sql"
       - ".github/workflows/impulsa-communication-analytics.yml"
 permissions:
   contents: read
@@ -41,6 +45,11 @@ jobs:
           docker run --rm --network host -e PGPASSWORD=postgres \
             -v "$GITHUB_WORKSPACE:/repo:ro" postgres:17 sh -c \
             'psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f /repo/supabase/verification/impulsa_communication_analytics_fixture.sql'
+      - name: Verificar la campaña oficial en base ficticia separada
+        run: |
+          docker run --rm --network host -e PGPASSWORD=postgres \
+            -v "$GITHUB_WORKSPACE:/repo:ro" postgres:17 sh -c \
+            'psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE tuktuk_official_fixture" && psql -h localhost -U postgres -d tuktuk_official_fixture -v ON_ERROR_STOP=1 -f /repo/supabase/verification/tuktuk_official_communication_fixture.sql'
   admin:
     name: "Dashboard, contratos y compilación Admin sin publicar"
     runs-on: ubuntu-24.04
@@ -53,6 +62,7 @@ jobs:
         with:
           bun-version: "1.4.2"
       - run: node --test tests/impulsa_communication_contract.test.mjs
+      - run: node --test tests/tuktuk_official_communication_contract.test.mjs
       - run: bun install --frozen-lockfile
       - name: Compilar exclusivamente
         env:
