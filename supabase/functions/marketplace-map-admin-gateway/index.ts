@@ -674,27 +674,25 @@ Deno.serve(async (request: Request) => {
         return reply({ ...payload, data: payload });
       }
 
-      const driverDetails = await Promise.all(
-        driverIds.map(async (driverUserId) => {
-          const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
-            target_project_id: projectId,
-            target_driver_user_id: driverUserId,
-          });
-          if (error) throw error;
+      // Authorization was checked by the operational-map RPC above.
+      // Only retrieve the project drivers returned by that authorized RPC.
+      const { data: driverProfiles, error: driverProfilesError } = await serviceClient
+        .from("driver_profiles")
+        .select("user_id,photo_asset_id")
+        .eq("project_id", projectId)
+        .in("user_id", driverIds);
+      if (driverProfilesError) throw driverProfilesError;
 
-          const root = asRecord(data);
-          return {
-            driverUserId,
-            account: asRecord(root.account),
-            driver: asRecord(root.driver),
-          };
-        }),
-      );
+      const { data: accountProfiles, error: accountProfilesError } = await serviceClient
+        .from("profiles")
+        .select("id,avatar_url")
+        .in("id", driverIds);
+      if (accountProfilesError) throw accountProfilesError;
 
       const photoAssetIds = Array.from(
         new Set(
-          driverDetails
-            .map((item) => String(item.driver.photo_asset_id ?? ""))
+          (driverProfiles ?? [])
+            .map((item) => String(item.photo_asset_id ?? ""))
             .filter((value) => /^[0-9a-f-]{36}$/i.test(value)),
         ),
       );
@@ -711,13 +709,14 @@ Deno.serve(async (request: Request) => {
         mediaAssets = data ?? [];
       }
 
-      const detailByUserId = new Map(driverDetails.map((item) => [item.driverUserId, item]));
+      const detailByUserId = new Map((driverProfiles ?? []).map((item) => [String(item.user_id), item]));
+      const accountByUserId = new Map((accountProfiles ?? []).map((item) => [String(item.id), item]));
       const assetById = new Map(mediaAssets.map((row: any) => [String(row.id), row]));
 
       const drivers = await Promise.all(
         driverIds.map(async (driverUserId) => {
           const detail = detailByUserId.get(driverUserId);
-          const photoAssetId = String(detail?.driver.photo_asset_id ?? "");
+          const photoAssetId = String(detail?.photo_asset_id ?? "");
           const asset = assetById.get(photoAssetId) as any;
 
           let uploadedPhotoUrl: string | null = null;
@@ -734,14 +733,16 @@ Deno.serve(async (request: Request) => {
             }
           }
 
+          const account = accountByUserId.get(driverUserId);
           const googleAvatar =
-            typeof detail?.account.avatar_url === "string" && detail.account.avatar_url.trim()
-              ? detail.account.avatar_url.trim()
+            typeof account?.avatar_url === "string" && account.avatar_url.trim()
+              ? account.avatar_url.trim()
               : null;
 
           return {
             driver_user_id: driverUserId,
             avatar_url: uploadedPhotoUrl ?? googleAvatar,
+            google_avatar_url: googleAvatar,
             avatar_source: uploadedPhotoUrl ? "driver_photo" : googleAvatar ? "google" : null,
           };
         }),
