@@ -605,7 +605,10 @@ test("Admin submenu accents remain aligned in inner navigation and preserve tab 
   // Four TukTuk primary areas plus the single non-TukTuk CRM fallback.
   assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 5);
   for (const name of ["Campañas", "Resultados", "Impulsa", "Gestión"]) assert.ok(commercial.includes(name), name);
-  for (const view of ["ofertas","impulsa","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
+  // Gestión usa una subnavegación de valores tipados; el destino ofertas ya no tiene botón principal.
+  assert.match(commercial, /\["ofertas","Beneficios de conductores"\]/);
+  assert.match(commercial, /setCommercialView\(value\)/);
+  for (const view of ["impulsa","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
 });
 
 test("Configuración replaces the Administration label without duplicate entries or route changes", () => {
