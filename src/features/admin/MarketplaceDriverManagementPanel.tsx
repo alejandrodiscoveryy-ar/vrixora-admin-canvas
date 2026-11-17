@@ -96,6 +96,8 @@ export default function MarketplaceDriverManagementPanel({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewReason, setReviewReason] = useState("");
   const [reviewDocumentType, setReviewDocumentType] = useState("");
+  const [impulsaReason, setImpulsaReason] = useState("");
+  const [impulsaDocumentType, setImpulsaDocumentType] = useState("");
 
   const data = useQuery({
     queryKey: ["driver-management-360", projectId, driverUserId],
@@ -126,6 +128,54 @@ export default function MarketplaceDriverManagementPanel({
     },
     retry: 1,
     staleTime: 0,
+  });
+
+  const impulsaApplication = useQuery({
+    queryKey: ["marketplace-impulsa-application", projectId, driverUserId],
+    queryFn: async () => {
+      const { data: payload, error } = await getSupabaseClient().rpc(
+        "admin_get_marketplace_impulsa_application_v1",
+        { target_project_id: projectId, target_driver_user_id: driverUserId },
+      );
+      if (error) throw error;
+      return payload as {
+        status: "not_requested" | "pending" | "approved" | "rejected";
+        submitted_at: string | null;
+        consent_version: string | null;
+        document_type: string | null;
+        reviewed_at: string | null;
+      };
+    },
+    retry: false,
+    staleTime: 0,
+  });
+
+  const impulsaDecision = useMutation({
+    mutationFn: async (approve: boolean) => {
+      const type = data.data?.driver.identity_type || impulsaDocumentType || null;
+      const { error } = await getSupabaseClient().rpc(
+        "admin_decide_marketplace_impulsa_application_v1",
+        {
+          target_project_id: projectId,
+          target_driver_user_id: driverUserId,
+          target_approve: approve,
+          target_reason: impulsaReason.trim(),
+          target_document_type: type,
+        },
+      );
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["marketplace-impulsa-application", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-verifications", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["driver-management-360", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-360", projectId, driverUserId] }),
+      ]);
+      setImpulsaReason("");
+      setImpulsaDocumentType("");
+    },
   });
 
   const reviewMutation = useMutation({
@@ -265,6 +315,57 @@ export default function MarketplaceDriverManagementPanel({
 
   return (
     <div className="min-w-0 space-y-3 max-sm:[&_button]:min-h-11" aria-label="Gestión administrativa del conductor">
+      {impulsaApplication.data?.status === "pending" && (
+        <section className={cn("min-w-0 space-y-3 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)} aria-label="Solicitud de verificación Impulsa">
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="h-5 w-5 text-amber-500" aria-hidden="true"/>
+            <div>
+              <h3 className="font-semibold">Impulsa · Solicitud pendiente</h3>
+              <p className="text-xs text-muted-foreground">
+                Solicitada el {formatDate(impulsaApplication.data.submitted_at)} · Consentimiento {impulsaApplication.data.consent_version}
+              </p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Revisa personalmente ambas caras del documento en el expediente. La solicitud y el consentimiento no verifican la identidad por sí solos.
+          </p>
+          {!documentTypeKnown && (
+            <label className="block text-xs">
+              Tipo de documento revisado
+              <select value={impulsaDocumentType} onChange={event => setImpulsaDocumentType(event.target.value)}
+                className={cn("mt-1 h-11 w-full rounded-lg border bg-surface-1 px-3 text-sm", premiumControlSurface)}>
+                <option value="">Selecciona el documento</option>
+                <option value="national_id">Carnet de identidad</option>
+                <option value="driver_license">Licencia de conducción</option>
+              </select>
+            </label>
+          )}
+          <label className="block text-xs">
+            Motivo de revisión
+            <input value={impulsaReason} onChange={event => setImpulsaReason(event.target.value)}
+              minLength={5} maxLength={300} placeholder="Revisión presencial de identidad"
+              className={cn("mt-1 h-11 w-full rounded-lg border bg-surface-1 px-3 text-sm", premiumControlSurface)}/>
+          </label>
+          {impulsaDecision.isError && <p role="alert" className="text-xs text-rose-500">
+            No se pudo resolver la solicitud. Comprueba documentos, vehículo y consentimiento; si el perfil cambió, el conductor debe solicitarla nuevamente.
+          </p>}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" disabled={impulsaDecision.isPending || !canVerify || impulsaReason.trim().length < 5 || (!documentTypeKnown && !impulsaDocumentType)}
+              onClick={() => impulsaDecision.mutate(true)}>
+              Aprobar identidad y activar Impulsa
+            </Button>
+            <Button type="button" variant="outline" disabled={impulsaDecision.isPending || impulsaReason.trim().length < 5}
+              onClick={() => impulsaDecision.mutate(false)}>
+              Rechazar solicitud
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Una sola aprobación registra la verificación, activa el perfil autorizado y habilita las tarjetas. Sin aprobación no se muestra la insignia azul.
+          </p>
+        </section>
+      )}
+      {impulsaApplication.data?.status === "rejected" &&
+        <p className="text-xs text-muted-foreground">Impulsa: solicitud rechazada; el conductor podrá corregir sus datos y volver a solicitarla.</p>}
       <section className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
