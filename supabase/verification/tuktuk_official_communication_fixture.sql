@@ -1,12 +1,12 @@
 -- PostgreSQL 17 disposable fixture. Never run against TukTuk production.
 CREATE SCHEMA app_private;
 CREATE SCHEMA auth;
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role; END IF;
-END $;
+END $$;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
   'select nullif(current_setting(''app.test_actor'',true),'''')::uuid';
 CREATE FUNCTION app_private.require_project_permission(uuid,text)
