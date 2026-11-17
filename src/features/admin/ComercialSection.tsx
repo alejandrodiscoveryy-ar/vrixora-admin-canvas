@@ -57,6 +57,7 @@ import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
 import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/MarketplaceImpulsaCommunicationAnalytics";
 import MarketplaceTuktukOfficialAnalytics from "@/features/admin/MarketplaceTuktukOfficialAnalytics";
+import MarketplaceCustomerCampaignDrafts from "@/features/admin/MarketplaceCustomerCampaignDrafts";
 import MarketplaceImpulsaTransitionPanel from "@/features/admin/MarketplaceImpulsaTransitionPanel";
 import CommercialReferralsPanel from "@/features/admin/CommercialReferralsPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -103,7 +104,8 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
-  const [commercialView, setCommercialView] = useState<"captacion" | "ofertas" | "referidos" | "impulsa">("ofertas");
+  const [commercialView, setCommercialView] = useState<"campanas" | "resultados" | "captacion" | "ofertas" | "referidos" | "impulsa">("campanas");
+  const [resultsSource, setResultsSource] = useState<"tuktuk" | "impulsa">("tuktuk");
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
     queryFn: async () => {
@@ -121,6 +123,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const showOffers = isTuktukProject && commercialView === "ofertas";
   const showReferrals = isTuktukProject && commercialView === "referidos";
   const showImpulsa = isTuktukProject && commercialView === "impulsa";
+  const showManagement = isTuktukProject && ["captacion","ofertas","referidos"].includes(commercialView);
   const canViewImpulsa = permissions.includes("settings.view");
   const canEditImpulsa = canViewImpulsa && permissions.includes("settings.manage") && canManage && permissions.includes("payments.manage");
   const adminMembership = useQuery({
@@ -141,6 +144,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     canManage &&
     isTuktukProject &&
     (projectIdentity.data?.owner_id === user?.id || adminMembership.data === true);
+  const canPlanCustomerBenefits = canManage && isTuktukProject && projectIdentity.data?.owner_id === user?.id;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [source, setSource] = useState("all");
@@ -273,7 +277,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.16] bg-gradient-to-br from-violet-500/[0.045] via-background/85 to-cyan-500/[0.025] p-3 shadow-[0_28px_80px_-55px_rgba(139,92,246,0.68)] sm:p-4 lg:p-5 admin-graphite-panel">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.065] via-background/80 to-cyan-500/[0.04]" />
       <img
-        src={showOffers || showImpulsa ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
+        src={showOffers || showImpulsa || commercialView === "campanas" ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute -right-8 top-20 hidden h-[24rem] w-[38%] object-contain object-right-top opacity-[0.045] mix-blend-screen lg:block"
@@ -288,58 +292,43 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/75 via-cyan-400/30 to-transparent" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            {isTuktukProject && (
-              <Button
-                type="button"
-                variant={showOffers ? "default" : "outline"}
-                onClick={() => setCommercialView("ofertas")}
-                className="admin-subnav-tab"
-                data-nav-tone="tarifas"
-                aria-pressed={showOffers}
-              >
-                <span className="admin-nav-icon" aria-hidden="true"><Gift /></span>
-                Ofertas TukTuk
-              </Button>
-            )}
-            {isTuktukProject && (
-              <Button
-                type="button"
-                variant={showImpulsa ? "default" : "outline"}
-                onClick={() => setCommercialView("impulsa")}
-                className="admin-subnav-tab"
-                data-nav-tone="finanzas"
-                aria-pressed={showImpulsa}
-              >
-                <span className="admin-nav-icon" aria-hidden="true"><TrendingUp /></span>
-                TukTuk Impulsa
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant={commercialView === "captacion" ? "default" : "outline"}
-              onClick={() => setCommercialView("captacion")}
-              className="admin-subnav-tab"
-                data-nav-tone="comercial"
-                aria-pressed={commercialView === "captacion"}
-            >
-              <span className="admin-nav-icon" aria-hidden="true"><Megaphone /></span>
-              Captación y campañas
-            </Button>
-            {isTuktukProject && (
-              <Button
-                type="button"
-                variant={showReferrals ? "default" : "outline"}
-                onClick={() => setCommercialView("referidos")}
-                className="admin-subnav-tab"
-                data-nav-tone="usuarios"
-                aria-pressed={showReferrals}
-              >
-                <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
-                Referidos
+            {isTuktukProject ? (
+              <>
+                <Button type="button" variant={commercialView === "campanas" ? "default" : "outline"}
+                  onClick={() => setCommercialView("campanas")} className="admin-subnav-tab"
+                  data-nav-tone="comercial" aria-pressed={commercialView === "campanas"}>
+                  <span className="admin-nav-icon" aria-hidden="true"><Megaphone /></span>
+                  Campañas
+                </Button>
+                <Button type="button" variant={commercialView === "resultados" ? "default" : "outline"}
+                  onClick={() => setCommercialView("resultados")} className="admin-subnav-tab"
+                  data-nav-tone="usuarios" aria-pressed={commercialView === "resultados"}>
+                  <span className="admin-nav-icon" aria-hidden="true"><TrendingUp /></span>
+                  Resultados
+                </Button>
+                <Button type="button" variant={showImpulsa ? "default" : "outline"}
+                  onClick={() => setCommercialView("impulsa")} className="admin-subnav-tab"
+                  data-nav-tone="finanzas" aria-pressed={showImpulsa}>
+                  <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
+                  Impulsa
+                </Button>
+                <Button type="button" variant={showManagement ? "default" : "outline"}
+                  onClick={() => setCommercialView("referidos")} className="admin-subnav-tab"
+                  data-nav-tone="tarifas" aria-pressed={showManagement}>
+                  <span className="admin-nav-icon" aria-hidden="true"><Layers /></span>
+                  Gestión
+                </Button>
+              </>
+            ) : (
+              <Button type="button" variant="default"
+                onClick={() => setCommercialView("captacion")} className="admin-subnav-tab"
+                data-nav-tone="comercial" aria-pressed={true}>
+                <span className="admin-nav-icon" aria-hidden="true"><Megaphone /></span>
+                Captación y campañas
               </Button>
             )}
           </div>
-          {canManage && !showOffers && !showReferrals && !showImpulsa && (
+          {canManage && (!isTuktukProject || commercialView === "captacion") && (
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditingCampaign("new")}>
                 Nueva campaña
@@ -351,13 +340,72 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             </div>
           )}
         </div>
-      </nav>
 
-      {showOffers ? (
+      </nav>
+      {showManagement && (
+        <nav aria-label="Herramientas de gestión comercial" className="flex flex-wrap items-center gap-2 rounded-xl border border-border/50 bg-background/45 p-2">
+          {([
+            ["referidos","Referidos y red"],
+            ["ofertas","Beneficios de conductores"],
+            ["captacion","Captación y contactos"],
+          ] as const).map(([value,label]) => (
+            <button type="button" key={value} aria-pressed={commercialView===value}
+              onClick={() => setCommercialView(value)}
+              className={"rounded-lg border px-3 py-2 text-xs font-medium transition-colors "+(commercialView===value?"border-cyan-400/35 bg-cyan-400/10 text-cyan-100":"border-border/50 text-muted-foreground hover:bg-muted/20")}>
+              {label}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {isTuktukProject && commercialView === "campanas" ? (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-orange-400/20 bg-background/55 p-3">
+            <h2 className="text-base font-semibold">Campañas de TukTuk</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              1. Prepara la promoción · 2. Genera enlaces para cada canal · 3. Consulta resultados.
+              Los descuentos quedan en borrador hasta autorizar y probar el cálculo y cobro.
+            </p>
+          </div>
+          <MarketplaceCustomerCampaignDrafts projectId={projectId} canEdit={canPlanCustomerBenefits} />
+          <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="generator" />
+        </div>
+      ) : isTuktukProject && commercialView === "resultados" ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/55 p-3">
+            <div>
+              <h2 className="text-base font-semibold">Resultados de comunicación</h2>
+              <p className="text-xs text-muted-foreground">Compara campañas oficiales y difusión de conductores sin mezclar fuentes.</p>
+            </div>
+            <div role="group" aria-label="Fuente de resultados" className="flex gap-1 rounded-lg border border-border/60 p-1">
+              <button type="button" aria-pressed={resultsSource==="tuktuk"} onClick={() => setResultsSource("tuktuk")}
+                className={"rounded-md px-3 py-1.5 text-xs font-semibold "+(resultsSource==="tuktuk"?"bg-orange-400/15 text-orange-200":"text-muted-foreground")}>
+                TukTuk oficial
+              </button>
+              <button type="button" aria-pressed={resultsSource==="impulsa"} onClick={() => setResultsSource("impulsa")}
+                className={"rounded-md px-3 py-1.5 text-xs font-semibold "+(resultsSource==="impulsa"?"bg-cyan-400/15 text-cyan-200":"text-muted-foreground")}>
+                Impulsa
+              </button>
+            </div>
+          </div>
+          {resultsSource==="tuktuk"
+            ? <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
+            : <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />}
+        </div>
+      ) : showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
       ) : showImpulsa ? (
         canViewImpulsa ? (
-          <div className="space-y-4"><MarketplaceImpulsaCommunicationAnalytics projectId={projectId} /><MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} /><MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} /><MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} /></div>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-cyan-400/20 bg-background/55 p-3">
+              <h2 className="text-base font-semibold">Programa Impulsa</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Control del programa y sus reglas. Las estadísticas de difusión están en Resultados → Impulsa.
+              </p>
+            </div>
+            <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
+            <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
+          </div>
         ) : (
           <section className="rounded-xl border border-border/70 bg-card/60 p-4 admin-graphite-panel" aria-label="TukTuk Impulsa">
             <h2 className="font-semibold">TukTuk Impulsa</h2>
