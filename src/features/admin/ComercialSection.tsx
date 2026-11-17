@@ -56,6 +56,7 @@ import { Textarea } from "@/components/ui/textarea";
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
 import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/MarketplaceImpulsaCommunicationAnalytics";
+import MarketplaceTuktukOfficialAnalytics from "@/features/admin/MarketplaceTuktukOfficialAnalytics";
 import MarketplaceImpulsaTransitionPanel from "@/features/admin/MarketplaceImpulsaTransitionPanel";
 import CommercialReferralsPanel from "@/features/admin/CommercialReferralsPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -356,7 +357,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
       ) : showImpulsa ? (
         canViewImpulsa ? (
-          <div className="space-y-4"><MarketplaceImpulsaCommunicationAnalytics projectId={projectId} /><MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} /><MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} /></div>
+          <div className="space-y-4"><MarketplaceImpulsaCommunicationAnalytics projectId={projectId} /><MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} /><MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} /><MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} /></div>
         ) : (
           <section className="rounded-xl border border-border/70 bg-card/60 p-4 admin-graphite-panel" aria-label="TukTuk Impulsa">
             <h2 className="font-semibold">TukTuk Impulsa</h2>
