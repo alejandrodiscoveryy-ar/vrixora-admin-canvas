@@ -18,6 +18,7 @@ create table if not exists app_private.marketplace_impulsa_communication_events 
     'facebook','instagram','qr','other'
   )),
   session_id uuid,
+  campaign text check (campaign is null or campaign ~ '^[a-z0-9_-]{1,32}$'),
   scope_code text not null default 'organic',
   reason text check (reason is null or reason in ('price','comparing','no_driver','difficult','later','other')),
   price_band text check (price_band is null or price_band in ('under_500','500_1500','1500_3000','3000_5000','over_5000')),
@@ -37,7 +38,7 @@ revoke all on app_private.marketplace_impulsa_communication_events from public,a
 -- The authenticated driver can only record his/her own actions. A share
 -- attempt means opening the share sheet, not confirmed delivery to a channel.
 create or replace function public.record_my_marketplace_impulsa_share_action_v1(
-  target_action text, target_channel text default 'unknown'
+  target_action text, target_channel text default 'unknown', target_campaign text default null
 ) returns boolean
 language plpgsql security definer set search_path to ''
 as $$
@@ -48,6 +49,7 @@ begin
   if actor is null then raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501'; end if;
   if target_action not in ('share_attempt','link_copied','message_copied','card_downloaded')
     or target_channel not in ('unknown','direct','whatsapp_private','whatsapp_groups','whatsapp_status','facebook','instagram','qr','other')
+    or (target_campaign is not null and target_campaign !~ '^[a-z0-9_-]{1,32}$')
   then raise exception 'INVALID_ANALYTICS_EVENT' using errcode='22023'; end if;
   select p.project_id into pid
   from app_private.marketplace_driver_promo_profiles p
@@ -64,13 +66,13 @@ begin
     return false;
   end if;
   insert into app_private.marketplace_impulsa_communication_events
-    (project_id,driver_user_id,event_type,channel,scope_code)
-  values(pid,actor,target_action,target_channel,'driver_action');
+    (project_id,driver_user_id,event_type,channel,campaign,scope_code)
+  values(pid,actor,target_action,target_channel,target_campaign,'driver_action');
   return true;
 end $$;
-revoke all on function public.record_my_marketplace_impulsa_share_action_v1(text,text)
+revoke all on function public.record_my_marketplace_impulsa_share_action_v1(text,text,text)
   from public,anon,authenticated,service_role;
-grant execute on function public.record_my_marketplace_impulsa_share_action_v1(text,text) to authenticated;
+grant execute on function public.record_my_marketplace_impulsa_share_action_v1(text,text,text) to authenticated;
 
 -- Only the server-side Edge Function, using service_role after dedicated
 -- rate limits, can record public landing/booking signals. Never trust client
@@ -80,6 +82,7 @@ create or replace function public.record_public_marketplace_impulsa_event_v1(
  target_session_id uuid,
  target_promo_code text default null,
  target_channel text default 'unknown',
+ target_campaign text default null,
  target_reason text default null,
  target_price_cup numeric default null
 ) returns boolean
@@ -95,6 +98,7 @@ begin
        'quote_ready','request_started','request_created','survey_answer')
      or target_session_id is null
      or target_channel not in ('unknown','direct','whatsapp_private','whatsapp_groups','whatsapp_status','facebook','instagram','qr','other')
+     or (target_campaign is not null and target_campaign !~ '^[a-z0-9_-]{1,32}$')
      or (target_reason is not null and target_reason not in ('price','comparing','no_driver','difficult','later','other'))
      or (target_event='survey_answer' and target_reason is null)
      or (target_reason is not null and target_event<>'survey_answer')
@@ -124,14 +128,14 @@ begin
       else 'over_5000' end;
   end if;
   insert into app_private.marketplace_impulsa_communication_events
-    (project_id,driver_user_id,event_type,channel,session_id,scope_code,reason,price_band)
-  values(pid,promoter,target_event,target_channel,target_session_id,scope,target_reason,bucket)
+    (project_id,driver_user_id,event_type,channel,campaign,session_id,scope_code,reason,price_band)
+  values(pid,promoter,target_event,target_channel,target_campaign,target_session_id,scope,target_reason,bucket)
   on conflict do nothing;
   return true;
 end $$;
-revoke all on function public.record_public_marketplace_impulsa_event_v1(text,uuid,text,text,text,numeric)
+revoke all on function public.record_public_marketplace_impulsa_event_v1(text,uuid,text,text,text,text,numeric)
  from public,anon,authenticated,service_role;
-grant execute on function public.record_public_marketplace_impulsa_event_v1(text,uuid,text,text,text,numeric)
+grant execute on function public.record_public_marketplace_impulsa_event_v1(text,uuid,text,text,text,text,numeric)
  to service_role;
 
 -- Dashboard summary: financial data is intentionally not included. "Real
@@ -190,13 +194,13 @@ begin
     order by p.clicks desc,p.shares desc,p.name
   ),
   channels as (
-    select channel,
+    select channel, campaign,
       count(*) filter(where event_type='share_attempt') as shares,
       count(*) filter(where event_type='link_open') as clicks,
       count(distinct session_id) filter(where event_type='link_open') as sessions,
       count(*) filter(where event_type='quote_ready') as quotes,
       count(*) filter(where event_type='request_created') as requests
-    from e group by channel
+    from e group by channel,campaign
   ),
   trend as (
     select (created_at at time zone 'America/Havana')::date as day,
