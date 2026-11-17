@@ -23,7 +23,7 @@ test("map avatars use authorized RPCs, never direct service SELECT on protected 
 test("historical drivers not currently on the map are included in the avatar roster", () => {
   const block = gateway.split('if (operation === "operational_driver_avatars") {')[1]?.split('if (operation === "operational_map_config") {')[0];
   assert.ok(block.includes("[...operationalDrivers, ...historicalDrivers]"));
-  assert.match(block, /\.filter\(\(value\) => \^\[0-9a-f-\]\{36\}\$\/i\.test\(value\)\)/);
+  assert.ok(block.includes('.filter((value) => /^[0-9a-f-]{36}$/i.test(value))'));
   assert.match(block, /for \(let offset = 0; offset < driverIds\.length; offset \+= 24\)/);
 });
 
