@@ -56,6 +56,12 @@ BEGIN
  PERFORM public.record_public_marketplace_impulsa_event_v1('request_started',sid,code,'whatsapp_groups','centro');
  PERFORM public.record_public_marketplace_impulsa_event_v1('survey_answer',sid,code,'whatsapp_groups','centro','price');
  PERFORM public.record_public_marketplace_impulsa_event_v1('request_created',sid,code,'whatsapp_groups','centro');
+ -- Anonymous/direct session remains measurable but never inflates Impulsa.
+ PERFORM public.record_public_marketplace_impulsa_event_v1(
+   'app_open','66666666-6666-4666-8666-666666666666'::uuid,null,'direct');
+ PERFORM public.record_public_marketplace_impulsa_event_v1(
+   'quote_ready','66666666-6666-4666-8666-666666666666'::uuid,null,'direct',null,null,1100);
+
  IF public.record_public_marketplace_impulsa_event_v1('link_open',sid,'invalid','facebook',null) THEN
    RAISE EXCEPTION 'accepted spoofed profile';
  END IF;
@@ -63,6 +69,10 @@ BEGIN
    RAISE EXCEPTION 'accepted unapproved survey data';
  END IF;
  d:=public.admin_get_marketplace_impulsa_communications_v1(pid,30);
+ IF (d->'organic_totals'->>'app_opens')::int<>1 OR
+    (d->'organic_totals'->>'quotes')::int<>1 THEN
+    RAISE EXCEPTION 'organic figures missing or mixed into Impulsa %',d->'organic_totals';
+ END IF;
  IF (d->'totals'->>'shares')::int<>1
    OR (d->'totals'->>'clicks')::int<>1
    OR (d->'totals'->>'sessions')::int<>1
