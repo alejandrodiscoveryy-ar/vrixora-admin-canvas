@@ -165,7 +165,7 @@ begin
     values(pid,actor,'impulsa_application_withdrawn','driver_profile',actor::text,
       jsonb_build_object('source','driver'));
   return jsonb_build_object('status','withdrawn');
-end $;
+end $$;
 revoke all on function public.withdraw_my_marketplace_impulsa_application_v1() from public,anon,authenticated;
 grant execute on function public.withdraw_my_marketplace_impulsa_application_v1() to authenticated;
 
