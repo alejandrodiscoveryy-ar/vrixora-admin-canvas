@@ -424,3 +424,6 @@ verify_jwt = false
 
 [functions.marketplace-impulsa-social]
 verify_jwt = false
+
+[functions.marketplace-impulsa-analytics]
+verify_jwt = false
