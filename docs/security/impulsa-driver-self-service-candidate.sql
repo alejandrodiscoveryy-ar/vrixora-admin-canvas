@@ -151,7 +151,7 @@ grant execute on function public.request_my_marketplace_impulsa_verification_v1(
 -- Withdrawal before administrative approval revokes the pending request.
 -- This never revokes an already active commercial profile.
 create or replace function public.withdraw_my_marketplace_impulsa_application_v1()
-returns jsonb language plpgsql security definer set search_path='' as $
+returns jsonb language plpgsql security definer set search_path='' as $$
 declare actor uuid:=auth.uid(); pid uuid;
 begin
   if actor is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
