@@ -9,6 +9,8 @@ on:
       - "supabase/migrations/20261116222332_marketplace_driver_consistency_readonly.sql"
       - "supabase/verification/marketplace_driver_consistency_fixture.sql"
       - "tests/marketplace_driver_consistency.test.mjs"
+      - "tests/admin_map_driver_avatar_contract.test.mjs"
+      - "supabase/functions/marketplace-map-admin-gateway/index.ts"
       - ".github/workflows/marketplace-driver-consistency.yml"
 
 permissions:
@@ -59,7 +61,7 @@ jobs:
         with:
           bun-version: '1.4.2'
       - name: Testear contrato de ranking
-        run: node --test tests/marketplace_driver_consistency.test.mjs
+        run: node --test tests/marketplace_driver_consistency.test.mjs tests/admin_map_driver_avatar_contract.test.mjs
       - name: Instalar dependencias existentes
         run: bun install --frozen-lockfile
       - name: Compilar sin desplegar
