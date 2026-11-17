@@ -69,8 +69,8 @@ async function getReport(projectId:string,days:PeriodDays):Promise<Report> {
   };
 }
 
-export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}:{
-  projectId:string;canManage:boolean;
+export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,mode="both"}:{
+  projectId:string;canManage:boolean;mode?:"generator"|"analytics"|"both";
 }) {
   const [days,setDays]=useState<PeriodDays>(30);
   const [channel,setChannel]=useState<Channel>("direct");
@@ -82,7 +82,7 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
   const message="Solicita tu transporte con Agencia TukTuk. Consulta las modalidades y el precio antes de confirmar:\n"+link;
   const query=useQuery({
     queryKey:["tuktuk-official-communications",projectId,days],
-    queryFn:()=>getReport(projectId,days),enabled:Boolean(projectId),
+    queryFn:()=>getReport(projectId,days),enabled:Boolean(projectId)&&mode!=="generator",
     staleTime:60_000,refetchInterval:120_000,refetchIntervalInBackground:false,retry:1,
   });
   const d=query.data,t=d?.totals??zero;
@@ -96,7 +96,7 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
         target_project_id:projectId,target_action:kind,target_channel:source,target_campaign:campaign,
       });
       if(error || data!==true) throw Error("TRACKING_UNAVAILABLE");
-      void query.refetch();
+      if(mode!=="generator")void query.refetch();
     } catch(_) {setNotice("Acción realizada, pero no se pudo registrar en las estadísticas.");}
   }
   async function copy(value:string,kind:"link_copied"|"message_copied",source:Channel=channel) {
@@ -142,23 +142,23 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
         <Link2 className="h-5 w-5"/>
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-base font-bold">TukTuk · Enlace oficial</h3>
+        <h3 className="text-base font-bold">{mode==="analytics"?"TukTuk · Resultados":"TukTuk · Enlace oficial"}</h3>
         <p className="text-xs text-muted-foreground">Campaña propia, separada de Impulsa y de los conductores</p>
       </div>
-      <div role="group" aria-label="Periodo de TukTuk" className="flex gap-1">
+      {mode!=="generator"&&<div role="group" aria-label="Periodo de TukTuk" className="flex gap-1">
         {([7,30,90] as const).map(period=><button type="button" key={period} aria-pressed={days===period}
           onClick={()=>setDays(period)}
           className={"rounded-md border px-2 py-1.5 text-xs font-semibold "+(days===period?"border-orange-400/35 bg-orange-500/15":"border-border/60 text-muted-foreground")}>
           {period}d
         </button>)}
-      </div>
-      <button type="button" aria-label="Actualizar estadísticas TukTuk" title="Actualizar"
+      </div>}
+      {mode!=="generator"&&<button type="button" aria-label="Actualizar estadísticas TukTuk" title="Actualizar"
         disabled={query.isFetching} onClick={()=>void query.refetch()}
         className="rounded-md border border-border p-2 disabled:opacity-50">
         <RefreshCw className={"h-4 w-4 "+(query.isFetching?"animate-spin":"")}/>
-      </button>
+      </button>}
     </header>
-    <div className="rounded-lg border border-border/50 bg-muted/10 p-3">
+    {mode!=="analytics"&&<div className="rounded-lg border border-border/50 bg-muted/10 p-3">
       <p className="text-xs font-semibold">Enlace principal de TukTuk Cliente</p>
       <p className="mt-1 break-all text-xs text-muted-foreground">{BASE}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -198,8 +198,8 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
         No modifica el acceso normal a Cliente. Los canales y acciones son etiquetas voluntarias;
         una copia o un intento de compartir no certifican su envío.
       </p>
-    </div>
-    {query.isPending?<p className="p-3 text-xs text-muted-foreground">Cargando el seguimiento oficial…</p>:
+    </div>}
+    {mode!=="generator"&&(query.isPending?<p className="p-3 text-xs text-muted-foreground">Cargando el seguimiento oficial…</p>:
       query.isError?<p role="alert" className="p-3 text-xs text-amber-600">
         No se pudieron leer las estadísticas.
         <button type="button" onClick={()=>void query.refetch()} className="ml-2 underline">Reintentar</button></p>:<>
@@ -286,6 +286,6 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage}
         Las aperturas se deduplican por pestaña y acción. No identificamos grupos de WhatsApp,
         reenvíos ni visitantes individuales. El tráfico general sin etiqueta se contabiliza aparte.
       </p>
-    </>}
+    </>)}
   </section>;
 }
