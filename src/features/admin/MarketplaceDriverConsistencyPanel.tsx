@@ -259,12 +259,10 @@ export default function MarketplaceDriverConsistencyPanel({
           </div>
         )}
       </div>
-      <div className="shrink-0 border-t border-white/10 bg-slate-950/80 px-3 py-2">
-        <p className="text-[10px] leading-snug text-slate-400">
-          <BarChart3 className="mr-1 inline h-3 w-3" aria-hidden="true" />
-          Basado en las entradas y salidas históricas de “Trabajando”.
-          Las horas son estimadas (máx. 12 h por jornada); no equivalen a tiempo GPS verificado ni excluyen carreras en curso. 
-          Una jornada abierta solo suma si el GPS está reciente y el conductor está disponible.
+      <div className="shrink-0 border-t border-white/10 bg-slate-950/80 px-3 py-1.5">
+        <p className="flex items-center gap-1.5 text-[10px] leading-tight text-slate-400">
+          <BarChart3 className="h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>Horas estimadas · no GPS verificado.</span>
         </p>
       </div>
     </section>

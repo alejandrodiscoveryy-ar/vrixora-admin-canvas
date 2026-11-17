@@ -17,12 +17,14 @@ test("mapa incorpora una pestaña Constantes sin reemplazar conductores, servici
 
 test("panel muestra recurrencia y horas por 7 y 30 dias, con avisos honestos", () => {
   for (const marker of ["7 días", "30 días", "Frecuencia", "Horas", "Ficha 360", "Días de inicio",
-    "Jornada estimada", "Jornadas cerradas", "GPS", "máx. 12 h", "no equivalen"]) {
+    "Jornada estimada", "Jornadas cerradas", "Horas estimadas · no GPS verificado."]) {
     // Periodos appear in number interpolation rather than static strings.
     if (marker.endsWith(" días") && marker.startsWith("7")) continue;
     if (marker.endsWith(" días") && marker.startsWith("30")) continue;
     assert.ok(panel.includes(marker), marker);
   }
+  assert.doesNotMatch(panel, /Basado en las entradas y salidas históricas/);
+  assert.doesNotMatch(panel, /Una jornada abierta solo suma/);
   assert.match(panel, /type PeriodDays = 7 \| 30/);
   assert.match(panel, /enabled,/);
   assert.match(panel, /onFocusDriver/);
