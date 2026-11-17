@@ -442,21 +442,37 @@ const driverInitials = (name: string | null) => {
     .join("");
 };
 
-function DriverAvatar({ name, url }: { name: string | null; url: string | null }) {
+function DriverAvatar({
+  name,
+  url,
+  fallbackUrl,
+}: {
+  name: string | null;
+  url: string | null;
+  fallbackUrl: string | null;
+}) {
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(() => new Set());
+  // Prefer an uploaded portrait, then Google, then initials.
+  // Updated signed URLs are retried even if an earlier one expired.
+  const imageUrl = url && !failedUrls.has(url)
+    ? url
+    : fallbackUrl && !failedUrls.has(fallbackUrl)
+      ? fallbackUrl
+      : null;
+
   return (
     <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background shadow-sm">
       <div className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
         {driverInitials(name)}
       </div>
-      {url ? (
+      {imageUrl ? (
         <img
-          src={url}
+          key={imageUrl}
+          src={imageUrl}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
           referrerPolicy="no-referrer"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
+          onError={() => setFailedUrls((previous) => new Set(previous).add(imageUrl))}
         />
       ) : null}
     </div>
@@ -855,8 +871,8 @@ export default function MarketplaceOperationalMap({
     queryKey: ["marketplace-operational-driver-avatars", projectId],
     queryFn: () => getMarketplaceOperationalDriverAvatars(projectId),
     enabled: isVisible,
-    staleTime: 10 * 60_000,
-    refetchInterval: 10 * 60_000,
+    staleTime: 6 * 60_000,
+    refetchInterval: 7 * 60_000,
     refetchIntervalInBackground: false,
     retry: 1,
   });
@@ -2562,7 +2578,11 @@ export default function MarketplaceOperationalMap({
                                     onClick={() => setExpandedDriverId((current) => current === driver.driverUserId ? null : driver.driverUserId)}
                                     className="flex min-h-10 w-full min-w-0 items-center gap-1.5 px-2 py-1 text-left transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
                                   >
-                                    <DriverAvatar name={driver.driverDisplayName} url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null} />
+                                    <DriverAvatar
+                                       name={driver.driverDisplayName}
+                                       url={driverAvatars.data?.[driver.driverUserId]?.avatarUrl ?? null}
+                                       fallbackUrl={driverAvatars.data?.[driver.driverUserId]?.googleAvatarUrl ?? null}
+                                     />
                                     <span className="min-w-0 flex-1">
                                       <span className="flex min-w-0 items-center gap-1">
                                         <span className="min-w-0 truncate text-[12px] font-semibold leading-tight text-foreground">{driver.driverDisplayName || "Conductor"}</span>
@@ -2642,6 +2662,7 @@ export default function MarketplaceOperationalMap({
                       projectId={projectId}
                       enabled={isVisible && panelOpen}
                       drivers={operational.data?.drivers ?? []}
+                      avatars={driverAvatars.data ?? {}}
                       isVerified={(driverUserId) => !driverVerifications.isError && driverVerifications.data?.[driverUserId]?.verified === true}
                       onOpenDriver={onOpenDriver ? (driverUserId) => { setExpanded(false); onOpenDriver(driverUserId); } : undefined}
                       onFocusDriver={(driverUserId) => {

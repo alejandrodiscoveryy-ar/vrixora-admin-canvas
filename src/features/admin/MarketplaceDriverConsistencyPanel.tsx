@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart3, ChevronDown, Clock3, LocateFixed, RefreshCw, Trophy, UserRound } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
-import type { MarketplaceOperationalDriver } from "@/lib/marketplace-map";
+import type { MarketplaceOperationalDriver, MarketplaceOperationalDriverAvatar } from "@/lib/marketplace-map";
 
 type PeriodDays = 7 | 30;
 type RankingMode = "days" | "hours";
@@ -31,6 +31,27 @@ function vehicleLabel(category: string | null) {
 
 function initials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join("").toUpperCase() || "C";
+}
+
+function ConsistencyDriverAvatar({ name, photo }: { name: string; photo: MarketplaceOperationalDriverAvatar | undefined }) {
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(() => new Set());
+  const portrait = photo?.avatarUrl;
+  const google = photo?.googleAvatarUrl;
+  const imageUrl = portrait && !failedUrls.has(portrait)
+    ? portrait
+    : google && !failedUrls.has(google)
+      ? google
+      : null;
+  return (
+    <span aria-hidden="true" className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/25 bg-cyan-500/10 text-[10px] font-bold text-cyan-100">
+      {initials(name)}
+      {imageUrl ? (
+        <img key={imageUrl} src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover"
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrls((previous) => new Set(previous).add(imageUrl))} />
+      ) : null}
+    </span>
+  );
 }
 
 async function getConsistency(projectId: string, days: PeriodDays): Promise<ConsistencyDriver[]> {
@@ -63,6 +84,7 @@ export default function MarketplaceDriverConsistencyPanel({
   projectId,
   enabled,
   drivers,
+  avatars,
   isVerified,
   onOpenDriver,
   onFocusDriver,
@@ -70,6 +92,7 @@ export default function MarketplaceDriverConsistencyPanel({
   projectId: string;
   enabled: boolean;
   drivers: MarketplaceOperationalDriver[];
+  avatars: Record<string, MarketplaceOperationalDriverAvatar>;
   isVerified: (driverUserId: string) => boolean;
   onOpenDriver?: (driverUserId: string) => void;
   onFocusDriver: (driverUserId: string) => void;
@@ -174,7 +197,7 @@ export default function MarketplaceDriverConsistencyPanel({
                     className="flex min-h-12 w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400"
                   >
                     <span className="w-5 shrink-0 text-center text-xs font-bold tabular-nums text-amber-200">{index + 1}</span>
-                    <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/10 text-[10px] font-bold text-cyan-100">{initials(driver.driverName)}</span>
+                    <ConsistencyDriverAvatar name={driver.driverName} photo={avatars[driver.driverUserId]} />
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-1">
                         <strong title={driver.driverName} className="min-w-0 truncate text-xs font-semibold leading-snug text-white">{driver.driverName}</strong>

@@ -65,3 +65,11 @@ test("Constantes presenta lista compacta y despliega datos únicamente al selecc
   }
   assert.doesNotMatch(panel, /\.rpc\("accept_job"|\.rpc\("admin_republish_marketplace_job"/);
 });
+
+test("ranking de conductores constantes usa foto propia y foto de Google de respaldo", () => {
+  assert.match(map, /avatars=\{driverAvatars\.data \?\? \{\}\}/);
+  assert.match(panel, /<ConsistencyDriverAvatar name=\{driver\.driverName\} photo=\{avatars\[driver\.driverUserId\]\}/);
+  assert.match(panel, /photo\?\.avatarUrl/);
+  assert.match(panel, /photo\?\.googleAvatarUrl/);
+  assert.match(panel, /onError=\{\(\) => setFailedUrls/);
+});
