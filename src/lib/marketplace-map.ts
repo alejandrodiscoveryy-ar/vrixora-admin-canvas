@@ -476,6 +476,7 @@ export async function getMarketplaceOperationalMap(
 export interface MarketplaceOperationalDriverAvatar {
   driverUserId: string;
   avatarUrl: string | null;
+  googleAvatarUrl: string | null;
   avatarSource: "driver_photo" | "google" | null;
 }
 
@@ -515,6 +516,7 @@ export async function getMarketplaceOperationalDriverAvatars(
         {
           driverUserId,
           avatarUrl: nullableString(row.avatar_url),
+          googleAvatarUrl: nullableString(row.google_avatar_url),
           avatarSource,
         },
       ];
