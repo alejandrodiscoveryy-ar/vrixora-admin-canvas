@@ -602,7 +602,9 @@ test("Admin submenu accents remain aligned in inner navigation and preserve tab 
   assert.match(care, /onKeyDown=\{onCareTabKeyDown\}/);
   assert.match(care, /canManageContact \?/);
   const commercial = readFileSync(new URL("../src/features/admin/ComercialSection.tsx", import.meta.url), "utf8");
-  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 4);
+  // Four TukTuk primary areas plus the single non-TukTuk CRM fallback.
+  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 5);
+  for (const name of ["Campañas", "Resultados", "Impulsa", "Gestión"]) assert.ok(commercial.includes(name), name);
   for (const view of ["ofertas","impulsa","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
 });
 
