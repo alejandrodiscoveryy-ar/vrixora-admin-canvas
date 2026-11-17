@@ -2662,6 +2662,7 @@ export default function MarketplaceOperationalMap({
                       projectId={projectId}
                       enabled={isVisible && panelOpen}
                       drivers={operational.data?.drivers ?? []}
+                      avatars={driverAvatars.data ?? {}}
                       isVerified={(driverUserId) => !driverVerifications.isError && driverVerifications.data?.[driverUserId]?.verified === true}
                       onOpenDriver={onOpenDriver ? (driverUserId) => { setExpanded(false); onOpenDriver(driverUserId); } : undefined}
                       onFocusDriver={(driverUserId) => {
