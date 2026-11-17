@@ -208,6 +208,16 @@ begin
   ),
   reasons as (select reason,count(*) as total from e
     where event_type='survey_answer' and reason is not null group by reason),
+  price_segments as (
+    select q.price_band,count(*) as quoted_sessions,
+      count(*) filter(where exists(
+        select 1 from e x where x.event_type='request_created'
+         and x.session_id=q.session_id and x.scope_code=q.scope_code
+      )) as sessions_with_request
+    from e q
+    where q.event_type='quote_ready' and q.price_band is not null
+    group by q.price_band
+  ),
   totals as (
     select
       count(*) filter(where event_type='share_attempt') as shares,
@@ -231,7 +241,8 @@ begin
     'drivers',coalesce((select jsonb_agg(to_jsonb(l) order by l.clicks desc,l.shares desc,l.name) from leaders l),'[]'::jsonb),
     'channels',coalesce((select jsonb_agg(to_jsonb(c) order by c.clicks desc,c.shares desc) from channels c),'[]'::jsonb),
     'trend',coalesce((select jsonb_agg(to_jsonb(t) order by t.day) from trend t),'[]'::jsonb),
-    'reasons',coalesce((select jsonb_agg(to_jsonb(r) order by r.total desc) from reasons r),'[]'::jsonb)
+    'reasons',coalesce((select jsonb_agg(to_jsonb(r) order by r.total desc) from reasons r),'[]'::jsonb),
+    'price_segments',coalesce((select jsonb_agg(to_jsonb(s) order by s.price_band) from price_segments s),'[]'::jsonb)
   ) into result;
   return result;
 end $$;
