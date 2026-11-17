@@ -41,9 +41,6 @@ begin
   if x.id<>draft_id or x.status<>'draft' or x.benefit_value<>10 or x.max_uses<>50 then
     raise exception 'Fixture: draft not persisted %',to_jsonb(x);
   end if;
-  select count(*) into n from app_private.marketplace_customer_campaign_draft_history
-     where draft_id=draft_id and action='created';
-  -- The column name shadows local variable above; verify by total history.
   select count(*) into n from app_private.marketplace_customer_campaign_draft_history;
   if n<>1 then raise exception 'Fixture: creation audit absent %',n; end if;
   perform public.admin_save_marketplace_customer_campaign_draft_v1(
