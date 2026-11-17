@@ -648,6 +648,9 @@ Deno.serve(async (request: Request) => {
       return reply({ ...payload, data: payload });
     }
     if (operation === "operational_driver_avatars") {
+      // Both RPCs explicitly require marketplace.view for target_project_id.
+      // driver_profiles intentionally denies direct SELECT to service_role:
+      // never bypass its permission model to load profile photos.
       const { data: operationalData, error: operationalError } = await userClient.rpc(
         "admin_get_marketplace_operational_map",
         { target_project_id: projectId },
@@ -658,13 +661,22 @@ Deno.serve(async (request: Request) => {
       const operationalDrivers = Array.isArray(operationalRoot.drivers)
         ? operationalRoot.drivers
         : [];
-      const driverIds = Array.from(
-        new Set(
-          operationalDrivers
-            .map((item) => String(asRecord(item).driver_user_id ?? ""))
-            .filter((value) => /^[0-9a-f-]{36}$/i.test(value)),
-        ),
+
+      // The history tab can include drivers not currently present on the
+      // operational map. Include their authorised IDs so they get photos too.
+      const { data: consistencyData, error: consistencyError } = await userClient.rpc(
+        "admin_get_marketplace_driver_consistency",
+        { target_project_id: projectId, target_days: 30 },
       );
+      const historyRoot = asRecord(consistencyData);
+      const historicalDrivers = !consistencyError && Array.isArray(historyRoot.items)
+        ? historyRoot.items
+        : [];
+      const driverIds = Array.from(new Set(
+        [...operationalDrivers, ...historicalDrivers]
+          .map((item) => String(asRecord(item).driver_user_id ?? ""))
+          .filter((value) => /^[0-9a-f-]{36}$/i.test(value)),
+      ));
 
       if (!driverIds.length) {
         const payload = {
@@ -674,69 +686,77 @@ Deno.serve(async (request: Request) => {
         return reply({ ...payload, data: payload });
       }
 
-      // Authorization was checked by the operational-map RPC above.
-      // Only retrieve the project drivers returned by that authorized RPC.
-      const { data: driverProfiles, error: driverProfilesError } = await serviceClient
-        .from("driver_profiles")
-        .select("user_id,photo_asset_id")
-        .eq("project_id", projectId)
-        .in("user_id", driverIds);
-      if (driverProfilesError) throw driverProfilesError;
-
-      const { data: accountProfiles, error: accountProfilesError } = await serviceClient
-        .from("profiles")
-        .select("id,avatar_url")
-        .in("id", driverIds);
-      if (accountProfilesError) throw accountProfilesError;
+      // Use the existing permission-checked Driver 360 RPC instead of a
+      // direct service-role query on a protected table.
+      const driverDetails: Array<{
+        driverUserId: string;
+        account: Record<string, unknown>;
+        driver: Record<string, unknown>;
+      }> = [];
+      for (let offset = 0; offset < driverIds.length; offset += 24) {
+        const batch = await Promise.all(
+          driverIds.slice(offset, offset + 24).map(async (driverUserId) => {
+            const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
+              target_project_id: projectId,
+              target_driver_user_id: driverUserId,
+            });
+            // A deleted historical driver must not hide every other photo.
+            if (error?.code === "P0002") return null;
+            if (error) throw error;
+            const root = asRecord(data);
+            return {
+              driverUserId,
+              account: asRecord(root.account),
+              driver: asRecord(root.driver),
+            };
+          }),
+        );
+        for (const item of batch) if (item) driverDetails.push(item);
+      }
 
       const photoAssetIds = Array.from(
         new Set(
-          (driverProfiles ?? [])
-            .map((item) => String(item.photo_asset_id ?? ""))
+          driverDetails
+            .map((item) => String(item.driver.photo_asset_id ?? ""))
             .filter((value) => /^[0-9a-f-]{36}$/i.test(value)),
         ),
       );
 
-      let mediaAssets: any[] = [];
+      let mediaAssets: Array<{ id: string; storage_bucket: string; storage_path: string }> = [];
       if (photoAssetIds.length) {
         const { data, error } = await serviceClient
           .from("media_assets")
-          .select("id,storage_bucket,storage_path,status")
+          .select("id,storage_bucket,storage_path")
           .eq("project_id", projectId)
           .eq("status", "available")
+          .eq("storage_bucket", "marketplace-media")
           .in("id", photoAssetIds);
         if (error) throw error;
         mediaAssets = data ?? [];
       }
 
-      const detailByUserId = new Map((driverProfiles ?? []).map((item) => [String(item.user_id), item]));
-      const accountByUserId = new Map((accountProfiles ?? []).map((item) => [String(item.id), item]));
-      const assetById = new Map(mediaAssets.map((row: any) => [String(row.id), row]));
+      const detailByUserId = new Map(driverDetails.map((item) => [item.driverUserId, item]));
+      const assetById = new Map(mediaAssets.map((row) => [String(row.id), row]));
 
       const drivers = await Promise.all(
         driverIds.map(async (driverUserId) => {
           const detail = detailByUserId.get(driverUserId);
-          const photoAssetId = String(detail?.photo_asset_id ?? "");
-          const asset = assetById.get(photoAssetId) as any;
+          const photoAssetId = String(detail?.driver.photo_asset_id ?? "");
+          const asset = assetById.get(photoAssetId);
 
           let uploadedPhotoUrl: string | null = null;
-          if (
-            asset?.storage_bucket === "marketplace-media" &&
-            typeof asset?.storage_path === "string" &&
-            asset.storage_path
-          ) {
+          if (asset?.storage_bucket === "marketplace-media" && asset.storage_path) {
             const { data: signed, error: signedError } = await serviceClient.storage
-              .from(asset.storage_bucket)
+              .from("marketplace-media")
               .createSignedUrl(asset.storage_path, 900);
             if (!signedError && signed?.signedUrl) {
               uploadedPhotoUrl = signed.signedUrl;
             }
           }
 
-          const account = accountByUserId.get(driverUserId);
           const googleAvatar =
-            typeof account?.avatar_url === "string" && account.avatar_url.trim()
-              ? account.avatar_url.trim()
+            typeof detail?.account.avatar_url === "string" && detail.account.avatar_url.trim()
+              ? detail.account.avatar_url.trim()
               : null;
 
           return {
