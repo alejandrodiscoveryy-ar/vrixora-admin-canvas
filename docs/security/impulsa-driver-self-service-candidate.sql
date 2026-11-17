@@ -6,7 +6,7 @@ begin;
 create table if not exists app_private.marketplace_impulsa_applications (
   project_id uuid not null,
   driver_user_id uuid not null,
-  status text not null default 'pending' check(status in ('pending','rejected','approved')),
+  status text not null default 'pending' check(status in ('pending','rejected','approved','withdrawn')),
   consent_version text not null,
   consent_accepted_at timestamptz not null,
   consent_public_profile boolean not null check(consent_public_profile),
@@ -110,7 +110,12 @@ begin
   end if;
   select * into existing from app_private.marketplace_impulsa_applications
     where project_id=pid and driver_user_id=actor for update;
-  if found and existing.status='pending' then
+  if found and existing.status='pending'
+    and existing.identity_front_asset_id is not distinct from d.identity_front_asset_id
+    and existing.identity_back_asset_id is not distinct from d.identity_back_asset_id
+    and existing.identity_document_type is not distinct from d.identity_document_type
+    and existing.submitted_photo_asset_id is not distinct from d.photo_asset_id
+    and existing.submitted_display_name is not distinct from public_name then
     return jsonb_build_object('status','pending');
   end if;
   -- Consent is for the CURRENT public name/photo only. Changes require
@@ -141,6 +146,27 @@ begin
 end $$;
 revoke all on function public.request_my_marketplace_impulsa_verification_v1(boolean,boolean,boolean) from public,anon,authenticated;
 grant execute on function public.request_my_marketplace_impulsa_verification_v1(boolean,boolean,boolean) to authenticated;
+
+-- Withdrawal before administrative approval revokes the pending request.
+-- This never revokes an already active commercial profile.
+create or replace function public.withdraw_my_marketplace_impulsa_application_v1()
+returns jsonb language plpgsql security definer set search_path='' as $
+declare actor uuid:=auth.uid(); pid uuid;
+begin
+  if actor is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
+  select id into pid from public.projects where slug='tuktuk-control';
+  update app_private.marketplace_impulsa_applications
+    set status='withdrawn',reviewed_at=null,reviewed_by=null,
+      review_reason=null
+    where project_id=pid and driver_user_id=actor and status='pending';
+  if not found then raise exception 'NO_PENDING_APPLICATION' using errcode='22023'; end if;
+  insert into public.audit_events(project_id,actor_id,action,entity_type,entity_id,metadata)
+    values(pid,actor,'impulsa_application_withdrawn','driver_profile',actor::text,
+      jsonb_build_object('source','driver'));
+  return jsonb_build_object('status','withdrawn');
+end $;
+revoke all on function public.withdraw_my_marketplace_impulsa_application_v1() from public,anon,authenticated;
+grant execute on function public.withdraw_my_marketplace_impulsa_application_v1() to authenticated;
 
 create or replace function public.admin_get_marketplace_impulsa_application_v1(
   target_project_id uuid,target_driver_user_id uuid
@@ -192,10 +218,11 @@ begin
   select * into d from public.driver_profiles
     where project_id=target_project_id and user_id=target_driver_user_id for update;
   select btrim(display_name) into current_name from public.profiles where id=target_driver_user_id;
-  if not found or d.status<>'active' or d.suspended_at is not null
+  if d.user_id is null or d.status<>'active' or d.suspended_at is not null
     or d.activated_at is null or d.identity_front_asset_id is distinct from a.identity_front_asset_id
     or d.identity_back_asset_id is distinct from a.identity_back_asset_id
     or d.photo_asset_id is distinct from a.submitted_photo_asset_id
+    or (a.identity_document_type is not null and d.identity_document_type is distinct from a.identity_document_type)
     or current_name is distinct from a.submitted_display_name
     or a.consent_version<>'impulsa-self-service-v1'
     or a.consent_public_profile is distinct from true
