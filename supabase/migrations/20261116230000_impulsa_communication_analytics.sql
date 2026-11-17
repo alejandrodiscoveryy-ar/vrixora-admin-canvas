@@ -152,10 +152,21 @@ begin
     raise exception 'INVALID_ANALYTICS_PERIOD' using errcode='22023';
   end if;
   with
-  e as (
+  all_events as (
     select * from app_private.marketplace_impulsa_communication_events
     where project_id=target_project_id
       and created_at >= now()-make_interval(days=>target_days)
+  ),
+  -- Do not conflate organic clients with visitors of Impulsa links.
+  e as (
+    select * from all_events where driver_user_id is not null
+  ),
+  organic_totals as (
+    select
+      count(*) filter(where event_type='app_open') as app_opens,
+      count(*) filter(where event_type='quote_ready') as quotes,
+      count(*) filter(where event_type='request_created') as requests_created
+    from all_events where driver_user_id is null
   ),
   live_profiles as (
     select p.driver_user_id, p.public_name, p.revoked_at is null as active
@@ -242,6 +253,7 @@ begin
     'source','Impulsa Analytics v1',
     'measured_since',(select min(created_at) from app_private.marketplace_impulsa_communication_events where project_id=target_project_id),
     'totals',(select to_jsonb(t) from totals t),
+    'organic_totals',(select to_jsonb(o) from organic_totals o),
     'drivers',coalesce((select jsonb_agg(to_jsonb(l) order by l.clicks desc,l.shares desc,l.name) from leaders l),'[]'::jsonb),
     'channels',coalesce((select jsonb_agg(to_jsonb(c) order by c.clicks desc,c.shares desc) from channels c),'[]'::jsonb),
     'trend',coalesce((select jsonb_agg(to_jsonb(t) order by t.day) from trend t),'[]'::jsonb),
