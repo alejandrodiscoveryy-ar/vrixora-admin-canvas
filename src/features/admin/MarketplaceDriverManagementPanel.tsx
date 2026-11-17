@@ -139,7 +139,7 @@ export default function MarketplaceDriverManagementPanel({
       );
       if (error) throw error;
       return payload as {
-        status: "not_requested" | "pending" | "approved" | "rejected";
+        status: "not_requested" | "pending" | "approved" | "rejected" | "withdrawn";
         submitted_at: string | null;
         consent_version: string | null;
         document_type: string | null;
