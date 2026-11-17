@@ -58,6 +58,7 @@ begin
     where project_id=pid and driver_user_id=actor;
   return jsonb_build_object(
     'status',case when is_active and is_verified then 'active'
+      when a.status='approved' then 'not_requested'
       when a.status is not null then a.status else 'not_requested' end,
     'documents_ready',documents_ready,'verified',is_verified,
     'promo_active',is_active and is_verified,
