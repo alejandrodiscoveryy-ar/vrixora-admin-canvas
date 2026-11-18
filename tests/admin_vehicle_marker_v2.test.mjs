@@ -57,7 +57,8 @@ test("Modalidades usan badges de color aprobados sin modificar el estado del map
   }
   assert.match(src, /backgroundColor: `\$\{vehicleModeColor\(code\)\}38`/);
   assert.match(src, /boxShadow: `inset 0 0 0 1px \$\{vehicleModeColor\(code\)\}66`/);
-  assert.match(src, /<VehicleModeIcon code=\{driver\.vehicleCategoryCode\} className="h-6 w-6"/);
+  assert.match(src, /<OperationalPinLegend kind="driver" vehicleCategoryCode=\{driver\.vehicleCategoryCode\}/);
+  assert.match(src, /driverState=\{pinState\} stale=\{pinState === "stale"\}/);
   assert.match(src, /className="h-3\/4 w-3\/4"/);
   assert.match(src, /color="#ffffff">\$\{vehicleModeGlyph\(vehicleCategoryCode\)\}/);
   assert.match(src, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
