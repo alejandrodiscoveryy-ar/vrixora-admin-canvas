@@ -49,6 +49,6 @@ test("Historical GPS of resting drivers is gray, working drivers stay orange, an
   assert.match(map, /"0\.76"/);
   assert.match(map, /driverPinState\(driver\) === "historic" \|\| driverPinState\(driver\) === "unavailable" \? "2"/);
   assert.match(map, /setExpandedDriverId\(driver\.driverUserId\)/);
-  assert.match(map, /GPS antiguos \(&gt;24 h\)/);
+  assert.match(map, /function hasHistoricalDriverCoordinate/);
   assert.match(map, /Posición aproximada de cobertura/);
 });
