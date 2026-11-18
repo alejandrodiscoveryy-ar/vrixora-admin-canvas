@@ -518,10 +518,23 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 Cambios sin guardar
               </Badge>
             ) : null}
-            {canSave ? (
-              <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || !isDirty}>
+            {visibleSection === "application" ? (
+              <Select value={activeSection} onValueChange={(value) => setActiveSection(value as SectionKey)}>
+                <SelectTrigger aria-label="Cambiar sección de ajustes"
+                  className="h-10 min-w-[170px] max-w-[230px] rounded-xl border-primary/30 bg-surface-2 text-xs font-medium text-text-primary">
+                  <SelectValue placeholder="Cambiar sección" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sections.map((section) => (
+                    <SelectItem key={section.key} value={section.key}>{section.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {canSave && isDirty ? (
+              <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
                 {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Guardar cambios
+                Guardar otros ajustes
               </Button>
             ) : null}
           </div>
@@ -553,16 +566,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </section>
           ) : currentSection ? (
             <div className="space-y-3">
-              {visibleSection === "application" ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/[0.08] via-surface-1 to-surface-1 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-primary">05 / Publicación y experiencia</p>
-                    <h2 className="text-lg font-semibold tracking-tight text-text-primary">Aplicación y versiones</h2>
-                    <p className="text-xs text-text-secondary">Versión activa, conductores y próxima publicación, todo en un lugar.</p>
-                  </div>
-                  <span className="rounded-lg border border-primary/25 bg-primary/[0.08] px-2.5 py-1.5 text-xs font-medium text-primary">Android · TukTuk</span>
-                </div>
-              ) : (
+              {visibleSection !== "application" ? (
                 <PremiumSettingsSnapshot
                   number={currentSection.number}
                   eyebrow={currentSection.eyebrow}
@@ -571,7 +575,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   icon={CurrentSectionIcon}
                   metrics={premiumMetrics}
                 />
-              )}
+              ) : null}
+              {visibleSection !== "application" ? (
               <nav aria-label="Cambiar módulo de configuración" className="flex gap-2 overflow-x-auto pb-1">
                 {sections.map((section) => {
                   const Icon = section.icon;
@@ -588,6 +593,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   );
                 })}
               </nav>
+              ) : null}
             </div>
           ) : null}
         </>

@@ -100,7 +100,7 @@ export default function AdministrationWorkspace({
         </nav>
 
         <div className="min-w-0 space-y-3">
-          {selectedMeta ? (
+          {selectedMeta && activeSection !== "configuracion" ? (
             <header data-nav-tone={adminSubnavTone("administracion", activeSection)} className="relative isolate overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-3 text-slate-50 shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_90%_10%,rgba(34,211,238,0.10),transparent_55%)]" />
               <SelectedIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-8 z-0 h-32 w-32 rotate-[-15deg] admin-nav-watermark opacity-[0.07] sm:right-4" />
