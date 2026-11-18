@@ -1,14 +1,14 @@
 -- TukTuk dispatch continuity. A grey GPS pin is visual information only.
 -- In the enabled radius/expansion policy, an on-duty driver with no FIX <=5m
--- was previously unconditionally rejected even when the operator enabled
--- outside-max-radius expansion. This prevents ALL subsequent work offers.
---
--- Retain fresh-GPS nearby ranking (1, 2, 6 km) unchanged. For a driver with
--- no fresh GPS, use only the FINAL out-of-radius wave after all configured
--- stages have elapsed, and ONLY when expansion_enabled and
--- allow_outside_max_radius are true. distance_km stays NULL so no false
--- proximity is reported. Existing eligibility, financial, modality,
--- permissions, notification dedupe, and assignment gates are untouched.
+-- was previously unconditionally rejected from ALL job offer waves.
+-- With an older last-known position INSIDE a radius, allow the candidate
+-- to receive a job at that normal radius stage. GPS age does not block offers.
+-- This last position is not current location: reported distance_km remains
+-- NULL to avoid inventing a real-time distance. Dispatch only uses it as an
+-- approximate inclusion signal. If no position exists, the already-enabled
+-- out-of-radius final wave is a fallback after all radius stages.
+-- Existing working state, finance, modality, permissions, notification
+-- dedupe, eligibility, job acceptance and assignments are unchanged.
 -- Does not change GPS validity, driver's working state, or price.
 CREATE OR REPLACE FUNCTION app_private.marketplace_promo_base_candidate_state(target_project_id uuid, target_driver_user_id uuid, target_vehicle_id text, target_job_id uuid)
  RETURNS TABLE(policy_enabled boolean, allowed boolean, distance_km numeric, radius_stage integer, radius_limit_km numeric, rating_average numeric, rating_count bigint, rating_preferred boolean, eligible_from timestamp with time zone, rating_score numeric, tie_breaker text)
@@ -31,6 +31,7 @@ declare
 
   v_driver_lat numeric;
   v_driver_lon numeric;
+  v_driver_gps_fresh boolean := false;
   v_distance_km numeric;
 
   v_radii numeric[] := array[]::numeric[];
@@ -191,27 +192,49 @@ begin
       return;
     end if;
 
-    select
-      l.latitude,
-      l.longitude
-    into
-      v_driver_lat,
-      v_driver_lon
-    from public.marketplace_driver_locations l
-    where l.project_id = target_project_id
-      and l.driver_user_id = target_driver_user_id
-      and l.vehicle_id = target_vehicle_id
-      and l.captured_at >= now() - interval '300 seconds'
-    order by l.captured_at desc
+    -- Use the NEWEST position available to dispatch. Exact accepted GPS is
+    -- preferred; if the driver has since gone off-duty, use the last retained
+    -- precise fix or coarse coverage. Do not assume a stale fix is live.
+    -- All sources are scoped to the exact driver/vehicle and project.
+    select last_known.latitude,last_known.longitude,last_known.is_fresh
+      into v_driver_lat,v_driver_lon,v_driver_gps_fresh
+    from (
+      select l.latitude,l.longitude,l.captured_at,
+             (l.captured_at >= now() - interval '300 seconds') as is_fresh,
+             0 as source_priority
+      from public.marketplace_driver_locations l
+      where l.project_id = target_project_id
+        and l.driver_user_id = target_driver_user_id
+        and l.vehicle_id = target_vehicle_id
+
+      union all
+
+      select h.latitude,h.longitude,h.captured_at,
+             false as is_fresh,1 as source_priority
+      from app_private.marketplace_driver_last_confirmed_gps_v1 h
+      where h.project_id = target_project_id
+        and h.driver_user_id = target_driver_user_id
+        and h.vehicle_id = target_vehicle_id
+
+      union all
+
+      select p.coverage_latitude,p.coverage_longitude,
+             p.coverage_captured_at,false as is_fresh,2 as source_priority
+      from app_private.marketplace_driver_presence_v2 p
+      where p.project_id = target_project_id
+        and p.driver_user_id = target_driver_user_id
+        and p.vehicle_id = target_vehicle_id
+    ) last_known
+    where last_known.latitude between -90 and 90
+      and last_known.longitude between -180 and 180
+      and last_known.captured_at <= now() + interval '5 minutes'
+    order by last_known.captured_at desc,last_known.source_priority
     limit 1;
 
     if not found then
-      -- A genuinely offline (but still Trabajando) driver has no reliable
-      -- current distance. Keep NULL; never reuse historic GPS as if live.
-      -- The already-enabled outside-radius final wave may offer this driver
-      -- work later, rather than making all offers impossible.
       v_driver_lat := null;
       v_driver_lon := null;
+      v_driver_gps_fresh := false;
     end if;
 
     if v_driver_lat is not null and v_driver_lon is not null then
@@ -258,9 +281,8 @@ begin
     end if;
 
     if v_distance_km is null then
-      -- Only use this fallback if the dispatch operator explicitly enabled
-      -- both expansion and offers outside the final radius. It starts after
-      -- ALL configured stages (3 * 30 sec in TukTuk production).
+      -- No location at all. Do not guess a position. Use the final wave
+      -- only when expansion and outside-radius offers are enabled.
       if coalesce(v_settings.expansion_enabled, true)
          and coalesce(v_settings.allow_outside_max_radius, false) then
         v_stage := v_radius_count + 1;
@@ -431,7 +453,9 @@ begin
   select
     true,
     now() >= v_eligible_from,
-    v_distance_km,
+    -- A stale fix can establish the approximate search area, not actual
+    -- realtime distance. Never include its distance as a GPS measurement.
+    case when v_driver_gps_fresh then v_distance_km else null::numeric end,
     v_stage,
     v_radius_limit,
     v_rating_average,
