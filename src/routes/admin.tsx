@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
-import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, adminSubnavTone, adminGroupDefault, type AdminProjectNavItem } from "@/lib/admin-navigation";
+import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, adminSubnavTone, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
@@ -98,20 +98,12 @@ function AdminChrome() {
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const configurationPageActive = Boolean(
-    currentProjectId && ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection)
-  );
-
   useEffect(() => {
     try {
       const savedCollapsed = localStorage.getItem(DESKTOP_SIDEBAR_PREFERENCE) === "true";
       setSidebarCollapsed(savedCollapsed);
     } catch { /* storage may be unavailable */ }
   }, []);
-
-  useEffect(() => {
-    if (configurationPageActive) setSidebarCollapsed(false);
-  }, [configurationPageActive]);
 
   function toggleDesktopSidebar() {
     const next = !sidebarCollapsed;
@@ -153,7 +145,6 @@ function AdminChrome() {
           currentSection={currentSection}
           compact={compactWorkspace}
           collapsed={sidebarCollapsed}
-          onOpenConfiguration={() => setSidebarCollapsed(false)}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
@@ -204,7 +195,6 @@ function ProjectNavItem({
   path,
   closeDrawer,
   collapsed = false,
-  onOpenConfiguration,
 }: {
   project: {
     id: string;
@@ -219,7 +209,6 @@ function ProjectNavItem({
   path: string;
   closeDrawer?: () => void;
   collapsed?: boolean;
-  onOpenConfiguration?: () => void;
 }) {
   const isActiveProject = project.id === currentProjectId;
   const navigate = useNavigate();
@@ -233,12 +222,8 @@ function ProjectNavItem({
   }, [trabajosRouteActive]);
 
   const configurationGroupId = useId();
-  const configurationRouteActive = isActiveProject && ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection);
-  const [configurationExpanded, setConfigurationExpanded] = useState(configurationRouteActive);
-
-  useEffect(() => {
-    if (configurationRouteActive) setConfigurationExpanded(true);
-  }, [configurationRouteActive, currentSection]);
+  // El submenú solo se despliega al pulsar Configuración; no ensanchar la barra.
+  const [configurationExpanded, setConfigurationExpanded] = useState(false);
 
   useEffect(() => {
     if (isActiveProject) {
@@ -465,41 +450,29 @@ function ProjectNavItem({
                 );
               });
 
-              const defaultChild = adminGroupDefault(tab);
-              if (!defaultChild) return null;
-              const groupOpen = !collapsed && configurationExpanded;
+              const groupOpen = configurationExpanded;
 
               return (
                 <div key={tab.slug} className="admin-nav-config-group space-y-1">
                   <div data-nav-tone={adminNavTone(tab.slug)}
                     data-nav-active={groupActive ? "true" : undefined}
                     className="admin-nav-item admin-nav-primary admin-nav-config-parent">
-                    <Link
-                      to="/admin/proyectos/$id/$section"
-                      params={{ id: project.id, section: defaultChild.slug }}
+                    <button
+                      type="button"
                       title={tab.label}
-                      aria-label={tab.label}
-                      onClick={() => {
-                        setConfigurationExpanded(true);
-                        onOpenConfiguration?.();
-                        closeDrawer?.();
-                      }}
+                      aria-label={groupOpen ? "Contraer Configuración" : "Desplegar Configuración"}
+                      aria-expanded={groupOpen}
+                      aria-controls={configurationGroupId}
+                      onClick={() => setConfigurationExpanded((value) => !value)}
                       className="admin-nav-config-link"
                     >
                       <AdminNavIcon icon={Icon} />
                       <span data-nav-label className="min-w-0 flex-1 break-words">{tab.label}</span>
-                    </Link>
-                    {!collapsed && (
-                      <button type="button" data-nav-chevron
-                        className="admin-nav-config-toggle"
-                        aria-label={groupOpen ? "Contraer Configuración" : "Desplegar Configuración"}
-                        aria-expanded={groupOpen}
-                        aria-controls={configurationGroupId}
-                        onClick={() => setConfigurationExpanded((value) => !value)}
-                      >
-                        <ChevronRight aria-hidden="true" className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${groupOpen ? "rotate-90" : ""}`} />
-                      </button>
-                    )}
+                      {!collapsed && (
+                        <ChevronRight data-nav-chevron aria-hidden="true"
+                          className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${groupOpen ? "rotate-90" : ""}`} />
+                      )}
+                    </button>
                   </div>
 
                   <div id={configurationGroupId} hidden={!groupOpen} data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5">
@@ -572,7 +545,6 @@ function DesktopSidebar({
   currentSection,
   compact,
   collapsed,
-  onOpenConfiguration,
 }: {
   projects: Awaited<ReturnType<typeof useUserProjects>>["data"] | undefined;
   projectsLoading: boolean;
@@ -581,7 +553,6 @@ function DesktopSidebar({
   currentSection: string;
   compact: boolean;
   collapsed: boolean;
-  onOpenConfiguration: () => void;
 }) {
   return (
         <aside
@@ -646,7 +617,6 @@ function DesktopSidebar({
               currentSection={currentSection}
               path={path}
               collapsed={collapsed}
-              onOpenConfiguration={onOpenConfiguration}
             />
           ))
         )}
