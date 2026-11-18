@@ -637,6 +637,7 @@ Deno.serve(async (request: Request) => {
         return {
           driver_user_id: entry.driverUserId,
           avatar_url: uploaded ?? google,
+          google_avatar_url: google,
           avatar_source: uploaded ? "driver_photo" : google ? "google" : null,
           vehicles: entry.vehicles.map((vehicle) => ({
             vehicle_id: String(vehicle.id ?? ""),

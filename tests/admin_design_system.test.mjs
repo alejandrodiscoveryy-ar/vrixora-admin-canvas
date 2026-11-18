@@ -390,7 +390,9 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(rows, /px-3 py-2 transition-colors/);
   assert.match(rows, /premiumSurface, "shadow-none"/);
   assert.doesNotMatch(rows, /premiumColumnHeaderSurface|bg-gradient|blur-3xl/);
-  assert.match(rows, /h-9 w-9 shrink-0/);
+  assert.match(rows, /<DriverDirectoryPortrait/);
+  assert.match(panel, /function DriverDirectoryPortrait/);
+  assert.match(panel, /h-9 w-9 shrink-0/);
   assert.match(rows, /<StatusBadge status=\{item.status\} compact \/>/);
   assert.match(rows, /item\.isAvailable/);
   assert.match(rows, /dateOfRegistration\(item.createdAt\)/);
