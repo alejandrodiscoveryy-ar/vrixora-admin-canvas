@@ -19,7 +19,7 @@ test("La hora de Cuba se mantiene UTC-4 en todo el invierno 2026-2027", () => {
   assert.doesNotMatch(map, /timeZone: "America\/Havana"/);
 });
 
-test("Mapa mantiene colores por GPS sin añadir menús: azul, verde, naranja transitorio, gris sin GPS", () => {
+test("Mapa usa azul/verde/naranja trabajando y reserva el gris para Descansando", () => {
   assert.match(map, /type DriverPinState = "available" \| "busy" \| "stale" \| "offline" \| "historic" \| "unavailable"/);
   assert.match(map, /if \(driver.activeJobId\) return "busy"/);
   assert.match(map, /if \(!driver.locationFresh\) \{/);
@@ -27,8 +27,9 @@ test("Mapa mantiene colores por GPS sin añadir menús: azul, verde, naranja tra
   assert.match(map, /driverState === "available"/);
   assert.match(map, /driverState === "busy"/);
   assert.match(map, /stale \|\| driverState === "stale"/);
-  assert.match(map, /driverState === "historic" \|\| driverState === "offline"/);
-  assert.match(map, /GPS atrasado 5–15 min \(ámbar\); más de 15 min sin GPS \(gris\)/);
+  assert.match(map, /driverState === "historic" \|\| driverState === "unavailable"/);
+  assert.match(map, /stale \|\| driverState === "stale" \|\| driverState === "offline"/);
+  assert.match(map, /Naranja: Trabajando sin GPS reciente · Gris: Descansando/);
   assert.match(map, /function driverCoordinate\(driver: MarketplaceOperationalDriver\)/);
   assert.match(map, /const age = mapPositionAgeMs\(driver.capturedAt\)/);
 });
