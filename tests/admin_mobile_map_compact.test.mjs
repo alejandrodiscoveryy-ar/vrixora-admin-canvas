@@ -64,7 +64,7 @@ test("Operaciones muestra jornadas abiertas con GPS antiguo sin mezclar descansa
   assert.match(source, /if \(!driver\.locationFresh\) \{/);
   assert.match(source, /age == null \|\| age > 15 \* 60_000 \? "offline" : "stale"/);
   assert.match(source, /const coordinate = driverCoordinate\(driver\);\s*if \(!coordinate\) continue;/);
-  assert.match(source, /Se muestran \{staleWorkingDriversWithLocation\} con última posición no confirmada \(ámbar o gris según antigüedad\)/);
+  assert.match(source, /Se muestran \{staleWorkingDriversWithLocation\} últimas posiciones en naranja/);
 });
 
 
