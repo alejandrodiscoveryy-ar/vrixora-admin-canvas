@@ -1511,7 +1511,7 @@ export default function MarketplaceOperationalMap({
           driver.vehicleCategoryCode,
         )} - ${driverPinStateLabel[driverPinState(driver)]} - ${driver.capturedAt ? new Intl.DateTimeFormat("es-CU", {
           timeZone: "America/Havana", dateStyle: "medium", timeStyle: "short",
-        }).format(new Date(driver.capturedAt)) + " (Cuba)" : "Sin fecha GPS"}`;
+        }).format(new Date(driver.capturedAt)) + " (Cuba)" : "Sin fecha GPS"}${!driver.locationFresh && (driver.lastAccuracyM ?? 0) >= 1000 ? " · Posición aproximada de cobertura" : ""}`;
 
         element.style.cursor =
           driver.activeJobId || mapViewMode === "coverage" || showAllFleetInOperations ? "pointer" : "default";
