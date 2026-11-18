@@ -339,7 +339,8 @@ function operationalPinSvg({
         cx="24"
         cy="21"
         r="11.5"
-        fill="${kind === "driver" ? ((driverState === "historic" || driverState === "unavailable") ? "#64748b" : (driverState === "stale" || driverState === "offline") ? "#ea580c" : driverState === "available" ? "#0284c7" : driverState === "busy" ? "#16a34a" : vehicleModeColor(vehicleCategoryCode)) : `url(#${innerId})`}"
+        /* El color de estado vive solo en la gota exterior; la silueta interior es neutra. */
+        fill="${kind === "driver" ? "#17243b" : `url(#${innerId})`}"
         stroke="#ffffff"
         stroke-width="1.4"
         stroke-opacity="0.96"
