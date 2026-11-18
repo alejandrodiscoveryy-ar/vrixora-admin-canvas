@@ -29,22 +29,25 @@ test("The map retains the last accepted location even if old, but never calls hi
   assert.match(map, /driver\.locationFresh \? driver\.longitude : driver\.lastLongitude/);
   assert.match(map, /function hasHistoricalDriverCoordinate/);
   assert.match(map, /MAP_LAST_POSITION_MAX_AGE_MS = 24 \* 60 \* 60 \* 1000/);
-  assert.match(map, /if \(hasHistoricalDriverCoordinate\(driver\)\) return "historic"/);
+  assert.match(map, /return hasHistoricalDriverCoordinate\(driver\) \? "historic" : "unavailable"/);
+  assert.match(map, /if \(driver.activeJobId\) return "busy"/);
   assert.match(map, /GPS histórico/);
   assert.match(map, /No representa la ubicación actual/);
-  assert.match(map, /GPS históricos/);
+  assert.match(map, /GPS antiguos/);
   assert.match(map, /Con última posición/);
   assert.match(map, /driver\.capturedAt \? new Intl\.DateTimeFormat/);
   assert.doesNotMatch(map, /if \(age == null \|\| age > MAP_LAST_POSITION_MAX_AGE_MS/);
 });
 
-test("Historical GPS pins are entirely gray, not orange modality pins, and identify the selected driver", () => {
-  assert.match(map, /driverState === "historic" \|\| driverState === "offline"/);
-  assert.match(map, /\? "#64748b" : vehicleModeColor\(vehicleCategoryCode\)/);
-  assert.match(map, /driverState === "historic" \|\| driverState === "offline"/);
+test("Historical GPS of resting drivers is gray, working drivers stay orange, and tap identifies driver", () => {
+  assert.match(map, /driverState === "historic" \|\| driverState === "unavailable"/);
+  assert.match(map, /stale \|\| driverState === "stale" \|\| driverState === "offline"/);
+  assert.match(map, /\? "#64748b" : \(driverState === "stale" \|\| driverState === "offline"\) \? "#ea580c"/);
+  assert.match(map, /driverState === "historic" \|\| driverState === "unavailable"/);
+  assert.match(map, /stale \|\| driverState === "stale" \|\| driverState === "offline"/);
   assert.match(map, /"0\.76"/);
-  assert.match(map, /driverPinState\(driver\) === "historic" \|\| driverPinState\(driver\) === "offline" \? "2"/);
+  assert.match(map, /driverPinState\(driver\) === "historic" \|\| driverPinState\(driver\) === "unavailable" \? "2"/);
   assert.match(map, /setExpandedDriverId\(driver\.driverUserId\)/);
-  assert.match(map, /GPS históricos \(&gt;24 h\), en gris/);
+  assert.match(map, /GPS antiguos \(&gt;24 h\)/);
   assert.match(map, /Posición aproximada de cobertura/);
 });
