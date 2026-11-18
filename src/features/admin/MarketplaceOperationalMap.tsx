@@ -103,27 +103,29 @@ type OperationalPinKind = "driver" | "customer" | "destination";
 // A clear difference between service, availability and old GPS is crucial in dispatch.
 type DriverPinState = "available" | "busy" | "stale" | "offline" | "historic" | "unavailable";
 function driverPinState(driver: MarketplaceOperationalDriver): DriverPinState {
-  // A driver can be Trabajando while their last accepted GPS is days old.
-  // GPS history is always muted and clearly labeled; never imply live presence.
-  if (hasHistoricalDriverCoordinate(driver)) return "historic";
+  // Business state first: grey always means Descansando. A driver with
+  // Trabajando enabled stays orange without fresh GPS, even after 24 hours.
+  // GPS age is a separate signal, not a reason to call a working driver off.
   if (driver.activeJobId) return "busy";
-  if (!driver.acceptingJobs) return "unavailable";
+  if (!driver.acceptingJobs)
+    return hasHistoricalDriverCoordinate(driver) ? "historic" : "unavailable";
   if (!driver.locationFresh) {
     // GPS only: an Android driver may continue transmitting positions while
     // app heartbeats pause in background. Never use that heartbeat to infer GPS.
     const age = mapPositionAgeMs(driver.capturedAt);
     return age == null || age > 15 * 60_000 ? "offline" : "stale";
   }
-  if (driver.isAvailable && driver.acceptingJobs) return "available";
-  return "unavailable";
+  if (driver.isAvailable) return "available";
+  // Still Trabajando: not eligible for new work, but not Descansando.
+  return "offline";
 }
 const driverPinStateLabel: Record<DriverPinState, string> = {
-  available: "Disponible",
+  available: "Trabajando · GPS reciente",
   busy: "En servicio",
-  stale: "GPS atrasado entre 5 y 15 min",
-  offline: "Sin GPS confirmado hace más de 15 min · No localizable",
-  historic: "GPS histórico (más de 24 horas), ubicación NO actual",
-  unavailable: "No disponible para nuevas carreras",
+  stale: "Trabajando · GPS atrasado (5–15 min)",
+  offline: "Trabajando · GPS sin actualizar (>15 min)",
+  historic: "Descansando · última ubicación histórica (>24 h)",
+  unavailable: "Descansando",
 };
 type MapViewMode = "operations" | "coverage";
 type CoverageFilter = "all" | "available" | "busy" | "stale" | "resting";
@@ -211,10 +213,10 @@ function operationalPinSvg({
 }) {
   const colors =
     kind === "driver"
-      ? driverState === "historic" || driverState === "offline"
+      ? driverState === "historic" || driverState === "unavailable"
         ? ["#cbd5e1", "#64748b", "#475569", "#334155"]
-        : stale || driverState === "stale"
-        ? ["#ffe2a3", "#b98233", "#96602b", "#633819"]
+        : stale || driverState === "stale" || driverState === "offline"
+        ? ["#fed7aa", "#f97316", "#ea580c", "#9a3412"]
         : driverState === "available"
           ? ["#bae6fd", "#0284c7", "#0369a1", "#075985"]
           : driverState === "busy"
@@ -237,7 +239,7 @@ function operationalPinSvg({
     ? selected ? "drop-shadow(0 0 3px rgba(255,255,255,0.65)) drop-shadow(0 3px 2px rgba(0,0,0,0.4))" : "drop-shadow(0 3px 2px rgba(0,0,0,0.4))"
     : selected ? "drop-shadow(0 0 5px rgba(255,255,255,0.68)) drop-shadow(0 9px 8px rgba(0,0,0,0.45))" : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
 
-  const markerOpacity = kind === "driver" && (driverState === "historic" || driverState === "offline")
+  const markerOpacity = kind === "driver" && (driverState === "historic" || driverState === "unavailable")
     ? "0.76"
     : kind === "driver" && stale ? "0.90" : "1";
 
@@ -337,7 +339,7 @@ function operationalPinSvg({
         cx="24"
         cy="21"
         r="11.5"
-        fill="${kind === "driver" ? ((driverState === "historic" || driverState === "offline") ? "#64748b" : vehicleModeColor(vehicleCategoryCode)) : `url(#${innerId})`}"
+        fill="${kind === "driver" ? ((driverState === "historic" || driverState === "unavailable") ? "#64748b" : (driverState === "stale" || driverState === "offline") ? "#ea580c" : driverState === "available" ? "#0284c7" : driverState === "busy" ? "#16a34a" : vehicleModeColor(vehicleCategoryCode)) : `url(#${innerId})`}"
         stroke="#ffffff"
         stroke-width="1.4"
         stroke-opacity="0.96"
@@ -1484,7 +1486,7 @@ export default function MarketplaceOperationalMap({
 
         const element = marker.getElement();
         // En servicio > disponible > GPS antiguo. GPS histórico no implica presencia.
-        element.style.zIndex = driverPinState(driver) === "historic" || driverPinState(driver) === "offline" ? "2"
+        element.style.zIndex = driverPinState(driver) === "historic" || driverPinState(driver) === "unavailable" ? "2"
           : driver.activeJobId ? "30" : !driver.acceptingJobs ? "5"
           : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
         const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
@@ -2415,8 +2417,8 @@ export default function MarketplaceOperationalMap({
               ) : null}
               {mapViewMode === "operations" && layers.drivers && showAllFleetInOperations && historicalFleetLocations > 0 ? (
                 <span className="rounded-lg border border-amber-400/25 bg-slate-950/85 px-2.5 py-1.5 text-[11px] text-amber-100 shadow-lg"
-                  title="Ubicaciones conservadas en el historial, pero demasiado antiguas para ubicar a un conductor en el mapa.">
-                  {historicalFleetLocations} GPS históricos (&gt;24 h), en gris
+                  title="Últimas ubicaciones anteriores a 24 horas. Naranja si el conductor sigue Trabajando; gris si está Descansando. No representan GPS en vivo.">
+                  {historicalFleetLocations} GPS antiguos (&gt;24 h)
                 </span>
               ) : null}
               {mapViewMode === "operations" &&
@@ -2432,7 +2434,7 @@ export default function MarketplaceOperationalMap({
                   role="status"
                   className="max-w-md rounded-xl border border-amber-400/30 bg-slate-950/85 px-3 py-2 text-[11px] text-amber-100 shadow-lg backdrop-blur-xl"
                 >
-                  Sin conductores trabajando con GPS reciente. Se muestran {staleWorkingDriversWithLocation} con última posición no confirmada (ámbar o gris según antigüedad).
+                  Sin GPS reciente para conductores Trabajando. Se muestran {staleWorkingDriversWithLocation} últimas posiciones en naranja; no representan ubicación actual.
                 </p>
               ) : null}
             </div>
@@ -2535,7 +2537,7 @@ export default function MarketplaceOperationalMap({
                             stale
                             vehicleCategoryCode="tricycle"
                           />
-                          <span>GPS atrasado 5–15 min (ámbar); más de 15 min sin GPS (gris)</span>
+                          <span>Naranja: Trabajando sin GPS reciente · Gris: Descansando</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <OperationalPinLegend kind="customer" />
@@ -2616,7 +2618,7 @@ export default function MarketplaceOperationalMap({
                                   : !driver.locationFresh
                                     ? "Trabajando · GPS sin actualizar"
                                     : driver.isAvailable ? "Trabajando · disponible" : "Trabajando · no disponible";
-                              const stateColor = pinState === "busy" ? "bg-emerald-400" : pinState === "available" ? "bg-sky-400" : pinState === "stale" ? "bg-amber-400" : "bg-slate-400";
+                              const stateColor = pinState === "busy" ? "bg-emerald-400" : pinState === "available" ? "bg-sky-400" : pinState === "stale" || pinState === "offline" ? "bg-orange-500" : "bg-slate-400";
                               const verified = !driverVerifications.isError && driverVerifications.data?.[driver.driverUserId]?.verified === true;
                               const working = driver.acceptingJobs || Boolean(driver.activeJobId);
                               const duration = working ? workingDurationLabel(driver.workingSince, data.serverTime) : null;

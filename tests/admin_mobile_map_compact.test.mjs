@@ -64,7 +64,7 @@ test("Operaciones muestra jornadas abiertas con GPS antiguo sin mezclar descansa
   assert.match(source, /if \(!driver\.locationFresh\) \{/);
   assert.match(source, /age == null \|\| age > 15 \* 60_000 \? "offline" : "stale"/);
   assert.match(source, /const coordinate = driverCoordinate\(driver\);\s*if \(!coordinate\) continue;/);
-  assert.match(source, /Se muestran \{staleWorkingDriversWithLocation\} con última posición no confirmada \(ámbar o gris según antigüedad\)/);
+  assert.match(source, /Se muestran \{staleWorkingDriversWithLocation\} últimas posiciones en naranja/);
 });
 
 
@@ -96,7 +96,7 @@ test("Agenda de conductores usa filas compactas y detalle desplegable", () => {
   assert.match(source, /timeZone: effectiveHavanaTimeZone\(capturedDate\), dateStyle: "short", timeStyle: "medium"/);
   assert.match(source, /setShowAllFleetInOperations\(true\)/);
   assert.match(source, /onOpenDriver\(driver\.driverUserId\)/);
-  assert.match(source, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
+  assert.match(source, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \|\| pinState === "offline" \? "bg-orange-500"/);
 });
 
 
