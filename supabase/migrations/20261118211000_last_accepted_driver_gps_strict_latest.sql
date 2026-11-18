@@ -302,7 +302,7 @@ begin
 
   return result;
 end;
-$function$
+$function$;
 
 
 -- Upsert remains monotonic by device-capture timestamp. Distinguish a truly
@@ -478,5 +478,5 @@ begin
     'server_time', now()
   );
 end;
-$function$
+$function$;
 
