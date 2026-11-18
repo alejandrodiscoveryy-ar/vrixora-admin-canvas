@@ -453,7 +453,7 @@ function ProjectNavItem({
 
               const defaultChild = adminGroupDefault(tab);
               if (!defaultChild) return null;
-              const nestedChildren = tab.children.filter((child) => child.slug !== "configuracion");
+              const nestedChildren = tab.children.filter((child) => child.slug !== defaultChild.slug);
               const groupOpen = configurationExpanded;
               const mainSettingsActive = isActiveProject && currentSection === defaultChild.slug;
 
