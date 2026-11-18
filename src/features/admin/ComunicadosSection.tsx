@@ -234,7 +234,6 @@ function AudienceMetric({ label, value }: { label: string; value: number }) {
 }
 
 function getValidationMessage({
-  category,
   title,
   body,
 }: {
