@@ -58,6 +58,7 @@ import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPo
 import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/MarketplaceImpulsaCommunicationAnalytics";
 import MarketplaceTuktukOfficialAnalytics from "@/features/admin/MarketplaceTuktukOfficialAnalytics";
 import MarketplaceCustomerCampaignDrafts from "@/features/admin/MarketplaceCustomerCampaignDrafts";
+import MarketplaceAlliesPanel from "@/features/admin/MarketplaceAlliesPanel";
 import MarketplaceImpulsaTransitionPanel from "@/features/admin/MarketplaceImpulsaTransitionPanel";
 import CommercialReferralsPanel from "@/features/admin/CommercialReferralsPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -104,7 +105,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
-  const [commercialView, setCommercialView] = useState<"campanas" | "resultados" | "captacion" | "ofertas" | "referidos" | "impulsa">("campanas");
+  const [commercialView, setCommercialView] = useState<"campanas" | "resultados" | "captacion" | "ofertas" | "referidos" | "impulsa" | "aliados">("campanas");
   const [resultsSource, setResultsSource] = useState<"tuktuk" | "impulsa">("tuktuk");
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
@@ -123,6 +124,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const showOffers = isTuktukProject && commercialView === "ofertas";
   const showReferrals = isTuktukProject && commercialView === "referidos";
   const showImpulsa = isTuktukProject && commercialView === "impulsa";
+  const showAllies = isTuktukProject && commercialView === "aliados";
   const showManagement = isTuktukProject && ["captacion","ofertas","referidos"].includes(commercialView);
   const canViewImpulsa = permissions.includes("settings.view");
   const canEditImpulsa = canViewImpulsa && permissions.includes("settings.manage") && canManage && permissions.includes("payments.manage");
@@ -312,6 +314,12 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                   <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
                   Impulsa
                 </Button>
+                <Button type="button" variant={showAllies ? "default" : "outline"}
+                  onClick={() => setCommercialView("aliados")} className="admin-subnav-tab"
+                  data-nav-tone="comercial" aria-pressed={showAllies}>
+                  <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
+                  Aliados
+                </Button>
                 <Button type="button" variant={showManagement ? "default" : "outline"}
                   onClick={() => setCommercialView("referidos")} className="admin-subnav-tab"
                   data-nav-tone="tarifas" aria-pressed={showManagement}>
@@ -392,6 +400,8 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             ? <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
             : <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />}
         </div>
+      ) : showAllies ? (
+        <MarketplaceAlliesPanel projectId={projectId} canManage={canManage} />
       ) : showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
       ) : showImpulsa ? (
