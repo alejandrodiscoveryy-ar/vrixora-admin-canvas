@@ -9,7 +9,7 @@ const CONTINUOUS_DST_UNTIL = Date.parse('2027-11-07T05:00:00Z');
 const LOCAL_FROM = '2026-11-01T00:00';
 const LOCAL_UNTIL = '2027-11-07T01:00';
 
-function effectiveHavanaTimeZone(at: Date): string {
+export function effectiveHavanaTimeZone(at: Date): string {
   const ms = at.getTime();
   return ms >= CONTINUOUS_DST_FROM && ms < CONTINUOUS_DST_UNTIL
     ? 'Etc/GMT+4'
