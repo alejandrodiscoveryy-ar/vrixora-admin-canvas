@@ -339,7 +339,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3"
                       role="progressbar" aria-label="Notificaciones enviadas"
-                      aria-valuemin={0} aria-valuemax={deliveryQuery.data.eligible_drivers}
+                      aria-valuemin={0} aria-valuemax={Math.max(1, deliveryQuery.data.eligible_drivers)}
                       aria-valuenow={Math.min(deliveryQuery.data.sent_drivers, deliveryQuery.data.eligible_drivers)}>
                       <div className="h-full rounded-full bg-emerald-400 transition-[width]"
                         style={{ width: (deliveryQuery.data.eligible_drivers > 0
@@ -384,7 +384,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                     </div>
                     <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                       {!versionAdoption.data.last_reported_at
-                        ? "La APK 24 no informa qué versión tiene cada conductor. Sin datos no significa sin actualizar."
+                        ? "Las APK anteriores no informaban la versión instalada. Sin datos no significa sin actualizar."
                         : "Datos obtenidos de la APK; si el informe supera 30 días se considera desconocido."}
                     </p>
                   </>
