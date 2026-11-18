@@ -306,7 +306,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-semibold text-text-primary">1. Seguimiento de la actualización</h3>
-                <p className="text-xs text-text-secondary">Son dos mediciones diferentes: avisos enviados e instalaciones conocidas.</p>
+                <p className="text-xs text-text-secondary">Avisos enviados e instalaciones conocidas son datos distintos. Enviado no significa instalado.</p>
               </div>
               <Button size="sm" variant="outline"
                 onClick={() => void Promise.all([versionAdoption.refetch(), deliveryQuery.refetch(), driverAudience.refetch()])}
