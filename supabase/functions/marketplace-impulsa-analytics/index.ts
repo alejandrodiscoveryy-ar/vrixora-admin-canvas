@@ -72,10 +72,16 @@ Deno.serve(async (req) => {
       target_operation:"read",target_derived_identity:derived
     });
     if (limit.error) return reply(429,origin);
-    const outcome = await client.rpc("record_public_marketplace_impulsa_event_v1",{
-      target_event:event,target_session_id:sessionId,target_promo_code:code,
-      target_channel:channel,target_campaign:campaign,target_reason:reason,target_price_cup:price,
-    });
+    // Aliados have their own ledger, not the driver's Impulsa telemetry.
+    const allyMatch = code === null && campaign?.match(/^aliado_([a-z0-9][a-z0-9-]{1,23})$/);
+    const outcome = allyMatch && !allyMatch[1].endsWith("-")
+      ? await client.rpc("record_public_marketplace_ally_event_v1", {
+          target_event:event,target_session_id:sessionId,target_slug:allyMatch[1],target_channel:channel,
+        })
+      : await client.rpc("record_public_marketplace_impulsa_event_v1", {
+          target_event:event,target_session_id:sessionId,target_promo_code:code,
+          target_channel:channel,target_campaign:campaign,target_reason:reason,target_price_cup:price,
+        });
     if (outcome.error) {
       console.error("impulsa-analytics ingest unavailable",outcome.error.code ?? "UNKNOWN");
       return reply(503,origin);

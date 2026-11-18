@@ -604,8 +604,8 @@ test("Admin submenu accents remain aligned in inner navigation and preserve tab 
   assert.match(care, /onKeyDown=\{onCareTabKeyDown\}/);
   assert.match(care, /canManageContact \?/);
   const commercial = readFileSync(new URL("../src/features/admin/ComercialSection.tsx", import.meta.url), "utf8");
-  // Four TukTuk primary areas plus the single non-TukTuk CRM fallback.
-  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 5);
+  // Five TukTuk areas (including Aliados) plus the non-TukTuk CRM fallback.
+  assert.equal((commercial.match(/className="admin-subnav-tab"/g) ?? []).length, 6);
   for (const name of ["Campañas", "Resultados", "Impulsa", "Gestión"]) assert.ok(commercial.includes(name), name);
   // Gestión usa una subnavegación de valores tipados; el destino ofertas ya no tiene botón principal.
   assert.match(commercial, /\["ofertas","Beneficios de conductores"\]/);
