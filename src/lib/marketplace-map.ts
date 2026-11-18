@@ -291,6 +291,8 @@ export interface MarketplaceOperationalDriver {
   lastLatitude: number | null;
   lastLongitude: number | null;
   lastAccuracyM: number | null;
+  /** Retained precise GPS is private to marketplace.manage; never interpret as live. */
+  lastLocationSource?: "gps" | "retained_gps" | "coverage" | null;
   accuracyM: number | null;
   headingDegrees: number | null;
   speedMps: number | null;
@@ -437,6 +439,8 @@ export async function getMarketplaceOperationalMap(
         lastLatitude: nullableNumber(row.last_latitude),
         lastLongitude: nullableNumber(row.last_longitude),
         lastAccuracyM: nullableNumber(row.last_accuracy_m),
+        lastLocationSource: ["gps", "retained_gps", "coverage"].includes(String(row.last_location_source ?? ""))
+          ? String(row.last_location_source) as "gps" | "retained_gps" | "coverage" : null,
         accuracyM: nullableNumber(row.accuracy_m),
         headingDegrees: nullableNumber(row.heading_degrees),
         speedMps: nullableNumber(row.speed_mps),
