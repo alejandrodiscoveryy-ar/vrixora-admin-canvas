@@ -67,6 +67,37 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     setNotes(query.data.release_notes);
   }, [query.data, projectSettings.data]);
 
+  const versionAdoption = useQuery({
+    queryKey: ["driver-android-adoption", projectId],
+    queryFn: async (): Promise<{
+      target_version: string;
+      target_build: number;
+      active_drivers: number;
+      current_drivers: number;
+      outdated_drivers: number;
+      unknown_drivers: number;
+      stale_reports: number;
+      last_reported_at: string | null;
+    }> => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_driver_android_adoption", {
+        target_project_id: projectId,
+      });
+      if (error) throw error;
+      return data as {
+        target_version: string;
+        target_build: number;
+        active_drivers: number;
+        current_drivers: number;
+        outdated_drivers: number;
+        unknown_drivers: number;
+        stale_reports: number;
+        last_reported_at: string | null;
+      };
+    },
+    enabled: canManage,
+    refetchInterval: 60_000,
+  });
+
   const driverAudience = useQuery({
     queryKey: ["driver-app-update-audience", projectId],
     queryFn: async (): Promise<{ eligible_android_users: number; enabled_android_tokens: number }> => {
@@ -285,6 +316,57 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                 <Megaphone className="mr-2 h-4 w-4" /> Notificar actualización
               </Button>
             </div>
+          </div>
+          <div className="space-y-3 rounded-2xl border border-cyan-400/20 bg-[#08151b]/65 p-3 sm:p-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold">Seguimiento de instalaciones Android</p>
+                <p className="text-xs text-text-secondary">
+                  Instalaciones confirmadas por la APK; no equivale a notificaciones enviadas.
+                </p>
+              </div>
+              <Button type="button" size="sm" variant="outline"
+                onClick={() => void versionAdoption.refetch()}
+                disabled={versionAdoption.isFetching || !canManage}>
+                {versionAdoption.isFetching ? "Consultando..." : "Actualizar datos"}
+              </Button>
+            </div>
+            {versionAdoption.isError ? (
+              <p role="alert" className="text-xs text-amber-300">
+                No se pudo consultar el seguimiento de instalaciones. Comprueba la migración de Supabase.
+              </p>
+            ) : versionAdoption.data ? (
+              <>
+                <p className="text-xs text-text-secondary">
+                  Objetivo: versión <strong>{versionAdoption.data.target_version}</strong>
+                  {" · compilación "}<strong>{versionAdoption.data.target_build}</strong>
+                  {" · "}{versionAdoption.data.active_drivers} conductores activos
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {([
+                    ["Versión confirmada", versionAdoption.data.current_drivers],
+                    ["Versión anterior", versionAdoption.data.outdated_drivers],
+                    ["Sin información", versionAdoption.data.unknown_drivers],
+                  ] as const).map(([label, count]) => (
+                    <div key={label} className="rounded-xl border border-cyan-400/15 bg-[#0b1c23]/80 px-3 py-2.5">
+                      <p className="text-xs text-text-secondary">{label}</p>
+                      <p className="text-2xl font-bold tabular-nums">{count}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-text-secondary">
+                  Datos recibidos al abrir la APK con el registro de versión incorporado.
+                  Los informes con más de 30 días se consideran sin información.
+                  {versionAdoption.data.stale_reports > 0
+                    ? ` Hay ${versionAdoption.data.stale_reports} informes antiguos.` : ""}
+                  {!versionAdoption.data.last_reported_at
+                    ? " Todavía no hay versiones confirmadas: la compilación 24 publicada no incorporaba este registro."
+                    : ` Último registro: ${new Date(versionAdoption.data.last_reported_at).toLocaleString("es-ES")}.`}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-text-secondary">Consultando versiones instaladas...</p>
+            )}
           </div>
           <AlertDialog open={pushConfirmationOpen} onOpenChange={setPushConfirmationOpen}>
             <AlertDialogContent>
