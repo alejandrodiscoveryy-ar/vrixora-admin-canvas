@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronRight, Coins, Gift, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, Smartphone, Upload, type LucideIcon } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, Coins, Gift, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, Smartphone, Upload, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -110,6 +110,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
   });
 
   const [activeSection, setActiveSection] = useState<SectionKey | "inicio">("inicio");
+  const [showExtraAppSettings, setShowExtraAppSettings] = useState(false);
   const isMarketplaceReferralProgram = project?.slug === "tuktuk-control";
   const visibleSection = isMarketplaceReferralProgram
     ? activeSection
@@ -493,7 +494,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           : [
               { label: "Mantenimiento", value: form.maintenanceMode ? "Activado" : "Desactivado", hint: form.maintenanceMode ? "Revisar impacto en usuarios" : "Acceso general disponible", tone: form.maintenanceMode ? "warning" : "success" },
               { label: "Bienvenida", value: form.welcomeMessage.trim() ? "Configurada" : "Pendiente", hint: "Mensaje de entrada" },
-              { label: "Versión Android", value: "Panel independiente", hint: "Actualizaciones y descargas" },
+              { label: "Versiones Android", value: "Gestionar", hint: "Publicación y seguimiento" },
             ];
 
   return (
@@ -552,14 +553,25 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </section>
           ) : currentSection ? (
             <div className="space-y-3">
-              <PremiumSettingsSnapshot
-                number={currentSection.number}
-                eyebrow={currentSection.eyebrow}
-                title={currentSection.label}
-                description={currentSection.description}
-                icon={CurrentSectionIcon}
-                metrics={premiumMetrics}
-              />
+              {visibleSection === "application" ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/[0.08] via-surface-1 to-surface-1 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-primary">05 / Publicación y experiencia</p>
+                    <h2 className="text-lg font-semibold tracking-tight text-text-primary">Aplicación y versiones</h2>
+                    <p className="text-xs text-text-secondary">Versión activa, conductores y próxima publicación, todo en un lugar.</p>
+                  </div>
+                  <span className="rounded-lg border border-primary/25 bg-primary/[0.08] px-2.5 py-1.5 text-xs font-medium text-primary">Android · TukTuk</span>
+                </div>
+              ) : (
+                <PremiumSettingsSnapshot
+                  number={currentSection.number}
+                  eyebrow={currentSection.eyebrow}
+                  title={currentSection.label}
+                  description={currentSection.description}
+                  icon={CurrentSectionIcon}
+                  metrics={premiumMetrics}
+                />
+              )}
               <nav aria-label="Cambiar módulo de configuración" className="flex gap-2 overflow-x-auto pb-1">
                 {sections.map((section) => {
                   const Icon = section.icon;
@@ -1348,9 +1360,24 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           {isMarketplaceReferralProgram ? (
             <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
           ) : null}
+          <button type="button" aria-expanded={showExtraAppSettings}
+            aria-controls="app-extra-settings"
+            onClick={() => setShowExtraAppSettings((prev) => !prev)}
+            className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-1 px-3 py-2 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <span className="min-w-0">
+              <strong className="block text-sm font-semibold text-text-primary">Otros ajustes de la aplicación</strong>
+              <span className="block text-xs text-text-secondary">
+                {form.maintenanceMode ? "Atención: mantenimiento activo · " : ""}Modo mantenimiento y mensaje de bienvenida
+              </span>
+            </span>
+            {showExtraAppSettings
+              ? <ChevronUp className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              : <ChevronDown className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+          </button>
+          {showExtraAppSettings ? (
+          <div id="app-extra-settings">
         <SectionCard density="compact" appearance="premium"
-          title="Comportamiento de TukTuk Control"
-          description="Parámetros administrativos que afectan el acceso y la experiencia de la aplicación."
+          title="Acceso y bienvenida"
           module="configuracion"
           className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
           headerClassName={CONFIG_HEADER_CLASS}
@@ -1383,6 +1410,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             </div>
           </div>
         </SectionCard>
+          </div>
+          ) : null}
         </div>
       ) : null}
 
