@@ -74,48 +74,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const valid = !enabled || (
     validVersion && Number.isSafeInteger(parsedBuild) && parsedBuild > 0 && parsedBuild <= 2147483647
   );
-  const savedRelease = query.data;
-  const configuredForPush = Boolean(savedRelease?.enabled &&
-    /^\\d+(?:\\.\\d+){1,3}$/.test(savedRelease.latest_version) &&
-    savedRelease.latest_build > 0);
-  const hasDraftChanges = Boolean(savedRelease && (
-    enabled !== savedRelease.enabled ||
-    version.trim() !== savedRelease.latest_version ||
-    parsedBuild !== savedRelease.latest_build ||
-    notes.trim() !== savedRelease.release_notes ||
-    (mode === "mandatory") !== Boolean(projectSettings.data?.forceUpdate)
-  ));
-  const canAnnounceRelease = canManage && !save.isPending && !pushSending &&
-    !hasUnsavedProjectChanges && !hasDraftChanges && configuredForPush;
-  const pushAudience = useQuery({
-    queryKey: ["mobile-push-audience", projectId],
-    queryFn: () => supabaseServices.communications.audience(projectId),
-    enabled: canManage,
-  });
-  const sendReleaseAnnouncement = async () => {
-    if (!canAnnounceRelease || !savedRelease) return;
-    const title = `Nueva versión de TukTuk Conductor ${savedRelease.latest_version}`;
-    const message = savedRelease.release_notes.replace(/\\*\\*/g, "").trim() ||
-      "Nueva versión disponible. Actualiza TukTuk Conductor desde Google Play.";
-    if (!window.confirm(`¿Enviar una notificación push sobre la versión ${savedRelease.latest_version} a ${pushAudience.data?.eligibleAndroidUsers ?? "los"} conductores elegibles? El aviso dentro de la aplicación ya funciona por separado.`)) return;
-    setPushSending(true);
-    try {
-      const result = await supabaseServices.communications.send(projectId, {
-        category: "app_update",
-        title,
-        body: message.slice(0, 500),
-        releaseVersion: savedRelease.latest_version,
-        actionUrl: TUKTUK_CONDUCTOR_PLAY_URL,
-      });
-      toast.success(`Notificación encolada para ${result.queuedUsers} usuario(s) elegible(s).`);
-      await queryClient.invalidateQueries({ queryKey: ["mobile-push-audience", projectId] });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo enviar el aviso.");
-    } finally {
-      setPushSending(false);
-    }
-  };
-
   const save = useMutation({
     mutationFn: async () => {
       if (!canManage || hasUnsavedProjectChanges || !valid || projectSettings.isError) {
@@ -143,6 +101,48 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const savedRelease = query.data;
+  const configuredForPush = Boolean(savedRelease?.enabled &&
+    /^\d+(?:\.\d+){1,3}$/.test(savedRelease.latest_version) &&
+    savedRelease.latest_build > 0);
+  const hasDraftChanges = Boolean(savedRelease && (
+    enabled !== savedRelease.enabled ||
+    version.trim() !== savedRelease.latest_version ||
+    parsedBuild !== savedRelease.latest_build ||
+    notes.trim() !== savedRelease.release_notes ||
+    (mode === "mandatory") !== Boolean(projectSettings.data?.forceUpdate)
+  ));
+  const canAnnounceRelease = canManage && !save.isPending && !pushSending &&
+    !hasUnsavedProjectChanges && !hasDraftChanges && configuredForPush;
+  const pushAudience = useQuery({
+    queryKey: ["mobile-push-audience", projectId],
+    queryFn: () => supabaseServices.communications.audience(projectId),
+    enabled: canManage,
+  });
+  const sendReleaseAnnouncement = async () => {
+    if (!canAnnounceRelease || !savedRelease) return;
+    const title = `Nueva versión de TukTuk Conductor ${savedRelease.latest_version}`;
+    const message = savedRelease.release_notes.replace(/\*\*/g, "").trim() ||
+      "Nueva versión disponible. Actualiza TukTuk Conductor desde Google Play.";
+    if (!window.confirm(`¿Enviar una notificación push sobre la versión ${savedRelease.latest_version} a ${pushAudience.data?.eligibleAndroidUsers ?? "los"} conductores elegibles? El aviso dentro de la aplicación ya funciona por separado.`)) return;
+    setPushSending(true);
+    try {
+      const result = await supabaseServices.communications.send(projectId, {
+        category: "app_update",
+        title,
+        body: message.slice(0, 500),
+        releaseVersion: savedRelease.latest_version,
+        actionUrl: TUKTUK_CONDUCTOR_PLAY_URL,
+      });
+      toast.success(`Notificación encolada para ${result.queuedUsers} usuario(s) elegible(s).`);
+      await queryClient.invalidateQueries({ queryKey: ["mobile-push-audience", projectId] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo enviar el aviso.");
+    } finally {
+      setPushSending(false);
+    }
+  };
+
   return (
     <SectionCard
       title="Actualizaciones de TukTuk Conductor"
