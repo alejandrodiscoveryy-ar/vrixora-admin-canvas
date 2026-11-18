@@ -18,7 +18,7 @@ test('Diferencia disponible, ocupado, ubicacion antigua y sin disponibilidad', (
   assert.match(src, /driverPinStateLabel\[driverPinState\(driver\)\]/);
   assert.match(src, /Conductor disponible \(azul\)/);
   assert.match(src, /Conductor en servicio \(verde\)/);
-  assert.match(src, /GPS atrasado 5–15 min \(ámbar\); más de 15 min sin GPS \(gris\)/);
+  assert.match(src, /Naranja: Trabajando sin GPS reciente · Gris: Descansando/);
 });
 test('Conserva todas las capas y rutas del mapa operativo', () => {
   assert.match(src, /getMarketplaceOperationalRoutes\(projectId\)/);
@@ -61,13 +61,13 @@ test("Modalidades usan badges de color aprobados sin modificar el estado del map
   assert.match(src, /driverState=\{pinState\} stale=\{pinState === "stale"\}/);
   assert.match(src, /className="h-3\/4 w-3\/4"/);
   assert.match(src, /color="#ffffff">\$\{vehicleModeGlyph\(vehicleCategoryCode\)\}/);
-  assert.match(src, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
+  assert.match(src, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \|\| pinState === "offline" \? "bg-orange-500"/);
 });
 
 
 test("Marcadores flotantes y leyenda muestran color de modalidad dentro del pin de estado", () => {
   const pin = src.slice(src.indexOf("function operationalPinSvg("), src.indexOf("function OperationalPinLegend("));
-  assert.match(pin, /\? "#64748b" : vehicleModeColor\(vehicleCategoryCode\)/);
+  assert.match(pin, /\? "#64748b" : \(driverState === "stale" \|\| driverState === "offline"\) \? "#ea580c"/);
   assert.match(pin, /fill="url\(#\$\{bodyId\}\)"/);
   assert.match(pin, /driverState === "available"/);
   assert.match(pin, /driverState === "busy"/);
@@ -84,7 +84,7 @@ test("La transparencia se limita a badges de interfaz; el mapa conserva colores 
   assert.match(icon, /className = "h-6 w-6"/);
   assert.match(icon, /rounded-md text-white/);
   assert.match(icon, /backgroundColor: `\$\{vehicleModeColor\(code\)\}38`/);
-  assert.match(pin, /\? "#64748b" : vehicleModeColor\(vehicleCategoryCode\)/);
+  assert.match(pin, /\? "#64748b" : \(driverState === "stale" \|\| driverState === "offline"\) \? "#ea580c"/);
   assert.doesNotMatch(pin, /vehicleModeColor\(vehicleCategoryCode\)\}38/);
 });
 
