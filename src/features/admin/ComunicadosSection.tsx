@@ -19,17 +19,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectPermissions } from "@/hooks/useProjects";
-import { supabaseServices, type MobileAnnouncementCategory } from "@/lib/services";
-import { TUKTUK_CONDUCTOR_PLAY_URL } from "@/lib/androidRelease";
+import { supabaseServices } from "@/lib/services";
 
 const CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
 const HEADER_CLASS = "px-4 py-2.5 sm:px-4 sm:py-2.5";
@@ -41,10 +33,8 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
   const queryClient = useQueryClient();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canSend = permissions.includes("settings.manage");
-  const [category, setCategory] = useState<MobileAnnouncementCategory>("general");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [releaseVersion, setReleaseVersion] = useState("");
   const [confirmationOpen, setConfirmationOpen] = useState(false);
 
   const audienceQuery = useQuery({
@@ -52,16 +42,9 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
     queryFn: () => supabaseServices.communications.audience(projectId),
   });
 
-  const isUpdate = category === "app_update";
   const titleValue = title.trim();
   const bodyValue = body.trim();
-  const releaseVersionValue = releaseVersion.trim();
-  const validationMessage = getValidationMessage({
-    category,
-    title: titleValue,
-    body: bodyValue,
-    releaseVersion: releaseVersionValue,
-  });
+  const validationMessage = getValidationMessage(titleValue, bodyValue);
 
   const sendMutation = useMutation({
     mutationFn: async () => {
@@ -74,17 +57,14 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
       }
 
       return supabaseServices.communications.send(projectId, {
-        category,
+        category: "general",
         title: titleValue,
         body: bodyValue,
-        releaseVersion: isUpdate ? releaseVersionValue : undefined,
-        actionUrl: isUpdate ? TUKTUK_CONDUCTOR_PLAY_URL : undefined,
       });
     },
     onSuccess: async (result) => {
       setTitle("");
       setBody("");
-      setReleaseVersion("");
       setConfirmationOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["mobile-push-audience", projectId] });
       toast.success(
@@ -170,7 +150,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
               value={title}
               maxLength={100}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder={isUpdate ? "Nueva versión disponible" : "Título del comunicado"}
+              placeholder="Título del comunicado"
               disabled={!canSend || sendMutation.isPending}
             />
           </div>
@@ -186,17 +166,11 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
               value={body}
               maxLength={500}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="Escribe el mensaje que recibirán los clientes."
+              placeholder="Escribe el mensaje para los conductores."
               disabled={!canSend || sendMutation.isPending}
             />
           </div>
 
-          {isUpdate ? (
-            <PageAlert tone="info" title="Abrirá Google Play">
-              Al tocar esta notificación, el cliente abrirá la página de TukTuk Control en Google
-              Play.
-            </PageAlert>
-          ) : null}
 
           {validationMessage && canSend ? (
             <PageAlert tone="warning">{validationMessage}</PageAlert>
@@ -209,7 +183,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
               disabled={!canSend || Boolean(validationMessage) || sendMutation.isPending}
             >
               <Send className="mr-2 h-4 w-4" />
-              {isUpdate ? "Enviar actualización" : "Enviar comunicado"}
+              Enviar comunicado
             </Button>
           </div>
         </div>
@@ -219,7 +193,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isUpdate ? "¿Enviar actualización?" : "¿Enviar comunicado?"}
+              ¿Enviar comunicado?
             </AlertDialogTitle>
             <AlertDialogDescription>
               {audienceQuery.data
@@ -255,23 +229,10 @@ function AudienceMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function getValidationMessage({
-  category,
-  title,
-  body,
-  releaseVersion,
-}: {
-  category: MobileAnnouncementCategory;
-  title: string;
-  body: string;
-  releaseVersion: string;
-}) {
+function getValidationMessage(title: string, body: string) {
   if (!title) return "El título es obligatorio.";
   if (title.length > 100) return "El título no puede superar 100 caracteres.";
   if (!body) return "El mensaje es obligatorio.";
   if (body.length > 500) return "El mensaje no puede superar 500 caracteres.";
-  if (category === "app_update" && !releaseVersion)
-    return "La versión es obligatoria para una actualización.";
-  if (releaseVersion.length > 40) return "La versión no puede superar 40 caracteres.";
   return null;
 }
