@@ -37,3 +37,12 @@ test("The map retains the last accepted location even if old, but never calls hi
   assert.match(map, /driver\.capturedAt \? new Intl\.DateTimeFormat/);
   assert.doesNotMatch(map, /if \(age == null \|\| age > MAP_LAST_POSITION_MAX_AGE_MS/);
 });
+
+test("Historical GPS pins are entirely gray, not orange modality pins, and identify the selected driver", () => {
+  assert.match(map, /driverState === "historic" \? "#64748b" : vehicleModeColor\(vehicleCategoryCode\)/);
+  assert.match(map, /driverState === "historic"[\s\S]*?"0\.76"/);
+  assert.match(map, /driverPinState\(driver\) === "historic" \? "2"/);
+  assert.match(map, /setExpandedDriverId\(driver\.driverUserId\)/);
+  assert.match(map, /GPS históricos \(&gt;24 h\), en gris/);
+  assert.match(map, /Posición aproximada de cobertura/);
+});
