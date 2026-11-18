@@ -462,32 +462,36 @@ function ProjectNavItem({
                   <div data-nav-tone={adminNavTone(tab.slug)}
                     data-nav-active={groupActive ? "true" : undefined}
                     className="admin-nav-item admin-nav-primary admin-nav-config-parent">
-                    <button
-                      type="button"
+                    <Link
+                      to="/admin/proyectos/$id/$section"
+                      params={{ id: project.id, section: defaultChild.slug }}
                       title={`${tab.label} · ${defaultChild.label}`}
-                      aria-label={groupOpen ? `Contraer ${tab.label} y abrir ${defaultChild.label}` : `Abrir ${tab.label} y ${defaultChild.label}`}
+                      aria-label={`Abrir ${defaultChild.label}`}
                       aria-current={mainSettingsActive ? "page" : undefined}
-                      aria-expanded={groupOpen}
-                      aria-controls={configurationGroupId}
                       onClick={() => {
-                        setConfigurationExpanded((value) => !value);
-                        // El acceso principal sustituye al enlace duplicado de Ajustes generales.
-                        if (currentSection !== defaultChild.slug) {
-                          void navigate({
-                            to: "/admin/proyectos/$id/$section",
-                            params: { id: project.id, section: defaultChild.slug },
-                          });
-                        }
+                        // En la barra compacta, desplegar los iconos sin cambiar su anchura.
+                        if (collapsed) setConfigurationExpanded(true);
+                        closeDrawer?.();
                       }}
                       className="admin-nav-config-link"
                     >
                       <AdminNavIcon icon={Icon} />
                       <span data-nav-label className="min-w-0 flex-1 break-words">{tab.label}</span>
-                      {!collapsed && (
-                        <ChevronRight data-nav-chevron aria-hidden="true"
+                    </Link>
+                    {!collapsed && (
+                      <button
+                        type="button"
+                        data-nav-chevron
+                        className="admin-nav-config-toggle"
+                        aria-label={groupOpen ? "Contraer Configuración" : "Desplegar Configuración"}
+                        aria-expanded={groupOpen}
+                        aria-controls={configurationGroupId}
+                        onClick={() => setConfigurationExpanded((value) => !value)}
+                      >
+                        <ChevronRight aria-hidden="true"
                           className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${groupOpen ? "rotate-90" : ""}`} />
-                      )}
-                    </button>
+                      </button>
+                    )}
                   </div>
 
                   <div id={configurationGroupId} hidden={!groupOpen} data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5">
