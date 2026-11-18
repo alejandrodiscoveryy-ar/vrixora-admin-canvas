@@ -1515,7 +1515,14 @@ export default function MarketplaceOperationalMap({
           driver.vehicleCategoryCode,
         )} - ${driverPinStateLabel[driverPinState(driver)]} - ${driver.capturedAt ? new Intl.DateTimeFormat("es-CU", {
           timeZone: "America/Havana", dateStyle: "medium", timeStyle: "short",
-        }).format(new Date(driver.capturedAt)) + " (Cuba)" : "Sin fecha GPS"}${!driver.locationFresh && (driver.lastAccuracyM ?? 0) >= 1000 ? " · Posición aproximada de cobertura" : ""}`;
+        }).format(new Date(driver.capturedAt)) + " (Cuba)" : "Sin fecha GPS"}${
+          driver.lastLocationSource === "retained_gps"
+            ? " · Último GPS confirmado, guardado para Admin (NO en vivo)"
+            : driver.lastLocationSource === "coverage" ||
+              (!driver.lastLocationSource && !driver.locationFresh && (driver.lastAccuracyM ?? 0) >= 1000)
+              ? " · Posición aproximada de cobertura (NO ubicación precisa)"
+              : ""
+        }`;
 
         element.style.cursor =
           driver.activeJobId || mapViewMode === "coverage" || showAllFleetInOperations ? "pointer" : "default";
@@ -2664,6 +2671,11 @@ export default function MarketplaceOperationalMap({
                                       <div className={hasHistoricalDriverCoordinate(driver) ? "text-amber-200" : "text-slate-400"}>
                                         <p>{signalAgeLabel(driver.capturedAt, data.serverTime)}</p>
                                         <p className="tabular-nums">{lastSignal}</p>
+                                        {driver.lastLocationSource === "retained_gps" ? (
+                                          <p className="text-sky-200">Último GPS confirmado, conservado al descansar; no es ubicación en vivo.</p>
+                                        ) : driver.lastLocationSource === "coverage" ? (
+                                          <p className="text-amber-200">Zona aproximada de cobertura, no confirma dónde estuvo el conductor.</p>
+                                        ) : null}
                                       </div>
                                       <div className="flex flex-wrap gap-1">
                                         <button
