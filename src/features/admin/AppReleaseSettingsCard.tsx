@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Smartphone, ShieldAlert } from "lucide-react";
+import { Download, Loader2, Megaphone, Smartphone, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionCard } from "@/components/admin/SectionCard";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { TUKTUK_CONDUCTOR_PLAY_URL, suggestNextAndroidRelease } from "@/lib/androidRelease";
 
 type ReleaseSettings = {
@@ -43,6 +44,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const [version, setVersion] = useState("");
   const [build, setBuild] = useState("");
   const [notes, setNotes] = useState("");
+  const [pushConfirmationOpen, setPushConfirmationOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["app-release-settings", projectId],
@@ -65,6 +67,18 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     setNotes(query.data.release_notes);
   }, [query.data, projectSettings.data]);
 
+  const driverAudience = useQuery({
+    queryKey: ["driver-app-update-audience", projectId],
+    queryFn: async (): Promise<{ eligible_android_users: number; enabled_android_tokens: number }> => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_driver_app_update_audience", {
+        target_project_id: projectId,
+      });
+      if (error) throw error;
+      return data as { eligible_android_users: number; enabled_android_tokens: number };
+    },
+    enabled: canManage,
+  });
+
   const parsedBuild = Number(build);
   const validVersion = /^\d+(?:\.\d+){1,3}$/.test(version.trim());
   const proposedRelease = query.data
@@ -73,6 +87,41 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const valid = !enabled || (
     validVersion && Number.isSafeInteger(parsedBuild) && parsedBuild > 0 && parsedBuild <= 2147483647
   );
+
+  const hasSavedActiveRelease = Boolean(
+    query.data?.enabled &&
+    enabled &&
+    validVersion &&
+    query.data.latest_version === version.trim() &&
+    query.data.latest_build === parsedBuild &&
+    (query.data.release_notes ?? "").trim() === notes.trim() &&
+    query.data.download_url === TUKTUK_CONDUCTOR_PLAY_URL &&
+    (projectSettings.data?.forceUpdate === true) === (mode === "mandatory") &&
+    !hasUnsavedProjectChanges
+  );
+
+  // El envío es una acción independiente: guardar versiones nunca lanza push.
+  const sendPush = useMutation({
+    mutationFn: async (): Promise<{ queued_users: number }> => {
+      if (!canManage || !hasSavedActiveRelease || driverAudience.isError) {
+        throw new Error("Guarda primero una versión activa y comprueba la audiencia de conductores.");
+      }
+      const { data, error } = await getSupabaseClient().rpc("admin_send_driver_app_update", {
+        target_project_id: projectId,
+        target_release_version: version.trim(),
+        target_release_build: parsedBuild,
+      });
+      if (error) throw error;
+      return data as { queued_users: number };
+    },
+    onSuccess: (result) => {
+      setPushConfirmationOpen(false);
+      toast.success(result.queued_users > 0
+        ? `Aviso de actualización puesto en cola para ${result.queued_users} conductores.`
+        : "No se añadieron avisos: esta compilación ya pudo notificarse o no hay conductores elegibles.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -198,14 +247,65 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           ) : null}
           {hasUnsavedProjectChanges ? <p className="text-xs text-amber-300">Guarda primero los demás cambios de configuración.</p> : null}
           <div className="flex justify-end">
-            <Button type="button"               onClick={() => {
-                if (enabled && mode === "mandatory" && !window.confirm("¿Confirmas la actualización obligatoria? Verifica que la nueva APK y su enlace funcionan correctamente.")) return;
+            <Button type="button" onClick={() => {
+                if (enabled && mode === "mandatory" && !window.confirm("¿Confirmas la actualización obligatoria? Verifica que Google Play ya ofrece esta misma versión y compilación.")) return;
                 save.mutate();
               }}
               disabled={!canManage || hasUnsavedProjectChanges || !valid || save.isPending || projectSettings.isLoading || projectSettings.isError}>
               {save.isPending ? "Guardando..." : "Guardar versión Android"}
             </Button>
           </div>
+          <div className="space-y-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.035] p-3 sm:p-4">
+            <div className="flex items-start gap-2">
+              <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold">Aviso al teléfono de los conductores</p>
+                <p className="text-xs text-text-secondary">
+                  Envía una sola notificación push por compilación a los conductores activos.
+                  Usa la versión, las novedades y el enlace oficial guardados arriba.
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-text-secondary" role="status">
+              {driverAudience.isLoading ? "Consultando destinatarios..." :
+                driverAudience.isError ? "No se pudo comprobar la audiencia de conductores." :
+                driverAudience.data ? `${driverAudience.data.eligible_android_users} conductores con notificaciones Android habilitadas (${driverAudience.data.enabled_android_tokens} dispositivos).` :
+                "La audiencia aparecerá cuando tengas permiso para gestionarla."}
+            </p>
+            {!hasSavedActiveRelease ? (
+              <p className="text-xs text-amber-300">
+                Para enviar, activa el aviso, indica la versión correcta y guarda primero los cambios. No se enviará nada por guardar.
+              </p>
+            ) : null}
+            <div className="flex justify-end">
+              <Button type="button" variant="outline"
+                onClick={() => setPushConfirmationOpen(true)}
+                disabled={!canManage || !hasSavedActiveRelease || !driverAudience.data ||
+                  driverAudience.data.eligible_android_users === 0 || driverAudience.isError || sendPush.isPending || save.isPending}>
+                <Megaphone className="mr-2 h-4 w-4" /> Notificar actualización
+              </Button>
+            </div>
+          </div>
+          <AlertDialog open={pushConfirmationOpen} onOpenChange={setPushConfirmationOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Notificar a los conductores?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Se enviará una notificación push de TukTuk Conductor {version.trim()}
+                  {" (compilación "}{build}{")"} a {driverAudience.data?.eligible_android_users ?? 0}
+                  {" "}conductores elegibles. No cambia el carácter obligatorio u opcional del aviso dentro de la app.
+                  Cada compilación se notifica una sola vez.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={sendPush.isPending}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction disabled={sendPush.isPending || !hasSavedActiveRelease}
+                  onClick={() => sendPush.mutate()}>
+                  {sendPush.isPending ? "Enviando..." : "Confirmar envío"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           </div>
         </div>
       )}
