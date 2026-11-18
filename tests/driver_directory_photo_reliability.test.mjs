@@ -27,7 +27,8 @@ test("Portrait prefers the conductor upload and falls back to their Google photo
   assert.match(page, /\[url, googleUrl\]\.find/);
   assert.match(page, /onError=\{\(\) => setFailedUrls/);
   assert.match(page, /googleUrl=\{driverMedia\.data\?\.\[item\.userId\]\?\.googleAvatarUrl \?\? null\}/);
-  assert.doesNotMatch(page, /e\.currentTarget\.style\.display = "none"/);
+  const portrait = page.split("function DriverDirectoryPortrait(")[1]?.split("const label = ")[0] ?? "";
+  assert.doesNotMatch(portrait, /currentTarget\.style\.display/);
 });
 
 test("Driver listing shows retryable error without deleting photo records", () => {
