@@ -339,7 +339,7 @@ function operationalPinSvg({
         cx="24"
         cy="21"
         r="11.5"
-        /* El color de estado vive solo en la gota exterior; la silueta interior es neutra. */
+        <!-- La gota exterior identifica el estado; el centro del vehículo es neutro. -->
         fill="${kind === "driver" ? "#17243b" : `url(#${innerId})`}"
         stroke="#ffffff"
         stroke-width="1.4"
