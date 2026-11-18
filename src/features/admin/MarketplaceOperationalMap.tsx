@@ -2661,8 +2661,15 @@ export default function MarketplaceOperationalMap({
                                         {duration ?? "—"}
                                       </span>
                                     )}
-                                    <VehicleModeIcon code={driver.vehicleCategoryCode} className="h-6 w-6" />
-                                    <span className={`h-2 w-2 shrink-0 rounded-full ${stateColor}`} role="img" aria-label={stateLabel} title={stateLabel} />
+                                    {/* Exactly the same state + vehicle marker as on the map.
+                                        A separate modality icon and tiny GPS dot made a grey/
+                                        amber map pin appear inconsistent with this row. */}
+                                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center"
+                                      role="img" aria-label={`${vehicleCategoryLabel(driver.vehicleCategoryCode)} · ${driverPinStateLabel[pinState]}`}
+                                      title={`${stateLabel} · ${driverPinStateLabel[pinState]}`}>
+                                      <OperationalPinLegend kind="driver" vehicleCategoryCode={driver.vehicleCategoryCode}
+                                        driverState={pinState} stale={pinState === "stale"} />
+                                    </span>
                                     <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${rowExpanded ? "rotate-180" : ""}`} />
                                   </button>
                                   {rowExpanded ? (
