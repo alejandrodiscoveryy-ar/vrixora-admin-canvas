@@ -105,8 +105,7 @@ function AdminChrome() {
   useEffect(() => {
     try {
       const savedCollapsed = localStorage.getItem(DESKTOP_SIDEBAR_PREFERENCE) === "true";
-      // Al entrar en Configuración, mostrar su submenú en el lateral principal.
-      setSidebarCollapsed(configurationPageActive ? false : savedCollapsed);
+      setSidebarCollapsed(savedCollapsed);
     } catch { /* storage may be unavailable */ }
   }, []);
 
