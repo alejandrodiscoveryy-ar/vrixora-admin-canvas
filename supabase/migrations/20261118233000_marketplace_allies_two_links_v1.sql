@@ -120,7 +120,7 @@ begin
     target_slug is null or target_slug !~ '^[a-z0-9][a-z0-9-]{1,23}$' or right(target_slug,1)='-' or
     target_rate is null or target_rate<0 or target_rate>.15 then
     raise exception 'INVALID_ALLY_DETAILS' using errcode='22023'; end if;
-  raw_key:=encode(pg_catalog.gen_random_bytes(32),'hex');
+  raw_key:=encode(extensions.gen_random_bytes(32),'hex');
   insert into app_private.marketplace_allies(project_id,name,slug,rate,report_secret_hash,created_by)
     values(target_project_id,btrim(target_name),target_slug,target_rate,
       extensions.digest(pg_catalog.decode(raw_key,'hex'),'sha256'),auth.uid())
@@ -156,7 +156,7 @@ create or replace function public.admin_rotate_marketplace_ally_key_v1(
 declare raw_key text; item app_private.marketplace_allies%rowtype;
 begin
   perform app_private.require_project_permission(target_project_id,'commercial.manage');
-  raw_key:=encode(pg_catalog.gen_random_bytes(32),'hex');
+  raw_key:=encode(extensions.gen_random_bytes(32),'hex');
   update app_private.marketplace_allies set
     report_secret_hash=extensions.digest(pg_catalog.decode(raw_key,'hex'),'sha256'),
     report_expires_at=now()+interval '365 days',updated_at=now()
