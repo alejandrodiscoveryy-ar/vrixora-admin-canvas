@@ -632,13 +632,24 @@ export async function handleRequest(request: Request): Promise<Response> {
     // The SQL wrapper resolves the opaque code, checks category and service,
     // and atomically records attribution with existing request idempotency.
     const promoCode = params.target_promo_code;
+    const allySlug = params.target_ally_slug;
     delete params.target_promo_code;
+    delete params.target_ally_slug;
     if (promoCode != null && (typeof promoCode !== "string" || !/^[0-9a-f]{32}$/.test(promoCode))) {
       throw Error("PROMO_CODE_INVALID");
     }
+    if (allySlug != null && (typeof allySlug !== "string" ||
+      !/^[a-z0-9][a-z0-9-]{1,23}$/.test(allySlug) || allySlug.endsWith("-"))) {
+      throw Error("ALLY_SLUG_INVALID");
+    }
     if (requestRpc === "create_marketplace_customer_request_v2" && promoCode) {
+      // Personal Impulsa profile wins if both campaign types appear.
       requestRpc = "create_marketplace_customer_request_promo_v1";
       params.target_promo_code = promoCode;
+    } else if (requestRpc === "create_marketplace_customer_request_v2" && allySlug) {
+      // Transactional wrapper: same verified price, session and idempotency as v2.
+      requestRpc = "create_marketplace_customer_request_ally_v1";
+      params.target_ally_slug = allySlug;
     }
     const { data, error } = await db.rpc(requestRpc, params);
     // PostgREST returns error objects, not always Error instances.
