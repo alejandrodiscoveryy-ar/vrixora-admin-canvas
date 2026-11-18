@@ -26,10 +26,10 @@ test("verified identity never appears again as an active pending verification", 
 
   const migration = read("supabase/migrations/20261118190000_exclude_verified_from_pending_impulsa_filter.sql");
   const ui = read("src/features/admin/MarketplaceSection.tsx");
-  assert.match(migration, /app_private\\.marketplace_driver_identity_verified_v1\\(a\\.project_id,a\\.driver_user_id\\) = false/);
-  assert.match(migration, /require_project_permission\\(target_project_id,'marketplace\\.manage'\\)/);
-  assert.match(migration, /a\\.status='pending'/);
-  assert.match(migration, /revoke all on function public\\.admin_list_marketplace_pending_impulsa_verifications_v1/);
-  assert.match(ui, /matchesPendingDriverVerification\\(/);
-  assert.match(ui, /driverVerifications\\.isError \\|\\| !verificationComplete/);
+  assert.match(migration, /app_private\.marketplace_driver_identity_verified_v1\(a\.project_id,a\.driver_user_id\) = false/);
+  assert.match(migration, /require_project_permission\(target_project_id,'marketplace\.manage'\)/);
+  assert.match(migration, /a\.status='pending'/);
+  assert.match(migration, /revoke all on function public\.admin_list_marketplace_pending_impulsa_verifications_v1/);
+  assert.match(ui, /matchesPendingDriverVerification\(/);
+  assert.match(ui, /driverVerifications\.isError \|\| !verificationComplete/);
 });
