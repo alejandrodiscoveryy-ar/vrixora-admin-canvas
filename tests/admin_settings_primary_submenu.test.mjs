@@ -25,12 +25,17 @@ test("Clicking Configuración reveals the nested icons without widening the desk
   assert.match(shell, /setConfigurationExpanded\(\(value\) => !value\)/);
   assert.match(shell, /aria-expanded=\{groupOpen\}/);
   assert.match(shell, /hidden=\{!groupOpen\}/);
-  assert.match(shell, /!collapsed && \(\s*<ChevronRight data-nav-chevron/);
+  assert.match(shell, /className="admin-nav-config-toggle"/);
+  assert.match(shell, /aria-label=\{groupOpen \? "Contraer Configuración" : "Desplegar Configuración"\}/);
+  assert.match(shell, /if \(collapsed\) setConfigurationExpanded\(true\)/);
   assert.match(shell, /className="admin-nav-item admin-nav-secondary"/);
   assert.match(shell, /const defaultChild = adminGroupDefault\(tab\)/);
   assert.match(shell, /nestedChildren = tab\.children\.filter\(\(child\) => child\.slug !== "configuracion"\)/);
   assert.match(shell, /section: defaultChild\.slug/);
   assert.match(shell, /mainSettingsActive \? "page" : undefined/);
+  assert.match(shell, /to="\/admin\/proyectos\/\$id\/\$section"/);
+  assert.match(shell, /section: defaultChild\.slug/);
+  assert.match(shell, /nestedChildren\.map\(\(child\) =>/);
   assert.match(shell, /collapsed \? "w-16"/);
   assert.match(shell, /function toggleDesktopSidebar\(\)/);
 });
