@@ -18,15 +18,17 @@ test("Configuration children live under their main sidebar category, not a secon
   }
 });
 
-test("Entering Configuración reveals the main submenu even when desktop rail was collapsed", () => {
-  assert.match(shell, /configurationPageActive/);
-  assert.match(shell, /if \(configurationPageActive\) setSidebarCollapsed\(false\)/);
-  assert.match(shell, /setConfigurationExpanded\(true\)/);
-  assert.match(shell, /onOpenConfiguration\?\.\(\)/);
-  assert.match(shell, /onOpenConfiguration=\{onOpenConfiguration\}/);
-  assert.match(shell, /const groupOpen = !collapsed && configurationExpanded/);
+test("Clicking Configuración reveals the nested icons without widening the desktop rail", () => {
+  assert.doesNotMatch(shell, /configurationPageActive|onOpenConfiguration/);
+  assert.match(shell, /const \[configurationExpanded, setConfigurationExpanded\] = useState\(false\)/);
+  assert.match(shell, /const groupOpen = configurationExpanded/);
+  assert.match(shell, /onClick=\{\(\) => setConfigurationExpanded\(\(value\) => !value\)\}/);
   assert.match(shell, /aria-expanded=\{groupOpen\}/);
   assert.match(shell, /hidden=\{!groupOpen\}/);
+  assert.match(shell, /!collapsed && \(\s*<ChevronRight data-nav-chevron/);
+  assert.match(shell, /className="admin-nav-item admin-nav-secondary"/);
+  assert.match(shell, /collapsed \? "w-16"/);
+  assert.match(shell, /function toggleDesktopSidebar\(\)/);
 });
 
 test("Mobile navigation, permissions and release controls remain intact", () => {
