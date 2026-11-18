@@ -159,42 +159,6 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
             </PageAlert>
           ) : null}
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="mobile-announcement-category">Tipo de comunicado</Label>
-              <Select
-                value={category}
-                onValueChange={(value) =>
-                  setCategory(value === "app_update" ? "app_update" : "general")
-                }
-                disabled={!canSend || sendMutation.isPending}
-              >
-                <SelectTrigger id="mobile-announcement-category" className={CONTROL_CLASS}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">Comunicado general</SelectItem>
-                  <SelectItem value="app_update">Nueva actualización</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {isUpdate ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="mobile-announcement-version">Versión</Label>
-                <Input
-                  id="mobile-announcement-version"
-                  className={CONTROL_CLASS}
-                  value={releaseVersion}
-                  maxLength={40}
-                  onChange={(event) => setReleaseVersion(event.target.value)}
-                  placeholder="Ej. 1.2.0"
-                  disabled={!canSend || sendMutation.isPending}
-                />
-              </div>
-            ) : null}
-          </div>
-
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="mobile-announcement-title">Título</Label>
