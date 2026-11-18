@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionCard } from "@/components/admin/SectionCard";
-
-const PLAY_URL = "";
+import { TUKTUK_CONDUCTOR_PLAY_URL, suggestNextAndroidRelease } from "@/lib/androidRelease";
 
 type ReleaseSettings = {
   enabled: boolean;
@@ -25,7 +24,7 @@ const defaultSettings: ReleaseSettings = {
   enabled: false,
   latest_version: "",
   latest_build: 0,
-  download_url: PLAY_URL,
+  download_url: TUKTUK_CONDUCTOR_PLAY_URL,
   release_notes: "",
 };
 
@@ -43,7 +42,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const [enabled, setEnabled] = useState(false);
   const [version, setVersion] = useState("");
   const [build, setBuild] = useState("");
-  const [url, setUrl] = useState(PLAY_URL);
   const [notes, setNotes] = useState("");
 
   const query = useQuery({
@@ -64,20 +62,16 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     setEnabled(query.data.enabled);
     setVersion(query.data.latest_version);
     setBuild(query.data.latest_build > 0 ? String(query.data.latest_build) : "");
-    setUrl(query.data.download_url || PLAY_URL);
     setNotes(query.data.release_notes);
   }, [query.data, projectSettings.data]);
 
   const parsedBuild = Number(build);
   const validVersion = /^\d+(?:\.\d+){1,3}$/.test(version.trim());
-  let validUrl = false;
-  try {
-    const parsed = new URL(url.trim());
-    validUrl = parsed.protocol === "https:" && Boolean(parsed.hostname) &&
-      !parsed.username && !parsed.password;
-  } catch { /* Invalid download URL. */ }
+  const proposedRelease = query.data
+    ? suggestNextAndroidRelease(query.data.latest_version, query.data.latest_build)
+    : null;
   const valid = !enabled || (
-    validVersion && Number.isSafeInteger(parsedBuild) && parsedBuild > 0 && validUrl
+    validVersion && Number.isSafeInteger(parsedBuild) && parsedBuild > 0 && parsedBuild <= 2147483647
   );
 
   const save = useMutation({
@@ -92,7 +86,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
         target_enabled: enabled,
         target_latest_version: version.trim(),
         target_latest_build: Number.isSafeInteger(parsedBuild) ? parsedBuild : 0,
-        target_download_url: url.trim(),
+        target_download_url: TUKTUK_CONDUCTOR_PLAY_URL,
         target_release_notes: notes.trim(),
         target_mandatory: enabled && mode === "mandatory",
       });
@@ -110,7 +104,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   return (
     <SectionCard
       title="Actualizaciones de TukTuk Conductor"
-      description="Configura el aviso automático, el tipo de actualización y el enlace oficial desde una sola ficha."
+      description="Configura el aviso, la versión Android y el enlace oficial permanente desde una sola ficha."
       module="configuracion"
       className="relative overflow-hidden rounded-[25px] border border-cyan-400/20 bg-gradient-to-br from-[#0b171c] via-[#081116] to-[#061a20]/90 shadow-[0_26px_70px_-42px_rgba(0,0,0,0.94)]"
       headerClassName="border-b border-cyan-400/[0.12] bg-cyan-300/[0.025] px-4 py-4 sm:px-6"
@@ -162,10 +156,29 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                 onChange={(e) => setBuild(e.target.value)} placeholder="23" disabled={!canManage || save.isPending} />
             </div>
           </div>
+          {proposedRelease ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.035] px-3 py-2.5">
+              <p className="text-xs text-text-secondary">
+                Siguiente sugerida: <strong className="text-text-primary">{proposedRelease.version}</strong>
+                {" · compilación "}
+                <strong className="text-text-primary">{proposedRelease.build}</strong>
+              </p>
+              <Button type="button" variant="outline" size="sm"
+                disabled={!canManage || save.isPending}
+                onClick={() => {
+                  setVersion(proposedRelease.version);
+                  setBuild(String(proposedRelease.build));
+                }}>
+                Usar sugerencia
+              </Button>
+            </div>
+          ) : null}
           <div className="space-y-1.5">
-            <Label htmlFor="app-release-download">Enlace oficial HTTPS de descarga</Label>
-            <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-download" type="url" value={url} onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enlace oficial HTTPS de la nueva APK" maxLength={1500} disabled={!canManage || save.isPending} />
+            <Label htmlFor="app-release-download">Enlace oficial de descarga (fijo)</Label>
+            <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80 text-text-secondary" id="app-release-download"
+              type="url" value={TUKTUK_CONDUCTOR_PLAY_URL} readOnly aria-readonly="true"
+              title={TUKTUK_CONDUCTOR_PLAY_URL} />
+            <p className="text-xs text-text-secondary">Enlace permanente de Google Play. No se modifica al publicar una nueva versión.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="app-release-notes">Novedades de la versión</Label>
@@ -175,9 +188,9 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           </div>
           <p className="text-xs text-text-secondary">
             <Download className="mr-1 inline h-3.5 w-3.5" />
-            Publica primero la APK/AAB y verifica el enlace. No establezcas una versión mínima superior a la versión publicada.
+            Publica primero la APK/AAB y verifica que esté disponible en Google Play. La sugerencia no se activa hasta guardar.
           </p>
-          {!valid ? <p role="alert" className="text-sm text-destructive">La versión, la compilación y el enlace HTTPS deben ser válidos.</p> : null}
+          {!valid ? <p role="alert" className="text-sm text-destructive">La versión y la compilación Android deben ser válidas.</p> : null}
           {enabled && mode === "mandatory" ? (
             <div role="status" className="flex items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 p-2 text-xs text-amber-200">
               <ShieldAlert className="h-4 w-4 shrink-0" /> El conductor no podrá continuar sin instalar la versión publicada. Verifica antes la descarga.
