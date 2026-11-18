@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Smartphone, ShieldAlert } from "lucide-react";
+import { Download, Loader2, Smartphone, ShieldAlert, Send } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
@@ -43,6 +43,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const [version, setVersion] = useState("");
   const [build, setBuild] = useState("");
   const [notes, setNotes] = useState("");
+  const [pushSending, setPushSending] = useState(false);
 
   const query = useQuery({
     queryKey: ["app-release-settings", projectId],
@@ -73,6 +74,47 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const valid = !enabled || (
     validVersion && Number.isSafeInteger(parsedBuild) && parsedBuild > 0 && parsedBuild <= 2147483647
   );
+  const savedRelease = query.data;
+  const configuredForPush = Boolean(savedRelease?.enabled &&
+    /^\\d+(?:\\.\\d+){1,3}$/.test(savedRelease.latest_version) &&
+    savedRelease.latest_build > 0);
+  const hasDraftChanges = Boolean(savedRelease && (
+    enabled !== savedRelease.enabled ||
+    version.trim() !== savedRelease.latest_version ||
+    parsedBuild !== savedRelease.latest_build ||
+    notes.trim() !== savedRelease.release_notes ||
+    (mode === "mandatory") !== Boolean(projectSettings.data?.forceUpdate)
+  ));
+  const canAnnounceRelease = canManage && !save.isPending && !pushSending &&
+    !hasUnsavedProjectChanges && !hasDraftChanges && configuredForPush;
+  const pushAudience = useQuery({
+    queryKey: ["mobile-push-audience", projectId],
+    queryFn: () => supabaseServices.communications.audience(projectId),
+    enabled: canManage,
+  });
+  const sendReleaseAnnouncement = async () => {
+    if (!canAnnounceRelease || !savedRelease) return;
+    const title = `Nueva versión de TukTuk Conductor ${savedRelease.latest_version}`;
+    const message = savedRelease.release_notes.replace(/\\*\\*/g, "").trim() ||
+      "Nueva versión disponible. Actualiza TukTuk Conductor desde Google Play.";
+    if (!window.confirm(`¿Enviar una notificación push sobre la versión ${savedRelease.latest_version} a ${pushAudience.data?.eligibleAndroidUsers ?? "los"} conductores elegibles? El aviso dentro de la aplicación ya funciona por separado.`)) return;
+    setPushSending(true);
+    try {
+      const result = await supabaseServices.communications.send(projectId, {
+        category: "app_update",
+        title,
+        body: message.slice(0, 500),
+        releaseVersion: savedRelease.latest_version,
+        actionUrl: TUKTUK_CONDUCTOR_PLAY_URL,
+      });
+      toast.success(`Notificación encolada para ${result.queuedUsers} usuario(s) elegible(s).`);
+      await queryClient.invalidateQueries({ queryKey: ["mobile-push-audience", projectId] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo enviar el aviso.");
+    } finally {
+      setPushSending(false);
+    }
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -205,6 +247,33 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
               disabled={!canManage || hasUnsavedProjectChanges || !valid || save.isPending || projectSettings.isLoading || projectSettings.isError}>
               {save.isPending ? "Guardando..." : "Guardar versión Android"}
             </Button>
+          </div>
+          <div className="border-t border-cyan-400/15 pt-4 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold">Notificación a los conductores</p>
+                <p className="text-xs text-text-secondary">
+                  El aviso automático en la app y la notificación push son distintos; aquí los gestionas juntos.
+                </p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void sendReleaseAnnouncement()}
+                disabled={!canAnnounceRelease || pushAudience.isLoading || pushAudience.isError}>
+                {pushSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Enviar notificación
+              </Button>
+            </div>
+            <p className="text-xs text-text-secondary">
+              {pushAudience.isError
+                ? "No se pudo consultar la audiencia de notificaciones."
+                : pushAudience.isLoading
+                  ? "Consultando audiencia Android..."
+                  : `Dispositivos con notificaciones activas: ${pushAudience.data?.enabledAndroidTokens ?? 0}. El envío requiere confirmación.`}
+            </p>
+            {!configuredForPush
+              ? <p className="text-xs text-amber-300">Primero guarda una versión válida con el aviso activado. Comprueba que la actualización esté disponible en Google Play.</p>
+              : hasDraftChanges || hasUnsavedProjectChanges
+                ? <p className="text-xs text-amber-300">Guarda los cambios de versión antes de enviar la notificación.</p>
+                : null}
           </div>
           </div>
         </div>
