@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Loader2, Megaphone, RefreshCw, Smartphone } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Loader2, Megaphone, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
@@ -157,9 +157,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     notes.trim() !== query.data.release_notes.trim() ||
     (enabled && mode === "mandatory") !== Boolean(projectSettings.data.forceUpdate)
   ));
-  const canSaveDraft = canManage && hasDraftChanges && valid &&
-    !hasUnsavedProjectChanges && !save.isPending && !projectSettings.isError;
-
   const hasSavedActiveRelease = Boolean(
     query.data?.enabled &&
     enabled &&
@@ -224,6 +221,9 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const canSaveDraft = canManage && hasDraftChanges && valid &&
+    !hasUnsavedProjectChanges && !save.isPending && !projectSettings.isError;
+
   return (
     <SectionCard
       title="Aplicación y versiones"
