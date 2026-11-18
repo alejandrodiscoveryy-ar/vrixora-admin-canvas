@@ -11,7 +11,7 @@ test("Android releases stay in a readable, compact and sequential workflow", () 
   assert.ok(ui.indexOf("1. Seguimiento") < ui.indexOf("2. Preparar versión"));
   assert.ok(ui.indexOf("2. Preparar versión") < ui.indexOf("3. Avisar a los conductores"));
   assert.match(ui, /density="compact"/);
-  assert.match(ui, /grid-cols-2 gap-2 md:grid-cols-4/);
+  assert.match(ui, /grid gap-3 lg:grid-cols-2/);
   assert.match(ui, /aria-expanded=\{editorOpen\}/);
   assert.match(ui, /Preparar \/ editar/);
   assert.match(ui, /aria-label="Actualizar el seguimiento de la versión"/);
