@@ -642,13 +642,13 @@ test("Configuration parent selects general settings or the first authorized chil
   assert.equal(adminGroupDefault({...group, children: group.children.filter(child => child.permission === "members.view")})?.slug, "empleados");
   assert.equal(adminGroupDefault({...group, children: []}), undefined);
   const route = readFileSync(new URL("../src/routes/admin.tsx", import.meta.url), "utf8");
-  assert.match(route, /const defaultChild = adminGroupDefault\(tab\)/);
-  assert.match(route, /params=\{\{ id: project.id, section: defaultChild.slug \}\}/);
-  assert.match(route, /setConfigurationExpanded\(true\);\s*onOpenConfiguration\?\.\(\);\s*closeDrawer\?\.\(\)/);
+  // El padre abre el submenú; se navega a cada sección desde sus enlaces autorizados.
   assert.match(route, /aria-controls=\{configurationGroupId\}/);
   assert.match(route, /hidden=\{!groupOpen\}/);
-  assert.match(route, /setConfigurationExpanded\(\(value\) => !value\)/);
-  assert.match(route, /const groupOpen = !collapsed && configurationExpanded/);
+  assert.match(route, /onClick=\{\(\) => setConfigurationExpanded\(\(value\) => !value\)\}/);
+  assert.match(route, /const groupOpen = configurationExpanded/);
+  assert.match(route, /params=\{\{\s*id: project.id,\s*section: child.slug/);
+  assert.doesNotMatch(route, /configurationPageActive|onOpenConfiguration/);
 });
 
 test("Marketplace compact directories share one responsive row and preserve actions", () => {
