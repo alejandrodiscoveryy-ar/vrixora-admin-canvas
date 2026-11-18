@@ -230,7 +230,9 @@ function operationalPinSvg({
     ? selected ? "drop-shadow(0 0 3px rgba(255,255,255,0.65)) drop-shadow(0 3px 2px rgba(0,0,0,0.4))" : "drop-shadow(0 3px 2px rgba(0,0,0,0.4))"
     : selected ? "drop-shadow(0 0 5px rgba(255,255,255,0.68)) drop-shadow(0 9px 8px rgba(0,0,0,0.45))" : "drop-shadow(0 9px 7px rgba(0,0,0,0.42))";
 
-  const markerOpacity = kind === "driver" && stale ? "0.90" : "1";
+  const markerOpacity = kind === "driver" && driverState === "historic"
+    ? "0.76"
+    : kind === "driver" && stale ? "0.90" : "1";
 
   // El marcador seleccionado gana relevancia; la leyenda mantiene su tamaÃ±o.
   // Crop the driver silhouette around the existing 24x24 glyph. Keep its
@@ -328,7 +330,7 @@ function operationalPinSvg({
         cx="24"
         cy="21"
         r="11.5"
-        fill="${kind === "driver" ? vehicleModeColor(vehicleCategoryCode) : `url(#${innerId})`}"
+        fill="${kind === "driver" ? (driverState === "historic" ? "#64748b" : vehicleModeColor(vehicleCategoryCode)) : `url(#${innerId})`}"
         stroke="#ffffff"
         stroke-width="1.4"
         stroke-opacity="0.96"
@@ -1475,7 +1477,9 @@ export default function MarketplaceOperationalMap({
 
         const element = marker.getElement();
         // En servicio > disponible > GPS antiguo. GPS histórico no implica presencia.
-        element.style.zIndex = driver.activeJobId ? "30" : !driver.acceptingJobs ? "5" : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
+        element.style.zIndex = driverPinState(driver) === "historic" ? "2"
+          : driver.activeJobId ? "30" : !driver.acceptingJobs ? "5"
+          : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
         const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
 
         if (!pin) continue;
@@ -1529,6 +1533,7 @@ export default function MarketplaceOperationalMap({
                 event.stopPropagation();
                 setAgendaTab("drivers");
                 setDriverListMode(driver.acceptingJobs ? "working" : "resting");
+                setExpandedDriverId(driver.driverUserId);
                 setAgendaCollapsed(false);
               }
             : null;
