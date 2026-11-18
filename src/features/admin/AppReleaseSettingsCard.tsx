@@ -393,15 +393,20 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
             </div>
           </section>
 
-          <section aria-label="Preparar la siguiente actualización" className="border-t border-border-subtle pt-2">
+          <section aria-label="Preparar la siguiente actualización" className="rounded-2xl border border-border-default bg-surface-2/60 p-3.5 sm:p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-text-primary">2. Preparar versión</h3>
-                <p className="text-xs text-text-secondary">
-                  {proposedRelease
-                    ? "Sugerida: " + proposedRelease.version + " · compilación " + proposedRelease.build
-                    : "La versión y el aviso actuales no cambian al preparar un borrador"}
-                </p>
+              <div className="flex min-w-0 items-start gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Wrench className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-text-primary">2. Preparar versión</h3>
+                  <p className="text-xs leading-relaxed text-text-secondary">
+                    {proposedRelease
+                      ? "Próxima sugerida: " + proposedRelease.version + " · compilación " + proposedRelease.build
+                      : "Edita la versión actual o prepara la siguiente."}
+                  </p>
+                </div>
               </div>
               <Button type="button" size="sm" variant="outline" aria-expanded={editorOpen}
                 aria-controls="android-release-editor" disabled={!canManage || save.isPending}
@@ -416,7 +421,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                   }
                   setEditorOpen(!editorOpen);
                 }}>
-                {editorOpen ? "Cerrar" : "Preparar / editar"}
+                {editorOpen ? "Cerrar editor" : "Preparar / editar"}
                 {editorOpen
                   ? <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
                   : <ChevronDown className="ml-1.5 h-3.5 w-3.5" />}
@@ -424,11 +429,11 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
             </div>
 
             {editorOpen ? (
-              <div id="android-release-editor" className="mt-3 space-y-3 rounded-xl border border-border-default bg-surface-2 p-3">
+              <div id="android-release-editor" className="mt-3 space-y-3 border-t border-border-default pt-3">
                 {proposedRelease ? (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
                     <p className="text-xs text-text-secondary">
-                      Propuesta: <strong className="text-text-primary">{proposedRelease.version} ({proposedRelease.build})</strong>
+                      Número sugerido: <strong className="text-text-primary">{proposedRelease.version} · compilación {proposedRelease.build}</strong>
                     </p>
                     <Button type="button" size="sm" variant="outline"
                       disabled={!canManage || save.isPending}
@@ -519,25 +524,36 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           </section>
 
           <section aria-label="Notificar la versión publicada"
-            className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-2">
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-text-primary">3. Avisar a los conductores</h3>
-              <p className="text-xs text-text-secondary">Después de guardar. Un envío por conductor y compilación.</p>
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-default bg-surface-1 p-3.5 sm:p-4">
+            <div className="flex min-w-0 items-start gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/[0.10] text-primary">
+                <Megaphone className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-text-primary">3. Avisar a los conductores</h3>
+                <p className="text-xs leading-relaxed text-text-secondary">
+                  Solo después de publicar y guardar. Cada compilación se envía una vez.
+                </p>
+              </div>
             </div>
-            <Button type="button" size="sm" variant="outline"
-              onClick={() => setPushConfirmationOpen(true)}
-              disabled={!canManage || !hasSavedActiveRelease || !driverAudience.data ||
-                driverAudience.data.eligible_android_users === 0 || driverAudience.isError ||
-                sendPush.isPending || save.isPending ||
-                (deliveryQuery.data != null &&
-                  deliveryQuery.data.sent_drivers >= deliveryQuery.data.eligible_drivers &&
-                  deliveryQuery.data.pending_drivers === 0 && deliveryQuery.data.failed_drivers === 0)}>
-              <Megaphone className="mr-1.5 h-3.5 w-3.5" />
-              {deliveryQuery.data && deliveryQuery.data.eligible_drivers > 0 &&
-                deliveryQuery.data.sent_drivers >= deliveryQuery.data.eligible_drivers &&
-                deliveryQuery.data.pending_drivers === 0 && deliveryQuery.data.failed_drivers === 0
-                ? "Ya notificados" : "Notificar versión"}
-            </Button>
+            {deliveryQuery.data && deliveryQuery.data.eligible_drivers > 0 &&
+              deliveryQuery.data.sent_drivers >= deliveryQuery.data.eligible_drivers &&
+              deliveryQuery.data.pending_drivers === 0 && deliveryQuery.data.failed_drivers === 0 ? (
+              <span role="status"
+                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.09] px-3 text-xs font-semibold text-emerald-200">
+                <CheckCheck className="h-4 w-4" aria-hidden="true" />
+                Ya notificados
+              </span>
+            ) : (
+              <Button type="button" size="sm" variant="outline"
+                onClick={() => setPushConfirmationOpen(true)}
+                disabled={!canManage || !hasSavedActiveRelease || !driverAudience.data ||
+                  driverAudience.data.eligible_android_users === 0 || driverAudience.isError ||
+                  sendPush.isPending || save.isPending}>
+                <Megaphone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                Notificar versión
+              </Button>
+            )}
           </section>
 
           <AlertDialog open={pushConfirmationOpen} onOpenChange={setPushConfirmationOpen}>
