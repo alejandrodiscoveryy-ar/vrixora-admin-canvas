@@ -30,7 +30,7 @@ test("Clicking Configuración reveals the nested icons without widening the desk
   assert.match(shell, /if \(collapsed\) setConfigurationExpanded\(true\)/);
   assert.match(shell, /className="admin-nav-item admin-nav-secondary"/);
   assert.match(shell, /const defaultChild = adminGroupDefault\(tab\)/);
-  assert.match(shell, /nestedChildren = tab\.children\.filter\(\(child\) => child\.slug !== "configuracion"\)/);
+  assert.match(shell, /nestedChildren = tab\.children\.filter\(\(child\) => child\.slug !== defaultChild\.slug\)/);
   assert.match(shell, /section: defaultChild\.slug/);
   assert.match(shell, /mainSettingsActive \? "page" : undefined/);
   assert.match(shell, /to="\/admin\/proyectos\/\$id\/\$section"/);
