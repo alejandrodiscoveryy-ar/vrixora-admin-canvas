@@ -2692,6 +2692,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           </DialogHeader>
 
           <div className="min-w-0 p-3 pt-12 sm:p-4 sm:pt-12">
+            {selectedDriverMedia.isError ? (
+              <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-3 py-2 text-xs text-amber-200">
+                <span>No se pudo recuperar la fotografía del conductor.</span>
+                <Button type="button" size="sm" variant="outline" onClick={() => void selectedDriverMedia.refetch()}>
+                  Reintentar foto
+                </Button>
+              </div>
+            ) : null}
             {driver360.isLoading ? (
               <LoadingState />
             ) : driver360.data ? (
