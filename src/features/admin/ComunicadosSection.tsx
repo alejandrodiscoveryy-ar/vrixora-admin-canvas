@@ -29,10 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices, type MobileAnnouncementCategory } from "@/lib/services";
-import { getSupabaseClient } from "@/lib/supabase";
-
-const GOOGLE_PLAY_URL =
-  "https://play.google.com/store/apps/details?id=com.alejandrocruz.tuktukcontrol";
+import { TUKTUK_CONDUCTOR_PLAY_URL } from "@/lib/androidRelease";
 
 const CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
 const HEADER_CLASS = "px-4 py-2.5 sm:px-4 sm:py-2.5";
@@ -55,18 +52,6 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
     queryFn: () => supabaseServices.communications.audience(projectId),
   });
 
-  const appReleaseQuery = useQuery({
-    queryKey: ["app-release-settings", projectId],
-    queryFn: async (): Promise<{ download_url?: string } | null> => {
-      const { data, error } = await getSupabaseClient().rpc("admin_get_app_release", {
-        target_project_id: projectId, target_platform: "android",
-      });
-      if (error) throw error;
-      return data as { download_url?: string } | null;
-    },
-    enabled: category === "app_update",
-  });
-  const updateUrl = appReleaseQuery.data?.download_url || GOOGLE_PLAY_URL;
   const isUpdate = category === "app_update";
   const titleValue = title.trim();
   const bodyValue = body.trim();
@@ -93,7 +78,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         title: titleValue,
         body: bodyValue,
         releaseVersion: isUpdate ? releaseVersionValue : undefined,
-        actionUrl: isUpdate ? updateUrl : undefined,
+        actionUrl: isUpdate ? TUKTUK_CONDUCTOR_PLAY_URL : undefined,
       });
     },
     onSuccess: async (result) => {
