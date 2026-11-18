@@ -100,8 +100,11 @@ const vehicleCategoryLabel = (code: string | null) =>
 
 type OperationalPinKind = "driver" | "customer" | "destination";
 // A clear difference between service, availability and old GPS is crucial in dispatch.
-type DriverPinState = "available" | "busy" | "stale" | "unavailable";
+type DriverPinState = "available" | "busy" | "stale" | "historic" | "unavailable";
 function driverPinState(driver: MarketplaceOperationalDriver): DriverPinState {
+  // A driver can be Trabajando while their last accepted GPS is days old.
+  // GPS history is always muted and clearly labeled; never imply live presence.
+  if (hasHistoricalDriverCoordinate(driver)) return "historic";
   if (driver.activeJobId) return "busy";
   if (!driver.acceptingJobs) return "unavailable";
   if (!driver.locationFresh) return "stale";
@@ -111,7 +114,8 @@ function driverPinState(driver: MarketplaceOperationalDriver): DriverPinState {
 const driverPinStateLabel: Record<DriverPinState, string> = {
   available: "Disponible",
   busy: "En servicio",
-  stale: "Ultima posicion conocida, no confirmar disponibilidad",
+  stale: "Última ubicación GPS, pendiente de actualizar",
+  historic: "GPS histórico (más de 24 horas), ubicación NO actual",
   unavailable: "No disponible para nuevas carreras",
 };
 type MapViewMode = "operations" | "coverage";
@@ -200,7 +204,9 @@ function operationalPinSvg({
 }) {
   const colors =
     kind === "driver"
-      ? stale || driverState === "stale"
+      ? driverState === "historic"
+        ? ["#cbd5e1", "#64748b", "#475569", "#334155"]
+        : stale || driverState === "stale"
         ? ["#ffe2a3", "#b98233", "#96602b", "#633819"]
         : driverState === "available"
           ? ["#bae6fd", "#0284c7", "#0369a1", "#075985"]
@@ -542,7 +548,6 @@ const workingStartTimeLabel = (workingSince: string | null | undefined) => {
 };
 
 const MAP_LAST_POSITION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-const MAP_FUTURE_POSITION_TOLERANCE_MS = 5 * 60 * 1000;
 
 // No map marker can imply a current driver position from a days-old GPS fix.
 // Preserve the historical location in the backend and the driver's details.
@@ -573,11 +578,8 @@ const validCoordinate = (value: number | null, min: number, max: number) =>
   value != null && Number.isFinite(value) && value >= min && value <= max ? value : null;
 
 function driverCoordinate(driver: MarketplaceOperationalDriver): Coordinate | null {
-  // Old or undated positions are never drawn in Operaciones, Toda la flota
-  // or Cobertura, regardless of whether the driver is Trabajando or Descansando.
-  const age = mapPositionAgeMs(driver.capturedAt);
-  if (age == null || age > MAP_LAST_POSITION_MAX_AGE_MS ||
-      age < -MAP_FUTURE_POSITION_TOLERANCE_MS) return null;
+  // Always use the latest accepted fix, including when the driver is resting.
+  // Old coordinates remain consultable but are never presented as live GPS.
   const lon = validCoordinate(
     driver.locationFresh ? driver.longitude : driver.lastLongitude,
     -180,
@@ -593,9 +595,7 @@ function driverCoordinate(driver: MarketplaceOperationalDriver): Coordinate | nu
 
 function hasHistoricalDriverCoordinate(driver: MarketplaceOperationalDriver): boolean {
   const age = mapPositionAgeMs(driver.capturedAt);
-  return age != null && age > MAP_LAST_POSITION_MAX_AGE_MS &&
-    validCoordinate(driver.lastLatitude, -90, 90) != null &&
-    validCoordinate(driver.lastLongitude, -180, 180) != null;
+  return age != null && age > MAP_LAST_POSITION_MAX_AGE_MS && driverCoordinate(driver) != null;
 }
 
 function decodePolyline(encoded: string): Coordinate[] {
@@ -1474,7 +1474,7 @@ export default function MarketplaceOperationalMap({
         }
 
         const element = marker.getElement();
-        // En servicio > disponible > GPS antiguo.
+        // En servicio > disponible > GPS antiguo. GPS histórico no implica presencia.
         element.style.zIndex = driver.activeJobId ? "30" : !driver.acceptingJobs ? "5" : !driver.locationFresh ? "10" : driverPinState(driver) === "available" ? "20" : "15";
         const pin = element.querySelector<HTMLElement>('[data-role="driver-pin"]');
 
@@ -1509,7 +1509,9 @@ export default function MarketplaceOperationalMap({
 
         element.title = `${driver.driverDisplayName ?? "Conductor"} - ${vehicleCategoryLabel(
           driver.vehicleCategoryCode,
-        )} - ${driverPinStateLabel[driverPinState(driver)]}`;
+        )} - ${driverPinStateLabel[driverPinState(driver)]} - ${driver.capturedAt ? new Intl.DateTimeFormat("es-CU", {
+          timeZone: "America/Havana", dateStyle: "medium", timeStyle: "short",
+        }).format(new Date(driver.capturedAt)) + " (Cuba)" : "Sin fecha GPS"}`;
 
         element.style.cursor =
           driver.activeJobId || mapViewMode === "coverage" || showAllFleetInOperations ? "pointer" : "default";
@@ -2383,19 +2385,19 @@ export default function MarketplaceOperationalMap({
                     </button>
                   ))}
                   <span className="px-2 text-[10px] text-slate-300">
-                    GPS ≤24 h: {coverageLocated}/{coverageDrivers.length}
+                    Con última posición: {coverageLocated}/{coverageDrivers.length}
                   </span>
                 </div>
               )}
               {mapViewMode === "operations" && layers.drivers && showAllFleetInOperations ? (
                 <span className="rounded-lg border border-sky-400/25 bg-slate-950/85 px-2.5 py-1.5 text-[11px] text-sky-100 shadow-lg">
-                  GPS ≤24 h: {(operational.data?.drivers ?? []).filter((driver) => driverCoordinate(driver) != null).length}/{operational.data?.drivers.length ?? 0}
+                  Con última posición: {(operational.data?.drivers ?? []).filter((driver) => driverCoordinate(driver) != null).length}/{operational.data?.drivers.length ?? 0}
                 </span>
               ) : null}
               {mapViewMode === "operations" && layers.drivers && showAllFleetInOperations && historicalFleetLocations > 0 ? (
                 <span className="rounded-lg border border-amber-400/25 bg-slate-950/85 px-2.5 py-1.5 text-[11px] text-amber-100 shadow-lg"
                   title="Ubicaciones conservadas en el historial, pero demasiado antiguas para ubicar a un conductor en el mapa.">
-                  {historicalFleetLocations} GPS históricos ocultos
+                  {historicalFleetLocations} GPS históricos (&gt;24 h), en gris
                 </span>
               ) : null}
               {mapViewMode === "operations" &&
@@ -2654,7 +2656,7 @@ export default function MarketplaceOperationalMap({
                                           {started && <p className="tabular-nums">Desde {started} · hora de Cuba</p>}
                                         </div>
                                       )}
-                                      <div className="text-slate-400">
+                                      <div className={hasHistoricalDriverCoordinate(driver) ? "text-amber-200" : "text-slate-400"}>
                                         <p>{signalAgeLabel(driver.capturedAt, data.serverTime)}</p>
                                         <p className="tabular-nums">{lastSignal}</p>
                                       </div>
@@ -2663,8 +2665,8 @@ export default function MarketplaceOperationalMap({
                                           type="button"
                                           disabled={!hasLastPosition}
                                           title={hasLastPosition
-                                            ? "Ver ubicación GPS registrada en las últimas 24 horas"
-                                            : "No disponible: solo existe una ubicación histórica o no hay señal GPS"}
+                                            ? "Ver la última ubicación GPS registrada. Consulta su fecha: puede ser histórica."
+                                            : "No hay ubicación GPS registrada"}
                                           className="rounded-md border border-orange-400/25 px-2 py-1 text-orange-200 enabled:hover:bg-orange-400/10 disabled:opacity-40"
                                           onClick={() => {
                                             const coordinate = driverCoordinate(driver);
