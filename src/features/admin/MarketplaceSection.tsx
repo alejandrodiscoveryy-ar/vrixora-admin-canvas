@@ -90,6 +90,35 @@ const MarketplaceCustomerCareWorkspace = lazy(() => import("@/features/admin/Mar
 
 const PAGE_SIZE = 25;
 
+function DriverDirectoryPortrait({
+  name,
+  url,
+  googleUrl,
+}: {
+  name: string;
+  url: string | null;
+  googleUrl: string | null;
+}) {
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
+  useEffect(() => setFailedUrls([]), [url, googleUrl]);
+  const activeUrl = [url, googleUrl].find((candidate) => candidate && !failedUrls.includes(candidate));
+  return (
+    <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-default bg-surface-2 text-primary">
+      <Users className="h-5 w-5" aria-hidden="true" />
+      {activeUrl ? (
+        <img
+          key={activeUrl}
+          src={activeUrl}
+          alt={`Foto de ${name}`}
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={() => setFailedUrls((previous) => previous.includes(activeUrl)
+            ? previous : [...previous, activeUrl])}
+        />
+      ) : null}
+    </span>
+  );
+}
+
 const label = (value: string | null) =>
   ({
     requested: "Solicitado",
@@ -2137,6 +2166,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 ) : null}
               </div>
             </div>
+            {driverMedia.isError ? (
+              <div role="alert" className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2 text-xs text-amber-200">
+                <span>No se pudieron cargar las fotos de los conductores. Los perfiles y sus archivos siguen guardados.</span>
+                <Button type="button" size="sm" variant="outline" onClick={() => void driverMedia.refetch()}>
+                  Reintentar fotos
+                </Button>
+              </div>
+            ) : null}
             {drivers.isError ? (
               <EmptyMarketplaceState appearance="premium" title="No se pudo cargar el directorio"
                 description="Reintenta la consulta antes de buscar conductores." icon={Users} />
@@ -2175,19 +2212,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                       <div className="pointer-events-none relative grid min-w-0 grid-cols-2 items-center gap-x-3 gap-y-2 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,0.9fr)_minmax(0,1.15fr)_7rem] xl:gap-3">
                         <div className="col-span-2 min-w-0 xl:col-span-1">
                           <div className="flex min-w-0 items-center gap-2.5">
-                            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-default bg-surface-2 text-primary">
-                              <Users className="h-5 w-5" />
-                              {driverMedia.data?.[item.userId]?.avatarUrl ? (
-                                <img
-                                  src={driverMedia.data?.[item.userId]?.avatarUrl ?? undefined}
-                                  alt={`Foto de ${item.displayName}`}
-                                  className="absolute inset-0 h-full w-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                              ) : null}
-                            </div>
+                            <DriverDirectoryPortrait
+                              name={item.displayName}
+                              url={driverMedia.data?.[item.userId]?.avatarUrl ?? null}
+                              googleUrl={driverMedia.data?.[item.userId]?.googleAvatarUrl ?? null}
+                            />
 
                             <div className="min-w-0 flex-1">
                               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
