@@ -10,14 +10,15 @@ test('Todos los vehiculos poseen pictogramas vectoriales en el mapa', () => {
   assert.match(a, /if \(vehicleCategoryCode === "van"\)/);
 });
 test('Diferencia disponible, ocupado, ubicacion antigua y sin disponibilidad', () => {
-  assert.match(src, /type DriverPinState = "available" \| "busy" \| "stale" \| "unavailable"/);
-  assert.match(src, /if \(!driver\.locationFresh\) return "stale"/);
+  assert.match(src, /type DriverPinState = "available" \| "busy" \| "stale" \| "offline" \| "historic" \| "unavailable"/);
+  assert.match(src, /if \(!driver\.locationFresh\) \{/);
+  assert.match(src, /age == null \|\| age > 15 \* 60_000 \? "offline" : "stale"/);
   assert.match(src, /if \(driver\.activeJobId\) return "busy"/);
   assert.match(src, /driverState: driverPinState\(driver\)/);
   assert.match(src, /driverPinStateLabel\[driverPinState\(driver\)\]/);
   assert.match(src, /Conductor disponible \(azul\)/);
   assert.match(src, /Conductor en servicio \(verde\)/);
-  assert.match(src, /Última ubicación conocida \(ámbar, no disponible\)/);
+  assert.match(src, /GPS atrasado 5–15 min \(ámbar\); más de 15 min sin GPS \(gris\)/);
 });
 test('Conserva todas las capas y rutas del mapa operativo', () => {
   assert.match(src, /getMarketplaceOperationalRoutes\(projectId\)/);
@@ -65,7 +66,7 @@ test("Modalidades usan badges de color aprobados sin modificar el estado del map
 
 test("Marcadores flotantes y leyenda muestran color de modalidad dentro del pin de estado", () => {
   const pin = src.slice(src.indexOf("function operationalPinSvg("), src.indexOf("function OperationalPinLegend("));
-  assert.match(pin, /kind === "driver" \? vehicleModeColor\(vehicleCategoryCode\) :/);
+  assert.match(pin, /\? "#64748b" : vehicleModeColor\(vehicleCategoryCode\)/);
   assert.match(pin, /fill="url\(#\$\{bodyId\}\)"/);
   assert.match(pin, /driverState === "available"/);
   assert.match(pin, /driverState === "busy"/);
@@ -82,7 +83,7 @@ test("La transparencia se limita a badges de interfaz; el mapa conserva colores 
   assert.match(icon, /className = "h-6 w-6"/);
   assert.match(icon, /rounded-md text-white/);
   assert.match(icon, /backgroundColor: `\$\{vehicleModeColor\(code\)\}38`/);
-  assert.match(pin, /kind === "driver" \? vehicleModeColor\(vehicleCategoryCode\) :/);
+  assert.match(pin, /\? "#64748b" : vehicleModeColor\(vehicleCategoryCode\)/);
   assert.doesNotMatch(pin, /vehicleModeColor\(vehicleCategoryCode\)\}38/);
 });
 
