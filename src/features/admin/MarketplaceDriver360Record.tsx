@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase";
 import {
@@ -83,13 +83,23 @@ const statusClass = (status: string) => {
 
 function ImageWithFallback({
   url,
+  fallbackUrl,
   alt,
   variant,
 }: {
   url: string | null | undefined;
+  fallbackUrl?: string | null;
   alt: string;
   variant: "portrait" | "vehicle";
 }) {
+  // A signed photo can fail if it expired or the network changed. Keep the
+  // priority: driver's own portrait, then Google, then neutral placeholder.
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
+  useEffect(() => setFailedUrls([]), [url, fallbackUrl]);
+  const activeUrl = [url, fallbackUrl].find((candidate) =>
+    candidate && !failedUrls.includes(candidate),
+  );
+
   return (
     <div
       className={
@@ -99,20 +109,19 @@ function ImageWithFallback({
       }
     >
       {variant === "portrait" ? (
-        <UserRound className="h-9 w-9" />
+        <UserRound className="h-9 w-9" aria-hidden="true" />
       ) : (
-        <CarFront className="h-9 w-9" />
+        <CarFront className="h-9 w-9" aria-hidden="true" />
       )}
-      {url ? (
+      {activeUrl ? (
         <img
-          key={url}
-          src={url}
+          key={activeUrl}
+          src={activeUrl}
           alt={alt}
-          loading="lazy"
+          loading={variant === "portrait" ? "eager" : "lazy"}
           className="absolute inset-0 h-full w-full object-cover"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
+          onError={() => setFailedUrls((previous) =>
+            previous.includes(activeUrl) ? previous : [...previous, activeUrl])}
         />
       ) : null}
     </div>
@@ -241,6 +250,7 @@ export default function MarketplaceDriver360Record({
         <div className="relative flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
           <ImageWithFallback
             url={media?.avatarUrl}
+            fallbackUrl={media?.googleAvatarUrl}
             alt={`Imagen de perfil de ${displayName}`}
             variant="portrait"
           />

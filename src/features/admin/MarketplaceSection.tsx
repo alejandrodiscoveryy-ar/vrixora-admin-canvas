@@ -1562,8 +1562,20 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, [driver360Id!]),
     enabled: Boolean(driver360Id),
     staleTime: 5 * 60_000,
+    refetchInterval: driver360Id ? 12 * 60_000 : false, // renew 15-min signed portraits
     retry: 1,
   });
+  const resolvedDriver360Media = useMemo(() => {
+    const userId = driver360Id ?? "";
+    const selected = selectedDriverMedia.data?.[userId];
+    const directory = driverMedia.data?.[userId];
+    if (!selected && !directory) return null;
+    return {
+      avatarUrl: selected?.avatarUrl ?? directory?.avatarUrl ?? null,
+      googleAvatarUrl: selected?.googleAvatarUrl ?? directory?.googleAvatarUrl ?? null,
+      vehiclePhotos: { ...directory?.vehiclePhotos, ...selected?.vehiclePhotos },
+    } satisfies MarketplaceDirectoryDriverMedia;
+  }, [driver360Id, selectedDriverMedia.data, driverMedia.data]);
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
@@ -2680,6 +2692,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           </DialogHeader>
 
           <div className="min-w-0 p-3 pt-12 sm:p-4 sm:pt-12">
+            {selectedDriverMedia.isError ? (
+              <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-3 py-2 text-xs text-amber-200">
+                <span>No se pudo recuperar la fotografía del conductor.</span>
+                <Button type="button" size="sm" variant="outline" onClick={() => void selectedDriverMedia.refetch()}>
+                  Reintentar foto
+                </Button>
+              </div>
+            ) : null}
             {driver360.isLoading ? (
               <LoadingState />
             ) : driver360.data ? (
@@ -2692,11 +2712,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 canSeeFinancial={canManagePayments}
                 canManageDriver={canManageMarketplace}
                 financialLoading={driverFinancial360.isLoading}
-                media={
-                  selectedDriverMedia.data?.[driver360Id ?? ""] ??
-                  driverMedia.data?.[driver360Id ?? ""] ??
-                  null
-                }
+                media={resolvedDriver360Media}
                 isAvailable={
                   driverRows.find((item) => item.userId === driver360Id)?.isAvailable ?? null
                 }
