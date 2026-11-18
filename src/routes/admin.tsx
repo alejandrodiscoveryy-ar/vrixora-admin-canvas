@@ -455,7 +455,7 @@ function ProjectNavItem({
               if (!defaultChild) return null;
               const nestedChildren = tab.children.filter((child) => child.slug !== "configuracion");
               const groupOpen = configurationExpanded;
-              const mainSettingsActive = currentSection === defaultChild.slug;
+              const mainSettingsActive = isActiveProject && currentSection === defaultChild.slug;
 
               return (
                 <div key={tab.slug} className="admin-nav-config-group space-y-1">
