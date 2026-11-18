@@ -554,7 +554,7 @@ test("Admin navigation: thematic families reuse palette and preserve group membe
 });
 
 test("Admin thematic inner menus keep selected links and larger icons", () => {
-  for (const [name,tone] of [["MarketplacePricingSection","tarifas"], ["AdministrationWorkspace","administracion"], ["MarketplaceConfigurationWorkspace","administracion"]]) {
+  for (const [name,tone] of [["MarketplacePricingSection","tarifas"], ["MarketplaceConfigurationWorkspace","administracion"]]) {
     const component = readFileSync(new URL("../src/features/admin/" + name + ".tsx", import.meta.url), "utf8");
     assert.ok(component.includes('data-nav-tone="' + tone + '"'), name);
     assert.match(component, /admin-graphite-nav-item/);
@@ -625,11 +625,13 @@ test("Configuración replaces the Administration label without duplicate entries
   ]);
   assert.equal(MARKETPLACE_WORKSPACE_VIEWS.find(item => item.slug === "configuracion").label, "Configuración operativa");
   const workspace = readFileSync(new URL("../src/features/admin/AdministrationWorkspace.tsx", import.meta.url), "utf8");
-  assert.match(workspace, /aria-label="Secciones de configuración del proyecto TukTuk"/);
-  assert.match(workspace, />Configuración<\/p>/);
-  assert.doesNotMatch(workspace, />Administración<\/p>/);
-  assert.match(workspace, /section: section\.slug/);
-  assert.match(workspace, /permissions\.includes\(section\.permission\)/);
+  // La categoría despliega sus destinos en el menú principal, no en una segunda barra.
+  const route = readFileSync(new URL("../src/routes/admin.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(workspace, /aria-label="Secciones de configuración del proyecto TukTuk"/);
+  assert.match(route, /data-nav-submenu/);
+  assert.match(route, /permissions\.includes\(child\.permission\)/);
+  assert.match(route, /section: child\.slug/);
+  assert.match(route, /onOpenConfiguration\?\.\(\)/);
 });
 
 
@@ -642,11 +644,11 @@ test("Configuration parent selects general settings or the first authorized chil
   const route = readFileSync(new URL("../src/routes/admin.tsx", import.meta.url), "utf8");
   assert.match(route, /const defaultChild = adminGroupDefault\(tab\)/);
   assert.match(route, /params=\{\{ id: project.id, section: defaultChild.slug \}\}/);
-  assert.match(route, /setConfigurationExpanded\(true\);\s*closeDrawer\?\.\(\)/);
+  assert.match(route, /setConfigurationExpanded\(true\);\s*onOpenConfiguration\?\.\(\);\s*closeDrawer\?\.\(\)/);
   assert.match(route, /aria-controls=\{configurationGroupId\}/);
   assert.match(route, /hidden=\{!groupOpen\}/);
   assert.match(route, /setConfigurationExpanded\(\(value\) => !value\)/);
-  assert.match(route, /const groupOpen = collapsed \? groupActive : configurationExpanded/);
+  assert.match(route, /const groupOpen = !collapsed && configurationExpanded/);
 });
 
 test("Marketplace compact directories share one responsive row and preserve actions", () => {
