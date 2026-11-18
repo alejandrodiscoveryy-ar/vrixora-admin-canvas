@@ -1562,8 +1562,20 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, [driver360Id!]),
     enabled: Boolean(driver360Id),
     staleTime: 5 * 60_000,
+    refetchInterval: driver360Id ? 12 * 60_000 : false, // renew 15-min signed portraits
     retry: 1,
   });
+  const resolvedDriver360Media = useMemo(() => {
+    const userId = driver360Id ?? "";
+    const selected = selectedDriverMedia.data?.[userId];
+    const directory = driverMedia.data?.[userId];
+    if (!selected && !directory) return null;
+    return {
+      avatarUrl: selected?.avatarUrl ?? directory?.avatarUrl ?? null,
+      googleAvatarUrl: selected?.googleAvatarUrl ?? directory?.googleAvatarUrl ?? null,
+      vehiclePhotos: { ...directory?.vehiclePhotos, ...selected?.vehiclePhotos },
+    } satisfies MarketplaceDirectoryDriverMedia;
+  }, [driver360Id, selectedDriverMedia.data, driverMedia.data]);
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
@@ -2692,11 +2704,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 canSeeFinancial={canManagePayments}
                 canManageDriver={canManageMarketplace}
                 financialLoading={driverFinancial360.isLoading}
-                media={
-                  selectedDriverMedia.data?.[driver360Id ?? ""] ??
-                  driverMedia.data?.[driver360Id ?? ""] ??
-                  null
-                }
+                media={resolvedDriver360Media}
                 isAvailable={
                   driverRows.find((item) => item.userId === driver360Id)?.isAvailable ?? null
                 }
