@@ -526,38 +526,82 @@ export async function getMarketplaceOperationalDriverAvatars(
 
 export interface MarketplaceDirectoryDriverMedia {
   avatarUrl: string | null;
+  googleAvatarUrl: string | null;
   vehiclePhotos: Record<string, string>;
 }
+
+const DRIVER_DIRECTORY_MEDIA_BATCH_SIZE = 25;
 
 export async function getMarketplaceDirectoryDriverMedia(
   projectId: string,
   driverUserIds: string[],
 ): Promise<Record<string, MarketplaceDirectoryDriverMedia>> {
   if (driverUserIds.length === 0) return {};
-  const { data, error } = await getSupabaseClient().functions.invoke(
-    "marketplace-map-admin-gateway",
-    { body: { operation: "driver_directory_media", project_id: projectId, driver_user_ids: driverUserIds } },
-  );
-  if (error) throw new Error(error.message);
-  const root = record(data);
-  const payload = record(root.data);
-  const drivers = Array.isArray(payload.drivers) ? payload.drivers as unknown[] : [];
-  return Object.fromEntries(drivers.map((item) => {
-    const driver = record(item);
-    const vehicles = Array.isArray(driver.vehicles) ? driver.vehicles as unknown[] : [];
-    const vehiclePhotos: Record<string, string> = {};
-    for (const item of vehicles) {
-      const vehicle = record(item);
-      const vehicleId = String(vehicle.vehicle_id ?? "").trim();
-      const photoUrl = nullableString(vehicle.photo_url);
-      if (vehicleId && photoUrl) vehiclePhotos[vehicleId] = photoUrl;
+
+  // The secure gateway accepts at most 25 driver IDs. The directory grows
+  // beyond 25 with "Mostrar más", so split requests rather than dropping ALL photos.
+  const uniqueIds = Array.from(new Set(driverUserIds));
+  const batches: string[][] = [];
+  for (let index = 0; index < uniqueIds.length; index += DRIVER_DIRECTORY_MEDIA_BATCH_SIZE) {
+    batches.push(uniqueIds.slice(index, index + DRIVER_DIRECTORY_MEDIA_BATCH_SIZE));
+  }
+
+  const allMedia: Record<string, MarketplaceDirectoryDriverMedia> = {};
+  let successCount = 0;
+  let firstFailure: Error | null = null;
+  // At most two batches at once: each batch resolves up to 25 private photo
+  // paths through permission-checked Driver 360 RPCs.
+  for (let index = 0; index < batches.length; index += 2) {
+    const outcomes = await Promise.allSettled(
+      batches.slice(index, index + 2).map(async (ids) => {
+        const { data, error } = await getSupabaseClient().functions.invoke(
+          "marketplace-map-admin-gateway",
+          {
+            body: {
+              operation: "driver_directory_media",
+              project_id: projectId,
+              driver_user_ids: ids,
+            },
+          },
+        );
+        if (error) throw new Error(error.message);
+        const root = record(data);
+        const payload = record(root.data);
+        const drivers = Array.isArray(payload.drivers) ? payload.drivers as unknown[] : [];
+        return Object.fromEntries(drivers.map((item) => {
+          const driver = record(item);
+          const vehicles = Array.isArray(driver.vehicles) ? driver.vehicles as unknown[] : [];
+          const vehiclePhotos: Record<string, string> = {};
+          for (const item of vehicles) {
+            const vehicle = record(item);
+            const vehicleId = String(vehicle.vehicle_id ?? "").trim();
+            const photoUrl = nullableString(vehicle.photo_url);
+            if (vehicleId && photoUrl) vehiclePhotos[vehicleId] = photoUrl;
+          }
+          return [String(driver.driver_user_id ?? ""), {
+            avatarUrl: nullableString(driver.avatar_url),
+            googleAvatarUrl: nullableString(driver.google_avatar_url),
+            vehiclePhotos,
+          } satisfies MarketplaceDirectoryDriverMedia];
+        }));
+      }),
+    );
+    for (const outcome of outcomes) {
+      if (outcome.status === "fulfilled") {
+        successCount += 1;
+        Object.assign(allMedia, outcome.value);
+      } else if (!firstFailure) {
+        firstFailure = outcome.reason instanceof Error
+          ? outcome.reason : new Error("No se pudieron cargar algunas fotos.");
+      }
     }
-    return [String(driver.driver_user_id ?? ""), {
-      avatarUrl: nullableString(driver.avatar_url),
-      vehiclePhotos,
-    } satisfies MarketplaceDirectoryDriverMedia];
-  }));
+  }
+
+  // A failure in one batch must not erase photos successfully loaded in others.
+  if (successCount === 0 && firstFailure) throw firstFailure;
+  return allMedia;
 }
+
 export async function getMarketplaceOperationalStaticMap(
   projectId: string,
   options: { showRoutes?: boolean } = {},
