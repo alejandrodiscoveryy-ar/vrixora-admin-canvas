@@ -1366,7 +1366,9 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-1 px-3 py-2 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <span className="min-w-0">
               <strong className="block text-sm font-semibold text-text-primary">Otros ajustes de la aplicación</strong>
-              <span className="block text-xs text-text-secondary">Modo mantenimiento y mensaje de bienvenida</span>
+              <span className="block text-xs text-text-secondary">
+                {form.maintenanceMode ? "Atención: mantenimiento activo · " : ""}Modo mantenimiento y mensaje de bienvenida
+              </span>
             </span>
             {showExtraAppSettings
               ? <ChevronUp className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
