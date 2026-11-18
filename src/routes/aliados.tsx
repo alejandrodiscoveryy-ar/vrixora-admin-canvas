@@ -26,8 +26,7 @@ function AllyDashboard() {
   useEffect(() => {
     const raw = new URLSearchParams(window.location.hash.slice(1)).get("k");
     setKey(raw && /^[0-9a-f]{64}$/.test(raw) ? raw : "");
-    // Remove capability from visible browser history after capturing it.
-    if (raw) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    // URL fragments do not reach the server; keeping this one supports refresh.
   }, []);
   const report = useQuery({
     queryKey: ["ally-private-report-v1", key],
