@@ -170,6 +170,7 @@ export default function MarketplaceDriverManagementPanel({
         queryClient.invalidateQueries({ queryKey: ["marketplace-impulsa-application", projectId, driverUserId] }),
         queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-driver-verifications", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-pending-driver-verifications", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["driver-management-360", projectId, driverUserId] }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-driver-360", projectId, driverUserId] }),
       ]);
@@ -200,6 +201,7 @@ export default function MarketplaceDriverManagementPanel({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
         queryClient.invalidateQueries({ queryKey: ["marketplace-driver-verifications", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-pending-driver-verifications", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["driver-management-360", projectId, driverUserId] }),
       ]);
       setReviewOpen(false);
