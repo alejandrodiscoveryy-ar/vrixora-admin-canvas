@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Megaphone, Smartphone, ShieldAlert } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Loader2, Megaphone, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
@@ -45,6 +45,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
   const [build, setBuild] = useState("");
   const [notes, setNotes] = useState("");
   const [pushConfirmationOpen, setPushConfirmationOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["app-release-settings", projectId],
@@ -110,6 +111,35 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     enabled: canManage,
   });
 
+  const deliveryQuery = useQuery({
+    queryKey: ["driver-android-release-delivery", projectId],
+    queryFn: async (): Promise<{
+      release_version: string;
+      release_build: number;
+      eligible_drivers: number;
+      sent_drivers: number;
+      pending_drivers: number;
+      failed_drivers: number;
+      last_sent_at: string | null;
+    }> => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_driver_android_release_delivery", {
+        target_project_id: projectId,
+      });
+      if (error) throw error;
+      return data as {
+        release_version: string;
+        release_build: number;
+        eligible_drivers: number;
+        sent_drivers: number;
+        pending_drivers: number;
+        failed_drivers: number;
+        last_sent_at: string | null;
+      };
+    },
+    enabled: canManage,
+    refetchInterval: 60_000,
+  });
+
   const parsedBuild = Number(build);
   const validVersion = /^\d+(?:\.\d+){1,3}$/.test(version.trim());
   const proposedRelease = query.data
@@ -119,6 +149,14 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     validVersion && Number.isSafeInteger(parsedBuild) && parsedBuild > 0 && parsedBuild <= 2147483647
   );
 
+  const isNewVersion = Boolean(query.data &&
+    (version.trim() !== query.data.latest_version || parsedBuild !== query.data.latest_build));
+  const hasDraftChanges = Boolean(query.data && projectSettings.data && (
+    enabled !== query.data.enabled ||
+    isNewVersion ||
+    notes.trim() !== query.data.release_notes.trim() ||
+    (enabled && mode === "mandatory") !== Boolean(projectSettings.data.forceUpdate)
+  ));
   const hasSavedActiveRelease = Boolean(
     query.data?.enabled &&
     enabled &&
@@ -145,8 +183,9 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       if (error) throw error;
       return data as { queued_users: number };
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       setPushConfirmationOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["driver-android-release-delivery", projectId] });
       toast.success(result.queued_users > 0
         ? `Aviso de actualización puesto en cola para ${result.queued_users} conductores.`
         : "No se añadieron avisos: esta compilación ya pudo notificarse o no hay conductores elegibles.");
@@ -173,6 +212,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       if (error) throw error;
     },
     onSuccess: async () => {
+      setEditorOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-release-settings", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["project-settings", projectId] }),
@@ -181,202 +221,291 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const canSaveDraft = canManage && hasDraftChanges && valid &&
+    !hasUnsavedProjectChanges && !save.isPending && !projectSettings.isError;
+
   return (
     <SectionCard
-      title="Actualizaciones de TukTuk Conductor"
-      description="Configura el aviso, la versión Android y el enlace oficial permanente desde una sola ficha."
+      title="Aplicación y versiones"
+      description="TukTuk Conductor · Android"
+      density="compact"
+      appearance="premium"
       module="configuracion"
-      className="relative overflow-hidden rounded-[25px] border border-cyan-400/20 bg-gradient-to-br from-[#0b171c] via-[#081116] to-[#061a20]/90 shadow-[0_26px_70px_-42px_rgba(0,0,0,0.94)]"
-      headerClassName="border-b border-cyan-400/[0.12] bg-cyan-300/[0.025] px-4 py-4 sm:px-6"
-      contentClassName="p-0"
+      headerClassName="px-3 py-2.5 sm:px-4"
+      contentClassName="p-3 sm:p-4"
     >
       {query.isLoading || projectSettings.isLoading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : query.isError || projectSettings.isError ? (
+        <div className="flex items-center gap-2 py-2 text-sm text-text-secondary">
+          <Loader2 className="h-4 w-4 animate-spin" /> Consultando la versión publicada...
+        </div>
+      ) : query.isError || projectSettings.isError || !query.data ? (
         <p role="alert" className="text-sm text-destructive">
-          No se pudo cargar la configuración de versiones. Verifica que la migración de Supabase esté aplicada.
+          No se pudo consultar la versión publicada. Vuelve a cargar esta sección.
         </p>
       ) : (
-        <div className="relative isolate overflow-hidden p-4 sm:p-6">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none overflow-hidden">
-            <span className="absolute -right-6 top-0 rotate-[-14deg] text-[clamp(5rem,14vw,11rem)] font-black tracking-tighter text-primary/[0.045]">TUKTUK</span>
-            <Smartphone className="absolute -bottom-12 -right-8 h-60 w-60 rotate-[-16deg] text-primary/[0.065]" strokeWidth={0.8} />
-          </div>
-          <div className="relative z-10 space-y-2.5">
-          <div className="flex items-start justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
-            <div>
-              <p className="text-sm font-medium">Activar aviso automático</p>
-              <p className="text-xs text-text-secondary">Desactivado por defecto. No envía notificaciones push.</p>
-            </div>
-            <Switch checked={enabled} onCheckedChange={setEnabled} disabled={!canManage || save.isPending} />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button type="button" aria-pressed={mode === "optional"} disabled={!canManage || save.isPending}
-              className={`min-h-20 rounded-2xl border p-4 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${mode === "optional" ? "border-cyan-300/50 bg-cyan-300/[0.09]" : "border-cyan-400/15 bg-[#08151b]/70 hover:border-cyan-400/35"}`}
-              onClick={() => setMode("optional")}>
-              <span className="font-semibold">Opcional</span>
-              <span className="block text-xs text-text-secondary">Actualizar ahora o más tarde</span>
-            </button>
-            <button type="button" aria-pressed={mode === "mandatory"} disabled={!canManage || save.isPending}
-              className={`min-h-20 rounded-2xl border p-4 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${mode === "mandatory" ? "border-amber-400/50 bg-amber-400/[0.09]" : "border-cyan-400/15 bg-[#08151b]/70 hover:border-cyan-400/35"}`}
-              onClick={() => setMode("mandatory")}>
-              <span className="font-semibold">Obligatoria</span>
-              <span className="block text-xs text-text-secondary">Requiere instalar la nueva versión</span>
-            </button>
-          </div>
-          <div className="grid gap-2 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="app-release-version">Versión publicada</Label>
-              <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-version" value={version} onChange={(e) => setVersion(e.target.value)}
-                placeholder="1.0.21" maxLength={24} disabled={!canManage || save.isPending} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="app-release-build">Número de compilación Android</Label>
-              <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-build" type="number" min={1} step={1} value={build}
-                onChange={(e) => setBuild(e.target.value)} placeholder="23" disabled={!canManage || save.isPending} />
-            </div>
-          </div>
-          {proposedRelease ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.035] px-3 py-2.5">
-              <p className="text-xs text-text-secondary">
-                Siguiente sugerida: <strong className="text-text-primary">{proposedRelease.version}</strong>
-                {" · compilación "}
-                <strong className="text-text-primary">{proposedRelease.build}</strong>
-              </p>
-              <Button type="button" variant="outline" size="sm"
-                disabled={!canManage || save.isPending}
-                onClick={() => {
-                  setVersion(proposedRelease.version);
-                  setBuild(String(proposedRelease.build));
-                }}>
-                Usar sugerencia
-              </Button>
-            </div>
-          ) : null}
-          <div className="space-y-1.5">
-            <Label htmlFor="app-release-download">Enlace oficial de descarga (fijo)</Label>
-            <Input className="h-10 rounded-xl border-cyan-400/20 bg-[#08141a]/80 text-text-secondary" id="app-release-download"
-              type="url" value={TUKTUK_CONDUCTOR_PLAY_URL} readOnly aria-readonly="true"
-              title={TUKTUK_CONDUCTOR_PLAY_URL} />
-            <p className="text-xs text-text-secondary">Enlace permanente de Google Play. No se modifica al publicar una nueva versión.</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="app-release-notes">Novedades de la versión</Label>
-            <Textarea className="min-h-24 rounded-xl border-cyan-400/20 bg-[#08141a]/80" id="app-release-notes" value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Mejoras de estabilidad, avisos y experiencia del conductor."
-              maxLength={1800} disabled={!canManage || save.isPending} />
-          </div>
-          <p className="text-xs text-text-secondary">
-            <Download className="mr-1 inline h-3.5 w-3.5" />
-            Publica primero la APK/AAB y verifica que esté disponible en Google Play. La sugerencia no se activa hasta guardar.
-          </p>
-          {!valid ? <p role="alert" className="text-sm text-destructive">La versión y la compilación Android deben ser válidas.</p> : null}
-          {enabled && mode === "mandatory" ? (
-            <div role="status" className="flex items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 p-2 text-xs text-amber-200">
-              <ShieldAlert className="h-4 w-4 shrink-0" /> El conductor no podrá continuar sin instalar la versión publicada. Verifica antes la descarga.
-            </div>
-          ) : null}
-          {hasUnsavedProjectChanges ? <p className="text-xs text-amber-300">Guarda primero los demás cambios de configuración.</p> : null}
-          <div className="flex justify-end">
-            <Button type="button" onClick={() => {
-                if (enabled && mode === "mandatory" && !window.confirm("¿Confirmas la actualización obligatoria? Verifica que Google Play ya ofrece esta misma versión y compilación.")) return;
-                save.mutate();
-              }}
-              disabled={!canManage || hasUnsavedProjectChanges || !valid || save.isPending || projectSettings.isLoading || projectSettings.isError}>
-              {save.isPending ? "Guardando..." : "Guardar versión Android"}
-            </Button>
-          </div>
-          <div className="space-y-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.035] p-3 sm:p-4">
-            <div className="flex items-start gap-2">
-              <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-              <div>
-                <p className="text-sm font-semibold">Aviso al teléfono de los conductores</p>
-                <p className="text-xs text-text-secondary">
-                  Envía una sola notificación push por compilación a los conductores activos.
-                  Usa la versión, las novedades y el enlace oficial guardados arriba.
-                </p>
+        <div className="space-y-3">
+          {/* La cabecera siempre muestra el estado guardado, nunca el borrador. */}
+          <section aria-label="Estado de la versión publicada" className="space-y-2 rounded-xl border border-border-default bg-surface-2 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-xs font-medium text-text-secondary">Publicada</span>
+                <strong className="text-lg font-semibold tabular-nums text-text-primary">
+                  {query.data.latest_version || "Sin versión"}
+                </strong>
+                <span className="text-xs text-text-secondary">
+                  Compilación {query.data.latest_build || "—"}
+                </span>
               </div>
+              <span className={
+                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold " +
+                (query.data.enabled
+                  ? (projectSettings.data?.forceUpdate
+                      ? "border-amber-400/35 bg-amber-400/10 text-amber-300"
+                      : "border-emerald-400/30 bg-emerald-400/10 text-emerald-300")
+                  : "border-border-default bg-surface-1 text-text-secondary")
+              }>
+                {query.data.enabled
+                  ? (projectSettings.data?.forceUpdate ? "Actualización obligatoria" : "Aviso opcional")
+                  : "Aviso desactivado"}
+              </span>
             </div>
-            <p className="text-xs text-text-secondary" role="status">
-              {driverAudience.isLoading ? "Consultando destinatarios..." :
-                driverAudience.isError ? "No se pudo comprobar la audiencia de conductores." :
-                driverAudience.data ? `${driverAudience.data.eligible_android_users} conductores con notificaciones Android habilitadas (${driverAudience.data.enabled_android_tokens} dispositivos).` :
-                "La audiencia aparecerá cuando tengas permiso para gestionarla."}
-            </p>
-            {!hasSavedActiveRelease ? (
-              <p className="text-xs text-amber-300">
-                Para enviar, activa el aviso, indica la versión correcta y guarda primero los cambios. No se enviará nada por guardar.
-              </p>
-            ) : null}
-            <div className="flex justify-end">
-              <Button type="button" variant="outline"
-                onClick={() => setPushConfirmationOpen(true)}
-                disabled={!canManage || !hasSavedActiveRelease || !driverAudience.data ||
-                  driverAudience.data.eligible_android_users === 0 || driverAudience.isError || sendPush.isPending || save.isPending}>
-                <Megaphone className="mr-2 h-4 w-4" /> Notificar actualización
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+              <span className="min-w-0 truncate">
+                {query.data.release_notes.trim()
+                  ? query.data.release_notes.trim().replace(/\s+/g, " ").slice(0, 110)
+                  : "Sin novedades registradas"}
+                {query.data.release_notes.trim().length > 110 ? "…" : ""}
+              </span>
+              <a href={TUKTUK_CONDUCTOR_PLAY_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-flex shrink-0 items-center gap-1 font-medium text-primary underline-offset-2 hover:underline">
+                Google Play <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
-          </div>
-          <div className="space-y-3 rounded-2xl border border-cyan-400/20 bg-[#08151b]/65 p-3 sm:p-4">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold">Seguimiento de instalaciones Android</p>
-                <p className="text-xs text-text-secondary">
-                  Instalaciones confirmadas por la APK; no equivale a notificaciones enviadas.
-                </p>
-              </div>
-              <Button type="button" size="sm" variant="outline"
-                onClick={() => void versionAdoption.refetch()}
-                disabled={versionAdoption.isFetching || !canManage}>
-                {versionAdoption.isFetching ? "Consultando..." : "Actualizar datos"}
+          </section>
+
+          <section aria-label="Monitoreo de la actualización" className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-text-primary">1. Seguimiento</h3>
+              <Button size="sm" variant="ghost"
+                onClick={() => void Promise.all([versionAdoption.refetch(), deliveryQuery.refetch(), driverAudience.refetch()])}
+                disabled={!canManage || versionAdoption.isFetching || deliveryQuery.isFetching}
+                aria-label="Actualizar el seguimiento de la versión">
+                <RefreshCw className={"mr-1.5 h-3.5 w-3.5" + (versionAdoption.isFetching || deliveryQuery.isFetching ? " animate-spin" : "")} />
+                Actualizar datos
               </Button>
             </div>
             {versionAdoption.isError ? (
-              <p role="alert" className="text-xs text-amber-300">
-                No se pudo consultar el seguimiento de instalaciones. Comprueba la migración de Supabase.
-              </p>
+              <p role="alert" className="text-xs text-destructive">No se pudieron consultar las instalaciones.</p>
             ) : versionAdoption.data ? (
               <>
-                <p className="text-xs text-text-secondary">
-                  Objetivo: versión <strong>{versionAdoption.data.target_version}</strong>
-                  {" · compilación "}<strong>{versionAdoption.data.target_build}</strong>
-                  {" · "}{versionAdoption.data.active_drivers} conductores activos
-                </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                   {([
+                    ["Conductores activos", versionAdoption.data.active_drivers],
                     ["Versión confirmada", versionAdoption.data.current_drivers],
                     ["Versión anterior", versionAdoption.data.outdated_drivers],
                     ["Sin información", versionAdoption.data.unknown_drivers],
-                  ] as const).map(([label, count]) => (
-                    <div key={label} className="rounded-xl border border-cyan-400/15 bg-[#0b1c23]/80 px-3 py-2.5">
-                      <p className="text-xs text-text-secondary">{label}</p>
-                      <p className="text-2xl font-bold tabular-nums">{count}</p>
+                  ] as const).map(([name, count]) => (
+                    <div key={name} className="min-w-0 rounded-lg border border-border-default bg-surface-2 px-3 py-2">
+                      <p className="text-[12px] leading-4 text-text-secondary">{name}</p>
+                      <p className="mt-1 text-xl font-semibold tabular-nums text-text-primary">{count}</p>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-text-secondary">
-                  Datos recibidos al abrir la APK con el registro de versión incorporado.
-                  Los informes con más de 30 días se consideran sin información.
-                  {versionAdoption.data.stale_reports > 0
-                    ? ` Hay ${versionAdoption.data.stale_reports} informes antiguos.` : ""}
-                  {!versionAdoption.data.last_reported_at
-                    ? " Todavía no hay versiones confirmadas: la compilación 24 publicada no incorporaba este registro."
-                    : ` Último registro: ${new Date(versionAdoption.data.last_reported_at).toLocaleString("es-ES")}.`}
-                </p>
+                {!versionAdoption.data.last_reported_at ? (
+                  <p className="text-xs text-text-secondary">
+                    Aún no hay instalaciones verificadas. La APK publicada anteriormente no informaba la compilación instalada.
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-secondary">
+                    Último registro: {new Date(versionAdoption.data.last_reported_at).toLocaleString("es-ES")}.
+                    {versionAdoption.data.stale_reports > 0
+                      ? " Informes antiguos: " + versionAdoption.data.stale_reports + "." : ""}
+                    {" "}Los registros de más de 30 días cuentan como desconocidos.
+                  </p>
+                )}
               </>
             ) : (
-              <p className="text-xs text-text-secondary">Consultando versiones instaladas...</p>
+              <p className="text-xs text-text-secondary">
+                {canManage ? "Consultando instalaciones..." : "Se requiere permiso de configuración para consultar el seguimiento."}
+              </p>
             )}
-          </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-xs text-text-secondary">
+              <span className="inline-flex items-center gap-1.5 font-medium text-text-primary">
+                <Megaphone className="h-3.5 w-3.5 text-primary" /> Notificaciones
+              </span>
+              {deliveryQuery.isError ? (
+                <span role="alert">No disponibles</span>
+              ) : deliveryQuery.data ? (
+                <>
+                  <span><strong className="text-text-primary tabular-nums">{deliveryQuery.data.sent_drivers}</strong> enviadas</span>
+                  <span>{deliveryQuery.data.pending_drivers} pendientes</span>
+                  {deliveryQuery.data.failed_drivers > 0 ? (
+                    <span className="text-destructive">{deliveryQuery.data.failed_drivers} con error</span>
+                  ) : null}
+                  <span>· {deliveryQuery.data.eligible_drivers} conductores habilitados</span>
+                </>
+              ) : (
+                <span>Consultando envíos...</span>
+              )}
+              <span className="text-text-tertiary">Enviado no significa instalado</span>
+            </div>
+          </section>
+
+          <section aria-label="Preparar la siguiente actualización" className="border-t border-border-subtle pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-text-primary">2. Preparar versión</h3>
+                <p className="text-xs text-text-secondary">
+                  {proposedRelease
+                    ? "Sugerida: " + proposedRelease.version + " · compilación " + proposedRelease.build
+                    : "La versión y el aviso actuales no cambian al preparar un borrador"}
+                </p>
+              </div>
+              <Button type="button" size="sm" variant="outline" aria-expanded={editorOpen}
+                aria-controls="android-release-editor" disabled={!canManage || save.isPending}
+                onClick={() => {
+                  if (editorOpen && hasDraftChanges && !window.confirm("¿Descartar los cambios que no has guardado?")) return;
+                  if (editorOpen) {
+                    setMode(projectSettings.data?.forceUpdate ? "mandatory" : "optional");
+                    setEnabled(query.data.enabled);
+                    setVersion(query.data.latest_version);
+                    setBuild(query.data.latest_build > 0 ? String(query.data.latest_build) : "");
+                    setNotes(query.data.release_notes);
+                  }
+                  setEditorOpen(!editorOpen);
+                }}>
+                {editorOpen ? "Cerrar" : "Preparar / editar"}
+                {editorOpen
+                  ? <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+                  : <ChevronDown className="ml-1.5 h-3.5 w-3.5" />}
+              </Button>
+            </div>
+
+            {editorOpen ? (
+              <div id="android-release-editor" className="mt-3 space-y-3 rounded-xl border border-border-default bg-surface-2 p-3">
+                {proposedRelease ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+                    <p className="text-xs text-text-secondary">
+                      Propuesta: <strong className="text-text-primary">{proposedRelease.version} ({proposedRelease.build})</strong>
+                    </p>
+                    <Button type="button" size="sm" variant="outline"
+                      disabled={!canManage || save.isPending}
+                      onClick={() => {
+                        setVersion(proposedRelease.version);
+                        setBuild(String(proposedRelease.build));
+                        setNotes("");
+                      }}>
+                      Usar sugerencia
+                    </Button>
+                  </div>
+                ) : null}
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="app-release-version">Versión</Label>
+                    <Input id="app-release-version" value={version}
+                      onChange={e => setVersion(e.target.value)} placeholder="1.0.23" maxLength={24}
+                      disabled={!canManage || save.isPending} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="app-release-build">Compilación Android</Label>
+                    <Input id="app-release-build" type="number" min={1} step={1} value={build}
+                      onChange={e => setBuild(e.target.value)} placeholder="25"
+                      disabled={!canManage || save.isPending} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="app-release-notes">Novedades que leerá el conductor</Label>
+                  <Textarea id="app-release-notes" value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    className="min-h-[76px]" rows={3} maxLength={1800}
+                    placeholder="Describe las novedades de esta versión."
+                    disabled={!canManage || save.isPending} />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-2">
+                  <div className="flex items-center gap-2">
+                    <Switch id="app-release-enabled" checked={enabled} onCheckedChange={setEnabled}
+                      disabled={!canManage || save.isPending} />
+                    <Label htmlFor="app-release-enabled">Aviso en la aplicación</Label>
+                  </div>
+                  <div className="inline-flex flex-wrap items-center gap-1 rounded-lg border border-border-default p-1"
+                    role="group" aria-label="Tipo de aviso">
+                    <Button type="button" size="sm"
+                      variant={mode === "optional" ? "secondary" : "ghost"}
+                      aria-pressed={mode === "optional"}
+                      onClick={() => setMode("optional")}
+                      disabled={!canManage || save.isPending || !enabled}>Opcional</Button>
+                    <Button type="button" size="sm"
+                      variant={mode === "mandatory" ? "secondary" : "ghost"}
+                      aria-pressed={mode === "mandatory"}
+                      onClick={() => setMode("mandatory")}
+                      disabled={!canManage || save.isPending || !enabled}>Obligatoria</Button>
+                  </div>
+                </div>
+                <p className="text-xs text-text-secondary">
+                  El enlace de Google Play es fijo. Guardar no envía notificaciones.
+                  {isNewVersion ? " Verifica primero que esta compilación ya esté publicada en Google Play." : ""}
+                  {enabled && mode === "mandatory" ? " La actualización bloqueará versiones anteriores." : ""}
+                </p>
+                {!valid ? (
+                  <p role="alert" className="text-xs text-destructive">Indica versión y compilación Android válidas.</p>
+                ) : null}
+                {isNewVersion && notes.trim().length === 0 ? (
+                  <p role="alert" className="text-xs text-amber-300">
+                    Escribe las novedades de esta compilación antes de guardarla.
+                  </p>
+                ) : null}
+                {hasUnsavedProjectChanges ? (
+                  <p className="text-xs text-amber-300">Guarda primero los otros cambios de configuración.</p>
+                ) : null}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-text-secondary">
+                    {hasDraftChanges ? "Cambios sin guardar" : "Sin cambios pendientes"}
+                  </span>
+                  <Button type="button"
+                    onClick={() => {
+                      if (enabled && mode === "mandatory" &&
+                          (isNewVersion || !projectSettings.data?.forceUpdate) &&
+                          !window.confirm("¿Confirmas que Google Play ya ofrece esta compilación y deseas exigir la actualización?")) return;
+                      save.mutate();
+                    }}
+                    disabled={!canSaveDraft || (isNewVersion && !notes.trim())}>
+                    {save.isPending ? "Guardando..." : "Guardar versión Android"}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </section>
+
+          <section aria-label="Notificar la versión publicada"
+            className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-2">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-text-primary">3. Avisar a los conductores</h3>
+              <p className="text-xs text-text-secondary">Después de guardar. Un envío por conductor y compilación.</p>
+            </div>
+            <Button type="button" size="sm" variant="outline"
+              onClick={() => setPushConfirmationOpen(true)}
+              disabled={!canManage || !hasSavedActiveRelease || !driverAudience.data ||
+                driverAudience.data.eligible_android_users === 0 || driverAudience.isError ||
+                sendPush.isPending || save.isPending ||
+                (deliveryQuery.data != null &&
+                  deliveryQuery.data.sent_drivers >= deliveryQuery.data.eligible_drivers &&
+                  deliveryQuery.data.pending_drivers === 0 && deliveryQuery.data.failed_drivers === 0)}>
+              <Megaphone className="mr-1.5 h-3.5 w-3.5" />
+              {deliveryQuery.data && deliveryQuery.data.eligible_drivers > 0 &&
+                deliveryQuery.data.sent_drivers >= deliveryQuery.data.eligible_drivers &&
+                deliveryQuery.data.pending_drivers === 0 && deliveryQuery.data.failed_drivers === 0
+                ? "Ya notificados" : "Notificar versión"}
+            </Button>
+          </section>
+
           <AlertDialog open={pushConfirmationOpen} onOpenChange={setPushConfirmationOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿Notificar a los conductores?</AlertDialogTitle>
+                <AlertDialogTitle>¿Notificar esta versión?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Se enviará una notificación push de TukTuk Conductor {version.trim()}
-                  {" (compilación "}{build}{")"} a {driverAudience.data?.eligible_android_users ?? 0}
-                  {" "}conductores elegibles. No cambia el carácter obligatorio u opcional del aviso dentro de la app.
-                  Cada compilación se notifica una sola vez.
+                  Se notificará la versión {query.data.latest_version} (compilación {query.data.latest_build})
+                  a los conductores activos con Android habilitado. Guardar una versión no envía
+                  notificaciones; esta acción es independiente y evita duplicados por compilación.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -388,7 +517,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          </div>
         </div>
       )}
     </SectionCard>
