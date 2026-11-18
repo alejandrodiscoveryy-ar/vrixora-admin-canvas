@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ExternalLink, Loader2, Megaphone, RefreshCw } from "lucide-react";
+import { BellRing, CheckCheck, ChevronDown, ChevronUp, CircleHelp, ExternalLink, Loader2, Megaphone, RefreshCw, ShieldCheck, Smartphone, Users, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
@@ -226,13 +226,14 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
 
   return (
     <SectionCard
-      title="Aplicación y versiones"
-      description="TukTuk Conductor · Android"
+      title="Centro de actualizaciones"
+      description="TukTuk Conductor · control y seguimiento Android"
       density="compact"
       appearance="premium"
       module="configuracion"
-      headerClassName="px-3 py-2.5 sm:px-4"
-      contentClassName="p-3 sm:p-4"
+      className="border-primary/20 bg-gradient-to-br from-surface-1 via-surface-1 to-primary/[0.035]"
+      headerClassName="px-4 py-3 sm:px-5"
+      contentClassName="p-3 sm:p-5"
     >
       {query.isLoading || projectSettings.isLoading ? (
         <div className="flex items-center gap-2 py-2 text-sm text-text-secondary">
@@ -244,110 +245,151 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
         </p>
       ) : (
         <div className="space-y-3">
-          {/* La cabecera siempre muestra el estado guardado, nunca el borrador. */}
-          <section aria-label="Estado de la versión publicada" className="space-y-2 rounded-xl border border-border-default bg-surface-2 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-                <span className="text-xs font-medium text-text-secondary">Publicada</span>
-                <strong className="text-lg font-semibold tabular-nums text-text-primary">
-                  {query.data.latest_version || "Sin versión"}
-                </strong>
-                <span className="text-xs text-text-secondary">
-                  Compilación {query.data.latest_build || "—"}
-                </span>
+          {/* Siempre se muestra el estado persistido, nunca el borrador. */}
+          <section aria-label="Versión actual de TukTuk Conductor"
+            className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.13] via-surface-2 to-surface-1 p-4 sm:p-5">
+            <Smartphone aria-hidden="true"
+              className="pointer-events-none absolute -right-5 -top-7 h-40 w-40 rotate-[-15deg] text-primary/[0.07]" strokeWidth={1} />
+            <div className="relative flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-primary">
+                  Versión Android publicada
+                </p>
+                <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <strong className="text-3xl font-bold tracking-tight tabular-nums text-text-primary sm:text-4xl">
+                    {query.data.latest_version || "Sin publicar"}
+                  </strong>
+                  <span className="rounded-md border border-border-strong bg-surface-1/70 px-2 py-1 text-xs font-semibold text-text-secondary">
+                    Build {query.data.latest_build || "—"}
+                  </span>
+                </div>
+                <p className="mt-1.5 max-w-md text-xs leading-relaxed text-text-secondary">
+                  Esta es la versión que la aplicación indica a los conductores.
+                </p>
               </div>
-              <span className={
-                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold " +
-                (query.data.enabled
-                  ? (projectSettings.data?.forceUpdate
-                      ? "border-amber-400/35 bg-amber-400/10 text-amber-300"
-                      : "border-emerald-400/30 bg-emerald-400/10 text-emerald-300")
-                  : "border-border-default bg-surface-1 text-text-secondary")
-              }>
-                {query.data.enabled
-                  ? (projectSettings.data?.forceUpdate ? "Actualización obligatoria" : "Aviso opcional")
-                  : "Aviso desactivado"}
-              </span>
+              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                <span role="status" className={
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold " +
+                  (!query.data.enabled
+                    ? "border-border-strong bg-surface-2 text-text-secondary"
+                    : projectSettings.data?.forceUpdate
+                      ? "border-amber-400/35 bg-amber-400/10 text-amber-200"
+                      : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200")
+                }>
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {!query.data.enabled ? "Aviso desactivado" :
+                    projectSettings.data?.forceUpdate ? "Actualización obligatoria" : "Actualización opcional"}
+                </span>
+                <a href={TUKTUK_CONDUCTOR_PLAY_URL} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/[0.08] px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  Abrir Google Play <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                </a>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
-              <span className="min-w-0 truncate">
-                {query.data.release_notes.trim()
-                  ? query.data.release_notes.trim().replace(/\s+/g, " ").slice(0, 110)
-                  : "Sin novedades registradas"}
-                {query.data.release_notes.trim().length > 110 ? "…" : ""}
-              </span>
-              <a href={TUKTUK_CONDUCTOR_PLAY_URL} target="_blank" rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center gap-1 font-medium text-primary underline-offset-2 hover:underline">
-                Google Play <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
+            {query.data.release_notes.trim() ? (
+              <details className="group relative mt-3 border-t border-border-default pt-2.5">
+                <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-xs font-semibold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
+                  <span className="inline-flex items-center gap-2">
+                    <CircleHelp className="h-4 w-4 text-primary" aria-hidden="true" />
+                    Ver novedades de esta versión
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-text-secondary transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-text-secondary">
+                  {query.data.release_notes.replace(/\*{2}/g, "").trim()}
+                </p>
+              </details>
+            ) : null}
           </section>
 
-          <section aria-label="Monitoreo de la actualización" className="space-y-2">
+          <section aria-label="Seguimiento de la actualización" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-text-primary">1. Seguimiento</h3>
-              <Button size="sm" variant="ghost"
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">1. Seguimiento de la actualización</h3>
+                <p className="text-xs text-text-secondary">Son dos mediciones diferentes: avisos enviados e instalaciones conocidas.</p>
+              </div>
+              <Button size="sm" variant="outline"
                 onClick={() => void Promise.all([versionAdoption.refetch(), deliveryQuery.refetch(), driverAudience.refetch()])}
                 disabled={!canManage || versionAdoption.isFetching || deliveryQuery.isFetching}
                 aria-label="Actualizar el seguimiento de la versión">
-                <RefreshCw className={"mr-1.5 h-3.5 w-3.5" + (versionAdoption.isFetching || deliveryQuery.isFetching ? " animate-spin" : "")} />
-                Actualizar datos
+                <RefreshCw className={"mr-1.5 h-3.5 w-3.5" +
+                  (versionAdoption.isFetching || deliveryQuery.isFetching ? " animate-spin" : "")} />
+                Actualizar
               </Button>
             </div>
-            {versionAdoption.isError ? (
-              <p role="alert" className="text-xs text-destructive">No se pudieron consultar las instalaciones.</p>
-            ) : versionAdoption.data ? (
-              <>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                  {([
-                    ["Conductores activos", versionAdoption.data.active_drivers],
-                    ["Versión confirmada", versionAdoption.data.current_drivers],
-                    ["Versión anterior", versionAdoption.data.outdated_drivers],
-                    ["Sin información", versionAdoption.data.unknown_drivers],
-                  ] as const).map(([name, count]) => (
-                    <div key={name} className="min-w-0 rounded-lg border border-border-default bg-surface-2 px-3 py-2">
-                      <p className="text-[12px] leading-4 text-text-secondary">{name}</p>
-                      <p className="mt-1 text-xl font-semibold tabular-nums text-text-primary">{count}</p>
-                    </div>
-                  ))}
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="min-w-0 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] p-3.5 sm:p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
+                    <BellRing className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  Notificaciones enviadas
                 </div>
-                {!versionAdoption.data.last_reported_at ? (
-                  <p className="text-xs text-text-secondary">
-                    Aún no hay instalaciones verificadas. La APK publicada anteriormente no informaba la compilación instalada.
-                  </p>
-                ) : (
-                  <p className="text-xs text-text-secondary">
-                    Último registro: {new Date(versionAdoption.data.last_reported_at).toLocaleString("es-ES")}.
-                    {versionAdoption.data.stale_reports > 0
-                      ? " Informes antiguos: " + versionAdoption.data.stale_reports + "." : ""}
-                    {" "}Los registros de más de 30 días cuentan como desconocidos.
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-xs text-text-secondary">
-                {canManage ? "Consultando instalaciones..." : "Se requiere permiso de configuración para consultar el seguimiento."}
-              </p>
-            )}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-xs text-text-secondary">
-              <span className="inline-flex items-center gap-1.5 font-medium text-text-primary">
-                <Megaphone className="h-3.5 w-3.5 text-primary" /> Notificaciones
-              </span>
-              {deliveryQuery.isError ? (
-                <span role="alert">No disponibles</span>
-              ) : deliveryQuery.data ? (
-                <>
-                  <span><strong className="text-text-primary tabular-nums">{deliveryQuery.data.sent_drivers}</strong> enviadas</span>
-                  <span>{deliveryQuery.data.pending_drivers} pendientes</span>
-                  {deliveryQuery.data.failed_drivers > 0 ? (
-                    <span className="text-destructive">{deliveryQuery.data.failed_drivers} con error</span>
-                  ) : null}
-                  <span>· {deliveryQuery.data.eligible_drivers} conductores habilitados</span>
-                </>
-              ) : (
-                <span>Consultando envíos...</span>
-              )}
-              <span className="text-text-tertiary">Enviado no significa instalado</span>
+                {deliveryQuery.isError ? (
+                  <p role="alert" className="mt-3 text-xs text-destructive">No se pudo comprobar el envío.</p>
+                ) : deliveryQuery.data ? (
+                  <>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <strong className="text-3xl font-bold tabular-nums text-emerald-200">
+                        {deliveryQuery.data.sent_drivers}
+                      </strong>
+                      <span className="text-sm text-text-secondary">
+                        de {deliveryQuery.data.eligible_drivers} conductores elegibles
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3"
+                      role="progressbar" aria-label="Notificaciones enviadas"
+                      aria-valuemin={0} aria-valuemax={deliveryQuery.data.eligible_drivers}
+                      aria-valuenow={Math.min(deliveryQuery.data.sent_drivers, deliveryQuery.data.eligible_drivers)}>
+                      <div className="h-full rounded-full bg-emerald-400 transition-[width]"
+                        style={{ width: (deliveryQuery.data.eligible_drivers > 0
+                          ? Math.min(100, 100 * deliveryQuery.data.sent_drivers / deliveryQuery.data.eligible_drivers)
+                          : 0) + "%" }} />
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                      {deliveryQuery.data.pending_drivers === 0 && deliveryQuery.data.failed_drivers === 0
+                        ? "Sin envíos pendientes ni errores registrados."
+                        : deliveryQuery.data.pending_drivers + " pendientes · " + deliveryQuery.data.failed_drivers + " con error."}
+                    </p>
+                  </>
+                ) : <p className="mt-3 text-xs text-text-secondary">Consultando envíos...</p>}
+              </div>
+              <div className="min-w-0 rounded-2xl border border-primary/20 bg-primary/[0.045] p-3.5 sm:p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.12] text-primary">
+                    <Users className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  Instalaciones verificadas
+                </div>
+                {versionAdoption.isError ? (
+                  <p role="alert" className="mt-3 text-xs text-destructive">No se pudieron consultar las instalaciones.</p>
+                ) : versionAdoption.data ? (
+                  <>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <strong className="text-3xl font-bold tabular-nums text-text-primary">
+                        {versionAdoption.data.current_drivers}
+                      </strong>
+                      <span className="text-sm text-text-secondary">en versión actual confirmada</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-text-secondary">
+                        {versionAdoption.data.active_drivers} conductores activos
+                      </span>
+                      <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-text-secondary">
+                        {versionAdoption.data.outdated_drivers} con versión anterior confirmada
+                      </span>
+                      <span className="rounded-md border border-amber-400/15 bg-amber-400/[0.07] px-2 py-1 text-xs text-amber-200">
+                        {versionAdoption.data.unknown_drivers} sin datos
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                      {!versionAdoption.data.last_reported_at
+                        ? "La APK 24 no informa qué versión tiene cada conductor. Sin datos no significa sin actualizar."
+                        : "Datos obtenidos de la APK; si el informe supera 30 días se considera desconocido."}
+                    </p>
+                  </>
+                ) : <p className="mt-3 text-xs text-text-secondary">Consultando instalaciones...</p>}
+              </div>
             </div>
           </section>
 
