@@ -518,19 +518,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 Cambios sin guardar
               </Badge>
             ) : null}
-            {visibleSection === "application" ? (
-              <Select value={activeSection} onValueChange={(value) => setActiveSection(value as SectionKey)}>
-                <SelectTrigger aria-label="Cambiar sección de ajustes"
-                  className="h-10 min-w-[170px] max-w-[230px] rounded-xl border-primary/30 bg-surface-2 text-xs font-medium text-text-primary">
-                  <SelectValue placeholder="Cambiar sección" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sections.map((section) => (
-                    <SelectItem key={section.key} value={section.key}>{section.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
             {canSave && isDirty ? (
               <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
                 {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
