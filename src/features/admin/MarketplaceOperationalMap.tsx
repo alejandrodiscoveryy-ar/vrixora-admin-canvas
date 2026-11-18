@@ -978,14 +978,6 @@ export default function MarketplaceOperationalMap({
     () => new Set(coverageDrivers.map((driver) => driver.driverUserId)),
     [coverageDrivers],
   );
-  const coverageLocated = useMemo(
-    () => coverageDrivers.filter((driver) => driverCoordinate(driver) != null).length,
-    [coverageDrivers],
-  );
-  const historicalFleetLocations = useMemo(
-    () => (operational.data?.drivers ?? []).filter(hasHistoricalDriverCoordinate).length,
-    [operational.data?.drivers],
-  );
 
   // Cambios GPS no deben crear nuevas consultas/caches de geometria de Mapbox cada 5 s.
   const routeKey = useMemo(() => {
@@ -2405,22 +2397,8 @@ export default function MarketplaceOperationalMap({
                       {label}
                     </button>
                   ))}
-                  <span className="px-2 text-[10px] text-slate-300">
-                    Con última posición: {coverageLocated}/{coverageDrivers.length}
-                  </span>
                 </div>
               )}
-              {mapViewMode === "operations" && layers.drivers && showAllFleetInOperations ? (
-                <span className="rounded-lg border border-sky-400/25 bg-slate-950/85 px-2.5 py-1.5 text-[11px] text-sky-100 shadow-lg">
-                  Con última posición: {(operational.data?.drivers ?? []).filter((driver) => driverCoordinate(driver) != null).length}/{operational.data?.drivers.length ?? 0}
-                </span>
-              ) : null}
-              {mapViewMode === "operations" && layers.drivers && showAllFleetInOperations && historicalFleetLocations > 0 ? (
-                <span className="rounded-lg border border-amber-400/25 bg-slate-950/85 px-2.5 py-1.5 text-[11px] text-amber-100 shadow-lg"
-                  title="Últimas ubicaciones anteriores a 24 horas. Naranja si el conductor sigue Trabajando; gris si está Descansando. No representan GPS en vivo.">
-                  {historicalFleetLocations} GPS antiguos (&gt;24 h)
-                </span>
-              ) : null}
               {mapViewMode === "operations" &&
               layers.drivers &&
               staleWorkingDriversWithLocation > 0 &&

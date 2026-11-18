@@ -33,8 +33,9 @@ test("The map retains the last accepted location even if old, but never calls hi
   assert.match(map, /if \(driver.activeJobId\) return "busy"/);
   assert.match(map, /GPS histórico/);
   assert.match(map, /No representa la ubicación actual/);
-  assert.match(map, /GPS antiguos/);
-  assert.match(map, /Con última posición/);
+  // Last known positions remain available without noisy map-level counters.
+  assert.doesNotMatch(map, /GPS antiguos \(&gt;24 h\)/);
+  assert.doesNotMatch(map, /Con última posición:/);
   assert.match(map, /driver\.capturedAt \? new Intl\.DateTimeFormat/);
   assert.doesNotMatch(map, /if \(age == null \|\| age > MAP_LAST_POSITION_MAX_AGE_MS/);
 });
@@ -48,6 +49,6 @@ test("Historical GPS of resting drivers is gray, working drivers stay orange, an
   assert.match(map, /"0\.76"/);
   assert.match(map, /driverPinState\(driver\) === "historic" \|\| driverPinState\(driver\) === "unavailable" \? "2"/);
   assert.match(map, /setExpandedDriverId\(driver\.driverUserId\)/);
-  assert.match(map, /GPS antiguos \(&gt;24 h\)/);
+  assert.match(map, /function hasHistoricalDriverCoordinate/);
   assert.match(map, /Posición aproximada de cobertura/);
 });

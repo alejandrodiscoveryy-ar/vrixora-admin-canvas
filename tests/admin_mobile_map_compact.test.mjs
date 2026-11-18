@@ -74,7 +74,8 @@ test("Toda la flota es una capa de Operaciones independiente de Cobertura", () =
   assert.match(source, /setShowAllFleetInOperations\(false\);\s*setLayers\(\(current\) => \(\{ \.\.\.current, drivers: showAllFleetInOperations \|\| !current\.drivers \}\)\)/);
   assert.match(source, /if \(mapViewMode === "coverage" && !coverageDriverIds\.has\(driver\.driverUserId\)\) continue;/);
   assert.match(source, /if \(mapViewMode !== "coverage"\) return;/);
-  assert.match(source, /Con última posición: \{\(operational\.data\?\.drivers \?\? \[\]\)\.filter\(\(driver\) => driverCoordinate\(driver\) != null\)\.length\}/);
+  assert.doesNotMatch(source, /Con última posición:/);
+  assert.doesNotMatch(source, /GPS antiguos \(&gt;24 h\)/);
   assert.match(source, /mapViewMode === "operations" && layers\.routes/);
 });
 
