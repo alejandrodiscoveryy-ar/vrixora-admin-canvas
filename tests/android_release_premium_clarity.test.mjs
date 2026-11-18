@@ -8,7 +8,7 @@ const settings = read("src/features/admin/ConfiguracionSection.tsx");
 
 test("Android section no longer duplicates the giant settings snapshot", () => {
   assert.match(settings, /visibleSection === "application" \? \(/);
-  assert.match(settings, /aria-label="Cambiar sección de ajustes"/);
+  assert.doesNotMatch(settings, /aria-label="Cambiar sección de ajustes"/);
   assert.match(settings, /visibleSection !== "application" \? \(/);
   assert.match(settings, /showExtraAppSettings/);
   assert.match(settings, /aria-controls="app-extra-settings"/);

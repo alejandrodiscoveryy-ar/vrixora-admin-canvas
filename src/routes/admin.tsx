@@ -98,12 +98,20 @@ function AdminChrome() {
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const configurationPageActive = Boolean(
+    currentProjectId && ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection)
+  );
 
   useEffect(() => {
     try {
-      setSidebarCollapsed(localStorage.getItem(DESKTOP_SIDEBAR_PREFERENCE) === "true");
+      const savedCollapsed = localStorage.getItem(DESKTOP_SIDEBAR_PREFERENCE) === "true";
+      setSidebarCollapsed(savedCollapsed);
     } catch { /* storage may be unavailable */ }
   }, []);
+
+  useEffect(() => {
+    if (configurationPageActive) setSidebarCollapsed(false);
+  }, [configurationPageActive]);
 
   function toggleDesktopSidebar() {
     const next = !sidebarCollapsed;
@@ -145,6 +153,7 @@ function AdminChrome() {
           currentSection={currentSection}
           compact={compactWorkspace}
           collapsed={sidebarCollapsed}
+          onOpenConfiguration={() => setSidebarCollapsed(false)}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
@@ -195,6 +204,7 @@ function ProjectNavItem({
   path,
   closeDrawer,
   collapsed = false,
+  onOpenConfiguration,
 }: {
   project: {
     id: string;
@@ -209,6 +219,7 @@ function ProjectNavItem({
   path: string;
   closeDrawer?: () => void;
   collapsed?: boolean;
+  onOpenConfiguration?: () => void;
 }) {
   const isActiveProject = project.id === currentProjectId;
   const navigate = useNavigate();
@@ -456,7 +467,7 @@ function ProjectNavItem({
 
               const defaultChild = adminGroupDefault(tab);
               if (!defaultChild) return null;
-              const groupOpen = collapsed ? groupActive : configurationExpanded;
+              const groupOpen = !collapsed && configurationExpanded;
 
               return (
                 <div key={tab.slug} className="admin-nav-config-group space-y-1">
@@ -470,6 +481,7 @@ function ProjectNavItem({
                       aria-label={tab.label}
                       onClick={() => {
                         setConfigurationExpanded(true);
+                        onOpenConfiguration?.();
                         closeDrawer?.();
                       }}
                       className="admin-nav-config-link"
@@ -560,6 +572,7 @@ function DesktopSidebar({
   currentSection,
   compact,
   collapsed,
+  onOpenConfiguration,
 }: {
   projects: Awaited<ReturnType<typeof useUserProjects>>["data"] | undefined;
   projectsLoading: boolean;
@@ -568,6 +581,7 @@ function DesktopSidebar({
   currentSection: string;
   compact: boolean;
   collapsed: boolean;
+  onOpenConfiguration: () => void;
 }) {
   return (
         <aside
@@ -632,6 +646,7 @@ function DesktopSidebar({
               currentSection={currentSection}
               path={path}
               collapsed={collapsed}
+              onOpenConfiguration={onOpenConfiguration}
             />
           ))
         )}

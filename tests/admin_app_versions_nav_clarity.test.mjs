@@ -4,13 +4,15 @@ import { test } from "node:test";
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const workspace = read("src/features/admin/AdministrationWorkspace.tsx");
 const config = read("src/features/admin/ConfiguracionSection.tsx");
+const sidebar = read("src/routes/admin.tsx");
 const updates = read("src/features/admin/AppReleaseSettingsCard.tsx");
 
 test("The Android configuration view displays one main release header", () => {
   assert.match(workspace, /selectedMeta && activeSection !== "configuracion"/);
   assert.match(config, /visibleSection !== "application" \? \(/);
-  assert.match(config, /aria-label="Cambiar sección de ajustes"/);
-  assert.match(config, /sections\.map\(\(section\) => \(\s*<SelectItem/);
+  assert.doesNotMatch(config, /aria-label="Cambiar sección de ajustes"/);
+  assert.match(sidebar, /admin-nav-config-group/);
+  assert.match(sidebar, /adminSubnavTone\("administracion", child\.slug\)/);
   assert.match(updates, /title="Centro de actualizaciones"/);
 });
 
@@ -26,5 +28,6 @@ test("Navigation stays accessible outside Android view", () => {
   assert.match(config, /aria-label="Cambiar módulo de configuración"/);
   assert.match(config, /aria-current=\{visibleSection === section\.key/);
   assert.match(config, /onClick=\{\(\) => setActiveSection\(section\.key\)\}/);
-  assert.match(config, /onValueChange=\{\(value\) => setActiveSection\(value as SectionKey\)\}/);
+  assert.match(sidebar, /onOpenConfiguration=\{onOpenConfiguration\}/);
+  assert.match(sidebar, /if \(configurationPageActive\) setSidebarCollapsed\(false\)/);
 });
