@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronRight, ShieldCheck } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { ShieldCheck } from "lucide-react";
 
 import { ADMINISTRATION_VIEWS, adminSubnavTone } from "@/lib/admin-navigation";
 import type { ProjectPermission } from "@/lib/services";
@@ -33,9 +32,7 @@ const SECTION_META: Record<string, { number: string; subtitle: string; eyebrow: 
 };
 
 export default function AdministrationWorkspace({
-  projectId,
   activeSection,
-  permissions,
   children,
 }: {
   projectId: string;
@@ -43,63 +40,13 @@ export default function AdministrationWorkspace({
   permissions: readonly ProjectPermission[];
   children: ReactNode;
 }) {
-  const visibleSections = ADMINISTRATION_VIEWS.filter((section) =>
-    permissions.includes(section.permission),
-  );
   const selected = ADMINISTRATION_VIEWS.find((section) => section.slug === activeSection);
   const selectedMeta = SECTION_META[activeSection];
   const SelectedIcon = selected?.icon ?? ShieldCheck;
 
   return (
-    <section aria-label="Configuración del proyecto TukTuk" className="min-w-0 space-y-3">
-      <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
-        <nav data-nav-tone="administracion"
-          aria-label="Secciones de configuración del proyecto TukTuk"
-          className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4 admin-graphite-panel"
-        >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
-          <div className="relative z-10 px-2.5 pb-2 pt-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Configuración</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Ajustes, equipo y servicios de TukTuk</p>
-          </div>
-
-          <div className="relative z-10 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-1">
-            {visibleSections.map((section) => {
-              const Icon = section.icon;
-              const meta = SECTION_META[section.slug];
-              const isSelected = section.slug === activeSection;
-
-              return (
-                <Link
-                  key={section.slug}
-                  to="/admin/proyectos/$id/$section"
-                  params={{ id: projectId, section: section.slug }}
-                  aria-current={isSelected ? "page" : undefined}
-                  data-nav-tone={adminSubnavTone("administracion", section.slug)}
-                  className={`group relative isolate flex admin-graphite-nav-item min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}
-                >
-                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "admin-nav-watermark opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
-                  <span className="admin-nav-icon relative z-10" aria-hidden="true">
-                    <Icon aria-hidden="true" strokeWidth={2} />
-                  </span>
-                  <span className="relative z-10 min-w-0 flex-1">
-                    <span className="block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{meta.number}</span>
-                    <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">{section.label}</span>
-                    <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{meta.subtitle}</span>
-                  </span>
-                  <ChevronRight data-nav-chevron aria-hidden="true" className="relative z-10 hidden h-4 w-4 shrink-0 xl:block" />
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="relative z-10 mt-2 flex items-center gap-1.5 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">
-            <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-cyan-400" />
-            Acceso según permisos
-          </div>
-        </nav>
-
-        <div className="min-w-0 space-y-3">
+    <section data-nav-tone="administracion" aria-label="Configuración del proyecto TukTuk" className="min-w-0 space-y-3">
+      {/* La navegación principal del proyecto ya contiene estos cuatro destinos; no duplicarla. */}
           {selectedMeta && activeSection !== "configuracion" ? (
             <header data-nav-tone={adminSubnavTone("administracion", activeSection)} className="relative isolate overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-3 text-slate-50 shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_90%_10%,rgba(34,211,238,0.10),transparent_55%)]" />
@@ -119,9 +66,7 @@ export default function AdministrationWorkspace({
             </header>
           ) : null}
 
-          {children}
-        </div>
-      </div>
+      {children}
     </section>
   );
 }
