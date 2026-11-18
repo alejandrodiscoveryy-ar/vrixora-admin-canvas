@@ -65,6 +65,7 @@ import { cn } from "@/lib/utils";
 import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Record";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
+import { usePendingDriverVerifications } from "@/hooks/usePendingDriverVerifications";
 import { matchesDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
@@ -1471,13 +1472,19 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   // Fetch verification for the entire loaded directory before applying filters or slicing visible rows.
   const driverVerifications = useDriverVerifications(projectId, driverRows.map((row) => row.userId),
     tab === "conductores" && !drivers.hasNextPage && !drivers.isLoading && !drivers.isError);
+  const pendingVerifications = usePendingDriverVerifications(projectId, driverRows.map((row) => row.userId),
+    tab === "conductores" && driverVerificationFilter === "pending" &&
+    canManageMarketplace && !drivers.hasNextPage && !drivers.isLoading && !drivers.isError);
   const verificationComplete = driverRows.every((row) =>
     typeof driverVerifications.data?.[row.userId]?.verified === "boolean");
-  const verificationFilterLoading = Boolean(driverVerificationFilter) &&
-    driverVerifications.isFetching && !verificationComplete;
+  const verificationFilterLoading = driverVerificationFilter === "pending"
+    ? pendingVerifications.isLoading || pendingVerifications.isFetching
+    : Boolean(driverVerificationFilter) && driverVerifications.isFetching && !verificationComplete;
   const verificationFilterUnavailable = Boolean(driverVerificationFilter) &&
     !drivers.isLoading && !drivers.hasNextPage && !verificationFilterLoading &&
-    (driverVerifications.isError || !verificationComplete);
+    (driverVerificationFilter === "pending"
+      ? !canManageMarketplace || pendingVerifications.isError || !pendingVerifications.data
+      : driverVerifications.isError || !verificationComplete);
   const verifiedDriverCount = verificationComplete && !drivers.isLoading && !drivers.hasNextPage && !drivers.isError && !driverVerifications.isError
     ? driverRows.filter((row) => driverVerifications.data?.[row.userId]?.verified === true).length : null;
   const driverCategories = [...new Set(
@@ -1489,7 +1496,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     if (query && !normalizeDriverText(item.displayName).includes(query) &&
         !(phoneDigits && (item.phone ?? "").replace(/\D/g, "").includes(phoneDigits))) return false;
     if (driverStatusFilter && item.status !== driverStatusFilter) return false;
-    if (!matchesDriverVerification(driverVerificationFilter, driverVerifications.data?.[item.userId]?.verified)) return false;
+    if (driverVerificationFilter === "pending") {
+      if (!pendingVerifications.data?.has(item.userId)) return false;
+    } else if (!matchesDriverVerification(driverVerificationFilter, driverVerifications.data?.[item.userId]?.verified)) return false;
     if (driverAvailabilityFilter === "available" && !item.isAvailable) return false;
     if (driverAvailabilityFilter === "unavailable" && item.isAvailable) return false;
     if (driverCategoryFilter && item.vehicleCategoryCode !== driverCategoryFilter) return false;
@@ -2100,6 +2109,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <FilterSelect appearance="premium" labelText="Verificación" value={driverVerificationFilter} onChange={setDriverVerificationFilter}>
                   <option value="">Todos</option>
                   <option value="verified">Verificados{verifiedDriverCount !== null ? ` (${verifiedDriverCount})` : ""}</option>
+                  <option value="pending">Solicitan verificación</option>
                   <option value="unverified">No verificados{verifiedDriverCount !== null ? ` (${driverRows.length - verifiedDriverCount})` : ""}</option>
                 </FilterSelect>
                 <FilterSelect appearance="premium" labelText="Inscripción" value={driverPeriodFilter} onChange={setDriverPeriodFilter}>
