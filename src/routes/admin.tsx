@@ -455,7 +455,7 @@ function ProjectNavItem({
               if (!defaultChild) return null;
               const nestedChildren = tab.children.filter((child) => child.slug !== "configuracion");
               const groupOpen = configurationExpanded;
-              const mainSettingsActive = currentSection === "configuracion";
+              const mainSettingsActive = currentSection === defaultChild.slug;
 
               return (
                 <div key={tab.slug} className="admin-nav-config-group space-y-1">
@@ -464,8 +464,8 @@ function ProjectNavItem({
                     className="admin-nav-item admin-nav-primary admin-nav-config-parent">
                     <button
                       type="button"
-                      title="Configuración · Ajustes generales"
-                      aria-label={groupOpen ? "Contraer Configuración y abrir Ajustes generales" : "Abrir Configuración y Ajustes generales"}
+                      title={`${tab.label} · ${defaultChild.label}`}
+                      aria-label={groupOpen ? `Contraer ${tab.label} y abrir ${defaultChild.label}` : `Abrir ${tab.label} y ${defaultChild.label}`}
                       aria-current={mainSettingsActive ? "page" : undefined}
                       aria-expanded={groupOpen}
                       aria-controls={configurationGroupId}
