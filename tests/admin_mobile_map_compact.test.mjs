@@ -96,7 +96,7 @@ test("Agenda de conductores usa filas compactas y detalle desplegable", () => {
   assert.match(source, /timeZone: effectiveHavanaTimeZone\(capturedDate\), dateStyle: "short", timeStyle: "medium"/);
   assert.match(source, /setShowAllFleetInOperations\(true\)/);
   assert.match(source, /onOpenDriver\(driver\.driverUserId\)/);
-  assert.match(source, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \? "bg-amber-400"/);
+  assert.match(source, /pinState === "busy" \? "bg-emerald-400" : pinState === "available" \? "bg-sky-400" : pinState === "stale" \|\| pinState === "offline" \? "bg-orange-500"/);
 });
 
 
