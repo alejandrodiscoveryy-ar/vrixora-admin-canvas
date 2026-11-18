@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const release = read("src/features/admin/AppReleaseSettingsCard.tsx");
 const comms = read("src/features/admin/ComunicadosSection.tsx");
-const migration = read("supabase/migrations/20261118122500_unify_driver_android_release_center.sql");
+const migration = read("supabase/migrations/20261118121617_unify_driver_android_release_center.sql");
 
 test("Android releases have a single editable configuration and separate explicit push confirmation", () => {
   assert.match(release, /readOnly aria-readonly="true"/);
