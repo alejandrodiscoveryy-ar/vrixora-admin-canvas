@@ -631,7 +631,8 @@ test("Configuración replaces the Administration label without duplicate entries
   assert.match(route, /data-nav-submenu/);
   assert.match(route, /permissions\.includes\(child\.permission\)/);
   assert.match(route, /section: child\.slug/);
-  assert.match(route, /onOpenConfiguration\?\.\(\)/);
+  assert.match(route, /onClick=\{\(\) => setConfigurationExpanded\(\(value\) => !value\)\}/);
+  assert.doesNotMatch(route, /onOpenConfiguration/);
 });
 
 
