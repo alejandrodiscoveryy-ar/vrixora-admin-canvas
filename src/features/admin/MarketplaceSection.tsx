@@ -66,7 +66,7 @@ import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Rec
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { usePendingDriverVerifications } from "@/hooks/usePendingDriverVerifications";
-import { matchesDriverVerification } from "@/features/admin/driver-verification-filter";
+import { matchesDriverVerification, matchesPendingDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
@@ -1507,12 +1507,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const verificationComplete = driverRows.every((row) =>
     typeof driverVerifications.data?.[row.userId]?.verified === "boolean");
   const verificationFilterLoading = driverVerificationFilter === "pending"
-    ? pendingVerifications.isLoading || pendingVerifications.isFetching
+    ? pendingVerifications.isLoading || pendingVerifications.isFetching ||
+      (driverVerifications.isFetching && !verificationComplete)
     : Boolean(driverVerificationFilter) && driverVerifications.isFetching && !verificationComplete;
   const verificationFilterUnavailable = Boolean(driverVerificationFilter) &&
     !drivers.isLoading && !drivers.hasNextPage && !verificationFilterLoading &&
     (driverVerificationFilter === "pending"
-      ? !canManageMarketplace || pendingVerifications.isError || !pendingVerifications.data
+      ? !canManageMarketplace || pendingVerifications.isError || !pendingVerifications.data ||
+        driverVerifications.isError || !verificationComplete
       : driverVerifications.isError || !verificationComplete);
   const verifiedDriverCount = verificationComplete && !drivers.isLoading && !drivers.hasNextPage && !drivers.isError && !driverVerifications.isError
     ? driverRows.filter((row) => driverVerifications.data?.[row.userId]?.verified === true).length : null;
@@ -1526,7 +1528,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
         !(phoneDigits && (item.phone ?? "").replace(/\D/g, "").includes(phoneDigits))) return false;
     if (driverStatusFilter && item.status !== driverStatusFilter) return false;
     if (driverVerificationFilter === "pending") {
-      if (!pendingVerifications.data?.has(item.userId)) return false;
+      if (!matchesPendingDriverVerification(
+        pendingVerifications.data?.has(item.userId) === true,
+        driverVerifications.data?.[item.userId]?.verified,
+      )) return false;
     } else if (!matchesDriverVerification(driverVerificationFilter, driverVerifications.data?.[item.userId]?.verified)) return false;
     if (driverAvailabilityFilter === "available" && !item.isAvailable) return false;
     if (driverAvailabilityFilter === "unavailable" && item.isAvailable) return false;
