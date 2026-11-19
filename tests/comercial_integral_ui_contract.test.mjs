@@ -36,6 +36,21 @@ test("Gestión agrupa tres políticas y deja una sola sección abierta", () => {
   for (const panel of [welcome, impulsa, wallet]) assert.match(panel, /embedded/);
 });
 
+test("Gestión presenta pestañas secundarias compactas sin una tarjeta negra independiente", () => {
+  const styles = readFileSync("src/features/admin/commercial-premium.ts", "utf8");
+  assert.match(main, /aria-label="Herramientas de gestión comercial" className="min-w-0"/);
+  assert.match(main, /<div className=\{cp\.managementNav\}>/);
+  assert.match(main, /cp\.managementNavSelected/);
+  assert.match(main, /cp\.managementNavUnselected/);
+  assert.match(main, /aria-pressed=\{commercialView === value\}/);
+  assert.doesNotMatch(main, /aria-label="Herramientas de gestión comercial" className=\{cp\.section/);
+  assert.match(styles, /managementNav: "grid min-w-0 grid-cols-2/);
+  assert.match(styles, /managementNavUnselected: "border-transparent bg-transparent/);
+  for (const label of ["Configuración general", "Referidos y red", "Beneficios de conductores", "Captación y contactos"]) {
+    assert.ok(main.includes(label), label);
+  }
+});
+
 test("Configuración preserva las tres rutas financieras y sus permisos", () => {
   assert.match(welcome, /admin_set_marketplace_welcome_policy/);
   assert.match(welcome, /admin_set_marketplace_commission_only/);
