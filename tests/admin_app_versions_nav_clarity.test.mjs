@@ -22,7 +22,7 @@ test("The Android configuration view displays one main release header", () => {
 });
 
 test("Saving unrelated project settings is only offered for actual edits", () => {
-  assert.match(config, /canSave && isDirty \? \(/);
+  assert.match(config, /canSave && isDirty && \(/);
   assert.match(config, /Guardar otros ajustes/);
   assert.match(config, /save\.mutate\(\)/);
   assert.match(updates, /admin_save_app_release_policy/);
@@ -56,4 +56,18 @@ test("Se accede a las cinco pantallas sin un selector intermedio ni perder naveg
   assert.match(config, /<AppReleaseSettingsCard projectId=\{projectId\}/);
   assert.match(updates, /title="Centro de actualizaciones"/);
   assert.doesNotMatch(config, /onClick=\{\(\) => setActiveSection\("inicio"\)\}/);
+});
+
+test("El icono de Configuración en modo compacto abre Ajustes generales y permite volver al submenú", () => {
+  const start = sidebar.indexOf('if ("children" in tab)');
+  const block = sidebar.slice(start, sidebar.indexOf("const to = tab.slug", start));
+  assert.match(block, /event\.preventDefault\(\);\s*toggleSubmenu\("configuracion"\)/);
+  assert.match(block, /if \(!groupActive\) \{/);
+  assert.match(block, /setConfigurationExpanded\(true\)/);
+  assert.match(block, /void navigate\(\{/);
+  assert.match(block, /section: defaultChild\.slug/);
+  assert.match(block, /\{collapsed && \(\s*<Link/);
+  assert.match(block, /title=\{defaultChild\.label\}/);
+  assert.match(block, /\{nestedChildren\.map\(\(child\) =>/);
+  assert.match(block, /aria-current=\{mainSettingsActive \? "page" : undefined\}/);
 });
