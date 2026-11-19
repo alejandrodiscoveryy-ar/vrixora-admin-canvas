@@ -63,7 +63,7 @@ test("Trabajos abre Pulso y su flecha controla el submenú sin navegar", () => {
   const block = chrome.slice(chrome.indexOf('if (tab.slug === "trabajos")'), chrome.indexOf("// El centro de precios"));
   assert.match(block, /params=\{\{ id: project\.id, section: "trabajos" \}\}/);
   assert.match(block, /search=\{\{ vista: "resumen" \}\}/);
-  assert.match(block, /title="Trabajos"/);
+  assert.match(block, /title=\{collapsed \? \(trabajosOpen \? "Contraer Trabajos"/);
   assert.match(block, /setTrabajosExpanded\(true\);\s*closeDrawer\?\.\(\)/);
   assert.match(block, /const trabajosOpen = trabajosExpanded/);
   assert.match(block, /aria-controls=\{trabajosGroupId\}/);
