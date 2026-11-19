@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
+import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,6 +138,7 @@ export default function MarketplaceOffersPanel({
   const [openedAt] = useState(() => Date.now());
   const [form, setForm] = useState<FormState>(initialForm);
   const [editing, setEditing] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const campaignQuery = useQuery({
     queryKey: ["marketplace-offer-catalog", projectId],
@@ -291,30 +293,26 @@ export default function MarketplaceOffersPanel({
   };
 
   return (
-    <section className="space-y-6">
-      <header className={cp.header}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Comercial · Conductores</p>
-            <h2 className={cp.title}>Beneficios de conductores</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Prepara incentivos para incorporar, fidelizar o reactivar conductores.</p>
-          </div>
-          {canEdit && (
-            <Button onClick={() => open()} size="sm" className="h-9 gap-2">
-              <Plus className="h-4 w-4" /> Nueva oferta
-            </Button>
-          )}
-        </div>
-        <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.055] px-3 py-2 text-xs text-muted-foreground">
-          Las ofertas de este catálogo son borradores: no modifican las carreras ni las comisiones vigentes.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs" aria-label="Resumen del catálogo de ofertas">
-          <span className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5"><strong className="tabular-nums">{count.total}</strong> ofertas</span>
-          <span className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5"><strong className="tabular-nums">{count.drafts}</strong> borradores</span>
-          <span className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5"><strong className="tabular-nums">{count.archived}</strong> archivadas</span>
-        </div>
-      </header>
-
+    <section className="space-y-3">
+      <CommercialPageHeader
+        title="Beneficios de conductores"
+        description="Campañas y ofertas para incorporar, fidelizar o reactivar conductores. No cambian las comisiones hasta su activación."
+        icon={Gift}
+        actions={canEdit ? (
+          <Button onClick={() => open()} size="sm" className="max-sm:min-h-11">
+            <Plus className="mr-1 size-4" /> Nueva oferta
+          </Button>
+        ) : undefined}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+        <p>{count.total} ofertas · {count.drafts} borradores · {count.archived} archivadas</p>
+        {count.archived > 0 && (
+          <Button type="button" size="sm" variant="ghost" aria-pressed={showArchived}
+            onClick={() => setShowArchived(value => !value)}>
+            {showArchived ? "Ocultar archivadas" : "Ver archivadas"}
+          </Button>
+        )}
+      </div>
       {message && (
         <p
           role="status"
@@ -326,20 +324,20 @@ export default function MarketplaceOffersPanel({
 
       {editing && canEdit && (
         <form
-          className="rounded-2xl border border-border/65 bg-card/75 p-4 shadow-sm sm:p-5 admin-graphite-panel"
+          className={cp.section}
           onSubmit={(event) => {
             event.preventDefault();
             save.mutate();
           }}
         >
-          <div className="relative z-10 space-y-5 [&_label]:text-[13px] [&_label]:font-semibold [&_label]:text-slate-200 [&_input]:min-h-11 [&_textarea]:bg-[#0b0e1d]/90">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-300/20 pb-5">
+          <div className="space-y-4 [&_label]:text-sm [&_input]:min-h-11">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.20em] text-cyan-300">Configuración de la oferta</p>
               <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
                 {form.id ? "Editar campaña" : "Crear campaña"}
               </h3>
-              <p className="mt-1 text-sm text-slate-300">Define el beneficio en bloques claros. Los cambios seguirán siendo borradores.</p>
+              <p className="mt-1 text-sm text-text-secondary">Define el beneficio en bloques claros. Los cambios seguirán siendo borradores.</p>
             </div>
             <Button type="button" variant="outline" onClick={() => setEditing(false)}>
               Cerrar
@@ -348,7 +346,7 @@ export default function MarketplaceOffersPanel({
           <div className="grid gap-4 rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 md:grid-cols-2 sm:p-4">
             <div className="flex items-center gap-3 border-b border-white/10 pb-3 md:col-span-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">01</span>
-              <div><p className="text-base font-bold text-white">Identidad y vigencia</p><p className="text-xs text-slate-400">Nombre, tipo de promoción y fechas de captación.</p></div>
+              <div><p className="text-base font-bold text-text-primary">Identidad y vigencia</p><p className="text-xs text-text-secondary">Nombre, tipo de promoción y fechas de captación.</p></div>
             </div>
             <div>
               <Label htmlFor="offer-name">Nombre comercial</Label>
@@ -412,7 +410,7 @@ export default function MarketplaceOffersPanel({
             </div>
             <div className="flex items-center gap-3 border-b border-white/10 pb-3 pt-2 md:col-span-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">02</span>
-              <div><p className="text-base font-bold text-white">Beneficio y destinatarios</p><p className="text-xs text-slate-400">A quién se dirige, cuándo comienza y cuánto dura.</p></div>
+              <div><p className="text-base font-bold text-text-primary">Beneficio y destinatarios</p><p className="text-xs text-text-secondary">A quién se dirige, cuándo comienza y cuánto dura.</p></div>
             </div>
             <div>
               <Label htmlFor="offer-audience">Beneficiarios</Label>
@@ -527,7 +525,7 @@ export default function MarketplaceOffersPanel({
           </div>
           <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 sm:p-4">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">03</span><Users className="h-5 w-5 text-cyan-200" /> <span className="text-base font-bold text-white">Segmentación y límites avanzados</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">03</span><Users className="h-5 w-5 text-cyan-200" /> <span className="text-base font-bold text-text-primary">Segmentación y límites avanzados</span>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
@@ -631,7 +629,7 @@ export default function MarketplaceOffersPanel({
           <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 sm:p-4">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">04</span>
-              <span className="text-base font-bold text-white">Condiciones y notas internas</span>
+              <span className="text-base font-bold text-text-primary">Condiciones y notas internas</span>
             </div>
             <Label htmlFor="offer-terms">Condiciones de la campaña</Label>
             <Textarea
@@ -643,7 +641,7 @@ export default function MarketplaceOffersPanel({
               placeholder="Requisitos, control presupuestario, excepciones y autorización."
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-300/30 bg-[#0e281f]/75 p-4 shadow-inner shadow-emerald-400/5 admin-graphite-control">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
             <div className="flex items-center gap-2 text-sm">
               <ShieldCheck className="h-4 w-4 text-emerald-300" /> Guarda sin afectar las comisiones
               reales.
@@ -658,126 +656,57 @@ export default function MarketplaceOffersPanel({
       )}
 
       {campaignQuery.isLoading ? (
-        <div className="rounded-2xl border border-border/55 p-5 text-sm text-muted-foreground">
-          Cargando campañas...
-        </div>
+        <p className="py-4 text-sm text-text-secondary">Cargando ofertas…</p>
       ) : campaignQuery.isError ? (
-        <div
-          role="alert"
-          className="rounded-2xl border border-rose-400/35 bg-rose-500/[0.06] p-5 text-sm text-rose-200"
-        >
+        <p role="alert" className="rounded-xl border border-rose-400/30 p-3 text-sm text-text-secondary">
           {errorMessage(campaignQuery.error)}
-        </div>
-      ) : campaigns.length === 0 ? (
-        <div className="relative flex flex-col items-center overflow-hidden rounded-[24px] border border-dashed border-violet-400/20 bg-gradient-to-br from-background/85 to-violet-500/[0.04] px-6 py-12 text-center shadow-[0_20px_65px_-50px_rgba(139,92,246,0.65)] admin-graphite-panel">
-          <Gift className="h-10 w-10 text-violet-300" />
-          <h3 className="mt-3 font-semibold">Todavía no hay ofertas preparadas</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Comienza creando una campaña de bienvenida, una comisión reducida o una oferta de
-            reactivación.
-          </p>
+        </p>
+      ) : campaigns.filter(item => item.status !== "archived" || showArchived).length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border-subtle px-4 py-8 text-center">
+          <p className="text-sm font-medium text-text-primary">No hay ofertas pendientes en el catálogo.</p>
+          <p className="mt-1 text-xs text-text-secondary">Puedes crear una nueva oferta o consultar las archivadas.</p>
         </div>
       ) : (
-        <div className={campaigns.length === 1 ? "grid gap-4" : "grid gap-4 xl:grid-cols-2"}>
-          {campaigns.map((item) => {
-            const offer = kinds.find((kind) => kind.value === item.kind);
+        <div className="space-y-2" aria-label="Catálogo de beneficios">
+          {campaigns.filter(item => item.status !== "archived" || showArchived).map(item => {
+            const offer = kinds.find(kind => kind.value === item.kind);
+            const expired = item.status !== "archived" && new Date(item.closes_at).getTime() < Date.now();
             return (
-              <article
-                key={item.id}
-                className="group relative isolate overflow-hidden rounded-[26px] border border-violet-400/30 bg-gradient-to-br from-[#201838] via-[#111626] to-[#0c212b] p-3 shadow-[0_24px_70px_-45px_rgba(111,89,201,0.5)] transition-colors hover:border-cyan-300/45 sm:p-3 admin-graphite-panel"
-              >
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
-                <img
-                  src="/admin-premium/comercial-ofertas-hero.svg"
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-10 top-1 hidden h-64 w-[33%] object-contain object-right opacity-20 lg:block"
-                />
-                <div className="relative z-10">
-                <div className="flex flex-wrap items-start justify-between gap-5">
-                  <div>
-                    <p className="text-xs font-semibold text-violet-300">
-                      {offer?.name ?? item.kind}
-                    </p>
-                    <h3 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">{item.name}</h3>
+              <article key={item.id} className="min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1 p-3 shadow-[var(--shadow-xs)] sm:p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-text-secondary">{offer?.name ?? item.kind}</p>
+                    <h3 className="mt-1 break-words text-base font-semibold text-text-primary">{item.name}</h3>
+                    <p className="mt-1 text-xs text-text-secondary">{item.description || offer?.helper}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-3">
-                    <span className="rounded-full border border-amber-300/40 bg-amber-400/[0.12] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-100">
-                      {item.status === "archived" ? "Archivada" : "Borrador"}
-                    </span>
-                    {item.benefit_duration_days != null && (
-                      <div className="rounded-2xl border border-cyan-300/30 bg-[#062736]/80 px-5 py-3 text-right shadow-[0_16px_45px_-28px_rgba(34,211,238,0.7)] admin-graphite-inset">
-                        <div className="font-mono text-3xl font-black leading-none text-cyan-200 sm:text-4xl">{item.benefit_duration_days}<span className="ml-1 text-sm font-bold">DÍAS</span></div>
-                        <p className="mt-1 text-xs font-medium text-cyan-100/80">Beneficio promocional</p>
-                      </div>
-                    )}
-                  </div>
+                  <span className="rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-secondary">
+                    {item.status === "archived" ? "Archivada" : expired ? "Borrador vencido" : "Borrador"}
+                  </span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-foreground/70">
-                  {item.description || offer?.helper}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {item.benefit_duration_days != null && (
-                    <span className="rounded-xl border border-cyan-400/20 bg-cyan-500/[0.07] px-3 py-1.5 text-xs font-semibold text-cyan-100">
-                      {item.benefit_duration_days} días de beneficio
-                    </span>
+                <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-2 border-t border-border-subtle pt-3 text-xs sm:grid-cols-4">
+                  <div><dt className="text-text-secondary">Destinatarios</dt><dd className="mt-1 font-medium text-text-primary">{audiences.find(a => a.value === item.audience)?.text ?? "Definidos"}</dd></div>
+                  <div><dt className="text-text-secondary">Beneficio</dt><dd className="mt-1 font-medium text-text-primary">
+                    {item.kind === "commission_free" ? "0 % comisión" : item.kind === "commission_reduced" ? `${item.benefit_value} % comisión`
+                      : item.kind === "free_rides" ? `${item.benefit_ride_limit} carreras` : `${item.benefit_value} CUP`}
+                    {item.benefit_duration_days != null ? ` · ${item.benefit_duration_days} días` : ""}
+                  </dd></div>
+                  <div><dt className="text-text-secondary">Inicio</dt><dd className="mt-1 font-medium text-text-primary">{displayDate(item.begins_at)}</dd></div>
+                  <div><dt className="text-text-secondary">Fin</dt><dd className="mt-1 font-medium text-text-primary">{displayDate(item.closes_at)}</dd></div>
+                </dl>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
+                  <p className="text-xs text-text-secondary">
+                    Versión {item.revision} · Sin activar{item.max_budget_cup ? ` · Tope ${item.max_budget_cup} CUP` : " · Sin presupuesto definido"}
+                  </p>
+                  {canEdit && item.status !== "archived" && (
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" className="max-sm:min-h-11" onClick={() => open(item)}>Editar</Button>
+                      <Button type="button" size="sm" variant="ghost" className="max-sm:min-h-11"
+                        disabled={archive.isPending} aria-label={`Archivar ${item.name}`}
+                        onClick={() => { if (window.confirm(`¿Archivar «${item.name}»?`)) archive.mutate(item.id); }}>
+                        <Archive className="size-4" /> Archivar
+                      </Button>
+                    </div>
                   )}
-                  <span className="rounded-xl border border-violet-400/20 bg-violet-500/[0.07] px-3 py-1.5 text-xs font-medium text-violet-100">
-                    {audiences.find((audience) => audience.value === item.audience)?.text ?? "Beneficiarios definidos"}
-                  </span>
-                </div>
-                <div className={campaigns.length === 1 ? "mt-4 grid gap-3 rounded-2xl border border-white/10 bg-[#081526]/65 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2 lg:grid-cols-4" : "mt-6 grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-relaxed text-slate-200 sm:grid-cols-2"}>
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />{" "}
-                    {displayDate(item.begins_at)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-3.5 w-3.5 text-cyan-300" />{" "}
-                    {displayDate(item.closes_at)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BadgePercent className="h-3.5 w-3.5 text-violet-300" />{" "}
-                    {item.kind === "commission_free"
-                      ? "0 % de comisión"
-                      : item.kind === "commission_reduced"
-                        ? `${item.benefit_value} % de comisión`
-                        : item.kind === "free_rides"
-                          ? `${item.benefit_ride_limit} carreras`
-                          : `${item.benefit_value} CUP`}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CircleDollarSign className="h-3.5 w-3.5 text-amber-300" />{" "}
-                    {item.max_budget_cup
-                      ? `Tope ${item.max_budget_cup} CUP`
-                      : "Sin presupuesto definido"}
-                  </div>
-                </div>
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-violet-300/20 pt-5">
-                  <span className="text-xs text-muted-foreground">
-                    Versión {item.revision} · No activada
-                  </span>
-                  <div className="flex gap-2">
-                    {canEdit && item.status !== "archived" && (
-                      <>
-                        <Button size="sm" variant="outline" onClick={() => open(item)}>
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={archive.isPending}
-                          onClick={() => {
-                            if (window.confirm(`¿Archivar «${item.name}»?`))
-                              archive.mutate(item.id);
-                          }}
-                          title="Archivar campaña"
-                        >
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
                 </div>
               </article>
             );
