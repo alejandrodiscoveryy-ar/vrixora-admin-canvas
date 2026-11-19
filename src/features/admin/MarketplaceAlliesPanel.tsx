@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,7 +129,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
 
   return (
     <section data-admin-module="comercial" className="space-y-4" aria-labelledby="tuktuk-allies-heading">
-      <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+      <header className={cp.header + " flex flex-col justify-between gap-3 sm:flex-row sm:items-center"}>
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-300" aria-hidden="true">
             <Handshake className="size-5" />
