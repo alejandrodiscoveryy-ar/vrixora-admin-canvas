@@ -349,10 +349,10 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <nav aria-label="Herramientas de gestión comercial" className="min-w-0">
           <div className={cp.managementNav}>
             {([
-              ["configuracion", "Configuración general"],
-              ["referidos", "Referidos y red"],
-              ["ofertas", "Beneficios de conductores"],
-              ["captacion", "Captación y contactos"],
+              ["configuracion","Configuración general"],
+              ["referidos","Referidos y red"],
+              ["ofertas","Beneficios de conductores"],
+              ["captacion","Captación y contactos"],
             ] as const).map(([value, label]) => (
               <button
                 type="button"
