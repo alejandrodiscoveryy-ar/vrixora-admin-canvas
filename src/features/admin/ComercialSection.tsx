@@ -403,30 +403,30 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />
         </section>
       ) : commercialView === "configuracion" && isTuktukProject ? (
-        <section className="space-y-4" aria-labelledby="commercial-settings-title" data-admin-module="comercial">
+        <section className="space-y-3" aria-labelledby="commercial-settings-title" data-admin-module="comercial">
           <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Gestión · Administración</p>
             <h2 id="commercial-settings-title" className={cp.title}>Configuración comercial</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Reglas generales, bienvenida, comisiones, crédito y retiradas. Aquí se configuran las políticas; los resultados de conductores permanecen en Impulsa.</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Configura la bienvenida, las comisiones y las retiradas desde un mismo lugar.</p>
           </header>
           {canViewImpulsa ? (
-            <div className="space-y-3">
-              <details className={cp.accordion}>
-                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Gift className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Bienvenida y cobro general</span><span className="block text-xs font-normal text-muted-foreground">Condiciones iniciales y cobro de la agencia</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
-                <div className={cp.accordionBody}>
-                  <MarketplaceWelcomePolicyPanel projectId={projectId} canView={permissions.includes("settings.view")} canEdit={permissions.includes("settings.manage")} />
+            <div className="space-y-2">
+              <details name="commercial-policy" className={cp.accordion}>
+                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Gift className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Bienvenida y cobro general</span><span className="block text-xs font-normal text-muted-foreground">Días de bienvenida · Comisión general · Cobro</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+                <div className="border-t border-border-subtle px-3 py-3 sm:px-4">
+                  <MarketplaceWelcomePolicyPanel projectId={projectId} canView={permissions.includes("settings.view")} canEdit={permissions.includes("settings.manage")} embedded />
                 </div>
               </details>
-              <details className={cp.accordion}>
-                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><TrendingUp className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Reglas y comisiones de Impulsa</span><span className="block text-xs font-normal text-muted-foreground">Porcentajes y condiciones del programa</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
-                <div className={cp.accordionBody}>
-                  <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
+              <details name="commercial-policy" className={cp.accordion}>
+                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><TrendingUp className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Reglas y comisiones de Impulsa</span><span className="block text-xs font-normal text-muted-foreground">Comisión normal · Viaje propio · Referidos</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+                <div className="border-t border-border-subtle px-3 py-3 sm:px-4">
+                  <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} embedded />
                 </div>
               </details>
-              <details className={cp.accordion}>
-                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Layers className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Créditos, deuda y retiradas</span><span className="block text-xs font-normal text-muted-foreground">Saldos y operaciones administrativas</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
-                <div className={cp.accordionBody}>
-                  <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
+              <details name="commercial-policy" className={cp.accordion}>
+                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Layers className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Créditos, deuda y retiradas</span><span className="block text-xs font-normal text-muted-foreground">Primera carrera a crédito · Retiradas</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+                <div className="border-t border-border-subtle px-3 py-3 sm:px-4">
+                  <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} embedded />
                 </div>
               </details>
             </div>
