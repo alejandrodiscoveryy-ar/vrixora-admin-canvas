@@ -20,6 +20,7 @@ on:
       - 'tests/admin_design_system.test.mjs'
       - 'tests/comercial_integral_ui_contract.test.mjs'
       - 'tests/comercial_graphite_softness_contract.test.mjs'
+      - 'tests/comercial_captacion_experiencia_contract.test.mjs'
       - 'scripts/verify-production-build.mjs'
       - 'package.json'
       - 'bun.lock'
@@ -52,6 +53,8 @@ jobs:
         run: node --test tests/comercial_integral_ui_contract.test.mjs
       - name: Comprobar grafito suave de Comercial
         run: node --test tests/comercial_graphite_softness_contract.test.mjs
+      - name: Comprobar Captación sin duplicaciones ni ceros ficticios
+        run: node --test tests/comercial_captacion_experiencia_contract.test.mjs
       - name: Verificar nicks de Aliados y privacidad
         run: node --test tests/tuktuk_allies_contract.test.mjs
       - name: Validar actualizaciones PWA y alertas push
