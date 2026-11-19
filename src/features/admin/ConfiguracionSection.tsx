@@ -15,8 +15,9 @@ import {
 } from "@/lib/services";
 
 import { SectionCard } from "@/components/admin/SectionCard";
-import { premiumSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
+import { premiumControlSurface } from "@/components/admin/density";
 import PremiumSettingsSnapshot, { type PremiumSettingsMetric } from "./PremiumSettingsSnapshot";
+import { configurationPremium as visual } from "./configuration-premium";
 import AppReleaseSettingsCard from "./AppReleaseSettingsCard";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Badge } from "@/components/ui/badge";
@@ -57,13 +58,13 @@ const sections: Array<{
   { key: "application", number: "05", label: "Aplicación y versiones", eyebrow: "EXPERIENCIA Y PUBLICACIÓN", description: "Actualizaciones de Android, mantenimiento y mensaje de bienvenida.", icon: Smartphone },
 ];
 
-const CONFIG_CARD_CLASS = `min-w-0 rounded-[var(--radius-card)] border ${premiumSurface}`;
+const CONFIG_CARD_CLASS = visual.card;
 const PREMIUM_CONFIG_CARD_CLASS = CONFIG_CARD_CLASS;
-const CONFIG_HEADER_CLASS = `border-b border-border-subtle px-3 py-3 sm:px-4 ${premiumHeaderSurface}`;
+const CONFIG_HEADER_CLASS = visual.cardHeader;
 const CONFIG_CONTENT_CLASS = "min-w-0 p-3 sm:p-4";
-const CONFIG_CONTROL_CLASS = `min-h-11 rounded-[var(--radius-control)] border-border-default bg-surface-2 text-text-primary shadow-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
+const CONFIG_CONTROL_CLASS = `min-h-11 rounded-[var(--radius-control)] border-border-default bg-surface-3/70 text-text-primary shadow-[var(--shadow-xs)] focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
 const CONFIG_SELECT_CLASS = CONFIG_CONTROL_CLASS;
-const CONFIG_TEXTAREA_CLASS = `min-h-[88px] rounded-[var(--radius-control)] border-border-default bg-surface-2 text-text-primary shadow-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
+const CONFIG_TEXTAREA_CLASS = `min-h-[88px] rounded-[var(--radius-control)] border-border-default bg-surface-3/70 text-text-primary shadow-[var(--shadow-xs)] focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
 
 const ACTIVE_CAMPAIGN_BADGE_CLASS =
   "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]";
@@ -482,11 +483,11 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   return (
     <div data-admin-module="configuracion" className="min-w-0 space-y-3">
-      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
+      <section aria-label="Categorías de ajustes del proyecto" className={visual.navigation}>
         <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-2 sm:px-3">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text-primary">Ajustes del proyecto</h2>
-            <p className="mt-0.5 text-xs text-text-secondary">Selecciona el área que necesitas administrar.</p>
+            <h2 className={visual.eyebrow}>CONFIGURACIÓN · TUKTUK CONTROL</h2>
+            <p className="mt-0.5 text-sm font-medium text-text-primary">Ajustes del proyecto</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
@@ -508,15 +509,14 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 key={section.key}
                 aria-current={selected ? "page" : undefined}
                 onClick={() => setActiveSection(section.key)}
-                className={"flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 " +
-                  (selected
-                    ? "border-primary/45 bg-primary/10 text-text-primary shadow-[inset_0_-2px_var(--primary)]"
-                    : "border-border-subtle bg-transparent text-text-secondary hover:border-border-strong hover:bg-surface-3/65 hover:text-text-primary") +
+                className={visual.tab + " " + (selected ? visual.tabActive : visual.tabIdle) +
                   (section.key === "application" ? " max-sm:col-span-2" : "")}
               >
-                <Icon className={"size-4 shrink-0 " + (selected ? "text-primary" : "text-text-secondary")} aria-hidden="true" />
+                <span className={selected ? visual.tabIcon : "grid size-8 shrink-0 place-items-center rounded-lg border border-border-default/60 bg-surface-3/65 text-text-secondary"} aria-hidden="true">
+                  <Icon className="size-4" />
+                </span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold leading-tight">{section.label}</span>
+                  <span className="block text-xs font-semibold leading-tight sm:text-[13px]">{section.label}</span>
                   {section.key === "application" && <span className="mt-0.5 block text-[11px] text-text-secondary">APK Android</span>}
                 </span>
               </button>

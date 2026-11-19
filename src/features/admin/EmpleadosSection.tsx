@@ -28,8 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Users } from "lucide-react";
-import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
+import { Plus, Trash2, Users, ShieldCheck, Wallet, Megaphone } from "lucide-react";
+import { premiumSurface } from "@/components/admin/density";
 import { useProjectMembers, useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { toast } from "sonner";
@@ -115,25 +115,26 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
       {/* Bloque Informativo: Roles del Proyecto */}
       <SectionCard density="compact" appearance="premium" title="Roles del proyecto y permisos" module="empleados" className={premium ? premiumSurface : undefined}>
         
-        <div className="relative z-10 grid gap-3 text-xs sm:grid-cols-3">
-          <div className={`min-w-0 space-y-1 rounded-[var(--radius-compact)] border p-3 ${premiumColumnHeaderSurface}`}>
-            <span className="font-bold text-foreground">Owner</span>
-            <p className="text-muted-foreground">
-              Acceso total, administración completa y gestión de miembros y ajustes.
-            </p>
-          </div>
-          <div className={`min-w-0 space-y-1 rounded-[var(--radius-compact)] border p-3 ${premiumColumnHeaderSurface}`}>
-            <span className="font-bold text-foreground">Accounting</span>
-            <p className="text-muted-foreground">
-              Gestión de clientes, cobros/pagos, analítica y lectura de licencias y planes.
-            </p>
-          </div>
-          <div className={`min-w-0 space-y-1 rounded-[var(--radius-compact)] border p-3 ${premiumColumnHeaderSurface}`}>
-            <span className="font-bold text-foreground">Marketing</span>
-            <p className="text-muted-foreground">
-              Gestión de clientes, seguimiento comercial (leads/campañas) y analítica.
-            </p>
-          </div>
+        <div className="grid min-w-0 gap-3 text-xs sm:grid-cols-3">
+          {([
+            { label: "Owner", description: "Acceso total, administración completa y gestión de miembros y ajustes.", icon: ShieldCheck, color: "var(--module-empleados)" },
+            { label: "Accounting", description: "Gestión de clientes, cobros/pagos, analítica y lectura de licencias y planes.", icon: Wallet, color: "var(--module-pagos)" },
+            { label: "Marketing", description: "Gestión de clientes, seguimiento comercial (leads/campañas) y analítica.", icon: Megaphone, color: "var(--module-comercial)" },
+          ] as const).map(role => {
+            const RoleIcon = role.icon;
+            return (
+              <div key={role.label} className="relative min-w-0 overflow-hidden rounded-[var(--radius-compact)] border border-border-default bg-surface-2/75 p-3 shadow-[var(--shadow-xs)]">
+                <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px]" style={{ backgroundColor: role.color }} />
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-border-default bg-surface-3/80" style={{ color: role.color }}>
+                    <RoleIcon className="size-4" />
+                  </span>
+                  <span className="text-sm font-semibold text-text-primary">{role.label}</span>
+                </div>
+                <p className="text-xs leading-relaxed text-text-secondary">{role.description}</p>
+              </div>
+            );
+          })}
         </div>
       </SectionCard>
 

@@ -10,13 +10,14 @@ import {
   KeyRound,
   Loader2,
   PlugZap,
+  MapPinned,
   RefreshCw,
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
-import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
+import { configurationPremium as visual } from "./configuration-premium";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { Badge } from "@/components/ui/badge";
@@ -232,14 +233,14 @@ export default function IntegracionesSection({
   });
 
   const integrationSwitcher = (
-    <div className={`flex min-w-0 flex-wrap gap-2 rounded-[var(--radius-card)] border p-2 ${premiumColumnHeaderSurface}`}>
+    <div className={visual.navigation + " flex flex-wrap gap-2"}>
       <Button
         type="button"
         aria-pressed={activeIntegration === "eltoque"}
         variant={activeIntegration === "eltoque" ? "default" : "outline"}
         onClick={() => setActiveIntegration("eltoque")}
       >
-        elTOQUE
+        <PlugZap className="mr-1.5 size-4" aria-hidden="true" /> elTOQUE
       </Button>
 
       <Button
@@ -248,7 +249,7 @@ export default function IntegracionesSection({
         variant={activeIntegration === "maps" ? "default" : "outline"}
         onClick={() => setActiveIntegration("maps")}
       >
-        Mapas y rutas
+        <MapPinned className="mr-1.5 size-4" aria-hidden="true" /> Mapas y rutas
       </Button>
     </div>
   );
@@ -346,7 +347,8 @@ export default function IntegracionesSection({
         title="elTOQUE"
         description="Tasa referencial automática para operaciones USD/EUR → CUP."
         module="configuracion"
-        className={premium ? premiumSurface : undefined}
+        className={premium ? visual.card : undefined}
+        headerClassName={premium ? visual.cardHeader : undefined}
         actions={
           <Badge variant={status.variant}>{status.label}</Badge>
         }
@@ -535,7 +537,8 @@ export default function IntegracionesSection({
         title="Notificación diaria de la tasa"
         description="Prepara una notificación diaria con la tasa vigente."
         module="configuracion"
-        className={premium ? premiumSurface : undefined}
+        className={premium ? visual.card : undefined}
+        headerClassName={premium ? visual.cardHeader : undefined}
       >
         
         <div className="min-w-0 space-y-4">

@@ -68,9 +68,11 @@ test("Flota, radar, atención y configuración usan estructuras móviles compact
   assert.match(care, /data-testid="customer-care-workspace"/);
   assert.match(care, /Publicar carrera real/);
   assert.match(settings, /grid grid-cols-2 gap-1\.5 sm:grid-cols-4/);
-  assert.match(settings, /premiumColumnHeaderSurface/);
+  assert.match(settings, /configurationPremium as visual/);
+  assert.match(settings, /visual\.navigation/);
   assert.doesNotMatch(settings, /xl:grid-cols-\[252px_minmax/);
-  assert.match(settings, /min-h-11/);
+  const configurationVisual = readFileSync("src/features/admin/configuration-premium.ts", "utf8");
+  assert.match(configurationVisual, /min-h-12/);
   assert.match(settings, /canManageSettings && canManageMarketplace/);
   assert.doesNotMatch(settings, /sm:p-2\.5-\[/);
 });

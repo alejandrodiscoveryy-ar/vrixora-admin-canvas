@@ -224,12 +224,18 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
 
 function AudienceMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-3">
-      <div className="flex items-center gap-2 text-text-secondary">
-        <Smartphone className="h-4 w-4 text-primary" />
-        <p className="text-sm">{label}</p>
+    <div className="relative isolate min-w-0 overflow-hidden rounded-[var(--radius-compact)] border border-border-default bg-surface-2/80 p-3 shadow-[var(--shadow-xs)]">
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-[var(--module-accent)] opacity-70" />
+      <Smartphone aria-hidden="true" className="pointer-events-none absolute bottom-1 right-2 size-14 text-[var(--module-accent)] opacity-[0.055]" />
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 text-text-secondary">
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" aria-hidden="true">
+            <Smartphone className="size-4" />
+          </span>
+          <p className="text-xs font-medium">{label}</p>
+        </div>
+        <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-text-primary">{value}</p>
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">{value}</p>
     </div>
   );
 }

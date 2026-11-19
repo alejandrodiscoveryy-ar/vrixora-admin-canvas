@@ -11,6 +11,7 @@ const staff = read("EmpleadosSection");
 const announcements = read("ComunicadosSection");
 const integrations = read("IntegracionesSection");
 const updates = read("AppReleaseSettingsCard");
+const visuals = readFileSync(new URL("../src/features/admin/configuration-premium.ts", import.meta.url), "utf8");
 
 test("Toda Configuración usa componentes oficiales y conserva jerarquía compacta", () => {
   for (const source of [settings, snapshot, workspace, operations, staff, announcements, integrations, updates]) {
@@ -19,14 +20,17 @@ test("Toda Configuración usa componentes oficiales y conserva jerarquía compac
   assert.match(workspace, /<ModuleHeader/);
   assert.match(operations, /<ModuleHeader/);
   assert.match(snapshot, /premiumHeaderSurface/);
-  assert.match(snapshot, /premiumMetricSurface/);
-  assert.match(settings, /premiumSurface/);
+  assert.match(snapshot, /visual\.accentLine/);
+  assert.match(snapshot, /metric\.tone/);
+  assert.match(settings, /visual\.card/);
+  assert.match(settings, /visual\.cardHeader/);
+  assert.match(settings, /visual\.navigation/);
   assert.match(settings, /premiumControlSurface/);
   assert.match(settings, /data-admin-module="configuracion"/);
   assert.match(staff, /premiumSurface/);
   assert.match(announcements, /premiumSurface/);
-  assert.match(integrations, /premiumSurface/);
-  assert.match(updates, /premiumSurface/);
+  assert.match(integrations, /visual\.card/);
+  assert.match(updates, /visual\.card/);
 });
 
 test("Las cinco categorías permanecen visibles y Android no se duplica en Comunicación", () => {
@@ -69,4 +73,21 @@ test("Se preservan guardado, permisos y funciones administrativas reales", () =>
   assert.match(announcements, /canSend/);
   assert.match(integrations, /settings\.canManage/);
   assert.match(updates, /hasUnsavedProjectChanges/);
+});
+
+test("Configuración recupera profundidad editorial real, sin degradados chillones", () => {
+  assert.match(visuals, /premiumSurface/);
+  assert.match(visuals, /premiumHeaderSurface/);
+  assert.match(visuals, /premiumMetricSurface/);
+  assert.match(visuals, /module-accent/);
+  assert.match(visuals, /before:bg-\[var\(--module-accent\)\]/);
+  assert.match(visuals, /tabActive:/);
+  assert.match(visuals, /shadow-\[var\(--shadow-card\)\]/);
+  assert.doesNotMatch(visuals, /#[0-9a-f]{3,8}\b/i);
+  assert.match(snapshot, /\{number\} · \{eyebrow\}/);
+  assert.match(snapshot, /backgroundImage: "linear-gradient/);
+  assert.match(snapshot, /opacity-\[0\.035\]/);
+  assert.match(updates, /visual\.accentLine/);
+  assert.match(announcements, /absolute inset-x-0 top-0 h-\[2px\]/);
+  assert.match(staff, /role\.color/);
 });
