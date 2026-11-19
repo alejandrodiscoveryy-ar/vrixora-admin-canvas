@@ -59,6 +59,7 @@ import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/Marketpla
 import MarketplaceTuktukOfficialAnalytics from "@/features/admin/MarketplaceTuktukOfficialAnalytics";
 import MarketplaceCustomerCampaignDrafts from "@/features/admin/MarketplaceCustomerCampaignDrafts";
 import MarketplaceAlliesPanel from "@/features/admin/MarketplaceAlliesPanel";
+import ComercialSourceOverview from "@/features/admin/ComercialSourceOverview";
 import MarketplaceImpulsaTransitionPanel from "@/features/admin/MarketplaceImpulsaTransitionPanel";
 import CommercialReferralsPanel from "@/features/admin/CommercialReferralsPanel";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -385,6 +386,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
             <h2 className="mt-1 text-lg font-semibold">Resultados de campañas oficiales</h2>
             <p className="mt-1 text-xs text-muted-foreground">Aperturas, solicitudes, canales y conversión de la Agencia. La contribución de conductores se analiza en Impulsa y la de terceros en Aliados.</p>
           </header>
+          <ComercialSourceOverview projectId={projectId} />
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
         </div>
       ) : showAllies ? (
