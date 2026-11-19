@@ -19,6 +19,7 @@ on:
       - 'src/lib/utils.ts'
       - 'tests/admin_design_system.test.mjs'
       - 'tests/comercial_integral_ui_contract.test.mjs'
+      - 'tests/comercial_graphite_softness_contract.test.mjs'
       - 'scripts/verify-production-build.mjs'
       - 'package.json'
       - 'bun.lock'
@@ -49,6 +50,8 @@ jobs:
         run: bun test tests/admin_design_system.test.mjs
       - name: Validar arquitectura integral de Comercial
         run: node --test tests/comercial_integral_ui_contract.test.mjs
+      - name: Comprobar grafito suave de Comercial
+        run: node --test tests/comercial_graphite_softness_contract.test.mjs
       - name: Verificar nicks de Aliados y privacidad
         run: node --test tests/tuktuk_allies_contract.test.mjs
       - name: Validar actualizaciones PWA y alertas push
