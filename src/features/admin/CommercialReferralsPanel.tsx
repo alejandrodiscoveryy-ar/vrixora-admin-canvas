@@ -177,7 +177,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
             const showAll = showEveryPerson[referrer.referrer_user_id] || Boolean(search.trim());
             const visiblePeople = showAll ? people : people.slice(0, 8);
             return (
-              <article key={referrer.referrer_user_id} className="overflow-hidden rounded-2xl border border-violet-400/20 bg-background/80 admin-graphite-inset">
+              <article key={referrer.referrer_user_id} className={cp.inset + " overflow-hidden p-0 sm:p-0"}>
                 <button
                   type="button"
                   className="flex w-full flex-wrap items-center justify-between gap-3 p-4 text-left hover:bg-violet-400/5"
@@ -204,7 +204,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
                 {isOpen && (
                   <div className="space-y-2 border-t border-border/55 p-3 sm:p-4">
                     {visiblePeople.map((person) => (
-                      <div key={person.relationship_id} className="grid gap-3 rounded-xl border border-border/50 bg-background/65 p-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)] admin-graphite-inset">
+                      <div key={person.relationship_id} className={cp.inset + " grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]"}>
                         <div className="min-w-0">
                           <p className="break-words text-sm font-semibold">{person.referred_name}</p>
                           <p className="mt-1 text-xs text-muted-foreground">{driverStatus(person.driver_status)}</p>
