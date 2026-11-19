@@ -2,8 +2,8 @@ import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ChevronDown } from "lucide-react";
+import { PolicyNumberField, PolicyStatus } from "@/features/admin/CommercialPolicyControls";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Policy = { enabled: boolean; billing_enabled: boolean; general_rate: number; own_rate: number; commercial_rate: number; live_general_rate: number; version: number };
@@ -59,76 +59,78 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
   if (!canView) return null;
 
   return (
-    <section aria-label="Comisiones comerciales Impulsa" className={embedded ? "min-w-0 space-y-4" : cp.section}>
+    <section aria-label="Comisiones comerciales Impulsa" className={embedded ? "min-w-0 space-y-3" : cp.section}>
       {!embedded && (
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">Comisiones comerciales</h2>
-          <p className="mt-1 text-sm text-text-secondary">Porcentajes por tipo de servicio y distribución de ingresos.</p>
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold text-text-primary">Reglas y comisiones de Impulsa</h2>
+          <p className="mt-1 text-sm text-text-secondary">Porcentajes para viajes propios y atribuidos a un promotor.</p>
         </div>
       )}
       {query.isError ? (
-        <p role="alert" className="rounded-lg border border-amber-400/30 p-3 text-sm text-text-secondary">
-          No se pudo cargar la configuración de Impulsa. No se modificó ningún saldo.
+        <p role="alert" className="rounded-xl border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] p-3 text-sm text-text-primary">
+          No se pudo cargar la política Impulsa. No se modificó ningún saldo.
         </p>
       ) : query.isLoading ? (
-        <p className="py-4 text-sm text-text-secondary">Consultando los porcentajes…</p>
+        <p role="status" className="py-4 text-sm text-text-secondary">Consultando los porcentajes vigentes…</p>
       ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-text-secondary">
-              {query.data?.enabled && query.data?.billing_enabled ? "Impulsa activo" :
-                query.data?.enabled ? "Impulsa: cobro suspendido" : "Impulsa desactivado"}
-            </p>
-            <p className="text-xs text-text-secondary">
-              Comisión general vigente: <strong className="text-text-primary">{pct(query.data?.live_general_rate ?? 0)} %</strong>
-              {" · "}{query.data?.billing_enabled ? "Cobro activo" : "Cobro desactivado"}
-            </p>
+        <div className="min-w-0 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <PolicyStatus
+              active={Boolean(query.data?.enabled && query.data?.billing_enabled)}
+              label={query.data?.enabled && query.data?.billing_enabled
+                ? "Impulsa activo" : query.data?.enabled ? "Impulsa sin cobro" : "Impulsa desactivado"}
+            />
+            <PolicyStatus active={Boolean(query.data?.billing_enabled)}
+              label={query.data?.billing_enabled ? "Cobro general activo" : "Cobro general suspendido"} />
+            {changed && <PolicyStatus active={false} pending />}
           </div>
 
-          <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+          <div className="grid min-w-0 gap-3 md:grid-cols-3">
             {([
-              { id: "general", label: "Comisión general", value: general, set: setGeneral, detail: "Carrera normal" },
-              { id: "own", label: "Impulsa · Propia", value: own, set: setOwn, detail: "El promotor realiza el viaje" },
-              { id: "commercial", label: "Impulsa · Comercial", value: commercial, set: setCommercial, detail: "Otro conductor realiza el viaje" },
+              { id: "general", label: "Comisión normal", value: general, set: setGeneral, detail: "Porcentaje general que paga el conductor." },
+              { id: "own", label: "Viaje propio Impulsa", value: own, set: setOwn, detail: "El conductor promotor realiza el servicio." },
+              { id: "commercial", label: "Atribución comercial", value: commercial, set: setCommercial, detail: "Porcentaje para el promotor si otro conductor hace el viaje." },
             ]).map(field => (
-              <div key={field.id} className="min-w-0 space-y-1.5">
-                <Label htmlFor={"impulsa-" + field.id}>{field.label}</Label>
-                <div className="flex items-center gap-2">
-                  <Input id={"impulsa-" + field.id} type="number" min="0" max="100" step="0.01"
-                    value={field.value} disabled={!canEdit || save.isPending}
-                    onChange={e => field.set(e.target.value)}
-                    className={cp.control + " h-11 min-w-0 flex-1 text-lg font-semibold tabular-nums"} />
-                  <span className="text-sm text-text-secondary">%</span>
-                </div>
-                <p className="text-xs leading-relaxed text-text-secondary">{field.detail}</p>
+              <div key={field.id} className="min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-2/60 p-3 sm:p-4">
+                <PolicyNumberField
+                  id={"impulsa-" + field.id} label={field.label}
+                  value={field.value} onChange={field.set} unit="%"
+                  min="0" max="100" step="0.01"
+                  disabled={!canEdit || save.isPending}
+                  hint={field.detail}
+                />
               </div>
             ))}
           </div>
-
           {!valid && (
             <p role="alert" className="text-sm text-destructive">
-              Revisa los porcentajes: la comisión propia y la comercial no pueden superar la general.
+              La comisión general debe ser mayor que 0; la propia y la comercial no pueden superarla.
             </p>
           )}
 
-          <details className={cp.inset + " group p-0 sm:p-0"}>
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-text-primary [&::-webkit-details-marker]:hidden">
-              Simulador de distribución
-              <span className="text-xs font-normal text-text-secondary">Ver ejemplo de reparto</span>
+          <details className="group rounded-[var(--radius-card)] border border-border-default bg-surface-2/45">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm text-text-primary [&::-webkit-details-marker]:hidden sm:px-4">
+              <span className="flex min-w-0 items-center gap-2 font-medium">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-3 text-[var(--module-accent)]" aria-hidden="true">%</span>
+                Simulador de reparto
+              </span>
+              <span className="flex shrink-0 items-center gap-2 text-xs text-text-secondary">
+                Ejemplo <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+              </span>
             </summary>
-            <div className="space-y-3 border-t border-border-subtle px-3 py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Label htmlFor="impulsa-fare">Importe de ejemplo (CUP)</Label>
-                <Input id="impulsa-fare" type="number" min="0" value={fare} onChange={e => setFare(e.target.value)}
-                  className={cp.control + " h-11 w-32 max-w-full tabular-nums"} />
-              </div>
+            <div className="space-y-3 border-t border-border-subtle p-3 sm:p-4">
+              <PolicyNumberField
+                id="impulsa-fare" label="Importe de ejemplo" unit="CUP"
+                value={fare} onChange={setFare}
+                min="0" max="100000000" step="0.01" disabled={false}
+              />
               <div className="max-w-full overflow-x-auto">
-                <table className="w-full min-w-[450px] text-left text-sm">
+                <table className="w-full min-w-[460px] text-left text-sm">
                   <thead><tr className="border-b border-border-subtle text-xs text-text-secondary">
                     <th scope="col" className="py-2">Servicio</th>
                     <th scope="col" className="py-2 text-right">Conductor</th>
-                    <th scope="col" className="py-2 text-right">Comercial</th>
-                    <th scope="col" className="py-2 text-right">TukTuk</th>
+                    <th scope="col" className="py-2 text-right">Promotor</th>
+                    <th scope="col" className="py-2 text-right">Agencia</th>
                   </tr></thead>
                   <tbody>
                     {[
@@ -136,7 +138,7 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
                       ["Propio", 100-o, 0, o],
                       ["Flota", 100-g, c, g-c],
                     ].map(row => (
-                      <tr key={String(row[0])} className="border-b border-border-subtle last:border-b-0">
+                      <tr key={String(row[0])} className="border-b border-border-subtle last:border-0">
                         <th scope="row" className="py-2 font-medium">{row[0]}</th>
                         {row.slice(1).map((value, index) => (
                           <td key={index} className="py-2 text-right tabular-nums">{cup(total * Number(value) / 100)}</td>
@@ -151,18 +153,25 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
             <p className="max-w-2xl text-xs leading-relaxed text-text-secondary">
-              Solo afecta nuevas carreras reales y liquidadas. Los viajes propios no generan un segundo crédito;
-              los saldos y beneficios anteriores se conservan.
+              Solo futuras carreras reales liquidadas. Los saldos, premios y condiciones anteriores se conservan.
             </p>
             {canEdit && (
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" className="max-sm:min-h-11"
-                  disabled={!valid || !changed || save.isPending}
-                  onClick={() => {
-                    if (query.data?.enabled && !window.confirm("¿Guardar los porcentajes para nuevas carreras?")) return;
-                    setMessage(""); save.mutate(Boolean(query.data?.enabled));
-                  }}>Guardar porcentajes</Button>
-                <Button size="sm" className="max-sm:min-h-11" variant="outline"
+              <div className="flex flex-wrap items-center gap-2">
+                {changed && (
+                  <Button size="sm" className="min-h-11 sm:min-h-9"
+                    disabled={!valid || save.isPending}
+                    onClick={() => {
+                      if (query.data?.enabled && !window.confirm("¿Guardar los porcentajes para nuevas carreras?")) return;
+                      setMessage(""); save.mutate(Boolean(query.data?.enabled));
+                    }}>
+                    {save.isPending ? "Guardando…" : "Guardar porcentajes"}
+                  </Button>
+                )}
+                <Button size="sm" className={
+                    "min-h-11 sm:min-h-9 " +
+                    (query.data?.enabled ? "border-[var(--semantic-danger-border)] text-[var(--semantic-danger-foreground)]" : "")
+                  }
+                  variant="subtle"
                   disabled={!valid || save.isPending || (!query.data?.enabled && !query.data?.billing_enabled)}
                   onClick={() => {
                     const next = !query.data?.enabled;
@@ -175,9 +184,9 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
                 </Button>
               </div>
             )}
-            {message && <p role="status" className="w-full text-sm text-text-primary">{message}</p>}
           </div>
-        </>
+          {message && <p role="status" className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary">{message}</p>}
+        </div>
       )}
     </section>
   );

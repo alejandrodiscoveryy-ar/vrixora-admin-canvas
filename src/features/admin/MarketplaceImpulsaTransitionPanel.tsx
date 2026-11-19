@@ -2,8 +2,8 @@ import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ChevronDown, Wallet, Clock3 } from "lucide-react";
+import { PolicyTile, PolicyNumberField, PolicyToggle, PolicyStatus } from "@/features/admin/CommercialPolicyControls";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Policy = { version: number; credit_enabled: boolean; credit_limit_cup: number; withdrawals_enabled: boolean; withdrawal_minimum_cup: number; remove_free_days: boolean; engine_ready: boolean; activated_at?: string | null };
@@ -36,100 +36,155 @@ export default function MarketplaceImpulsaTransitionPanel({projectId,canEdit,emb
  const activate=useMutation({mutationFn:async()=>{if(!query.data?.engine_ready||!canEdit||changed)throw new Error("Guarda la configuración primero");const {error}=await getSupabaseClient().rpc("admin_activate_marketplace_wallet_transition_v1",{target_project_id:projectId,target_expected_version:query.data.version});if(error)throw new Error(error.message);},onSuccess:async()=>{setMessage("Política de cobro activada.");await refresh();},onError:async()=>{setMessage("No se pudo activar. Verifica la configuración y los permisos.");await refresh();}});
  const resolveRequest=(w:Withdrawal,status:"paid"|"rejected")=>{const reference=window.prompt(status==="paid"?"Referencia del pago externo ya realizado":"Motivo del rechazo")?.trim();if(!reference)return;if(!window.confirm(status==="paid"?`Confirmar que ya pagaste ${cup(w.amount)} a ${w.display_name}? Este registro no ejecuta una transferencia.`:"¿Rechazar y liberar el saldo reservado?"))return;resolve.mutate({id:w.id,status,reference});};
  const disabled = !canEdit || save.isPending;
+ const creditChanged = Boolean(query.data) && (credit !== query.data?.credit_enabled || Number(limit) !== Number(query.data?.credit_limit_cup));
+ const withdrawalChanged = Boolean(query.data) && (withdrawals !== query.data?.withdrawals_enabled || Number(minimum) !== Number(query.data?.withdrawal_minimum_cup));
+ const freeDaysChanged = Boolean(query.data) && removeFree !== query.data?.remove_free_days;
+
  return (
-  <section aria-label="Crédito y retiradas" className={embedded ? "min-w-0 space-y-4" : cp.section}>
+  <section aria-label="Crédito y retiradas" className={embedded ? "min-w-0 space-y-3" : cp.section}>
     {!embedded && (
-      <div>
+      <div className="mb-3">
         <h2 className="text-lg font-semibold text-text-primary">Crédito inicial y retiradas</h2>
-        <p className="mt-1 text-sm text-text-secondary">Configura condiciones económicas y revisa deudas y solicitudes.</p>
+        <p className="mt-1 text-sm text-text-secondary">Condiciones económicas y movimientos pendientes.</p>
       </div>
     )}
     {query.isError ? (
-      <p role="alert" className="rounded-lg border border-amber-400/30 p-3 text-sm text-text-secondary">No se pudo cargar la política. No se modificó ningún saldo.</p>
+      <p role="alert" className="rounded-xl border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] p-3 text-sm text-text-primary">
+        No se pudo cargar la política. No se modificó ningún saldo.
+      </p>
     ) : query.isLoading ? (
-      <p className="py-4 text-sm text-text-secondary">Consultando la política…</p>
+      <p role="status" className="py-4 text-sm text-text-secondary">Consultando la política de crédito y retiradas…</p>
     ) : (
-      <div className="space-y-4">
-        <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
-          <div className="min-w-0 space-y-3 lg:border-r lg:border-border-subtle lg:pr-6">
-            <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-text-primary">
-              <input className="size-4" type="checkbox" checked={credit} onChange={e => setCredit(e.target.checked)} disabled={disabled} />
-              Primera carrera a crédito
-            </label>
-            <p className="text-xs text-text-secondary">Un servicio por conductor. La deuda debe liquidarse antes del siguiente.</p>
-            <div className="space-y-1.5">
-              <Label htmlFor="initial-credit-limit">Límite máximo de deuda (CUP)</Label>
-              <Input id="initial-credit-limit" type="number" min=".01" max="1000000" step=".01"
-                value={limit} onChange={e => setLimit(e.target.value)} disabled={disabled || !credit}
-                className={cp.control + " h-11 w-full max-w-[240px] tabular-nums"} />
-            </div>
-          </div>
-          <div className="min-w-0 space-y-3">
-            <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-text-primary">
-              <input className="size-4" type="checkbox" checked={withdrawals} onChange={e => setWithdrawals(e.target.checked)} disabled={disabled} />
-              Retiradas de ganancias Impulsa
-            </label>
-            <p className="text-xs text-text-secondary">Solo ganancias comerciales reales. Se aprueban manualmente, nunca con bonos o recargas.</p>
-            <div className="space-y-1.5">
-              <Label htmlFor="impulsa-withdrawal-minimum">Importe mínimo de retirada (CUP)</Label>
-              <Input id="impulsa-withdrawal-minimum" type="number" min=".01" max="100000000" step=".01"
-                value={minimum} onChange={e => setMinimum(e.target.value)} disabled={disabled || !withdrawals}
-                className={cp.control + " h-11 w-full max-w-[240px] tabular-nums"} />
-            </div>
-          </div>
+      <div className="min-w-0 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <PolicyStatus active={Boolean(query.data?.activated_at)}
+            label={query.data?.activated_at ? "Política activa" : query.data?.engine_ready ? "Preparada para activar" : "En preparación"} />
+          {changed && <PolicyStatus active={false} pending />}
+          <p className="text-xs text-text-secondary sm:ml-auto">Guardar ajustes no realiza movimientos de dinero.</p>
         </div>
-        <label className="flex min-h-11 items-start gap-3 border-t border-border-subtle pt-3 text-sm text-text-primary">
-          <input className="mt-1 size-4 shrink-0" type="checkbox" checked={removeFree} onChange={e => setRemoveFree(e.target.checked)}
-            disabled={disabled || Boolean(query.data?.activated_at)} />
-          <span><span className="font-medium">Finalizar días gratuitos al activar la nueva política</span>
-            <span className="mt-1 block text-xs text-text-secondary">Las carreras aceptadas y los premios por referidos mantienen sus condiciones.</span>
-          </span>
-        </label>
-        {!valid && <p role="alert" className="text-sm text-destructive">Revisa los importes y sus límites antes de guardar.</p>}
+
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+          <PolicyTile
+            title="Primera carrera a crédito"
+            description="Solo un servicio inicial por conductor. La deuda se liquida antes del siguiente."
+            controls={
+              <PolicyToggle id="initial-credit-enabled"
+                label="Activar primera carrera a crédito"
+                checked={credit} onChange={setCredit}
+                disabled={disabled} pending={creditChanged} />
+            }
+          >
+            <PolicyNumberField id="initial-credit-limit"
+              label="Límite máximo de deuda" unit="CUP"
+              value={limit} onChange={setLimit} min="0.01" max="1000000" step="0.01"
+              disabled={disabled || !credit}
+              hint={credit ? "Tope permitido por conductor." : "Activa el crédito para editar su límite."} />
+          </PolicyTile>
+
+          <PolicyTile
+            title="Retiradas de ganancias Impulsa"
+            description="Solo ganancias comerciales reales; aprobación manual, nunca bonos ni recargas."
+            controls={
+              <PolicyToggle id="impulsa-withdrawals-enabled"
+                label="Activar retiradas de ganancias Impulsa"
+                checked={withdrawals} onChange={setWithdrawals}
+                disabled={disabled} pending={withdrawalChanged} />
+            }
+          >
+            <PolicyNumberField id="impulsa-withdrawal-minimum"
+              label="Importe mínimo de retirada" unit="CUP"
+              value={minimum} onChange={setMinimum} min="0.01" max="100000000" step="0.01"
+              disabled={disabled || !withdrawals}
+              hint={withdrawals ? "Las solicitudes requieren aprobación antes del registro de pago." : "Activa las retiradas para editar el mínimo."} />
+          </PolicyTile>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-border-default bg-surface-2/45 px-3 py-3 sm:px-4">
+          <div className="min-w-0 space-y-1">
+            <p className="text-sm font-semibold text-text-primary">Finalizar días gratuitos al activar la política</p>
+            <p className="text-xs leading-relaxed text-text-secondary">
+              Las carreras aceptadas y los premios por referidos conservarán sus condiciones.
+              {query.data?.activated_at ? " Esta decisión ya no puede editarse." : ""}
+            </p>
+          </div>
+          <PolicyToggle id="impulsa-remove-free-days" checked={removeFree} onChange={setRemoveFree}
+            disabled={disabled || Boolean(query.data?.activated_at)}
+            pending={freeDaysChanged}
+            label="Finalizar días gratuitos al activar la nueva política" />
+        </div>
+
+        {!valid && <p role="alert" className="text-sm text-destructive">Revisa los importes: deben ser mayores que cero y estar dentro de los límites permitidos.</p>}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
-          <p className="text-xs text-text-secondary">
-            <strong className="text-text-primary">{query.data?.activated_at ? "Política activa" : query.data?.engine_ready ? "Motor listo · aún no activada" : "Configuración en preparación"}</strong>
-            <span className="mt-1 block">Guardar no activa comisiones ni realiza movimientos financieros.</span>
+          <p className="text-xs leading-relaxed text-text-secondary">
+            {changed ? "Hay cambios sin guardar." : "Condiciones guardadas."}
+            {" "}La activación del motor es una acción independiente.
           </p>
           {canEdit && (
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" className="max-sm:min-h-11" disabled={disabled || !valid || !changed}
-                onClick={() => { setMessage(""); save.mutate(); }}>Guardar política</Button>
+              {changed && (
+                <Button size="sm" className="min-h-11 sm:min-h-9"
+                  disabled={disabled || !valid}
+                  onClick={() => { setMessage(""); save.mutate(); }}>
+                  {save.isPending ? "Guardando…" : "Guardar política"}
+                </Button>
+              )}
               {query.data?.engine_ready && !query.data.activated_at && (
-                <Button size="sm" className="max-sm:min-h-11" variant="outline"
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="subtle"
                   disabled={changed || activate.isPending || save.isPending || !credit || !removeFree}
                   onClick={() => {
                     if (window.confirm("Activar las comisiones configuradas, Impulsa y el crédito inicial, y terminar los días gratuitos para nuevas carreras. ¿Confirmas?")) activate.mutate();
-                  }}>Activar política económica</Button>
+                  }}>
+                  Activar política económica
+                </Button>
               )}
             </div>
           )}
         </div>
 
         {canEdit && query.data?.engine_ready && (
-          <section aria-label="Control de deudas y retiradas" className="space-y-3 border-t border-border-subtle pt-4">
-            <h3 className="text-sm font-semibold text-text-primary">Deuda y retiradas pendientes</h3>
+          <section aria-label="Control de deudas y retiradas" className="min-w-0 space-y-3 border-t border-border-subtle pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-text-primary sm:text-base">Deuda y retiradas pendientes</h3>
+              <span className="text-xs text-text-secondary">Movimientos reales · control manual</span>
+            </div>
             {summary.isError || requests.isError ? (
               <p role="alert" className="text-sm text-text-secondary">No se pudieron cargar los movimientos. Revisa el estado antes de operar.</p>
             ) : summary.isLoading || requests.isLoading ? (
-              <p className="text-sm text-text-secondary">Consultando saldos…</p>
+              <p role="status" className="text-sm text-text-secondary">Consultando saldos…</p>
             ) : (
               <>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className={cp.inset}>
-                    <p className="text-xs text-text-secondary">Deuda por cobrar · {summary.data?.debt_drivers ?? 0} conductores</p>
-                    <strong className="mt-1 block text-xl font-semibold tabular-nums text-text-primary">{cup(summary.data?.debt_cup ?? 0)}</strong>
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                  <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2/65 p-3 sm:p-4">
+                    <div className="flex items-center gap-2 text-xs text-text-secondary">
+                      <Wallet className="size-4 text-[var(--module-accent)]" aria-hidden="true" />
+                      Deuda por cobrar
+                    </div>
+                    <strong className="mt-2 block text-2xl font-semibold tabular-nums tracking-tight text-text-primary">
+                      {cup(summary.data?.debt_cup ?? 0)}
+                    </strong>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {summary.data?.debt_drivers ?? 0} {(summary.data?.debt_drivers ?? 0) === 1 ? "conductor" : "conductores"}
+                    </p>
                   </div>
-                  <div className={cp.inset}>
-                    <p className="text-xs text-text-secondary">Retiradas pendientes · {summary.data?.pending_withdrawals ?? 0}</p>
-                    <strong className="mt-1 block text-xl font-semibold tabular-nums text-text-primary">{cup(summary.data?.pending_withdrawal_cup ?? 0)}</strong>
+                  <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2/65 p-3 sm:p-4">
+                    <div className="flex items-center gap-2 text-xs text-text-secondary">
+                      <Clock3 className="size-4 text-[var(--module-accent)]" aria-hidden="true" />
+                      Retiradas pendientes
+                    </div>
+                    <strong className="mt-2 block text-2xl font-semibold tabular-nums tracking-tight text-text-primary">
+                      {cup(summary.data?.pending_withdrawal_cup ?? 0)}
+                    </strong>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {summary.data?.pending_withdrawals ?? 0} {(summary.data?.pending_withdrawals ?? 0) === 1 ? "solicitud" : "solicitudes"}
+                    </p>
                   </div>
                 </div>
-                <details className="group rounded-xl border border-border-subtle">
-                  <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium text-text-primary">
-                    Ver conductores con deuda y solicitudes de retirada
+                <details className="group overflow-hidden rounded-[var(--radius-card)] border border-border-default bg-surface-2/45">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm text-text-primary [&::-webkit-details-marker]:hidden sm:px-4">
+                    <span className="font-medium">Ver conductores y solicitudes</span>
+                    <ChevronDown className="size-4 text-text-secondary transition-transform group-open:rotate-180" aria-hidden="true" />
                   </summary>
-                  <div className="space-y-3 border-t border-border-subtle p-3">
+                  <div className="space-y-3 border-t border-border-subtle p-3 sm:p-4">
                     {!summary.data?.drivers.length && <p className="text-xs text-text-secondary">No hay conductores con deuda.</p>}
                     {summary.data?.drivers.map(d => (
                       <div key={d.user_id} className="flex flex-wrap justify-between gap-2 border-b border-border-subtle py-2 text-sm">
@@ -150,8 +205,12 @@ export default function MarketplaceImpulsaTransitionPanel({projectId,canEdit,emb
                         {w.payment_reference && <p className="break-all text-xs text-text-secondary">{w.payment_reference}</p>}
                         {w.status === "requested" && (
                           <div className="flex flex-wrap gap-2">
-                            <Button size="sm" className="max-sm:min-h-11" disabled={resolve.isPending} onClick={() => resolveRequest(w,"paid")}>Registrar pago realizado</Button>
-                            <Button size="sm" className="max-sm:min-h-11" variant="outline" disabled={resolve.isPending} onClick={() => resolveRequest(w,"rejected")}>Rechazar</Button>
+                            <Button size="sm" className="min-h-11 sm:min-h-9"
+                              disabled={resolve.isPending}
+                              onClick={() => resolveRequest(w,"paid")}>Registrar pago realizado</Button>
+                            <Button size="sm" className="min-h-11 sm:min-h-9" variant="subtle"
+                              disabled={resolve.isPending}
+                              onClick={() => resolveRequest(w,"rejected")}>Rechazar</Button>
                           </div>
                         )}
                       </div>
@@ -162,7 +221,7 @@ export default function MarketplaceImpulsaTransitionPanel({projectId,canEdit,emb
             )}
           </section>
         )}
-        {message && <p role="status" className="text-sm text-text-primary">{message}</p>}
+        {message && <p role="status" className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary">{message}</p>}
       </div>
     )}
   </section>

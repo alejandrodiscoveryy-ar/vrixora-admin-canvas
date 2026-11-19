@@ -23,11 +23,16 @@ test("All key Comercial panels reuse graphite controls and inset surfaces", () =
     ["MarketplaceCustomerCampaignDrafts", /cp\.control/],
     ["MarketplaceTuktukOfficialAnalytics", /cp\.inset/],
     ["MarketplaceImpulsaCommunicationAnalytics", /cp\.inset/],
-    ["MarketplaceWelcomePolicyPanel", /cp\.control/],
-    ["MarketplaceImpulsaPolicyPanel", /cp\.control/],
-    ["MarketplaceImpulsaTransitionPanel", /cp\.control/],
+    ["MarketplaceWelcomePolicyPanel", /PolicyNumberField/],
+    ["MarketplaceImpulsaPolicyPanel", /PolicyNumberField/],
+    ["MarketplaceImpulsaTransitionPanel", /PolicyNumberField/],
   ];
   for(const [name,matcher] of expected) assert.match(src(name),matcher,name);
+  // Los tres módulos financieros migraron sus campos al componente oficial común.
+  const policyControls = src("CommercialPolicyControls");
+  assert.match(policyControls, /<Input/);
+  assert.match(policyControls, /border-border-default bg-surface-2\/60/);
+  assert.match(policyControls, /bg-surface-3\/65/);
 });
 
 test("Graphite refinement does not change business actions, permissions or analytics", () => {
