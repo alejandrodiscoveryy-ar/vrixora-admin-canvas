@@ -1,3 +1,4 @@
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, BadgePercent, ChevronDown, Plus, ShieldAlert } from "lucide-react";
@@ -112,11 +113,11 @@ export default function MarketplaceCustomerCampaignDrafts({projectId,canEdit}:{
       budget:d.budget_cup===null?"":String(d.budget_cup),
     });
   };
-  return <section aria-label="Promociones para clientes" className="space-y-3 rounded-xl border border-orange-400/20 bg-background/50 p-3 sm:p-4">
+  return <section aria-label="Promociones para clientes" className={cp.section + " space-y-3"}>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         <BadgePercent className="h-5 w-5 text-orange-400"/>
-        <div><h3 className="text-sm font-bold">Promociones para clientes</h3>
+        <div><h3 className="text-base font-semibold text-text-primary">Promociones para clientes</h3>
           <p className="text-[11px] text-muted-foreground">Vigencia · audiencia · presupuesto · límite de usos</p>
         </div>
       </div>
@@ -137,7 +138,7 @@ export default function MarketplaceCustomerCampaignDrafts({projectId,canEdit}:{
     </div>
     {notice&&<p role="status" className="rounded-lg border border-border/50 p-2 text-xs text-muted-foreground">{notice}</p>}
     {form&&canEdit&&<form onSubmit={e=>{e.preventDefault();save.mutate(form);}}
-      className="space-y-3 rounded-xl border border-orange-400/20 bg-muted/[0.06] p-3">
+      className={cp.section + " space-y-3"}>
       <div className="flex justify-between gap-2">
         <h4 className="text-sm font-semibold">{form.id?"Editar borrador":"Preparar nueva campaña"}</h4>
         <button type="button" className="text-xs underline" onClick={()=>setForm(null)}>Cancelar</button>
