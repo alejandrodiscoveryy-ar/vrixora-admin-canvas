@@ -31,7 +31,7 @@ test("Saving unrelated project settings is only offered for actual edits", () =>
 
 test("Navigation stays accessible outside Android view", () => {
   assert.match(config, /aria-label="Cambiar módulo de configuración"/);
-  assert.match(config, /aria-current=\{visibleSection === section\.key/);
+  assert.match(config, /aria-current=\{selected \? "page" : undefined\}/);
   assert.match(config, /onClick=\{\(\) => setActiveSection\(section\.key\)\}/);
   assert.doesNotMatch(sidebar, /onOpenConfiguration|configurationPageActive/);
   assert.match(sidebar, /const groupOpen = configurationExpanded/);
