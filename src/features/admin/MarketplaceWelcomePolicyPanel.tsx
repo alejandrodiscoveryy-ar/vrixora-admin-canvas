@@ -1,3 +1,4 @@
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgePercent, ChevronDown, ChevronUp, Gift, ShieldCheck } from "lucide-react";
@@ -150,7 +151,7 @@ export default function MarketplaceWelcomePolicyPanel({
   if (!canView) return null;
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[22px] border border-emerald-300/25 bg-gradient-to-br from-[#0d2729] via-[#101d2c] to-[#17182c] p-3 shadow-[0_26px_65px_-42px_rgba(16,185,129,0.37)] sm:p-4 admin-graphite-panel">
+    <section className={cp.section}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-emerald-400/75 via-cyan-300/35 to-transparent" />
       <div className="relative z-10 space-y-3">
         <header className="flex flex-wrap items-center justify-between gap-3">
@@ -160,7 +161,7 @@ export default function MarketplaceWelcomePolicyPanel({
             </span>
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">TukTuk · Comercial</p>
-              <h2 className="mt-0.5 text-lg font-extrabold tracking-tight text-white sm:text-xl">Política comercial general</h2>
+              <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-text-primary sm:text-xl">Política comercial general</h2>
               <p className="mt-0.5 text-sm text-slate-300">Define los días de bienvenida y las comisiones.</p>
             </div>
           </div>
@@ -182,7 +183,7 @@ export default function MarketplaceWelcomePolicyPanel({
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-300/25 bg-emerald-300/10 text-emerald-200"><Gift aria-hidden="true" className="h-5 w-5" /></span>
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">01 · Bienvenida</p>
-                      <h3 className="text-lg font-bold text-white">Días gratuitos</h3>
+                      <h3 className="text-base font-semibold text-text-primary">Días gratuitos</h3>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#081c1b]/80 px-3 py-2 admin-graphite-inset">
@@ -220,7 +221,7 @@ export default function MarketplaceWelcomePolicyPanel({
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-200"><BadgePercent aria-hidden="true" className="h-5 w-5" /></span>
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">02 · Facturación</p>
-                      <h3 className="text-lg font-bold text-white">Comisiones Marketplace</h3>
+                      <h3 className="text-base font-semibold text-text-primary">Comisiones Marketplace</h3>
                     </div>
                   </div>
                   {chargePolicy.isLoading ? (
