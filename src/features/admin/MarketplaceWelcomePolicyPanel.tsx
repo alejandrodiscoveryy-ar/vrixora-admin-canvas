@@ -183,7 +183,7 @@ export default function MarketplaceWelcomePolicyPanel({
               <div className="flex items-center gap-2">
                 <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days}
                   disabled={!canEdit || save.isPending} onChange={event => setDays(event.target.value)}
-                  aria-label="Días gratuitos" className="h-11 w-28 max-w-full text-lg font-semibold tabular-nums" />
+                  aria-label="Días gratuitos" className={cp.control + " h-11 w-28 max-w-full text-lg font-semibold tabular-nums"} />
                 <span className="text-sm text-text-secondary">días</span>
               </div>
               {!validDays && <p role="alert" className="text-xs text-destructive">Indica entre 1 y 365 días.</p>}
@@ -224,7 +224,7 @@ export default function MarketplaceWelcomePolicyPanel({
                 <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01"
                   value={commission} disabled={!canEdit || saveCommission.isPending}
                   onChange={event => setCommission(event.target.value)} aria-label="Porcentaje de comisión"
-                  className="h-11 w-28 max-w-full text-lg font-semibold tabular-nums" />
+                  className={cp.control + " h-11 w-28 max-w-full text-lg font-semibold tabular-nums"} />
                 <span className="text-sm text-text-secondary">%</span>
               </div>
               {!validCommission && <p role="alert" className="text-xs text-destructive">Indica un porcentaje válido entre 0 y 100.</p>}
