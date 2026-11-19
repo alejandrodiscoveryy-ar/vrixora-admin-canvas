@@ -162,7 +162,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
         <div className="relative w-full sm:w-80">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input aria-label="Buscar referente o referido" value={search} onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar referente, referido o código" className="pl-9" />
+            placeholder="Buscar referente, referido o código" className={cp.control + " pl-9"} />
         </div>
       </div>
 
