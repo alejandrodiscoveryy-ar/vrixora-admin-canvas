@@ -756,5 +756,6 @@ test("Comercial: Impulsa y Aliados distintos; submenú Gestión con iconos semá
   assert.match(commercial, /<ChildIcon className="size-4 shrink-0" aria-hidden="true" \/>/);
   assert.match(styles, /managementNavItem: "flex min-w-0 min-h-11 items-center gap-2/);
   const operationalConfig = readFileSync(new URL("../src/features/admin/MarketplaceConfigurationWorkspace.tsx", import.meta.url), "utf8");
-  assert.match(operationalConfig, /id: "cancelaciones"[\\s\\S]*?icon: CalendarX2/);
+  const cancellationBlock = operationalConfig.slice(operationalConfig.indexOf('id: "cancelaciones"'));
+  assert.match(cancellationBlock, /icon: CalendarX2/);
 });
