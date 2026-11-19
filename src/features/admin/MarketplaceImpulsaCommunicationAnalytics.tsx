@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart3, ChevronDown, ExternalLink, MousePointerClick, RefreshCw, Share2, Users, TrendingUp, AlertCircle } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from "recharts";
 import { getSupabaseClient } from "@/lib/supabase";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 type PeriodDays = 7 | 30 | 90;
@@ -98,13 +99,13 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
     {title:"Solicitud iniciada",value:t.requests_started},
     {title:"Solicitud creada",value:t.requests_created}];
   return <section aria-label="Impulsa Analytics — Comunicación y conversión"
-    className="space-y-3 rounded-xl border border-cyan-400/15 bg-background/50 p-3 sm:p-4">
+    className={cp.section}>
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-500">
         <BarChart3 className="h-5 w-5"/>
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-base font-bold">Impulsa Analytics</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-foreground">Resultados de Impulsa</h3>
         <p className="text-xs text-muted-foreground">Comunicación, llegada de clientes y puntos de abandono</p>
       </div>
       <div className="flex items-center gap-1" role="group" aria-label="Periodo de análisis">
