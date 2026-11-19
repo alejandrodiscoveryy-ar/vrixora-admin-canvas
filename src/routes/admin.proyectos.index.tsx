@@ -2,6 +2,7 @@ import { Link, createFileRoute, useNavigate, useRouterState } from "@tanstack/re
 import { useEffect } from "react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useUserProjects } from "@/hooks/useProjects";
+import { singleProjectEntry } from "@/lib/admin-project-entry";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,10 @@ function ProjectsList() {
     select: (state) => (state.location.search as Record<string, unknown>).seleccionar === "1",
   });
   const navigate = useNavigate();
+  const redirectProjectId = singleProjectEntry(projects, {
+    loaded: Boolean(user) && !isLoading && !isFetching && !error,
+    selectorRequested,
+  });
 
   useEffect(() => {
     if (!user) {
@@ -37,18 +42,18 @@ function ProjectsList() {
     // Una sola asociación accesible: abrirla automáticamente, también tras OAuth.
     // Esperar una consulta en curso evita redirigir con una lista obsoleta.
     // El parámetro seleccionar=1 permite recuperar el selector si falla el acceso.
-    if (!isLoading && !isFetching && !error && projects.length === 1 && !selectorRequested) {
+    if (redirectProjectId) {
       void navigate({
         to: "/admin/proyectos/$id",
-        params: { id: projects[0].id },
+        params: { id: redirectProjectId },
         replace: true,
       });
     }
-  }, [user, isLoading, isFetching, error, projects, selectorRequested, navigate]);
+  }, [user, isLoading, redirectProjectId, navigate]);
 
   if (!user) return null;
 
-  if (isLoading || isFetching || (projects.length === 1 && !error && !selectorRequested)) {
+  if (isLoading || isFetching || redirectProjectId) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
