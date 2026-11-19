@@ -72,7 +72,7 @@ export default function MarketplaceConfigurationWorkspace({
   const SelectedIcon = selected.icon;
 
   return (
-    <section aria-label="Configuración de TukTuk" className="min-w-0 space-y-3">
+    <section data-admin-module="configuracion" aria-label="Configuración de TukTuk" className="min-w-0 space-y-3">
       <div className="min-w-0 space-y-3">
         <nav data-nav-tone="administracion"
           aria-label="Secciones de configuración de TukTuk"
