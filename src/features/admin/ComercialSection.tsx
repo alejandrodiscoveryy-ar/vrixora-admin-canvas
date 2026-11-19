@@ -399,7 +399,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : showAllies ? (
         <MarketplaceAlliesPanel projectId={projectId} canManage={canManage} />
       ) : showOffers ? (
-        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
+        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} />
       ) : showImpulsa ? (
         <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
           <header className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-card/90 to-violet-500/[0.06] p-4 shadow-sm sm:p-5">
