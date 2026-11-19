@@ -363,7 +363,7 @@ function ProjectNavItem({
                       onKeyDown={(event) => {
                         if (collapsed && event.key === " ") {
                           event.preventDefault();
-                          toggleSubmenu("trabajos");
+                          event.currentTarget.click();
                         }
                       }}
                       aria-label={collapsed ? (trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos") : "Trabajos"}
@@ -373,6 +373,16 @@ function ProjectNavItem({
                         if (collapsed) {
                           event.preventDefault();
                           toggleSubmenu("trabajos");
+                          // Igual que Configuración: entrar a la pantalla principal
+                          // al acceder desde otro módulo, y plegar/desplegar si ya está aquí.
+                          if (!groupActive) {
+                            setTrabajosExpanded(true);
+                            void navigate({
+                              to: "/admin/proyectos/$id/$section",
+                              params: { id: project.id, section: "trabajos" },
+                              search: { vista: "resumen" },
+                            });
+                          }
                           return;
                         }
                         setTrabajosExpanded(true);
@@ -444,8 +454,22 @@ function ProjectNavItem({
                       title="Centro de precios"
                       aria-expanded={pricingExpanded}
                       aria-controls={pricingGroupId}
-                      onClick={() => {
-                        // El icono colapsado solo pliega/despliega, sin cambiar pantalla.
+                      onClick={(event) => {
+                        // Igual que Configuración: el primer clic desde fuera
+                        // abre el centro de precios y sus opciones simultáneamente.
+                        if (collapsed && !groupActive) {
+                          event.preventDefault();
+                          setPricingExpanded(true);
+                          setTrabajosExpanded(false);
+                          setConfigurationExpanded(false);
+                          void navigate({
+                            to: "/admin/proyectos/$id/$section",
+                            params: { id: project.id, section: "planes" },
+                            search: { precio: "global" },
+                          });
+                          return;
+                        }
+                        // Dentro del módulo, <summary> mantiene plegar/desplegar.
                         if (!collapsed && !groupActive) {
                           void navigate({ to: "/admin/proyectos/$id/$section", params: { id: project.id, section: "planes" }, search: { precio: "global" } });
                           closeDrawer?.();
