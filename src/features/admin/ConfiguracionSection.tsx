@@ -15,6 +15,7 @@ import {
 } from "@/lib/services";
 
 import { SectionCard } from "@/components/admin/SectionCard";
+import { premiumSurface, premiumHeaderSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import PremiumSettingsSnapshot, { type PremiumSettingsMetric } from "./PremiumSettingsSnapshot";
 import AppReleaseSettingsCard from "./AppReleaseSettingsCard";
 import { PageAlert } from "@/components/admin/PageAlert";
@@ -56,21 +57,13 @@ const sections: Array<{
   { key: "application", number: "05", label: "Aplicación y versiones", eyebrow: "EXPERIENCIA Y PUBLICACIÓN", description: "Actualizaciones de Android, mantenimiento y mensaje de bienvenida.", icon: Smartphone },
 ];
 
-const CONFIG_CARD_CLASS = "border-border-default admin-graphite-panel";
-const PREMIUM_CONFIG_CARD_CLASS = "relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border admin-graphite-panel";
-
-const CONFIG_HEADER_CLASS = "border-b border-border-default px-3 py-3 sm:px-4 admin-graphite-header";
-
-const CONFIG_CONTENT_CLASS = "min-w-0 p-3 sm:p-4 admin-graphite-form";
-
-const CONFIG_CONTROL_CLASS =
-  "h-11 rounded-xl border-border-default bg-surface-1 admin-graphite-control shadow-inner shadow-black/10 transition-colors hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
-
-const CONFIG_SELECT_CLASS =
-  "h-11 rounded-xl border-border-default bg-surface-1 admin-graphite-control hover:border-cyan-300/45 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20";
-
-const CONFIG_TEXTAREA_CLASS =
-  "min-h-[88px] rounded-xl border-border-default bg-surface-1 admin-graphite-control shadow-inner shadow-black/10 hover:border-cyan-300/45 focus-visible:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300/20";
+const CONFIG_CARD_CLASS = `min-w-0 rounded-[var(--radius-card)] border ${premiumSurface}`;
+const PREMIUM_CONFIG_CARD_CLASS = CONFIG_CARD_CLASS;
+const CONFIG_HEADER_CLASS = `border-b border-border-subtle px-3 py-3 sm:px-4 ${premiumHeaderSurface}`;
+const CONFIG_CONTENT_CLASS = "min-w-0 p-3 sm:p-4";
+const CONFIG_CONTROL_CLASS = `min-h-11 rounded-[var(--radius-control)] border-border-default bg-surface-2 text-text-primary shadow-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
+const CONFIG_SELECT_CLASS = CONFIG_CONTROL_CLASS;
+const CONFIG_TEXTAREA_CLASS = `min-h-[88px] rounded-[var(--radius-control)] border-border-default bg-surface-2 text-text-primary shadow-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
 
 const ACTIVE_CAMPAIGN_BADGE_CLASS =
   "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]";
@@ -488,12 +481,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             ];
 
   return (
-    <div className="min-w-0 space-y-3">
-      <section aria-label="Categorías de ajustes del proyecto" className="min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default bg-surface-2/65">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-3 py-3 sm:px-4">
+    <div data-admin-module="configuracion" className="min-w-0 space-y-3">
+      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-2 sm:px-3">
           <div className="min-w-0">
-            <h2 className="text-base font-semibold text-text-primary">Ajustes del proyecto</h2>
-            <p className="mt-0.5 text-xs text-text-secondary">Todas las categorías, incluida la actualización APK, están disponibles aquí.</p>
+            <h2 className="text-sm font-semibold text-text-primary">Ajustes del proyecto</h2>
+            <p className="mt-0.5 text-xs text-text-secondary">Selecciona el área que necesitas administrar.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
@@ -505,7 +498,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             )}
           </div>
         </div>
-        <nav aria-label="Cambiar módulo de configuración" className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 xl:grid-cols-5">
+        <nav aria-label="Cambiar módulo de configuración" className="grid min-w-0 grid-cols-2 gap-1.5 px-1 pb-1 pt-1 sm:grid-cols-3 xl:grid-cols-5">
           {sections.map(section => {
             const Icon = section.icon;
             const selected = visibleSection === section.key;
@@ -515,16 +508,16 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 key={section.key}
                 aria-current={selected ? "page" : undefined}
                 onClick={() => setActiveSection(section.key)}
-                className={"flex min-h-14 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 " +
+                className={"flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 " +
                   (selected
-                    ? "border-primary/50 bg-primary/10 text-text-primary"
-                    : "border-border-subtle bg-surface-3/45 text-text-secondary hover:border-border-strong hover:bg-surface-3 hover:text-text-primary") +
+                    ? "border-primary/45 bg-primary/10 text-text-primary shadow-[inset_0_-2px_var(--primary)]"
+                    : "border-border-subtle bg-transparent text-text-secondary hover:border-border-strong hover:bg-surface-3/65 hover:text-text-primary") +
                   (section.key === "application" ? " max-sm:col-span-2" : "")}
               >
                 <Icon className={"size-4 shrink-0 " + (selected ? "text-primary" : "text-text-secondary")} aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block text-xs font-semibold leading-tight">{section.label}</span>
-                  {section.key === "application" && <span className="mt-0.5 block text-[11px] text-primary">Actualización APK Android</span>}
+                  {section.key === "application" && <span className="mt-0.5 block text-[11px] text-text-secondary">APK Android</span>}
                 </span>
               </button>
             );
@@ -677,7 +670,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   </p>
                 </div>
 
-                <div className="flex h-24 w-full items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.035] p-2 shadow-inner shadow-black/20 sm:w-[120px]">
+                <div className="flex h-24 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[120px]">
                   {form.logoUrl ? (
                     <img
                       src={form.logoUrl}
@@ -750,7 +743,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Label>Color primario</Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-10 w-10 shrink-0 rounded-xl border border-cyan-400/30 shadow-inner shadow-black/20"
+                    className="h-10 w-10 shrink-0 rounded-[var(--radius-control)] border border-border-default"
                     style={{
                       backgroundColor: form.primaryColor,
                     }}
@@ -768,7 +761,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 <Label>Color secundario</Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-10 w-10 shrink-0 rounded-xl border border-cyan-400/30 shadow-inner shadow-black/20"
+                    className="h-10 w-10 shrink-0 rounded-[var(--radius-control)] border border-border-default"
                     style={{
                       backgroundColor: form.secondaryColor,
                     }}
@@ -1120,9 +1113,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {visibleSection === "communication" ? (
         <div className="space-y-3">
-          {!isMarketplaceReferralProgram ? (
-            <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
-          ) : null}
           <SectionCard density="compact" appearance="premium"
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
@@ -1262,9 +1252,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
       {visibleSection === "application" ? (
         <div className="space-y-3">
-          {isMarketplaceReferralProgram ? (
-            <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
-          ) : null}
+          <AppReleaseSettingsCard projectId={projectId} canManage={canManage} hasUnsavedProjectChanges={projectDirty} />
           <button type="button" aria-expanded={showExtraAppSettings}
             aria-controls="app-extra-settings"
             onClick={() => setShowExtraAppSettings((prev) => !prev)}
@@ -1340,7 +1328,7 @@ function SettingToggle({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex min-h-[90px] items-start justify-between gap-4 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4 shadow-inner shadow-black/15 admin-graphite-panel">
+    <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-border-default bg-surface-2/65 px-3 py-3 sm:px-4">
       <div className="min-w-0">
         <p className="text-sm font-medium text-text-primary">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-text-secondary">{description}</p>
@@ -1385,7 +1373,7 @@ function ReferralCampaignDetail({
   tone?: "success";
 }) {
   return (
-    <div className="rounded-2xl border border-cyan-400/18 bg-gradient-to-br from-cyan-400/[0.05] to-[#061217] p-4 admin-graphite-panel">
+    <div className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
       {tone === "success" ? (
         <Badge variant="outline" className={`mt-1.5 ${ACTIVE_CAMPAIGN_BADGE_CLASS}`}>
@@ -1423,7 +1411,7 @@ function IconMasterPreview({
   return (
     <div className="space-y-1.5 text-center">
       <div
-        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-cyan-400/20 bg-cyan-400/[0.04] shadow-inner shadow-black/20 ${shapeClass}`}
+        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 ${shapeClass}`}
       >
         {variantUrl ? (
           <img
