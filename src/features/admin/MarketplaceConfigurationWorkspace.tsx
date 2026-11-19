@@ -2,6 +2,7 @@ import { adminSubnavTone } from "@/lib/admin-navigation";
 import { useState } from "react";
 import {
   BellRing,
+  CalendarX2,
   ChevronRight,
   FlaskConical,
   Globe2,
@@ -50,7 +51,7 @@ const SECTIONS = [
     subtitle: "Políticas de servicio",
     eyebrow: "CONFIANZA Y CONTINUIDAD",
     description: "Controla la espera, los reemplazos y la supervisión de cancelaciones.",
-    icon: ShieldCheck,
+    icon: CalendarX2,
   },
 ] as const;
 

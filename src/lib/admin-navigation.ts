@@ -1,26 +1,31 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  AlertTriangle,
+  BadgeCheck,
   BarChart3,
   BriefcaseBusiness,
-  Eye,
+  Calculator,
+  CarFront,
+  ClipboardList,
+  CreditCard,
   Gauge,
-  MapPin,
   Headphones,
+  HeartPulse,
+  IdCard,
+  MapPinned,
   Megaphone,
+  MessageSquareText,
+  Package,
   PlugZap,
-  ScrollText,
   Settings2,
   ShieldCheck,
-  Tags,
   SlidersHorizontal,
-  CarFront,
+  Tags,
+  TriangleAlert,
   Truck,
-  Package,
   UserRound,
+  UsersRound,
   Wallet,
-  WalletCards,
-  Users,
+  Wrench,
 } from "lucide-react";
 
 import type { ProjectPermission } from "@/lib/services";
@@ -51,13 +56,13 @@ export const ADMINISTRATION_VIEWS = [
   {
     slug: "empleados",
     label: "Empleados",
-    icon: ShieldCheck,
+    icon: BadgeCheck,
     permission: "members.view",
   },
   {
     slug: "comunicados",
     label: "Comunicados",
-    icon: Megaphone,
+    icon: MessageSquareText,
     permission: "settings.view",
   },
   {
@@ -69,23 +74,23 @@ export const ADMINISTRATION_VIEWS = [
 ] satisfies Array<AdminProjectTab>;
 
 export const PRICING_WORKSPACE_VIEWS = [
-  { code: "global", number: "01", label: "Ajuste general", subtitle: "Plataforma y control de cambios", eyebrow: "GESTIÓN TRANSVERSAL", description: "Consulta el ajuste publicado y prepara nuevas simulaciones con verificación segura.", icon: SlidersHorizontal },
+  { code: "global", number: "01", label: "Ajuste general", subtitle: "Plataforma y control de cambios", eyebrow: "GESTIÓN TRANSVERSAL", description: "Consulta el ajuste publicado y prepara nuevas simulaciones con verificación segura.", icon: Calculator },
   { code: "passenger", number: "02", label: "Pasajeros", subtitle: "Viajes y modalidades de transporte", eyebrow: "SERVICIO DE PASAJEROS", description: "Gestiona los precios de las modalidades para trasladar personas.", icon: CarFront },
   { code: "cargo", number: "03", label: "Carga", subtitle: "Mercancías y logística", eyebrow: "SERVICIO DE CARGA", description: "Gestiona tarifas para el transporte de objetos y mercancías.", icon: Truck },
   { code: "courier", number: "04", label: "Mensajería", subtitle: "Paquetes y entregas", eyebrow: "SERVICIO DE MENSAJERÍA", description: "Gestiona tarifas para recogidas y entregas.", icon: Package },
 ] as const;
 
 export const MARKETPLACE_WORKSPACE_VIEWS = [
-  { slug: "resumen", label: "Pulso", icon: Eye, permission: "marketplace.view" },
-  { slug: "trabajos", label: "Operaciones", icon: BriefcaseBusiness, permission: "marketplace.view" },
+  { slug: "resumen", label: "Pulso", icon: HeartPulse, permission: "marketplace.view" },
+  { slug: "trabajos", label: "Operaciones", icon: ClipboardList, permission: "marketplace.view" },
   { slug: "atencion", label: "Atención al cliente", icon: Headphones, permission: "marketplace.view" },
-  { slug: "mapa", label: "Mapa", icon: MapPin, permission: "marketplace.view" },
-  { slug: "conductores", label: "Conductores", icon: Users, permission: "marketplace.view" },
+  { slug: "mapa", label: "Mapa", icon: MapPinned, permission: "marketplace.view" },
+  { slug: "conductores", label: "Conductores", icon: IdCard, permission: "marketplace.view" },
   { slug: "clientes", label: "Clientes", icon: UserRound, permission: "customers.view" },
   { slug: "billeteras", label: "Billeteras", icon: Wallet, permission: "payments.view" },
-  { slug: "recargas", label: "Recargas", icon: WalletCards, permission: "payments.view" },
-  { slug: "incidencias", label: "Incidencias", icon: AlertTriangle, permission: "marketplace.view" },
-  { slug: "configuracion", label: "Configuración operativa", icon: ShieldCheck, permission: "settings.view" },
+  { slug: "recargas", label: "Recargas", icon: CreditCard, permission: "payments.view" },
+  { slug: "incidencias", label: "Incidencias", icon: TriangleAlert, permission: "marketplace.view" },
+  { slug: "configuracion", label: "Configuración operativa", icon: Wrench, permission: "settings.view" },
 ] satisfies Array<AdminProjectTab>;
 
 export const ADMIN_PROJECT_TABS = [
@@ -104,7 +109,7 @@ export const ADMIN_PROJECT_TABS = [
   {
     slug: "clientes",
     label: "Usuarios app",
-    icon: Users,
+    icon: UsersRound,
     permission: "customers.view",
   },
   {
@@ -134,7 +139,7 @@ export const ADMIN_PROJECT_TABS = [
   {
     slug: "auditoria",
     label: "Auditoría",
-    icon: ScrollText,
+    icon: ShieldCheck,
     permission: "audit.view",
   },
 ] satisfies Array<AdminProjectNavItem>;

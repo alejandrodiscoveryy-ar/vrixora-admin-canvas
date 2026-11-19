@@ -10,6 +10,12 @@ import {
   Layers,
   UsersRound,
   TrendingUp,
+  Rocket,
+  Handshake,
+  Target,
+  SlidersHorizontal,
+  GitFork,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -110,6 +116,12 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
   const [commercialView, setCommercialView] = useState<"campanas" | "resultados" | "captacion" | "ofertas" | "referidos" | "configuracion" | "impulsa" | "aliados">("campanas");
+  const managementNavIcons = {
+    configuracion: SlidersHorizontal,
+    referidos: GitFork,
+    ofertas: Gift,
+    captacion: UserPlus,
+  } as const;
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
     queryFn: async () => {
@@ -294,7 +306,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 <Button type="button" variant={commercialView === "campanas" ? "default" : "outline"}
                   onClick={() => setCommercialView("campanas")} className="admin-subnav-tab"
                   data-nav-tone="comercial" aria-pressed={commercialView === "campanas"}>
-                  <span className="admin-nav-icon" aria-hidden="true"><Megaphone /></span>
+                  <span className="admin-nav-icon" aria-hidden="true"><Target /></span>
                   Campañas
                 </Button>
                 <Button type="button" variant={commercialView === "resultados" ? "default" : "outline"}
@@ -306,13 +318,13 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 <Button type="button" variant={showImpulsa ? "default" : "outline"}
                   onClick={() => setCommercialView("impulsa")} className="admin-subnav-tab"
                   data-nav-tone="finanzas" aria-pressed={showImpulsa}>
-                  <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
+                  <span className="admin-nav-icon" aria-hidden="true"><Rocket /></span>
                   Impulsa
                 </Button>
                 <Button type="button" variant={showAllies ? "default" : "outline"}
                   onClick={() => setCommercialView("aliados")} className="admin-subnav-tab"
                   data-nav-tone="comercial" aria-pressed={showAllies}>
-                  <span className="admin-nav-icon" aria-hidden="true"><UsersRound /></span>
+                  <span className="admin-nav-icon" aria-hidden="true"><Handshake /></span>
                   Aliados
                 </Button>
                 <Button type="button" variant={showManagement ? "default" : "outline"}
@@ -342,7 +354,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               ["referidos","Referidos y red"],
               ["ofertas","Beneficios de conductores"],
               ["captacion","Captación y contactos"],
-            ] as const).map(([value, label]) => (
+            ] as const).map(([value, label]) => {
+              const ChildIcon = managementNavIcons[value];
+              return (
               <button
                 type="button"
                 key={value}
@@ -350,9 +364,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 onClick={() => setCommercialView(value)}
                 className={cp.managementNavItem + " " + (commercialView === value ? cp.managementNavSelected : cp.managementNavUnselected)}
               >
-                {label}
+                <ChildIcon className="size-4 shrink-0" aria-hidden="true" />
+                <span className="min-w-0">{label}</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </nav>
       )}
