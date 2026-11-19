@@ -71,7 +71,8 @@ test("Flota, radar, atención y configuración usan estructuras móviles compact
   assert.match(settings, /configurationPremium as visual/);
   assert.match(settings, /visual\.navigation/);
   assert.doesNotMatch(settings, /xl:grid-cols-\[252px_minmax/);
-  assert.match(settings, /min-h-11/);
+  const configurationVisual = readFileSync("src/features/admin/configuration-premium.ts", "utf8");
+  assert.match(configurationVisual, /min-h-12/);
   assert.match(settings, /canManageSettings && canManageMarketplace/);
   assert.doesNotMatch(settings, /sm:p-2\.5-\[/);
 });
