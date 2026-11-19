@@ -132,14 +132,14 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          <MiniMetric label="Solicitudes creadas" value={t.requests_created} icon={TrendingUp} detail="Evento de cliente, no carrera completada"/>
        </div>
 
-       <details className="group rounded-xl border border-border-subtle bg-surface-2/40">
+       <details className={cp.inset + " group"}>
          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-text-primary [&::-webkit-details-marker]:hidden">
            Análisis detallado de campañas
            <span className="text-xs font-normal text-text-secondary">Evolución, abandonos y cotizaciones</span>
          </summary>
          <div className="space-y-3 border-t border-border-subtle p-3">
        <div className="grid gap-3 lg:grid-cols-2">
-         <div className="rounded-xl border border-border/50 p-3">
+         <div className={cp.inset}>
            <h4 className="text-sm font-semibold">Evolución de la campaña</h4>
            {timeline.length ? <div className="mt-2 h-44 w-full">
              <ResponsiveContainer width="100%" height="100%">
@@ -154,7 +154,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
              </ResponsiveContainer>
            </div> : <p className="py-7 text-xs text-muted-foreground">Aún no hay datos de tráfico registrados.</p>}
          </div>
-         <div className="rounded-xl border border-border/50 p-3">
+         <div className={cp.inset}>
            <h4 className="text-sm font-semibold">Recorrido del cliente</h4>
            <div className="mt-3 space-y-2">
              {stages.map((s,i)=>{
@@ -179,7 +179,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
        </div>
 
        <div className="grid gap-3 lg:grid-cols-2">
-         <div className="rounded-xl border border-border/50 p-3">
+         <div className={cp.inset}>
            <h4 className="mb-2 text-sm font-semibold">Origen declarado del enlace</h4>
            {d!.channels.length ? <div className="space-y-2 text-xs">
              {d!.channels.map(x=><div key={`${x.channel}:${x.campaign??""}`} className="flex items-center justify-between gap-3 border-b border-border/30 pb-1">
@@ -190,7 +190,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
            </div> : <p className="py-4 text-xs text-muted-foreground">Sin canales medidos todavía.</p>}
            <p className="mt-2 text-[10px] text-muted-foreground">El canal identifica cómo se etiquetó el enlace, no el grupo o destinatario final. Los reenvíos pueden cambiarlo.</p>
          </div>
-         <div className="rounded-xl border border-border/50 p-3">
+         <div className={cp.inset}>
            <h4 className="mb-2 text-sm font-semibold">Motivos de abandono (respuesta voluntaria)</h4>
            {d!.reasons.length ? <div className="h-40">
              <ResponsiveContainer width="100%" height="100%">
@@ -206,7 +206,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          </div>
        </div>
 
-       <div className="rounded-xl border border-border/50 p-3">
+       <div className={cp.inset}>
          <h4 className="text-sm font-semibold">Comportamiento por importe de la cotización</h4>
          <p className="mt-1 text-[10px] text-muted-foreground">Precios aproximados mostrados por Cliente; estos datos no prueban causalidad. No se ajustan tarifas desde aquí.</p>
          {d!.price_segments.length ? <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
@@ -220,7 +220,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          </div>
        </details>
 
-       <div className="rounded-xl border border-border-default bg-surface-1">
+       <div className={cp.inset + " p-0 sm:p-0"}>
          <div className="border-b border-border-subtle p-3"><h4 className="text-base font-semibold text-text-primary">Aportación de cada conductor</h4>
            <p className="mt-1 text-[11px] text-muted-foreground">Toca una fila para ver cómo se comporta su enlace.</p></div>
          <div className="divide-y divide-border/40">
