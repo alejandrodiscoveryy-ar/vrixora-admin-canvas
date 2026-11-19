@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart3, RefreshCw } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 
 type Period = 7 | 30 | 90;
 type Official = { totals?: { link_opens?: number; visitor_sessions?: number; requests_created?: number } };
@@ -60,7 +61,7 @@ export default function ComercialSourceOverview({ projectId }: { projectId: stri
       completed:allySummary.completed, error:allies.isError, loading:allies.isLoading },
   ];
   return <section data-admin-module="comercial" aria-label="Vista por fuentes de captación" className="space-y-3">
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-card/75 p-3 sm:p-4">
+    <div className={cp.section + " flex flex-wrap items-center justify-between gap-3"}>
       <div className="flex items-center gap-2">
         <BarChart3 className="size-5 text-violet-300" aria-hidden="true"/>
         <div>
@@ -80,7 +81,7 @@ export default function ComercialSourceOverview({ projectId }: { projectId: stri
       </div>
     </div>
     <div className="grid gap-3 lg:grid-cols-3">
-      {cards.map(card => <article key={card.name} className="rounded-2xl border border-border/65 bg-card/75 p-4 shadow-sm">
+      {cards.map(card => <article key={card.name} className={cp.section}>
         <h4 className="font-semibold text-foreground">{card.name}</h4>
         <p className="mt-1 text-xs text-muted-foreground">{card.period}</p>
         {card.error ? <p role="alert" className="mt-3 text-xs text-amber-300">No se pudo consultar esta fuente. No se muestran ceros artificiales.</p>
