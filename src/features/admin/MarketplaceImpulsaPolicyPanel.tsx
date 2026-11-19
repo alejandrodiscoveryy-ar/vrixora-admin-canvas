@@ -1,3 +1,4 @@
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgePercent, TrendingUp, ShieldCheck } from "lucide-react";
@@ -57,11 +58,11 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
     },
   });
   if (!canView) return null;
-  return <section aria-label="Comisiones comerciales Impulsa" className="relative isolate overflow-hidden rounded-[22px] border border-cyan-300/25 bg-gradient-to-br from-[#0d2729] via-[#101d2c] to-[#17182c] p-3 shadow-[0_26px_65px_-42px_rgba(16,185,129,0.37)] sm:p-4 admin-graphite-panel">
+  return <section aria-label="Comisiones comerciales Impulsa" className={cp.section}>
     <img src="/admin-premium/economy.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-44 w-[55%] object-contain object-right-top opacity-[0.15]" />
     <div className="relative space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300/10 text-cyan-200"><TrendingUp className="h-5 w-5"/></span><div><p className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">TukTuk · Impulsa</p><h2 className="text-lg font-extrabold text-white">Comisiones comerciales</h2><p className="text-xs text-slate-300">Tres porcentajes sobre el importe del viaje.</p></div></div>
+        <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300/10 text-cyan-200"><TrendingUp className="h-5 w-5"/></span><div><p className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">TukTuk · Impulsa</p><h2 className="text-lg font-semibold text-text-primary">Comisiones comerciales</h2><p className="text-xs text-text-secondary">Tres porcentajes sobre el importe del viaje.</p></div></div>
         <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-200">{query.isLoading ? "Consultando" : query.isError ? "No disponible" : query.data?.enabled && query.data?.billing_enabled ? "Activo" : query.data?.enabled ? "Cobro suspendido" : "Sin activar"}</span>
       </header>
       {query.isError ? <p role="alert" className="rounded-xl border border-amber-300/25 bg-amber-300/10 p-3 text-sm text-amber-100">El módulo financiero aún no está instalado o no tienes permiso. No se modificó ningún saldo.</p> : query.isLoading ? <p className="text-sm text-slate-300">Cargando configuración…</p> : <>
