@@ -369,15 +369,21 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       {isTuktukProject && commercialView === "campanas" ? (
         <div className="space-y-3">
-          <div className="rounded-xl border border-orange-400/20 bg-background/55 p-3">
-            <h2 className="text-base font-semibold">Campañas de TukTuk</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              1. Prepara la promoción · 2. Genera enlaces para cada canal · 3. Consulta resultados.
-              Los descuentos quedan en borrador hasta autorizar y probar el cálculo y cobro.
-            </p>
-          </div>
-          <MarketplaceCustomerCampaignDrafts projectId={projectId} canEdit={canPlanCustomerBenefits} />
+          <header className="rounded-2xl border border-orange-400/20 bg-gradient-to-br from-orange-500/[0.07] via-card/90 to-background/70 p-4 sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Comercial · Captación de pasajeros</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">Campañas de TukTuk</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Crea un enlace para cada acción, compártelo y consulta sus resultados en la pestaña Resultados.</p>
+          </header>
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="generator" />
+          <details className="group rounded-xl border border-border/60 bg-card/55">
+            <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">
+              Promociones con descuentos · En preparación
+              <span className="ml-2 text-xs font-normal text-muted-foreground">Solo borradores, no se aplican al pasajero</span>
+            </summary>
+            <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+              <MarketplaceCustomerCampaignDrafts projectId={projectId} canEdit={canPlanCustomerBenefits} />
+            </div>
+          </details>
         </div>
       ) : isTuktukProject && commercialView === "resultados" ? (
         <div className="space-y-3">

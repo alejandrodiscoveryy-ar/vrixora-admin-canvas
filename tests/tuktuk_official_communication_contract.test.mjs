@@ -12,15 +12,15 @@ test("TukTuk is a distinct official campaign but preserves the existing Client a
   assert.match(panel,/utm_source/);
   assert.match(panel,/utm_campaign/);
   assert.match(panel,/tuktuk_/);
-  assert.match(panel,/TukTuk · Enlace oficial/);
+  assert.match(panel,/Crear enlace de campaña/);
   assert.match(section,/MarketplaceImpulsaCommunicationAnalytics/);
   assert.match(section,/MarketplaceTuktukOfficialAnalytics/);
   assert.match(section,/canManage=\{canManage\}/);
 });
 test("marketing actions and QR link are tagged and never claimed as deliveries",()=>{
-  for (const phrase of ["Copiar enlace","Copiar mensaje","Compartir","Copiar enlace QR","hospitales",
+  for (const phrase of ["Copiar enlace","Copiar mensaje","Compartir","Copiar enlace para QR","hospitales",
       "Motivos de abandono","Interés por rango de precio","Canales de difusión",
-      "Acciones de comunicación","no certifican su envío"]) {
+      "Acciones de comunicación","Las visitas y solicitudes registradas podrás consultarlas en Resultados."]) {
     assert.ok(panel.includes(phrase),phrase);
   }
   assert.match(panel,/taggedLink\("qr",campaign\)/);
