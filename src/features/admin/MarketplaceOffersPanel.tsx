@@ -134,7 +134,7 @@ export default function MarketplaceOffersPanel({
   const [openedAt] = useState(() => Date.now());
   const [form, setForm] = useState<FormState>(initialForm);
   const [editing, setEditing] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const campaignQuery = useQuery({
     queryKey: ["marketplace-offer-catalog", projectId],
@@ -146,6 +146,7 @@ export default function MarketplaceOffersPanel({
       total: campaigns.length,
       drafts: campaigns.filter((x) => x.status === "draft").length,
       archived: campaigns.filter((x) => x.status === "archived").length,
+      expired: campaigns.filter((x) => x.status !== "archived" && new Date(x.closes_at).getTime() < openedAt).length,
       forthcoming: campaigns.filter(
         (x) => x.status !== "archived" && new Date(x.begins_at).getTime() > openedAt,
       ).length,
@@ -301,11 +302,11 @@ export default function MarketplaceOffersPanel({
         ) : undefined}
       />
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
-        <p>{count.total} ofertas · {count.drafts} borradores · {count.archived} archivadas</p>
-        {count.archived > 0 && (
-          <Button type="button" size="sm" variant="ghost" aria-pressed={showArchived}
-            onClick={() => setShowArchived(value => !value)}>
-            {showArchived ? "Ocultar archivadas" : "Ver archivadas"}
+        <p>{count.total} ofertas · {count.drafts} borradores · {count.expired} vencidas · {count.archived} archivadas</p>
+        {count.archived + count.expired > 0 && (
+          <Button type="button" size="sm" variant="ghost" aria-pressed={showHistory}
+            onClick={() => setShowHistory(value => !value)}>
+            {showHistory ? "Ocultar historial" : "Ver vencidas y archivadas"}
           </Button>
         )}
       </div>
@@ -657,14 +658,14 @@ export default function MarketplaceOffersPanel({
         <p role="alert" className="rounded-xl border border-rose-400/30 p-3 text-sm text-text-secondary">
           {errorMessage(campaignQuery.error)}
         </p>
-      ) : campaigns.filter(item => item.status !== "archived" || showArchived).length === 0 ? (
+      ) : campaigns.filter(item => (item.status !== "archived" && new Date(item.closes_at).getTime() >= openedAt) || showHistory).length === 0 ? (
         <div className="rounded-xl border border-dashed border-border-subtle px-4 py-8 text-center">
           <p className="text-sm font-medium text-text-primary">No hay ofertas pendientes en el catálogo.</p>
           <p className="mt-1 text-xs text-text-secondary">Puedes crear una nueva oferta o consultar las archivadas.</p>
         </div>
       ) : (
         <div className="space-y-2" aria-label="Catálogo de beneficios">
-          {campaigns.filter(item => item.status !== "archived" || showArchived).map(item => {
+          {campaigns.filter(item => (item.status !== "archived" && new Date(item.closes_at).getTime() >= openedAt) || showHistory).map(item => {
             const offer = kinds.find(kind => kind.value === item.kind);
             const expired = item.status !== "archived" && new Date(item.closes_at).getTime() < Date.now();
             return (
