@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read = (file) => readFileSync(new URL("../" + file, import.meta.url), "utf8");
 const sql = read("supabase/migrations/20261118233000_marketplace_allies_two_links_v1.sql");
+const capSql = read("supabase/migrations/20261119003000_marketplace_ally_maximum_five_percent.sql");
 const admin = read("src/features/admin/MarketplaceAlliesPanel.tsx");
 const commercial = read("src/features/admin/ComercialSection.tsx");
 const personal = read("src/routes/aliados.tsx");
@@ -43,4 +44,17 @@ test("public telemetry is service-only and actual trips use verified gateway wra
   assert.match(sql, /IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_ALLY/);
   assert.match(sql, /rate_snapshot/);
   assert.match(sql, /report_secret_hash=extensions\.digest/);
+});
+
+
+test("Aliados comparte como máximo cinco puntos y no afecta Impulsa", () => {
+  assert.match(capSql, /marketplace_allies_rate_check/);
+  assert.match(capSql, /marketplace_ally_attributions_rate_snapshot_check/);
+  assert.match(capSql, /rate\s*<=\s*\.05/);
+  assert.match(capSql, /rate_snapshot\s*<=\s*\.05/);
+  assert.match(capSql, /target_rate>\.05/);
+  assert.doesNotMatch(capSql, /update\s+public\.project_marketplace_financial_settings/i);
+  assert.match(admin, /pct > 5/);
+  assert.match(admin, /newRate > 5/);
+  assert.match(admin, /max="5"/);
 });
