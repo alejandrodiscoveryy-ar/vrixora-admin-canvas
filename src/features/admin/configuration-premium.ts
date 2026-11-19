@@ -18,6 +18,7 @@ export const configurationPremium = {
   tabIcon: "grid size-8 shrink-0 place-items-center rounded-lg border border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]",
   card: `relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default shadow-[var(--shadow-card)] ${premiumSurface}`,
   cardHeader: `relative border-b border-border-default px-3 py-3 sm:px-4 ${premiumHeaderSurface} before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-[var(--module-accent)] before:opacity-75`,
+  moduleHeader: "relative overflow-hidden border-[var(--module-border)] shadow-[var(--shadow-card)] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:bg-[var(--module-accent)] before:opacity-70",
   panel: `relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumColumnHeaderSurface}`,
   inset: `min-w-0 rounded-[var(--radius-compact)] border border-border-default ${premiumMetricSurface}`,
   accentLine: "pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-[var(--module-accent)] opacity-75",
