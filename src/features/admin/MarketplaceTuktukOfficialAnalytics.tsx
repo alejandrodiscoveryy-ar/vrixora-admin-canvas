@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Copy, Link2, MessageCircle, MousePointerClick, RefreshCw, Share2, Users } from "lucide-react";
 import { ResponsiveContainer, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { getSupabaseClient } from "@/lib/supabase";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 type PeriodDays = 7 | 30 | 90;
@@ -136,13 +137,13 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
     {label:"Solicitudes señaladas",value:t.requests_created,Icon:BarChart3},
   ];
   return <section aria-label="TukTuk enlace oficial y campañas"
-      className="space-y-3 rounded-xl border border-orange-400/25 bg-background/50 p-3 sm:p-4">
+      className={cp.section}>
     <header className="flex flex-wrap items-center gap-2">
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-orange-500/10 text-orange-500">
         <Link2 className="h-5 w-5"/>
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-base font-bold">{mode==="analytics"?"TukTuk · Resultados":"Crear enlace de campaña"}</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-foreground">{mode==="analytics"?"TukTuk · Resultados":"Crear enlace de campaña"}</h3>
         <p className="text-xs text-muted-foreground">Difunde la aplicación y mide cada acción comercial</p>
       </div>
       {mode!=="generator"&&<div role="group" aria-label="Periodo de TukTuk" className="flex gap-1">
