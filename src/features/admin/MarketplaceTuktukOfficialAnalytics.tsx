@@ -142,8 +142,8 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
         <Link2 className="h-5 w-5"/>
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-base font-bold">{mode==="analytics"?"TukTuk · Resultados":"TukTuk · Enlace oficial"}</h3>
-        <p className="text-xs text-muted-foreground">Campaña propia, separada de Impulsa y de los conductores</p>
+        <h3 className="text-base font-bold">{mode==="analytics"?"TukTuk · Resultados":"Crear enlace de campaña"}</h3>
+        <p className="text-xs text-muted-foreground">Difunde la aplicación y mide cada acción comercial</p>
       </div>
       {mode!=="generator"&&<div role="group" aria-label="Periodo de TukTuk" className="flex gap-1">
         {([7,30,90] as const).map(period=><button type="button" key={period} aria-pressed={days===period}
@@ -159,19 +159,19 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
       </button>}
     </header>
     {mode!=="analytics"&&<div className="rounded-lg border border-border/50 bg-muted/10 p-3">
-      <p className="text-xs font-semibold">Enlace principal de TukTuk Cliente</p>
+      <p className="text-xs font-semibold">El cliente llegará a la aplicación TukTuk</p>
       <p className="mt-1 break-all text-xs text-muted-foreground">{BASE}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-xs font-medium">Dónde publicarás
+        <label className="text-xs font-medium">¿Dónde vas a compartirlo?
           <select aria-label="Canal de la campaña" value={channel}
             onChange={e=>setChannel(e.target.value as Channel)}
             className="mt-1 w-full rounded-md border border-border bg-background px-2 py-2 text-xs">
             {availableChannels.map(v=><option key={v} value={v}>{sources[v]}</option>)}
           </select>
         </label>
-        <label className="text-xs font-medium">Nombre de la acción (opcional)
+        <label className="text-xs font-medium">Nombre de tu campaña (opcional)
           <input aria-label="Identificador de acción TukTuk" value={action} maxLength={20}
-            placeholder="hospitales, noviembre, pegatinas"
+            placeholder="hospitales, pegatinas, lanzamiento"
             onChange={e=>setAction(e.target.value.toLowerCase().normalize("NFD")
               .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9_]/g,"").slice(0,20))}
             className="mt-1 w-full rounded-md border border-border bg-background px-2 py-2 text-xs"/>
@@ -191,12 +191,11 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
         <button type="button" disabled={!canManage||busy}
           onClick={()=>void copy(taggedLink("qr",campaign),"link_copied","qr")}
           className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted/25 disabled:opacity-50">
-          <Link2 className="h-3.5 w-3.5"/> Copiar enlace QR</button>
+          <Link2 className="h-3.5 w-3.5"/> Copiar enlace para QR</button>
       </div>
       {notice&&<p role="status" className="mt-2 text-xs text-muted-foreground">{notice}</p>}
       <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-        No modifica el acceso normal a Cliente. Los canales y acciones son etiquetas voluntarias;
-        una copia o un intento de compartir no certifican su envío.
+        El enlace lleva a TukTuk Cliente. Las visitas y solicitudes registradas podrás consultarlas en Resultados.
       </p>
     </div>}
     {mode!=="generator"&&(query.isPending?<p className="p-3 text-xs text-muted-foreground">Cargando el seguimiento oficial…</p>:
