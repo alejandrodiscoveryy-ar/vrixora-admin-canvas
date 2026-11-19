@@ -1,7 +1,6 @@
 import { adminSubnavTone } from "@/lib/admin-navigation";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
-import { premiumColumnHeaderSurface } from "@/components/admin/density";
-import { premiumSurface } from "@/components/admin/density";
+import { premiumColumnHeaderSurface, premiumSurface } from "@/components/admin/density";
 import { useState } from "react";
 import { BellRing, CalendarX2, FlaskConical, Globe2, Radar } from "lucide-react";
 
