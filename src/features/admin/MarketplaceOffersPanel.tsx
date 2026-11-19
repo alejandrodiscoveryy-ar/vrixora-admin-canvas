@@ -325,24 +325,17 @@ export default function MarketplaceOffersPanel({
 
       {editing && canEdit && (
         <form
-          className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/25 bg-gradient-to-br from-[#17142a] via-[#101627] to-[#0a1d29] p-4 shadow-[0_24px_72px_-48px_rgba(139,92,246,0.44)] sm:p-3 admin-graphite-panel"
+          className="rounded-2xl border border-border/65 bg-card/75 p-4 shadow-sm sm:p-5 admin-graphite-panel"
           onSubmit={(event) => {
             event.preventDefault();
             save.mutate();
           }}
         >
-          <img
-            src="/admin-premium/comercial-ofertas-hero.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-8 top-2 hidden h-[21rem] w-[36%] object-contain object-right-top opacity-20 lg:block"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#11142b]/25 via-[#0e1425]/50 to-[#0a1724]/65" />
           <div className="relative z-10 space-y-5 [&_label]:text-[13px] [&_label]:font-semibold [&_label]:text-slate-200 [&_input]:min-h-11 [&_textarea]:bg-[#0b0e1d]/90">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-300/20 pb-5">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.20em] text-cyan-300">Configuración de la oferta</p>
-              <h3 className="mt-1 text-2xl font-extrabold tracking-tight text-white">
+              <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
                 {form.id ? "Editar campaña" : "Crear campaña"}
               </h3>
               <p className="mt-1 text-sm text-slate-300">Define el beneficio en bloques claros. Los cambios seguirán siendo borradores.</p>
