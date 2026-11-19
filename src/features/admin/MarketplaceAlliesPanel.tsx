@@ -13,10 +13,10 @@ type Ally = {
   report_expires_at: string;
 };
 type Issue = { slug: string; report_key: string; expires_at: string };
-const clientBase = "https://www.vrixora.com/cliente/tuk/";
+const shortBase = "https://www.vrixora.com/tuk/";
 const reportBase = "https://admin.vrixora.com/aliados";
 const cup = (value: unknown) => Number(value ?? 0).toLocaleString("es-CU", { maximumFractionDigits: 2 }) + " CUP";
-const promo = (slug: string) => clientBase + "?aliado=" + encodeURIComponent(slug);
+const promo = (slug: string) => shortBase + encodeURIComponent(slug);
 const privateLink = (secret: string) => reportBase + "#k=" + secret;
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : "No se pudo completar la operación"; }
 async function copy(value: string) {
@@ -140,15 +140,15 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
     {canManage && <div className="rounded-xl border border-border/60 bg-card/40 p-3 sm:p-4">
       <h3 className="mb-3 text-sm font-semibold">Crear nuevo Aliado</h3>
       <div className="grid gap-3 sm:grid-cols-[1fr_1fr_140px_auto] sm:items-end">
-        <div className="space-y-1"><Label htmlFor="ally-name">Nombre público</Label>
+        <div className="space-y-1"><Label htmlFor="ally-name">Responsable del Aliado</Label>
           <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={e => setName(e.target.value)}/></div>
-        <div className="space-y-1"><Label htmlFor="ally-slug">Alias único del enlace</Label>
-          <Input id="ally-slug" maxLength={24} placeholder="ej. juan-perez" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,""))}/></div>
+        <div className="space-y-1"><Label htmlFor="ally-slug">Nick comercial para compartir</Label>
+          <Input id="ally-slug" maxLength={24} placeholder="Ej. conuco" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,""))}/></div>
         <div className="space-y-1"><Label htmlFor="ally-pct">Comisión (%)</Label>
           <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={e => setRate(e.target.value)}/></div>
         <Button onClick={() => void create()} disabled={saving}><Plus className="mr-1 size-4"/>Crear</Button>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">Las ganancias se calculan solo para carreras reales liquidadas; no se mueve dinero automáticamente.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Enlace público: <strong>{promo(slug || "nick")}</strong>. El nick es único entre Aliados y conductores; no se puede cambiar después de compartirlo. Las ganancias se calculan solo para carreras reales liquidadas; no se mueve dinero automáticamente.</p>
     </div>}
 
     {q.isLoading ? <p className="text-sm text-muted-foreground">Cargando Aliados…</p> :
