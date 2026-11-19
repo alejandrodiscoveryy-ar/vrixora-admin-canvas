@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionCard } from "@/components/admin/SectionCard";
-import { premiumSurface, premiumHeaderSurface } from "@/components/admin/density";
 import { premiumMetricSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { TUKTUK_CONDUCTOR_PLAY_URL, suggestNextAndroidRelease } from "@/lib/androidRelease";
@@ -233,8 +232,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       density="compact"
       appearance="premium"
       module="configuracion"
-      className={premiumSurface}
-      headerClassName={`px-3 py-3 sm:px-4 ${premiumHeaderSurface}`}
       contentClassName="p-3 sm:p-4"
     >
       {query.isLoading || projectSettings.isLoading ? (
@@ -251,7 +248,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           <section aria-label="Versión actual de TukTuk Conductor"
             className={`relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--module-border)] p-3 sm:p-4 ${premiumColumnHeaderSurface}`}>
 
-            <Smartphone aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-1 size-20 text-[var(--module-accent)] opacity-[0.055]" />
+            <Smartphone aria-hidden="true" className="pointer-events-none absolute bottom-2 right-2 size-12 select-none text-[var(--module-accent)] opacity-[0.06] sm:right-3 sm:size-16 dark:opacity-[0.07]" />
             <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-primary">
