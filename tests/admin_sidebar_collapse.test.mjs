@@ -65,10 +65,10 @@ test("Trabajos abre Pulso y su flecha controla el submenú sin navegar", () => {
   assert.match(block, /search=\{\{ vista: "resumen" \}\}/);
   assert.match(block, /title="Trabajos"/);
   assert.match(block, /setTrabajosExpanded\(true\);\s*closeDrawer\?\.\(\)/);
-  assert.match(block, /const trabajosOpen = collapsed \? groupActive : trabajosExpanded/);
+  assert.match(block, /const trabajosOpen = trabajosExpanded/);
   assert.match(block, /aria-controls=\{trabajosGroupId\}/);
   assert.match(block, /aria-expanded=\{trabajosOpen\}/);
-  assert.match(block, /onClick=\{\(\) => setTrabajosExpanded\(\(value\) => !value\)\}/);
+  assert.match(block, /onClick=\{\(\) => toggleSubmenu\("trabajos"\)\}/);
   assert.match(block, /id=\{trabajosGroupId\} hidden=\{!trabajosOpen\}/);
   assert.match(block, /MARKETPLACE_WORKSPACE_VIEWS\.filter\(\(view\) => permissions\.includes\(view\.permission\)\)/);
   assert.match(block, /search=\{\{ vista: view\.slug \}\}/);
