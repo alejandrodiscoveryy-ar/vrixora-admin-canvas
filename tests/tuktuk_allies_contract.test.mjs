@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 const read = (file) => readFileSync(new URL("../" + file, import.meta.url), "utf8");
 const sql = read("supabase/migrations/20261118233000_marketplace_allies_two_links_v1.sql");
 const capSql = read("supabase/migrations/20261119003000_marketplace_ally_maximum_five_percent.sql");
+const brandedSql = read("supabase/migrations/20261119013500_marketplace_ally_branded_shortlinks_v1.sql");
+const shortEdge = read("supabase/functions/marketplace-ally-shortlink/index.ts");
 const admin = read("src/features/admin/MarketplaceAlliesPanel.tsx");
 const commercial = read("src/features/admin/ComercialSection.tsx");
 const personal = read("src/routes/aliados.tsx");
@@ -24,7 +26,7 @@ test("allies are isolated from Impulsa, with RLS and no table access", () => {
 });
 
 test("two distinct URLs and a no-login private panel", () => {
-  assert.match(admin, /cliente\/tuk\/\?aliado=/);
+  assert.match(admin, /www\.vrixora\.com\/tuk\//);
   assert.match(admin, /admin\.vrixora\.com\/aliados/);
   assert.match(admin, /admin_rotate_marketplace_ally_key_v1/);
   assert.match(admin, /admin_record_marketplace_ally_payment_v1/);
@@ -57,4 +59,20 @@ test("Aliados comparte como máximo cinco puntos y no afecta Impulsa", () => {
   assert.match(admin, /pct > 5/);
   assert.match(admin, /newRate > 5/);
   assert.match(admin, /max="5"/);
+});
+
+test("nicks públicos comparten espacio sin colisiones entre Aliados e Impulsa", () => {
+  assert.match(brandedSql, /get_public_marketplace_ally_shortlink_v1/);
+  assert.match(brandedSql, /ALLY_NICK_TAKEN_BY_DRIVER/);
+  assert.match(brandedSql, /PROMO_ALIAS_TAKEN/);
+  assert.match(brandedSql, /marketplace_driver_promo_aliases/);
+  assert.match(brandedSql, /hashtextextended/);
+  assert.match(brandedSql, /grant execute on function public\.get_public_marketplace_ally_shortlink_v1\(text\) to service_role/);
+  assert.doesNotMatch(brandedSql, /update public\.wallet_transactions/i);
+  assert.match(shortEdge, /get_public_marketplace_ally_shortlink_v1/);
+  assert.match(shortEdge, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.doesNotMatch(shortEdge, /report_key|report_secret_hash|report_expires_at|\.rate/);
+  assert.match(admin, /const promo = \(slug: string\) => shortBase \+ encodeURIComponent\(slug\)/);
+  assert.match(admin, /Nick comercial para compartir/);
+  assert.doesNotMatch(admin, /\?aliado=/);
 });
