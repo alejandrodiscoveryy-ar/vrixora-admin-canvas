@@ -19,10 +19,12 @@ export default function MarketplaceWelcomePolicyPanel({
   projectId,
   canView,
   canEdit,
+  embedded = false,
 }: {
   projectId: string;
   canView: boolean;
   canEdit: boolean;
+  embedded?: boolean;
 }) {
   const client = useQueryClient();
   const [enabled, setEnabled] = useState(true);
@@ -151,10 +153,10 @@ export default function MarketplaceWelcomePolicyPanel({
   if (!canView) return null;
 
   return (
-    <section className={cp.section}>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-emerald-400/75 via-cyan-300/35 to-transparent" />
+    <section className={embedded ? "min-w-0 space-y-3" : cp.section}>
+      
       <div className="relative z-10 space-y-3">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        {!embedded && <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/35 bg-emerald-300/10 text-emerald-200">
               <BadgePercent aria-hidden="true" className="h-5 w-5" />
@@ -165,18 +167,18 @@ export default function MarketplaceWelcomePolicyPanel({
               <p className="mt-0.5 text-sm text-text-secondary">Define los días de bienvenida y las comisiones.</p>
             </div>
           </div>
-          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-3 py-1 text-xs font-semibold text-cyan-100">Independiente de las ofertas</span>
-        </header>
+          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-3 py-1 text-xs font-semibold text-text-primary">Independiente de las ofertas</span>
+        </header>}
 
         {policy.isLoading ? (
-          <p className="rounded-xl border border-border-subtle bg-[#0a1723]/80 px-4 py-3 text-sm text-text-secondary admin-graphite-inset">Cargando política comercial…</p>
+          <p className="rounded-xl border border-border-subtle bg-surface-2 px-4 py-3 text-sm text-text-secondary admin-graphite-inset">Cargando política comercial…</p>
         ) : policy.isError ? (
           <p role="alert" className="rounded-xl border border-amber-300/35 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">No se pudo consultar la política. No se ha modificado ningún beneficio.</p>
         ) : (
           <div className="grid items-stretch gap-3 lg:grid-cols-2">
-            <article className={cp.section + " relative isolate flex flex-col"}>
-              <img src="/admin-premium/comercial-ofertas-hero.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-12 bottom-0 h-44 w-[65%] object-contain object-right-bottom opacity-[0.15]" />
-              <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-transparent" />
+            <article className="relative flex min-w-0 flex-col rounded-xl border border-border-subtle bg-surface-2 p-3 sm:p-4">
+              
+              
               <div className="relative z-10 flex h-full flex-col">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
@@ -186,26 +188,26 @@ export default function MarketplaceWelcomePolicyPanel({
                       <h3 className="text-base font-semibold text-text-primary">Días gratuitos</h3>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-[#081c1b]/80 px-3 py-2 admin-graphite-inset">
+                  <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 py-2 admin-graphite-inset">
                     <span className={`text-sm font-bold ${enabled ? "text-emerald-200" : "text-text-secondary"}`}>{enabled ? "Activo" : "Inactivo"}</span>
                     <Switch id="welcome-enabled" aria-label="Activar días gratuitos de bienvenida" checked={enabled} disabled={!canEdit || save.isPending} onCheckedChange={setEnabled} />
                   </div>
                 </div>
 
                 <div className="mt-3 flex flex-col justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-2 px-3 py-3 sm:px-4">
-                  <Label htmlFor="welcome-days" className="text-sm font-semibold text-emerald-100">Beneficio de bienvenida</Label>
+                  <Label htmlFor="welcome-days" className="text-sm font-semibold text-text-primary">Beneficio de bienvenida</Label>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} aria-label="Días gratuitos" className="h-[68px] w-[120px] shrink-0 rounded-xl border-0 bg-transparent px-1 py-0 text-center text-[48px] font-black leading-none tabular-nums tracking-tight text-text-primary shadow-none md:text-[56px] focus-visible:ring-2 focus-visible:ring-emerald-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                    <span className="text-[22px] font-extrabold leading-tight tracking-wide text-emerald-100 md:text-[26px]">DÍAS</span>
-                    <div className="ml-auto flex flex-col gap-1.5" role="group" aria-label="Ajustar días gratuitos">
-                      <button type="button" aria-label="Aumentar un día" title="Aumentar 1 día" disabled={!canEdit || save.isPending || Number(days) >= 365} onClick={() => setDays(String(Math.min(365, Math.max(1, Math.trunc(Number(days)) || 1) + 1)))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-emerald-300/40 bg-emerald-300/10 text-emerald-100 transition hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronUp aria-hidden="true" className="h-5 w-5" /></button>
-                      <button type="button" aria-label="Disminuir un día" title="Disminuir 1 día" disabled={!canEdit || save.isPending || Number(days) <= 1} onClick={() => setDays(String(Math.max(1, (Math.trunc(Number(days)) || 1) - 1)))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-emerald-300/40 bg-emerald-300/10 text-emerald-100 transition hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronDown aria-hidden="true" className="h-5 w-5" /></button>
+                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} aria-label="Días gratuitos" className="h-12 w-24 shrink-0 rounded-lg border border-border-default bg-surface-1 px-2 text-center text-2xl font-semibold tabular-nums text-text-primary shadow-none" />
+                    <span className="text-sm font-medium text-text-secondary">DÍAS</span>
+                    <div className="ml-auto flex gap-1.5" role="group" aria-label="Ajustar días gratuitos">
+                      <button type="button" aria-label="Aumentar un día" title="Aumentar 1 día" disabled={!canEdit || save.isPending || Number(days) >= 365} onClick={() => setDays(String(Math.min(365, Math.max(1, Math.trunc(Number(days)) || 1) + 1)))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-emerald-300/40 bg-emerald-300/10 text-text-primary transition hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronUp aria-hidden="true" className="h-5 w-5" /></button>
+                      <button type="button" aria-label="Disminuir un día" title="Disminuir 1 día" disabled={!canEdit || save.isPending || Number(days) <= 1} onClick={() => setDays(String(Math.max(1, (Math.trunc(Number(days)) || 1) - 1)))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-emerald-300/40 bg-emerald-300/10 text-text-primary transition hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronDown aria-hidden="true" className="h-5 w-5" /></button>
                     </div>
                   </div>
-                  <p className="mt-1 text-sm font-medium text-emerald-100/80">Gratuitos para nuevos conductores</p>
+                  <p className="mt-1 text-sm font-medium text-text-primary/80">Gratuitos para nuevos conductores</p>
                 </div>
 
-                <div className="mt-auto flex min-h-[74px] flex-col justify-between gap-2 border-t border-emerald-300/15 pt-2">
+                <div className="mt-auto flex min-h-0 flex-col justify-between gap-2 border-t border-emerald-300/15 pt-2">
                   <p className="text-sm leading-5 text-text-secondary">Los beneficios ya concedidos se conservan.</p>
                   {canEdit && <div className="flex justify-end"><Button size="sm" disabled={!validDays || !changed || save.isPending} onClick={() => { setStatus(""); save.mutate(); }} className="min-h-10 rounded-xl bg-emerald-400 px-4 font-bold text-[#05251e] hover:bg-emerald-300 disabled:opacity-40">{save.isPending ? "Guardando…" : "Guardar bienvenida"}</Button></div>}
                 </div>
@@ -214,7 +216,7 @@ export default function MarketplaceWelcomePolicyPanel({
 
             <article className={cp.section + " relative isolate flex flex-col"}>
               <img src="/admin-premium/economy.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-44 w-[70%] object-contain object-right-top opacity-[0.38]" />
-              <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-transparent" />
+              
               <div className="relative z-10 flex h-full flex-col">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
@@ -229,32 +231,32 @@ export default function MarketplaceWelcomePolicyPanel({
                   ) : chargePolicy.isError ? (
                     <span role="alert" className="text-sm font-semibold text-amber-100">Cobro no disponible</span>
                   ) : (
-                    <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-[#071827]/85 px-3 py-2 admin-graphite-inset">
-                      <span className={`text-sm font-bold ${chargeEnabled ? "text-cyan-100" : "text-amber-200"}`}>{chargeEnabled ? "Cobro activo" : "Sin cobro"}</span>
+                    <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 py-2 admin-graphite-inset">
+                      <span className={`text-sm font-bold ${chargeEnabled ? "text-text-primary" : "text-amber-200"}`}>{chargeEnabled ? "Cobro activo" : "Sin cobro"}</span>
                       <Switch id="commission-charge-switch" aria-label="Activar cobro de comisiones Marketplace" checked={chargeEnabled} disabled={!canEdit || saveChargePolicy.isPending} onCheckedChange={setChargeEnabled} />
                     </div>
                   )}
                 </div>
 
                 <div className="mt-3 flex flex-col justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-2 px-3 py-3 sm:px-4">
-                  <Label htmlFor="welcome-commission" className="text-sm font-semibold text-cyan-100">Comisión por carrera</Label>
+                  <Label htmlFor="welcome-commission" className="text-sm font-semibold text-text-primary">Comisión por carrera</Label>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                     <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} aria-label="Porcentaje de comisión" className={`h-[68px] w-[120px] shrink-0 rounded-xl border-0 bg-transparent px-1 py-0 text-center font-black leading-none tabular-nums tracking-tight text-text-primary shadow-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${commission.length > 3 ? "text-[34px] md:text-[40px]" : "text-[48px] md:text-[56px]"}`} />
-                    <span className="text-[24px] font-extrabold leading-tight text-cyan-100 md:text-[28px]">%</span>
+                    <span className="text-[24px] font-extrabold leading-tight text-text-primary md:text-[28px]">%</span>
                     <div className="ml-auto flex flex-col gap-1.5" role="group" aria-label="Ajustar porcentaje de comisión">
-                      <button type="button" aria-label="Aumentar comisión un punto porcentual" title="Aumentar 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) >= 100} onClick={() => setCommission(String(Number(Math.min(100, Number(commission) + 1).toFixed(2))))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 text-cyan-100 transition hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronUp aria-hidden="true" className="h-5 w-5" /></button>
-                      <button type="button" aria-label="Disminuir comisión un punto porcentual" title="Disminuir 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) <= 0.01} onClick={() => setCommission(String(Number(Math.max(0.01, Number(commission) - 1).toFixed(2))))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 text-cyan-100 transition hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronDown aria-hidden="true" className="h-5 w-5" /></button>
+                      <button type="button" aria-label="Aumentar comisión un punto porcentual" title="Aumentar 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) >= 100} onClick={() => setCommission(String(Number(Math.min(100, Number(commission) + 1).toFixed(2))))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 text-text-primary transition hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronUp aria-hidden="true" className="h-5 w-5" /></button>
+                      <button type="button" aria-label="Disminuir comisión un punto porcentual" title="Disminuir 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) <= 0.01} onClick={() => setCommission(String(Number(Math.max(0.01, Number(commission) - 1).toFixed(2))))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 text-text-primary transition hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronDown aria-hidden="true" className="h-5 w-5" /></button>
                     </div>
                   </div>
-                  <p className="mt-1 text-sm font-medium leading-5 text-cyan-100/80">
+                  <p className="mt-1 text-sm font-medium leading-5 text-text-primary/80">
                     {chargePolicy.isLoading ? "Consultando el cobro…" : chargePolicy.isError ? "Estado del cobro no disponible." : chargeChanged ? "Cambio del cobro pendiente de guardar." : chargePolicy.data?.enabled ? "Cobro activo para nuevas carreras, salvo beneficios gratuitos." : "Cobro suspendido: el porcentaje se conserva."}
                   </p>
                 </div>
 
-                <div className="mt-auto flex min-h-[74px] flex-col justify-between gap-2 border-t border-cyan-300/15 pt-2">
+                <div className="mt-auto flex min-h-0 flex-col justify-between gap-2 border-t border-cyan-300/15 pt-2">
                   <p className="text-sm leading-5 text-text-secondary">Las carreras anteriores conservan su liquidación.</p>
                   {canEdit && <div className="flex flex-wrap justify-end gap-2">
-                    <Button size="sm" disabled={!validCommission || !commissionChanged || saveCommission.isPending} onClick={() => { setStatus(""); saveCommission.mutate(); }} className="min-h-10 rounded-xl border border-cyan-300/35 bg-[#0b3041] px-3 font-semibold text-cyan-100 hover:bg-[#104359] disabled:opacity-40 admin-graphite-control">{saveCommission.isPending ? "Guardando…" : "Guardar porcentaje"}</Button>
+                    <Button size="sm" disabled={!validCommission || !commissionChanged || saveCommission.isPending} onClick={() => { setStatus(""); saveCommission.mutate(); }} className="min-h-10 rounded-xl border border-cyan-300/35 bg-[#0b3041] px-3 font-semibold text-text-primary hover:bg-[#104359] disabled:opacity-40 admin-graphite-control">{saveCommission.isPending ? "Guardando…" : "Guardar porcentaje"}</Button>
                     {chargePolicy.isSuccess && <Button size="sm" disabled={!chargeChanged || saveChargePolicy.isPending} onClick={() => {
                       const msg = chargeEnabled
                         ? "Se empezará a cobrar la comisión configurada en las próximas aceptaciones. ¿Continuar?"
