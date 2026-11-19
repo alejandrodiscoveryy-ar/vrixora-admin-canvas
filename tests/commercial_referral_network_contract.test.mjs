@@ -51,9 +51,11 @@ test("Impulsa has its own commercial tab, permission gates and no duplicate in O
   assert.match(comercial, /setCommercialView\("impulsa"\)/);
   assert.match(comercial, /aria-pressed=\{showImpulsa\}/);
   assert.match(comercial, /showImpulsa \? \(/);
+  assert.match(comercial, /<MarketplaceImpulsaCommunicationAnalytics projectId=\{projectId\} \/>/);
+  assert.match(comercial, /commercialView === "configuracion"/);
   assert.match(comercial, /<MarketplaceImpulsaPolicyPanel projectId=\{projectId\} canView=\{canViewImpulsa\} canEdit=\{canEditImpulsa\}/);
   assert.match(comercial, /const canEditImpulsa = canViewImpulsa && permissions.includes\("settings.manage"\) && canManage && permissions.includes\("payments.manage"\)/);
-  // The legacy CRM actions are now shown only within Gestión → Captación.
+  // Los controles económicos quedan en Gestión → Configuración general; CRM en Captación.
   assert.match(comercial, /canManage && \(!isTuktukProject \|\| commercialView === "captacion"\)/);
   assert.match(comercial, /showManagement &&/);
   assert.doesNotMatch(offers, /MarketplaceImpulsaPolicyPanel/);
