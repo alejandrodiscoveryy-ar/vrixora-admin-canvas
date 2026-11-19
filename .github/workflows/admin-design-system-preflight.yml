@@ -29,6 +29,8 @@ on:
       - 'tests/comercial_captacion_experiencia_contract.test.mjs'
       - 'tests/comercial_politicas_premium_contract.test.mjs'
       - 'tests/driver_promotion_preview.test.mjs'
+      - 'tests/marketplace_promo_alias_suggestions.test.mjs'
+      - 'src/lib/marketplace-promo-alias.ts'
       - 'scripts/verify-production-build.mjs'
       - 'package.json'
       - 'bun.lock'
@@ -67,6 +69,8 @@ jobs:
         run: node --test tests/comercial_politicas_premium_contract.test.mjs
       - name: Verificar validación y autorización de Impulsa en conductor 360
         run: node --test tests/driver_promotion_preview.test.mjs
+      - name: Verificar propuesta única de nombre de Impulsa
+        run: bun test tests/marketplace_promo_alias_suggestions.test.mjs
       - name: Verificar entrada automática al proyecto único
         run: bun test tests/admin_single_project_start.test.mjs
       - name: Verificar logos y controles del menú lateral

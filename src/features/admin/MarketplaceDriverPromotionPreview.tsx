@@ -5,15 +5,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import { getSupabaseClient } from "@/lib/supabase";
+import { suggestDriverPromoAlias, validDriverPromoAlias } from "@/lib/marketplace-promo-alias";
 
-export default function MarketplaceDriverPromotionPreview({ projectId, driverUserId, active, canManage, verified, onOpenExpediente }: {
-  projectId: string; driverUserId: string; active: boolean; canManage: boolean; verified: boolean | null; onOpenExpediente: () => void;
+export default function MarketplaceDriverPromotionPreview({ projectId, driverUserId, driverDisplayName, active, canManage, verified, onOpenExpediente }: {
+  projectId: string; driverUserId: string; driverDisplayName: string; active: boolean; canManage: boolean; verified: boolean | null; onOpenExpediente: () => void;
 }) {
   const queryClient = useQueryClient();
   const [code, setCode] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [alias, setAlias] = useState<string | null>(null);
-  const [aliasInput, setAliasInput] = useState("");
+  const [aliasInput, setAliasInput] = useState(() => suggestDriverPromoAlias(driverDisplayName, driverUserId));
   const [aliasError, setAliasError] = useState("");
   const [aliasSaving, setAliasSaving] = useState(false);
   const [reference, setReference] = useState("");
@@ -26,7 +27,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
   const [actionMessage, setActionMessage] = useState("");
   useEffect(() => {
     let cancelled = false;
-    setCode(null); setAlias(null); setAliasInput(""); setAliasError(""); setReference(""); setConfirmed(false); setActivationError("");
+    setCode(null); setAlias(null); setAliasInput(suggestDriverPromoAlias(driverDisplayName, driverUserId)); setAliasError(""); setReference(""); setConfirmed(false); setActivationError("");
     setDeactivateOpen(false); setDeactivateReason(""); setActionMessage("");
     if (!canManage) { setBusy(false); setStatus("La gestión de Impulsa requiere permisos de administración."); return; }
     if (verified !== true) { setBusy(false); setStatus(verified === null ? "Consultando la verificación del conductor…" : "Verifica primero la identidad del conductor."); return; }
@@ -58,9 +59,9 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
       finally { if (!cancelled) setBusy(false); }
     })();
     return () => { cancelled = true; };
-  }, [projectId, driverUserId, active, canManage, verified, revision]);
+  }, [projectId, driverUserId, driverDisplayName, active, canManage, verified, revision]);
   async function activate() {
-    if (!canManage || verified !== true || !active || !confirmed || reference.trim().length < 5 || busy) return;
+    if (!canManage || verified !== true || !active || !confirmed || reference.trim().length < 5 || !validDriverPromoAlias(aliasInput.trim().toLowerCase()) || busy) return;
     setBusy(true); setActivationError("");
     try {
       const { data, error } = await getSupabaseClient().rpc("admin_activate_marketplace_promo_card_v1", {
@@ -71,8 +72,34 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
       if (typeof data?.code !== "string" || !/^[0-9a-f]{32}$/.test(data.code)) {
         throw Error("INVALID_PROMO_RESPONSE");
       }
+      // An authorized profile now exists. Save the editable suggestion using
+      // the existing server-side uniqueness constraint; if it collides, keep
+      // the canonical alias automatically assigned by Supabase.
+      const proposedAlias = aliasInput.trim().toLowerCase();
+      const saved = await getSupabaseClient().rpc("admin_marketplace_promo_alias_v1", {
+        target_project_id: projectId, target_driver_user_id: driverUserId, target_alias: proposedAlias,
+      });
+      if (!saved.error && saved.data === proposedAlias) {
+        setAlias(proposedAlias);
+        setAliasInput(proposedAlias);
+        setAliasError("");
+      } else {
+        const fallback = await getSupabaseClient().rpc("admin_marketplace_promo_alias_v1", {
+          target_project_id: projectId, target_driver_user_id: driverUserId,
+        });
+        if (!fallback.error && typeof fallback.data === "string" && validDriverPromoAlias(fallback.data)) {
+          setAlias(fallback.data);
+          setAliasInput(fallback.data);
+          setAliasError(saved.error?.message.includes("PROMO_ALIAS_TAKEN")
+            ? "La propuesta estaba ocupada. El sistema asignó un nombre disponible. Puedes editarlo."
+            : "El perfil está activo, pero no se pudo guardar el nombre elegido. Se conservó el enlace disponible.");
+        } else {
+          setAliasError("Perfil activado; no se pudo confirmar el nombre comercial. Pulsa Actualizar para reintentar.");
+        }
+      }
+      setCode(data.code);
+      setStatus("");
       await queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] });
-      setRevision(value => value + 1);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "";
       // Mantener visible el formulario y explicar el motivo, sin publicar detalles técnicos.
@@ -92,7 +119,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
   async function saveAlias() {
     const chosen = aliasInput.trim().toLowerCase();
     if (!canManage || verified !== true || !active || aliasSaving || busy || !code || chosen === alias) return;
-    if (!/^[a-z0-9][a-z0-9-]{1,31}$/.test(chosen) || chosen.endsWith("-")) {
+    if (!validDriverPromoAlias(chosen)) {
       setAliasError("Usa entre 2 y 32 caracteres: letras sin acentos, números y guiones."); return;
     }
     setAliasSaving(true); setAliasError("");
@@ -100,9 +127,15 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
       const { data, error } = await getSupabaseClient().rpc("admin_marketplace_promo_alias_v1", {
         target_project_id: projectId, target_driver_user_id: driverUserId, target_alias: chosen,
       });
-      if (error || data !== chosen) throw Error("alias");
+      if (error) throw error;
+      if (data !== chosen) throw Error("PROMO_ALIAS_MISMATCH");
       setRevision(value => value + 1);
-    } catch { setAliasError("No se pudo guardar el nombre. Puede estar ocupado o reservado."); }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "";
+      setAliasError(message.includes("PROMO_ALIAS_TAKEN")
+        ? "Este nombre ya está reservado. Prueba otro; nunca se asignará el de otra persona."
+        : "No se pudo guardar el nombre. Revisa el formato y vuelve a intentarlo.");
+    }
     finally { setAliasSaving(false); }
   }
   async function deactivate() {
@@ -148,19 +181,41 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
           </p>
         )}
       </div>
+      <div className="space-y-1.5">
+        <label htmlFor="impulsa-suggested-alias" className="block text-sm font-medium">Nombre comercial propuesto</label>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-xs text-text-secondary">vrixora.com/tuk/</span>
+          <input id="impulsa-suggested-alias" aria-label="Nombre comercial propuesto"
+            className="min-h-11 min-w-0 flex-1 rounded-[var(--radius-control)] border border-border-default bg-surface-3/65 px-3 py-2 text-sm text-text-primary"
+            value={aliasInput} minLength={2} maxLength={32}
+            aria-invalid={!validDriverPromoAlias(aliasInput.trim().toLowerCase())}
+            aria-describedby="impulsa-alias-suggestion-help"
+            onChange={event => { setAliasInput(event.target.value.toLowerCase()); setAliasError(""); }}
+          />
+        </div>
+        <p id="impulsa-alias-suggestion-help" className="text-xs leading-relaxed text-text-secondary">
+          Propuesta basada en el nombre del conductor y un identificador propio para evitar homónimos.
+          Puedes editarla. Al activar, el servidor comprobará que el enlace no esté repetido.
+        </p>
+        {!validDriverPromoAlias(aliasInput.trim().toLowerCase()) && (
+          <p role="alert" className="text-xs text-amber-500">
+            Usa entre 2 y 32 caracteres: letras sin acentos, números y guiones, sin terminar en guion.
+          </p>
+        )}
+      </div>
       <label className="flex min-h-11 items-center gap-2 text-sm">
         <input type="checkbox" checked={confirmed} onChange={event => { setConfirmed(event.target.checked); setActivationError(""); }}/>
         Confirmo que cuento con autorización documentada.
       </label>
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" disabled={!confirmed || reference.trim().length < 5 || busy}
+        <button type="button" disabled={!confirmed || reference.trim().length < 5 || !validDriverPromoAlias(aliasInput.trim().toLowerCase()) || busy}
           onClick={() => void activate()}
           className="min-h-11 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-45">
           {busy ? "Activando…" : "Activar Impulsa y generar tarjetas"}
         </button>
-        {(!confirmed || reference.trim().length < 5) && (
+        {(!confirmed || reference.trim().length < 5 || !validDriverPromoAlias(aliasInput.trim().toLowerCase())) && (
           <p className="text-xs text-text-secondary" role="status">
-            {!confirmed ? "Pendiente: confirmar la autorización documentada." : "Pendiente: completar la referencia documental."}
+            {!confirmed ? "Pendiente: confirmar la autorización documentada." : reference.trim().length < 5 ? "Pendiente: completar la referencia documental." : "Pendiente: corregir el nombre del enlace."}
           </p>
         )}
       </div>

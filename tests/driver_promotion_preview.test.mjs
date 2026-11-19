@@ -50,7 +50,7 @@ test("Activación Impulsa explica por qué el botón está deshabilitado", () =>
   assert.match(card, /El nombre del conductor no sustituye esa referencia/);
   assert.match(card, /Referencia incompleta:/);
   assert.match(card, /Faltan \{5 - reference\.trim\(\)\.length\}/);
-  assert.match(card, /disabled=\{!confirmed \|\| reference\.trim\(\)\.length < 5 \|\| busy\}/);
+  assert.match(card, /disabled=\{!confirmed \|\| reference\.trim\(\)\.length < 5 \|\| !validDriverPromoAlias\(aliasInput\.trim\(\)\.toLowerCase\(\)\) \|\| busy\}/);
   assert.match(card, /confirmar la autorización documentada/);
 });
 
@@ -62,4 +62,17 @@ test("Si el servidor rechaza la activación, conserva los campos y explica la ca
   assert.match(card, /PUBLIC_NAME_INVALID/);
   assert.match(card, /\{activationError && <p role="alert"/);
   assert.doesNotMatch(card, /catch \{ setStatus\("No se pudo activar/);
+});
+
+test("La ficha 360 propone antes de activar un enlace editable y diferencia homónimos", () => {
+  assert.match(record, /driverDisplayName=\{displayName\}/);
+  assert.match(card, /suggestDriverPromoAlias\(driverDisplayName, driverUserId\)/);
+  assert.match(card, /Nombre comercial propuesto/);
+  assert.match(card, /aria-label="Nombre comercial propuesto"/);
+  assert.match(card, /Puedes editarla/);
+  assert.match(card, /Al activar, el servidor comprobará que el enlace no esté repetido/);
+  assert.match(card, /target_alias: proposedAlias/);
+  assert.match(card, /PROMO_ALIAS_TAKEN/);
+  assert.match(card, /setAlias\(fallback\.data\)/);
+  assert.match(card, /El nombre del conductor no sustituye esa referencia/);
 });
