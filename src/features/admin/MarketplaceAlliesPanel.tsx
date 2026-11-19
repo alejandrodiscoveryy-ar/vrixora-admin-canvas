@@ -64,7 +64,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
       });
       if (error) throw error;
       setIssued(data as Issue);
-      setName(""); setSlug(""); setRate("3");
+      setName(""); setSlug(""); setRate("3"); setCreateExpanded(false);
       await refresh();
       toast.success("Aliado creado. Copia sus dos enlaces antes de cerrar esta tarjeta.");
     } catch (e) { toast.error(errorMessage(e)); }
@@ -136,7 +136,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Red comercial · TukTuk</p>
             <h2 id="tuktuk-allies-heading" className="text-xl font-semibold tracking-tight text-foreground">Aliados</h2>
-            <p className="text-xs text-muted-foreground">Captación de pasajeros, viajes atribuidos y liquidaciones por colaborador.</p>
+            <p className="text-xs text-muted-foreground">Captación de pasajeros, viajes y liquidaciones. Difusión pública y resultados privados sin cuenta Google.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -314,14 +314,14 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                   <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5">
                     <p className="text-[11px] text-muted-foreground">Enlaces personalizados · pago registrado manualmente</p>
                     <div className="flex flex-wrap items-center gap-1">
-                      <Button size="sm" variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); }} aria-label={"Editar " + ally.name}>
+                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); }} aria-label={"Editar " + ally.name}>
                         <Pencil className="mr-1.5 size-3.5" aria-hidden="true" />Editar
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-8 px-2.5 text-xs" disabled={saving} onClick={() => void update(ally, ally.status === "active" ? "paused" : "active")}>
+                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" disabled={saving} onClick={() => void update(ally, ally.status === "active" ? "paused" : "active")}>
                         {ally.status === "active" ? <PauseCircle className="mr-1.5 size-3.5" aria-hidden="true" /> : <PlayCircle className="mr-1.5 size-3.5" aria-hidden="true" />}
                         {ally.status === "active" ? "Pausar" : "Reactivar"}
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => { setEditing(null); setEditingPayment(ally.id); }} aria-label={"Registrar pago a " + ally.name}>
+                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" onClick={() => { setEditing(null); setEditingPayment(ally.id); }} aria-label={"Registrar pago a " + ally.name}>
                         <Wallet className="mr-1.5 size-3.5" aria-hidden="true" />Registrar pago
                       </Button>
                     </div>
