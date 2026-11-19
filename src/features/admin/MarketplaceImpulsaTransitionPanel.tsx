@@ -61,7 +61,7 @@ export default function MarketplaceImpulsaTransitionPanel({projectId,canEdit,emb
               <Label htmlFor="initial-credit-limit">Límite máximo de deuda (CUP)</Label>
               <Input id="initial-credit-limit" type="number" min=".01" max="1000000" step=".01"
                 value={limit} onChange={e => setLimit(e.target.value)} disabled={disabled || !credit}
-                className="h-11 w-full max-w-[240px] tabular-nums" />
+                className={cp.control + " h-11 w-full max-w-[240px] tabular-nums"} />
             </div>
           </div>
           <div className="min-w-0 space-y-3">
@@ -74,7 +74,7 @@ export default function MarketplaceImpulsaTransitionPanel({projectId,canEdit,emb
               <Label htmlFor="impulsa-withdrawal-minimum">Importe mínimo de retirada (CUP)</Label>
               <Input id="impulsa-withdrawal-minimum" type="number" min=".01" max="100000000" step=".01"
                 value={minimum} onChange={e => setMinimum(e.target.value)} disabled={disabled || !withdrawals}
-                className="h-11 w-full max-w-[240px] tabular-nums" />
+                className={cp.control + " h-11 w-full max-w-[240px] tabular-nums"} />
             </div>
           </div>
         </div>
@@ -116,11 +116,11 @@ export default function MarketplaceImpulsaTransitionPanel({projectId,canEdit,emb
             ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="min-w-0 rounded-xl border border-border-subtle bg-surface-2 p-3">
+                  <div className={cp.inset}>
                     <p className="text-xs text-text-secondary">Deuda por cobrar · {summary.data?.debt_drivers ?? 0} conductores</p>
                     <strong className="mt-1 block text-xl font-semibold tabular-nums text-text-primary">{cup(summary.data?.debt_cup ?? 0)}</strong>
                   </div>
-                  <div className="min-w-0 rounded-xl border border-border-subtle bg-surface-2 p-3">
+                  <div className={cp.inset}>
                     <p className="text-xs text-text-secondary">Retiradas pendientes · {summary.data?.pending_withdrawals ?? 0}</p>
                     <strong className="mt-1 block text-xl font-semibold tabular-nums text-text-primary">{cup(summary.data?.pending_withdrawal_cup ?? 0)}</strong>
                   </div>
