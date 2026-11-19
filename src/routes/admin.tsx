@@ -517,7 +517,7 @@ function ProjectNavItem({
                       onKeyDown={(event) => {
                         if (collapsed && event.key === " ") {
                           event.preventDefault();
-                          toggleSubmenu("configuracion");
+                          event.currentTarget.click();
                         }
                       }}
                       aria-label={collapsed ? (groupOpen ? "Contraer Configuración" : "Desplegar Configuración") : `Abrir ${defaultChild.label}`}
@@ -528,6 +528,15 @@ function ProjectNavItem({
                         if (collapsed) {
                           event.preventDefault();
                           toggleSubmenu("configuracion");
+                          // El icono compacto debe abrir Configuración, no solo desplegar
+                          // las otras opciones. Si ya estamos dentro, funciona como plegador.
+                          if (!groupActive) {
+                            setConfigurationExpanded(true);
+                            void navigate({
+                              to: "/admin/proyectos/$id/$section",
+                              params: { id: project.id, section: defaultChild.slug },
+                            });
+                          }
                           return;
                         }
                         closeDrawer?.();
@@ -554,6 +563,22 @@ function ProjectNavItem({
                   </div>
 
                   <div id={configurationGroupId} hidden={!groupOpen} data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5">
+                      {collapsed && (
+                        <Link
+                          to="/admin/proyectos/$id/$section"
+                          params={{ id: project.id, section: defaultChild.slug }}
+                          title={defaultChild.label}
+                          aria-label={defaultChild.label}
+                          aria-current={mainSettingsActive ? "page" : undefined}
+                          data-nav-tone={adminSubnavTone("administracion", defaultChild.slug)}
+                          data-nav-active={mainSettingsActive ? "true" : undefined}
+                          onClick={closeDrawer}
+                          className="admin-nav-item admin-nav-secondary"
+                        >
+                          <AdminNavIcon icon={defaultChild.icon} />
+                          <span data-nav-label className="min-w-0 flex-1 break-words">{defaultChild.label}</span>
+                        </Link>
+                      )}
                       {nestedChildren.map((child) => {
                         const ChildIcon = child.icon;
                         const childPath = `${projectBasePath}/${child.slug}`;
