@@ -213,16 +213,34 @@ function ProjectNavItem({
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(isActiveProject);
   const trabajosGroupId = useId();
+  const pricingGroupId = useId();
+  const configurationGroupId = useId();
   const trabajosRouteActive = isActiveProject && currentSection === "trabajos";
+  const pricingRouteActive = isActiveProject && currentSection === "planes";
+  const configurationRouteActive = isActiveProject &&
+    ["configuracion", "empleados", "comunicados", "integraciones"].includes(currentSection);
   const [trabajosExpanded, setTrabajosExpanded] = useState(trabajosRouteActive);
+  const [pricingExpanded, setPricingExpanded] = useState(pricingRouteActive);
+  const [configurationExpanded, setConfigurationExpanded] = useState(configurationRouteActive);
 
   useEffect(() => {
     if (trabajosRouteActive) setTrabajosExpanded(true);
   }, [trabajosRouteActive]);
+  useEffect(() => {
+    if (pricingRouteActive) setPricingExpanded(true);
+  }, [pricingRouteActive]);
+  useEffect(() => {
+    if (configurationRouteActive) setConfigurationExpanded(true);
+  }, [configurationRouteActive]);
 
-  const configurationGroupId = useId();
-  // El submenú solo se despliega al pulsar Configuración; no ensanchar la barra.
-  const [configurationExpanded, setConfigurationExpanded] = useState(false);
+  const toggleSubmenu = (group: "trabajos" | "planes" | "configuracion") => {
+    if (group === "trabajos") setTrabajosExpanded(open => !open);
+    else if (collapsed) setTrabajosExpanded(false);
+    if (group === "planes") setPricingExpanded(open => !open);
+    else if (collapsed) setPricingExpanded(false);
+    if (group === "configuracion") setConfigurationExpanded(open => !open);
+    else if (collapsed) setConfigurationExpanded(false);
+  };
 
   useEffect(() => {
     if (isActiveProject) {
@@ -330,19 +348,33 @@ function ProjectNavItem({
             // Areas de Trabajos: mismo panel, URL navegable y sin barra horizontal.
             if (tab.slug === "trabajos") {
               const groupActive = isActiveProject && currentSection === "trabajos";
-              const trabajosOpen = collapsed ? groupActive : trabajosExpanded;
+              const trabajosOpen = trabajosExpanded;
               return (
                 <div key="trabajos" className="admin-nav-config-group space-y-1">
                   <div data-nav-tone="trabajos"
-                    data-nav-active={groupActive ? "true" : undefined}
+                    data-nav-active={groupActive || trabajosOpen ? "true" : undefined}
                     className="admin-nav-item admin-nav-primary admin-nav-config-parent">
                     <Link
                       to="/admin/proyectos/$id/$section"
                       params={{ id: project.id, section: "trabajos" }}
                       search={{ vista: "resumen" }}
-                      title="Trabajos"
-                      aria-label="Trabajos"
-                      onClick={() => {
+                      title={collapsed ? (trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos") : "Trabajos"}
+                      role={collapsed ? "button" : undefined}
+                      onKeyDown={(event) => {
+                        if (collapsed && event.key === " ") {
+                          event.preventDefault();
+                          toggleSubmenu("trabajos");
+                        }
+                      }}
+                      aria-label={collapsed ? (trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos") : "Trabajos"}
+                      aria-expanded={collapsed ? trabajosOpen : undefined}
+                      aria-controls={collapsed ? trabajosGroupId : undefined}
+                      onClick={(event) => {
+                        if (collapsed) {
+                          event.preventDefault();
+                          toggleSubmenu("trabajos");
+                          return;
+                        }
                         setTrabajosExpanded(true);
                         closeDrawer?.();
                       }}
@@ -357,7 +389,7 @@ function ProjectNavItem({
                         aria-label={trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos"}
                         aria-expanded={trabajosOpen}
                         aria-controls={trabajosGroupId}
-                        onClick={() => setTrabajosExpanded((value) => !value)}
+                        onClick={() => toggleSubmenu("trabajos")}
                       >
                         <ChevronRight aria-hidden="true" className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${trabajosOpen ? "rotate-90" : ""}`} />
                       </button>
@@ -396,24 +428,38 @@ function ProjectNavItem({
               const groupActive = isActiveProject && currentSection === "planes";
               return (
                 <div key="centro-precios" className="space-y-1">
-                  <details open={groupActive || undefined} className="group/admin">
+                  <details
+                      open={pricingExpanded}
+                      onToggle={(event) => {
+                        const open = event.currentTarget.open;
+                        setPricingExpanded(open);
+                        if (collapsed && open) {
+                          setTrabajosExpanded(false);
+                          setConfigurationExpanded(false);
+                        }
+                      }}
+                      className="group/admin"
+                    >
                     <summary
                       title="Centro de precios"
+                      aria-expanded={pricingExpanded}
+                      aria-controls={pricingGroupId}
                       onClick={() => {
-                        if (!groupActive) {
+                        // El icono colapsado solo pliega/despliega, sin cambiar pantalla.
+                        if (!collapsed && !groupActive) {
                           void navigate({ to: "/admin/proyectos/$id/$section", params: { id: project.id, section: "planes" }, search: { precio: "global" } });
                           closeDrawer?.();
                         }
                       }}
                       data-nav-tone="tarifas"
-                      data-nav-active={groupActive ? "true" : undefined}
+                      data-nav-active={groupActive || pricingExpanded ? "true" : undefined}
                       className="admin-nav-item admin-nav-primary cursor-pointer list-none [&::-webkit-details-marker]:hidden"
                     >
                       <AdminNavIcon icon={Icon} />
                       <span data-nav-label className="min-w-0 flex-1 break-words">Centro de precios</span>
                       <ChevronRight data-nav-chevron className="h-3.5 w-3.5 shrink-0 transition-transform group-open/admin:rotate-90" />
                     </summary>
-                    <div data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5" aria-label="Vistas del Centro de precios">
+                    <div id={pricingGroupId} data-nav-nested data-nav-submenu className="ml-2 mt-1 space-y-0.5 border-l border-border/60 pl-1.5" aria-label="Vistas del Centro de precios">
                       {PRICING_VIEWS.map((view) => {
                         const ViewIcon = view.icon;
                         const selected = groupActive && (pricingView === view.code || (!pricingView && view.code === "global"));
@@ -461,17 +507,29 @@ function ProjectNavItem({
               return (
                 <div key={tab.slug} className="admin-nav-config-group space-y-1">
                   <div data-nav-tone={adminNavTone(tab.slug)}
-                    data-nav-active={groupActive ? "true" : undefined}
+                    data-nav-active={groupActive || groupOpen ? "true" : undefined}
                     className="admin-nav-item admin-nav-primary admin-nav-config-parent">
                     <Link
                       to="/admin/proyectos/$id/$section"
                       params={{ id: project.id, section: defaultChild.slug }}
-                      title={`${tab.label} · ${defaultChild.label}`}
-                      aria-label={`Abrir ${defaultChild.label}`}
+                      title={collapsed ? (groupOpen ? "Contraer Configuración" : "Desplegar Configuración") : `${tab.label} · ${defaultChild.label}`}
+                      role={collapsed ? "button" : undefined}
+                      onKeyDown={(event) => {
+                        if (collapsed && event.key === " ") {
+                          event.preventDefault();
+                          toggleSubmenu("configuracion");
+                        }
+                      }}
+                      aria-label={collapsed ? (groupOpen ? "Contraer Configuración" : "Desplegar Configuración") : `Abrir ${defaultChild.label}`}
                       aria-current={mainSettingsActive ? "page" : undefined}
-                      onClick={() => {
-                        // En la barra compacta, desplegar los iconos sin cambiar su anchura.
-                        if (collapsed) setConfigurationExpanded(true);
+                      aria-expanded={collapsed ? groupOpen : undefined}
+                      aria-controls={collapsed ? configurationGroupId : undefined}
+                      onClick={(event) => {
+                        if (collapsed) {
+                          event.preventDefault();
+                          toggleSubmenu("configuracion");
+                          return;
+                        }
                         closeDrawer?.();
                       }}
                       className="admin-nav-config-link"
@@ -487,7 +545,7 @@ function ProjectNavItem({
                         aria-label={groupOpen ? "Contraer Configuración" : "Desplegar Configuración"}
                         aria-expanded={groupOpen}
                         aria-controls={configurationGroupId}
-                        onClick={() => setConfigurationExpanded((value) => !value)}
+                        onClick={() => toggleSubmenu("configuracion")}
                       >
                         <ChevronRight aria-hidden="true"
                           className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${groupOpen ? "rotate-90" : ""}`} />
@@ -581,7 +639,7 @@ function DesktopSidebar({
       id="admin-desktop-sidebar"
       aria-label="Navegación principal"
       data-state={collapsed ? "collapsed" : "expanded"}
-      className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 motion-reduce:transition-none lg:flex ${
+      className={`hidden shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar/95 backdrop-blur-xl transition-[width] duration-200 motion-reduce:transition-none lg:sticky lg:top-0 lg:h-dvh lg:max-h-dvh lg:self-start lg:flex ${
         collapsed ? "w-16" : compact ? "w-[232px]" : "w-[272px]"
       }`}
     >
@@ -608,7 +666,7 @@ function DesktopSidebar({
       </div>
 
             <nav
-        className={`flex-1 space-y-1 overflow-y-auto ${
+        className={`min-h-0 flex-1 space-y-1 overflow-y-auto ${
           collapsed ? "overflow-x-hidden p-2 [&_[data-nav-nested]]:ml-0 [&_[data-nav-nested]]:border-0 [&_[data-nav-nested]]:pl-0 [&_[data-nav-label]]:sr-only [&_[data-nav-chevron]]:hidden [&_summary]:justify-center [&_summary]:gap-0 [&_summary]:px-1 [&_[data-nav-nested]_a]:justify-center [&_[data-nav-nested]_a]:gap-0 [&_[data-nav-nested]_a]:px-1" : compact ? "p-2.5" : "p-3.5"
         }`}
       >

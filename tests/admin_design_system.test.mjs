@@ -642,7 +642,7 @@ test("Configuración replaces the Administration label without duplicate entries
   assert.match(route, /data-nav-submenu/);
   assert.match(route, /permissions\.includes\(child\.permission\)/);
   assert.match(route, /section: child\.slug/);
-  assert.match(route, /onClick=\{\(\) => setConfigurationExpanded\(\(value\) => !value\)\}/);
+  assert.match(route, /onClick=\{\(\) => toggleSubmenu\("configuracion"\)\}/);
   assert.doesNotMatch(route, /onOpenConfiguration/);
 });
 
@@ -657,7 +657,7 @@ test("Configuration parent selects general settings or the first authorized chil
   // El padre abre el submenú; se navega a cada sección desde sus enlaces autorizados.
   assert.match(route, /aria-controls=\{configurationGroupId\}/);
   assert.match(route, /hidden=\{!groupOpen\}/);
-  assert.match(route, /onClick=\{\(\) => setConfigurationExpanded\(\(value\) => !value\)\}/);
+  assert.match(route, /onClick=\{\(\) => toggleSubmenu\("configuracion"\)\}/);
   assert.match(route, /const groupOpen = configurationExpanded/);
   assert.match(route, /params=\{\{\s*id: project.id,\s*section: child.slug/);
   assert.doesNotMatch(route, /configurationPageActive|onOpenConfiguration/);

@@ -63,12 +63,12 @@ test("Trabajos abre Pulso y su flecha controla el submenú sin navegar", () => {
   const block = chrome.slice(chrome.indexOf('if (tab.slug === "trabajos")'), chrome.indexOf("// El centro de precios"));
   assert.match(block, /params=\{\{ id: project\.id, section: "trabajos" \}\}/);
   assert.match(block, /search=\{\{ vista: "resumen" \}\}/);
-  assert.match(block, /title="Trabajos"/);
+  assert.match(block, /title=\{collapsed \? \(trabajosOpen \? "Contraer Trabajos"/);
   assert.match(block, /setTrabajosExpanded\(true\);\s*closeDrawer\?\.\(\)/);
-  assert.match(block, /const trabajosOpen = collapsed \? groupActive : trabajosExpanded/);
+  assert.match(block, /const trabajosOpen = trabajosExpanded/);
   assert.match(block, /aria-controls=\{trabajosGroupId\}/);
   assert.match(block, /aria-expanded=\{trabajosOpen\}/);
-  assert.match(block, /onClick=\{\(\) => setTrabajosExpanded\(\(value\) => !value\)\}/);
+  assert.match(block, /onClick=\{\(\) => toggleSubmenu\("trabajos"\)\}/);
   assert.match(block, /id=\{trabajosGroupId\} hidden=\{!trabajosOpen\}/);
   assert.match(block, /MARKETPLACE_WORKSPACE_VIEWS\.filter\(\(view\) => permissions\.includes\(view\.permission\)\)/);
   assert.match(block, /search=\{\{ vista: view\.slug \}\}/);
@@ -98,4 +98,30 @@ test("Un proyecto: solo se presenta su logo, no el botón redundante Proyectos",
   assert.match(chrome, /Proyecto activo/);
   assert.match(aside, /<VrixoraLogo variant="mark"/);
   assert.match(mobile, /<VrixoraLogo variant="mark"/);
+});
+
+test("La barra lateral fija mantiene expandir menú visible aunque la lista sea larga", () => {
+  const aside = chrome.slice(chrome.indexOf("function DesktopSidebar("), chrome.indexOf("function MobileDrawer("));
+  assert.match(aside, /lg:sticky lg:top-0 lg:h-dvh lg:max-h-dvh lg:self-start/);
+  assert.match(aside, /min-h-0 flex-1 space-y-1 overflow-y-auto/);
+  assert.match(aside, /onClick=\{onToggleSidebar\}/);
+  assert.match(aside, /aria-label=\{collapsed \? "Desplegar menú lateral" : "Contraer menú lateral"\}/);
+});
+
+test("Pulsar el icono colapsado abre y cierra las vistas sin cambiar de pantalla", () => {
+  const work = chrome.slice(chrome.indexOf('if (tab.slug === "trabajos")'), chrome.indexOf("// El centro de precios"));
+  const pricing = chrome.slice(chrome.indexOf('if (tab.slug === "planes"'), chrome.indexOf('if ("children" in tab)'));
+  const settings = chrome.slice(chrome.indexOf('if ("children" in tab)', chrome.indexOf('if (tab.slug === "planes"')), chrome.indexOf('const to = tab.slug'));
+  assert.match(work, /event\.preventDefault\(\);\s*toggleSubmenu\("trabajos"\)/);
+  assert.match(work, /aria-expanded=\{collapsed \? trabajosOpen : undefined\}/);
+  assert.match(work, /hidden=\{!trabajosOpen\}/);
+  assert.match(pricing, /open=\{pricingExpanded\}/);
+  assert.match(pricing, /if \(!collapsed && !groupActive\)/);
+  assert.match(pricing, /aria-controls=\{pricingGroupId\}/);
+  assert.match(settings, /event\.preventDefault\(\);\s*toggleSubmenu\("configuracion"\)/);
+  assert.match(settings, /aria-expanded=\{collapsed \? groupOpen : undefined\}/);
+  assert.match(settings, /hidden=\{!groupOpen\}/);
+  assert.match(chrome, /if \(group === "trabajos"\)/);
+  assert.match(chrome, /if \(group === "planes"\)/);
+  assert.match(chrome, /if \(group === "configuracion"\)/);
 });

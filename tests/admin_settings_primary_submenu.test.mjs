@@ -20,14 +20,14 @@ test("Configuration children live under their main sidebar category, not a secon
 
 test("Clicking Configuración reveals the nested icons without widening the desktop rail", () => {
   assert.doesNotMatch(shell, /configurationPageActive|onOpenConfiguration/);
-  assert.match(shell, /const \[configurationExpanded, setConfigurationExpanded\] = useState\(false\)/);
+  assert.match(shell, /const \[configurationExpanded, setConfigurationExpanded\] = useState\(configurationRouteActive\)/);
   assert.match(shell, /const groupOpen = configurationExpanded/);
-  assert.match(shell, /setConfigurationExpanded\(\(value\) => !value\)/);
+  assert.match(shell, /toggleSubmenu\("configuracion"\)/);
   assert.match(shell, /aria-expanded=\{groupOpen\}/);
   assert.match(shell, /hidden=\{!groupOpen\}/);
   assert.match(shell, /className="admin-nav-config-toggle"/);
   assert.match(shell, /aria-label=\{groupOpen \? "Contraer Configuración" : "Desplegar Configuración"\}/);
-  assert.match(shell, /if \(collapsed\) setConfigurationExpanded\(true\)/);
+  assert.match(shell, /event\.preventDefault\(\);\s*toggleSubmenu\("configuracion"\)/);
   assert.match(shell, /className="admin-nav-item admin-nav-secondary"/);
   assert.match(shell, /const defaultChild = adminGroupDefault\(tab\)/);
   assert.match(shell, /nestedChildren = tab\.children\.filter\(\(child\) => child\.slug !== defaultChild\.slug\)/);
