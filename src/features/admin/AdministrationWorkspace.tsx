@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { ShieldCheck } from "lucide-react";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
-import { configurationPremium as visual } from "./configuration-premium";
 
 import { ADMINISTRATION_VIEWS } from "@/lib/admin-navigation";
 import type { ProjectPermission } from "@/lib/services";
@@ -54,7 +53,6 @@ export default function AdministrationWorkspace({
           density="compact"
           appearance="premium"
           module={activeSection === "empleados" ? "empleados" : "configuracion"}
-          className={visual.moduleHeader}
           title={selected?.label ?? "Configuración"}
           description={selectedMeta.description}
           icon={SelectedIcon}
