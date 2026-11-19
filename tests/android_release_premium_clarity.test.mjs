@@ -21,6 +21,7 @@ test("Premium update status explains release, delivery, adoption, and next actio
     "Versión Android publicada", "Actualización obligatoria",
     "Notificaciones enviadas", "Instalaciones verificadas",
     "Enviado no significa instalado", "Sin datos no significa sin actualizar",
+    "Sin información de instalación",
     "2. Preparar versión", "3. Avisar a los conductores",
     "Usar sugerencia", "Ya notificados"
   ]) assert.ok(release.includes(word), word);

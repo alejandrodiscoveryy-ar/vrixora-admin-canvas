@@ -365,19 +365,29 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                   <p role="alert" className="mt-3 text-xs text-destructive">No se pudieron consultar las instalaciones.</p>
                 ) : versionAdoption.data ? (
                   <>
-                    <div className="mt-3 flex items-baseline gap-2">
-                      <strong className="text-3xl font-bold tabular-nums text-text-primary">
-                        {versionAdoption.data.current_drivers}
-                      </strong>
-                      <span className="text-sm text-text-secondary">en versión actual confirmada</span>
+                    <div className="mt-3 flex items-baseline gap-2" role="status">
+                      {!versionAdoption.data.last_reported_at ? (
+                        <span className="text-base font-semibold text-text-primary">
+                          Sin información de instalación
+                        </span>
+                      ) : (
+                        <>
+                          <strong className="text-3xl font-bold tabular-nums text-text-primary">
+                            {versionAdoption.data.current_drivers}
+                          </strong>
+                          <span className="text-sm text-text-secondary">en versión actual confirmada</span>
+                        </>
+                      )}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-text-secondary">
                         {versionAdoption.data.active_drivers} conductores activos
                       </span>
-                      <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-text-secondary">
-                        {versionAdoption.data.outdated_drivers} con versión anterior confirmada
-                      </span>
+                      {versionAdoption.data.last_reported_at ? (
+                        <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-text-secondary">
+                          {versionAdoption.data.outdated_drivers} con versión anterior confirmada
+                        </span>
+                      ) : null}
                       <span className="rounded-md border border-amber-400/15 bg-amber-400/[0.07] px-2 py-1 text-xs text-amber-200">
                         {versionAdoption.data.unknown_drivers} sin datos
                       </span>
