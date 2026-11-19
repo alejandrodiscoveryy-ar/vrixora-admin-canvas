@@ -105,8 +105,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const { user } = useSupabaseAuth();
   const { data: permissions = [] } = useProjectPermissions(projectId);
   const canManage = permissions.includes("commercial.manage");
-  const [commercialView, setCommercialView] = useState<"campanas" | "resultados" | "captacion" | "ofertas" | "referidos" | "impulsa" | "aliados">("campanas");
-  const [resultsSource, setResultsSource] = useState<"tuktuk" | "impulsa">("tuktuk");
+  const [commercialView, setCommercialView] = useState<"campanas" | "resultados" | "captacion" | "ofertas" | "referidos" | "configuracion" | "impulsa" | "aliados">("campanas");
   const projectIdentity = useQuery({
     queryKey: ["commercial-project-identity", projectId],
     queryFn: async () => {
@@ -125,7 +124,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
   const showReferrals = isTuktukProject && commercialView === "referidos";
   const showImpulsa = isTuktukProject && commercialView === "impulsa";
   const showAllies = isTuktukProject && commercialView === "aliados";
-  const showManagement = isTuktukProject && ["captacion","ofertas","referidos"].includes(commercialView);
+  const showManagement = isTuktukProject && ["captacion","ofertas","referidos","configuracion"].includes(commercialView);
   const canViewImpulsa = permissions.includes("settings.view");
   const canEditImpulsa = canViewImpulsa && permissions.includes("settings.manage") && canManage && permissions.includes("payments.manage");
   const adminMembership = useQuery({
@@ -321,7 +320,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                   Aliados
                 </Button>
                 <Button type="button" variant={showManagement ? "default" : "outline"}
-                  onClick={() => setCommercialView("referidos")} className="admin-subnav-tab"
+                  onClick={() => setCommercialView("configuracion")} className="admin-subnav-tab"
                   data-nav-tone="tarifas" aria-pressed={showManagement}>
                   <span className="admin-nav-icon" aria-hidden="true"><Layers /></span>
                   Gestión
@@ -353,7 +352,8 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       {showManagement && (
         <nav aria-label="Herramientas de gestión comercial" className="flex flex-wrap items-center gap-2 rounded-xl border border-border/50 bg-background/45 p-2">
           {([
-            ["referidos","Referidos y red"],
+            ["configuracion","Configuración general"],
+             ["referidos","Referidos y red"],
             ["ofertas","Beneficios de conductores"],
             ["captacion","Captación y contactos"],
           ] as const).map(([value,label]) => (
@@ -380,80 +380,52 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         </div>
       ) : isTuktukProject && commercialView === "resultados" ? (
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/55 p-3">
-            <div>
-              <h2 className="text-base font-semibold">Resultados de comunicación</h2>
-              <p className="text-xs text-muted-foreground">Compara campañas oficiales y difusión de conductores sin mezclar fuentes.</p>
-            </div>
-            <div role="group" aria-label="Fuente de resultados" className="flex gap-1 rounded-lg border border-border/60 p-1">
-              <button type="button" aria-pressed={resultsSource==="tuktuk"} onClick={() => setResultsSource("tuktuk")}
-                className={"rounded-md px-3 py-1.5 text-xs font-semibold "+(resultsSource==="tuktuk"?"bg-orange-400/15 text-orange-200":"text-muted-foreground")}>
-                TukTuk oficial
-              </button>
-              <button type="button" aria-pressed={resultsSource==="impulsa"} onClick={() => setResultsSource("impulsa")}
-                className={"rounded-md px-3 py-1.5 text-xs font-semibold "+(resultsSource==="impulsa"?"bg-cyan-400/15 text-cyan-200":"text-muted-foreground")}>
-                Impulsa
-              </button>
-            </div>
-          </div>
-          {resultsSource==="tuktuk"
-            ? <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
-            : <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />}
+          <header className="rounded-xl border border-border/60 bg-card/70 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Captación · TukTuk</p>
+            <h2 className="mt-1 text-lg font-semibold">Resultados de campañas oficiales</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Aperturas, solicitudes, canales y conversión de la Agencia. La contribución de conductores se analiza en Impulsa y la de terceros en Aliados.</p>
+          </header>
+          <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
         </div>
       ) : showAllies ? (
         <MarketplaceAlliesPanel projectId={projectId} canManage={canManage} />
       ) : showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
       ) : showImpulsa ? (
-        canViewImpulsa ? (
-          <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
-            <header className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-card/90 to-violet-500/[0.06] p-4 shadow-sm sm:p-5">
-              <div className="pointer-events-none absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-400/[0.06] blur-2xl" aria-hidden="true" />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">Red comercial · TukTuk</p>
-              <h2 id="impulsa-premium-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Impulsa</h2>
-              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">Conductores que ayudan a captar pasajeros. Separa el crecimiento comercial de las reglas económicas y la gestión de billeteras.</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => { setResultsSource("impulsa"); setCommercialView("resultados"); }}>
-                  <TrendingUp className="mr-1.5 size-3.5" aria-hidden="true" />Ver resultados de captación
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setCommercialView("referidos")}>
-                  <UsersRound className="mr-1.5 size-3.5" aria-hidden="true" />Gestionar red y referidos
-                </Button>
-              </div>
-            </header>
-            <div className="grid gap-2 sm:grid-cols-3" aria-label="Áreas del programa Impulsa">
-              <div className="rounded-xl border border-border/60 bg-card/75 p-3">
-                <p className="text-[11px] font-semibold text-cyan-300">Captación</p>
-                <p className="mt-1 text-xs text-muted-foreground">Visitas, atribuciones y conversiones en Resultados → Impulsa.</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-card/75 p-3">
-                <p className="text-[11px] font-semibold text-violet-300">Reglas comerciales</p>
-                <p className="mt-1 text-xs text-muted-foreground">Comisiones y activación del programa, con controles de autorización.</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-card/75 p-3">
-                <p className="text-[11px] font-semibold text-amber-300">Billeteras</p>
-                <p className="mt-1 text-xs text-muted-foreground">Créditos, deuda y retiradas: gestión financiera, no indicadores de captación.</p>
-              </div>
+        <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
+          <header className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-card/90 to-violet-500/[0.06] p-4 shadow-sm sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">Red comercial · Conductores</p>
+            <h2 id="impulsa-premium-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Impulsa</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Conductores promotores, su difusión, pasajeros captados, solicitudes y viajes reales. Los resultados de cada conductor se despliegan en el informe.</p>
+          </header>
+          <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />
+        </section>
+      ) : commercialView === "configuracion" && isTuktukProject ? (
+        <section className="space-y-4" aria-labelledby="commercial-settings-title" data-admin-module="comercial">
+          <header className="rounded-2xl border border-violet-400/20 bg-card/75 p-4 shadow-sm sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Gestión · Administración</p>
+            <h2 id="commercial-settings-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Configuración comercial</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Reglas económicas, crédito y retiradas. Los resultados de conductores permanecen en Impulsa; aquí solo se administran las políticas.</p>
+          </header>
+          {canViewImpulsa ? (
+            <div className="space-y-3">
+              <details className="rounded-xl border border-border/60 bg-card/60">
+                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Reglas y comisiones de Impulsa</summary>
+                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+                  <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
+                </div>
+              </details>
+              <details className="rounded-xl border border-border/60 bg-card/60">
+                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Créditos, deuda y retiradas</summary>
+                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+                  <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
+                </div>
+              </details>
             </div>
-            <details className="group rounded-xl border border-border/60 bg-card/55">
-              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground marker:text-cyan-300">Configurar reglas y comisiones</summary>
-              <div className="px-2 pb-2 sm:px-3 sm:pb-3">
-                <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
-              </div>
-            </details>
-            <details className="group rounded-xl border border-border/60 bg-card/55">
-              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground marker:text-amber-300">Administración financiera · crédito, deuda y retiradas</summary>
-              <div className="px-2 pb-2 sm:px-3 sm:pb-3">
-                <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
-              </div>
-            </details>
-          </section>
-        ) : (
-          <section className="rounded-xl border border-border/70 bg-card/60 p-4 admin-graphite-panel" aria-label="TukTuk Impulsa">
-            <h2 className="font-semibold">TukTuk Impulsa</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Necesitas permisos de configuración para consultar la política comercial.</p>
-          </section>
-        )
+          ) : (
+            <div className="rounded-xl border border-border/60 bg-card/55 p-4 text-sm text-muted-foreground" role="status">Necesitas permiso de configuración para consultar y modificar estas políticas.</div>
+          )}
+        </section>
       ) : showReferrals ? (
         <CommercialReferralsPanel projectId={projectId} />
       ) : (

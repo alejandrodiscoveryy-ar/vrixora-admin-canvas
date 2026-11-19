@@ -610,7 +610,10 @@ test("Admin submenu accents remain aligned in inner navigation and preserve tab 
   // Gestión usa una subnavegación de valores tipados; el destino ofertas ya no tiene botón principal.
   assert.match(commercial, /\["ofertas","Beneficios de conductores"\]/);
   assert.match(commercial, /setCommercialView\(value\)/);
-  for (const view of ["impulsa","captacion","referidos"]) assert.ok(commercial.includes('setCommercialView("' + view + '")'));
+  assert.match(commercial, /setCommercialView\("impulsa"\)/);
+  assert.match(commercial, /setCommercialView\("captacion"\)/);
+  assert.match(commercial, /\["referidos","Referidos y red"\]/);
+  assert.match(commercial, /\["configuracion","Configuración general"\]/);
 });
 
 test("Configuración replaces the Administration label without duplicate entries or route changes", () => {

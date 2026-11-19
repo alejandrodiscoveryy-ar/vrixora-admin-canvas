@@ -39,7 +39,7 @@ test("ingresos reales no mezclan simulacros, comisiones promocionales ni premios
 });
 
 test("Comercial incluye la pestaña Referidos sin alterar Ofertas y Captación", () => {
-  assert.match(comercial, /setCommercialView\("referidos"\)/);
+  assert.match(comercial, /\["referidos","Referidos y red"\]/);
   assert.match(comercial, /<CommercialReferralsPanel projectId=\{projectId\} \/>/);
   assert.match(comercial, /<MarketplaceOffersPanel projectId=\{projectId\}/);
   assert.match(ui, /admin_get_commercial_referral_network_v1/);
@@ -51,9 +51,11 @@ test("Impulsa has its own commercial tab, permission gates and no duplicate in O
   assert.match(comercial, /setCommercialView\("impulsa"\)/);
   assert.match(comercial, /aria-pressed=\{showImpulsa\}/);
   assert.match(comercial, /showImpulsa \? \(/);
+  assert.match(comercial, /<MarketplaceImpulsaCommunicationAnalytics projectId=\{projectId\} \/>/);
+  assert.match(comercial, /commercialView === "configuracion"/);
   assert.match(comercial, /<MarketplaceImpulsaPolicyPanel projectId=\{projectId\} canView=\{canViewImpulsa\} canEdit=\{canEditImpulsa\}/);
   assert.match(comercial, /const canEditImpulsa = canViewImpulsa && permissions.includes\("settings.manage"\) && canManage && permissions.includes\("payments.manage"\)/);
-  // The legacy CRM actions are now shown only within Gestión → Captación.
+  // Los controles económicos quedan en Gestión → Configuración general; CRM en Captación.
   assert.match(comercial, /canManage && \(!isTuktukProject \|\| commercialView === "captacion"\)/);
   assert.match(comercial, /showManagement &&/);
   assert.doesNotMatch(offers, /MarketplaceImpulsaPolicyPanel/);
