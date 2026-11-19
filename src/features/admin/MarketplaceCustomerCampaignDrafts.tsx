@@ -29,7 +29,7 @@ const empty=():Form=>({
 });
 const kinds:Record<Kind,string>={percent:"Descuento %",fixed:"Descuento CUP",points:"Puntos extra"};
 const audiences:Record<Audience,string>={new:"Nuevos clientes",all:"Todos los clientes",return:"Clientes por recuperar"};
-const inputClass="mt-1 w-full min-w-0 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs";
+const inputClass=`mt-1 w-full min-w-0 px-3 py-2 text-sm ${cp.control}`;
 const number=(n:number)=>n.toLocaleString("es-CU",{maximumFractionDigits:2});
 function benefit(d:Draft) {
   if(d.benefit_kind==="percent") return number(d.benefit_value)+" % · máx. "+number(d.max_discount_cup??0)+" CUP";
@@ -149,7 +149,7 @@ export default function MarketplaceCustomerCampaignDrafts({projectId,canEdit}:{
             placeholder="Bienvenida TukTuk" onChange={e=>update("title",e.target.value)}/>
         </label>
         <label className="text-xs font-semibold">Identificador de campaña
-          <div className="mt-1 flex items-center rounded-lg border border-border/60 bg-background">
+          <div className={cp.control + " mt-1 flex items-center"}>
             <span className="pl-3 text-xs text-muted-foreground">tuktuk_</span>
             <input required disabled={Boolean(form.id)} maxLength={20}
               className="w-full min-w-0 bg-transparent px-2 py-2 text-xs disabled:opacity-50"
