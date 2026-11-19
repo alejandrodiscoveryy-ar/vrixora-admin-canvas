@@ -2,9 +2,7 @@ import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { PolicyTile, PolicyToggle, PolicyNumberField } from "@/features/admin/CommercialPolicyControls";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type WelcomePolicy = {
@@ -152,122 +150,118 @@ export default function MarketplaceWelcomePolicyPanel({
   if (!canView) return null;
 
   return (
-    <section aria-label="Bienvenida y cobro general" className={embedded ? "min-w-0 space-y-4" : cp.section}>
+    <section aria-label="Bienvenida y cobro general" className={embedded ? "min-w-0 space-y-3" : cp.section}>
       {!embedded && (
-        <div>
+        <div className="mb-3">
           <h2 className="text-lg font-semibold text-text-primary">Bienvenida y cobro general</h2>
-          <p className="mt-1 text-sm text-text-secondary">Condiciones para nuevos conductores y comisión general de los viajes.</p>
+          <p className="mt-1 text-sm text-text-secondary">Políticas independientes para nuevas altas y comisiones.</p>
         </div>
       )}
       {policy.isLoading ? (
-        <p className="py-4 text-sm text-text-secondary">Consultando la política vigente…</p>
+        <p role="status" className="py-4 text-sm text-text-secondary">Consultando las condiciones vigentes…</p>
       ) : policy.isError ? (
-        <p role="alert" className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-text-secondary">
-          No se pudo consultar la bienvenida. No se modificó ningún beneficio.
+        <p role="alert" className="rounded-xl border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] p-3 text-sm text-text-primary">
+          No fue posible consultar la bienvenida. No se modificó ninguna política.
         </p>
       ) : (
-        <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
-          <div className="min-w-0 space-y-3 lg:border-r lg:border-border-subtle lg:pr-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-text-primary">Bienvenida</h3>
-                <p className="text-xs text-text-secondary">Solo para conductores nuevos</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-text-secondary">{enabled ? "Activa" : "Inactiva"}</span>
-                <Switch id="welcome-enabled" aria-label="Activar días gratuitos de bienvenida" checked={enabled} disabled={!canEdit || save.isPending} onCheckedChange={setEnabled} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="welcome-days">Días gratuitos</Label>
-              <div className="flex items-center gap-2">
-                <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days}
-                  disabled={!canEdit || save.isPending} onChange={event => setDays(event.target.value)}
-                  aria-label="Días gratuitos" className={cp.control + " h-11 w-28 max-w-full text-lg font-semibold tabular-nums"} />
-                <span className="text-sm text-text-secondary">días</span>
-              </div>
-              {!validDays && <p role="alert" className="text-xs text-destructive">Indica entre 1 y 365 días.</p>}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
-              <p className="max-w-xs text-xs text-text-secondary">Las promociones ya concedidas no se modifican.</p>
-              {canEdit && (
-                <Button size="sm" className="max-sm:min-h-11" disabled={!validDays || !changed || save.isPending}
-                  onClick={() => { setStatus(""); save.mutate(); }}>
-                  {save.isPending ? "Guardando…" : "Guardar bienvenida"}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="min-w-0 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-text-primary">Comisión general</h3>
-                <p className="text-xs text-text-secondary">Cobro de la agencia por carrera</p>
-              </div>
-              {chargePolicy.isLoading ? (
-                <span className="text-xs text-text-secondary">Consultando cobro…</span>
-              ) : chargePolicy.isError ? (
-                <span role="alert" className="text-xs text-amber-500">Cobro no disponible</span>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-text-secondary">{chargeEnabled ? "Cobro activo" : "Cobro suspendido"}</span>
-                  <Switch id="commission-charge-switch" aria-label="Activar cobro de comisiones Marketplace"
-                    checked={chargeEnabled} disabled={!canEdit || saveChargePolicy.isPending}
-                    onCheckedChange={setChargeEnabled} />
-                </div>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="welcome-commission">Porcentaje de comisión</Label>
-              <div className="flex items-center gap-2">
-                <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01"
-                  value={commission} disabled={!canEdit || saveCommission.isPending}
-                  onChange={event => setCommission(event.target.value)} aria-label="Porcentaje de comisión"
-                  className={cp.control + " h-11 w-28 max-w-full text-lg font-semibold tabular-nums"} />
-                <span className="text-sm text-text-secondary">%</span>
-              </div>
-              {!validCommission && <p role="alert" className="text-xs text-destructive">Indica un porcentaje válido entre 0 y 100.</p>}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
-              <p className="max-w-xs text-xs text-text-secondary">El cobro y el porcentaje se guardan por separado.</p>
-              {canEdit && (
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" className="max-sm:min-h-11" variant="outline"
-                    disabled={!validCommission || !commissionChanged || saveCommission.isPending}
-                    onClick={() => { setStatus(""); saveCommission.mutate(); }}>
-                    {saveCommission.isPending ? "Guardando…" : "Guardar porcentaje"}
+        <div className="grid min-w-0 items-stretch gap-3 lg:grid-cols-2">
+          <PolicyTile
+            title="Bienvenida a nuevos conductores"
+            description="Días sin comisión para nuevos registros. No cambia beneficios ya otorgados."
+            controls={<PolicyToggle
+              id="welcome-enabled" checked={enabled} onChange={setEnabled}
+              disabled={!canEdit || save.isPending}
+              pending={changed}
+              label="Activar días gratuitos de bienvenida"
+            />}
+            footer={
+              <>
+                <p className="text-xs text-text-secondary">
+                  {changed ? "Tienes cambios pendientes" : enabled ? "Bienvenida configurada" : "Bienvenida desactivada"}
+                </p>
+                {canEdit && changed && (
+                  <Button size="sm" className="min-h-11 sm:min-h-9"
+                    disabled={!validDays || save.isPending}
+                    onClick={() => { setStatus(""); save.mutate(); }}>
+                    {save.isPending ? "Guardando…" : "Guardar bienvenida"}
                   </Button>
-                  {chargePolicy.isSuccess && (
-                    <Button size="sm" className="max-sm:min-h-11"
-                      disabled={!chargeChanged || saveChargePolicy.isPending}
-                      onClick={() => {
-                        const msg = chargeEnabled
-                          ? "Se empezará a cobrar la comisión configurada en las próximas aceptaciones. ¿Continuar?"
-                          : "Las nuevas aceptaciones serán libres de comisión y no requerirán saldo para ella. ¿Continuar?";
-                        if (!window.confirm(msg)) return;
-                        setStatus(""); saveChargePolicy.mutate();
-                      }}>
-                      {saveChargePolicy.isPending ? "Guardando…" : "Guardar cobro"}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+                )}
+              </>
+            }
+          >
+            <PolicyNumberField
+              id="welcome-days" label="Duración" unit="días" value={days}
+              onChange={setDays} min="1" max="365" step="1"
+              disabled={!canEdit || save.isPending}
+              hint={enabled ? "Se aplica únicamente al dar de alta a nuevos conductores." : "Valor conservado para cuando se reactive la bienvenida."}
+            />
+            {!validDays && <p role="alert" className="mt-2 text-xs text-destructive">Indica entre 1 y 365 días.</p>}
+          </PolicyTile>
+
+          <PolicyTile
+            title="Cobro de comisión"
+            description="Porcentaje de la agencia para nuevas carreras; el cobro se controla por separado."
+            controls={
+              chargePolicy.isLoading ? (
+                <span role="status" className="text-xs text-text-secondary">Consultando cobro…</span>
+              ) : chargePolicy.isError ? (
+                <span role="alert" className="text-xs text-[var(--semantic-warning-foreground)]">Cobro no disponible</span>
+              ) : (
+                <PolicyToggle
+                  id="commission-charge-switch" checked={chargeEnabled}
+                  onChange={setChargeEnabled}
+                  pending={chargeChanged}
+                  disabled={!canEdit || saveChargePolicy.isPending}
+                  label="Activar cobro de comisiones Marketplace"
+                />
+              )
+            }
+            footer={
+              <>
+                <p className="max-w-xs text-xs text-text-secondary">
+                  {commissionChanged || chargeChanged
+                    ? "Cambios pendientes de guardar"
+                    : chargePolicy.data?.enabled ? "Cobro habilitado" : "Cobro suspendido"}
+                </p>
+                {canEdit && (commissionChanged || chargeChanged) && (
+                  <div className="flex flex-wrap gap-2">
+                    {commissionChanged && (
+                      <Button size="sm" className="min-h-11 sm:min-h-9" variant="subtle"
+                        disabled={!validCommission || saveCommission.isPending}
+                        onClick={() => { setStatus(""); saveCommission.mutate(); }}>
+                        {saveCommission.isPending ? "Guardando…" : "Guardar porcentaje"}
+                      </Button>
+                    )}
+                    {chargeChanged && chargePolicy.isSuccess && (
+                      <Button size="sm" className="min-h-11 sm:min-h-9"
+                        disabled={saveChargePolicy.isPending}
+                        onClick={() => {
+                          const msg = chargeEnabled
+                            ? "Se empezará a cobrar la comisión configurada en las próximas aceptaciones. ¿Continuar?"
+                            : "Las nuevas aceptaciones serán libres de comisión y no requerirán saldo para ella. ¿Continuar?";
+                          if (!window.confirm(msg)) return;
+                          setStatus(""); saveChargePolicy.mutate();
+                        }}>
+                        {saveChargePolicy.isPending ? "Guardando…" : "Guardar cobro"}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </>
+            }
+          >
+            <PolicyNumberField
+              id="welcome-commission" label="Comisión general" unit="%" value={commission}
+              onChange={setCommission} min="0.01" max="100" step="0.01"
+              disabled={!canEdit || saveCommission.isPending}
+              hint="El porcentaje y la activación del cobro son dos operaciones independientes."
+            />
+            {!validCommission && <p role="alert" className="mt-2 text-xs text-destructive">Indica un porcentaje válido entre 0 y 100.</p>}
+          </PolicyTile>
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3 text-xs text-text-secondary">
-        <p>
-          {policy.data ? (policy.data.enabled ? `Bienvenida: ${policy.data.duration_days} días` : "Bienvenida desactivada") : "Bienvenida no disponible"}
-          {" · "}
-          {chargePolicy.isLoading ? "Cobro consultándose" : chargePolicy.isError ? "Cobro no disponible" : chargePolicy.data?.enabled ? "Comisiones activas" : "Comisiones suspendidas"}
-        </p>
-        {(changed || commissionChanged || chargeChanged) && (
-          <span className="font-medium text-amber-600">Hay cambios sin guardar</span>
-        )}
-        {status && <p role="status" className="w-full text-sm text-text-primary">{status}</p>}
-      </div>
+
+      {status && <p role="status" className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary">{status}</p>}
     </section>
   );
 }
