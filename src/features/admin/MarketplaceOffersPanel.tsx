@@ -121,7 +121,7 @@ function errorMessage(error: unknown) {
 }
 const numbers = (value: string) => (value.trim() ? Number(value) : null);
 const selectStyle =
-  "mt-1.5 w-full rounded-xl border border-border/70 bg-background/75 px-3 py-2.5 text-sm text-foreground outline-none focus:border-cyan-400/60";
+  `mt-1.5 w-full px-3 py-2.5 text-sm text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring/30 ${cp.control}`;
 
 export default function MarketplaceOffersPanel({
   projectId,
@@ -340,7 +340,7 @@ export default function MarketplaceOffersPanel({
               Cerrar
             </Button>
           </div>
-          <div className="grid gap-4 rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 md:grid-cols-2 sm:p-4">
+          <div className={cp.inset + " grid gap-4 md:grid-cols-2"}>
             <div className="flex items-center gap-3 border-b border-white/10 pb-3 md:col-span-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">01</span>
               <div><p className="text-base font-bold text-text-primary">Identidad y vigencia</p><p className="text-xs text-text-secondary">Nombre, tipo de promoción y fechas de captación.</p></div>
@@ -520,7 +520,7 @@ export default function MarketplaceOffersPanel({
               </div>
             )}
           </div>
-          <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 sm:p-4">
+          <div className={cp.inset}>
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">03</span><Users className="h-5 w-5 text-cyan-200" /> <span className="text-base font-bold text-text-primary">Segmentación y límites avanzados</span>
             </div>
@@ -623,7 +623,7 @@ export default function MarketplaceOffersPanel({
               </div>
             </div>
           </div>
-          <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 sm:p-4">
+          <div className={cp.inset}>
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">04</span>
               <span className="text-base font-bold text-text-primary">Condiciones y notas internas</span>
@@ -669,7 +669,7 @@ export default function MarketplaceOffersPanel({
             const offer = kinds.find(kind => kind.value === item.kind);
             const expired = item.status !== "archived" && new Date(item.closes_at).getTime() < Date.now();
             return (
-              <article key={item.id} className="min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1 p-3 shadow-[var(--shadow-xs)] sm:p-4">
+              <article key={item.id} className={cp.inset + " shadow-[var(--shadow-xs)]"}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-text-secondary">{offer?.name ?? item.kind}</p>
