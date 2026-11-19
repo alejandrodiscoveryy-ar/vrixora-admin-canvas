@@ -9,15 +9,20 @@ const updates = read("src/features/admin/AppReleaseSettingsCard.tsx");
 
 test("The Android configuration view displays one main release header", () => {
   assert.match(workspace, /selectedMeta && activeSection !== "configuracion"/);
-  assert.match(config, /visibleSection !== "application" \? \(/);
+  assert.match(config, /visibleSection !== "application" && \(/);
   assert.doesNotMatch(config, /aria-label="Cambiar sección de ajustes"/);
+  assert.match(config, /aria-label="Categorías de ajustes del proyecto"/);
+  assert.match(config, /<nav aria-label="Cambiar módulo de configuración"/);
+  assert.match(config, /Actualización APK Android/);
+  assert.match(config, /const \[activeSection, setActiveSection\] = useState<SectionKey>\("general"\)/);
+  assert.doesNotMatch(config, /useState<SectionKey \| "inicio">\("inicio"\)/);
   assert.match(sidebar, /admin-nav-config-group/);
   assert.match(sidebar, /adminSubnavTone\("administracion", child\.slug\)/);
   assert.match(updates, /title="Centro de actualizaciones"/);
 });
 
 test("Saving unrelated project settings is only offered for actual edits", () => {
-  assert.match(config, /canSave && isDirty \? \(/);
+  assert.match(config, /canSave && isDirty && \(/);
   assert.match(config, /Guardar otros ajustes/);
   assert.match(config, /save\.mutate\(\)/);
   assert.match(updates, /admin_save_app_release_policy/);
@@ -26,9 +31,43 @@ test("Saving unrelated project settings is only offered for actual edits", () =>
 
 test("Navigation stays accessible outside Android view", () => {
   assert.match(config, /aria-label="Cambiar módulo de configuración"/);
-  assert.match(config, /aria-current=\{visibleSection === section\.key/);
+  assert.match(config, /aria-current=\{selected \? "page" : undefined\}/);
   assert.match(config, /onClick=\{\(\) => setActiveSection\(section\.key\)\}/);
   assert.doesNotMatch(sidebar, /onOpenConfiguration|configurationPageActive/);
   assert.match(sidebar, /const groupOpen = configurationExpanded/);
   assert.match(sidebar, /aria-controls=\{configurationGroupId\}/);
+});
+
+test("Se accede a las cinco pantallas sin un selector intermedio ni perder navegación en APK", () => {
+  for (const [key, name] of [
+    ["general", "Identidad y marca"],
+    ["billing", "Monedas y cambio"],
+    ["referrals", "Referidos"],
+    ["communication", "Comunicación y contacto"],
+    ["application", "Aplicación y versiones"],
+  ]) {
+    assert.ok(config.includes('key: "' + key + '"'), key);
+    assert.ok(config.includes('label: "' + name + '"'), name);
+  }
+  assert.match(config, /sections\.map\(section => \{/);
+  assert.match(config, /aria-current=\{selected \? "page" : undefined\}/);
+  assert.match(config, /onClick=\{\(\) => setActiveSection\(section\.key\)\}/);
+  assert.match(config, /\{visibleSection === "application" \? \(/);
+  assert.match(config, /<AppReleaseSettingsCard projectId=\{projectId\}/);
+  assert.match(updates, /title="Centro de actualizaciones"/);
+  assert.doesNotMatch(config, /onClick=\{\(\) => setActiveSection\("inicio"\)\}/);
+});
+
+test("El icono de Configuración en modo compacto abre Ajustes generales y permite volver al submenú", () => {
+  const start = sidebar.indexOf('if ("children" in tab)');
+  const block = sidebar.slice(start, sidebar.indexOf("const to = tab.slug", start));
+  assert.match(block, /event\.preventDefault\(\);\s*toggleSubmenu\("configuracion"\)/);
+  assert.match(block, /if \(!groupActive\) \{/);
+  assert.match(block, /setConfigurationExpanded\(true\)/);
+  assert.match(block, /void navigate\(\{/);
+  assert.match(block, /section: defaultChild\.slug/);
+  assert.match(block, /\{collapsed && \(\s*<Link/);
+  assert.match(block, /title=\{defaultChild\.label\}/);
+  assert.match(block, /\{nestedChildren\.map\(\(child\) =>/);
+  assert.match(block, /aria-current=\{mainSettingsActive \? "page" : undefined\}/);
 });
