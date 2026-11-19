@@ -180,14 +180,14 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
             <div className="min-w-0 space-y-1">
               <Label>Enlace público para captar clientes</Label>
               <div className="flex min-w-0 gap-2">
-                <Input readOnly aria-label="Enlace público" value={promo(issued.slug)} className="min-w-0" />
+                <Input readOnly aria-label="Enlace público" value={promo(issued.slug)} className={cp.control + " min-w-0"} />
                 <Button variant="outline" size="icon" onClick={() => void copy(promo(issued.slug))} aria-label="Copiar enlace público"><Copy className="size-4" /></Button>
               </div>
             </div>
             <div className="min-w-0 space-y-1">
               <Label>Enlace privado para resultados</Label>
               <div className="flex min-w-0 gap-2">
-                <Input readOnly aria-label="Enlace privado" value={privateLink(issued.report_key)} className="min-w-0" />
+                <Input readOnly aria-label="Enlace privado" value={privateLink(issued.report_key)} className={cp.control + " min-w-0"} />
                 <Button variant="outline" size="icon" onClick={() => void copy(privateLink(issued.report_key))} aria-label="Copiar enlace privado"><Copy className="size-4" /></Button>
               </div>
               <p className="text-[11px] text-muted-foreground">Trátalo como una contraseña: cualquiera con este enlace puede consultar sus resultados.</p>
@@ -208,15 +208,15 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_140px_auto] xl:items-end">
             <div className="space-y-1.5">
               <Label htmlFor="ally-name">Responsable del Aliado</Label>
-              <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={(event) => setName(event.target.value)} />
+              <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={(event) => setName(event.target.value)} className={cp.control} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ally-slug">Nick comercial para compartir</Label>
-              <Input id="ally-slug" maxLength={24} placeholder="Ej. conuco" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} />
+              <Input id="ally-slug" maxLength={24} placeholder="Ej. conuco" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} className={cp.control} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ally-pct">Comisión (%)</Label>
-              <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={(event) => setRate(event.target.value)} />
+              <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={(event) => setRate(event.target.value)} className={cp.control} />
             </div>
             <Button type="submit" disabled={saving} className="w-full sm:w-auto xl:mb-px">
               <Plus className="mr-1.5 size-4" aria-hidden="true" />Crear aliado
@@ -322,11 +322,11 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="min-w-[170px] flex-1 space-y-1">
                         <Label>Nombre del aliado</Label>
-                        <Input maxLength={80} value={editedName} onChange={(event) => setEditedName(event.target.value)} />
+                        <Input maxLength={80} value={editedName} onChange={(event) => setEditedName(event.target.value)} className={cp.control} />
                       </div>
                       <div className="min-w-[140px] space-y-1">
                         <Label>Porcentaje futuro</Label>
-                        <Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={(event) => setEditedRate(event.target.value)} />
+                        <Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={(event) => setEditedRate(event.target.value)} className={cp.control} />
                       </div>
                       <Button size="sm" disabled={saving} onClick={() => void update(ally, ally.status, editedName, Number(editedRate))}>Guardar cambios</Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
@@ -340,11 +340,11 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="min-w-[140px] space-y-1">
                         <Label>Importe CUP</Label>
-                        <Input type="number" min="0" step=".01" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} />
+                        <Input type="number" min="0" step=".01" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} className={cp.control} />
                       </div>
                       <div className="min-w-[180px] flex-1 space-y-1">
                         <Label>Comprobante o referencia</Label>
-                        <Input value={paymentRef} onChange={(event) => setPaymentRef(event.target.value)} placeholder="Transferencia / recibo" />
+                        <Input value={paymentRef} onChange={(event) => setPaymentRef(event.target.value)} placeholder="Transferencia / recibo" className={cp.control} />
                       </div>
                       <Button size="sm" disabled={saving} onClick={() => void logPayment(ally)}>Registrar pago</Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditingPayment(null)}>Cancelar</Button>
