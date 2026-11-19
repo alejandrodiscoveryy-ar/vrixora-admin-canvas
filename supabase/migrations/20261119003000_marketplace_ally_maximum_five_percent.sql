@@ -44,7 +44,7 @@ begin
     returning * into item;
   return jsonb_build_object('id',item.id,'slug',item.slug,'name',item.name,
       'rate',item.rate,'report_key',raw_key,'expires_at',item.report_expires_at);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.admin_update_marketplace_ally_v1(target_project_id uuid, target_ally_id uuid, target_name text, target_rate numeric, target_status text)
@@ -63,7 +63,7 @@ begin
     where id=target_ally_id and project_id=target_project_id;
   if not found then raise exception 'ALLY_NOT_FOUND' using errcode='22023'; end if;
   return true;
-end $function$
+end $function$;
 
 
 commit;
