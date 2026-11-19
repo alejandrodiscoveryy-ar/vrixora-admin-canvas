@@ -1,7 +1,6 @@
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgePercent, TrendingUp, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,36 +57,128 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
     },
   });
   if (!canView) return null;
-  return <section aria-label="Comisiones comerciales Impulsa" className={embedded ? "min-w-0 space-y-3" : cp.section}>
-    
-    <div className="relative space-y-3">
-      {!embedded && <header className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300/10 text-cyan-200"><TrendingUp className="h-5 w-5"/></span><div><p className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">TukTuk · Impulsa</p><h2 className="text-lg font-semibold text-text-primary">Comisiones comerciales</h2><p className="text-xs text-text-secondary">Tres porcentajes sobre el importe del viaje.</p></div></div>
-        <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-200">{query.isLoading ? "Consultando" : query.isError ? "No disponible" : query.data?.enabled && query.data?.billing_enabled ? "Activo" : query.data?.enabled ? "Cobro suspendido" : "Sin activar"}</span>
-      </header>}
-      {query.isError ? <p role="alert" className="rounded-xl border border-amber-300/25 bg-amber-300/10 p-3 text-sm text-amber-100">El módulo financiero aún no está instalado o no tienes permiso. No se modificó ningún saldo.</p> : query.isLoading ? <p className="text-sm text-text-secondary">Cargando configuración…</p> : <>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {([{id:"general",label:"Comisión general",value:general,set:setGeneral,detail:"Carrera normal"},{id:"own",label:"Impulsa · Propia",value:own,set:setOwn,detail:"El promotor realiza el viaje"},{id:"commercial",label:"Impulsa · Comercial",value:commercial,set:setCommercial,detail:"Otro conductor realiza el viaje"}]).map(field=>
-            <div key={field.id} className="min-w-0 rounded-xl border border-border-subtle bg-surface-2 p-3">
-              <Label htmlFor={"impulsa-"+field.id} className="text-xs font-semibold text-text-secondary">{field.label}</Label>
-              <div className="mt-1 flex items-center gap-1"><Input id={"impulsa-"+field.id} type="number" min="0" max="100" step="0.01" value={field.value} disabled={!canEdit || save.isPending} onChange={e=>field.set(e.target.value)} className="h-11 w-full border border-border-default bg-surface-1 px-3 text-xl font-semibold text-text-primary tabular-nums shadow-none"/><span className="text-sm font-semibold text-text-secondary">%</span></div>
-              <p className="text-xs text-text-tertiary">{field.detail}</p>
-            </div>)}
+
+  return (
+    <section aria-label="Comisiones comerciales Impulsa" className={embedded ? "min-w-0 space-y-4" : cp.section}>
+      {!embedded && (
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary">Comisiones comerciales</h2>
+          <p className="mt-1 text-sm text-text-secondary">Porcentajes por tipo de servicio y distribución de ingresos.</p>
         </div>
-        <div className="rounded-xl border border-border-subtle bg-surface-2 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold text-text-primary"><BadgePercent className="h-4 w-4 text-cyan-300"/>Simulador de distribución</div><div className="flex items-center gap-2"><Label htmlFor="impulsa-fare" className="text-xs text-text-secondary">Precio CUP</Label><Input id="impulsa-fare" type="number" min="0" value={fare} onChange={e=>setFare(e.target.value)} className="h-9 w-28"/></div></div>
-          <div className="mt-3 min-w-0 overflow-x-auto divide-y divide-border-subtle text-xs sm:text-sm">
-            <div className="grid min-w-[460px] grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,1fr))] gap-2 py-2 font-semibold text-text-tertiary"><span>Servicio</span><span className="text-right">Conductor</span><span className="text-right">Comercial</span><span className="text-right">TukTuk</span></div>
-            {[["Normal",100-g,0,g],["Propio",100-o,0,o],["Flota",100-g,c,g-c]].map(row=><div key={String(row[0])} className="grid grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,1fr))] gap-1 py-2 text-text-primary"><span>{row[0]}</span>{row.slice(1).map((v,i)=><span key={i} className={"text-right tabular-nums "+(i===1?"text-emerald-300":"")}>{cup(total*Number(v)/100)}</span>)}</div>)}
+      )}
+      {query.isError ? (
+        <p role="alert" className="rounded-lg border border-amber-400/30 p-3 text-sm text-text-secondary">
+          No se pudo cargar la configuración de Impulsa. No se modificó ningún saldo.
+        </p>
+      ) : query.isLoading ? (
+        <p className="py-4 text-sm text-text-secondary">Consultando los porcentajes…</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-text-secondary">
+              {query.data?.enabled && query.data?.billing_enabled ? "Impulsa activo" :
+                query.data?.enabled ? "Impulsa: cobro suspendido" : "Impulsa desactivado"}
+            </p>
+            <p className="text-xs text-text-secondary">
+              Comisión general vigente: <strong className="text-text-primary">{pct(query.data?.live_general_rate ?? 0)} %</strong>
+              {" · "}{query.data?.billing_enabled ? "Cobro activo" : "Cobro desactivado"}
+            </p>
           </div>
-          {!valid && <p role="alert" className="mt-2 text-xs text-rose-300">El porcentaje propio y comercial no pueden superar la comisión general. El porcentaje general y propio deben ser positivos.</p>}
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-300/20 bg-surface-2 p-3">
-          <div className="flex min-w-0 gap-2"><ShieldCheck className="h-5 w-5 shrink-0 text-emerald-300"/><div className="space-y-1 text-xs text-text-secondary"><p className="font-semibold text-text-primary">Comisión general vigente: {pct(query.data?.live_general_rate ?? 0)} % · {query.data?.billing_enabled ? "Cobro activo" : "Cobro desactivado"}</p><p>Solo carreras nuevas, reales y liquidadas. Los viajes propios no generan un segundo crédito. Ganancias de la flota en CUP reales; si el cobro no tiene fondos reales suficientes, quedan pendientes de financiación.</p><p>Las reservas y beneficios de bienvenida existentes se conservan.</p></div></div>
-          {canEdit && <div className="flex flex-wrap justify-end gap-2"><Button size="sm" disabled={!valid || !changed || save.isPending} onClick={()=>{if(query.data?.enabled && !window.confirm("Guardar los porcentajes activos para nuevas carreras?"))return;setMessage("");save.mutate(!!query.data?.enabled);}}>Guardar porcentajes</Button><Button size="sm" variant="outline" disabled={!valid || save.isPending || (!query.data?.enabled && !query.data?.billing_enabled)} onClick={()=>{const next=!query.data?.enabled;if(!window.confirm(next?"Activar Impulsa y aplicar la comisión general propuesta a las nuevas carreras? No cambia el interruptor de cobro.":"Desactivar Impulsa para futuras publicaciones? Las carreras y ganancias anteriores se conservan."))return;setMessage("");save.mutate(next);}}>{query.data?.enabled?"Desactivar Impulsa":"Activar Impulsa"}</Button></div>}
-          {message && <p role="status" className="w-full text-xs text-cyan-200">{message}</p>}
-        </div>
-      </>}
-    </div>
-  </section>;
+
+          <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+            {([
+              { id: "general", label: "Comisión general", value: general, set: setGeneral, detail: "Carrera normal" },
+              { id: "own", label: "Impulsa · Propia", value: own, set: setOwn, detail: "El promotor realiza el viaje" },
+              { id: "commercial", label: "Impulsa · Comercial", value: commercial, set: setCommercial, detail: "Otro conductor realiza el viaje" },
+            ]).map(field => (
+              <div key={field.id} className="min-w-0 space-y-1.5">
+                <Label htmlFor={"impulsa-" + field.id}>{field.label}</Label>
+                <div className="flex items-center gap-2">
+                  <Input id={"impulsa-" + field.id} type="number" min="0" max="100" step="0.01"
+                    value={field.value} disabled={!canEdit || save.isPending}
+                    onChange={e => field.set(e.target.value)}
+                    className="h-11 min-w-0 flex-1 text-lg font-semibold tabular-nums" />
+                  <span className="text-sm text-text-secondary">%</span>
+                </div>
+                <p className="text-xs leading-relaxed text-text-secondary">{field.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          {!valid && (
+            <p role="alert" className="text-sm text-destructive">
+              Revisa los porcentajes: la comisión propia y la comercial no pueden superar la general.
+            </p>
+          )}
+
+          <details className="group rounded-xl border border-border-subtle bg-surface-2/50">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-text-primary [&::-webkit-details-marker]:hidden">
+              Simulador de distribución
+              <span className="text-xs font-normal text-text-secondary">Ver ejemplo de reparto</span>
+            </summary>
+            <div className="space-y-3 border-t border-border-subtle px-3 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="impulsa-fare">Importe de ejemplo (CUP)</Label>
+                <Input id="impulsa-fare" type="number" min="0" value={fare} onChange={e => setFare(e.target.value)}
+                  className="h-11 w-32 max-w-full tabular-nums" />
+              </div>
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full min-w-[450px] text-left text-sm">
+                  <thead><tr className="border-b border-border-subtle text-xs text-text-secondary">
+                    <th scope="col" className="py-2">Servicio</th>
+                    <th scope="col" className="py-2 text-right">Conductor</th>
+                    <th scope="col" className="py-2 text-right">Comercial</th>
+                    <th scope="col" className="py-2 text-right">TukTuk</th>
+                  </tr></thead>
+                  <tbody>
+                    {[
+                      ["Normal", 100-g, 0, g],
+                      ["Propio", 100-o, 0, o],
+                      ["Flota", 100-g, c, g-c],
+                    ].map(row => (
+                      <tr key={String(row[0])} className="border-b border-border-subtle last:border-b-0">
+                        <th scope="row" className="py-2 font-medium">{row[0]}</th>
+                        {row.slice(1).map((value, index) => (
+                          <td key={index} className="py-2 text-right tabular-nums">{cup(total * Number(value) / 100)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
+            <p className="max-w-2xl text-xs leading-relaxed text-text-secondary">
+              Solo afecta nuevas carreras reales y liquidadas. Los viajes propios no generan un segundo crédito;
+              los saldos y beneficios anteriores se conservan.
+            </p>
+            {canEdit && (
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" className="max-sm:min-h-11"
+                  disabled={!valid || !changed || save.isPending}
+                  onClick={() => {
+                    if (query.data?.enabled && !window.confirm("¿Guardar los porcentajes para nuevas carreras?")) return;
+                    setMessage(""); save.mutate(Boolean(query.data?.enabled));
+                  }}>Guardar porcentajes</Button>
+                <Button size="sm" className="max-sm:min-h-11" variant="outline"
+                  disabled={!valid || save.isPending || (!query.data?.enabled && !query.data?.billing_enabled)}
+                  onClick={() => {
+                    const next = !query.data?.enabled;
+                    if (!window.confirm(next
+                      ? "¿Activar Impulsa para futuras carreras? No cambia el interruptor general de cobro."
+                      : "¿Desactivar Impulsa para futuras carreras? Los ingresos previos se conservan.")) return;
+                    setMessage(""); save.mutate(next);
+                  }}>
+                  {query.data?.enabled ? "Desactivar Impulsa" : "Activar Impulsa"}
+                </Button>
+              </div>
+            )}
+            {message && <p role="status" className="w-full text-sm text-text-primary">{message}</p>}
+          </div>
+        </>
+      )}
+    </section>
+  );
 }

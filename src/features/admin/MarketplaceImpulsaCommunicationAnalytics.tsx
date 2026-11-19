@@ -116,7 +116,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
       </div>
       <button type="button" aria-label="Actualizar analítica" title="Actualizar"
         disabled={query.isFetching} onClick={()=>void query.refetch()}
-        className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-50">
+        className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-border-default text-text-secondary disabled:opacity-50">
         <RefreshCw className={`h-4 w-4 ${query.isFetching?"animate-spin":""}`}/></button>
     </div>
 
@@ -132,6 +132,12 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          <MiniMetric label="Solicitudes creadas" value={t.requests_created} icon={TrendingUp} detail="Evento de cliente, no carrera completada"/>
        </div>
 
+       <details className="group rounded-xl border border-border-subtle bg-surface-2/40">
+         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-text-primary [&::-webkit-details-marker]:hidden">
+           Análisis detallado de campañas
+           <span className="text-xs font-normal text-text-secondary">Evolución, abandonos y cotizaciones</span>
+         </summary>
+         <div className="space-y-3 border-t border-border-subtle p-3">
        <div className="grid gap-3 lg:grid-cols-2">
          <div className="rounded-xl border border-border/50 p-3">
            <h4 className="text-sm font-semibold">Evolución de la campaña</h4>
@@ -211,8 +217,11 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          </div> : <p className="py-3 text-xs text-muted-foreground">Aún no hay precios registrados para comparar.</p>}
        </div>
 
-       <div className="rounded-xl border border-border/50">
-         <div className="border-b border-border/40 p-3"><h4 className="text-sm font-semibold">Aportación de cada conductor</h4>
+         </div>
+       </details>
+
+       <div className="rounded-xl border border-border-default bg-surface-1">
+         <div className="border-b border-border-subtle p-3"><h4 className="text-base font-semibold text-text-primary">Aportación de cada conductor</h4>
            <p className="mt-1 text-[11px] text-muted-foreground">Toca una fila para ver cómo se comporta su enlace.</p></div>
          <div className="divide-y divide-border/40">
            {d!.drivers.length ? d!.drivers.map((x,i)=>{

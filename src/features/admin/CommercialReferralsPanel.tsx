@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Coins, Gift, Search, UsersRound, Wallet } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
+import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -141,22 +142,11 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
 
   return (
     <section className={cp.shell}>
-      <div className={cp.header}>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Referidos</p>
-        <h2 className={cp.title}>Quién refirió a quién</h2>
-        <p className={cp.description}>
-          Abre un conductor para ver a cada persona que invitó, sus carreras reales y lo que generaron para TUKTUK.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Se excluyen carreras y vínculos de prueba. Las comisiones promocionales no son dinero nuevo recibido;
-          los premios por invitaciones son créditos para el referente, no ingresos de TUKTUK.
-        </p>
-        {!canViewMoney && (
-          <p className="mt-3 text-xs text-amber-300">
-            Los importes están ocultos: se requiere permiso de Finanzas para consultarlos.
-          </p>
-        )}
-      </div>
+      <CommercialPageHeader title="Referidos y red" description="Quién refirió a quién, carreras reales y recompensas de cada referente." icon={UsersRound} />
+      <p className="text-xs leading-relaxed text-text-secondary">
+        Se excluyen carreras de prueba. Las comisiones promocionales no son dinero nuevo recibido; los premios acreditados pertenecen al referente.
+        {!canViewMoney && <span className="ml-1 font-medium">Los importes requieren permiso de Finanzas.</span>}
+      </p>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map(({ label, value, icon }) => (

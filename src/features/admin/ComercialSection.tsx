@@ -11,7 +11,6 @@ import {
   Layers,
   UsersRound,
   TrendingUp,
-  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -56,6 +55,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
+import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
+import { CommercialSettingsPanel } from "@/features/admin/CommercialSettingsPanel";
 import MarketplaceWelcomePolicyPanel from "@/features/admin/MarketplaceWelcomePolicyPanel";
 import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/MarketplaceImpulsaCommunicationAnalytics";
@@ -363,11 +364,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       {isTuktukProject && commercialView === "campanas" ? (
         <div className="space-y-3">
-          <header className={cp.header}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Comercial · Captación de pasajeros</p>
-            <h2 className={cp.title}>Campañas de TukTuk</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Crea un enlace para cada acción, compártelo y consulta sus resultados en la pestaña Resultados.</p>
-          </header>
+          <CommercialPageHeader title="Campañas de TukTuk" description="Crea enlaces para atraer pasajeros y consulta sus resultados." icon={Megaphone} />
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="generator" />
           <details className={cp.accordion}>
             <summary className={cp.accordionTitle}>
@@ -381,11 +378,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         </div>
       ) : isTuktukProject && commercialView === "resultados" ? (
         <div className="space-y-3">
-          <header className={cp.header}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Captación · TukTuk</p>
-            <h2 className={cp.title}>Resultados de campañas oficiales</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Aperturas, solicitudes, canales y conversión de la Agencia. La contribución de conductores se analiza en Impulsa y la de terceros en Aliados.</p>
-          </header>
+          <CommercialPageHeader title="Resultados de campañas oficiales" description="Compara cómo llegan los pasajeros y qué acciones terminan en solicitudes. Los informes detallados están debajo." icon={TrendingUp} />
           <ComercialSourceOverview projectId={projectId} />
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
         </div>
@@ -394,41 +387,24 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : showOffers ? (
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} />
       ) : showImpulsa ? (
-        <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
-          <header className={cp.header}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">Red comercial · Conductores</p>
-            <h2 id="impulsa-premium-title" className={cp.title}>Impulsa</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Conductores promotores, su difusión, pasajeros captados, solicitudes y viajes reales. Los resultados de cada conductor se despliegan en el informe.</p>
-          </header>
+        <section className="space-y-4" aria-label="Impulsa" data-admin-module="comercial">
+          <CommercialPageHeader title="Impulsa" description="Resultados de los conductores que promocionan TukTuk: difusión, solicitudes y viajes reales." icon={UsersRound} />
           <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />
         </section>
       ) : commercialView === "configuracion" && isTuktukProject ? (
-        <section className="space-y-3" aria-labelledby="commercial-settings-title" data-admin-module="comercial">
-          <header className={cp.header}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Gestión · Administración</p>
-            <h2 id="commercial-settings-title" className={cp.title}>Configuración comercial</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Configura la bienvenida, las comisiones y las retiradas desde un mismo lugar.</p>
-          </header>
+        <section className="space-y-3" aria-label="Configuración comercial" data-admin-module="comercial">
+          <CommercialPageHeader title="Configuración comercial" description="Políticas vigentes de bienvenida, comisiones y billeteras. Selecciona el bloque que necesites administrar." icon={Layers} />
           {canViewImpulsa ? (
             <div className="space-y-2">
-              <details name="commercial-policy" className={cp.accordion}>
-                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Gift className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Bienvenida y cobro general</span><span className="block text-xs font-normal text-muted-foreground">Días de bienvenida · Comisión general · Cobro</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
-                <div className="border-t border-border-subtle px-3 py-3 sm:px-4">
-                  <MarketplaceWelcomePolicyPanel projectId={projectId} canView={permissions.includes("settings.view")} canEdit={permissions.includes("settings.manage")} embedded />
-                </div>
-              </details>
-              <details name="commercial-policy" className={cp.accordion}>
-                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><TrendingUp className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Reglas y comisiones de Impulsa</span><span className="block text-xs font-normal text-muted-foreground">Comisión normal · Viaje propio · Referidos</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
-                <div className="border-t border-border-subtle px-3 py-3 sm:px-4">
-                  <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} embedded />
-                </div>
-              </details>
-              <details name="commercial-policy" className={cp.accordion}>
-                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Layers className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Créditos, deuda y retiradas</span><span className="block text-xs font-normal text-muted-foreground">Primera carrera a crédito · Retiradas</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
-                <div className="border-t border-border-subtle px-3 py-3 sm:px-4">
-                  <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} embedded />
-                </div>
-              </details>
+              <CommercialSettingsPanel icon={Gift} title="Bienvenida y cobro general" description="Días gratuitos, comisión general y estado del cobro">
+                <MarketplaceWelcomePolicyPanel projectId={projectId} canView={permissions.includes("settings.view")} canEdit={permissions.includes("settings.manage")} embedded />
+              </CommercialSettingsPanel>
+              <CommercialSettingsPanel icon={TrendingUp} title="Reglas y comisiones de Impulsa" description="Viaje normal, servicio propio y aportación comercial">
+                <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} embedded />
+              </CommercialSettingsPanel>
+              <CommercialSettingsPanel icon={Layers} title="Créditos, deuda y retiradas" description="Crédito inicial, retiros y obligaciones pendientes">
+                <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} embedded />
+              </CommercialSettingsPanel>
             </div>
           ) : (
             <div className="rounded-xl border border-border/60 bg-card/55 p-4 text-sm text-muted-foreground" role="status">Necesitas permiso de configuración para consultar y modificar estas políticas.</div>
@@ -439,13 +415,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : (
         <section className="min-w-0 space-y-4">
           <div className="min-w-0 space-y-4">
-            <div className={cp.header}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Captación</p>
-              <h2 className={cp.title}>Captación y seguimiento</h2>
-              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                Sigue cada contacto desde el primer interés hasta su registro en TukTuk.
-              </p>
-            </div>
+            <CommercialPageHeader title="Captación y contactos" description="Da seguimiento a cada contacto comercial desde el primer interés hasta su registro." icon={UsersRound} />
           {/* 4 KPI Principales */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard density="compact" appearance="premium"

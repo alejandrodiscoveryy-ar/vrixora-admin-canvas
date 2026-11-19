@@ -515,7 +515,13 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
     assert.match(source(name), /appearance="premium"/, name);
   }
   for (const name of ["MarketplaceCustomerCareWorkspace", "MarketplaceLiteContactCard", "MarketplaceConfigurationWorkspace", "MarketplaceDispatchSettingsCard", "MarketplaceJobReminderSettingsCard", "MarketplaceTerritoryCatalog", "MarketplaceTestCenterV2", "MarketplacePricingSection", "MarketplacePricingLaboratoryV2", "MarketplacePricingV3Diagnostics", "MarketplacePricingV3Hierarchy", "MarketplaceTemporalDraftsV3", "MarketplacePricingGlobalAdjustment", "AdministrationWorkspace", "MarketplaceOffersPanel", "CommercialReferralsPanel", "MarketplaceWelcomePolicyPanel"]) {
-    assert.match(source(name), /admin-graphite-/, name);
+    // Migrated Comercial screens now use official ModuleHeader and shared density tokens
+    // instead of requiring legacy per-screen graphite classes.
+    if (["MarketplaceOffersPanel", "CommercialReferralsPanel", "MarketplaceWelcomePolicyPanel"].includes(name)) {
+      assert.match(source(name), /CommercialPageHeader|commercialPremium as cp/, name);
+    } else {
+      assert.match(source(name), /admin-graphite-/, name);
+    }
   }
   const workspace = source("MarketplaceSection");
   const wallet = workspace.slice(workspace.indexOf('<TabsContent value="billeteras"'), workspace.indexOf('<TabsContent value="configuracion"'));

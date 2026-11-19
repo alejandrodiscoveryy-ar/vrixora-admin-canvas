@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
-import { commercialPremium as cp } from "@/features/admin/commercial-premium";
+import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
+import { MetricCard } from "@/components/admin/MetricCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,50 +130,36 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
 
   return (
     <section data-admin-module="comercial" className="space-y-4" aria-labelledby="tuktuk-allies-heading">
-      <header className={cp.header + " flex flex-col justify-between gap-3 sm:flex-row sm:items-center"}>
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-300" aria-hidden="true">
-            <Handshake className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Red comercial · TukTuk</p>
-            <h2 id="tuktuk-allies-heading" className="text-xl font-semibold tracking-tight text-foreground">Aliados</h2>
-            <p className="text-xs text-muted-foreground">Captación de pasajeros, viajes y liquidaciones. Difusión pública y resultados privados sin cuenta Google.</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" className="min-h-11 sm:min-h-9" onClick={() => void refresh()} disabled={q.isFetching} aria-label="Actualizar resultados de aliados">
-            <RefreshCcw className="mr-1.5 size-3.5" aria-hidden="true" />Actualizar
-          </Button>
-          {canManage && (
-            <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setCreateExpanded((value) => !value)} aria-expanded={createExpanded} aria-controls="ally-create-form">
-              {createExpanded ? <X className="mr-1.5 size-4" aria-hidden="true" /> : <Plus className="mr-1.5 size-4" aria-hidden="true" />}
-              {createExpanded ? "Cerrar formulario" : "Nuevo aliado"}
+      <CommercialPageHeader
+        title="Aliados"
+        description="Colaboradores externos, enlaces personalizados, pasajeros atraídos y liquidaciones."
+        icon={Handshake}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => void refresh()} disabled={q.isFetching} aria-label="Actualizar resultados de aliados">
+              <RefreshCcw className="mr-1.5 size-4" aria-hidden="true" /> Actualizar
             </Button>
-          )}
-        </div>
-      </header>
+            {canManage && (
+              <Button size="sm" className="max-sm:min-h-11" onClick={() => setCreateExpanded(value => !value)}
+                aria-expanded={createExpanded} aria-controls="ally-create-form">
+                {createExpanded ? <X className="mr-1 size-4" aria-hidden="true" /> : <Plus className="mr-1 size-4" aria-hidden="true" />}
+                {createExpanded ? "Cerrar formulario" : "Nuevo aliado"}
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {q.data && q.data.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Resumen del programa de aliados">
-          {[
-            { label: "Aliados activos", value: totals.active.toLocaleString("es-CU"), note: "de " + q.data.length + " registrados", icon: Handshake, tone: "text-violet-300", surface: "bg-violet-500/10 border-violet-400/20" },
-            { label: "Visitas a enlaces", value: totals.clicks.toLocaleString("es-CU"), note: "difusión comercial", icon: MousePointerClick, tone: "text-sky-300", surface: "bg-sky-500/10 border-sky-400/20" },
-            { label: "Viajes atribuidos", value: totals.attributed.toLocaleString("es-CU"), note: totals.completed + " completados", icon: Route, tone: "text-emerald-300", surface: "bg-emerald-500/10 border-emerald-400/20" },
-            { label: "Pendiente de pago", value: cup(totals.pending), note: "comisiones calculadas", icon: Wallet, tone: "text-amber-300", surface: "bg-amber-500/10 border-amber-400/20" },
-          ].map((metric) => {
-            const Icon = metric.icon;
-            return (
-              <div key={metric.label} className="relative overflow-hidden rounded-xl border border-border/60 bg-card/70 px-3 py-3.5 shadow-sm sm:px-4">
-                <span className={"absolute right-3 top-3 flex size-8 items-center justify-center rounded-lg border " + metric.surface + " " + metric.tone} aria-hidden="true">
-                  <Icon className="size-4" />
-                </span>
-                <p className="pr-9 text-[11px] font-medium text-muted-foreground">{metric.label}</p>
-                <p className="mt-2 max-w-full break-words text-xl font-semibold leading-tight tracking-tight tabular-nums text-foreground sm:text-2xl">{metric.value}</p>
-                <p className="mt-1 text-[10px] text-muted-foreground">{metric.note}</p>
-              </div>
-            );
-          })}
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen del programa de aliados">
+          <MetricCard density="compact" appearance="premium" module="comercial" icon={Handshake} label="Aliados activos"
+            value={totals.active.toLocaleString("es-CU")} description={`de ${q.data.length} registrados`} />
+          <MetricCard density="compact" appearance="premium" module="comercial" icon={MousePointerClick} label="Visitas a enlaces"
+            value={totals.clicks.toLocaleString("es-CU")} description="Difusión comercial" />
+          <MetricCard density="compact" appearance="premium" module="comercial" icon={Route} label="Viajes atribuidos"
+            value={totals.attributed.toLocaleString("es-CU")} description={`${totals.completed} completados`} />
+          <MetricCard density="compact" appearance="premium" module="comercial" icon={Wallet} label="Pendiente de pago"
+            value={cup(totals.pending)} description="Comisiones calculadas" />
         </div>
       )}
 
