@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, Coins, Gift, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, Smartphone, Upload, type LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Coins, Gift, Loader2, MessageSquareText, Palette, Plus, Save, Settings2, Smartphone, Upload, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useProject } from "@/hooks/useProjects";
@@ -56,14 +56,6 @@ const sections: Array<{
   { key: "application", number: "05", label: "Aplicación y versiones", eyebrow: "EXPERIENCIA Y PUBLICACIÓN", description: "Actualizaciones de Android, mantenimiento y mensaje de bienvenida.", icon: Smartphone },
 ];
 
-const LEGACY_SECTION_LABELS: Record<SectionKey, string> = {
-  general: "General e identidad",
-  billing: "Moneda y cambio",
-  referrals: "Referidos",
-  communication: "Comunicación",
-  application: "Aplicación",
-};
-
 const CONFIG_CARD_CLASS = "border-border-default admin-graphite-panel";
 const PREMIUM_CONFIG_CARD_CLASS = "relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border admin-graphite-panel";
 
@@ -109,12 +101,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
     enabled: canManageWhatsApp,
   });
 
-  const [activeSection, setActiveSection] = useState<SectionKey | "inicio">("inicio");
+  const [activeSection, setActiveSection] = useState<SectionKey>("general");
   const [showExtraAppSettings, setShowExtraAppSettings] = useState(false);
   const isMarketplaceReferralProgram = project?.slug === "tuktuk-control";
-  const visibleSection = isMarketplaceReferralProgram
-    ? activeSection
-    : activeSection === "inicio" ? "general" : activeSection;
+  const visibleSection = activeSection;
   const currentSection = sections.find((section) => section.key === visibleSection);
   const CurrentSectionIcon = currentSection?.icon ?? Settings2;
 
@@ -498,136 +488,58 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             ];
 
   return (
-    <div className="space-y-3">
-      {isMarketplaceReferralProgram ? (
-        <>
-          {visibleSection !== "inicio" ? (
-          <div className="flex min-h-9 flex-wrap items-center justify-end gap-2">
-            {visibleSection !== "inicio" ? (
-              <button
-                type="button"
-                onClick={() => setActiveSection("inicio")}
-                className="mr-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Volver
-              </button>
-            ) : null}
-            {isDirty ? (
-              <Badge variant="outline" className="border-amber-400/35 bg-amber-400/[0.07] text-amber-300">
-                Cambios sin guardar
-              </Badge>
-            ) : null}
-            {canSave && isDirty ? (
-              <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-                {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+    <div className="min-w-0 space-y-3">
+      <section aria-label="Categorías de ajustes del proyecto" className="min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default bg-surface-2/65">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-3 py-3 sm:px-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-text-primary">Ajustes del proyecto</h2>
+            <p className="mt-0.5 text-xs text-text-secondary">Todas las categorías, incluida la actualización APK, están disponibles aquí.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
+            {canSave && isDirty && (
+              <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => save.mutate()} disabled={save.isPending}>
+                {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
                 Guardar otros ajustes
               </Button>
-            ) : null}
-          </div>
-          ) : null}
-          {visibleSection === "inicio" ? (
-            <section aria-label="Categorías de configuración" className="grid gap-4 sm:grid-cols-2">
-              {sections.map((section) => {
-                const Icon = section.icon;
-                return (
-                  <button
-                    key={section.key}
-                    type="button"
-                    onClick={() => setActiveSection(section.key)}
-                    className="group relative isolate flex min-h-11 min-w-0 items-center gap-3 overflow-hidden rounded-[var(--radius-card)] border border-cyan-400/[0.14] bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.10] px-3 py-3 text-left shadow-[0_22px_58px_-43px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/45 hover:shadow-[0_26px_58px_-38px_rgba(34,211,238,0.20)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:px-6 admin-graphite-panel"
-                  >
-                    <Icon aria-hidden="true" className="pointer-events-none absolute -right-9 -top-11 z-0 h-40 w-40 -rotate-12 text-cyan-300 opacity-[0.055] transition-opacity group-hover:opacity-[0.10]" />
-                    <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-cyan-400/25 bg-cyan-400/[0.09] text-cyan-300 shadow-inner">
-                      <Icon aria-hidden="true" className="h-8 w-8" />
-                    </span>
-                    <span className="relative z-10 min-w-0 flex-1 space-y-1">
-                      <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300/75">{section.eyebrow}</span>
-                      <span className="block text-lg font-semibold leading-snug tracking-tight text-foreground">{section.label}</span>
-                      <span className="block max-w-sm text-xs leading-relaxed text-text-secondary">{section.description}</span>
-                    </span>
-                    <ChevronRight aria-hidden="true" className="relative z-10 h-5 w-5 shrink-0 text-cyan-300/75 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
-                  </button>
-                );
-              })}
-            </section>
-          ) : currentSection ? (
-            <div className="space-y-3">
-              {visibleSection !== "application" ? (
-                <PremiumSettingsSnapshot
-                  number={currentSection.number}
-                  eyebrow={currentSection.eyebrow}
-                  title={currentSection.label}
-                  description={currentSection.description}
-                  icon={CurrentSectionIcon}
-                  metrics={premiumMetrics}
-                />
-              ) : null}
-              {visibleSection !== "application" ? (
-              <nav aria-label="Cambiar módulo de configuración" className="flex gap-2 overflow-x-auto pb-1">
-                {sections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <button
-                      type="button"
-                      key={section.key}
-                      aria-current={visibleSection === section.key ? "page" : undefined}
-                      onClick={() => setActiveSection(section.key)}
-                      className={"inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 " + (visibleSection === section.key ? "border-cyan-300/45 bg-cyan-300/12 text-cyan-100" : "border-border-default bg-surface-2 text-text-secondary hover:border-primary/35 hover:text-text-primary")}
-                    >
-                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />{section.label}
-                    </button>
-                  );
-                })}
-              </nav>
-              ) : null}
-            </div>
-          ) : null}
-        </>
-      ) : (
-      <div className="rounded-[20px] border border-white/10 bg-gradient-to-br from-background/70 via-background/50 to-cyan-500/[0.025] p-2.5 shadow-[0_18px_52px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl admin-graphite-panel">
-        <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
-          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-            {sections.map((section) => (
-              <Button
-                key={section.key}
-                type="button"
-                variant={visibleSection === section.key ? "default" : "outline"}
-                onClick={() => setActiveSection(section.key)}
-                className="h-auto min-h-9 whitespace-normal px-3 py-1.5 text-xs leading-tight"
-              >
-                {LEGACY_SECTION_LABELS[section.key]}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            {isDirty ? (
-              <Badge
-                variant="outline"
-                className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]"
-              >
-                Cambios sin guardar
-              </Badge>
-            ) : null}
-
-            {canSave ? (
-              <Button
-                size="sm"
-                onClick={() => save.mutate()}
-                disabled={save.isPending || !isDirty}
-              >
-                {save.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Guardar cambios
-              </Button>
-            ) : null}
+            )}
           </div>
         </div>
-      </div>
+        <nav aria-label="Cambiar módulo de configuración" className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 xl:grid-cols-5">
+          {sections.map(section => {
+            const Icon = section.icon;
+            const selected = visibleSection === section.key;
+            return (
+              <button
+                type="button"
+                key={section.key}
+                aria-current={selected ? "page" : undefined}
+                onClick={() => setActiveSection(section.key)}
+                className={"flex min-h-14 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 " +
+                  (selected
+                    ? "border-primary/50 bg-primary/10 text-text-primary"
+                    : "border-border-subtle bg-surface-3/45 text-text-secondary hover:border-border-strong hover:bg-surface-3 hover:text-text-primary") +
+                  (section.key === "application" ? " max-sm:col-span-2" : "")}
+              >
+                <Icon className={"size-4 shrink-0 " + (selected ? "text-primary" : "text-text-secondary")} aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-xs font-semibold leading-tight">{section.label}</span>
+                  {section.key === "application" && <span className="mt-0.5 block text-[11px] text-primary">Actualización APK Android</span>}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </section>
+      {isMarketplaceReferralProgram && visibleSection !== "application" && (
+        <PremiumSettingsSnapshot
+          number={currentSection?.number ?? "01"}
+          eyebrow={currentSection?.eyebrow ?? "AJUSTES"}
+          title={currentSection?.label ?? "Ajustes"}
+          description={currentSection?.description ?? ""}
+          icon={CurrentSectionIcon}
+          metrics={premiumMetrics}
+        />
       )}
       {visibleSection === "general" ? (
         <div className="space-y-3">
