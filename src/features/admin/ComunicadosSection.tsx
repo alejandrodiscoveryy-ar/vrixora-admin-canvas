@@ -4,6 +4,7 @@ import { Loader2, Megaphone, Send, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { MetricCard } from "@/components/admin/MetricCard";
 import { premiumSurface, premiumHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { SectionCard } from "@/components/admin/SectionCard";
@@ -224,19 +225,14 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
 
 function AudienceMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="relative isolate min-w-0 overflow-hidden rounded-[var(--radius-compact)] border border-border-default bg-surface-2/80 p-3 shadow-[var(--shadow-xs)]">
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-[var(--module-accent)] opacity-70" />
-      <Smartphone aria-hidden="true" className="pointer-events-none absolute bottom-1 right-2 size-14 text-[var(--module-accent)] opacity-[0.055]" />
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 text-text-secondary">
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" aria-hidden="true">
-            <Smartphone className="size-4" />
-          </span>
-          <p className="text-xs font-medium">{label}</p>
-        </div>
-        <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-text-primary">{value}</p>
-      </div>
-    </div>
+    <MetricCard
+      density="compact"
+      appearance="premium"
+      module="configuracion"
+      icon={Smartphone}
+      label={label}
+      value={value}
+    />
   );
 }
 
