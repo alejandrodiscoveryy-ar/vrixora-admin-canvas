@@ -40,3 +40,26 @@ test("Impulsa centraliza la promoción y no modifica la identidad", () => {
   assert.match(management, /onOpenImpulsa/);
   assert.doesNotMatch(management, /admin_activate_marketplace_promo_card_v1/);
 });
+
+test("Activación Impulsa explica por qué el botón está deshabilitado", () => {
+  const sql = read("supabase/migrations/20261113220656_mi_tuktuk_administrative_activation_identity_review.sql");
+  assert.match(sql, /char_length\(reference\) not between 5 and 300/);
+  assert.match(card, /minLength=\{5\} maxLength=\{300\}/);
+  assert.match(card, /Referencia de autorización documentada/);
+  assert.match(card, /id="impulsa-authorization-help"/);
+  assert.match(card, /El nombre del conductor no sustituye esa referencia/);
+  assert.match(card, /Referencia incompleta:/);
+  assert.match(card, /Faltan \{5 - reference\.trim\(\)\.length\}/);
+  assert.match(card, /disabled=\{!confirmed \|\| reference\.trim\(\)\.length < 5 \|\| busy\}/);
+  assert.match(card, /confirmar la autorización documentada/);
+});
+
+test("Si el servidor rechaza la activación, conserva los campos y explica la causa", () => {
+  assert.match(card, /const \[activationError, setActivationError\] = useState\("")/);
+  assert.match(card, /setActivationError\(message\.includes\("DOCUMENTED_AUTHORIZATION_REQUIRED"\)/);
+  assert.match(card, /PROMO_SERVICE_NOT_ACTIVE/);
+  assert.match(card, /IDENTITY_NOT_VERIFIED/);
+  assert.match(card, /PUBLIC_NAME_INVALID/);
+  assert.match(card, /\{activationError && <p role="alert"/);
+  assert.doesNotMatch(card, /catch \{ setStatus\("No se pudo activar/);
+});
