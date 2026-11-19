@@ -359,7 +359,7 @@ function ProjectNavItem({
                       params={{ id: project.id, section: "trabajos" }}
                       search={{ vista: "resumen" }}
                       title="Trabajos"
-                      aria-label="Trabajos"
+                      aria-label={collapsed ? (trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos") : "Trabajos"}
                       aria-expanded={collapsed ? trabajosOpen : undefined}
                       aria-controls={collapsed ? trabajosGroupId : undefined}
                       onClick={(event) => {
@@ -423,7 +423,14 @@ function ProjectNavItem({
                 <div key="centro-precios" className="space-y-1">
                   <details
                       open={pricingExpanded}
-                      onToggle={(event) => setPricingExpanded(event.currentTarget.open)}
+                      onToggle={(event) => {
+                        const open = event.currentTarget.open;
+                        setPricingExpanded(open);
+                        if (collapsed && open) {
+                          setTrabajosExpanded(false);
+                          setConfigurationExpanded(false);
+                        }
+                      }}
                       className="group/admin"
                     >
                     <summary
@@ -499,7 +506,7 @@ function ProjectNavItem({
                       to="/admin/proyectos/$id/$section"
                       params={{ id: project.id, section: defaultChild.slug }}
                       title={`${tab.label} · ${defaultChild.label}`}
-                      aria-label={`Abrir ${defaultChild.label}`}
+                      aria-label={collapsed ? (groupOpen ? "Contraer Configuración" : "Desplegar Configuración") : `Abrir ${defaultChild.label}`}
                       aria-current={mainSettingsActive ? "page" : undefined}
                       aria-expanded={collapsed ? groupOpen : undefined}
                       aria-controls={collapsed ? configurationGroupId : undefined}
