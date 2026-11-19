@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet } from "lucide-react";
+import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const [rate, setRate] = useState("3");
   const [saving, setSaving] = useState(false);
   const [issued, setIssued] = useState<Issue | null>(null);
+  const [createExpanded, setCreateExpanded] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
   const [editedRate, setEditedRate] = useState("");
@@ -116,83 +117,256 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
     } catch (e) { toast.error(errorMessage(e)); } finally { setSaving(false); }
   }
 
-  return <section className="space-y-4 rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-5">
-    <header className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="text-lg font-semibold">TukTuk Aliados</h2>
-      <p className="text-xs text-muted-foreground">Dos enlaces por colaborador: difusión pública y resultados privados. No requiere cuenta Google.</p></div>
-      <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={q.isFetching}><RefreshCcw className="mr-2 size-4"/>Actualizar</Button>
-    </header>
 
-    {issued && <div className="space-y-3 rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4" role="status">
-      <div className="flex items-start justify-between gap-3"><div>
-        <p className="font-semibold text-emerald-300">Enlaces listos para compartir</p>
-        <p className="text-xs text-muted-foreground">El enlace privado solo se muestra ahora. Si lo pierdes, podrás regenerarlo.</p>
-      </div><Button size="sm" variant="ghost" onClick={() => setIssued(null)}>Cerrar</Button></div>
-      <div className="space-y-1"><Label>Enlace público para captar clientes</Label>
-        <div className="flex gap-2"><Input readOnly aria-label="Enlace público" value={promo(issued.slug)}/><Button variant="outline" size="icon" onClick={() => void copy(promo(issued.slug))} aria-label="Copiar enlace público"><Copy className="size-4"/></Button></div>
-      </div>
-      <div className="space-y-1"><Label>Enlace privado para resultados</Label>
-        <div className="flex gap-2"><Input readOnly aria-label="Enlace privado" value={privateLink(issued.report_key)}/><Button variant="outline" size="icon" onClick={() => void copy(privateLink(issued.report_key))} aria-label="Copiar enlace privado"><Copy className="size-4"/></Button></div>
-        <p className="text-xs text-muted-foreground">Trátalo como una contraseña: cualquiera con ese enlace puede consultar las métricas del Aliado.</p>
-      </div>
-    </div>}
+  const totals = (q.data ?? []).reduce((all, ally) => ({
+    active: all.active + (ally.status === "active" ? 1 : 0),
+    clicks: all.clicks + Number(ally.clicks ?? 0),
+    attributed: all.attributed + Number(ally.attributed ?? 0),
+    completed: all.completed + Number(ally.completed ?? 0),
+    pending: all.pending + Math.max(0, Number(ally.earned ?? 0) - Number(ally.paid ?? 0)),
+  }), { active: 0, clicks: 0, attributed: 0, completed: 0, pending: 0 });
 
-    {canManage && <div className="rounded-xl border border-border/60 bg-card/40 p-3 sm:p-4">
-      <h3 className="mb-3 text-sm font-semibold">Crear nuevo Aliado</h3>
-      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_140px_auto] sm:items-end">
-        <div className="space-y-1"><Label htmlFor="ally-name">Responsable del Aliado</Label>
-          <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={e => setName(e.target.value)}/></div>
-        <div className="space-y-1"><Label htmlFor="ally-slug">Nick comercial para compartir</Label>
-          <Input id="ally-slug" maxLength={24} placeholder="Ej. conuco" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,""))}/></div>
-        <div className="space-y-1"><Label htmlFor="ally-pct">Comisión (%)</Label>
-          <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={e => setRate(e.target.value)}/></div>
-        <Button onClick={() => void create()} disabled={saving}><Plus className="mr-1 size-4"/>Crear</Button>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">Enlace público: <strong>{promo(slug || "nick")}</strong>. El nick es único entre Aliados y conductores; no se puede cambiar después de compartirlo. Las ganancias se calculan solo para carreras reales liquidadas; no se mueve dinero automáticamente.</p>
-    </div>}
+  return (
+    <section data-admin-module="comercial" className="space-y-4" aria-labelledby="tuktuk-allies-heading">
+      <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-300" aria-hidden="true">
+            <Handshake className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Red comercial · TukTuk</p>
+            <h2 id="tuktuk-allies-heading" className="text-xl font-semibold tracking-tight text-foreground">Aliados</h2>
+            <p className="text-xs text-muted-foreground">Captación de pasajeros, viajes atribuidos y liquidaciones por colaborador.</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" className="h-9" onClick={() => void refresh()} disabled={q.isFetching} aria-label="Actualizar resultados de aliados">
+            <RefreshCcw className="mr-1.5 size-3.5" aria-hidden="true" />Actualizar
+          </Button>
+          {canManage && (
+            <Button size="sm" className="h-9" onClick={() => setCreateExpanded((value) => !value)} aria-expanded={createExpanded} aria-controls="ally-create-form">
+              {createExpanded ? <X className="mr-1.5 size-4" aria-hidden="true" /> : <Plus className="mr-1.5 size-4" aria-hidden="true" />}
+              {createExpanded ? "Cerrar formulario" : "Nuevo aliado"}
+            </Button>
+          )}
+        </div>
+      </header>
 
-    {q.isLoading ? <p className="text-sm text-muted-foreground">Cargando Aliados…</p> :
-      q.isError ? <p role="alert" className="text-sm text-red-400">No se pudo consultar el programa. {errorMessage(q.error)}</p> :
-      !q.data?.length ? <p className="text-sm text-muted-foreground">Todavía no hay Aliados. Crea el primero para obtener los dos enlaces.</p> :
-      <div className="space-y-3">
-        {q.data.map(ally => <article key={ally.id} className="rounded-xl border border-border/70 bg-card/50 p-3 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><h3 className="font-semibold">{ally.name}</h3>
-              <p className="text-xs text-muted-foreground">{ally.slug} · {(Number(ally.rate)*100).toLocaleString("es-CU")}% · {ally.status==="active"?"Activo":"Pausado"}</p></div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => void copy(promo(ally.slug))}><Link2 className="mr-1 size-3"/>Enlace público</Button>
-              {canManage && <Button size="sm" variant="outline" onClick={() => void rotate(ally)} disabled={saving}><ExternalLink className="mr-1 size-3"/>Renovar acceso privado</Button>}
+      {q.data && q.data.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Resumen del programa de aliados">
+          {[
+            { label: "Aliados activos", value: totals.active.toLocaleString("es-CU"), note: "de " + q.data.length + " registrados", icon: Handshake, tone: "text-violet-300", surface: "bg-violet-500/10 border-violet-400/20" },
+            { label: "Visitas a enlaces", value: totals.clicks.toLocaleString("es-CU"), note: "difusión comercial", icon: MousePointerClick, tone: "text-sky-300", surface: "bg-sky-500/10 border-sky-400/20" },
+            { label: "Viajes atribuidos", value: totals.attributed.toLocaleString("es-CU"), note: totals.completed + " completados", icon: Route, tone: "text-emerald-300", surface: "bg-emerald-500/10 border-emerald-400/20" },
+            { label: "Pendiente de pago", value: cup(totals.pending), note: "comisiones calculadas", icon: Wallet, tone: "text-amber-300", surface: "bg-amber-500/10 border-amber-400/20" },
+          ].map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <div key={metric.label} className="relative overflow-hidden rounded-xl border border-border/60 bg-card/70 px-3 py-3.5 shadow-sm sm:px-4">
+                <span className={"absolute right-3 top-3 flex size-8 items-center justify-center rounded-lg border " + metric.surface + " " + metric.tone} aria-hidden="true">
+                  <Icon className="size-4" />
+                </span>
+                <p className="pr-9 text-[11px] font-medium text-muted-foreground">{metric.label}</p>
+                <p className="mt-2 max-w-full break-words text-xl font-semibold leading-tight tracking-tight tabular-nums text-foreground sm:text-2xl">{metric.value}</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">{metric.note}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {issued && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 sm:p-4" role="status">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex items-start gap-2">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Enlaces listos para compartir</p>
+                <p className="text-xs text-muted-foreground">Guarda el acceso privado ahora: solo se muestra una vez y regenerarlo invalida el anterior.</p>
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setIssued(null)}><X className="mr-1 size-3.5" />Cerrar</Button>
+          </div>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="min-w-0 space-y-1">
+              <Label>Enlace público para captar clientes</Label>
+              <div className="flex min-w-0 gap-2">
+                <Input readOnly aria-label="Enlace público" value={promo(issued.slug)} className="min-w-0" />
+                <Button variant="outline" size="icon" onClick={() => void copy(promo(issued.slug))} aria-label="Copiar enlace público"><Copy className="size-4" /></Button>
+              </div>
+            </div>
+            <div className="min-w-0 space-y-1">
+              <Label>Enlace privado para resultados</Label>
+              <div className="flex min-w-0 gap-2">
+                <Input readOnly aria-label="Enlace privado" value={privateLink(issued.report_key)} className="min-w-0" />
+                <Button variant="outline" size="icon" onClick={() => void copy(privateLink(issued.report_key))} aria-label="Copiar enlace privado"><Copy className="size-4" /></Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Trátalo como una contraseña: cualquiera con este enlace puede consultar sus resultados.</p>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-            {[
-              ["Visitas",ally.clicks],["Viajes atribuidos",ally.attributed],
-              ["Completados",ally.completed],["Generado",cup(ally.earned)],["Pagado",cup(ally.paid)],
-            ].map(([label,value])=><div key={label} className="rounded-lg bg-background/70 p-2">
-              <p className="text-[11px] text-muted-foreground">{label}</p><p className="text-sm font-semibold">{value}</p></div>)}
+        </div>
+      )}
+
+      {canManage && createExpanded && (
+        <form id="ally-create-form" className="rounded-xl border border-violet-400/25 bg-card/80 p-3 shadow-sm sm:p-4" onSubmit={(event) => { event.preventDefault(); void create(); }}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Crear aliado comercial</h3>
+              <p className="text-xs text-muted-foreground">Un nick público único y una comisión de hasta el 5 %.</p>
+            </div>
+            <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[10px] font-semibold text-violet-300">Enlace personalizado</span>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span>Por pagar (calculado): <strong>{cup(Math.max(0,Number(ally.earned)-Number(ally.paid)))}</strong></span>
-            {canManage && <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="ghost" onClick={() => {setEditing(ally.id);setEditedName(ally.name);setEditedRate(String(Number(ally.rate)*100));}}>Editar</Button>
-              <Button size="sm" variant="ghost" disabled={saving} onClick={() => void update(ally,ally.status==="active"?"paused":"active")}>{ally.status==="active"?"Pausar":"Reactivar"}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditingPayment(ally.id)}><Wallet className="mr-1 size-3"/>Registrar pago</Button>
-            </div>}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_140px_auto] xl:items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="ally-name">Responsable del Aliado</Label>
+              <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={(event) => setName(event.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ally-slug">Nick comercial para compartir</Label>
+              <Input id="ally-slug" maxLength={24} placeholder="Ej. conuco" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ally-pct">Comisión (%)</Label>
+              <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={(event) => setRate(event.target.value)} />
+            </div>
+            <Button type="submit" disabled={saving} className="w-full sm:w-auto xl:mb-px">
+              <Plus className="mr-1.5 size-4" aria-hidden="true" />Crear aliado
+            </Button>
           </div>
-          {editing===ally.id && <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-border/60 pt-3">
-            <div className="space-y-1"><Label>Nombre</Label><Input value={editedName} onChange={e=>setEditedName(e.target.value)}/></div>
-            <div className="space-y-1"><Label>Porcentaje futuro</Label><Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={e=>setEditedRate(e.target.value)}/></div>
-            <Button size="sm" disabled={saving} onClick={()=>void update(ally,ally.status,editedName,Number(editedRate))}>Guardar</Button>
-            <Button size="sm" variant="ghost" onClick={()=>setEditing(null)}>Cancelar</Button>
-          </div>}
-          {editingPayment===ally.id && <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-border/60 pt-3">
-            <p className="w-full text-xs text-muted-foreground">Registra únicamente un pago ya realizado. Esto no transfiere dinero.</p>
-            <div className="space-y-1"><Label>Importe CUP</Label><Input type="number" min="0" step=".01" value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)}/></div>
-            <div className="space-y-1"><Label>Comprobante o referencia</Label><Input value={paymentRef} onChange={e=>setPaymentRef(e.target.value)} placeholder="Transferencia / recibo"/></div>
-            <Button size="sm" disabled={saving} onClick={()=>void logPayment(ally)}>Registrar</Button>
-            <Button size="sm" variant="ghost" onClick={()=>setEditingPayment(null)}>Cancelar</Button>
-          </div>}
-        </article>)}
-      </div>}
-  </section>;
+          <p className="mt-3 break-all text-[11px] text-muted-foreground">
+            Enlace público: <span className="font-medium text-foreground">{promo(slug || "nick")}</span>. El nick es único entre Aliados y conductores y no puede cambiarse después de compartirlo. Las ganancias se calculan solo para carreras reales liquidadas; no se transfiere dinero automáticamente.
+          </p>
+        </form>
+      )}
+
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Colaboradores</h3>
+          {q.data && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">{q.data.length}</span>}
+        </div>
+        <span className="text-[11px] text-muted-foreground">Resultados acumulados</span>
+      </div>
+
+      {q.isLoading ? (
+        <p className="rounded-xl border border-border/50 bg-card/50 px-4 py-6 text-sm text-muted-foreground" role="status">Cargando Aliados…</p>
+      ) : q.isError ? (
+        <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-5 text-sm text-destructive">No se pudo consultar el programa. {errorMessage(q.error)}</p>
+      ) : !q.data?.length ? (
+        <div className="rounded-xl border border-dashed border-border/70 bg-card/30 px-4 py-8 text-center">
+          <Handshake className="mx-auto mb-2 size-7 text-violet-300/70" aria-hidden="true" />
+          <p className="text-sm font-semibold text-foreground">Todavía no hay Aliados</p>
+          <p className="mt-1 text-xs text-muted-foreground">Crea el primer colaborador para generar sus enlaces y medir resultados.</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {q.data.map((ally) => {
+            const due = Math.max(0, Number(ally.earned) - Number(ally.paid));
+            const indicators = [
+              { label: "Visitas", value: Number(ally.clicks).toLocaleString("es-CU"), tone: "text-foreground" },
+              { label: "Viajes atribuidos", value: Number(ally.attributed).toLocaleString("es-CU"), tone: "text-foreground" },
+              { label: "Completados", value: Number(ally.completed).toLocaleString("es-CU"), tone: "text-foreground" },
+              { label: "Generado", value: cup(ally.earned), tone: "text-sky-300" },
+              { label: "Pagado", value: cup(ally.paid), tone: "text-emerald-300" },
+              { label: "Por pagar", value: cup(due), tone: due > 0 ? "text-amber-300" : "text-foreground" },
+            ];
+            const initials = ally.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toUpperCase() || "A";
+            return (
+              <article key={ally.id} className="group relative overflow-hidden rounded-2xl border border-border/65 bg-card/75 shadow-sm transition-colors hover:border-violet-400/35">
+                <span className="absolute inset-y-0 left-0 w-[3px] bg-violet-500/60" aria-hidden="true" />
+                <div className="flex flex-col gap-3 px-4 pb-3 pt-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-sm font-bold text-violet-200">{initials}</span>
+                    <div className="min-w-0">
+                      <h4 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground" title={ally.name}>{ally.name}</h4>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                        <span className="font-medium text-violet-300">@{ally.slug}</span>
+                        <span aria-hidden="true" className="text-muted-foreground/60">·</span>
+                        <span className="text-muted-foreground">{(Number(ally.rate) * 100).toLocaleString("es-CU")}% de comisión</span>
+                        <span className={"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium " + (ally.status === "active" ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300" : "border-border/60 bg-muted/40 text-muted-foreground")}>
+                          <span className={"size-1.5 rounded-full " + (ally.status === "active" ? "bg-emerald-400" : "bg-slate-400")} aria-hidden="true" />
+                          {ally.status === "active" ? "Activo" : "Pausado"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline" className="h-9 border-violet-400/25 bg-violet-500/5" onClick={() => void copy(promo(ally.slug))} aria-label={"Copiar enlace público de " + ally.name}>
+                      <Link2 className="mr-1.5 size-3.5" aria-hidden="true" />Enlace público
+                    </Button>
+                    {canManage && (
+                      <Button size="sm" variant="outline" className="h-9" onClick={() => void rotate(ally)} disabled={saving} aria-label={"Renovar acceso privado de " + ally.name}>
+                        <ExternalLink className="mr-1.5 size-3.5" aria-hidden="true" />Renovar acceso
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/50 sm:mx-5 sm:grid-cols-3 xl:grid-cols-6">
+                  {indicators.map((metric) => (
+                    <div key={metric.label} className="min-w-0 bg-card px-3 py-2.5">
+                      <p className="text-[10px] font-medium leading-tight text-muted-foreground">{metric.label}</p>
+                      <p className={"mt-1 break-words text-[14px] font-semibold leading-tight tabular-nums " + metric.tone}>{metric.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {canManage && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5">
+                    <p className="text-[11px] text-muted-foreground">Enlaces personalizados · pago registrado manualmente</p>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); }} aria-label={"Editar " + ally.name}>
+                        <Pencil className="mr-1.5 size-3.5" aria-hidden="true" />Editar
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2.5 text-xs" disabled={saving} onClick={() => void update(ally, ally.status === "active" ? "paused" : "active")}>
+                        {ally.status === "active" ? <PauseCircle className="mr-1.5 size-3.5" aria-hidden="true" /> : <PlayCircle className="mr-1.5 size-3.5" aria-hidden="true" />}
+                        {ally.status === "active" ? "Pausar" : "Reactivar"}
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => { setEditing(null); setEditingPayment(ally.id); }} aria-label={"Registrar pago a " + ally.name}>
+                        <Wallet className="mr-1.5 size-3.5" aria-hidden="true" />Registrar pago
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {editing === ally.id && canManage && (
+                  <div className="mx-4 mb-3 rounded-xl border border-border/65 bg-background/60 p-3 sm:mx-5">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="min-w-[170px] flex-1 space-y-1">
+                        <Label>Nombre del aliado</Label>
+                        <Input maxLength={80} value={editedName} onChange={(event) => setEditedName(event.target.value)} />
+                      </div>
+                      <div className="min-w-[140px] space-y-1">
+                        <Label>Porcentaje futuro</Label>
+                        <Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={(event) => setEditedRate(event.target.value)} />
+                      </div>
+                      <Button size="sm" disabled={saving} onClick={() => void update(ally, ally.status, editedName, Number(editedRate))}>Guardar cambios</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+                    </div>
+                  </div>
+                )}
+
+                {editingPayment === ally.id && canManage && (
+                  <div className="mx-4 mb-3 rounded-xl border border-border/65 bg-background/60 p-3 sm:mx-5">
+                    <p className="mb-2 text-xs text-muted-foreground">Registra únicamente un pago ya realizado. Esto no transfiere dinero.</p>
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="min-w-[140px] space-y-1">
+                        <Label>Importe CUP</Label>
+                        <Input type="number" min="0" step=".01" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} />
+                      </div>
+                      <div className="min-w-[180px] flex-1 space-y-1">
+                        <Label>Comprobante o referencia</Label>
+                        <Input value={paymentRef} onChange={(event) => setPaymentRef(event.target.value)} placeholder="Transferencia / recibo" />
+                      </div>
+                      <Button size="sm" disabled={saving} onClick={() => void logPayment(ally)}>Registrar pago</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingPayment(null)}>Cancelar</Button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
 }
