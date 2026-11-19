@@ -9,6 +9,9 @@ on:
       - 'tests/admin_windows_delivery_regression.test.mjs'
       - 'tests/admin_pwa_cache_refresh.test.mjs'
       - 'src/features/admin/**'
+      - 'supabase/migrations/20261119013500_marketplace_ally_branded_shortlinks_v1.sql'
+      - 'supabase/functions/marketplace-ally-shortlink/**'
+      - 'tests/tuktuk_allies_contract.test.mjs'
       - 'src/routes/admin*.tsx'
       - 'src/routes/__root.tsx'
       - 'src/styles.css'
@@ -43,6 +46,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Probar el contrato de componentes premium
         run: bun test tests/admin_design_system.test.mjs
+      - name: Verificar nicks de Aliados y privacidad
+        run: node --test tests/tuktuk_allies_contract.test.mjs
       - name: Validar actualizaciones PWA y alertas push
         run: node --test tests/admin_windows_delivery_regression.test.mjs tests/admin_pwa_cache_refresh.test.mjs tests/marketplace_impulsa_self_service.test.mjs
       - name: Compilar y verificar bundle de prueba (sin desplegar)
