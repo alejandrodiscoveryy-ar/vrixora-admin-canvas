@@ -221,7 +221,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
        </details>
 
        <div className="rounded-xl border border-border-default bg-surface-1">
-         <div className="border-b border-border-subtle p-3"><h4 className="text-base font-semibold text-text-primary">Resultados por conductor</h4>
+         <div className="border-b border-border-subtle p-3"><h4 className="text-base font-semibold text-text-primary">Aportación de cada conductor</h4>
            <p className="mt-1 text-[11px] text-muted-foreground">Toca una fila para ver cómo se comporta su enlace.</p></div>
          <div className="divide-y divide-border/40">
            {d!.drivers.length ? d!.drivers.map((x,i)=>{
