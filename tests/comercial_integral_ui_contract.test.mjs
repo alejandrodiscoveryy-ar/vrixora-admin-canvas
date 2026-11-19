@@ -53,7 +53,8 @@ test("Configuración preserva las tres rutas financieras y sus permisos", () => 
 test("Campañas, conductores y aliados muestran primero la acción o resultado", () => {
   assert.match(offers, /Catálogo de beneficios/);
   assert.doesNotMatch(offers, /comercial-ofertas-hero\.svg/);
-  assert.match(offers, /showArchived/);
+  assert.match(offers, /showHistory/);
+  assert.match(offers, /count\.expired/);
   assert.match(offers, /archiveMarketplaceOfferCampaign/);
   assert.match(allies, /<MetricCard/);
   assert.match(allies, /Nuevo aliado/);
