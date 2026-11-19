@@ -5,6 +5,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MetricCard } from "@/components/admin/MetricCard";
 
 type ReferredPerson = {
   relationship_id: string;
@@ -142,8 +143,8 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
     <section className={cp.shell}>
       <div className={cp.header}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Referidos</p>
-        <h2 className="mt-1 text-xl font-semibold">Quién refirió a quién</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h2 className={cp.title}>Quién refirió a quién</h2>
+        <p className={cp.description}>
           Abre un conductor para ver a cada persona que invitó, sus carreras reales y lo que generaron para TUKTUK.
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
@@ -158,13 +159,8 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {tiles.map(({ label, value, icon: Icon }) => (
-          <div key={label} className={cp.metric}>
-            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span>{label}</span><Icon className="h-4 w-4 shrink-0 text-violet-300" />
-            </div>
-            <div className="mt-2 break-words text-xl font-bold tabular-nums">{value}</div>
-          </div>
+        {tiles.map(({ label, value, icon }) => (
+          <MetricCard key={label} density="compact" appearance="premium" module="comercial" label={label} value={value} icon={icon} />
         ))}
       </div>
 
