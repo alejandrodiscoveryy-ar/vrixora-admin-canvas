@@ -53,8 +53,8 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
     const s = slug.trim().toLowerCase();
     const pct = Number(rate);
     if (!/^[a-z0-9][a-z0-9-]{1,23}$/.test(s) || s.endsWith("-") || name.trim().length < 2 ||
-      !Number.isFinite(pct) || pct < 0 || pct > 15) {
-      toast.error("Revisa el nombre, el alias y el porcentaje (0 a 15%)."); return;
+      !Number.isFinite(pct) || pct < 0 || pct > 5) {
+      toast.error("Revisa el nombre, el alias y el porcentaje (0 a 5%)."); return;
     }
     setSaving(true);
     try {
@@ -71,6 +71,9 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   }
   async function update(ally: Ally, status: "active" | "paused", newName = ally.name, newRate = ally.rate * 100) {
     if (!canManage) return;
+    if (!Number.isFinite(newRate) || newRate < 0 || newRate > 5) {
+      toast.error("La comisión del Aliado debe estar entre 0 y 5 %."); return;
+    }
     setSaving(true);
     try {
       const { error } = await getSupabaseClient().rpc("admin_update_marketplace_ally_v1", {
@@ -142,7 +145,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
         <div className="space-y-1"><Label htmlFor="ally-slug">Alias único del enlace</Label>
           <Input id="ally-slug" maxLength={24} placeholder="ej. juan-perez" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,""))}/></div>
         <div className="space-y-1"><Label htmlFor="ally-pct">Comisión (%)</Label>
-          <Input id="ally-pct" type="number" min="0" max="15" step=".1" value={rate} onChange={e => setRate(e.target.value)}/></div>
+          <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={e => setRate(e.target.value)}/></div>
         <Button onClick={() => void create()} disabled={saving}><Plus className="mr-1 size-4"/>Crear</Button>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">Las ganancias se calculan solo para carreras reales liquidadas; no se mueve dinero automáticamente.</p>
@@ -178,7 +181,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
           </div>
           {editing===ally.id && <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-border/60 pt-3">
             <div className="space-y-1"><Label>Nombre</Label><Input value={editedName} onChange={e=>setEditedName(e.target.value)}/></div>
-            <div className="space-y-1"><Label>Porcentaje futuro</Label><Input type="number" min="0" max="15" step=".1" value={editedRate} onChange={e=>setEditedRate(e.target.value)}/></div>
+            <div className="space-y-1"><Label>Porcentaje futuro</Label><Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={e=>setEditedRate(e.target.value)}/></div>
             <Button size="sm" disabled={saving} onClick={()=>void update(ally,ally.status,editedName,Number(editedRate))}>Guardar</Button>
             <Button size="sm" variant="ghost" onClick={()=>setEditing(null)}>Cancelar</Button>
           </div>}
