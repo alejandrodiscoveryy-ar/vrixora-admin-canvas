@@ -1,14 +1,8 @@
 import { adminSubnavTone } from "@/lib/admin-navigation";
+import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { premiumColumnHeaderSurface, premiumSurface } from "@/components/admin/density";
 import { useState } from "react";
-import {
-  BellRing,
-  CalendarX2,
-  ChevronRight,
-  FlaskConical,
-  Globe2,
-  Radar,
-  ShieldCheck,
-} from "lucide-react";
+import { BellRing, CalendarX2, FlaskConical, Globe2, Radar } from "lucide-react";
 
 import MarketplaceTerritoryCatalog from "@/features/admin/MarketplaceTerritoryCatalog";
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
@@ -78,17 +72,17 @@ export default function MarketplaceConfigurationWorkspace({
 
   return (
     <section aria-label="Configuración de TukTuk" className="min-w-0 space-y-3">
-      <div className="grid min-w-0 items-start gap-2 sm:gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-3">
         <nav data-nav-tone="administracion"
           aria-label="Secciones de configuración de TukTuk"
-          className="relative isolate overflow-hidden rounded-[17px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] sm:rounded-[22px] sm:p-2.5 xl:sticky xl:top-4 admin-graphite-panel"
+          className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}
         >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
+
           <div className="relative z-10 hidden px-2.5 pb-2 pt-2 sm:block">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Configuración</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Áreas de control de TukTuk</p>
           </div>
-          <div className="relative z-10 grid grid-cols-3 gap-1 sm:gap-1.5 xl:grid-cols-1">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {SECTIONS.map((section) => {
               const Icon = section.icon;
               const isSelected = section.id === active;
@@ -100,46 +94,35 @@ export default function MarketplaceConfigurationWorkspace({
                   aria-pressed={isSelected}
                   data-nav-tone={adminSubnavTone("configuracion", section.id)}
                   aria-controls="tuktuk-config-detail"
-                  className={`group relative isolate flex admin-graphite-nav-item min-h-11 min-w-0 flex-col items-center justify-center gap-1 sm:flex-row overflow-hidden rounded-[12px] border px-1.5 py-2 text-center transition-all duration-200 sm:justify-start sm:gap-2.5 sm:rounded-[16px] sm:px-3 sm:py-3 sm:text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isSelected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}
+                  className={`flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${isSelected ? "border-primary/45 bg-primary/10 text-text-primary shadow-[inset_0_-2px_var(--primary)]" : "border-transparent bg-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/65 hover:text-text-primary"}`}
                 >
-                  <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 rotate-[-14deg] ${isSelected ? "admin-nav-watermark opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
-                  <span className="admin-nav-icon relative z-10" aria-hidden="true">
+
+                  <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] bg-surface-3 text-[var(--module-accent,var(--primary))]" aria-hidden="true">
                     <Icon aria-hidden="true" strokeWidth={2} />
                   </span>
-                  <span className="relative z-10 min-w-0 flex-1">
-                    <span className="hidden text-[10px] font-semibold tracking-[0.12em] text-muted-foreground sm:block">{section.number}</span>
-                    <span className="block text-[11px] font-semibold leading-tight text-foreground sm:mt-0.5 sm:text-sm">{section.title}</span>
-                    <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{section.subtitle}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="sr-only">{section.number}</span>
+                    <span className="block text-xs font-semibold leading-snug text-text-primary sm:text-sm">{section.title}</span>
+                    <span className="sr-only">{section.subtitle}</span>
                   </span>
-                  <ChevronRight data-nav-chevron aria-hidden="true" className="relative z-10 hidden h-4 w-4 shrink-0 xl:block" />
+
                 </button>
               );
             })}
           </div>
-          <div className="relative z-10 mt-2 hidden items-center gap-1.5 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground sm:flex">
-            <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-cyan-400" />
-            Acceso según permisos
-          </div>
+
         </nav>
 
         <div id="tuktuk-config-detail" className="min-w-0 space-y-3">
           {active !== "pruebas" ? (
-            <header data-nav-tone={adminSubnavTone("configuracion", active)} className="relative isolate overflow-hidden rounded-[20px] border border-cyan-400/15 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-3 text-slate-50 shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
-              <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_90%_10%,rgba(34,211,238,0.10),transparent_55%)]" />
-              <SelectedIcon aria-hidden="true" className="pointer-events-none absolute -right-5 -top-8 z-0 h-32 w-32 rotate-[-15deg] admin-nav-watermark opacity-[0.07] sm:right-4" />
-              <div className="relative z-10 flex items-center gap-3">
-                <span className="admin-workspace-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
-                  <SelectedIcon aria-hidden="true" className="h-[19px] w-[19px]" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-cyan-200/85">{selected.number} / {selected.eyebrow}</p>
-                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                    <h2 className="text-lg font-semibold tracking-tight text-white">{selected.title}</h2>
-                    <p className="hidden text-xs leading-relaxed text-slate-300 sm:block">{selected.description}</p>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <ModuleHeader
+              module="configuracion"
+              density="compact"
+              appearance="premium"
+              title={selected.title}
+              description={selected.description}
+              icon={SelectedIcon}
+            />
           ) : null}
 
           {active === "pruebas" ? (
@@ -155,7 +138,7 @@ export default function MarketplaceConfigurationWorkspace({
             <div className="grid min-w-0 gap-3.5 xl:grid-cols-2" aria-label="Radar: despacho y avisos">
               <MarketplaceDispatchSettingsCard projectId={projectId} canManage={canManageSettings} />
               <MarketplaceJobReminderSettingsCard projectId={projectId} canManage={canManageSettings} />
-              <div className="relative isolate flex items-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card/65 px-3.5 py-2.5 text-xs text-muted-foreground xl:col-span-2 admin-graphite-inset">
+              <div className={`flex min-w-0 items-center gap-2 rounded-[var(--radius-compact)] border px-3 py-2.5 text-xs text-text-secondary xl:col-span-2 ${premiumSurface}`}>
                 <BellRing aria-hidden="true" className="h-4 w-4 shrink-0 text-cyan-400" />
                 <span>Los permisos y validaciones de despacho y avisos se mantienen.</span>
               </div>
