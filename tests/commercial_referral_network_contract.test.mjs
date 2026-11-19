@@ -39,7 +39,7 @@ test("ingresos reales no mezclan simulacros, comisiones promocionales ni premios
 });
 
 test("Comercial incluye la pestaña Referidos sin alterar Ofertas y Captación", () => {
-  assert.match(comercial, /setCommercialView\("referidos"\)/);
+  assert.match(comercial, /\["referidos","Referidos y red"\]/);
   assert.match(comercial, /<CommercialReferralsPanel projectId=\{projectId\} \/>/);
   assert.match(comercial, /<MarketplaceOffersPanel projectId=\{projectId\}/);
   assert.match(ui, /admin_get_commercial_referral_network_v1/);
