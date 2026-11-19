@@ -161,14 +161,14 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
         <RefreshCw className={"h-4 w-4 "+(query.isFetching?"animate-spin":"")}/>
       </button>}
     </header>
-    {mode!=="analytics"&&<div className="rounded-lg border border-border/50 bg-muted/10 p-3">
+    {mode!=="analytics"&&<div className={cp.inset}>
       <p className="text-xs font-semibold">El cliente llegará a la aplicación TukTuk</p>
       <p className="mt-1 break-all text-xs text-muted-foreground">{BASE}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-xs font-medium">¿Dónde vas a compartirlo?
           <select aria-label="Canal de la campaña" value={channel}
             onChange={e=>setChannel(e.target.value as Channel)}
-            className="mt-1 min-h-11 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-1 px-3 py-2 text-sm text-text-primary">
+            className={cp.control + " mt-1 min-h-11 w-full px-3 py-2 text-sm text-text-primary"}>
             {availableChannels.map(v=><option key={v} value={v}>{sources[v]}</option>)}
           </select>
         </label>
@@ -177,10 +177,10 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
             placeholder="hospitales, pegatinas, lanzamiento"
             onChange={e=>setAction(e.target.value.toLowerCase().normalize("NFD")
               .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9_]/g,"").slice(0,20))}
-            className="mt-1 min-h-11 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-1 px-3 py-2 text-sm text-text-primary"/>
+            className={cp.control + " mt-1 min-h-11 w-full px-3 py-2 text-sm text-text-primary"}/>
         </label>
       </div>
-      <p className="mt-2 break-all rounded-[var(--radius-control)] border border-border-subtle bg-surface-2 p-3 font-mono text-xs text-text-secondary">{link}</p>
+      <p className={cp.inset + " mt-2 break-all font-mono text-xs text-text-secondary"}>{link}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button type="button" size="sm" className="max-sm:min-h-11" disabled={!canManage||busy}
           onClick={()=>void copy(link,"link_copied")}><Copy className="mr-1 size-4"/>Copiar enlace</Button>
