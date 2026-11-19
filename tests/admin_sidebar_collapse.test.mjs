@@ -6,13 +6,13 @@ test("El menu de escritorio se contrae a 64px sin desmontar el contenido", () =>
   assert.match(chrome, /collapsed \? "w-16" : compact \? "w-\[232px\]" : "w-\[272px\]"/);
   assert.match(chrome, /collapsed=\{sidebarCollapsed\}/);
   assert.match(chrome, /onToggleSidebar=\{toggleDesktopSidebar\}/);
-  assert.match(chrome, /aria-expanded=\{!sidebarCollapsed\}/);
+  assert.match(chrome, /aria-expanded=\{!collapsed\}/);
   assert.match(chrome, /aria-controls="admin-desktop-sidebar"/);
   assert.match(chrome, /<Outlet \/>/);
 });
 test("El control sigue disponible y tiene nombre accesible en los dos estados", () => {
-  assert.match(chrome, /aria-label=\{sidebarCollapsed \? "Desplegar menú lateral" : "Contraer menú lateral"\}/);
-  assert.match(chrome, /sidebarCollapsed \? <PanelLeftOpen/);
+  assert.match(chrome, /aria-label=\{collapsed \? "Desplegar menú lateral" : "Contraer menú lateral"\}/);
+  assert.match(chrome, /collapsed \? <PanelLeftOpen/);
   assert.match(chrome, /motion-reduce:transition-none/);
 });
 test("La preferencia es local y tolera almacenamiento bloqueado", () => {
@@ -74,4 +74,28 @@ test("Trabajos abre Pulso y su flecha controla el submenú sin navegar", () => {
   assert.match(block, /search=\{\{ vista: view\.slug \}\}/);
   assert.match(block, /aria-current=\{viewActive \? "page" : undefined\}/);
   assert.doesNotMatch(block, /<summary|<details/);
+});
+
+test("El control de expandir se encuentra solo al pie del sidebar, no en la cabecera", () => {
+  const aside = chrome.slice(chrome.indexOf("function DesktopSidebar("), chrome.indexOf("function MobileDrawer("));
+  const topbar = chrome.slice(chrome.indexOf("function TopBar("), chrome.indexOf("function DesktopLink("));
+  assert.match(aside, /onClick=\{onToggleSidebar\}/);
+  assert.match(aside, /aria-controls="admin-desktop-sidebar"/);
+  assert.match(aside, /aria-expanded=\{!collapsed\}/);
+  assert.match(aside, /<span>Contraer menú<\/span>/);
+  assert.match(aside, /collapsed \? <PanelLeftOpen/);
+  assert.doesNotMatch(topbar, /onToggleSidebar|aria-controls="admin-desktop-sidebar"|PanelLeftOpen|PanelLeftClose/);
+  assert.doesNotMatch(aside, /Sistema operativo|Datos sincronizados con Supabase/);
+});
+
+test("Un proyecto: solo se presenta su logo, no el botón redundante Proyectos", () => {
+  const aside = chrome.slice(chrome.indexOf("function DesktopSidebar("), chrome.indexOf("function MobileDrawer("));
+  const mobile = chrome.slice(chrome.indexOf("function MobileDrawer("), chrome.indexOf("function TopBar("));
+  assert.match(aside, /!projectsLoading && \(projects\?\.length \?\? 0\) !== 1 && \(/);
+  assert.match(mobile, /!projectsLoading && \(projects\?\.length \?\? 0\) !== 1 && \(/);
+  assert.match(chrome, /projectIconVariantUrl\(project\.iconUrl, "pwa-192\.png"\)/);
+  assert.match(chrome, /params=\{\{ id: project\.id \}\}/);
+  assert.match(chrome, /Proyecto activo/);
+  assert.match(aside, /<VrixoraLogo variant="mark"/);
+  assert.match(mobile, /<VrixoraLogo variant="mark"/);
 });

@@ -13,6 +13,7 @@ on:
       - 'src/routes/admin.proyectos.index.tsx'
       - 'src/routes/admin.proyectos.$id.tsx'
       - 'tests/admin_single_project_start.test.mjs'
+      - 'tests/admin_sidebar_collapse.test.mjs'
       - 'supabase/migrations/20261119013500_marketplace_ally_branded_shortlinks_v1.sql'
       - 'supabase/functions/marketplace-ally-shortlink/**'
       - 'tests/tuktuk_allies_contract.test.mjs'
@@ -64,6 +65,8 @@ jobs:
         run: node --test tests/comercial_politicas_premium_contract.test.mjs
       - name: Verificar entrada automática al proyecto único
         run: bun test tests/admin_single_project_start.test.mjs
+      - name: Verificar logos y controles del menú lateral
+        run: bun test tests/admin_sidebar_collapse.test.mjs
       - name: Verificar nicks de Aliados y privacidad
         run: node --test tests/tuktuk_allies_contract.test.mjs
       - name: Validar actualizaciones PWA y alertas push

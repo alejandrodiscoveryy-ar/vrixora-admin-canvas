@@ -1,7 +1,6 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  Activity,
   ChevronRight,
   FolderKanban,
   LayoutDashboard,
@@ -146,13 +145,12 @@ function AdminChrome() {
           currentSection={currentSection}
           compact={compactWorkspace}
           collapsed={sidebarCollapsed}
+          onToggleSidebar={toggleDesktopSidebar}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
             user={user}
             onMenuOpen={() => setMobileDrawerOpen(true)}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={toggleDesktopSidebar}
             project={currentProject ?? null}
           />
           <main
@@ -302,7 +300,10 @@ function ProjectNavItem({
               <FolderKanban className="h-5 w-5" />
             )}
           </span>
-          <span className={collapsed ? "sr-only" : "truncate"}>{project.name}</span>
+          <span className={collapsed ? "sr-only" : "min-w-0 flex-1"}>
+            <span className="block truncate">{project.name}</span>
+            {isActiveProject && <span className="block text-[10px] font-normal text-muted-foreground">Proyecto activo</span>}
+          </span>
         </Link>
         {!collapsed && <button
           type="button"
@@ -564,6 +565,7 @@ function DesktopSidebar({
   currentSection,
   compact,
   collapsed,
+  onToggleSidebar,
 }: {
   projects: Awaited<ReturnType<typeof useUserProjects>>["data"] | undefined;
   projectsLoading: boolean;
@@ -572,6 +574,7 @@ function DesktopSidebar({
   currentSection: string;
   compact: boolean;
   collapsed: boolean;
+  onToggleSidebar: () => void;
 }) {
   return (
         <aside
@@ -609,19 +612,21 @@ function DesktopSidebar({
           collapsed ? "overflow-x-hidden p-2 [&_[data-nav-nested]]:ml-0 [&_[data-nav-nested]]:border-0 [&_[data-nav-nested]]:pl-0 [&_[data-nav-label]]:sr-only [&_[data-nav-chevron]]:hidden [&_summary]:justify-center [&_summary]:gap-0 [&_summary]:px-1 [&_[data-nav-nested]_a]:justify-center [&_[data-nav-nested]_a]:gap-0 [&_[data-nav-nested]_a]:px-1" : compact ? "p-2.5" : "p-3.5"
         }`}
       >
-        <DesktopLink
-          to="/admin/proyectos"
-          icon={LayoutDashboard}
-          label="Proyectos"
-          active={path === "/admin/proyectos"}
-          collapsed={collapsed}
-        />
+        {!projectsLoading && (projects?.length ?? 0) !== 1 && (
+          <DesktopLink
+            to="/admin/proyectos"
+            icon={LayoutDashboard}
+            label="Proyectos"
+            active={path === "/admin/proyectos"}
+            collapsed={collapsed}
+          />
+        )}
                 <div
           className={`px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 ${
             collapsed ? "sr-only" : compact ? "mb-2 mt-4" : "mb-2.5 mt-7"
           }`}
         >
-          Espacios de trabajo
+          {!projectsLoading && projects?.length === 1 ? "Proyecto activo" : "Espacios de trabajo"}
         </div>
         {projectsLoading ? (
           <div className="flex items-center justify-center py-4">
@@ -641,26 +646,22 @@ function DesktopSidebar({
         )}
       </nav>
 
-            <div
-        className={`border-t border-sidebar-border/80 ${
-          collapsed ? "p-2" : compact ? "p-2.5" : "p-3.5"
-        }`}
-      >
-        {collapsed ? (
-          <div title="Sistema operativo" aria-label="Sistema operativo" className="flex h-10 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] text-emerald-300">
-            <Activity className="h-4 w-4" aria-hidden="true" />
-          </div>
-        ) : (
-        <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
-          <div className="flex items-center gap-2 text-xs font-medium text-emerald-300">
-            <Activity className="h-3.5 w-3.5" />
-            Sistema operativo
-          </div>
-          <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">
-            Datos sincronizados con Supabase
-          </p>
-        </div>
-        )}
+      <div className={`shrink-0 border-t border-sidebar-border/80 ${collapsed ? "p-2" : "p-3"}`}>
+        <Button
+          variant="ghost"
+          size={collapsed ? "icon" : "sm"}
+          className={collapsed
+            ? "mx-auto flex size-10 text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
+            : "flex min-h-11 w-full items-center justify-start gap-3 rounded-xl px-3 text-sm text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"}
+          aria-controls="admin-desktop-sidebar"
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? "Desplegar menú lateral" : "Contraer menú lateral"}
+          title={collapsed ? "Desplegar menú lateral" : "Contraer menú lateral"}
+          onClick={onToggleSidebar}
+        >
+          {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+          {!collapsed && <span>Contraer menú</span>}
+        </Button>
       </div>
     </aside>
   );
@@ -719,16 +720,18 @@ function MobileDrawer({
         </SheetHeader>
 
         <nav className="flex max-h-[calc(100dvh-14rem)] flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-          <DrawerLink
-            to="/admin/proyectos"
-            icon={LayoutDashboard}
-            label="Proyectos"
-            active={path === "/admin/proyectos"}
-            closeDrawer={() => onOpenChange(false)}
-          />
+          {!projectsLoading && (projects?.length ?? 0) !== 1 && (
+            <DrawerLink
+              to="/admin/proyectos"
+              icon={LayoutDashboard}
+              label="Proyectos"
+              active={path === "/admin/proyectos"}
+              closeDrawer={() => onOpenChange(false)}
+            />
+          )}
 
           <div className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Espacios de trabajo
+            {!projectsLoading && projects?.length === 1 ? "Proyecto activo" : "Espacios de trabajo"}
           </div>
           {projectsLoading ? (
             <div className="flex items-center justify-center py-4">
@@ -787,14 +790,10 @@ function TopBar({
   user,
   project,
   onMenuOpen,
-  sidebarCollapsed,
-  onToggleSidebar,
 }: {
   user: NonNullable<ReturnType<typeof useSupabaseAuth>["user"]>;
   project: Awaited<ReturnType<typeof useProject>>["data"] | null;
   onMenuOpen: () => void;
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
 }) {
   const navigate = useNavigate();
   const { signOut } = useSupabaseAuth();
@@ -821,19 +820,6 @@ function TopBar({
         onClick={onMenuOpen}
       >
         <Menu className="h-5 w-5" />
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        className="hidden shrink-0 text-muted-foreground hover:text-foreground lg:inline-flex"
-        aria-controls="admin-desktop-sidebar"
-        aria-expanded={!sidebarCollapsed}
-        aria-label={sidebarCollapsed ? "Desplegar menú lateral" : "Contraer menú lateral"}
-        title={sidebarCollapsed ? "Desplegar menú lateral" : "Contraer menú lateral"}
-        onClick={onToggleSidebar}
-      >
-        {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
       </Button>
 
       <Link to="/admin/proyectos" className="flex min-w-0 items-center gap-2 lg:hidden">
