@@ -280,7 +280,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     }));
   }, [activeLeads]);
   return (
-    <div data-admin-module="comercial" className="min-w-0 p-2 sm:p-3">
+    <div data-admin-module="comercial" className={cp.workspace}>
       <div className="min-w-0 space-y-3 sm:space-y-4">
       <nav
         aria-label="Áreas de Comercial"
@@ -407,7 +407,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
               </CommercialSettingsPanel>
             </div>
           ) : (
-            <div className="rounded-xl border border-border/60 bg-card/55 p-4 text-sm text-muted-foreground" role="status">Necesitas permiso de configuración para consultar y modificar estas políticas.</div>
+            <div className={cp.inset + " text-sm text-text-secondary"} role="status">Necesitas permiso de configuración para consultar y modificar estas políticas.</div>
           )}
         </section>
       ) : showReferrals ? (
@@ -456,7 +456,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 return (
                   <div
                     key={step.label}
-                    className="relative rounded-2xl border border-border/70 bg-card/60 p-4 flex flex-col justify-between admin-graphite-inset"
+                    className={cp.inset + " relative flex flex-col justify-between"}
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -768,7 +768,7 @@ function Filter({
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-10 text-xs bg-background/60 border-border/80">
+      <SelectTrigger className={"h-10 text-xs " + cp.control}>
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent>
@@ -962,7 +962,7 @@ function HistoryDialog({
         </DialogHeader>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto py-2">
           {canManage && (
-            <div className="space-y-2 rounded-xl border border-border/70 bg-card p-3 admin-graphite-inset">
+            <div className={cp.inset + " space-y-2"}>
               <Label className="text-xs">Añadir nota de seguimiento</Label>
               <Textarea
                 placeholder="Escribe una nota..."
