@@ -44,17 +44,15 @@ test('Provincia conserva permisos y actualizacion de lugares', () => {
   assert.match(section, /<MarketplaceConfigurationWorkspace/);
 });
 
-test('interfaz compacta premium, marca de agua tenue y accesibilidad', () => {
+test('interfaz premium sin barra duplicada, con navegación compacta y acceso completo', () => {
   assert.doesNotMatch(workspace, />Configuración del servicio</);
-  assert.match(workspace, /xl:grid-cols-\[252px_minmax\(0,1fr\)\]/);
-  assert.match(workspace, /opacity-\[0\.075\]/);
-  assert.match(workspace, /opacity-\[0\.07\]/);
-  assert.match(workspace, /pointer-events-none absolute -right-4 -top-5/);
-  assert.match(workspace, /aria-hidden="true"/);
+  assert.doesNotMatch(workspace, /xl:grid-cols-\[252px_minmax\(0,1fr\)\]/);
+  assert.doesNotMatch(workspace, /admin-nav-watermark|bg-gradient/);
+  assert.match(workspace, /premiumColumnHeaderSurface/);
+  assert.match(workspace, /<ModuleHeader/);
+  assert.match(workspace, /grid grid-cols-2 gap-1\.5 sm:grid-cols-4/);
   assert.match(workspace, /aria-pressed=\{isSelected\}/);
   assert.match(workspace, /aria-controls="tuktuk-config-detail"/);
-  assert.match(workspace, /text-white/);
-  // Las tres áreas se muestran en columnas también en teléfono; escritorio conserva la barra lateral.
-  assert.match(workspace, /grid grid-cols-3 gap-1 sm:gap-1\.5 xl:grid-cols-1/);
-  assert.match(workspace, /aria-controls="tuktuk-config-detail"/);
+  assert.match(workspace, /aria-hidden="true"/);
+  assert.match(workspace, /canManageSettings && canManageMarketplace/);
 });
