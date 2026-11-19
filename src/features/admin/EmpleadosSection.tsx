@@ -29,7 +29,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Users, ShieldCheck, Wallet, Megaphone } from "lucide-react";
-import { premiumSurface } from "@/components/admin/density";
 import { useProjectMembers, useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices } from "@/lib/services";
 import { toast } from "sonner";
@@ -113,7 +112,7 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
       )}
 
       {/* Bloque Informativo: Roles del Proyecto */}
-      <SectionCard density="compact" appearance="premium" title="Roles del proyecto y permisos" module="empleados" className={premium ? premiumSurface : undefined}>
+      <SectionCard density="compact" appearance="premium" title="Roles del proyecto y permisos" module="empleados">
         
         <div className="grid min-w-0 gap-3 text-xs sm:grid-cols-3">
           {([
@@ -123,7 +122,7 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
           ] as const).map(role => {
             const RoleIcon = role.icon;
             return (
-              <div key={role.label} className="relative min-w-0 overflow-hidden rounded-[var(--radius-compact)] border border-border-default bg-surface-2/75 p-3 shadow-[var(--shadow-xs)]">
+              <div key={role.label} className="relative min-w-0 overflow-hidden rounded-[var(--radius-compact)] border border-border-default bg-surface-2/75 p-3">
                 <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px]" style={{ backgroundColor: role.color }} />
                 <div className="mb-2 flex items-center gap-2">
                   <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-border-default bg-surface-3/80" style={{ color: role.color }}>
@@ -141,7 +140,7 @@ export default function EmpleadosSection({ projectId, premium = false }: { proje
       <AdminDataTableShell density="compact" appearance="premium"
         title="Empleados asignados"
         description={premium ? undefined : "Miembros con acceso activo al centro de control"}
-        className={premium ? premiumSurface : undefined}
+       
         isEmpty={rows.length === 0}
         emptyState={
           <EmptyState
