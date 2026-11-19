@@ -346,19 +346,25 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       </nav>
       {showManagement && (
-        <nav aria-label="Herramientas de gestión comercial" className={cp.section + " flex flex-wrap items-center gap-2"}>
-          {([
-            ["configuracion","Configuración general"],
-             ["referidos","Referidos y red"],
-            ["ofertas","Beneficios de conductores"],
-            ["captacion","Captación y contactos"],
-          ] as const).map(([value,label]) => (
-            <button type="button" key={value} aria-pressed={commercialView===value}
-              onClick={() => setCommercialView(value)}
-              className={"min-h-11 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "+(commercialView===value?"border-border-strong bg-surface-3 text-text-primary":"border-border-subtle bg-surface-1 text-text-secondary hover:bg-surface-2")}>
-              {label}
-            </button>
-          ))}
+        <nav aria-label="Herramientas de gestión comercial" className="min-w-0">
+          <div className={cp.managementNav}>
+            {([
+              ["configuracion", "Configuración general"],
+              ["referidos", "Referidos y red"],
+              ["ofertas", "Beneficios de conductores"],
+              ["captacion", "Captación y contactos"],
+            ] as const).map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={commercialView === value}
+                onClick={() => setCommercialView(value)}
+                className={cp.managementNavItem + " " + (commercialView === value ? cp.managementNavSelected : cp.managementNavUnselected)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </nav>
       )}
 
