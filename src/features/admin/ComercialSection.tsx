@@ -406,16 +406,48 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
       ) : showImpulsa ? (
         canViewImpulsa ? (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-cyan-400/20 bg-background/55 p-3">
-              <h2 className="text-base font-semibold">Programa Impulsa</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Control del programa y sus reglas. Las estadísticas de difusión están en Resultados → Impulsa.
-              </p>
+          <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
+            <header className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-card/90 to-violet-500/[0.06] p-4 shadow-sm sm:p-5">
+              <div className="pointer-events-none absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-400/[0.06] blur-2xl" aria-hidden="true" />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">Red comercial · TukTuk</p>
+              <h2 id="impulsa-premium-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Impulsa</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">Conductores que ayudan a captar pasajeros. Separa el crecimiento comercial de las reglas económicas y la gestión de billeteras.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => { setResultsSource("impulsa"); setCommercialView("resultados"); }}>
+                  <TrendingUp className="mr-1.5 size-3.5" aria-hidden="true" />Ver resultados de captación
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setCommercialView("referidos")}>
+                  <UsersRound className="mr-1.5 size-3.5" aria-hidden="true" />Gestionar red y referidos
+                </Button>
+              </div>
+            </header>
+            <div className="grid gap-2 sm:grid-cols-3" aria-label="Áreas del programa Impulsa">
+              <div className="rounded-xl border border-border/60 bg-card/75 p-3">
+                <p className="text-[11px] font-semibold text-cyan-300">Captación</p>
+                <p className="mt-1 text-xs text-muted-foreground">Visitas, atribuciones y conversiones en Resultados → Impulsa.</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-card/75 p-3">
+                <p className="text-[11px] font-semibold text-violet-300">Reglas comerciales</p>
+                <p className="mt-1 text-xs text-muted-foreground">Comisiones y activación del programa, con controles de autorización.</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-card/75 p-3">
+                <p className="text-[11px] font-semibold text-amber-300">Billeteras</p>
+                <p className="mt-1 text-xs text-muted-foreground">Créditos, deuda y retiradas: gestión financiera, no indicadores de captación.</p>
+              </div>
             </div>
-            <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
-            <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
-          </div>
+            <details className="group rounded-xl border border-border/60 bg-card/55">
+              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground marker:text-cyan-300">Configurar reglas y comisiones</summary>
+              <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+                <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
+              </div>
+            </details>
+            <details className="group rounded-xl border border-border/60 bg-card/55">
+              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground marker:text-amber-300">Administración financiera · crédito, deuda y retiradas</summary>
+              <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+                <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
+              </div>
+            </details>
+          </section>
         ) : (
           <section className="rounded-xl border border-border/70 bg-card/60 p-4 admin-graphite-panel" aria-label="TukTuk Impulsa">
             <h2 className="font-semibold">TukTuk Impulsa</h2>
