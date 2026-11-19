@@ -99,7 +99,7 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         headerClassName={HEADER_CLASS}
         contentClassName={CONTENT_CLASS}
       >
-        {premium ? <Smartphone aria-hidden="true" className="pointer-events-none absolute -right-6 -top-12 z-0 h-40 w-40 -rotate-12 text-cyan-400 opacity-[0.055]" /> : null}
+        
         {audienceQuery.isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -132,8 +132,8 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         headerClassName={HEADER_CLASS}
         contentClassName={CONTENT_CLASS}
       >
-        {premium ? <Megaphone aria-hidden="true" className="pointer-events-none absolute -right-7 -top-12 z-0 h-44 w-44 -rotate-12 text-cyan-400 opacity-[0.045]" /> : null}
-        <div className="relative z-10 space-y-3">
+        
+        <div className="min-w-0 space-y-3">
           {!canSend ? (
             <PageAlert tone="info" title="Solo lectura">
               Puedes consultar la audiencia, pero necesitas el permiso de configuración para enviar
