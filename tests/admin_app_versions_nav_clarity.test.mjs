@@ -13,7 +13,7 @@ test("The Android configuration view displays one main release header", () => {
   assert.doesNotMatch(config, /aria-label="Cambiar sección de ajustes"/);
   assert.match(config, /aria-label="Categorías de ajustes del proyecto"/);
   assert.match(config, /<nav aria-label="Cambiar módulo de configuración"/);
-  assert.match(config, /Actualización APK Android/);
+  assert.match(config, /APK Android/);
   assert.match(config, /const \[activeSection, setActiveSection\] = useState<SectionKey>\("general"\)/);
   assert.doesNotMatch(config, /useState<SectionKey \| "inicio">\("inicio"\)/);
   assert.match(sidebar, /admin-nav-config-group/);

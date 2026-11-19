@@ -4,6 +4,7 @@ import { Loader2, Megaphone, Send, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { premiumSurface, premiumHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { SectionCard } from "@/components/admin/SectionCard";
 import {
@@ -23,11 +24,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { supabaseServices, type MobileAnnouncementCategory } from "@/lib/services";
 
-const CARD_CLASS = "border-border-default bg-surface-1 shadow-[var(--shadow-card)]";
-const HEADER_CLASS = "px-4 py-2.5 sm:px-4 sm:py-2.5";
+const CARD_CLASS = premiumSurface;
+const HEADER_CLASS = `px-3 py-3 sm:px-4 ${premiumHeaderSurface}`;
 const CONTENT_CLASS = "p-3";
 const CONTROL_CLASS =
-  "border-border-strong bg-surface-2 shadow-[var(--shadow-xs)] hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+  `min-h-11 rounded-[var(--radius-control)] border-border-default bg-surface-2 shadow-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
 
 export default function ComunicadosSection({ projectId, premium = false }: { projectId: string; premium?: boolean }) {
   const queryClient = useQueryClient();
@@ -94,11 +95,11 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         title="Audiencia de notificaciones"
         description="Se incluyen clientes con licencia activa y al menos un dispositivo Android con notificaciones habilitadas."
         module="configuracion"
-        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : CARD_CLASS}
+        className={CARD_CLASS}
         headerClassName={HEADER_CLASS}
         contentClassName={CONTENT_CLASS}
       >
-        {premium ? <Smartphone aria-hidden="true" className="pointer-events-none absolute -right-6 -top-12 z-0 h-40 w-40 -rotate-12 text-cyan-400 opacity-[0.055]" /> : null}
+        
         {audienceQuery.isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -127,12 +128,12 @@ export default function ComunicadosSection({ projectId, premium = false }: { pro
         title="Nuevo comunicado"
         description={premium ? undefined : "El envío se registra y el backend valida nuevamente el permiso de configuración."}
         module="configuracion"
-        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : CARD_CLASS}
+        className={CARD_CLASS}
         headerClassName={HEADER_CLASS}
         contentClassName={CONTENT_CLASS}
       >
-        {premium ? <Megaphone aria-hidden="true" className="pointer-events-none absolute -right-7 -top-12 z-0 h-44 w-44 -rotate-12 text-cyan-400 opacity-[0.045]" /> : null}
-        <div className="relative z-10 space-y-3">
+        
+        <div className="min-w-0 space-y-3">
           {!canSend ? (
             <PageAlert tone="info" title="Solo lectura">
               Puedes consultar la audiencia, pero necesitas el permiso de configuración para enviar

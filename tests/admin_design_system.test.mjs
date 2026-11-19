@@ -519,6 +519,9 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
     // instead of requiring legacy per-screen graphite classes.
     if (["MarketplaceOffersPanel", "CommercialReferralsPanel", "MarketplaceWelcomePolicyPanel"].includes(name)) {
       assert.match(source(name), /CommercialPageHeader|commercialPremium as cp/, name);
+    } else if (["MarketplaceConfigurationWorkspace", "AdministrationWorkspace"].includes(name)) {
+      assert.match(source(name), /<ModuleHeader|premiumColumnHeaderSurface/, name);
+      assert.doesNotMatch(source(name), /bg-gradient-to-br|from-slate-950/, name);
     } else {
       assert.match(source(name), /admin-graphite-/, name);
     }
@@ -561,14 +564,16 @@ test("Admin navigation: thematic families reuse palette and preserve group membe
   assert.doesNotMatch(styles, /--(?:primary|canvas|surface-1|background|semantic-success)\s*:/);
 });
 
-test("Admin thematic inner menus keep selected links and larger icons", () => {
-  for (const [name,tone] of [["MarketplacePricingSection","tarifas"], ["MarketplaceConfigurationWorkspace","administracion"]]) {
-    const component = readFileSync(new URL("../src/features/admin/" + name + ".tsx", import.meta.url), "utf8");
-    assert.ok(component.includes('data-nav-tone="' + tone + '"'), name);
-    assert.match(component, /admin-graphite-nav-item/);
-    assert.match(component, /className="admin-nav-icon relative z-10" aria-hidden="true"/);
-    assert.match(component, /aria-(?:current|pressed)=/);
-  }
+test("Admin thematic inner menus use the common premium density without losing selected states", () => {
+  const pricing = readFileSync(new URL("../src/features/admin/MarketplacePricingSection.tsx", import.meta.url), "utf8");
+  const operational = readFileSync(new URL("../src/features/admin/MarketplaceConfigurationWorkspace.tsx", import.meta.url), "utf8");
+  assert.match(pricing, /data-nav-tone="tarifas"/);
+  assert.match(pricing, /admin-graphite-nav-item/);
+  assert.match(operational, /data-nav-tone="administracion"/);
+  assert.match(operational, /premiumColumnHeaderSurface/);
+  assert.match(operational, /<ModuleHeader/);
+  assert.match(operational, /aria-pressed=\{isSelected\}/);
+  assert.match(operational, /grid-cols-2 gap-1\.5 sm:grid-cols-4/);
 });
 
 
@@ -597,13 +602,16 @@ test("Admin submenus: every destination has a stable thematic accent without cha
   assert.match(css, /admin-nav-secondary\[aria-current="page"\]/);
 });
 
-test("Admin submenu accents remain aligned in inner navigation and preserve tab controls", () => {
-  for (const [name,group] of [["MarketplacePricingSection","precios"],["AdministrationWorkspace","administracion"],["MarketplaceConfigurationWorkspace","configuracion"]]) {
-    const component = readFileSync(new URL("../src/features/admin/" + name + ".tsx", import.meta.url), "utf8");
-    assert.ok(component.includes('data-nav-tone={adminSubnavTone("' + group + '",'), name);
-    assert.match(component, /admin-nav-watermark/);
-    assert.match(component, /admin-workspace-icon/);
-  }
+test("Admin submenu accents remain aligned with the shared premium components", () => {
+  const pricing = readFileSync(new URL("../src/features/admin/MarketplacePricingSection.tsx", import.meta.url), "utf8");
+  const workspace = readFileSync(new URL("../src/features/admin/AdministrationWorkspace.tsx", import.meta.url), "utf8");
+  const operational = readFileSync(new URL("../src/features/admin/MarketplaceConfigurationWorkspace.tsx", import.meta.url), "utf8");
+  assert.match(pricing, /data-nav-tone=\{adminSubnavTone\("precios",/);
+  assert.match(operational, /data-nav-tone=\{adminSubnavTone\("configuracion",/);
+  assert.match(workspace, /<ModuleHeader/);
+  assert.match(operational, /<ModuleHeader/);
+  assert.doesNotMatch(workspace, /bg-gradient|admin-nav-watermark/);
+  assert.doesNotMatch(operational, /bg-gradient|admin-nav-watermark/);
   const care = readFileSync(new URL("../src/features/admin/MarketplaceCustomerCareWorkspace.tsx", import.meta.url), "utf8");
   assert.match(care, /data-nav-tone="comercial" className="admin-subnav-tab/);
   assert.match(care, /data-nav-tone="finanzas" className="admin-subnav-tab/);
