@@ -519,6 +519,9 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
     // instead of requiring legacy per-screen graphite classes.
     if (["MarketplaceOffersPanel", "CommercialReferralsPanel", "MarketplaceWelcomePolicyPanel"].includes(name)) {
       assert.match(source(name), /CommercialPageHeader|commercialPremium as cp/, name);
+    } else if (["MarketplaceConfigurationWorkspace", "AdministrationWorkspace"].includes(name)) {
+      assert.match(source(name), /<ModuleHeader|premiumColumnHeaderSurface/, name);
+      assert.doesNotMatch(source(name), /bg-gradient-to-br|from-slate-950/, name);
     } else {
       assert.match(source(name), /admin-graphite-/, name);
     }
