@@ -1,7 +1,6 @@
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgePercent, ChevronDown, ChevronUp, Gift, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,143 +152,121 @@ export default function MarketplaceWelcomePolicyPanel({
   if (!canView) return null;
 
   return (
-    <section className={embedded ? "min-w-0 space-y-3" : cp.section}>
-      
-      <div className="relative z-10 space-y-3">
-        {!embedded && <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/35 bg-emerald-300/10 text-emerald-200">
-              <BadgePercent aria-hidden="true" className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">TukTuk · Comercial</p>
-              <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-text-primary sm:text-xl">Política comercial general</h2>
-              <p className="mt-0.5 text-sm text-text-secondary">Define los días de bienvenida y las comisiones.</p>
+    <section aria-label="Bienvenida y cobro general" className={embedded ? "min-w-0 space-y-4" : cp.section}>
+      {!embedded && (
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary">Bienvenida y cobro general</h2>
+          <p className="mt-1 text-sm text-text-secondary">Condiciones para nuevos conductores y comisión general de los viajes.</p>
+        </div>
+      )}
+      {policy.isLoading ? (
+        <p className="py-4 text-sm text-text-secondary">Consultando la política vigente…</p>
+      ) : policy.isError ? (
+        <p role="alert" className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-text-secondary">
+          No se pudo consultar la bienvenida. No se modificó ningún beneficio.
+        </p>
+      ) : (
+        <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
+          <div className="min-w-0 space-y-3 lg:border-r lg:border-border-subtle lg:pr-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-text-primary">Bienvenida</h3>
+                <p className="text-xs text-text-secondary">Solo para conductores nuevos</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-text-secondary">{enabled ? "Activa" : "Inactiva"}</span>
+                <Switch id="welcome-enabled" aria-label="Activar días gratuitos de bienvenida" checked={enabled} disabled={!canEdit || save.isPending} onCheckedChange={setEnabled} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="welcome-days">Días gratuitos</Label>
+              <div className="flex items-center gap-2">
+                <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days}
+                  disabled={!canEdit || save.isPending} onChange={event => setDays(event.target.value)}
+                  aria-label="Días gratuitos" className="h-11 w-28 max-w-full text-lg font-semibold tabular-nums" />
+                <span className="text-sm text-text-secondary">días</span>
+              </div>
+              {!validDays && <p role="alert" className="text-xs text-destructive">Indica entre 1 y 365 días.</p>}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
+              <p className="max-w-xs text-xs text-text-secondary">Las promociones ya concedidas no se modifican.</p>
+              {canEdit && (
+                <Button size="sm" className="max-sm:min-h-11" disabled={!validDays || !changed || save.isPending}
+                  onClick={() => { setStatus(""); save.mutate(); }}>
+                  {save.isPending ? "Guardando…" : "Guardar bienvenida"}
+                </Button>
+              )}
             </div>
           </div>
-          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-3 py-1 text-xs font-semibold text-text-primary">Independiente de las ofertas</span>
-        </header>}
 
-        {policy.isLoading ? (
-          <p className="rounded-xl border border-border-subtle bg-surface-2 px-4 py-3 text-sm text-text-secondary admin-graphite-inset">Cargando política comercial…</p>
-        ) : policy.isError ? (
-          <p role="alert" className="rounded-xl border border-amber-300/35 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">No se pudo consultar la política. No se ha modificado ningún beneficio.</p>
-        ) : (
-          <div className="grid items-stretch gap-3 lg:grid-cols-2">
-            <article className="relative flex min-w-0 flex-col rounded-xl border border-border-subtle bg-surface-2 p-3 sm:p-4">
-              
-              
-              <div className="relative z-10 flex h-full flex-col">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-300/25 bg-emerald-300/10 text-emerald-200"><Gift aria-hidden="true" className="h-5 w-5" /></span>
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">01 · Bienvenida</p>
-                      <h3 className="text-base font-semibold text-text-primary">Días gratuitos</h3>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 py-2 admin-graphite-inset">
-                    <span className={`text-sm font-bold ${enabled ? "text-emerald-200" : "text-text-secondary"}`}>{enabled ? "Activo" : "Inactivo"}</span>
-                    <Switch id="welcome-enabled" aria-label="Activar días gratuitos de bienvenida" checked={enabled} disabled={!canEdit || save.isPending} onCheckedChange={setEnabled} />
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-col justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-2 px-3 py-3 sm:px-4">
-                  <Label htmlFor="welcome-days" className="text-sm font-semibold text-text-primary">Beneficio de bienvenida</Label>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <Input id="welcome-days" type="number" min="1" max="365" step="1" value={days} disabled={!canEdit || save.isPending} onChange={(event) => setDays(event.target.value)} aria-label="Días gratuitos" className="h-12 w-24 shrink-0 rounded-lg border border-border-default bg-surface-1 px-2 text-center text-2xl font-semibold tabular-nums text-text-primary shadow-none" />
-                    <span className="text-sm font-medium text-text-secondary">DÍAS</span>
-                    <div className="ml-auto flex gap-1.5" role="group" aria-label="Ajustar días gratuitos">
-                      <button type="button" aria-label="Aumentar un día" title="Aumentar 1 día" disabled={!canEdit || save.isPending || Number(days) >= 365} onClick={() => setDays(String(Math.min(365, Math.max(1, Math.trunc(Number(days)) || 1) + 1)))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-emerald-300/40 bg-emerald-300/10 text-text-primary transition hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronUp aria-hidden="true" className="h-5 w-5" /></button>
-                      <button type="button" aria-label="Disminuir un día" title="Disminuir 1 día" disabled={!canEdit || save.isPending || Number(days) <= 1} onClick={() => setDays(String(Math.max(1, (Math.trunc(Number(days)) || 1) - 1)))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-emerald-300/40 bg-emerald-300/10 text-text-primary transition hover:bg-emerald-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronDown aria-hidden="true" className="h-5 w-5" /></button>
-                    </div>
-                  </div>
-                  <p className="mt-1 text-sm font-medium text-text-primary/80">Gratuitos para nuevos conductores</p>
-                </div>
-
-                <div className="mt-auto flex min-h-0 flex-col justify-between gap-2 border-t border-emerald-300/15 pt-2">
-                  <p className="text-sm leading-5 text-text-secondary">Los beneficios ya concedidos se conservan.</p>
-                  {canEdit && <div className="flex justify-end"><Button size="sm" disabled={!validDays || !changed || save.isPending} onClick={() => { setStatus(""); save.mutate(); }} className="min-h-10 rounded-xl bg-emerald-400 px-4 font-bold text-[#05251e] hover:bg-emerald-300 disabled:opacity-40">{save.isPending ? "Guardando…" : "Guardar bienvenida"}</Button></div>}
-                </div>
+          <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-text-primary">Comisión general</h3>
+                <p className="text-xs text-text-secondary">Cobro de la agencia por carrera</p>
               </div>
-            </article>
-
-            <article className={cp.section + " relative isolate flex flex-col"}>
-              <img src="/admin-premium/economy.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-10 top-0 h-44 w-[70%] object-contain object-right-top opacity-[0.38]" />
-              
-              <div className="relative z-10 flex h-full flex-col">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-200"><BadgePercent aria-hidden="true" className="h-5 w-5" /></span>
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">02 · Facturación</p>
-                      <h3 className="text-base font-semibold text-text-primary">Comisiones Marketplace</h3>
-                    </div>
-                  </div>
-                  {chargePolicy.isLoading ? (
-                    <span className="text-sm text-text-secondary">Consultando…</span>
-                  ) : chargePolicy.isError ? (
-                    <span role="alert" className="text-sm font-semibold text-amber-100">Cobro no disponible</span>
-                  ) : (
-                    <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 py-2 admin-graphite-inset">
-                      <span className={`text-sm font-bold ${chargeEnabled ? "text-text-primary" : "text-amber-200"}`}>{chargeEnabled ? "Cobro activo" : "Sin cobro"}</span>
-                      <Switch id="commission-charge-switch" aria-label="Activar cobro de comisiones Marketplace" checked={chargeEnabled} disabled={!canEdit || saveChargePolicy.isPending} onCheckedChange={setChargeEnabled} />
-                    </div>
+              {chargePolicy.isLoading ? (
+                <span className="text-xs text-text-secondary">Consultando cobro…</span>
+              ) : chargePolicy.isError ? (
+                <span role="alert" className="text-xs text-amber-500">Cobro no disponible</span>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-text-secondary">{chargeEnabled ? "Cobro activo" : "Cobro suspendido"}</span>
+                  <Switch id="commission-charge-switch" aria-label="Activar cobro de comisiones Marketplace"
+                    checked={chargeEnabled} disabled={!canEdit || saveChargePolicy.isPending}
+                    onCheckedChange={setChargeEnabled} />
+                </div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="welcome-commission">Porcentaje de comisión</Label>
+              <div className="flex items-center gap-2">
+                <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01"
+                  value={commission} disabled={!canEdit || saveCommission.isPending}
+                  onChange={event => setCommission(event.target.value)} aria-label="Porcentaje de comisión"
+                  className="h-11 w-28 max-w-full text-lg font-semibold tabular-nums" />
+                <span className="text-sm text-text-secondary">%</span>
+              </div>
+              {!validCommission && <p role="alert" className="text-xs text-destructive">Indica un porcentaje válido entre 0 y 100.</p>}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
+              <p className="max-w-xs text-xs text-text-secondary">El cobro y el porcentaje se guardan por separado.</p>
+              {canEdit && (
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" className="max-sm:min-h-11" variant="outline"
+                    disabled={!validCommission || !commissionChanged || saveCommission.isPending}
+                    onClick={() => { setStatus(""); saveCommission.mutate(); }}>
+                    {saveCommission.isPending ? "Guardando…" : "Guardar porcentaje"}
+                  </Button>
+                  {chargePolicy.isSuccess && (
+                    <Button size="sm" className="max-sm:min-h-11"
+                      disabled={!chargeChanged || saveChargePolicy.isPending}
+                      onClick={() => {
+                        const msg = chargeEnabled
+                          ? "Se empezará a cobrar la comisión configurada en las próximas aceptaciones. ¿Continuar?"
+                          : "Las nuevas aceptaciones serán libres de comisión y no requerirán saldo para ella. ¿Continuar?";
+                        if (!window.confirm(msg)) return;
+                        setStatus(""); saveChargePolicy.mutate();
+                      }}>
+                      {saveChargePolicy.isPending ? "Guardando…" : "Guardar cobro"}
+                    </Button>
                   )}
                 </div>
-
-                <div className="mt-3 flex flex-col justify-center rounded-[var(--radius-card)] border border-border-subtle bg-surface-2 px-3 py-3 sm:px-4">
-                  <Label htmlFor="welcome-commission" className="text-sm font-semibold text-text-primary">Comisión por carrera</Label>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <Input id="welcome-commission" type="number" min="0.01" max="100" step="0.01" value={commission} disabled={!canEdit || saveCommission.isPending} onChange={(event) => setCommission(event.target.value)} aria-label="Porcentaje de comisión" className={`h-[68px] w-[120px] shrink-0 rounded-xl border-0 bg-transparent px-1 py-0 text-center font-black leading-none tabular-nums tracking-tight text-text-primary shadow-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${commission.length > 3 ? "text-[34px] md:text-[40px]" : "text-[48px] md:text-[56px]"}`} />
-                    <span className="text-[24px] font-extrabold leading-tight text-text-primary md:text-[28px]">%</span>
-                    <div className="ml-auto flex flex-col gap-1.5" role="group" aria-label="Ajustar porcentaje de comisión">
-                      <button type="button" aria-label="Aumentar comisión un punto porcentual" title="Aumentar 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) >= 100} onClick={() => setCommission(String(Number(Math.min(100, Number(commission) + 1).toFixed(2))))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 text-text-primary transition hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronUp aria-hidden="true" className="h-5 w-5" /></button>
-                      <button type="button" aria-label="Disminuir comisión un punto porcentual" title="Disminuir 1 %" disabled={!canEdit || saveCommission.isPending || !validCommission || Number(commission) <= 0.01} onClick={() => setCommission(String(Number(Math.max(0.01, Number(commission) - 1).toFixed(2))))} className="flex h-9 w-10 items-center justify-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 text-text-primary transition hover:bg-cyan-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"><ChevronDown aria-hidden="true" className="h-5 w-5" /></button>
-                    </div>
-                  </div>
-                  <p className="mt-1 text-sm font-medium leading-5 text-text-primary/80">
-                    {chargePolicy.isLoading ? "Consultando el cobro…" : chargePolicy.isError ? "Estado del cobro no disponible." : chargeChanged ? "Cambio del cobro pendiente de guardar." : chargePolicy.data?.enabled ? "Cobro activo para nuevas carreras, salvo beneficios gratuitos." : "Cobro suspendido: el porcentaje se conserva."}
-                  </p>
-                </div>
-
-                <div className="mt-auto flex min-h-0 flex-col justify-between gap-2 border-t border-cyan-300/15 pt-2">
-                  <p className="text-sm leading-5 text-text-secondary">Las carreras anteriores conservan su liquidación.</p>
-                  {canEdit && <div className="flex flex-wrap justify-end gap-2">
-                    <Button size="sm" disabled={!validCommission || !commissionChanged || saveCommission.isPending} onClick={() => { setStatus(""); saveCommission.mutate(); }} className="min-h-10 rounded-xl border border-cyan-300/35 bg-[#0b3041] px-3 font-semibold text-text-primary hover:bg-[#104359] disabled:opacity-40 admin-graphite-control">{saveCommission.isPending ? "Guardando…" : "Guardar porcentaje"}</Button>
-                    {chargePolicy.isSuccess && <Button size="sm" disabled={!chargeChanged || saveChargePolicy.isPending} onClick={() => {
-                      const msg = chargeEnabled
-                        ? "Se empezará a cobrar la comisión configurada en las próximas aceptaciones. ¿Continuar?"
-                        : "Las nuevas aceptaciones serán libres de comisión y no requerirán saldo para ella. ¿Continuar?";
-                      if (!window.confirm(msg)) return;
-                      setStatus(""); saveChargePolicy.mutate();
-                    }} className="min-h-10 rounded-xl bg-cyan-400 px-3 font-bold text-[#051f2c] hover:bg-cyan-300 disabled:opacity-40">{saveChargePolicy.isPending ? "Guardando…" : "Guardar cobro"}</Button>}
-                  </div>}
-                </div>
-              </div>
-            </article>
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-300/20 bg-surface-2 px-3 py-2 admin-graphite-inset">
-          <div className="flex min-w-0 items-start gap-3">
-            <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
-            <div className="min-w-0 space-y-1">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-200">Estrategia vigente</p>
-              {policy.data ? (
-                <p className="text-sm font-semibold leading-5 text-text-primary">
-                  {policy.data.enabled ? `Bienvenida: ${policy.data.duration_days} días` : "Bienvenida desactivada"}
-                  <span className="px-2 text-slate-500" aria-hidden="true">·</span>
-                  {chargePolicy.isLoading ? "Consultando cobro…" : chargePolicy.isError ? "Cobro no disponible" : chargePolicy.data?.enabled
-                    ? `Comisiones activas: ${Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es")} %`
-                    : `Comisiones suspendidas (${Number((policy.data.commission_rate * 100).toFixed(2)).toLocaleString("es")} % configurado)`}
-                </p>
-              ) : <p className="text-sm text-text-secondary">Consultando estrategia…</p>}
-              {status && <p role="status" className="text-xs font-semibold text-emerald-200">{status}</p>}
+              )}
             </div>
           </div>
-          {(changed || commissionChanged || chargeChanged) && <span className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-3 py-1.5 text-xs font-semibold text-amber-100">Cambios sin guardar</span>}
         </div>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3 text-xs text-text-secondary">
+        <p>
+          {policy.data ? (policy.data.enabled ? `Bienvenida: ${policy.data.duration_days} días` : "Bienvenida desactivada") : "Bienvenida no disponible"}
+          {" · "}
+          {chargePolicy.isLoading ? "Cobro consultándose" : chargePolicy.isError ? "Cobro no disponible" : chargePolicy.data?.enabled ? "Comisiones activas" : "Comisiones suspendidas"}
+        </p>
+        {(changed || commissionChanged || chargeChanged) && (
+          <span className="font-medium text-amber-600">Hay cambios sin guardar</span>
+        )}
+        {status && <p role="status" className="w-full text-sm text-text-primary">{status}</p>}
       </div>
     </section>
   );
