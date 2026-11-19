@@ -28,6 +28,7 @@ on:
       - 'tests/comercial_graphite_softness_contract.test.mjs'
       - 'tests/comercial_captacion_experiencia_contract.test.mjs'
       - 'tests/comercial_politicas_premium_contract.test.mjs'
+      - 'tests/driver_promotion_preview.test.mjs'
       - 'scripts/verify-production-build.mjs'
       - 'package.json'
       - 'bun.lock'
@@ -64,6 +65,8 @@ jobs:
         run: node --test tests/comercial_captacion_experiencia_contract.test.mjs
       - name: Validar experiencia premium y seguridad financiera en Gestión
         run: node --test tests/comercial_politicas_premium_contract.test.mjs
+      - name: Verificar validación y autorización de Impulsa en conductor 360
+        run: node --test tests/driver_promotion_preview.test.mjs
       - name: Verificar entrada automática al proyecto único
         run: bun test tests/admin_single_project_start.test.mjs
       - name: Verificar logos y controles del menú lateral

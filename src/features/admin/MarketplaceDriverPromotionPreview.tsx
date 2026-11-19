@@ -18,6 +18,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
   const [aliasSaving, setAliasSaving] = useState(false);
   const [reference, setReference] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [activationError, setActivationError] = useState("");
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
@@ -25,7 +26,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
   const [actionMessage, setActionMessage] = useState("");
   useEffect(() => {
     let cancelled = false;
-    setCode(null); setAlias(null); setAliasInput(""); setAliasError(""); setReference(""); setConfirmed(false);
+    setCode(null); setAlias(null); setAliasInput(""); setAliasError(""); setReference(""); setConfirmed(false); setActivationError("");
     setDeactivateOpen(false); setDeactivateReason(""); setActionMessage("");
     if (!canManage) { setBusy(false); setStatus("La gestión de Impulsa requiere permisos de administración."); return; }
     if (verified !== true) { setBusy(false); setStatus(verified === null ? "Consultando la verificación del conductor…" : "Verifica primero la identidad del conductor."); return; }
@@ -60,17 +61,33 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
   }, [projectId, driverUserId, active, canManage, verified, revision]);
   async function activate() {
     if (!canManage || verified !== true || !active || !confirmed || reference.trim().length < 5 || busy) return;
-    setBusy(true);
+    setBusy(true); setActivationError("");
     try {
       const { data, error } = await getSupabaseClient().rpc("admin_activate_marketplace_promo_card_v1", {
         target_project_id: projectId, target_driver_user_id: driverUserId,
         target_authorization_confirmed: true, target_authorization_reference: reference.trim(),
       });
-      if (error || typeof data?.code !== "string" || !/^[0-9a-f]{32}$/.test(data.code)) throw Error("activation");
+      if (error) throw error;
+      if (typeof data?.code !== "string" || !/^[0-9a-f]{32}$/.test(data.code)) {
+        throw Error("INVALID_PROMO_RESPONSE");
+      }
       await queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] });
       setRevision(value => value + 1);
-    } catch { setStatus("No se pudo activar. Revisa la autorización, identidad y vehículo."); }
-    finally { setBusy(false); }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "";
+      // Mantener visible el formulario y explicar el motivo, sin publicar detalles técnicos.
+      setActivationError(message.includes("DOCUMENTED_AUTHORIZATION_REQUIRED")
+        ? "La autorización necesita una referencia documental válida de 5 a 300 caracteres."
+        : message.includes("PROMO_SERVICE_NOT_ACTIVE")
+          ? "No se puede activar: comprueba que el conductor tenga un vehículo activo y servicios publicados."
+          : message.includes("IDENTITY_NOT_VERIFIED")
+            ? "La verificación de identidad no está confirmada. Revisa el expediente."
+            : message.includes("PUBLIC_NAME_INVALID")
+              ? "El perfil no tiene un nombre público válido. Revisa los datos del conductor."
+              : message.includes("42501") || message.includes("permission denied")
+                ? "Tu cuenta no tiene autorización para activar Impulsa en este proyecto."
+                : "No se pudo activar Impulsa. Revisa la conexión y los requisitos operativos antes de reintentar.");
+    } finally { setBusy(false); }
   }
   async function saveAlias() {
     const chosen = aliasInput.trim().toLowerCase();
@@ -111,11 +128,43 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
     </div>
     {verified === false && canManage && <button type="button" onClick={onOpenExpediente} className="rounded-lg border px-3 py-2 text-sm text-primary">Ir a verificar identidad</button>}
     {busy ? <p role="status" className="text-sm text-muted-foreground">Consultando perfil…</p> : null}
-    {status === "authorization" ? <div className="space-y-3 rounded-xl border p-3">
+    {status === "authorization" ? <div className="space-y-3 rounded-xl border border-border-default bg-surface-2/50 p-3 sm:p-4">
       <p className="text-sm">Identidad verificada. Para activar el perfil público, registra la autorización del conductor para publicar su nombre y fotografía.</p>
-      <label className="block text-sm">Referencia de autorización<input className="mt-1 w-full rounded-md border bg-background p-2" value={reference} maxLength={300} onChange={event => setReference(event.target.value)}/></label>
-      <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)}/> Confirmo que cuento con autorización documentada.</label>
-      <button type="button" disabled={!confirmed || reference.trim().length < 5 || busy} onClick={() => void activate()} className="rounded-lg bg-primary px-3 py-2 text-primary-foreground disabled:opacity-50">Activar Impulsa y generar tarjetas</button>
+      <div className="space-y-1.5">
+        <label htmlFor="impulsa-authorization-reference" className="block text-sm font-medium">Referencia de autorización documentada</label>
+        <input id="impulsa-authorization-reference" className="min-h-11 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-3/65 px-3 py-2 text-sm text-text-primary"
+          value={reference} minLength={5} maxLength={300} required
+          aria-describedby="impulsa-authorization-help"
+          aria-invalid={reference.trim().length > 0 && reference.trim().length < 5}
+          placeholder="Número de acta, folio o registro"
+          onChange={event => { setReference(event.target.value); setActivationError(""); }} />
+        <p id="impulsa-authorization-help" className="text-xs leading-relaxed text-text-secondary">
+          Indica un identificador comprobable del documento de autorización (mínimo 5 y máximo 300 caracteres).
+          El nombre del conductor no sustituye esa referencia.
+        </p>
+        {reference.trim().length > 0 && reference.trim().length < 5 && (
+          <p role="status" className="text-xs text-amber-500">
+            Referencia incompleta: {reference.trim().length} de 5 caracteres mínimos. Faltan {5 - reference.trim().length}.
+          </p>
+        )}
+      </div>
+      <label className="flex min-h-11 items-center gap-2 text-sm">
+        <input type="checkbox" checked={confirmed} onChange={event => { setConfirmed(event.target.checked); setActivationError(""); }}/>
+        Confirmo que cuento con autorización documentada.
+      </label>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" disabled={!confirmed || reference.trim().length < 5 || busy}
+          onClick={() => void activate()}
+          className="min-h-11 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-45">
+          {busy ? "Activando…" : "Activar Impulsa y generar tarjetas"}
+        </button>
+        {(!confirmed || reference.trim().length < 5) && (
+          <p className="text-xs text-text-secondary" role="status">
+            {!confirmed ? "Pendiente: confirmar la autorización documentada." : "Pendiente: completar la referencia documental."}
+          </p>
+        )}
+      </div>
+      {activationError && <p role="alert" className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-500">{activationError}</p>}
     </div> : status ? <p role="status" className="text-sm text-muted-foreground">{status}</p> : null}
     {renderer ? <>
       <div className="flex flex-wrap items-center gap-2 text-sm text-emerald-500"><ShieldCheck className="h-4 w-4"/> Perfil promocional activo y verificado</div>
