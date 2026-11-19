@@ -279,20 +279,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
     }));
   }, [activeLeads]);
   return (
-    <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/[0.16] bg-gradient-to-br from-violet-500/[0.045] via-background/85 to-cyan-500/[0.025] p-3 shadow-[0_28px_80px_-55px_rgba(139,92,246,0.68)] sm:p-4 lg:p-5 admin-graphite-panel">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.065] via-background/80 to-cyan-500/[0.04]" />
-      <img
-        src={showOffers || showImpulsa || commercialView === "campanas" ? "/admin-premium/economy.svg" : "/admin-premium/acquisition.svg"}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-8 top-20 hidden h-[24rem] w-[38%] object-contain object-right-top opacity-[0.045] mix-blend-screen lg:block"
-      />
-      <div className="pointer-events-none absolute -right-32 -top-36 h-[26rem] w-[26rem] rounded-full bg-violet-500/[0.07] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -left-28 h-[25rem] w-[25rem] rounded-full bg-cyan-400/[0.06] blur-3xl" />
-      <div className="relative z-10 space-y-4 md:space-y-5">
+    <div data-admin-module="comercial" className="min-w-0 p-2 sm:p-3">
+      <div className="min-w-0 space-y-3 sm:space-y-4">
       <nav
         aria-label="Áreas de Comercial"
-        className="relative isolate overflow-hidden rounded-[22px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.07] via-background/85 to-cyan-500/[0.025] px-3 py-3 shadow-[0_18px_54px_-42px_rgba(139,92,246,0.75)] backdrop-blur-xl sm:px-4 admin-graphite-panel"
+        className={cp.header}
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-400/75 via-cyan-400/30 to-transparent" />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
@@ -354,7 +345,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       </nav>
       {showManagement && (
-        <nav aria-label="Herramientas de gestión comercial" className="flex flex-wrap items-center gap-2 rounded-xl border border-border/50 bg-background/45 p-2">
+        <nav aria-label="Herramientas de gestión comercial" className={cp.section + " flex flex-wrap items-center gap-2"}>
           {([
             ["configuracion","Configuración general"],
              ["referidos","Referidos y red"],
@@ -363,7 +354,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           ] as const).map(([value,label]) => (
             <button type="button" key={value} aria-pressed={commercialView===value}
               onClick={() => setCommercialView(value)}
-              className={"rounded-lg border px-3 py-2 text-xs font-medium transition-colors "+(commercialView===value?"border-cyan-400/35 bg-cyan-400/10 text-cyan-100":"border-border/50 text-muted-foreground hover:bg-muted/20")}>
+              className={"min-h-11 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "+(commercialView===value?"border-border-strong bg-surface-3 text-text-primary":"border-border-subtle bg-surface-1 text-text-secondary hover:bg-surface-2")}>
               {label}
             </button>
           ))}
@@ -374,11 +365,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <div className="space-y-3">
           <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Comercial · Captación de pasajeros</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight">Campañas de TukTuk</h2>
+            <h2 className={cp.title}>Campañas de TukTuk</h2>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Crea un enlace para cada acción, compártelo y consulta sus resultados en la pestaña Resultados.</p>
           </header>
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="generator" />
-          <details className="group rounded-xl border border-border/60 bg-card/55">
+          <details className={cp.accordion}>
             <summary className={cp.accordionTitle}>
               Promociones con descuentos · En preparación
               <span className="ml-2 text-xs font-normal text-muted-foreground">Solo borradores, no se aplican al pasajero</span>
@@ -406,7 +397,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
           <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">Red comercial · Conductores</p>
-            <h2 id="impulsa-premium-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Impulsa</h2>
+            <h2 id="impulsa-premium-title" className={cp.title}>Impulsa</h2>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Conductores promotores, su difusión, pasajeros captados, solicitudes y viajes reales. Los resultados de cada conductor se despliegan en el informe.</p>
           </header>
           <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />
@@ -415,7 +406,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <section className="space-y-4" aria-labelledby="commercial-settings-title" data-admin-module="comercial">
           <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Gestión · Administración</p>
-            <h2 id="commercial-settings-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Configuración comercial</h2>
+            <h2 id="commercial-settings-title" className={cp.title}>Configuración comercial</h2>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Reglas generales, bienvenida, comisiones, crédito y retiradas. Aquí se configuran las políticas; los resultados de conductores permanecen en Impulsa.</p>
           </header>
           {canViewImpulsa ? (
@@ -446,16 +437,9 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : showReferrals ? (
         <CommercialReferralsPanel projectId={projectId} />
       ) : (
-        <section className="relative isolate overflow-hidden rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 shadow-[0_28px_86px_-62px_rgba(139,92,246,0.8)] sm:p-5 admin-graphite-panel">
-          <img
-            src="/admin-premium/acquisition.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-10 top-2 h-[28rem] w-[60%] object-contain object-right-top opacity-[0.08] mix-blend-screen"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/70" />
-          <div className="relative z-10 space-y-6">
-            <div className="rounded-[22px] border border-violet-400/20 bg-background/75 px-4 py-4 shadow-[0_18px_55px_-44px_rgba(139,92,246,0.7)] backdrop-blur-md sm:px-5 admin-graphite-inset">
+        <section className="min-w-0 space-y-4">
+          <div className="min-w-0 space-y-4">
+            <div className={cp.header}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Captación</p>
               <h2 className={cp.title}>Captación y seguimiento</h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">

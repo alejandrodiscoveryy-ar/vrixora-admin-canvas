@@ -345,7 +345,7 @@ export default function MarketplaceOffersPanel({
               Cerrar
             </Button>
           </div>
-          <div className="grid gap-4 rounded-[22px] border border-violet-400/25 bg-[#080c1b]/85 p-4 shadow-inner shadow-violet-500/[0.05] md:grid-cols-2 sm:p-5 admin-graphite-control">
+          <div className="grid gap-4 rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 md:grid-cols-2 sm:p-4">
             <div className="flex items-center gap-3 border-b border-white/10 pb-3 md:col-span-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">01</span>
               <div><p className="text-base font-bold text-white">Identidad y vigencia</p><p className="text-xs text-slate-400">Nombre, tipo de promoción y fechas de captación.</p></div>
@@ -525,7 +525,7 @@ export default function MarketplaceOffersPanel({
               </div>
             )}
           </div>
-          <div className="rounded-[22px] border border-cyan-400/25 bg-[#08111d]/90 p-4 shadow-[0_20px_55px_-43px_rgba(34,211,238,0.28)] sm:p-5 admin-graphite-inset">
+          <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 sm:p-4">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 font-mono text-sm font-bold text-cyan-200">03</span><Users className="h-5 w-5 text-cyan-200" /> <span className="text-base font-bold text-white">Segmentación y límites avanzados</span>
             </div>
@@ -628,7 +628,7 @@ export default function MarketplaceOffersPanel({
               </div>
             </div>
           </div>
-          <div className="rounded-[22px] border border-violet-400/25 bg-[#0b0e1f]/90 p-4 sm:p-5 admin-graphite-inset">
+          <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2 p-3 sm:p-4">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 font-mono text-sm font-bold text-violet-200">04</span>
               <span className="text-base font-bold text-white">Condiciones y notas internas</span>

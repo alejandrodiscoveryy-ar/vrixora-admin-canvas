@@ -141,11 +141,11 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9" onClick={() => void refresh()} disabled={q.isFetching} aria-label="Actualizar resultados de aliados">
+          <Button variant="outline" size="sm" className="min-h-11 sm:min-h-9" onClick={() => void refresh()} disabled={q.isFetching} aria-label="Actualizar resultados de aliados">
             <RefreshCcw className="mr-1.5 size-3.5" aria-hidden="true" />Actualizar
           </Button>
           {canManage && (
-            <Button size="sm" className="h-9" onClick={() => setCreateExpanded((value) => !value)} aria-expanded={createExpanded} aria-controls="ally-create-form">
+            <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setCreateExpanded((value) => !value)} aria-expanded={createExpanded} aria-controls="ally-create-form">
               {createExpanded ? <X className="mr-1.5 size-4" aria-hidden="true" /> : <Plus className="mr-1.5 size-4" aria-hidden="true" />}
               {createExpanded ? "Cerrar formulario" : "Nuevo aliado"}
             </Button>

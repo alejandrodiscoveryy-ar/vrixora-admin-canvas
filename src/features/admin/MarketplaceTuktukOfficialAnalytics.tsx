@@ -166,7 +166,7 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
         <label className="text-xs font-medium">¿Dónde vas a compartirlo?
           <select aria-label="Canal de la campaña" value={channel}
             onChange={e=>setChannel(e.target.value as Channel)}
-            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-2 text-xs">
+            className="mt-1 min-h-11 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-1 px-3 py-2 text-sm text-text-primary">
             {availableChannels.map(v=><option key={v} value={v}>{sources[v]}</option>)}
           </select>
         </label>
@@ -175,10 +175,10 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
             placeholder="hospitales, pegatinas, lanzamiento"
             onChange={e=>setAction(e.target.value.toLowerCase().normalize("NFD")
               .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9_]/g,"").slice(0,20))}
-            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-2 text-xs"/>
+            className="mt-1 min-h-11 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-1 px-3 py-2 text-sm text-text-primary"/>
         </label>
       </div>
-      <p className="mt-2 break-all rounded-md border border-border/40 bg-background/50 p-2 font-mono text-[11px] text-muted-foreground">{link}</p>
+      <p className="mt-2 break-all rounded-[var(--radius-control)] border border-border-subtle bg-surface-2 p-3 font-mono text-xs text-text-secondary">{link}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button type="button" disabled={!canManage||busy} onClick={()=>void copy(link,"link_copied")}
           className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-orange-400/30 px-3 py-1.5 text-xs font-semibold hover:bg-orange-400/10 disabled:opacity-50">
