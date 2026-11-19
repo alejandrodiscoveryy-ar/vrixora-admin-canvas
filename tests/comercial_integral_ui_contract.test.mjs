@@ -59,7 +59,7 @@ test("Campañas, conductores y aliados muestran primero la acción o resultado",
   assert.match(allies, /Nuevo aliado/);
   assert.match(referrals, /<MetricCard/);
   assert.match(official, /Análisis detallado de las campañas/);
-  assert.match(driverAnalytics, /Resultados por conductor/);
+  assert.match(driverAnalytics, /Aportación de cada conductor/);
   assert.match(driverAnalytics, /Análisis detallado de campañas/);
   assert.match(official, /taggedLink\("qr",campaign\)/);
 });
