@@ -28,7 +28,15 @@ function ProjectLayout() {
 
   useEffect(() => {
     if (!user) navigate({ to: "/admin/login" });
-    else if (!accessLoading && !hasAccess) navigate({ to: "/admin/proyectos" });
+    else if (!accessLoading && !hasAccess) {
+      // No volver a abrir automáticamente un proyecto sin acceso.
+      // El selector de recuperación sigue disponible aunque exista solo uno.
+      void navigate({
+        to: "/admin/proyectos",
+        search: { seleccionar: "1" },
+        replace: true,
+      });
+    }
   }, [user, hasAccess, accessLoading, navigate]);
 
   if (!user || projectLoading || accessLoading || permissionsLoading || !project || !hasAccess) {
