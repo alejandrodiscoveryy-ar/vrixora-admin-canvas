@@ -17,6 +17,11 @@ export const commercialPremium = {
   // All layers use the same official graphite palette and keep clear edge contrast.
   inset: `min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4 ${premiumColumnHeaderSurface} shadow-none`,
   control: `rounded-[var(--radius-control)] border ${premiumControlSurface}`,
+  // Secondary navigation is not a new card or a second toolbar: transparent tabs.
+  managementNav: "grid min-w-0 grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-1",
+  managementNavItem: "min-w-0 min-h-11 rounded-[var(--radius-control)] border-b-2 px-3 py-2 text-left text-xs font-medium leading-snug transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:text-[13px]",
+  managementNavSelected: "border-[var(--module-accent)] bg-[color:color-mix(in_oklab,var(--module-accent)_8%,var(--surface-3))] text-text-primary font-semibold",
+  managementNavUnselected: "border-transparent bg-transparent text-text-secondary hover:bg-surface-3/60 hover:text-text-primary",
   accordion: `group min-w-0 overflow-hidden rounded-[var(--radius-card)] border transition-colors open:border-border-strong ${premiumSurface}`,
   accordionTitle: "flex min-h-11 cursor-pointer list-none items-center gap-3 px-3 py-3 text-sm font-semibold text-text-primary sm:px-4 [&::-webkit-details-marker]:hidden",
   accordionBody: "border-t border-border-subtle p-3 sm:p-4",
