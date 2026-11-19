@@ -418,9 +418,11 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
                 <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => setEditingCampaign("new")}>
                   Nueva campaña de contactos
                 </Button>
-                <Button size="sm" className="max-sm:min-h-11" onClick={() => setEditing({ ...EMPTY })}>
-                  <Plus className="mr-1.5 size-4" aria-hidden="true" /> Nuevo contacto
-                </Button>
+                {Boolean(leads.data?.length) && (
+                  <Button size="sm" className="max-sm:min-h-11" onClick={() => setEditing({ ...EMPTY })}>
+                    <Plus className="mr-1.5 size-4" aria-hidden="true" /> Nuevo contacto
+                  </Button>
+                )}
               </div>
             ) : undefined}
           />
