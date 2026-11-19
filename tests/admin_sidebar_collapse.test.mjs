@@ -108,14 +108,22 @@ test("La barra lateral fija mantiene expandir menú visible aunque la lista sea 
   assert.match(aside, /aria-label=\{collapsed \? "Desplegar menú lateral" : "Contraer menú lateral"\}/);
 });
 
-test("Pulsar el icono colapsado abre y cierra las vistas sin cambiar de pantalla", () => {
+test("Iconos compactos: primer clic entra a la sección y permite plegar sus opciones", () => {
   const work = chrome.slice(chrome.indexOf('if (tab.slug === "trabajos")'), chrome.indexOf("// El centro de precios"));
   const pricing = chrome.slice(chrome.indexOf('if (tab.slug === "planes"'), chrome.indexOf('if ("children" in tab)'));
   const settings = chrome.slice(chrome.indexOf('if ("children" in tab)', chrome.indexOf('if (tab.slug === "planes"')), chrome.indexOf('const to = tab.slug'));
   assert.match(work, /event\.preventDefault\(\);\s*toggleSubmenu\("trabajos"\)/);
   assert.match(work, /aria-expanded=\{collapsed \? trabajosOpen : undefined\}/);
   assert.match(work, /hidden=\{!trabajosOpen\}/);
+  assert.match(work, /if \(!groupActive\) \{\s*setTrabajosExpanded\(true\)/);
+  assert.match(work, /params: \{ id: project\.id, section: "trabajos" \}/);
+  assert.match(work, /search: \{ vista: "resumen" \}/);
+  assert.match(work, /event\.currentTarget\.click\(\)/);
   assert.match(pricing, /open=\{pricingExpanded\}/);
+  assert.match(pricing, /if \(collapsed && !groupActive\) \{/);
+  assert.match(pricing, /event\.preventDefault\(\);\s*setPricingExpanded\(true\)/);
+  assert.match(pricing, /params: \{ id: project\.id, section: "planes" \}/);
+  assert.match(pricing, /search: \{ precio: "global" \}/);
   assert.match(pricing, /if \(!collapsed && !groupActive\)/);
   assert.match(pricing, /aria-controls=\{pricingGroupId\}/);
   assert.match(settings, /event\.preventDefault\(\);\s*toggleSubmenu\("configuracion"\)/);
