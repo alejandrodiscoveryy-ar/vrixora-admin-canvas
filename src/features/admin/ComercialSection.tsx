@@ -378,7 +378,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         </div>
       ) : isTuktukProject && commercialView === "resultados" ? (
         <div className="space-y-3">
-          <CommercialPageHeader title="Resultados de captación" description="Compara cómo llegan los pasajeros y qué acciones terminan en solicitudes. Los informes detallados están debajo." icon={TrendingUp} />
+          <CommercialPageHeader title="Resultados de campañas oficiales" description="Compara cómo llegan los pasajeros y qué acciones terminan en solicitudes. Los informes detallados están debajo." icon={TrendingUp} />
           <ComercialSourceOverview projectId={projectId} />
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="analytics" />
         </div>
