@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
-import { configurationPremium as visual } from "./configuration-premium";
+import { premiumColumnHeaderSurface } from "@/components/admin/density";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { Badge } from "@/components/ui/badge";
@@ -233,7 +233,7 @@ export default function IntegracionesSection({
   });
 
   const integrationSwitcher = (
-    <div className={visual.navigation + " flex flex-wrap gap-2"}>
+    <div className={`flex min-w-0 flex-wrap gap-2 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
       <Button
         type="button"
         aria-pressed={activeIntegration === "eltoque"}
@@ -347,8 +347,7 @@ export default function IntegracionesSection({
         title="elTOQUE"
         description="Tasa referencial automática para operaciones USD/EUR → CUP."
         module="configuracion"
-        className={premium ? visual.card : undefined}
-        headerClassName={premium ? visual.cardHeader : undefined}
+        
         actions={
           <Badge variant={status.variant}>{status.label}</Badge>
         }
@@ -537,8 +536,7 @@ export default function IntegracionesSection({
         title="Notificación diaria de la tasa"
         description="Prepara una notificación diaria con la tasa vigente."
         module="configuracion"
-        className={premium ? visual.card : undefined}
-        headerClassName={premium ? visual.cardHeader : undefined}
+        
       >
         
         <div className="min-w-0 space-y-4">
