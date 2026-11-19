@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -291,11 +292,11 @@ export default function MarketplaceOffersPanel({
 
   return (
     <section className="space-y-6">
-      <header className="rounded-2xl border border-violet-400/20 bg-card/75 p-4 shadow-sm sm:p-5 admin-graphite-panel">
+      <header className={cp.header}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Comercial · Conductores</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Beneficios de conductores</h2>
+            <h2 className={cp.title}>Beneficios de conductores</h2>
             <p className="mt-1 text-xs text-muted-foreground">Prepara incentivos para incorporar, fidelizar o reactivar conductores.</p>
           </div>
           {canEdit && (

@@ -11,6 +11,7 @@ import {
   Layers,
   UsersRound,
   TrendingUp,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -54,6 +55,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import MarketplaceWelcomePolicyPanel from "@/features/admin/MarketplaceWelcomePolicyPanel";
 import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/MarketplaceImpulsaCommunicationAnalytics";
@@ -370,27 +372,27 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
 
       {isTuktukProject && commercialView === "campanas" ? (
         <div className="space-y-3">
-          <header className="rounded-2xl border border-orange-400/20 bg-gradient-to-br from-orange-500/[0.07] via-card/90 to-background/70 p-4 sm:p-5">
+          <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Comercial · Captación de pasajeros</p>
             <h2 className="mt-1 text-xl font-semibold tracking-tight">Campañas de TukTuk</h2>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Crea un enlace para cada acción, compártelo y consulta sus resultados en la pestaña Resultados.</p>
           </header>
           <MarketplaceTuktukOfficialAnalytics projectId={projectId} canManage={canManage} mode="generator" />
           <details className="group rounded-xl border border-border/60 bg-card/55">
-            <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">
+            <summary className={cp.accordionTitle}>
               Promociones con descuentos · En preparación
               <span className="ml-2 text-xs font-normal text-muted-foreground">Solo borradores, no se aplican al pasajero</span>
             </summary>
-            <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+            <div className={cp.accordionBody}>
               <MarketplaceCustomerCampaignDrafts projectId={projectId} canEdit={canPlanCustomerBenefits} />
             </div>
           </details>
         </div>
       ) : isTuktukProject && commercialView === "resultados" ? (
         <div className="space-y-3">
-          <header className="rounded-xl border border-border/60 bg-card/70 p-4">
+          <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-300">Captación · TukTuk</p>
-            <h2 className="mt-1 text-lg font-semibold">Resultados de campañas oficiales</h2>
+            <h2 className={cp.title}>Resultados de campañas oficiales</h2>
             <p className="mt-1 text-xs text-muted-foreground">Aperturas, solicitudes, canales y conversión de la Agencia. La contribución de conductores se analiza en Impulsa y la de terceros en Aliados.</p>
           </header>
           <ComercialSourceOverview projectId={projectId} />
@@ -402,7 +404,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} />
       ) : showImpulsa ? (
         <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
-          <header className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-card/90 to-violet-500/[0.06] p-4 shadow-sm sm:p-5">
+          <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-300">Red comercial · Conductores</p>
             <h2 id="impulsa-premium-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Impulsa</h2>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Conductores promotores, su difusión, pasajeros captados, solicitudes y viajes reales. Los resultados de cada conductor se despliegan en el informe.</p>
@@ -411,28 +413,28 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
         </section>
       ) : commercialView === "configuracion" && isTuktukProject ? (
         <section className="space-y-4" aria-labelledby="commercial-settings-title" data-admin-module="comercial">
-          <header className="rounded-2xl border border-violet-400/20 bg-card/75 p-4 shadow-sm sm:p-5">
+          <header className={cp.header}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Gestión · Administración</p>
             <h2 id="commercial-settings-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Configuración comercial</h2>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Reglas generales, bienvenida, comisiones, crédito y retiradas. Aquí se configuran las políticas; los resultados de conductores permanecen en Impulsa.</p>
           </header>
           {canViewImpulsa ? (
             <div className="space-y-3">
-              <details className="rounded-xl border border-border/60 bg-card/60">
-                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Bienvenida y cobro general</summary>
-                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+              <details className={cp.accordion}>
+                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Gift className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Bienvenida y cobro general</span><span className="block text-xs font-normal text-muted-foreground">Condiciones iniciales y cobro de la agencia</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+                <div className={cp.accordionBody}>
                   <MarketplaceWelcomePolicyPanel projectId={projectId} canView={permissions.includes("settings.view")} canEdit={permissions.includes("settings.manage")} />
                 </div>
               </details>
-              <details className="rounded-xl border border-border/60 bg-card/60">
-                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Reglas y comisiones de Impulsa</summary>
-                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+              <details className={cp.accordion}>
+                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><TrendingUp className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Reglas y comisiones de Impulsa</span><span className="block text-xs font-normal text-muted-foreground">Porcentajes y condiciones del programa</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+                <div className={cp.accordionBody}>
                   <MarketplaceImpulsaPolicyPanel projectId={projectId} canView={canViewImpulsa} canEdit={canEditImpulsa} />
                 </div>
               </details>
-              <details className="rounded-xl border border-border/60 bg-card/60">
-                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Créditos, deuda y retiradas</summary>
-                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+              <details className={cp.accordion}>
+                <summary className={cp.accordionTitle}><span className="grid size-8 shrink-0 place-items-center rounded-lg border border-violet-400/20 bg-violet-400/10 text-violet-300"><Layers className="size-4" /></span><span className="min-w-0 flex-1"><span className="block">Créditos, deuda y retiradas</span><span className="block text-xs font-normal text-muted-foreground">Saldos y operaciones administrativas</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+                <div className={cp.accordionBody}>
                   <MarketplaceImpulsaTransitionPanel projectId={projectId} canEdit={canEditImpulsa} />
                 </div>
               </details>
@@ -455,7 +457,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           <div className="relative z-10 space-y-6">
             <div className="rounded-[22px] border border-violet-400/20 bg-background/75 px-4 py-4 shadow-[0_18px_55px_-44px_rgba(139,92,246,0.7)] backdrop-blur-md sm:px-5 admin-graphite-inset">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Captación</p>
-              <h2 className="mt-1 text-lg font-semibold text-foreground">Captación y seguimiento</h2>
+              <h2 className={cp.title}>Captación y seguimiento</h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
                 Sigue cada contacto desde el primer interés hasta su registro en TukTuk.
               </p>
