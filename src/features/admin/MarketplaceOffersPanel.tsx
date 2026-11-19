@@ -13,7 +13,6 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import MarketplaceWelcomePolicyPanel from "@/features/admin/MarketplaceWelcomePolicyPanel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -296,63 +295,28 @@ export default function MarketplaceOffersPanel({
 
   return (
     <section className="space-y-6">
-      <MarketplaceWelcomePolicyPanel projectId={projectId} canView={canViewPolicy} canEdit={canEditPolicy} />
-      <div className="relative isolate overflow-hidden rounded-[26px] border border-violet-300/25 bg-gradient-to-br from-[#17152b] via-[#0e162b] to-[#0b2030] p-3 shadow-[0_24px_70px_-45px_rgba(107,70,208,0.65)] sm:p-3 admin-graphite-panel">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400/75 via-cyan-400/25 to-transparent" />
-        <img
-          src="/admin-premium/comercial-ofertas-hero.svg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-6 -top-8 hidden h-[19rem] w-[43%] max-w-[440px] object-contain object-right opacity-90 lg:block"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#101327]/95 via-[#0d1728]/90 via-60% to-[#0b1b31]/20" />
-        <div className="pointer-events-none absolute -right-28 -top-32 h-[24rem] w-[24rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
-        <div className="relative z-10">
-        <div className="flex flex-wrap items-start justify-between gap-5 pb-1">
-          <div className="flex max-w-[680px] items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-300/45 bg-violet-400/20 text-violet-100 shadow-[0_0_36px_-13px_rgba(167,139,250,0.8)]">
-              <Gift className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
-                TukTuk · Comercial
-              </p>
-              <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">Campañas y ofertas</h2>
-              <p className="mt-2 max-w-lg text-sm leading-6 text-slate-200/85">
-                Diseña promociones con fechas, beneficiarios, límites y condiciones. Cada campaña
-                conserva su propia configuración.
-              </p>
-            </div>
+      <header className="rounded-2xl border border-violet-400/20 bg-card/75 p-4 shadow-sm sm:p-5 admin-graphite-panel">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Comercial · Conductores</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Beneficios de conductores</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Prepara incentivos para incorporar, fidelizar o reactivar conductores.</p>
           </div>
           {canEdit && (
-            <Button onClick={() => open()} className="min-h-11 gap-2 rounded-xl bg-cyan-400 px-5 font-bold text-[#06131d] shadow-[0_10px_36px_-14px_rgba(34,211,238,0.95)] hover:bg-cyan-300">
+            <Button onClick={() => open()} size="sm" className="h-9 gap-2">
               <Plus className="h-4 w-4" /> Nueva oferta
             </Button>
           )}
         </div>
-        <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-300/35 bg-[#2b210d]/80 px-4 py-3 text-sm leading-6 text-amber-100 shadow-inner shadow-amber-400/[0.04]">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            <strong>Catálogo en preparación.</strong> Estas ofertas se guardan como borradores: no se
-            aplican a las carreras ni cambian las comisiones. La promoción actual de incorporación sigue vigente.
-          </span>
+        <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.055] px-3 py-2 text-xs text-muted-foreground">
+          Las ofertas de este catálogo son borradores: no modifican las carreras ni las comisiones vigentes.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs" aria-label="Resumen del catálogo de ofertas">
+          <span className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5"><strong className="tabular-nums">{count.total}</strong> ofertas</span>
+          <span className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5"><strong className="tabular-nums">{count.drafts}</strong> borradores</span>
+          <span className="rounded-lg border border-border/60 bg-background/50 px-3 py-1.5"><strong className="tabular-nums">{count.archived}</strong> archivadas</span>
         </div>
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { title: "Campañas", value: count.total, icon: Gift, card: "border-violet-400/30 from-[#271b41] via-[#15172a] to-[#101525]", accent: "text-violet-200 bg-violet-400/15 border-violet-300/20" },
-            { title: "Borradores", value: count.drafts, icon: BadgePercent, card: "border-cyan-400/25 from-[#11354a] via-[#121e30] to-[#0b1828]", accent: "text-cyan-200 bg-cyan-400/10 border-cyan-300/20" },
-            { title: "Programables", value: count.forthcoming, icon: CalendarDays, card: "border-blue-400/25 from-[#1c294b] via-[#141c31] to-[#0b1828]", accent: "text-blue-200 bg-blue-400/10 border-blue-300/20" },
-            { title: "Archivadas", value: count.archived, icon: Archive, card: "border-amber-400/20 from-[#2c2431] via-[#171923] to-[#0e1927]", accent: "text-amber-200 bg-amber-400/10 border-amber-300/20" },
-          ].map(({ title, value, icon: Icon, card, accent }) => (
-            <div key={title} className={`relative overflow-hidden rounded-[20px] border bg-gradient-to-br p-4 shadow-[0_18px_48px_-34px_rgba(15,11,40,0.75)] ${card}`}>
-              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border ${accent}`}><Icon className="h-4 w-4" /></span>
-              <div className="mt-2 font-mono text-3xl font-bold tracking-tight text-white">{value}</div>
-              <div className="mt-1 text-sm font-semibold text-slate-200">{title}</div>
-            </div>
-          ))}
-        </div>
+      </header>
 
       {message && (
         <p
