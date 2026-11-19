@@ -1,7 +1,8 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useUserProjects } from "@/hooks/useProjects";
+import { singleProjectEntry } from "@/lib/admin-project-entry";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,18 +23,37 @@ export const Route = createFileRoute("/admin/proyectos/")({
 
 function ProjectsList() {
   const { user } = useSupabaseAuth();
-  const { data: projects = [], isLoading, error } = useUserProjects(user?.id ?? null);
+  const { data: projects = [], isLoading, isFetching, error } = useUserProjects(user?.id ?? null);
+  const selectorRequested = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).seleccionar === "1",
+  });
   const navigate = useNavigate();
+  const redirectProjectId = singleProjectEntry(projects, {
+    loaded: Boolean(user) && !isLoading && !isFetching && !error,
+    selectorRequested,
+  });
 
   useEffect(() => {
-    if (!user && !isLoading) {
-      navigate({ to: "/admin/login" });
+    if (!user) {
+      if (!isLoading) void navigate({ to: "/admin/login", replace: true });
+      return;
     }
-  }, [user, isLoading, navigate]);
+
+    // Una sola asociación accesible: abrirla automáticamente, también tras OAuth.
+    // Esperar una consulta en curso evita redirigir con una lista obsoleta.
+    // El parámetro seleccionar=1 permite recuperar el selector si falla el acceso.
+    if (redirectProjectId) {
+      void navigate({
+        to: "/admin/proyectos/$id",
+        params: { id: redirectProjectId },
+        replace: true,
+      });
+    }
+  }, [user, isLoading, redirectProjectId, navigate]);
 
   if (!user) return null;
 
-  if (isLoading) {
+  if (isLoading || isFetching || redirectProjectId) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
