@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionCard } from "@/components/admin/SectionCard";
-import { configurationPremium as visual } from "./configuration-premium";
+import { premiumSurface, premiumHeaderSurface } from "@/components/admin/density";
 import { premiumMetricSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { TUKTUK_CONDUCTOR_PLAY_URL, suggestNextAndroidRelease } from "@/lib/androidRelease";
@@ -233,8 +233,8 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       density="compact"
       appearance="premium"
       module="configuracion"
-      className={visual.card}
-      headerClassName={visual.cardHeader}
+      className={premiumSurface}
+      headerClassName={`px-3 py-3 sm:px-4 ${premiumHeaderSurface}`}
       contentClassName="p-3 sm:p-4"
     >
       {query.isLoading || projectSettings.isLoading ? (
@@ -251,7 +251,6 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
           <section aria-label="Versión actual de TukTuk Conductor"
             className={`relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--module-border)] p-3 sm:p-4 ${premiumColumnHeaderSurface}`}>
 
-            <div aria-hidden="true" className={visual.accentLine} />
             <Smartphone aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-1 size-20 text-[var(--module-accent)] opacity-[0.055]" />
             <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -406,7 +405,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
             </div>
           </section>
 
-          <section aria-label="Preparar la siguiente actualización" className={visual.panel + " p-3 sm:p-4"}>
+          <section aria-label="Preparar la siguiente actualización" className={`rounded-[var(--radius-card)] border p-3 sm:p-4 ${premiumColumnHeaderSurface}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-start gap-2.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
