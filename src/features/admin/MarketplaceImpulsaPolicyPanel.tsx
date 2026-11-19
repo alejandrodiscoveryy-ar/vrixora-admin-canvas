@@ -97,7 +97,7 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
                   <Input id={"impulsa-" + field.id} type="number" min="0" max="100" step="0.01"
                     value={field.value} disabled={!canEdit || save.isPending}
                     onChange={e => field.set(e.target.value)}
-                    className="h-11 min-w-0 flex-1 text-lg font-semibold tabular-nums" />
+                    className={cp.control + " h-11 min-w-0 flex-1 text-lg font-semibold tabular-nums"} />
                   <span className="text-sm text-text-secondary">%</span>
                 </div>
                 <p className="text-xs leading-relaxed text-text-secondary">{field.detail}</p>
@@ -111,7 +111,7 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
             </p>
           )}
 
-          <details className="group rounded-xl border border-border-subtle bg-surface-2/50">
+          <details className={cp.inset + " group p-0 sm:p-0"}>
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-text-primary [&::-webkit-details-marker]:hidden">
               Simulador de distribución
               <span className="text-xs font-normal text-text-secondary">Ver ejemplo de reparto</span>
@@ -120,7 +120,7 @@ export default function MarketplaceImpulsaPolicyPanel({ projectId, canView, canE
               <div className="flex flex-wrap items-center gap-2">
                 <Label htmlFor="impulsa-fare">Importe de ejemplo (CUP)</Label>
                 <Input id="impulsa-fare" type="number" min="0" value={fare} onChange={e => setFare(e.target.value)}
-                  className="h-11 w-32 max-w-full tabular-nums" />
+                  className={cp.control + " h-11 w-32 max-w-full tabular-nums"} />
               </div>
               <div className="max-w-full overflow-x-auto">
                 <table className="w-full min-w-[450px] text-left text-sm">
