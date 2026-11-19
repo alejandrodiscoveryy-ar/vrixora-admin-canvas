@@ -4,6 +4,7 @@ import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePo
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,7 +197,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
       )}
 
       {canManage && createExpanded && (
-        <form id="ally-create-form" className="rounded-xl border border-violet-400/25 bg-card/80 p-3 shadow-sm sm:p-4" onSubmit={(event) => { event.preventDefault(); void create(); }}>
+        <form id="ally-create-form" className={cp.inset} onSubmit={(event) => { event.preventDefault(); void create(); }}>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-semibold text-foreground">Crear aliado comercial</h3>
@@ -236,11 +237,11 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
       </div>
 
       {q.isLoading ? (
-        <p className="rounded-xl border border-border/50 bg-card/50 px-4 py-6 text-sm text-muted-foreground" role="status">Cargando Aliados…</p>
+        <p className={cp.inset + " py-6 text-sm text-text-secondary"} role="status">Cargando Aliados…</p>
       ) : q.isError ? (
         <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-5 text-sm text-destructive">No se pudo consultar el programa. {errorMessage(q.error)}</p>
       ) : !q.data?.length ? (
-        <div className="rounded-xl border border-dashed border-border/70 bg-card/30 px-4 py-8 text-center">
+        <div className={cp.inset + " border-dashed py-8 text-center"}>
           <Handshake className="mx-auto mb-2 size-7 text-violet-300/70" aria-hidden="true" />
           <p className="text-sm font-semibold text-foreground">Todavía no hay Aliados</p>
           <p className="mt-1 text-xs text-muted-foreground">Crea el primer colaborador para generar sus enlaces y medir resultados.</p>
@@ -259,7 +260,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
             ];
             const initials = ally.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toUpperCase() || "A";
             return (
-              <article key={ally.id} className="group relative overflow-hidden rounded-2xl border border-border/65 bg-card/75 shadow-sm transition-colors hover:border-violet-400/35">
+              <article key={ally.id} className={cp.inset + " group relative overflow-hidden p-0 shadow-sm transition-colors hover:border-violet-400/35 sm:p-0"}>
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-violet-500/60" aria-hidden="true" />
                 <div className="flex flex-col gap-3 px-4 pb-3 pt-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3">
@@ -291,7 +292,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
 
                 <div className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/50 sm:mx-5 sm:grid-cols-3 xl:grid-cols-6">
                   {indicators.map((metric) => (
-                    <div key={metric.label} className="min-w-0 bg-card px-3 py-2.5">
+                    <div key={metric.label} className="min-w-0 bg-surface-2 px-3 py-2.5 dark:bg-[color:color-mix(in_oklab,var(--surface-3)_92%,var(--text-secondary)_8%)]">
                       <p className="text-[10px] font-medium leading-tight text-muted-foreground">{metric.label}</p>
                       <p className={"mt-1 break-words text-[14px] font-semibold leading-tight tabular-nums " + metric.tone}>{metric.value}</p>
                     </div>
@@ -317,7 +318,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                 )}
 
                 {editing === ally.id && canManage && (
-                  <div className="mx-4 mb-3 rounded-xl border border-border/65 bg-background/60 p-3 sm:mx-5">
+                  <div className={cp.inset + " mx-4 mb-3 sm:mx-5"}>
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="min-w-[170px] flex-1 space-y-1">
                         <Label>Nombre del aliado</Label>
@@ -334,7 +335,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                 )}
 
                 {editingPayment === ally.id && canManage && (
-                  <div className="mx-4 mb-3 rounded-xl border border-border/65 bg-background/60 p-3 sm:mx-5">
+                  <div className={cp.inset + " mx-4 mb-3 sm:mx-5"}>
                     <p className="mb-2 text-xs text-muted-foreground">Registra únicamente un pago ya realizado. Esto no transfiere dinero.</p>
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="min-w-[140px] space-y-1">
