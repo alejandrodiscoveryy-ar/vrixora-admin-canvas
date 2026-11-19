@@ -53,7 +53,7 @@ export default function AdministrationWorkspace({
         <ModuleHeader
           density="compact"
           appearance="premium"
-          module="configuracion"
+          module={activeSection === "empleados" ? "empleados" : "configuracion"}
           className={visual.moduleHeader}
           title={selected?.label ?? "Configuración"}
           description={selectedMeta.description}
