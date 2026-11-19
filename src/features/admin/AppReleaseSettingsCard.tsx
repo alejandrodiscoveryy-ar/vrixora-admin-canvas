@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionCard } from "@/components/admin/SectionCard";
+import { premiumSurface, premiumHeaderSurface, premiumMetricSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { TUKTUK_CONDUCTOR_PLAY_URL, suggestNextAndroidRelease } from "@/lib/androidRelease";
 
@@ -231,9 +232,9 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
       density="compact"
       appearance="premium"
       module="configuracion"
-      className="border-primary/20 bg-gradient-to-br from-surface-1 via-surface-1 to-primary/[0.035]"
-      headerClassName="px-4 py-3 sm:px-5"
-      contentClassName="p-3 sm:p-5"
+      className={premiumSurface}
+      headerClassName={`px-3 py-3 sm:px-4 ${premiumHeaderSurface}`}
+      contentClassName="p-3 sm:p-4"
     >
       {query.isLoading || projectSettings.isLoading ? (
         <div className="flex items-center gap-2 py-2 text-sm text-text-secondary">
@@ -247,16 +248,15 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
         <div className="space-y-3">
           {/* Siempre se muestra el estado persistido, nunca el borrador. */}
           <section aria-label="Versión actual de TukTuk Conductor"
-            className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.13] via-surface-2 to-surface-1 p-4 sm:p-5">
-            <Smartphone aria-hidden="true"
-              className="pointer-events-none absolute -right-5 -top-7 h-40 w-40 rotate-[-15deg] text-primary/[0.07]" strokeWidth={1} />
+            className={`min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4 ${premiumColumnHeaderSurface}`}>
+
             <div className="relative flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-primary">
                   Versión Android publicada
                 </p>
                 <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <strong className="text-3xl font-bold tracking-tight tabular-nums text-text-primary sm:text-4xl">
+                  <strong className="text-2xl font-semibold tracking-tight tabular-nums text-text-primary sm:text-3xl">
                     {query.data.latest_version || "Sin publicar"}
                   </strong>
                   <span className="rounded-md border border-border-strong bg-surface-1/70 px-2 py-1 text-xs font-semibold text-text-secondary">
@@ -318,7 +318,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
               </Button>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
-              <div className="min-w-0 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.045] p-3.5 sm:p-4">
+              <div className={`min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4 ${premiumMetricSurface}`}>
                 <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
                     <BellRing className="h-4 w-4" aria-hidden="true" />
@@ -354,7 +354,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
                   </>
                 ) : <p className="mt-3 text-xs text-text-secondary">Consultando envíos...</p>}
               </div>
-              <div className="min-w-0 rounded-2xl border border-primary/20 bg-primary/[0.045] p-3.5 sm:p-4">
+              <div className={`min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4 ${premiumMetricSurface}`}>
                 <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.12] text-primary">
                     <Users className="h-4 w-4" aria-hidden="true" />
@@ -403,7 +403,7 @@ export default function AppReleaseSettingsCard({ projectId, canManage, hasUnsave
             </div>
           </section>
 
-          <section aria-label="Preparar la siguiente actualización" className="rounded-2xl border border-border-default bg-surface-2/60 p-3.5 sm:p-4">
+          <section aria-label="Preparar la siguiente actualización" className={`rounded-[var(--radius-card)] border p-3 sm:p-4 ${premiumColumnHeaderSurface}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-start gap-2.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
