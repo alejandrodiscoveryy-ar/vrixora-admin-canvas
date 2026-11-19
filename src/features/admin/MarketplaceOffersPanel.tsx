@@ -128,13 +128,9 @@ const selectStyle =
 export default function MarketplaceOffersPanel({
   projectId,
   canEdit,
-  canViewPolicy,
-  canEditPolicy,
 }: {
   projectId: string;
   canEdit: boolean;
-  canViewPolicy: boolean;
-  canEditPolicy: boolean;
 }) {
   const client = useQueryClient();
   const [openedAt] = useState(() => Date.now());
