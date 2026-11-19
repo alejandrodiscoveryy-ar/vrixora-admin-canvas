@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Coins, Gift, Search, UsersRound, Wallet } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
+import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -138,8 +139,8 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
   ];
 
   return (
-    <section className="relative space-y-5 rounded-[26px] border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.055] via-background/85 to-cyan-500/[0.035] p-3 sm:p-3 admin-graphite-panel">
-      <div className="rounded-[22px] border border-violet-400/20 bg-background/75 p-4 sm:p-5 admin-graphite-inset">
+    <section className={cp.shell}>
+      <div className={cp.header}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">Comercial · Referidos</p>
         <h2 className="mt-1 text-xl font-semibold">Quién refirió a quién</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -158,7 +159,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="min-w-0 rounded-2xl border border-violet-400/15 bg-background/75 p-4 admin-graphite-inset">
+          <div key={label} className={cp.metric}>
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>{label}</span><Icon className="h-4 w-4 shrink-0 text-violet-300" />
             </div>
