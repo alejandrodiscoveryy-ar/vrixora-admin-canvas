@@ -1,6 +1,6 @@
 import { adminSubnavTone } from "@/lib/admin-navigation";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
-import { configurationPremium as visual } from "./configuration-premium";
+import { premiumColumnHeaderSurface } from "@/components/admin/density";
 import { premiumSurface } from "@/components/admin/density";
 import { useState } from "react";
 import { BellRing, CalendarX2, FlaskConical, Globe2, Radar } from "lucide-react";
@@ -76,11 +76,11 @@ export default function MarketplaceConfigurationWorkspace({
       <div className="min-w-0 space-y-3">
         <nav data-nav-tone="administracion"
           aria-label="Secciones de configuración de TukTuk"
-          className={visual.navigation}
+          className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}
         >
 
           <div className="relative z-10 hidden px-2.5 pb-2 pt-2 sm:block">
-            <p className={visual.eyebrow}>Configuración</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary">Configuración</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Áreas de control de TukTuk</p>
           </div>
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -95,10 +95,12 @@ export default function MarketplaceConfigurationWorkspace({
                   aria-pressed={isSelected}
                   data-nav-tone={adminSubnavTone("configuracion", section.id)}
                   aria-controls="tuktuk-config-detail"
-                  className={visual.tab + " " + (isSelected ? visual.tabActive : visual.tabIdle)}
+                  className={"flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 " +
+                    (isSelected ? "border-[var(--module-border)] bg-[var(--module-surface)] text-text-primary shadow-[inset_0_-2px_var(--module-accent)]" :
+                      "border-transparent bg-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/70 hover:text-text-primary")}
                 >
 
-                  <span className={visual.tabIcon} aria-hidden="true">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" aria-hidden="true">
                     <Icon aria-hidden="true" strokeWidth={2} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -120,7 +122,6 @@ export default function MarketplaceConfigurationWorkspace({
               module="configuracion"
               density="compact"
               appearance="premium"
-              className={visual.moduleHeader}
               title={selected.title}
               description={selected.description}
               icon={SelectedIcon}
