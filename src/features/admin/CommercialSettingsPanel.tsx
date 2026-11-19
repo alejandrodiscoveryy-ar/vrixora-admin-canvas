@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
@@ -15,8 +15,10 @@ export function CommercialSettingsPanel({
   description: string;
   children: ReactNode;
 }) {
+  const [visited, setVisited] = useState(false);
   return (
-    <details name="commercial-policy" className={cp.accordion}>
+    <details name="commercial-policy" className={cp.accordion}
+      onToggle={event => { if (event.currentTarget.open) setVisited(true); }}>
       <summary className={cp.accordionTitle}>
         <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] bg-surface-2 text-[var(--module-accent,var(--primary))]">
           <Icon className="size-4" />
@@ -28,7 +30,7 @@ export function CommercialSettingsPanel({
         <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-text-secondary transition-transform group-open:rotate-180" />
       </summary>
       <div className="border-t border-border-subtle px-3 py-3 sm:px-4 sm:py-4">
-        {children}
+        {visited ? children : null}
       </div>
     </details>
   );
