@@ -716,3 +716,43 @@ test("Conductores: verification filters distinguish false from unknown and inclu
   assert.match(directory, /setDriverVerificationFilter\(""\)/);
   assert.match(directory, /verificationFilterUnavailable/);
 });
+
+
+test("Navegación: siluetas únicas por destino y jerarquía, sin repetir iconos entre padres e hijos", () => {
+  const primary = ADMIN_PROJECT_TABS.map(tab => tab.icon);
+  const work = MARKETPLACE_WORKSPACE_VIEWS.map(tab => tab.icon);
+  const pricing = PRICING_WORKSPACE_VIEWS.map(tab => tab.icon);
+  const settings = ADMINISTRATION_VIEWS.map(tab => tab.icon);
+  const checkUnique = (name, icons) => assert.equal(new Set(icons).size, icons.length, `Iconos repetidos en ${name}`);
+  checkUnique("menú principal", primary);
+  checkUnique("Trabajos", work);
+  checkUnique("Centro de precios", pricing);
+  checkUnique("Configuración", settings);
+  checkUnique("todos los destinos", [...primary, ...work, ...pricing, ...settings]);
+
+  const workGroup = ADMIN_PROJECT_TABS.find(tab => tab.slug === "trabajos");
+  const operations = MARKETPLACE_WORKSPACE_VIEWS.find(tab => tab.slug === "trabajos");
+  const users = ADMIN_PROJECT_TABS.find(tab => tab.slug === "clientes");
+  const drivers = MARKETPLACE_WORKSPACE_VIEWS.find(tab => tab.slug === "conductores");
+  const wallets = MARKETPLACE_WORKSPACE_VIEWS.find(tab => tab.slug === "billeteras");
+  const topups = MARKETPLACE_WORKSPACE_VIEWS.find(tab => tab.slug === "recargas");
+  assert.notEqual(workGroup.icon, operations.icon);
+  assert.notEqual(users.icon, drivers.icon);
+  assert.notEqual(wallets.icon, topups.icon);
+});
+
+test("Comercial: Impulsa y Aliados distintos; submenú Gestión con iconos semánticos propios", () => {
+  const commercial = readFileSync(new URL("../src/features/admin/ComercialSection.tsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../src/features/admin/commercial-premium.ts", import.meta.url), "utf8");
+  assert.match(commercial, /<Target \/><\/span>\s*Campañas/);
+  assert.match(commercial, /<TrendingUp \/><\/span>\s*Resultados/);
+  assert.match(commercial, /<Rocket \/><\/span>\s*Impulsa/);
+  assert.match(commercial, /<Handshake \/><\/span>\s*Aliados/);
+  assert.match(commercial, /<Layers \/><\/span>\s*Gestión/);
+  assert.match(commercial, /configuracion: SlidersHorizontal/);
+  assert.match(commercial, /referidos: GitFork/);
+  assert.match(commercial, /ofertas: Gift/);
+  assert.match(commercial, /captacion: UserPlus/);
+  assert.match(commercial, /<ChildIcon className="size-4 shrink-0" aria-hidden="true" \/>/);
+  assert.match(styles, /managementNavItem: "flex min-w-0 min-h-11 items-center gap-2/);
+});
