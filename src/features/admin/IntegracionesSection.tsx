@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { Badge } from "@/components/ui/badge";
@@ -231,7 +232,7 @@ export default function IntegracionesSection({
   });
 
   const integrationSwitcher = (
-    <div className={premium ? "relative isolate flex flex-wrap gap-3 overflow-hidden rounded-[20px] border border-cyan-400/20 bg-gradient-to-r from-card/95 via-card/90 to-cyan-950/[0.09] p-3 shadow-[0_18px_45px_-40px_rgba(14,165,233,0.3)]" : "flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-surface-1 p-2"}>
+    <div className={`flex min-w-0 flex-wrap gap-2 rounded-[var(--radius-card)] border p-2 ${premiumColumnHeaderSurface}`}>
       <Button
         type="button"
         aria-pressed={activeIntegration === "eltoque"}
@@ -254,7 +255,7 @@ export default function IntegracionesSection({
 
   if (activeIntegration === "maps") {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="min-w-0 space-y-3">
         {!premium ? (
         <ModuleHeader density="compact" appearance="premium"
           title="Integraciones y API"
@@ -273,7 +274,7 @@ export default function IntegracionesSection({
 
   if (integrationQuery.isLoading) {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="min-w-0 space-y-3">
         {!premium ? (
         <ModuleHeader density="compact" appearance="premium"
           title="Integraciones y API"
@@ -294,7 +295,7 @@ export default function IntegracionesSection({
 
   if (integrationQuery.isError || !settings) {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="min-w-0 space-y-3">
         {!premium ? (
         <ModuleHeader density="compact" appearance="premium"
           title="Integraciones y API"
@@ -321,7 +322,7 @@ export default function IntegracionesSection({
   const status = getStatus(settings);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="min-w-0 space-y-3">
       {!premium ? (
         <ModuleHeader density="compact" appearance="premium"
         title="Integraciones y API"
@@ -345,13 +346,13 @@ export default function IntegracionesSection({
         title="elTOQUE"
         description="Tasa referencial automática para operaciones USD/EUR → CUP."
         module="configuracion"
-        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}
+        className={premium ? premiumSurface : undefined}
         actions={
           <Badge variant={status.variant}>{status.label}</Badge>
         }
       >
-        {premium ? <PlugZap aria-hidden="true" className="pointer-events-none absolute -right-9 -top-10 z-0 h-48 w-48 -rotate-12 text-cyan-400 opacity-[0.05]" /> : null}
-        <div className="relative z-10 space-y-6">
+        
+        <div className="min-w-0 space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="eltoque-api-key">
@@ -383,7 +384,7 @@ export default function IntegracionesSection({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-border-subtle bg-surface-2 p-3">
+              <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
                 <p className="text-xs text-muted-foreground">
                   Moneda base
                 </p>
@@ -392,7 +393,7 @@ export default function IntegracionesSection({
                 </p>
               </div>
 
-              <div className="rounded-lg border border-border-subtle bg-surface-2 p-3">
+              <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
                 <p className="text-xs text-muted-foreground">
                   Moneda de cobro
                 </p>
@@ -461,7 +462,7 @@ export default function IntegracionesSection({
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-border-subtle bg-surface-2 p-4">
+            <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
               <p className="text-xs text-muted-foreground">
                 Tasa actual
               </p>
@@ -474,7 +475,7 @@ export default function IntegracionesSection({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border-subtle bg-surface-2 p-4">
+            <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
               <p className="text-xs text-muted-foreground">
                 Fuente
               </p>
@@ -486,7 +487,7 @@ export default function IntegracionesSection({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border-subtle bg-surface-2 p-4">
+            <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
               <p className="text-xs text-muted-foreground">
                 Última sincronización
               </p>
@@ -534,10 +535,10 @@ export default function IntegracionesSection({
         title="Notificación diaria de la tasa"
         description="Prepara una notificación diaria con la tasa vigente."
         module="configuracion"
-        className={premium ? "relative isolate overflow-hidden rounded-[22px] border-cyan-400/20 bg-gradient-to-br from-card/95 via-card/95 to-cyan-950/[0.07] shadow-[0_24px_60px_-42px_rgba(0,0,0,0.85)]" : undefined}
+        className={premium ? premiumSurface : undefined}
       >
-        {premium ? <BellRing aria-hidden="true" className="pointer-events-none absolute -right-9 -top-10 z-0 h-44 w-44 -rotate-12 text-cyan-400 opacity-[0.045]" /> : null}
-        <div className="relative z-10 space-y-5">
+        
+        <div className="min-w-0 space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="flex items-center gap-2 font-medium">
@@ -607,7 +608,7 @@ export default function IntegracionesSection({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-border-subtle bg-surface-2 p-4">
+            <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
               <p className="text-xs text-muted-foreground">
                 Dispositivos push activos
               </p>
@@ -616,7 +617,7 @@ export default function IntegracionesSection({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border-subtle bg-surface-2 p-4">
+            <div className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
               <p className="text-xs text-muted-foreground">
                 Notificaciones pendientes
               </p>
