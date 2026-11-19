@@ -142,7 +142,7 @@ export default function CommercialReferralsPanel({ projectId }: { projectId: str
 
   return (
     <section className={cp.shell}>
-      <CommercialPageHeader title="Referidos y red" description="Quién refirió a quién, carreras reales y recompensas de cada referente." icon={Users} />
+      <CommercialPageHeader title="Referidos y red" description="Quién refirió a quién, carreras reales y recompensas de cada referente." icon={UsersRound} />
       <p className="text-xs leading-relaxed text-text-secondary">
         Se excluyen carreras de prueba. Las comisiones promocionales no son ingresos nuevos y los premios acreditados pertenecen al referente.
         {!canViewMoney && <span className="ml-1 font-medium">Los importes requieren permiso de Finanzas.</span>}
