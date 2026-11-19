@@ -4,6 +4,8 @@ import { BarChart3, Copy, Link2, MessageCircle, MousePointerClick, RefreshCw, Sh
 import { ResponsiveContainer, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { getSupabaseClient } from "@/lib/supabase";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
+import { Button } from "@/components/ui/button";
+import { MetricCard } from "@/components/admin/MetricCard";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 type PeriodDays = 7 | 30 | 90;
@@ -149,13 +151,13 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
       {mode!=="generator"&&<div role="group" aria-label="Periodo de TukTuk" className="flex gap-1">
         {([7,30,90] as const).map(period=><button type="button" key={period} aria-pressed={days===period}
           onClick={()=>setDays(period)}
-          className={"rounded-md border px-2 py-1.5 text-xs font-semibold "+(days===period?"border-orange-400/35 bg-orange-500/15":"border-border/60 text-muted-foreground")}>
+          className={"min-h-11 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-semibold "+(days===period?"border-border-strong bg-surface-3 text-text-primary":"border-border-subtle text-text-secondary hover:bg-surface-2")}>
           {period}d
         </button>)}
       </div>}
       {mode!=="generator"&&<button type="button" aria-label="Actualizar estadísticas TukTuk" title="Actualizar"
         disabled={query.isFetching} onClick={()=>void query.refetch()}
-        className="rounded-md border border-border p-2 disabled:opacity-50">
+        className="grid min-h-11 min-w-11 place-items-center rounded-[var(--radius-control)] border border-border-default disabled:opacity-50">
         <RefreshCw className={"h-4 w-4 "+(query.isFetching?"animate-spin":"")}/>
       </button>}
     </header>
@@ -179,20 +181,17 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
         </label>
       </div>
       <p className="mt-2 break-all rounded-[var(--radius-control)] border border-border-subtle bg-surface-2 p-3 font-mono text-xs text-text-secondary">{link}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" disabled={!canManage||busy} onClick={()=>void copy(link,"link_copied")}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-orange-400/30 px-3 py-1.5 text-xs font-semibold hover:bg-orange-400/10 disabled:opacity-50">
-          <Copy className="h-3.5 w-3.5"/> Copiar enlace</button>
-        <button type="button" disabled={!canManage||busy} onClick={()=>void copy(message,"message_copied")}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted/25 disabled:opacity-50">
-          <MessageCircle className="h-3.5 w-3.5"/> Copiar mensaje</button>
-        <button type="button" disabled={!canManage||busy} onClick={()=>void share()}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted/25 disabled:opacity-50">
-          <Share2 className="h-3.5 w-3.5"/> Compartir</button>
-        <button type="button" disabled={!canManage||busy}
-          onClick={()=>void copy(taggedLink("qr",campaign),"link_copied","qr")}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted/25 disabled:opacity-50">
-          <Link2 className="h-3.5 w-3.5"/> Copiar enlace para QR</button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button type="button" size="sm" className="max-sm:min-h-11" disabled={!canManage||busy}
+          onClick={()=>void copy(link,"link_copied")}><Copy className="mr-1 size-4"/>Copiar enlace</Button>
+        <Button type="button" size="sm" className="max-sm:min-h-11" variant="outline" disabled={!canManage||busy}
+          onClick={()=>void copy(message,"message_copied")}><MessageCircle className="mr-1 size-4"/>Copiar mensaje</Button>
+        <Button type="button" size="sm" className="max-sm:min-h-11" variant="outline" disabled={!canManage||busy}
+          onClick={()=>void share()}><Share2 className="mr-1 size-4"/>Compartir</Button>
+        <Button type="button" size="sm" className="max-sm:min-h-11" variant="outline" disabled={!canManage||busy}
+          onClick={()=>void copy(taggedLink("qr",campaign),"link_copied","qr")}>
+          <Link2 className="mr-1 size-4"/>Enlace para QR
+        </Button>
       </div>
       {notice&&<p role="status" className="mt-2 text-xs text-muted-foreground">{notice}</p>}
       <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
@@ -203,13 +202,18 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
       query.isError?<p role="alert" className="p-3 text-xs text-amber-600">
         No se pudieron leer las estadísticas.
         <button type="button" onClick={()=>void query.refetch()} className="ml-2 underline">Reintentar</button></p>:<>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {metrics.map(({label,value,Icon})=><div key={label} className="rounded-lg border border-border/50 p-3">
-          <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground">
-            <span>{String(label)}</span><Icon className="h-4 w-4"/>
-          </div><p className="mt-1 text-xl font-bold tabular-nums">{fmt(value)}</p>
-        </div>)}
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(({label,value,Icon})=>(
+          <MetricCard key={label} module="comercial" density="compact" appearance="premium"
+            label={label} value={fmt(value)} icon={Icon} />
+        ))}
       </div>
+      <details className="group rounded-xl border border-border-subtle bg-surface-2/40">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-text-primary [&::-webkit-details-marker]:hidden">
+          Análisis detallado de las campañas
+          <span className="text-xs font-normal text-text-secondary">Embudo, canales, abandono y precio</span>
+        </summary>
+        <div className="space-y-3 border-t border-border-subtle p-3">
       <div className="grid gap-3 lg:grid-cols-2">
         <div className="rounded-lg border border-border/50 p-3">
           <h4 className="text-sm font-semibold">Evolución de la campaña</h4>
@@ -286,6 +290,8 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
         Las aperturas se deduplican por pestaña y acción. No identificamos grupos de WhatsApp,
         reenvíos ni visitantes individuales. El tráfico general sin etiqueta se contabiliza aparte.
       </p>
+        </div>
+      </details>
     </>)}
   </section>;
 }
