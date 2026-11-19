@@ -55,7 +55,7 @@ test("Activación Impulsa explica por qué el botón está deshabilitado", () =>
 });
 
 test("Si el servidor rechaza la activación, conserva los campos y explica la causa", () => {
-  assert.match(card, /const \[activationError, setActivationError\] = useState\("")/);
+  assert.match(card, /const \[activationError, setActivationError\] = useState\(""\)/);
   assert.match(card, /setActivationError\(message\.includes\("DOCUMENTED_AUTHORIZATION_REQUIRED"\)/);
   assert.match(card, /PROMO_SERVICE_NOT_ACTIVE/);
   assert.match(card, /IDENTITY_NOT_VERIFIED/);
