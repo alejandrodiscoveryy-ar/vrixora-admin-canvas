@@ -190,7 +190,7 @@ export default function MarketplaceTuktukOfficialAnalytics({projectId,canManage,
           onClick={()=>void share()}><Share2 className="mr-1 size-4"/>Compartir</Button>
         <Button type="button" size="sm" className="max-sm:min-h-11" variant="outline" disabled={!canManage||busy}
           onClick={()=>void copy(taggedLink("qr",campaign),"link_copied","qr")}>
-          <Link2 className="mr-1 size-4"/>Enlace para QR
+          <Link2 className="mr-1 size-4"/>Copiar enlace para QR
         </Button>
       </div>
       {notice&&<p role="status" className="mt-2 text-xs text-muted-foreground">{notice}</p>}
