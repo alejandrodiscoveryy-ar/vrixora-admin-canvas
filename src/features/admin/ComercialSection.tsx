@@ -54,6 +54,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import MarketplaceOffersPanel from "@/features/admin/MarketplaceOffersPanel";
+import MarketplaceWelcomePolicyPanel from "@/features/admin/MarketplaceWelcomePolicyPanel";
 import MarketplaceImpulsaPolicyPanel from "@/features/admin/MarketplaceImpulsaPolicyPanel";
 import MarketplaceImpulsaCommunicationAnalytics from "@/features/admin/MarketplaceImpulsaCommunicationAnalytics";
 import MarketplaceTuktukOfficialAnalytics from "@/features/admin/MarketplaceTuktukOfficialAnalytics";
@@ -398,7 +399,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : showAllies ? (
         <MarketplaceAlliesPanel projectId={projectId} canManage={canManage} />
       ) : showOffers ? (
-        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} canViewPolicy={permissions.includes("settings.view")} canEditPolicy={permissions.includes("settings.manage")} />
+        <MarketplaceOffersPanel projectId={projectId} canEdit={canEditOffers} />
       ) : showImpulsa ? (
         <section className="space-y-4" aria-labelledby="impulsa-premium-title" data-admin-module="comercial">
           <header className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/[0.09] via-card/90 to-violet-500/[0.06] p-4 shadow-sm sm:p-5">
@@ -413,10 +414,16 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
           <header className="rounded-2xl border border-violet-400/20 bg-card/75 p-4 shadow-sm sm:p-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">Gestión · Administración</p>
             <h2 id="commercial-settings-title" className="mt-1 text-xl font-semibold tracking-tight text-foreground">Configuración comercial</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Reglas económicas, crédito y retiradas. Los resultados de conductores permanecen en Impulsa; aquí solo se administran las políticas.</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Reglas generales, bienvenida, comisiones, crédito y retiradas. Aquí se configuran las políticas; los resultados de conductores permanecen en Impulsa.</p>
           </header>
           {canViewImpulsa ? (
             <div className="space-y-3">
+              <details className="rounded-xl border border-border/60 bg-card/60">
+                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Bienvenida y cobro general</summary>
+                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+                  <MarketplaceWelcomePolicyPanel projectId={projectId} canView={permissions.includes("settings.view")} canEdit={permissions.includes("settings.manage")} />
+                </div>
+              </details>
               <details className="rounded-xl border border-border/60 bg-card/60">
                 <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-foreground">Reglas y comisiones de Impulsa</summary>
                 <div className="px-2 pb-2 sm:px-3 sm:pb-3">
