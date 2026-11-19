@@ -358,7 +358,14 @@ function ProjectNavItem({
                       to="/admin/proyectos/$id/$section"
                       params={{ id: project.id, section: "trabajos" }}
                       search={{ vista: "resumen" }}
-                      title="Trabajos"
+                      title={collapsed ? (trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos") : "Trabajos"}
+                      role={collapsed ? "button" : undefined}
+                      onKeyDown={(event) => {
+                        if (collapsed && event.key === " ") {
+                          event.preventDefault();
+                          toggleSubmenu("trabajos");
+                        }
+                      }}
                       aria-label={collapsed ? (trabajosOpen ? "Contraer Trabajos" : "Desplegar Trabajos") : "Trabajos"}
                       aria-expanded={collapsed ? trabajosOpen : undefined}
                       aria-controls={collapsed ? trabajosGroupId : undefined}
@@ -505,7 +512,14 @@ function ProjectNavItem({
                     <Link
                       to="/admin/proyectos/$id/$section"
                       params={{ id: project.id, section: defaultChild.slug }}
-                      title={`${tab.label} · ${defaultChild.label}`}
+                      title={collapsed ? (groupOpen ? "Contraer Configuración" : "Desplegar Configuración") : `${tab.label} · ${defaultChild.label}`}
+                      role={collapsed ? "button" : undefined}
+                      onKeyDown={(event) => {
+                        if (collapsed && event.key === " ") {
+                          event.preventDefault();
+                          toggleSubmenu("configuracion");
+                        }
+                      }}
                       aria-label={collapsed ? (groupOpen ? "Contraer Configuración" : "Desplegar Configuración") : `Abrir ${defaultChild.label}`}
                       aria-current={mainSettingsActive ? "page" : undefined}
                       aria-expanded={collapsed ? groupOpen : undefined}
