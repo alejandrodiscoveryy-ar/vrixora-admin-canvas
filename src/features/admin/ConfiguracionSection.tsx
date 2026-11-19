@@ -15,9 +15,9 @@ import {
 } from "@/lib/services";
 
 import { SectionCard } from "@/components/admin/SectionCard";
-import { premiumControlSurface } from "@/components/admin/density";
+import { premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import PremiumSettingsSnapshot, { type PremiumSettingsMetric } from "./PremiumSettingsSnapshot";
-import { configurationPremium as visual } from "./configuration-premium";
+
 import AppReleaseSettingsCard from "./AppReleaseSettingsCard";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Badge } from "@/components/ui/badge";
@@ -58,10 +58,6 @@ const sections: Array<{
   { key: "application", number: "05", label: "Aplicación y versiones", eyebrow: "EXPERIENCIA Y PUBLICACIÓN", description: "Actualizaciones de Android, mantenimiento y mensaje de bienvenida.", icon: Smartphone },
 ];
 
-const CONFIG_CARD_CLASS = visual.card;
-const PREMIUM_CONFIG_CARD_CLASS = CONFIG_CARD_CLASS;
-const CONFIG_HEADER_CLASS = visual.cardHeader;
-const CONFIG_CONTENT_CLASS = "min-w-0 p-3 sm:p-4";
 const CONFIG_CONTROL_CLASS = `min-h-11 rounded-[var(--radius-control)] border-border-default bg-surface-3/70 text-text-primary shadow-[var(--shadow-xs)] focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
 const CONFIG_SELECT_CLASS = CONFIG_CONTROL_CLASS;
 const CONFIG_TEXTAREA_CLASS = `min-h-[88px] rounded-[var(--radius-control)] border-border-default bg-surface-3/70 text-text-primary shadow-[var(--shadow-xs)] focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20 ${premiumControlSurface}`;
@@ -483,11 +479,10 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   return (
     <div data-admin-module="configuracion" className="min-w-0 space-y-3">
-      <section aria-label="Categorías de ajustes del proyecto" className={visual.navigation}>
+      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
         <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-2 sm:px-3">
           <div className="min-w-0">
-            <h2 className={visual.eyebrow}>CONFIGURACIÓN · TUKTUK CONTROL</h2>
-            <p className="mt-0.5 text-sm font-medium text-text-primary">Ajustes del proyecto</p>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">Ajustes del proyecto</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
@@ -509,10 +504,13 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 key={section.key}
                 aria-current={selected ? "page" : undefined}
                 onClick={() => setActiveSection(section.key)}
-                className={visual.tab + " " + (selected ? visual.tabActive : visual.tabIdle) +
+                className={"flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 " +
+                  (selected
+                    ? "border-[var(--module-border)] bg-[var(--module-surface)] text-text-primary shadow-[inset_0_-2px_var(--module-accent)]"
+                    : "border-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/70 hover:text-text-primary") +
                   (section.key === "application" ? " max-sm:col-span-2" : "")}
               >
-                <span className={selected ? visual.tabIcon : "grid size-8 shrink-0 place-items-center rounded-lg border border-border-default/60 bg-surface-3/65 text-text-secondary"} aria-hidden="true">
+                <span className={"grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border " + (selected ? "border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" : "border-border-default bg-surface-3/65 text-text-secondary")} aria-hidden="true">
                   <Icon className="size-4" />
                 </span>
                 <span className="min-w-0">
@@ -540,9 +538,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Identidad del proyecto"
             description="Información principal utilizada en la administración y en los documentos."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-6">
               <div className="space-y-1.5 md:col-span-2 xl:order-1 xl:col-span-2">
@@ -618,9 +613,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Marca e identidad visual"
             description="Recursos visuales utilizados por el proyecto."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             <div className="grid gap-x-3 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="grid gap-2 md:col-span-2 sm:grid-cols-[minmax(0,1fr)_120px] sm:items-end xl:col-span-2">
@@ -785,9 +777,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Monedas y tipo de cambio"
             description="Define las monedas y el tipo de cambio utilizados por Marketplace."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
@@ -901,7 +890,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       {visibleSection === "referrals" ? (
         <div className="space-y-3">
           {isMarketplaceReferralProgram ? (
-            <SectionCard density="compact" appearance="premium" title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion" className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS} headerClassName={CONFIG_HEADER_CLASS} contentClassName={CONFIG_CONTENT_CLASS}>
+            <SectionCard density="compact" appearance="premium" title="Recompensa Marketplace" description="El importe se acredita en la billetera Marketplace cuando el referido completa su primer trabajo válido." module="configuracion">
               {marketplaceReferralSettingsQuery.isError ? <PageAlert tone="error">No se pudo cargar la configuración vigente de recompensas Marketplace.</PageAlert> : null}
               <div className="grid gap-4 lg:grid-cols-[minmax(250px,1.2fr)_minmax(220px,1fr)_auto] lg:items-center">
                 <SettingToggle title="Programa de referidos" description="Activa o desactiva la recompensa vigente." checked={marketplaceRewardEnabled} onCheckedChange={setMarketplaceRewardEnabled} disabled={!canManage} />
@@ -916,9 +905,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Programa de referidos"
             description="Cada campaña conserva su condición y recompensa para no alterar relaciones ni beneficios históricos."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             {referralCampaignsQuery.isLoading ? (
               <div className="flex items-center justify-center py-10">
@@ -967,9 +953,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
               title="Iniciar nueva campaña"
               description="La campaña activa se cerrará al crear la nueva. Las reglas históricas no se modificarán."
               module="configuracion"
-              className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-              headerClassName={CONFIG_HEADER_CLASS}
-              contentClassName={CONFIG_CONTENT_CLASS}
             >
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_160px_auto] xl:items-end">
                 <div className="space-y-1.5">
@@ -1042,9 +1025,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Historial de campañas"
             description="Las campañas cerradas conservan las condiciones con las que se emitieron las recompensas."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             {referralCampaignsQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -1117,9 +1097,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Contacto institucional"
             description="Datos utilizados por la identidad del proyecto y sus documentos."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             <div className="max-w-xl space-y-1.5">
               <Label>WhatsApp institucional</Label>
@@ -1137,9 +1114,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
             title="Canales operativos de WhatsApp"
             description="Configura soporte y cobros de forma independiente."
             module="configuracion"
-            className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-            headerClassName={CONFIG_HEADER_CLASS}
-            contentClassName={CONFIG_CONTENT_CLASS}
           >
             {!canManageWhatsApp ? (
               <PageAlert tone="info" title="Acceso restringido">
@@ -1272,9 +1246,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         <SectionCard density="compact" appearance="premium"
           title="Acceso y bienvenida"
           module="configuracion"
-          className={isMarketplaceReferralProgram ? PREMIUM_CONFIG_CARD_CLASS : CONFIG_CARD_CLASS}
-          headerClassName={CONFIG_HEADER_CLASS}
-          contentClassName={CONFIG_CONTENT_CLASS}
         >
           <div className="grid gap-4 md:grid-cols-2">
             {form.maintenanceMode ? (

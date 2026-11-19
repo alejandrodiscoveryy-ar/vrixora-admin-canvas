@@ -570,8 +570,7 @@ test("Admin thematic inner menus use the common premium density without losing s
   assert.match(pricing, /data-nav-tone="tarifas"/);
   assert.match(pricing, /admin-graphite-nav-item/);
   assert.match(operational, /data-nav-tone="administracion"/);
-  assert.match(operational, /configurationPremium as visual/);
-  assert.match(operational, /visual\.navigation/);
+  assert.match(operational, /premiumColumnHeaderSurface/);
   assert.match(operational, /<ModuleHeader/);
   assert.match(operational, /aria-pressed=\{isSelected\}/);
   assert.match(operational, /grid-cols-2 gap-1\.5 sm:grid-cols-4/);

@@ -48,8 +48,7 @@ test('interfaz premium sin barra duplicada, con navegación compacta y acceso co
   assert.doesNotMatch(workspace, />Configuración del servicio</);
   assert.doesNotMatch(workspace, /xl:grid-cols-\[252px_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(workspace, /admin-nav-watermark|bg-gradient/);
-  assert.match(workspace, /configurationPremium as visual/);
-  assert.match(workspace, /visual\.navigation/);
+  assert.match(workspace, /premiumColumnHeaderSurface/);
   assert.match(workspace, /<ModuleHeader/);
   assert.match(workspace, /grid grid-cols-2 gap-1\.5 sm:grid-cols-4/);
   assert.match(workspace, /aria-pressed=\{isSelected\}/);
