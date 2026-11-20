@@ -37,7 +37,7 @@ test("datos ausentes, falta de muestra o permisos siempre producen gris", () => 
   assert.equal(toneFromDecline(0,0), "gray");
   assert.equal(toneFromDecline(0,4), "gray");
   assert.equal(toneFromDecline(null,100), "gray");
-  assert.equal(toneFromCancellation(9,9), "gray");
+  assert.equal(toneFromCancellation(4,4), "gray");
   assert.equal(toneFromCancellation(null,0), "gray");
   assert.equal(toneFromPending(null,"topups"), "gray");
   const noPermissions = parseAgencyVitality({...sample, clients:null,rides:null,finance:null,operation:null});
