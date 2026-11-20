@@ -562,12 +562,12 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
       {visibleSection === "general" ? (
         <div className="space-y-3">
           <SectionCard density="compact" appearance="premium"
-            title="Identidad del proyecto"
-            description="Información principal utilizada en la administración y en los documentos."
+            title="Datos principales"
+            description="Información de la agencia y contacto institucional."
             module="configuracion"
           >
             <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-6">
-              <div className="space-y-1.5 md:col-span-2 xl:order-1 xl:col-span-2">
+              <div className="order-1 space-y-1.5 md:col-span-2 xl:col-span-2">
                 <Label>Nombre del proyecto</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -580,7 +580,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 md:col-span-2 xl:order-4 xl:col-span-6">
+              <div className="order-4 space-y-1.5 md:col-span-2 xl:col-span-6">
                 <Label>Descripción</Label>
                 <Textarea
                   className={CONFIG_TEXTAREA_CLASS}
@@ -593,7 +593,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-2 xl:col-span-2">
+              <div className="order-2 space-y-1.5 xl:col-span-2">
                 <Label>Correo de soporte</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -604,7 +604,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-3 xl:col-span-2">
+              <div className="order-3 space-y-1.5 xl:col-span-2">
                 <Label>Sitio web oficial</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -614,7 +614,13 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-5 xl:col-span-3">
+              <details className="group order-5 min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/55 md:col-span-2 xl:col-span-6">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-text-primary marker:hidden [&::-webkit-details-marker]:hidden">
+                  <span>Enlaces legales</span>
+                  <ChevronDown className="size-4 text-text-secondary transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="grid grid-cols-1 gap-3 border-t border-border-subtle p-3 md:grid-cols-2">
+              <div className="space-y-1.5">
                 <Label>Política de privacidad</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -624,7 +630,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-6 xl:col-span-3">
+              <div className="space-y-1.5">
                 <Label>Términos y condiciones</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -633,6 +639,8 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   disabled={!canManage}
                 />
               </div>
+                </div>
+              </details>
             </div>
           </SectionCard>
 
