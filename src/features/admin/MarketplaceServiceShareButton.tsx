@@ -66,17 +66,28 @@ export default function MarketplaceServiceShareButton({ projectId, jobId, compac
       setFailure("Este dispositivo no admite compartir directamente. Usa «Copiar mensaje».");
       return;
     }
-    setFailure("");
+    setBusy(true); setFailure("");
     try {
-      // The proposal was loaded from the protected RPC for manual review.
-      // The Android share sheet lets the operator choose WhatsApp and the group.
-      // No automatic messages are sent by Vrixora.
+      // Revalidar antes de invocar el menú del sistema; un trabajo asignado,
+      // vencido o con prioridad protegida nunca debe compartirse desde Admin.
+      const fresh = await loadPayload(projectId, jobId);
+      if (JSON.stringify(fresh) !== JSON.stringify(payload)) {
+        setPayload(fresh); setComment(cleanServiceShareComment(fresh.comment ?? "")); setReviewed(false);
+        setFailure("El servicio cambió. Revisa el mensaje actualizado antes de compartir.");
+        return;
+      }
+      // Android abre el selector nativo; el operador elige WhatsApp y el grupo.
+      // En navegadores que pierden la activación tras la comprobación, queda «Copiar».
       await navigator.share({ title: "Carrera disponible · Agencia TukTuk", text: preview });
       setOpen(false); reset();
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
-      setFailure("No se pudo abrir el menú para compartir. Puedes copiar el mensaje.");
-    }
+      if (error instanceof Error && error.message.includes("JOB_NOT_SHAREABLE")) {
+        setPayload(null); setReviewed(false); setFailure(errorText(error));
+      } else {
+        setFailure("No se pudo abrir el menú para compartir. Usa «Copiar mensaje».");
+      }
+    } finally { setBusy(false); }
   };
   return <>
     <Button type="button" size="sm" variant="outline"
