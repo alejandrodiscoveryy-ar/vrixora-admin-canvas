@@ -12,10 +12,16 @@ import { Label } from "@/components/ui/label";
 
 type Ally = {
   id: string; name: string; slug: string; rate: number; status: "active" | "paused";
-  clicks: number; attributed: number; completed: number; earned: number; paid: number;
+  clicks: number; app_opens?: number; origins?: number; destinations?: number;
+  quotes?: number; requests?: number; reasons?: Array<{ reason: string; total: number }>;
+  attributed: number; completed: number; earned: number; paid: number;
   report_expires_at: string;
 };
 type Issue = { slug: string; report_key: string; expires_at: string };
+const reasonLabels: Record<string, string> = {
+  price: "Precio", comparing: "Comparación", no_driver: "Sin transporte",
+  difficult: "Dificultad al solicitar", later: "Más tarde", other: "Otro",
+};
 const shortBase = "https://www.vrixora.com/tuk/";
 const reportBase = "https://admin.vrixora.com/aliados";
 const cup = (value: unknown) => Number(value ?? 0).toLocaleString("es-CU", { maximumFractionDigits: 2 }) + " CUP";
@@ -298,6 +304,34 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     </div>
                   ))}
                 </div>
+
+                {ally.app_opens !== undefined && (
+                  <div className="mx-4 mb-3 rounded-xl border border-violet-400/15 bg-violet-400/[0.04] px-3 py-2.5 sm:mx-5">
+                    <p className="text-xs font-semibold text-violet-200">Captación de pasajeros <span className="font-normal text-muted-foreground">· histórico de eventos</span></p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                      {([
+                        ["Abrieron la app", ally.app_opens],
+                        ["Eligieron origen", ally.origins],
+                        ["Eligieron destino", ally.destinations],
+                        ["Cotizaron", ally.quotes],
+                        ["Solicitaron", ally.requests],
+                      ] as const).map(([label, value]) => (
+                        <div key={label} className="rounded-lg border border-border/40 bg-surface-2 px-2.5 py-2">
+                          <p className="text-[10px] text-muted-foreground">{label}</p>
+                          <p className="mt-1 font-semibold tabular-nums">{value === undefined ? "—" : Number(value).toLocaleString("es-CU")}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {ally.reasons && ally.reasons.length > 0 && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Motivos declarados: {ally.reasons.map((entry) =>
+                          `${reasonLabels[entry.reason] ?? "Otro"} (${Number(entry.total).toLocaleString("es-CU")})`
+                        ).join(" · ")}
+                      </p>
+                    )}
+                    <p className="mt-2 text-[10px] text-muted-foreground">Los eventos no representan necesariamente clientes únicos ni carreras completadas.</p>
+                  </div>
+                )}
 
                 {canManage && (
                   <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5">
