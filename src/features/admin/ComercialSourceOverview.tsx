@@ -8,7 +8,7 @@ import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 type Period = 7 | 30 | 90;
 type Official = { totals?: { link_opens?: number; visitor_sessions?: number; app_opens?: number; quotes?: number; requests_created?: number } };
 type Impulsa = { totals?: { clicks?: number; sessions?: number; app_opens?: number; quotes?: number; requests_created?: number }; organic_totals?: { app_opens?: number; quotes?: number; requests_created?: number }; drivers?: Array<{ attributed_real?: number; completed_real?: number }> };
-type Ally = { id: string; clicks: number; attributed: number; completed: number };
+type Ally = { id: string; clicks: number; app_opens?: number; quotes?: number; requests?: number; attributed: number; completed: number };
 const count = (value: unknown) => Number.isFinite(Number(value)) ? Math.max(0,Number(value)).toLocaleString("es-CU") : "—";
 
 export default function ComercialSourceOverview({ projectId }: { projectId: string }) {
@@ -42,9 +42,12 @@ export default function ComercialSourceOverview({ projectId }: { projectId: stri
   });
   const allySummary = (allies.data ?? []).reduce((acc, row) => ({
     clicks: acc.clicks + Number(row.clicks ?? 0),
+    appOpens: acc.appOpens + Number(row.app_opens ?? 0),
+    quotes: acc.quotes + Number(row.quotes ?? 0),
+    requests: acc.requests + Number(row.requests ?? 0),
     attributed: acc.attributed + Number(row.attributed ?? 0),
     completed: acc.completed + Number(row.completed ?? 0),
-  }), { clicks:0, attributed:0, completed:0 });
+  }), { clicks:0, appOpens:0, quotes:0, requests:0, attributed:0, completed:0 });
   const driverSummary = (impulsa.data?.drivers ?? []).reduce((acc, row) => ({
     attributed: acc.attributed + Number(row.attributed_real ?? 0),
     completed: acc.completed + Number(row.completed_real ?? 0),
@@ -59,7 +62,9 @@ export default function ComercialSourceOverview({ projectId }: { projectId: stri
       quotes:impulsa.data?.totals?.quotes, requests:impulsa.data?.totals?.requests_created,
       attributed:driverSummary.attributed, completed:driverSummary.completed, error:impulsa.isError, loading:impulsa.isLoading },
     { name:"Aliados · Externos", period:"Histórico completo", clicks:allySummary.clicks,
-      sessions:undefined, appOpens:undefined, quotes:undefined, requests:undefined,
+      sessions:undefined, appOpens:allies.data?.every(a=>a.app_opens!==undefined) ? allySummary.appOpens : undefined,
+      quotes:allies.data?.every(a=>a.quotes!==undefined) ? allySummary.quotes : undefined,
+      requests:allies.data?.every(a=>a.requests!==undefined) ? allySummary.requests : undefined,
       attributed:allySummary.attributed, completed:allySummary.completed,
       error:allies.isError, loading:allies.isLoading },
     { name:"Orgánico · Sin atribución", period:`Últimos ${days} días`,

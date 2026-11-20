@@ -25,6 +25,9 @@ on:
       - 'supabase/migrations/20261119013500_marketplace_ally_branded_shortlinks_v1.sql'
       - 'supabase/functions/marketplace-ally-shortlink/**'
       - 'tests/tuktuk_allies_contract.test.mjs'
+      - 'tests/tuktuk_allies_funnel_v2_contract.test.mjs'
+      - 'supabase/migrations/20261120191500_marketplace_ally_funnel_reasons_v2.sql'
+      - 'supabase/functions/marketplace-impulsa-analytics/index.ts'
       - 'src/routes/admin*.tsx'
       - 'src/routes/__root.tsx'
       - 'src/styles.css'
@@ -97,6 +100,8 @@ jobs:
         run: bun test tests/admin_config_premium_integral_contract.test.mjs tests/admin_config_premium_five_sections.test.mjs
       - name: Verificar nicks de Aliados y privacidad
         run: node --test tests/tuktuk_allies_contract.test.mjs
+      - name: Validar medición anónima y embudo comercial de Aliados
+        run: node --test tests/tuktuk_allies_funnel_v2_contract.test.mjs
       - name: Validar actualizaciones PWA y alertas push
         run: node --test tests/admin_windows_delivery_regression.test.mjs tests/admin_pwa_cache_refresh.test.mjs tests/marketplace_impulsa_self_service.test.mjs
       - name: Compilar y verificar bundle de prueba (sin desplegar)
