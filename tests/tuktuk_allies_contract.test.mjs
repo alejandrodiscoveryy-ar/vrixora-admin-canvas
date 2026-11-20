@@ -39,7 +39,7 @@ test("two distinct URLs and a no-login private panel", () => {
 
 test("public telemetry is service-only and actual trips use verified gateway wrapper", () => {
   assert.match(sql, /grant execute on function public\.record_public_marketplace_ally_event_v1[\s\S]*to service_role/);
-  assert.match(edge, /record_public_marketplace_ally_event_v1/);
+  assert.match(edge, /record_public_marketplace_ally_event_v2/);
   assert.match(edge, /marketplace_customer_gateway_rate_limit/);
   assert.match(map, /create_marketplace_customer_request_ally_v1/);
   assert.match(map, /const allySlug = params\.target_ally_slug/);
