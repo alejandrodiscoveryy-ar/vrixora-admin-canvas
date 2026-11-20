@@ -646,124 +646,83 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
           <SectionCard density="compact" appearance="premium"
             title="Marca e identidad visual"
-            description="Recursos visuales utilizados por el proyecto."
             module="configuracion"
           >
-            <div className="grid gap-x-3 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="grid gap-2 md:col-span-2 sm:grid-cols-[minmax(0,1fr)_120px] sm:items-end xl:col-span-2">
-                <div className="space-y-1.5">
-                  <Label>Logo completo</Label>
-                  <Input
-                    id="project-logo"
-                    type="file"
-                    accept="image/png,image/webp"
-                    className="sr-only"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-
-                      if (file) {
-                        void selectBrandAsset("logo", file);
-                      }
-
-                      event.target.value = "";
-                    }}
-                    disabled={!canManage || uploadBrandAsset.isPending}
-                  />
-
-                  <Button
-                    asChild
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={
-                      !canManage || uploadBrandAsset.isPending
-                        ? "pointer-events-none w-full opacity-50"
-                        : "w-full"
-                    }
-                  >
-                    <label htmlFor="project-logo">
-                      {uploadBrandAsset.isPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Upload />
-                      )}
-                      {form.logoUrl ? "Reemplazar logo completo" : "Subir logo completo"}
-                    </label>
-                  </Button>
-
-                  <p className="text-xs leading-relaxed text-text-tertiary">
-                    Se utiliza en pantallas, documentos y comunicaciones. PNG o WEBP · máximo 2 MB ·
-                    proporción horizontal entre 2:1 y 3:1 · lienzo recomendado 1600 × 600.
-                  </p>
-                </div>
-
-                <div className="flex h-24 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[120px]">
-                  {form.logoUrl ? (
-                    <img
-                      src={form.logoUrl}
-                      alt="Vista previa del logo"
-                      className="max-h-full max-w-full object-contain"
+            <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+              <div className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/55 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-20 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-border-default bg-surface-3/70 p-2 sm:w-36">
+                    {form.logoUrl ? (
+                      <img src={form.logoUrl} alt="Logo actual de TukTuk Control"
+                        className="max-h-full max-w-full object-contain" />
+                    ) : <span className="text-xs text-text-secondary">Sin logo</span>}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="text-sm font-semibold text-text-primary">Logo completo</p>
+                    <Input
+                      id="project-logo" type="file" accept="image/png,image/webp" className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void selectBrandAsset("logo", file);
+                        event.target.value = "";
+                      }}
+                      disabled={!canManage || uploadBrandAsset.isPending}
                     />
-                  ) : (
-                    <span className="text-[10px] text-text-tertiary">Sin logo</span>
-                  )}
+                    <Button asChild type="button" variant="outline" size="sm"
+                      className={`min-h-11 w-full gap-2 ${!canManage || uploadBrandAsset.isPending ? "pointer-events-none opacity-50" : ""}`}>
+                      <label htmlFor="project-logo">
+                        {uploadBrandAsset.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                        {form.logoUrl ? "Cambiar logo" : "Subir logo"}
+                      </label>
+                    </Button>
+                  </div>
                 </div>
+                <details className="group mt-2 text-xs text-text-secondary">
+                  <summary className="min-h-9 cursor-pointer list-none py-2 font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-1">Formato recomendado <ChevronDown className="size-3.5 group-open:rotate-180" aria-hidden="true" /></span>
+                  </summary>
+                  <p className="pb-1 leading-relaxed">PNG o WEBP, máximo 2 MB, horizontal 2:1 a 3:1; lienzo recomendado 1600 × 600. Se utiliza en documentos y comunicaciones.</p>
+                </details>
               </div>
-
-              <div className="md:col-span-2 xl:col-span-2">
-                <div className="space-y-1.5">
-                  <Label>Icono maestro</Label>
-                  <Input
-                    id="project-favicon"
-                    type="file"
-                    accept="image/png"
-                    className="sr-only"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-
-                      if (file) {
-                        void selectBrandAsset("favicon", file);
-                      }
-
-                      event.target.value = "";
-                    }}
-                    disabled={!canManage || uploadBrandAsset.isPending}
-                  />
-
-                  <Button
-                    asChild
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={
-                      !canManage || uploadBrandAsset.isPending
-                        ? "pointer-events-none w-full opacity-50"
-                        : "w-full"
-                    }
-                  >
-                    <label htmlFor="project-favicon">
-                      {uploadBrandAsset.isPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Upload />
-                      )}
-                      {form.iconUrl ? "Reemplazar icono maestro" : "Subir icono maestro"}
-                    </label>
-                  </Button>
-
-                  <p className="text-xs leading-relaxed text-text-tertiary">
-                    PNG 1024 × 1024 · fondo transparente obligatorio · mantén el símbolo dentro de
-                    la zona segura · máximo 2 MB. Al subirlo se generan automáticamente las
-                    variantes de favicon, PWA, Windows, Android, shortcuts y notificaciones sin
-                    alterar la identidad.
-                  </p>
+              <div className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/55 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-border-default bg-surface-3/70 p-2">
+                    {form.iconUrl ? (
+                      <img src={projectIconVariantUrl(form.iconUrl, "pwa-192.png")} alt="Icono actual de la aplicación"
+                        className="h-full w-full object-contain" />
+                    ) : <span className="text-xs text-text-secondary">Sin icono</span>}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="text-sm font-semibold text-text-primary">Icono maestro</p>
+                    <Input
+                      id="project-favicon" type="file" accept="image/png" className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void selectBrandAsset("favicon", file);
+                        event.target.value = "";
+                      }}
+                      disabled={!canManage || uploadBrandAsset.isPending}
+                    />
+                    <Button asChild type="button" variant="outline" size="sm"
+                      className={`min-h-11 w-full gap-2 ${!canManage || uploadBrandAsset.isPending ? "pointer-events-none opacity-50" : ""}`}>
+                      <label htmlFor="project-favicon">
+                        {uploadBrandAsset.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                        {form.iconUrl ? "Cambiar icono" : "Subir icono"}
+                      </label>
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="mt-3 flex min-w-0 flex-wrap items-start justify-around gap-2" aria-label="Variantes del icono">
                   <IconMasterPreview label="Cuadrado" shape="square" url={form.iconUrl} />
                   <IconMasterPreview label="Círculo" shape="circle" url={form.iconUrl} />
                   <IconMasterPreview label="Redondeado" shape="rounded" url={form.iconUrl} />
                 </div>
+                <details className="group mt-2 text-xs text-text-secondary">
+                  <summary className="min-h-9 cursor-pointer list-none py-2 font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-1">Requisitos del icono <ChevronDown className="size-3.5 group-open:rotate-180" aria-hidden="true" /></span>
+                  </summary>
+                  <p className="pb-1 leading-relaxed">PNG 1024 × 1024 transparente, máximo 2 MB y símbolo en zona segura. Las variantes de favicon, PWA, Windows, Android y notificaciones se generan al subirlo.</p>
+                </details>
               </div>
 
               <div className="space-y-1.5">
@@ -1417,7 +1376,7 @@ function IconMasterPreview({
   return (
     <div className="space-y-1.5 text-center">
       <div
-        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 ${shapeClass}`}
+        className={`mx-auto flex size-11 items-center justify-center overflow-hidden border border-border-default bg-surface-3/70 sm:size-12 ${shapeClass}`}
       >
         {variantUrl ? (
           <img
