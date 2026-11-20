@@ -16,6 +16,7 @@ on:
       - 'tests/admin_sidebar_collapse.test.mjs'
       - 'tests/admin_settings_primary_submenu.test.mjs'
       - 'tests/admin_app_versions_nav_clarity.test.mjs'
+      - 'tests/admin_config_mobile_density.test.mjs'
       - 'tests/admin_config_premium_integral_contract.test.mjs'
       - 'tests/admin_config_premium_five_sections.test.mjs'
       - 'supabase/migrations/20261119013500_marketplace_ally_branded_shortlinks_v1.sql'
@@ -82,6 +83,8 @@ jobs:
         run: bun test tests/admin_settings_primary_submenu.test.mjs
       - name: Garantizar pantallas visibles y acceso rápido a APK
         run: bun test tests/admin_app_versions_nav_clarity.test.mjs
+      - name: Validar densidad móvil real de Configuración y marca
+        run: bun test tests/admin_config_mobile_density.test.mjs
       - name: Validar experiencia premium integral de Configuración
         run: bun test tests/admin_config_premium_integral_contract.test.mjs tests/admin_config_premium_five_sections.test.mjs
       - name: Verificar nicks de Aliados y privacidad
