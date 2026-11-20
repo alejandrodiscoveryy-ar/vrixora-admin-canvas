@@ -142,6 +142,28 @@ function varianceLabel(current: number, previous: number): string {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1)} % frente al período anterior.`;
 }
 
+
+/** Cohorte observada, no el total de usuarios de Control ni la flota en línea. */
+export function controlConversionFunnel(control: AgencyVitality["control"]) {
+  const registered = control.registered;
+  const stages = [
+    { id: "registered", label: "Registro en Control", value: registered },
+    { id: "started", label: "Inició alta de conductor", value: control.started },
+    { id: "activated", label: "Conductor habilitado", value: control.activated },
+    { id: "first_ride", label: "Primera carrera liquidada", value: control.first_ride },
+  ] as const;
+  return {
+    consistent: control.started <= registered
+      && control.activated <= control.started
+      && control.first_ride <= control.activated
+      && control.only_control <= registered,
+    stages: stages.map(stage => ({
+      ...stage,
+      share: registered > 0 ? stage.value * 100 / registered : null,
+    })),
+  };
+}
+
 export function agencyVitalitySignals(data: AgencyVitality): VitalitySignal[] {
   const clients = data.clients;
   const rides = data.rides;
@@ -151,17 +173,17 @@ export function agencyVitalitySignals(data: AgencyVitality): VitalitySignal[] {
   });
   const cancelRate = rides && rides.requested > 0 ? rides.cancelled * 100 / rides.requested : null;
   return [
-    make("control", "Control → conductor", "gray", data.control.activated,
-      data.control.registered > 0
-        ? `${data.control.activated} de ${data.control.registered} registros de Control observados incorporados al cierre del período. Sin objetivo aprobado para clasificar.`
-        : "Sin registros instrumentados de Control en el período; no equivale a que no exista actividad.",
-      "Cohorte de registros user_registered y driver_profiles"),
     make("clients", "Clientes nuevos", clients ? toneFromDecline(clients.new, clients.previous_new) : "gray", clients?.new ?? null,
       clients ? varianceLabel(clients.new, clients.previous_new) : "Sin permiso para consultar clientes.",
       "Clientes registrados durante el período; comparados con período anterior equivalente"),
     make("rides", "Carreras completadas", rides ? toneFromDecline(rides.completed, rides.previous_completed) : "gray", rides?.completed ?? null,
       rides ? varianceLabel(rides.completed, rides.previous_completed) : "Sin permiso para consultar carreras.",
       "Carreras reales creadas en el período; estado actual completado o liquidado"),
+    make("control", "Conductores incorporados", "gray", data.control.activated,
+      data.control.registered > 0
+        ? `${data.control.activated} de ${data.control.registered} registros de Control observados incorporados al cierre del período. Sin objetivo aprobado para clasificar.`
+        : "Sin registros instrumentados de Control en el período; no equivale a que no exista actividad.",
+      "Cohorte de registros user_registered y driver_profiles"),
     make("cancelled", "Cancelaciones", toneFromCancellation(rides?.requested ?? null, rides?.cancelled ?? null), cancelRate,
       cancelRate == null ? "Sin solicitudes comprobadas o sin permisos." :
         `${rides!.cancelled} canceladas de ${rides!.requested} solicitadas (${cancelRate.toFixed(1)} %). ${rides!.requested < VITALITY_RULES.minRequestsForCancellation ? "Muestra insuficiente: mínimo 5." : "Umbrales: 10 % atención; 20 % deterioro; 35 % crítico."}`,
