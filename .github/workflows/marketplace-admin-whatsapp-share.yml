@@ -8,6 +8,7 @@ on:
       - 'supabase/migrations/*_marketplace_admin_whatsapp_payload.sql'
       - 'supabase/verification/marketplace_admin_whatsapp_share_fixture.sql'
       - 'tests/marketplace_admin_whatsapp_share.test.mjs'
+      - 'tests/admin_mobile_job_share_flow.test.mjs'
       - 'scripts/New-MarketplaceWhatsappMigration.ps1'
       - '.github/workflows/marketplace-admin-whatsapp-share.yml'
 permissions:
@@ -33,7 +34,7 @@ jobs:
         with:
           node-version: '24.20.0'
       - name: Message unit tests
-        run: node --test tests/marketplace_admin_whatsapp_share.test.mjs
+        run: node --test tests/marketplace_admin_whatsapp_share.test.mjs tests/admin_mobile_job_share_flow.test.mjs
       - uses: supabase/setup-cli@v1
         with:
           version: 2.76.8

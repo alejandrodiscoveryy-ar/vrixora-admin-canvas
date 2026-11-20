@@ -56,11 +56,11 @@ export async function adminPushSupported() {
 /** Must run in a user gesture; persists a token only after server validation. */
 export async function registerAdminPush() {
   if (typeof window === "undefined" || !window.isSecureContext || !("Notification" in window)) {
-    throw new Error("Los avisos Windows requieren HTTPS y un navegador compatible.");
+    throw new Error("Las notificaciones requieren HTTPS y un navegador compatible.");
   }
   // Request permission BEFORE any asynchronous browser-support check: user gesture must be preserved.
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") throw new Error("Debes permitir notificaciones para recibir avisos de Windows.");
+  if (permission !== "granted") throw new Error("Debes permitir las notificaciones para recibir avisos en este dispositivo.");
   if (!await adminPushSupported()) throw new Error("Este navegador no admite notificaciones web de Firebase.");
   // Reuse the existing Vrixora PWA worker; do not add a second SW with the same scope.
   const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });

@@ -2799,7 +2799,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             {detail.isLoading ? (
               <LoadingState />
             ) : detail.data ? (
-              <JobDetail key={`${jobId}:${jobDetailInitialTab}`} detail={detail.data} projectId={projectId} jobId={jobId!} initialTab={jobDetailInitialTab} />
+              <JobDetail key={`${jobId}:${jobDetailInitialTab}`} detail={detail.data} projectId={projectId} jobId={jobId!} initialTab={jobDetailInitialTab} canShare={canManageMarketplace && canCustomers} />
             ) : (
               <div className="rounded-2xl border border-dashed border-border/60 bg-background/45 p-5 text-sm text-muted-foreground">
                 No se encontro el trabajo.
@@ -3619,11 +3619,12 @@ function JobNotificationReach({
   );
 }
 
-function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
+function JobDetail({ detail, projectId, jobId, initialTab = "overview", canShare = false }: {
   detail: import("@/lib/services/types").MarketplaceJobDetail;
   projectId: string;
   jobId: string;
   initialTab?: "overview" | "radar";
+  canShare?: boolean;
 }) {
   const { job, serviceRequest, assignment, customer, financial, timeline, incidentResolution } = detail;
   const [activeTab, setActiveTab] = useState<"overview" | "radar" | "finance" | "history">(initialTab);
@@ -3638,6 +3639,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
     ? formatOperationPrice(displayPrice, currency)
     : "No disponible";
   const closed = ["cancelled_by_customer", "cancelled_by_driver", "expired", "settled", "completed"].includes(state);
+  const canShareJob = canShare && state === "published" && !hasDriver && job.is_test !== true;
   const tabs = [
     { id: "overview", label: "Resumen ejecutivo", Icon: Eye },
     { id: "radar", label: "Radar y cobertura", Icon: Radar },
@@ -3682,6 +3684,14 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview" }: {
             </div>
           </div>
         </div>
+        {canShareJob ? (
+          <div className="relative mt-3 flex flex-col gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] p-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs font-medium text-foreground">Carrera disponible: compártela con tus conductores.</p>
+            <div className="w-full sm:w-56">
+              <MarketplaceServiceShareButton projectId={projectId} jobId={jobId} compact />
+            </div>
+          </div>
+        ) : null}
         <div className="relative mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 md:grid-cols-4">
           {[
             { title: "Estado", value: label(state), icon: CheckCircle2 },
