@@ -13,4 +13,11 @@ test("no inventa total de clientes únicos ni altera cobros",()=>{
   assert.match(panel,/No se muestra un total único/);
   assert.match(panel,/card\.error/);
   assert.match(panel,/card\.loading/);
+  assert.match(panel,/organic_totals/);
+  assert.match(panel,/Orgánico · Sin atribución/);
+  assert.match(panel,/Aperturas de app/);
+  assert.match(panel,/Cotizaciones/);
+  assert.match(panel,/appOpens:impulsa\.data\?\.organic_totals\?\.app_opens/);
+  assert.match(panel,/requests:impulsa\.data\?\.organic_totals\?\.requests_created/);
+  assert.match(panel,/atribución verificada|«—» significa dato no disponible/);
 });

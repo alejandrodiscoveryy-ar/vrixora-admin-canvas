@@ -34,6 +34,7 @@ on:
       - 'tests/comercial_integral_ui_contract.test.mjs'
       - 'tests/comercial_graphite_softness_contract.test.mjs'
       - 'tests/comercial_captacion_experiencia_contract.test.mjs'
+      - 'tests/comercial_source_overview.test.mjs'
       - 'tests/comercial_politicas_premium_contract.test.mjs'
       - 'tests/driver_promotion_preview.test.mjs'
       - 'tests/marketplace_promo_alias_suggestions.test.mjs'
@@ -74,6 +75,8 @@ jobs:
         run: node --test tests/comercial_graphite_softness_contract.test.mjs
       - name: Comprobar Captación sin duplicaciones ni ceros ficticios
         run: node --test tests/comercial_captacion_experiencia_contract.test.mjs
+      - name: Comprobar separación de canales y tráfico orgánico
+        run: node --test tests/comercial_source_overview.test.mjs
       - name: Validar experiencia premium y seguridad financiera en Gestión
         run: node --test tests/comercial_politicas_premium_contract.test.mjs
       - name: Verificar validación y autorización de Impulsa en conductor 360
