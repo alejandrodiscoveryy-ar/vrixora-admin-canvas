@@ -51,7 +51,7 @@ export type AgencyVitality = {
 
 export const VITALITY_RULES = {
   minPrevious: 5,
-  minRequestsForCancellation: 10,
+  minRequestsForCancellation: 5,
   declineWarning: 10,
   declineOrange: 25,
   declineRed: 40,
