@@ -479,51 +479,69 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   return (
     <div data-admin-module="configuracion" className="min-w-0 space-y-3">
-      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
-        <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-2 sm:px-3">
-          <div className="min-w-0">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">Ajustes del proyecto</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
-            {canSave && isDirty && (
-              <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => save.mutate()} disabled={save.isPending}>
-                {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
-                Guardar otros ajustes
-              </Button>
-            )}
-          </div>
+      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border border-border-default p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
+        <div className="hidden items-center justify-between gap-3 px-2 pb-2 pt-1 md:flex">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">Ajustes del proyecto</p>
+          {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
         </div>
-        <nav aria-label="Cambiar módulo de configuración" className="grid min-w-0 grid-cols-2 gap-1.5 px-1 pb-1 pt-1 sm:grid-cols-3 xl:grid-cols-5">
+        {/* En móvil un selector sustituye las tres filas de botones. APK queda a un toque. */}
+        <nav aria-label="Cambiar módulo de configuración" className="flex min-w-0 items-center gap-2 md:hidden">
+          <Select value={visibleSection} onValueChange={(value) => setActiveSection(value as SectionKey)}>
+            <SelectTrigger aria-label="Elegir categoría de configuración" className={`min-h-11 min-w-0 flex-1 ${CONFIG_SELECT_CLASS}`}>
+              <SelectValue placeholder="Elegir categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map(section => (
+                <SelectItem key={section.key} value={section.key}>{section.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {visibleSection !== "application" && (
+            <Button type="button" variant="outline" size="sm"
+              className="min-h-11 shrink-0 gap-1.5 px-3"
+              onClick={() => setActiveSection("application")}
+              aria-label="Abrir aplicación y versiones APK Android">
+              <Smartphone className="size-4" aria-hidden="true" /> APK
+            </Button>
+          )}
+          {isDirty && <span className="size-2 shrink-0 rounded-full bg-[var(--semantic-warning)]" role="status" aria-label="Cambios sin guardar" />}
+        </nav>
+        <nav aria-label="Categorías de configuración en escritorio" className="hidden min-w-0 grid-cols-5 gap-1.5 md:grid">
           {sections.map(section => {
             const Icon = section.icon;
             const selected = visibleSection === section.key;
             return (
-              <button
-                type="button"
-                key={section.key}
+              <button type="button" key={section.key}
                 aria-current={selected ? "page" : undefined}
                 onClick={() => setActiveSection(section.key)}
                 className={"flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 " +
                   (selected
                     ? "border-[var(--module-border)] bg-[var(--module-surface)] text-text-primary shadow-[inset_0_-2px_var(--module-accent)]"
-                    : "border-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/70 hover:text-text-primary") +
-                  (section.key === "application" ? " max-sm:col-span-2" : "")}
+                    : "border-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/70 hover:text-text-primary")}
               >
-                <span className={"grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border " + (selected ? "border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" : "border-border-default bg-surface-3/65 text-text-secondary")} aria-hidden="true">
-                  <Icon className="size-4" />
-                </span>
+                <span className={"grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border " +
+                  (selected ? "border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" : "border-border-default bg-surface-3/65 text-text-secondary")}
+                  aria-hidden="true"><Icon className="size-4" /></span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold leading-tight sm:text-[13px]">{section.label}</span>
-                  {section.key === "application" && <span className="mt-0.5 block text-[11px] text-text-secondary">APK Android</span>}
+                  <span className="block text-xs font-semibold leading-tight">{section.label}</span>
+                  {section.key === "application" && <span className="block text-[11px] text-text-secondary">APK Android</span>}
                 </span>
               </button>
             );
           })}
         </nav>
+        {canSave && isDirty && (
+          <div className="hidden justify-end pt-2 md:flex">
+            <Button type="button" size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+              Guardar cambios
+            </Button>
+          </div>
+        )}
       </section>
       {isMarketplaceReferralProgram && visibleSection !== "application" && (
-        <PremiumSettingsSnapshot
+        <div className="hidden md:block">
+          <PremiumSettingsSnapshot
           number={currentSection?.number ?? "01"}
           eyebrow={currentSection?.eyebrow ?? "AJUSTES"}
           title={currentSection?.label ?? "Ajustes"}
@@ -531,16 +549,17 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           icon={CurrentSectionIcon}
           metrics={premiumMetrics}
         />
+        </div>
       )}
       {visibleSection === "general" ? (
         <div className="space-y-3">
           <SectionCard density="compact" appearance="premium"
-            title="Identidad del proyecto"
-            description="Información principal utilizada en la administración y en los documentos."
+            title="Datos principales"
+            description="Información de la agencia y contacto institucional."
             module="configuracion"
           >
             <div className="grid gap-x-3 gap-y-2.5 md:grid-cols-2 xl:grid-cols-6">
-              <div className="space-y-1.5 md:col-span-2 xl:order-1 xl:col-span-2">
+              <div className="order-1 space-y-1.5 md:col-span-2 xl:col-span-2">
                 <Label>Nombre del proyecto</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -553,7 +572,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 md:col-span-2 xl:order-4 xl:col-span-6">
+              <div className="order-4 space-y-1.5 md:col-span-2 xl:col-span-6">
                 <Label>Descripción</Label>
                 <Textarea
                   className={CONFIG_TEXTAREA_CLASS}
@@ -566,7 +585,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-2 xl:col-span-2">
+              <div className="order-2 space-y-1.5 xl:col-span-2">
                 <Label>Correo de soporte</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -577,7 +596,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-3 xl:col-span-2">
+              <div className="order-3 space-y-1.5 xl:col-span-2">
                 <Label>Sitio web oficial</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -587,7 +606,13 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-5 xl:col-span-3">
+              <details className="group order-5 min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/55 md:col-span-2 xl:col-span-6">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-text-primary marker:hidden [&::-webkit-details-marker]:hidden">
+                  <span>Enlaces legales</span>
+                  <ChevronDown className="size-4 text-text-secondary transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="grid grid-cols-1 gap-3 border-t border-border-subtle p-3 md:grid-cols-2">
+              <div className="space-y-1.5">
                 <Label>Política de privacidad</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -597,7 +622,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                 />
               </div>
 
-              <div className="space-y-1.5 xl:order-6 xl:col-span-3">
+              <div className="space-y-1.5">
                 <Label>Términos y condiciones</Label>
                 <Input
                   className={CONFIG_CONTROL_CLASS}
@@ -606,129 +631,90 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                   disabled={!canManage}
                 />
               </div>
+                </div>
+              </details>
             </div>
           </SectionCard>
 
           <SectionCard density="compact" appearance="premium"
             title="Marca e identidad visual"
-            description="Recursos visuales utilizados por el proyecto."
             module="configuracion"
           >
-            <div className="grid gap-x-3 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="grid gap-2 md:col-span-2 sm:grid-cols-[minmax(0,1fr)_120px] sm:items-end xl:col-span-2">
-                <div className="space-y-1.5">
-                  <Label>Logo completo</Label>
-                  <Input
-                    id="project-logo"
-                    type="file"
-                    accept="image/png,image/webp"
-                    className="sr-only"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-
-                      if (file) {
-                        void selectBrandAsset("logo", file);
-                      }
-
-                      event.target.value = "";
-                    }}
-                    disabled={!canManage || uploadBrandAsset.isPending}
-                  />
-
-                  <Button
-                    asChild
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={
-                      !canManage || uploadBrandAsset.isPending
-                        ? "pointer-events-none w-full opacity-50"
-                        : "w-full"
-                    }
-                  >
-                    <label htmlFor="project-logo">
-                      {uploadBrandAsset.isPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Upload />
-                      )}
-                      {form.logoUrl ? "Reemplazar logo completo" : "Subir logo completo"}
-                    </label>
-                  </Button>
-
-                  <p className="text-xs leading-relaxed text-text-tertiary">
-                    Se utiliza en pantallas, documentos y comunicaciones. PNG o WEBP · máximo 2 MB ·
-                    proporción horizontal entre 2:1 y 3:1 · lienzo recomendado 1600 × 600.
-                  </p>
-                </div>
-
-                <div className="flex h-24 w-full items-center justify-center rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-2 sm:w-[120px]">
-                  {form.logoUrl ? (
-                    <img
-                      src={form.logoUrl}
-                      alt="Vista previa del logo"
-                      className="max-h-full max-w-full object-contain"
+            <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+              <div className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/55 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-20 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-border-default bg-surface-3/70 p-2 sm:w-36">
+                    {form.logoUrl ? (
+                      <img src={form.logoUrl} alt="Logo actual de TukTuk Control"
+                        className="max-h-full max-w-full object-contain" />
+                    ) : <span className="text-xs text-text-secondary">Sin logo</span>}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="text-sm font-semibold text-text-primary">Logo completo</p>
+                    <Input
+                      id="project-logo" type="file" accept="image/png,image/webp" className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void selectBrandAsset("logo", file);
+                        event.target.value = "";
+                      }}
+                      disabled={!canManage || uploadBrandAsset.isPending}
                     />
-                  ) : (
-                    <span className="text-[10px] text-text-tertiary">Sin logo</span>
-                  )}
+                    <Button asChild type="button" variant="secondary" size="sm"
+                      className={`min-h-11 w-full gap-2 ${!canManage || uploadBrandAsset.isPending ? "pointer-events-none opacity-50" : ""}`}>
+                      <label htmlFor="project-logo">
+                        {uploadBrandAsset.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                        {form.logoUrl ? "Cambiar logo" : "Subir logo"}
+                      </label>
+                    </Button>
+                  </div>
                 </div>
+                <details className="group mt-2 text-xs text-text-secondary">
+                  <summary className="min-h-9 cursor-pointer list-none py-2 font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-1">Formato recomendado <ChevronDown className="size-3.5 group-open:rotate-180" aria-hidden="true" /></span>
+                  </summary>
+                  <p className="pb-1 leading-relaxed">PNG o WEBP, máximo 2 MB, horizontal 2:1 a 3:1; lienzo recomendado 1600 × 600. Se utiliza en documentos y comunicaciones.</p>
+                </details>
               </div>
-
-              <div className="md:col-span-2 xl:col-span-2">
-                <div className="space-y-1.5">
-                  <Label>Icono maestro</Label>
-                  <Input
-                    id="project-favicon"
-                    type="file"
-                    accept="image/png"
-                    className="sr-only"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-
-                      if (file) {
-                        void selectBrandAsset("favicon", file);
-                      }
-
-                      event.target.value = "";
-                    }}
-                    disabled={!canManage || uploadBrandAsset.isPending}
-                  />
-
-                  <Button
-                    asChild
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={
-                      !canManage || uploadBrandAsset.isPending
-                        ? "pointer-events-none w-full opacity-50"
-                        : "w-full"
-                    }
-                  >
-                    <label htmlFor="project-favicon">
-                      {uploadBrandAsset.isPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Upload />
-                      )}
-                      {form.iconUrl ? "Reemplazar icono maestro" : "Subir icono maestro"}
-                    </label>
-                  </Button>
-
-                  <p className="text-xs leading-relaxed text-text-tertiary">
-                    PNG 1024 × 1024 · fondo transparente obligatorio · mantén el símbolo dentro de
-                    la zona segura · máximo 2 MB. Al subirlo se generan automáticamente las
-                    variantes de favicon, PWA, Windows, Android, shortcuts y notificaciones sin
-                    alterar la identidad.
-                  </p>
+              <div className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/55 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-border-default bg-surface-3/70 p-2">
+                    {form.iconUrl ? (
+                      <img src={projectIconVariantUrl(form.iconUrl, "pwa-192.png")} alt="Icono actual de la aplicación"
+                        className="h-full w-full object-contain" />
+                    ) : <span className="text-xs text-text-secondary">Sin icono</span>}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="text-sm font-semibold text-text-primary">Icono maestro</p>
+                    <Input
+                      id="project-favicon" type="file" accept="image/png" className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void selectBrandAsset("favicon", file);
+                        event.target.value = "";
+                      }}
+                      disabled={!canManage || uploadBrandAsset.isPending}
+                    />
+                    <Button asChild type="button" variant="secondary" size="sm"
+                      className={`min-h-11 w-full gap-2 ${!canManage || uploadBrandAsset.isPending ? "pointer-events-none opacity-50" : ""}`}>
+                      <label htmlFor="project-favicon">
+                        {uploadBrandAsset.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                        {form.iconUrl ? "Cambiar icono" : "Subir icono"}
+                      </label>
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="mt-3 flex min-w-0 flex-wrap items-start justify-around gap-2" aria-label="Variantes del icono">
                   <IconMasterPreview label="Cuadrado" shape="square" url={form.iconUrl} />
                   <IconMasterPreview label="Círculo" shape="circle" url={form.iconUrl} />
                   <IconMasterPreview label="Redondeado" shape="rounded" url={form.iconUrl} />
                 </div>
+                <details className="group mt-2 text-xs text-text-secondary">
+                  <summary className="min-h-9 cursor-pointer list-none py-2 font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-1">Requisitos del icono <ChevronDown className="size-3.5 group-open:rotate-180" aria-hidden="true" /></span>
+                  </summary>
+                  <p className="pb-1 leading-relaxed">PNG 1024 × 1024 transparente, máximo 2 MB y símbolo en zona segura. Las variantes de favicon, PWA, Windows, Android y notificaciones se generan al subirlo.</p>
+                </details>
               </div>
 
               <div className="space-y-1.5">
@@ -1279,8 +1265,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </div>
       ) : null}
 
-
-
+      {canSave && isDirty && (
+        <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2/85 p-2 md:hidden">
+          <Button type="button" size="sm" className="min-h-11 w-full gap-2"
+            onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            Guardar cambios
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1382,7 +1375,7 @@ function IconMasterPreview({
   return (
     <div className="space-y-1.5 text-center">
       <div
-        className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden border border-border-default bg-surface-2 ${shapeClass}`}
+        className={`mx-auto flex size-11 items-center justify-center overflow-hidden border border-border-default bg-surface-3/70 sm:size-12 ${shapeClass}`}
       >
         {variantUrl ? (
           <img

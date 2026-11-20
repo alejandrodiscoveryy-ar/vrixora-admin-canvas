@@ -23,7 +23,7 @@ test("The Android configuration view displays one main release header", () => {
 
 test("Saving unrelated project settings is only offered for actual edits", () => {
   assert.match(config, /canSave && isDirty && \(/);
-  assert.match(config, /Guardar otros ajustes/);
+  assert.match(config, /Guardar cambios/);
   assert.match(config, /save\.mutate\(\)/);
   assert.match(updates, /admin_save_app_release_policy/);
   assert.match(updates, /admin_send_driver_app_update/);

@@ -46,5 +46,5 @@ test("Mobile navigation, permissions and release controls remain intact", () => 
   assert.match(shell, /onClick=\{closeDrawer\}/);
   assert.match(settings, /AppReleaseSettingsCard/);
   assert.doesNotMatch(settings, /aria-label="Cambiar sección de ajustes"/);
-  assert.match(settings, /Guardar otros ajustes/);
+  assert.match(settings, /Guardar cambios/);
 });
