@@ -16,18 +16,18 @@ test("Avisos administrativos sirven en Android sin lenguaje exclusivo de Windows
 });
 
 test("La notificación abre la carrera 360, donde está disponible el mensaje para los conductores", () => {
-  assert.match(push, /carrera=\\$\\{encodeURIComponent\\(data.job_id\\)\\}/);
+  assert.match(push, /carrera=\$\{encodeURIComponent\(data.job_id\)\}/);
   assert.match(operations, /alertJobId/);
-  assert.match(operations, /setJobId\\(alertJobId\\)/);
-  assert.match(operations, /canShare=\\{canManageMarketplace && canCustomers\\}/);
+  assert.match(operations, /setJobId\(alertJobId\)/);
+  assert.match(operations, /canShare=\{canManageMarketplace && canCustomers\}/);
   assert.match(operations, /canShareJob = canShare && state === "published" && !hasDriver && job.is_test !== true/);
-  assert.match(operations, /<MarketplaceServiceShareButton projectId=\\{projectId\\} jobId=\\{jobId\\} compact \\/>/);
+  assert.match(operations, /<MarketplaceServiceShareButton projectId=\{projectId\} jobId=\{jobId\} compact \/>/);
 });
 
 test("Se revisa el mensaje, se puede copiar o compartir manualmente sin envío automático", () => {
   assert.match(share, /admin_get_marketplace_job_whatsapp_payload/);
-  assert.match(share, /navigator\\.clipboard\\.writeText\\(preview\\)/);
-  assert.match(share, /navigator\\.share\\(\\{ title: .*text: preview \\}\\)/);
+  assert.match(share, /navigator\.clipboard\.writeText\(preview\)/);
+  assert.match(share, /navigator\.share\(\{ title: .*text: preview \}\)/);
   assert.match(share, /Compartir por WhatsApp/);
   assert.match(share, /!reviewed/);
 });
