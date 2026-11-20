@@ -479,51 +479,77 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
 
   return (
     <div data-admin-module="configuracion" className="min-w-0 space-y-3">
-      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
-        <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-2 sm:px-3">
-          <div className="min-w-0">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">Ajustes del proyecto</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
-            {canSave && isDirty && (
-              <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => save.mutate()} disabled={save.isPending}>
-                {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
-                Guardar otros ajustes
-              </Button>
-            )}
-          </div>
+      <section aria-label="Categorías de ajustes del proyecto" className={`min-w-0 rounded-[var(--radius-card)] border border-border-default p-2 shadow-[var(--shadow-xs)] ${premiumColumnHeaderSurface}`}>
+        <div className="hidden items-center justify-between gap-3 px-2 pb-2 pt-1 md:flex">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">Ajustes del proyecto</p>
+          {isDirty && <Badge variant="outline" className="border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]">Cambios sin guardar</Badge>}
         </div>
-        <nav aria-label="Cambiar módulo de configuración" className="grid min-w-0 grid-cols-2 gap-1.5 px-1 pb-1 pt-1 sm:grid-cols-3 xl:grid-cols-5">
+        {/* En móvil un selector sustituye las tres filas de botones. APK queda a un toque. */}
+        <nav aria-label="Cambiar módulo de configuración" className="flex min-w-0 items-center gap-2 md:hidden">
+          <Select value={visibleSection} onValueChange={(value) => setActiveSection(value as SectionKey)}>
+            <SelectTrigger aria-label="Elegir categoría de configuración" className={`min-h-11 min-w-0 flex-1 ${CONFIG_SELECT_CLASS}`}>
+              <SelectValue placeholder="Elegir categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map(section => (
+                <SelectItem key={section.key} value={section.key}>{section.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {visibleSection !== "application" && (
+            <Button type="button" variant="outline" size="sm"
+              className="min-h-11 shrink-0 gap-1.5 px-3"
+              onClick={() => setActiveSection("application")}
+              aria-label="Abrir aplicación y versiones APK Android">
+              <Smartphone className="size-4" aria-hidden="true" /> APK
+            </Button>
+          )}
+          {isDirty && <span className="size-2 shrink-0 rounded-full bg-[var(--semantic-warning)]" role="status" aria-label="Cambios sin guardar" />}
+        </nav>
+        <nav aria-label="Categorías de configuración en escritorio" className="hidden min-w-0 grid-cols-5 gap-1.5 md:grid">
           {sections.map(section => {
             const Icon = section.icon;
             const selected = visibleSection === section.key;
             return (
-              <button
-                type="button"
-                key={section.key}
+              <button type="button" key={section.key}
                 aria-current={selected ? "page" : undefined}
                 onClick={() => setActiveSection(section.key)}
                 className={"flex min-h-11 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 " +
                   (selected
                     ? "border-[var(--module-border)] bg-[var(--module-surface)] text-text-primary shadow-[inset_0_-2px_var(--module-accent)]"
-                    : "border-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/70 hover:text-text-primary") +
-                  (section.key === "application" ? " max-sm:col-span-2" : "")}
+                    : "border-transparent text-text-secondary hover:border-border-default hover:bg-surface-3/70 hover:text-text-primary")}
               >
-                <span className={"grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border " + (selected ? "border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" : "border-border-default bg-surface-3/65 text-text-secondary")} aria-hidden="true">
-                  <Icon className="size-4" />
-                </span>
+                <span className={"grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border " +
+                  (selected ? "border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-accent)]" : "border-border-default bg-surface-3/65 text-text-secondary")}
+                  aria-hidden="true"><Icon className="size-4" /></span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold leading-tight sm:text-[13px]">{section.label}</span>
-                  {section.key === "application" && <span className="mt-0.5 block text-[11px] text-text-secondary">APK Android</span>}
+                  <span className="block text-xs font-semibold leading-tight">{section.label}</span>
+                  {section.key === "application" && <span className="block text-[11px] text-text-secondary">APK Android</span>}
                 </span>
               </button>
             );
           })}
         </nav>
+        {canSave && isDirty && (
+          <div className="pt-2 md:hidden">
+            <Button type="button" size="sm" className="min-h-11 w-full" onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+              Guardar cambios
+            </Button>
+          </div>
+        )}
+        {canSave && isDirty && (
+          <div className="hidden justify-end pt-2 md:flex">
+            <Button type="button" size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+              Guardar cambios
+            </Button>
+          </div>
+        )}
       </section>
       {isMarketplaceReferralProgram && visibleSection !== "application" && (
-        <PremiumSettingsSnapshot
+        <div className="hidden md:block">
+          <PremiumSettingsSnapshot
           number={currentSection?.number ?? "01"}
           eyebrow={currentSection?.eyebrow ?? "AJUSTES"}
           title={currentSection?.label ?? "Ajustes"}
@@ -531,6 +557,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           icon={CurrentSectionIcon}
           metrics={premiumMetrics}
         />
+        </div>
       )}
       {visibleSection === "general" ? (
         <div className="space-y-3">
