@@ -531,14 +531,6 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
           })}
         </nav>
         {canSave && isDirty && (
-          <div className="pt-2 md:hidden">
-            <Button type="button" size="sm" className="min-h-11 w-full" onClick={() => save.mutate()} disabled={save.isPending}>
-              {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
-              Guardar cambios
-            </Button>
-          </div>
-        )}
-        {canSave && isDirty && (
           <div className="hidden justify-end pt-2 md:flex">
             <Button type="button" size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
               {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
@@ -668,7 +660,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                       }}
                       disabled={!canManage || uploadBrandAsset.isPending}
                     />
-                    <Button asChild type="button" variant="outline" size="sm"
+                    <Button asChild type="button" variant="secondary" size="sm"
                       className={`min-h-11 w-full gap-2 ${!canManage || uploadBrandAsset.isPending ? "pointer-events-none opacity-50" : ""}`}>
                       <label htmlFor="project-logo">
                         {uploadBrandAsset.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
@@ -703,7 +695,7 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
                       }}
                       disabled={!canManage || uploadBrandAsset.isPending}
                     />
-                    <Button asChild type="button" variant="outline" size="sm"
+                    <Button asChild type="button" variant="secondary" size="sm"
                       className={`min-h-11 w-full gap-2 ${!canManage || uploadBrandAsset.isPending ? "pointer-events-none opacity-50" : ""}`}>
                       <label htmlFor="project-favicon">
                         {uploadBrandAsset.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
@@ -1273,8 +1265,15 @@ export default function ConfiguracionSection({ projectId }: { projectId: string 
         </div>
       ) : null}
 
-
-
+      {canSave && isDirty && (
+        <div className="rounded-[var(--radius-card)] border border-border-default bg-surface-2/85 p-2 md:hidden">
+          <Button type="button" size="sm" className="min-h-11 w-full gap-2"
+            onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            Guardar cambios
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
