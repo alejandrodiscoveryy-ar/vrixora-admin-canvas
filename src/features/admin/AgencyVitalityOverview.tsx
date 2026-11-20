@@ -159,7 +159,7 @@ export default function AgencyVitalityOverview({
               )}
               <details className="group mt-3 text-xs text-text-secondary">
                 <summary className="min-h-9 cursor-pointer py-2 font-medium text-text-primary">Cómo se asignan los colores</summary>
-                <p>Caídas de clientes/carreras con al menos 5 casos en el período anterior: amarillo desde 10 %, naranja desde 25 %, rojo desde 40 %. Cancelaciones con al menos 10 solicitudes: 10 %, 20 % y 35 %. Incidencias abiertas: 1 / 2 / 4. Recargas pendientes: 1 / 4 / 11. Sin base, permisos u objetivo: gris. Reglas iniciales de seguimiento, no decisiones automáticas.</p>
+                <p>Caídas de clientes/carreras con al menos 5 casos en el período anterior: amarillo desde 10 %, naranja desde 25 %, rojo desde 40 %. Cancelaciones con al menos 5 solicitudes: 10 %, 20 % y 35 %. Incidencias abiertas: 1 / 2 / 4. Recargas pendientes: 1 / 4 / 11. Sin base, permisos u objetivo: gris. Reglas iniciales de seguimiento, no decisiones automáticas.</p>
               </details>
             </section>
           </>
