@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  parseAgencyVitality, agencyVitalitySignals, toneFromDecline,
+  parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel, toneFromDecline,
   toneFromCancellation, toneFromPending, VITALITY_RULES,
 } from "../src/lib/agency-vitality.ts";
 
@@ -93,4 +93,17 @@ test("interfaz principal separa Vitalidad del análisis legado y comunica semáf
   assert.match(board, /«Habilitado» no significa conectado o trabajando/);
   assert.match(board, /Valores de carreras, no ingresos netos ni comisiones/);
   assert.match(board, /<SectionCard/);
+});
+
+test("embudo de Control muestra tasas verificables sin convertir la ausencia de datos en cero", () => {
+  const funnel = controlConversionFunnel(sample.control);
+  assert.equal(funnel.consistent, true);
+  assert.deepEqual(funnel.stages.map(s=>s.value),[20,12,8,3]);
+  assert.deepEqual(funnel.stages.map(s=>s.share),[100,60,40,15]);
+  assert.equal(controlConversionFunnel({...sample.control,registered:0,started:0,activated:0,first_ride:0}).stages[0].share,null);
+  assert.equal(controlConversionFunnel({...sample.control,started:6,activated:8}).consistent,false);
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  assert.match(board,/Control → Conductor → Primera carrera/);
+  assert.match(board,/Consultar conductores/);
+  assert.match(board,/señales con atención/);
 });

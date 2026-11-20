@@ -9,6 +9,7 @@ import {
 import { getSupabaseClient } from "@/lib/supabase";
 import {
   agencyVitalitySignals,
+  controlConversionFunnel,
   parseAgencyVitality,
   vitalityToneName,
   type AgencyVitality, type VitalitySignal, type VitalityTone,
@@ -24,6 +25,13 @@ const toneClasses: Record<VitalityTone, string> = {
   gray: "border-[var(--semantic-inactive-border)] bg-[var(--semantic-inactive-surface)] text-[var(--semantic-inactive-foreground)]",
 };
 const tones: VitalityTone[] = ["green", "yellow", "orange", "red", "gray"];
+const toneRail: Record<VitalityTone, string> = {
+  green: "bg-[var(--semantic-success)]",
+  yellow: "bg-[var(--semantic-warning)]",
+  orange: "bg-orange-500",
+  red: "bg-[var(--semantic-danger)]",
+  gray: "bg-[var(--semantic-inactive)]",
+};
 const signalIcons = {
   control: Users, clients: UserRound, rides: CarFront,
   cancelled: TrendingDown, incidents: AlertTriangle, topups: Wallet,
@@ -57,8 +65,9 @@ function StatusPill({ tone }: { tone: VitalityTone }) {
 function SignalCard({ signal }: { signal: VitalitySignal }) {
   const Icon = signalIcons[signal.id as keyof typeof signalIcons] ?? Activity;
   return (
-    <details className={`group min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumSurface}`}>
-      <summary className="flex min-h-[132px] cursor-pointer list-none flex-col justify-between gap-2 p-3 marker:hidden [&::-webkit-details-marker]:hidden sm:p-4">
+    <details className={`group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumSurface}`}>
+      <summary className="flex min-h-[114px] cursor-pointer list-none flex-col justify-between gap-2 py-3 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
+        <span aria-hidden="true" className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${toneRail[signal.tone]}`}/>
         <span className="flex min-w-0 items-start justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-text-secondary">
             <Icon className="size-4 shrink-0 text-[var(--module-accent)]" aria-hidden="true"/>{signal.label}
@@ -91,6 +100,73 @@ function InlineStat({ label, value, note }: { label: string; value: string | num
   );
 }
 
+
+function ControlConversionFunnel({ data, projectId }: {
+  data: AgencyVitality["control"]; projectId: string;
+}) {
+  const funnel = controlConversionFunnel(data);
+  return (
+    <SectionCard density="compact" appearance="premium" module="rendimiento"
+      title="Control → Conductor → Primera carrera"
+      description="Seguimiento de una misma cohorte, desde el registro hasta el primer servicio real"
+      contentClassName="space-y-3 p-3 sm:p-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Etapas de incorporación">
+        {funnel.stages.map((stage, index) => (
+          <div key={stage.id} className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+                Etapa {index + 1}
+              </span>
+              <span aria-hidden="true" className="h-1.5 w-6 rounded-full bg-[var(--module-accent)] opacity-70"/>
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums text-text-primary">{number(stage.value)}</p>
+            <p className="mt-0.5 min-h-9 text-sm font-medium leading-snug text-text-primary">{stage.label}</p>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3"
+              role="progressbar" aria-label={stage.label} aria-valuemin={0} aria-valuemax={100}
+              aria-valuenow={stage.share == null ? undefined : Math.min(100, stage.share)}>
+              <div className="h-full rounded-full bg-[var(--module-accent)] transition-[width]"
+                style={{ width: `${Math.min(100, stage.share ?? 0)}%`, opacity: 0.9 - index * 0.12 }} />
+            </div>
+            <p className="mt-2 text-xs tabular-nums text-text-secondary">
+              {stage.share == null ? "Sin base instrumentada" : `${stage.share.toFixed(1)} % de la cohorte`}
+            </p>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[var(--radius-control)] border border-border-subtle bg-surface-2/40 px-3 py-2">
+        <span className="text-xs text-text-secondary">
+          Solo Control: <strong className="tabular-nums text-text-primary">{number(data.only_control)}</strong>
+        </span>
+        <span className="text-xs text-text-secondary">
+          Conversión a conductor: <strong className="tabular-nums text-text-primary">
+            {data.registered ? `${(data.activated * 100 / data.registered).toFixed(1)} %` : "—"}
+          </strong>
+        </span>
+        <span className="text-xs text-text-secondary">
+          Con primera carrera: <strong className="tabular-nums text-text-primary">
+            {data.registered ? `${(data.first_ride * 100 / data.registered).toFixed(1)} %` : "—"}
+          </strong>
+        </span>
+      </div>
+      {!funnel.consistent && (
+        <p role="status" className="text-xs text-[var(--semantic-warning-foreground)]">
+          Las etapas no siguen una secuencia acumulativa consistente; comprobar los eventos antes de interpretar la conversión.
+        </p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="max-w-2xl text-xs leading-relaxed text-text-secondary">
+          Base: registros identificables de Control en el período; no incluye instalaciones anónimas ni todos los perfiles históricos.
+          «Habilitado» no significa conectado o trabajando. La primera carrera solo cuenta cuando está liquidada.
+        </p>
+        <Link className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline"
+          to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"conductores"}}>
+          Consultar conductores <ArrowUpRight className="size-3.5" aria-hidden="true"/>
+        </Link>
+      </div>
+    </SectionCard>
+  );
+}
+
 export default function AgencyVitalityOverview({
   projectId, from, to,
 }: { projectId: string; from: string; to: string }) {
@@ -102,6 +178,7 @@ export default function AgencyVitalityOverview({
   const signals = useMemo(() => vitality.data ? agencyVitalitySignals(vitality.data) : [], [vitality.data]);
   const priorities = signals.filter(s => s.priority >= 2).sort((a,b) => b.priority - a.priority);
   const d = vitality.data;
+  const assessed = signals.filter(signal => signal.tone !== "gray").length;
 
   return (
     <section aria-label="Vitalidad de la Agencia TukTuk" data-admin-module="rendimiento" className="space-y-3">
@@ -117,8 +194,13 @@ export default function AgencyVitalityOverview({
           <span>Comparaciones contra período anterior de igual duración</span>
           {d?.computed_at && <span title="Momento de consulta">· Actualizado {new Intl.DateTimeFormat("es-ES", {dateStyle:"short",timeStyle:"short",timeZone:"America/Havana"}).format(new Date(d.computed_at))} (Cuba)</span>}
         </div>
-        <div className="flex flex-wrap gap-1.5" aria-label="Leyenda del semáforo">
-          {tones.map(tone => <StatusPill key={tone} tone={tone} />)}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1.5" aria-label="Leyenda del semáforo">
+            {tones.map(tone => <StatusPill key={tone} tone={tone} />)}
+          </div>
+          {d && <p className="text-xs font-medium tabular-nums text-text-secondary">
+            {priorities.length} señales con atención · {assessed} de {signals.length} evaluables
+          </p>}
         </div>
         {vitality.isLoading ? (
           <div role="status" className="min-h-32 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-4 text-sm text-text-secondary">
@@ -166,21 +248,9 @@ export default function AgencyVitalityOverview({
         )}
       </SectionCard>
       {d && (
-        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <SectionCard density="compact" appearance="premium" module="rendimiento"
-            title="Control → Conductor" description="Cohorte observada de usuarios que se registraron en Control"
-            contentClassName="p-3 sm:p-4">
-            <InlineStat label="Registros instrumentados" value={d.control.registered}/>
-            <InlineStat label="Solo Control" value={d.control.only_control}/>
-            <InlineStat label="Iniciaron alta" value={d.control.started}/>
-            <InlineStat label="Conductor habilitado" value={d.control.activated}/>
-            <InlineStat label="Con primera carrera liquidada" value={d.control.first_ride}/>
-            <p className="mt-2 text-xs text-text-secondary">Solo usuarios con evento de registro vinculable. No contabiliza instalaciones sin identificación.</p>
-            <Link className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"conductores"}}>
-              Consultar conductores <ArrowUpRight className="size-3.5" aria-hidden="true"/>
-            </Link>
-          </SectionCard>
+        <>
+        <ControlConversionFunnel data={d.control} projectId={projectId}/>
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <SectionCard density="compact" appearance="premium" module="rendimiento"
             title="Clientes" description="Pasajeros registrados y atendidos"
             contentClassName="p-3 sm:p-4">
@@ -219,6 +289,7 @@ export default function AgencyVitalityOverview({
             <p className="mt-2 text-xs text-text-secondary">Valores de carreras, no ingresos netos ni comisiones. «Habilitado» no significa conectado o trabajando. La flota es una fotografía actual.</p>
           </SectionCard>
         </div>
+        </>
       )}
     </section>
   );
