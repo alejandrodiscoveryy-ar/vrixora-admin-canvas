@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   BarChart3,
   BriefcaseBusiness,
+  ChevronDown,
   Loader2,
   LogIn,
   Megaphone,
@@ -43,6 +44,8 @@ import {
 } from "@/components/admin/MobileAdminSystem";
 
 import { MetricCard } from "@/components/admin/MetricCard";
+import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import AgencyVitalityOverview from "@/features/admin/AgencyVitalityOverview";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -303,134 +306,72 @@ export default function RendimientoSection({
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-        {friendlyError(error)}
-      </div>
-    );
+  if (permissionsLoading) {
+    return <div role="status" className="flex items-center justify-center py-12 text-sm text-text-secondary">
+      <Loader2 className="mr-2 size-5 animate-spin text-primary" aria-hidden="true"/> Comprobando acceso…
+    </div>;
   }
 
   return (
-    <div className="relative isolate overflow-hidden rounded-[30px] border border-cyan-400/[0.10] bg-background/72 p-2 shadow-[0_34px_110px_-72px_rgba(34,211,238,0.82)] sm:p-3 admin-graphite-inset">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/72 via-background/87 to-background/96" />
-
-      <img
-        src="/admin-premium/analytics.svg"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-10 top-6 h-[36rem] w-[70%] object-contain object-right-top opacity-[0.13] mix-blend-screen"
+    <div data-admin-module="rendimiento" className="min-w-0 space-y-3">
+      <ModuleHeader
+        density="compact"
+        appearance="premium"
+        module="rendimiento"
+        title="Vitalidad de la Agencia TukTuk"
+        description="Crecimiento, clientes, carreras y problemas que requieren atención"
+        icon={Activity}
+        actions={
+          <AdminPeriodSelector appearance="premium"
+            value={period} range={dateRange}
+            onChange={(nextPeriod, nextRange) => {
+              setPeriod(nextPeriod);
+              setDateRange(nextRange);
+            }}
+          />
+        }
       />
-
-      <div className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-cyan-400/[0.075] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-violet-500/[0.055] blur-3xl" />
-
-      <div className="relative z-10 space-y-3.5 md:space-y-4">
-      <section className="relative overflow-hidden rounded-[24px] border border-cyan-400/20 bg-gradient-to-r from-cyan-500/[0.09] via-background/60 to-violet-500/[0.055] p-3 shadow-[0_22px_64px_-46px_rgba(34,211,238,0.78)] backdrop-blur-xl admin-graphite-panel">
-        <img
-          src="/admin-premium/analytics.svg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-12 -top-16 h-64 w-[42%] object-contain object-right opacity-[0.085] mix-blend-screen"
-        />
-
-        <div className="relative z-10 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/[0.10] text-cyan-200 shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
-                <BarChart3 className="h-4 w-4" />
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                  Analítica
-                </p>
-                <h2 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
-                  Rendimiento y evolución
-                </h2>
-              </div>
+      <AgencyVitalityOverview projectId={projectId} from={fromDate} to={toDate} />
+      <details className="group min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1/70 shadow-[var(--shadow-xs)]">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-text-primary marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
+          <span className="inline-flex items-center gap-2">
+            <BarChart3 className="size-4 text-[var(--module-accent)]" aria-hidden="true"/>
+            Análisis detallado · Usuarios, captación y gráficos
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-text-secondary transition-transform group-open:rotate-180" aria-hidden="true"/>
+        </summary>
+        <div className="space-y-3 border-t border-border-subtle p-3 sm:p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-text-secondary">Gráficos y filtros adicionales</span>
+            <GrainSelect value={grain} onChange={setGrain}/>
+          </div>
+          <MobileFiltersPanel
+            activeFilters={activeFilterCount}
+            onClear={() => {
+              setSource("all"); setCampaign("all"); setVersion("all");
+            }}
+          >
+            <div className="grid gap-2 sm:grid-cols-3">
+              <FilterSelect value={source} onChange={setSource} label="Fuente"
+                options={[{value:"all",label:"Todas las fuentes"},...(dimensions.data?.sources ?? []).map(item=>({value:item,label:item}))]}/>
+              <FilterSelect value={campaign} onChange={setCampaign} label="Campaña"
+                options={[{value:"all",label:"Todas las campañas"},...(dimensions.data?.campaigns ?? []).map(item=>({value:item,label:item}))]}/>
+              <FilterSelect value={version} onChange={setVersion} label="Versión"
+                options={[{value:"all",label:"Todas las versiones"},...(dimensions.data?.versions ?? []).map(item=>({value:item,label:item}))]}/>
             </div>
-
-            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-              Uso, captación y operación en el período seleccionado.
-            </p>
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center xl:justify-end">
-            <AdminPeriodSelector appearance="premium"
-              value={period}
-              range={dateRange}
-              onChange={(nextPeriod, nextRange) => {
-                setPeriod(nextPeriod);
-                setDateRange(nextRange);
-              }}
-            />
-
-            <GrainSelect value={grain} onChange={setGrain} />
-          </div>
-        </div>
-
-        <div className="relative z-10 mt-3">
-        <MobileFiltersPanel
-          activeFilters={activeFilterCount}
-          onClear={() => {
-            setSource("all");
-            setCampaign("all");
-            setVersion("all");
-          }}
-        >
-          <div className="grid gap-2 sm:grid-cols-3">
-            <FilterSelect
-              value={source}
-              onChange={setSource}
-              label="Fuente"
-              options={[
-                { value: "all", label: "Todas las fuentes" },
-                ...(dimensions.data?.sources ?? []).map((item) => ({
-                  value: item,
-                  label: item,
-                })),
-              ]}
-            />
-
-            <FilterSelect
-              value={campaign}
-              onChange={setCampaign}
-              label="Campaña"
-              options={[
-                { value: "all", label: "Todas las campañas" },
-                ...(dimensions.data?.campaigns ?? []).map((item) => ({
-                  value: item,
-                  label: item,
-                })),
-              ]}
-            />
-
-            <FilterSelect
-              value={version}
-              onChange={setVersion}
-              label="Versión"
-              options={[
-                { value: "all", label: "Todas las versiones" },
-                ...(dimensions.data?.versions ?? []).map((item) => ({
-                  value: item,
-                  label: item,
-                })),
-              ]}
-            />
-          </div>
-        </MobileFiltersPanel>
-        </div>
-      </section>
-
+          </MobileFiltersPanel>
+          <p className="text-xs leading-relaxed text-text-secondary">
+            Los filtros de fuente, campaña y versión afectan solo a estos gráficos heredados.
+            La Vitalidad usa las cuentas verificadas del proyecto. La retención es acumulada, no del período.
+          </p>
+          {isLoading ? (
+            <div role="status" className="p-4 text-sm text-text-secondary">Consultando estadísticas detalladas…</div>
+          ) : error ? (
+            <div role="alert" className="rounded-[var(--radius-compact)] border border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] p-3 text-sm text-text-primary">
+              No se pudieron cargar los gráficos detallados. La Vitalidad mantiene su consulta independiente.
+            </div>
+          ) : (
+          <>
       {isMobile ? (
         <MobileMetricsGrid
           metrics={mobileMetrics}
@@ -777,7 +718,10 @@ export default function RendimientoSection({
           )}
         </SectionCard>
       </section>
-      </div>
+          </>
+          )}
+        </div>
+      </details>
     </div>
   );
 }
@@ -948,8 +892,4 @@ function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
-}
-
-function friendlyError(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }
