@@ -46,7 +46,7 @@ test("datos ausentes, falta de muestra o permisos siempre producen gris", () => 
   assert.equal(flags.find(f=>f.id==="clients")?.value,null);
   assert.equal(flags.find(f=>f.id==="rides")?.value,null);
   assert.throws(()=>parseAgencyVitality({...sample,clients:{new:3}}),/INVALID_VITALITY_DATA/);
-  assert.equal(VITALITY_RULES.minRequestsForCancellation,10);
+  assert.equal(VITALITY_RULES.minRequestsForCancellation,5);
 });
 
 test("indicadores y prioridades conservan su período y no llaman activo a trabajar", () => {
