@@ -112,7 +112,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
       void activeContext.resume().then(reportState).catch(() => {
         if (!soundPreferredRef.current || soundRef.current !== activeContext) return;
         setSoundEnabled(false);
-        setSoundError("Chrome bloqueó el audio. Haz clic en Vrixora para reactivarlo.");
+        setSoundError("El navegador bloqueó el audio. Toca Vrixora para reactivarlo.");
       });
     } catch {
       setSoundEnabled(false);
@@ -370,7 +370,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
           <div>
             <p className="text-sm font-semibold">Centro de alarmas operativas</p>
             <p className="text-xs text-muted-foreground">{online === null ? "Conectando…" : online ?
-              "Vigilancia activa · cada 20 s · avisos Windows opcionales" : "Sin conexión · no se están consultando carreras"}</p>
+              "Vigilancia activa · cada 20 s · avisos del dispositivo opcionales" : "Sin conexión · no se están consultando carreras"}</p>
           </div>
           {pending.length > 0 && <span className="rounded-full bg-rose-500/15 px-2 py-1 text-xs font-bold text-rose-300" aria-live="polite">
             {pending.length} sin conductor</span>}
@@ -381,7 +381,7 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
           <button type="button" disabled={pushBusy} onClick={() => void toggleWindowsPush()}
             className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 px-2.5 py-1.5 text-xs font-semibold hover:bg-cyan-500/10">
             {pushEnabled ? <MonitorCheck className="h-4 w-4" /> : <MonitorOff className="h-4 w-4" />}
-            {pushEnabled ? "Avisos Windows activos" : "Activar avisos Windows"}
+            {pushEnabled ? "Notificaciones activas" : "Activar notificaciones"}
           </button>
           <button type="button" onClick={() => void toggleSound()} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent">
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
