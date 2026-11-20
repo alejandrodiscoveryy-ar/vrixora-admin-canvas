@@ -69,6 +69,8 @@ test("lectura: proyecto autorizado, pruebas excluidas, moneda separada y sin rie
   for(const p of ["marketplace.view","customers.view","payments.view"]) assert.ok(sql.includes(p));
   assert.match(sql,/coalesce\(j\.is_test, false\) = false and j\.test_deleted_at is null/);
   assert.match(sql,/status = 'settled'/);
+  assert.match(sql,/marketplace_incident_resolutions resolution/);
+  assert.match(sql,/resolution\.id is null/);
   assert.match(sql,/currency='CUP'/);
   assert.match(sql,/currency='USD'/);
   assert.match(sql,/currency='EUR'/);
