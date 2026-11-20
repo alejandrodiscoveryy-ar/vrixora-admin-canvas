@@ -114,7 +114,10 @@ begin
       'profiles_total', (select count(*) from public.driver_profiles d where d.project_id = target_project_id),
       'profiles_active', (select count(*) from public.driver_profiles d
         where d.project_id = target_project_id and d.status = 'active' and d.suspended_at is null),
-      'incidents_open', (select count(*) from valid_jobs j where j.status='incident'),
+      'incidents_open', (select count(*) from valid_jobs j
+      left join public.marketplace_incident_resolutions resolution
+        on resolution.project_id = target_project_id and resolution.job_id = j.id
+      where j.status = 'incident' and resolution.id is null),
       'topups_pending', case when can_payments then
         (select count(*) from public.topups t where t.project_id=target_project_id and t.status='requested')
         else null end
