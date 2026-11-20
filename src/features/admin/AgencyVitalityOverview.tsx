@@ -66,8 +66,8 @@ function SignalCard({ signal }: { signal: VitalitySignal }) {
   const Icon = signalIcons[signal.id as keyof typeof signalIcons] ?? Activity;
   return (
     <details className={`group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumSurface}`}>
-      <span aria-hidden="true" className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${toneRail[signal.tone]}`}/>
       <summary className="flex min-h-[114px] cursor-pointer list-none flex-col justify-between gap-2 py-3 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
+        <span aria-hidden="true" className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${toneRail[signal.tone]}`}/>
         <span className="flex min-w-0 items-start justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-text-secondary">
             <Icon className="size-4 shrink-0 text-[var(--module-accent)]" aria-hidden="true"/>{signal.label}
