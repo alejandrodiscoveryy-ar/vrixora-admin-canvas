@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -60,6 +60,24 @@ export default function MarketplaceServiceShareButton({ projectId, jobId, compac
       setPayload(null); setReviewed(false); setFailure(errorText(error));
     } finally { setBusy(false); }
   };
+  const share = async () => {
+    if (!payload || !reviewed || busy) return;
+    if (typeof navigator.share !== "function") {
+      setFailure("Este dispositivo no admite compartir directamente. Usa «Copiar mensaje».");
+      return;
+    }
+    setFailure("");
+    try {
+      // The proposal was loaded from the protected RPC for manual review.
+      // The Android share sheet lets the operator choose WhatsApp and the group.
+      // No automatic messages are sent by Vrixora.
+      await navigator.share({ title: "Carrera disponible · Agencia TukTuk", text: preview });
+      setOpen(false); reset();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setFailure("No se pudo abrir el menú para compartir. Puedes copiar el mensaje.");
+    }
+  };
   return <>
     <Button type="button" size="sm" variant="outline"
       className={compact ? "h-auto min-h-11 flex-1 basis-[8rem] whitespace-normal border-emerald-500/30 text-emerald-400 text-[10px]" : "w-full min-h-11 border-emerald-500/30 text-emerald-500"}
@@ -84,9 +102,16 @@ export default function MarketplaceServiceShareButton({ projectId, jobId, compac
             <input type="checkbox" className="mt-1" checked={reviewed} disabled={busy} onChange={(event) => setReviewed(event.target.checked)} />
             He revisado el mensaje y no contiene información privada innecesaria.
           </label>
-          <Button type="button" className="w-full min-h-11" disabled={busy || !reviewed} onClick={() => void copy()}>
-            <Copy className="mr-2 h-4 w-4" /> Copiar mensaje
-          </Button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button type="button" className="min-h-11 w-full" disabled={busy || !reviewed} onClick={() => void copy()}>
+              <Copy className="mr-2 h-4 w-4" /> Copiar mensaje
+            </Button>
+            {typeof navigator !== "undefined" && typeof navigator.share === "function" ? (
+              <Button type="button" variant="outline" className="min-h-11 w-full" disabled={busy || !reviewed} onClick={() => void share()}>
+                <Share2 className="mr-2 h-4 w-4" /> Compartir por WhatsApp
+              </Button>
+            ) : null}
+          </div>
         </> : null}
       </DialogContent>
     </Dialog>
