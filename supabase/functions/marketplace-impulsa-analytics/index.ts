@@ -75,8 +75,9 @@ Deno.serve(async (req) => {
     // Aliados have their own ledger, not the driver's Impulsa telemetry.
     const allyMatch = code === null && campaign?.match(/^aliado_([a-z0-9][a-z0-9-]{1,23})$/);
     const outcome = allyMatch && !allyMatch[1].endsWith("-")
-      ? await client.rpc("record_public_marketplace_ally_event_v1", {
+      ? await client.rpc("record_public_marketplace_ally_event_v2", {
           target_event:event,target_session_id:sessionId,target_slug:allyMatch[1],target_channel:channel,
+          target_reason:reason,target_price_cup:price,
         })
       : await client.rpc("record_public_marketplace_impulsa_event_v1", {
           target_event:event,target_session_id:sessionId,target_promo_code:code,
