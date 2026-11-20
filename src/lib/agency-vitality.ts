@@ -164,7 +164,7 @@ export function agencyVitalitySignals(data: AgencyVitality): VitalitySignal[] {
       "Carreras reales creadas en el período; estado actual completado o liquidado"),
     make("cancelled", "Cancelaciones", toneFromCancellation(rides?.requested ?? null, rides?.cancelled ?? null), cancelRate,
       cancelRate == null ? "Sin solicitudes comprobadas o sin permisos." :
-        `${rides!.cancelled} canceladas de ${rides!.requested} solicitadas (${cancelRate.toFixed(1)} %). ${rides!.requested < VITALITY_RULES.minRequestsForCancellation ? "Muestra insuficiente: mínimo 10." : "Umbrales: 10 % atención; 20 % deterioro; 35 % crítico."}`,
+        `${rides!.cancelled} canceladas de ${rides!.requested} solicitadas (${cancelRate.toFixed(1)} %). ${rides!.requested < VITALITY_RULES.minRequestsForCancellation ? "Muestra insuficiente: mínimo 5." : "Umbrales: 10 % atención; 20 % deterioro; 35 % crítico."}`,
       "Proporción de carreras creadas en el período, con estado actual"),
     make("incidents", "Incidencias abiertas", toneFromPending(op?.incidents_open ?? null, "incidents"), op?.incidents_open ?? null,
       op ? "Situación actual; 1 atención, 2–3 deterioro, 4 o más crítico." : "Sin permiso para consultar incidencias.",
