@@ -83,8 +83,12 @@ test("Las recargas resueltas ofrecen WhatsApp con datos reales y envío manual",
   assert.match(topups, /Notificar por WhatsApp/);
   assert.doesNotMatch(topups, /href=\{notificationLink\.web\}/);
   assert.doesNotMatch(topups, /target="_blank"/);
-  assert.match(panel, /item\.rejectionReason \? \[`Motivo: \$\{item\.rejectionReason\}`\]/);
-  assert.match(panel, /receiptNumber \? \[`Comprobante: \$\{receiptNumber\}`\]/);
+  assert.match(panel, /item\.rejectionReason \? \[`⚠️ \*Motivo:\* \$\{item\.rejectionReason\}`\]/);
+  assert.match(panel, /receiptNumber \? \[`🧾 \*Comprobante:\* \$\{receiptNumber\}`\]/);
+  assert.match(panel, /"🛺 \*Agencia TukTuk\*"/);
+  assert.match(panel, /"✅ \*Recarga confirmada\*"/);
+  assert.match(panel, /"❌ \*Recarga rechazada\*"/);
+  assert.match(panel, /`💰 \*Importe:\* \$\{formatAmount\(item\.amount, item\.currency\)\}`/);
   assert.match(panel, /formatCustomerDateTime\(handledAt\)/);
   assert.doesNotMatch(topups, /navigator\.share\(/);
 });
