@@ -189,7 +189,8 @@ test("Recargas premium reutiliza sistema grafito aprobado y mantiene acciones cr
   assert.match(recargas, /setVerifiedPaymentReceived\(false\)/);
   assert.match(account, /premiumHeaderSurface/);
   assert.match(account, /data-topup-account-panel/);
-  assert.match(styles, /\.marketplace-record-workspace\[aria-label="Recargas"\] \{ max-inline-size: min\(100%, 82rem\); \}/);
+  assert.match(styles, /\.marketplace-record-workspace\[aria-label="Recargas"\] \{\s*max-inline-size: none;/);
+  assert.match(styles, /\.marketplace-topup-toolbar-top/);
   assert.match(styles, /@container \(max-width: 560px\)/);
   assert.doesNotMatch(recargas, /grid-cols-3 xl:grid-cols-4/);
 });
