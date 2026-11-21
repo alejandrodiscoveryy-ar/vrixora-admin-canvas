@@ -119,3 +119,14 @@ test("Recargas pendientes de transferencia envían datos guardados a WhatsApp De
   assert.match(topups, /Enviar datos de pago/);
   assert.match(topups, /Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas/);
 });
+
+test("Mensaje de recarga evita duplicar WhatsApp cuando coincide con teléfono de tarjeta", () => {
+  const payments = readFileSync(new URL("../src/features/admin/MarketplaceTopupPaymentDestination.tsx", import.meta.url), "utf8");
+  const message = payments.slice(payments.indexOf("export function topupPaymentInstructionsMessage("), payments.indexOf("export function MarketplaceTopupPaymentDestination("));
+  assert.match(message, /const sameWhatsAppNumber =/);
+  assert.match(message, /destination\.whatsappPhone\.replace\(\s*\/\\D\/g,\s*""\)/);
+  assert.match(message, /destination\.paymentPhone\.replace\(\s*\/\\D\/g,\s*""\)/);
+  assert.match(message, /const separateWhatsAppNumber = Boolean\(destination\.whatsappPhone\) && !sameWhatsAppNumber/);
+  assert.match(message, /\.\.\.\(separateWhatsAppNumber/);
+  assert.match(message, /respondiendo a este chat/);
+});
