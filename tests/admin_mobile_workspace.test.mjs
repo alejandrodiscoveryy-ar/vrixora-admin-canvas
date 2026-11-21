@@ -249,3 +249,10 @@ test("Recargas mantiene los datos y acciones financieras mientras muestra teléf
   assert.match(view, /href=\{notificationLink\.desktop\}/);
   assert.match(view, /receiptsByTopup\.get\(item\.topupId\)/);
 });
+test("La suspensión administrativa explica el bloqueo completo de Conductor", () => {
+  assert.match(panel, /La suspensión bloqueará TukTuk Conductor en APK y WebApp actualizadas/);
+  assert.match(panel, /cerrará su sesión/);
+  assert.match(panel, /Se conservan saldos e historial/);
+  assert.match(panel, /podrá volver a iniciar sesión/);
+  assert.match(panel, /setDriverSuspension\(projectId/);
+});
