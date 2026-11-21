@@ -2471,8 +2471,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <TabsContent value="billeteras" className="mt-3">
             <section aria-label="Billeteras" data-nav-tone="finanzas" className="marketplace-record-workspace min-w-0 space-y-2.5">
               <div className={cn("marketplace-record-toolbar marketplace-wallet-toolbar relative isolate overflow-hidden rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
-                <WalletCards aria-hidden="true" className="pointer-events-none absolute -top-4 right-[35%] hidden h-20 w-20 text-text-secondary opacity-[0.06] dark:opacity-[0.08] lg:block" />
-                <div className="marketplace-wallet-toolbar-top relative grid min-w-0 gap-2.5">
+                <WalletCards aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark" />
+                <div className="marketplace-wallet-toolbar-top relative z-10 grid min-w-0 gap-2.5">
                   <div className="flex min-w-0 items-center gap-3">
                     <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]">
                       <Wallet className="h-5 w-5" />
@@ -2499,6 +2499,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         key={value || "all"}
                         size="sm"
                         className="marketplace-record-filter min-h-11 sm:min-h-8"
+                        data-finance-tone={value === "deposit_pending" || value === "no_available" ? "warning" : value === "deposit_confirmed" || value === "has_available" ? "success" : "neutral"}
                         variant={walletFilter === value ? "default" : "ghost"}
                         aria-pressed={walletFilter === value}
                         onClick={() => setWalletFilter(value)}
@@ -2520,7 +2521,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <div className="space-y-2">
                   {filteredWalletRows.map((wallet) => {
                     const reserved = Number(wallet.realReservedBalance) + Number(wallet.promotionalReservedBalance);
-                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet">
+                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-deposit-state={wallet.initialDepositConfirmed ? "confirmed" : "pending"}>
                       <div className="marketplace-wallet-summary">
                         <RecordIdentity icon={Wallet} name={wallet.driverDisplayName}>
                           <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
@@ -2565,7 +2566,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 />
               ) : null}
               <div className={cn("marketplace-record-toolbar marketplace-topup-toolbar relative overflow-hidden rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
-                <WalletCards aria-hidden="true" className="pointer-events-none absolute -top-4 right-48 hidden h-20 w-20 text-text-secondary opacity-[0.07] dark:opacity-[0.08] lg:block" />
+                <Banknote aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark" />
                 <div className="marketplace-topup-toolbar-top relative grid min-w-0 gap-2.5">
                   <div className="marketplace-topup-heading flex min-w-0 items-center gap-3">
                     <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]"><Banknote className="h-5 w-5" /></span>
@@ -2582,7 +2583,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
                     {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
-                      <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
+                      <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" data-finance-tone={value === "requested" ? "warning" : value === "rejected" ? "danger" : value === "confirmed" || value === "reconciled" ? "success" : "neutral"} variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
                     ))}
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-text-secondary">
