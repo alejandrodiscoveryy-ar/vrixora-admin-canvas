@@ -1048,7 +1048,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [receivedPaymentReference, setReceivedPaymentReference] = useState("");
   const [verifiedPaymentReceived, setVerifiedPaymentReceived] = useState(false);
   const [newTopup, setNewTopup] = useState(false);
-  const [topupStatus, setTopupStatus] = useState("");
+  const [topupStatus, setTopupStatus] = useState("requested");
   const [walletSearch, setWalletSearch] = useState("");
   const [walletFilter, setWalletFilter] = useState<"" | "deposit_pending" | "deposit_confirmed" | "has_available" | "no_available">("");
   const [topupSearch, setTopupSearch] = useState("");
@@ -1076,6 +1076,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   // Mantener montado el mapa al alternar vistas, pero no cargarlo hasta abrir Mapa.
   useEffect(() => {
     if (tab === "mapa") setMapVisited(true);
+  }, [tab]);
+
+  // Al entrar o regresar a Recargas, priorizar solicitudes pendientes.
+  // Los otros filtros siguen siendo seleccionables durante la visita.
+  useEffect(() => {
+    if (tab !== "recargas") return;
+    setTopupStatus("requested");
+    setTopupSearch("");
   }, [tab]);
 
   useEffect(() => {
