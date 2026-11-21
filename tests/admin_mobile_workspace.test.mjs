@@ -102,8 +102,8 @@ test("Billeteras permite configurar cuenta receptora independiente de WhatsApp",
   for (const field of ["topup-destination-card", "topup-destination-phone", "topup-destination-whatsapp"]) {
     assert.ok(payments.includes(field), "Falta el campo: " + field);
   }
-  assert.match(payments, /paymentPhone: normalizedPaymentPhone/);
-  assert.match(payments, /whatsappPhone: normalizedWhatsappPhone/);
+  assert.match(payments, /target_payment_phone: normalizedPaymentPhone/);
+  assert.match(payments, /target_whatsapp_phone: normalizedWhatsappPhone/);
   assert.match(payments, /cardValid && paymentPhoneValid && whatsappPhoneValid && pairComplete/);
   assert.match(payments, /tu billetera se acreditará únicamente cuando confirmemos la recepción del dinero/i);
 });
