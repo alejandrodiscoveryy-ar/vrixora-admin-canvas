@@ -1790,7 +1790,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <span>Indicadores generales del registro y promociones</span>
                 <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
               </summary>
-              <div className="relative mt-3 grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+              <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4 mt-3">
               {([
                 { label: "Conductores", detail: "Perfiles registrados", eyebrow: "Equipo", value: overview.data?.driversTotal, icon: Users, module: "resumen" },
                 { label: "Activos", detail: "Perfiles habilitados", eyebrow: "Operación", value: overview.data?.driversActive, icon: Users, semanticState: "success" },
