@@ -261,6 +261,46 @@ const formatDate = (value: unknown) => {
   }).format(parsed);
 };
 
+
+// Mensaje administrativo listo para revisar y enviar manualmente por WhatsApp.
+function topupWhatsAppMessage(
+  item: {
+    driverDisplayName: string;
+    amount: unknown;
+    currency: string;
+    method: string;
+    reference?: string | null;
+    status: string;
+    rejectionReason?: string | null;
+    confirmedAt?: string | null;
+    rejectedAt?: string | null;
+  },
+  methodLabel: string,
+  receiptNumber?: string | null,
+) {
+  const rejected = item.status === "rejected";
+  const state = rejected ? "Rechazada" : item.status === "reconciled" ? "Confirmada y conciliada" : "Confirmada";
+  const handledAt = rejected ? item.rejectedAt : item.confirmedAt;
+
+  return [
+    "Agencia TukTuk",
+    "",
+    `Hola, ${item.driverDisplayName}.`,
+    rejected
+      ? `Te informamos que tu solicitud de recarga por ${formatAmount(item.amount, item.currency)} fue rechazada.`
+      : `Tu recarga por ${formatAmount(item.amount, item.currency)} fue confirmada y acreditada a tu billetera TukTuk.`,
+    "",
+    `Estado: ${state}`,
+    `Método: ${methodLabel}`,
+    ...(item.reference ? [`Referencia: ${item.reference}`] : []),
+    ...(rejected && item.rejectionReason ? [`Motivo: ${item.rejectionReason}`] : []),
+    ...(!rejected && receiptNumber ? [`Comprobante: ${receiptNumber}`] : []),
+    ...(handledAt ? [`Fecha: ${formatCustomerDateTime(handledAt)} (hora de Cuba)`] : []),
+    "",
+    "Equipo de Agencia TukTuk",
+  ].join("\n");
+}
+
 // Fechas administrativas de clientes con zona horaria fija de Cuba,
  // independientes del país o zona del dispositivo del operador.
 const formatCustomerDateTime = (value: string | null | undefined) => {
@@ -2477,6 +2517,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <div className="space-y-2">
                   {filteredTopupRows.map((item) => {
                     const receipt = receiptsByTopup.get(item.topupId);
+                    const canNotifyTopup = ["confirmed", "reconciled", "rejected"].includes(item.status);
+                    const notificationLink = canNotifyTopup
+                      ? driverWhatsAppLinks(
+                          item.driverPhone,
+                          topupWhatsAppMessage(item, paymentMethodLabel(item.method), receipt?.documentNumber),
+                        )
+                      : null;
                     return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row", premiumSurface, "shadow-none")} data-marketplace-record="topup">
                       <div className="marketplace-topup-summary">
                         <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
@@ -2504,6 +2551,27 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           {item.rejectedAt ? <RecordMetric labelText="Rechazada" value={<time dateTime={item.rejectedAt}>{formatDate(item.rejectedAt)}</time>} /> : null}
                           {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante" value={receipt.documentNumber} tone="available" /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
                         </div>
+                        {notificationLink ? (
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              asChild
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)] shadow-none"
+                            >
+                              <a
+                                href={notificationLink.web}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Notificar por WhatsApp la recarga ${item.status === "rejected" ? "rechazada" : "confirmada"} a ${item.driverDisplayName}`}
+                              >
+                                <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
+                                Notificar por WhatsApp
+                              </a>
+                            </Button>
+                          </div>
+                        ) : null}
                         {canManagePayments && item.status === "requested" ? (
                           <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
                             setError(null);
