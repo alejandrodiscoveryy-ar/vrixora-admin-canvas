@@ -1263,33 +1263,38 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 }
 .marketplace-topup-row .marketplace-topup-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 136px 112px 398px;
+  grid-template-columns: minmax(0, 1fr) 135px 165px 128px 112px 398px;
   align-items: center;
-  column-gap: 14px;
+  column-gap: 12px;
   row-gap: 8px;
   min-width: 0;
 }
-/* Las cuatro columnas se mantienen incluso cuando una recarga no tiene acciones.
-   display: contents expone identidad, importe y estado al grid padre sin duplicar DOM. */
-.marketplace-topup-row .marketplace-topup-summary {
-  display: contents;
-}
+/* Identidad, teléfono, referencia, importe, estado y acciones comparten columnas.
+   No se truncan datos financieros ni se repiten por filas alternativas. */
+.marketplace-topup-row .marketplace-topup-summary { display: contents; }
 .marketplace-topup-row .marketplace-topup-summary > :first-child {
   grid-column: 1;
   min-width: 0;
 }
+.marketplace-topup-row .marketplace-topup-phone { grid-column: 2; }
+.marketplace-topup-row .marketplace-topup-reference { grid-column: 3; }
+.marketplace-topup-row .marketplace-topup-detail-value {
+  margin-block-start: 2px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 .marketplace-topup-row .marketplace-topup-amount {
-  grid-column: 2;
+  grid-column: 4;
   min-width: 0;
 }
 .marketplace-topup-row .marketplace-topup-status {
-  grid-column: 3;
+  grid-column: 5;
   min-width: 0;
   justify-self: end;
 }
-.marketplace-topup-row .marketplace-topup-actions {
-  grid-column: 4;
-}
+.marketplace-topup-row .marketplace-topup-actions { grid-column: 6; }
 .marketplace-topup-row .marketplace-topup-amount .marketplace-value-accent {
   font-size: 18px;
   font-weight: 700;
@@ -1319,9 +1324,9 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 .marketplace-topup-row .marketplace-record-detail-grid {
   padding-block: 12px 4px;
 }
-@container (max-width: 1160px) {
+@container (max-width: 1250px) {
   .marketplace-topup-row .marketplace-topup-main {
-    grid-template-columns: minmax(0, 1fr) 136px 112px;
+    grid-template-columns: minmax(0, 1fr) 135px 165px 128px 112px;
   }
   .marketplace-topup-row .marketplace-topup-actions {
     grid-column: 1 / -1;
@@ -1331,23 +1336,32 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
     padding-top: 8px;
   }
 }
+@container (max-width: 900px) {
+  .marketplace-topup-row .marketplace-topup-main {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 128px 112px;
+  }
+  .marketplace-topup-row .marketplace-topup-summary > :first-child { grid-column: 1 / 3; }
+  .marketplace-topup-row .marketplace-topup-phone { grid-column: 1; grid-row: 2; }
+  .marketplace-topup-row .marketplace-topup-reference { grid-column: 2; grid-row: 2; }
+  .marketplace-topup-row .marketplace-topup-amount { grid-column: 3; grid-row: 2; }
+  .marketplace-topup-row .marketplace-topup-status { grid-column: 4; grid-row: 2; }
+}
 @container (max-width: 560px) {
   .marketplace-topup-row .marketplace-topup-main {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 10px;
   }
-  .marketplace-topup-row .marketplace-topup-summary > :first-child {
-    grid-column: 1 / -1;
-  }
-  .marketplace-topup-row .marketplace-topup-amount { grid-column: 1; }
-  .marketplace-topup-row .marketplace-topup-status { grid-column: 2; }
+  .marketplace-topup-row .marketplace-topup-summary > :first-child { grid-column: 1 / -1; grid-row: 1; }
+  .marketplace-topup-row .marketplace-topup-phone { grid-column: 1; grid-row: 2; }
+  .marketplace-topup-row .marketplace-topup-reference { grid-column: 2; grid-row: 2; }
+  .marketplace-topup-row .marketplace-topup-amount { grid-column: 1; grid-row: 3; }
+  .marketplace-topup-row .marketplace-topup-status { grid-column: 2; grid-row: 3; }
   .marketplace-topup-row .marketplace-topup-actions { justify-content: flex-start; }
   .marketplace-topup-row .marketplace-topup-actions > * {
     flex: 1 1 100%;
     max-inline-size: none;
   }
 }
-
 
 /* Billeteras premium: misma distribución operativa que Recargas.
    Reglas limitadas al módulo; los valores de saldos y su procedencia no cambian. */
