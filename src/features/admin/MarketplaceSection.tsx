@@ -1065,7 +1065,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const canManageSettings = permissions.includes("settings.manage");
   const canManageMarketplace = permissions.includes("marketplace.manage");
   const canFinishAdmin = canManageMarketplace && canManagePayments;
-  const paymentDestination = useTopupPaymentDestination(projectId, canManagePayments && (tab === "billeteras" || tab === "recargas"));
+  const paymentDestination = useTopupPaymentDestination(projectId, canManagePayments && tab === "recargas");
 
   const queryClient = useQueryClient();
 
@@ -2451,15 +2451,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <>
           <TabsContent value="billeteras" className="mt-3">
             <section aria-label="Billeteras" data-nav-tone="finanzas" className="marketplace-record-workspace min-w-0 space-y-2.5">
-              {canManagePayments ? (
-                <MarketplaceTopupPaymentDestination
-                  projectId={projectId}
-                  destination={paymentDestination.data}
-                  isLoading={paymentDestination.isLoading}
-                  isError={paymentDestination.isError}
-                  onRetry={() => void paymentDestination.refetch()}
-                />
-              ) : null}
               <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
@@ -2509,6 +2500,15 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           </TabsContent>
           <TabsContent value="recargas">
             <section aria-label="Recargas" data-nav-tone="recargas" className="marketplace-record-workspace min-w-0 space-y-2.5">
+              {canManagePayments ? (
+                <MarketplaceTopupPaymentDestination
+                  projectId={projectId}
+                  destination={paymentDestination.data}
+                  isLoading={paymentDestination.isLoading}
+                  isError={paymentDestination.isError}
+                  onRetry={() => void paymentDestination.refetch()}
+                />
+              ) : null}
               <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <RecordSearch value={topupSearch} onChange={setTopupSearch} placeholder="Buscar conductor, teléfono o referencia" labelText="Buscar recargas cargadas" />
@@ -2603,7 +2603,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             </div>
                           ) : (
                             <p className="mt-2 text-xs text-text-secondary">
-                              {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono en Billeteras para enviar instrucciones."}
+                              {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas, para enviar instrucciones."}
                             </p>
                           )
                         ) : null}
