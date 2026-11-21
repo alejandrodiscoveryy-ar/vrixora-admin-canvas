@@ -1757,14 +1757,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     <div className="min-w-0 space-y-3 sm:space-y-6">
       <Tabs value={tab}>
         <TabsContent value="resumen">
-          <MarketplacePulseDecisions
-            projectId={projectId}
-            overview={overview.data}
-            overviewError={overview.isError}
-            canPayments={canPayments}
-            canManagePayments={canManagePayments}
-            canAnalytics={permissions.includes("analytics.view")}
-          />
           <section
             aria-label="Indicadores operativos de Pulso"
             className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}
@@ -1785,7 +1777,20 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <span className="hidden sm:inline">{overview.isError ? "Error de actualización" : overview.isFetching ? "Actualizando..." : "Datos cada 30 s"}</span>
               </span>
             </header>
-            <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+            <MarketplacePulseDecisions
+              projectId={projectId}
+              overview={overview.data}
+              overviewError={overview.isError}
+              canPayments={canPayments}
+              canManagePayments={canManagePayments}
+              canAnalytics={permissions.includes("analytics.view")}
+            />
+            <details className="group mt-3 border-t border-border-default pt-3">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-[var(--radius-control)] border border-border-default bg-surface-2/65 px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-3 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                <span>Indicadores generales del registro y promociones</span>
+                <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+              </summary>
+              <div className="relative mt-3 grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
               {([
                 { label: "Conductores", detail: "Perfiles registrados", eyebrow: "Equipo", value: overview.data?.driversTotal, icon: Users, module: "resumen" },
                 { label: "Activos", detail: "Perfiles habilitados", eyebrow: "Operación", value: overview.data?.driversActive, icon: Users, semanticState: "success" },
@@ -1828,6 +1833,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               {showAllPulseMetrics ? "Mostrar indicadores principales" : "Ver todos los indicadores"}
               <ChevronDown className={`h-4 w-4 transition-transform ${showAllPulseMetrics ? "rotate-180" : ""}`} />
             </button>
+            </details>
           </section>
           <MarketplaceFleetPulse projectId={projectId} enabled={tab === "resumen"} onOpenDriver={setDriver360Id} />
         </TabsContent>
