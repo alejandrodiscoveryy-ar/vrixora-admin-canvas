@@ -3122,6 +3122,16 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
     },
+    async confirmTopupWithReference(projectId, topupId, idempotencyKey, paymentReference) {
+      await requireOnline("Confirmar recarga con referencia");
+      const { error } = await getSupabaseClient().rpc("admin_confirm_marketplace_topup_with_reference", {
+        target_project_id: projectId,
+        target_topup_id: topupId,
+        target_confirmation_idempotency_key: idempotencyKey,
+        target_payment_reference: paymentReference,
+      });
+      throwIfError(error);
+    },
     async rejectTopup(projectId, topupId, reason) {
       await requireOnline("Rechazar recarga");
       const { error } = await getSupabaseClient().rpc("admin_reject_marketplace_topup", {

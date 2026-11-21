@@ -1042,8 +1042,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [topup, setTopup] = useState<{
     id: string;
     driver: string;
+    method: string;
     confirmationKey: string;
   } | null>(null);
+  const [receivedPaymentReference, setReceivedPaymentReference] = useState("");
+  const [verifiedPaymentReceived, setVerifiedPaymentReceived] = useState(false);
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("");
   const [walletSearch, setWalletSearch] = useState("");
@@ -1430,11 +1433,15 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   });
 
   const confirm = useMutation({
-    mutationFn: () =>
-      supabaseServices.marketplace.confirmTopup(projectId, topup!.id, topup!.confirmationKey),
+    mutationFn: () => topup!.method === "transfer"
+      ? supabaseServices.marketplace.confirmTopupWithReference(projectId, topup!.id, topup!.confirmationKey, receivedPaymentReference.trim())
+      : supabaseServices.marketplace.confirmTopup(projectId, topup!.id, topup!.confirmationKey),
     onSuccess: () => {
       setError(null);
       setTopup(null);
+      setReceivedPaymentReference("");
+      setVerifiedPaymentReceived(false);
+      toast.success("Recarga confirmada. Despliega el registro y pulsa Notificar por WhatsApp para enviar el comprobante.");
       void invalidate(
         "marketplace-topups",
         "marketplace-wallets",
@@ -2610,7 +2617,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         {canManagePayments && item.status === "requested" ? (
                           <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
                             setError(null);
-                            setTopup({ id: item.topupId, driver: item.driverDisplayName, confirmationKey: crypto.randomUUID() });
+                            setTopup({ id: item.topupId, driver: item.driverDisplayName, method: item.method, confirmationKey: crypto.randomUUID() });
+                            setReceivedPaymentReference(item.reference ?? "");
+                            setVerifiedPaymentReceived(false);
                             setReason("");
                           }}>Gestionar recarga pendiente</Button>
                         ) : null}
@@ -3249,6 +3258,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           if (!open) {
             setTopup(null);
             setReason("");
+            setReceivedPaymentReference("");
+            setVerifiedPaymentReceived(false);
             void invalidate("marketplace-topups", "marketplace-financial-documents");
           }
         }}
@@ -3257,9 +3268,35 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <DialogHeader>
             <DialogTitle>Gestionar recarga de {topup?.driver}</DialogTitle>
             <DialogDescription>
-              Confirmar acredita la billetera una sola vez. Para rechazar debes indicar el motivo.
+              Registra la referencia y comprueba el ingreso antes de confirmar. La confirmación acredita la billetera y emite el comprobante una sola vez.
             </DialogDescription>
           </DialogHeader>
+
+          {topup?.method === "transfer" ? (
+            <div className="space-y-3 rounded-xl border border-border/60 bg-surface-1 p-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="topup-received-reference">Referencia de la transferencia recibida</Label>
+                <Input
+                  id="topup-received-reference"
+                  value={receivedPaymentReference}
+                  onChange={(event) => setReceivedPaymentReference(event.target.value)}
+                  placeholder="Referencia proporcionada después del pago"
+                  maxLength={160}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-text-secondary">
+                  La referencia quedará asociada al comprobante emitido al confirmar la recarga.
+                </p>
+              </div>
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary"
+                  checked={verifiedPaymentReceived}
+                  onChange={(event) => setVerifiedPaymentReceived(event.target.checked)}
+                />
+                <span>He comprobado que el ingreso se recibió realmente en la cuenta de la agencia.</span>
+              </label>
+            </div>
+          ) : null}
 
           <Textarea
             value={reason}
@@ -3269,7 +3306,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
 
           <div className="grid grid-cols-2 gap-2">
             <Button
-              disabled={confirm.isPending || reject.isPending}
+              disabled={confirm.isPending || reject.isPending || (topup?.method === "transfer" && (!receivedPaymentReference.trim() || !verifiedPaymentReceived))}
               onClick={() => confirm.mutate()}
             >
               {confirm.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

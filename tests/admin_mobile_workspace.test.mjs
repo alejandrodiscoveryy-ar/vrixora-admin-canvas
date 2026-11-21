@@ -130,3 +130,43 @@ test("Mensaje de recarga evita duplicar WhatsApp cuando coincide con teléfono d
   assert.match(message, /\.\.\.\(separateWhatsAppNumber/);
   assert.match(message, /respondiendo a este chat/);
 });
+
+test("Recarga transferida: referencia y verificación antes de acreditar saldo", () => {
+  const topups = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
+  const form = panel.slice(panel.indexOf('<DialogTitle>Gestionar recarga de'), panel.indexOf('type JobRadarImpact'));
+  const service = readFileSync(new URL("../src/lib/services/supabase.ts", import.meta.url), "utf8");
+  const types = readFileSync(new URL("../src/lib/services/types.ts", import.meta.url), "utf8");
+  assert.match(topups, /setReceivedPaymentReference\(item\.reference \?\? ""\)/);
+  assert.match(topups, /method: item\.method/);
+  assert.match(form, /htmlFor="topup-received-reference"/);
+  assert.match(form, /value=\{receivedPaymentReference\}/);
+  assert.match(form, /checked=\{verifiedPaymentReceived\}/);
+  assert.match(form, /!receivedPaymentReference\.trim\(\) \|\| !verifiedPaymentReceived/);
+  assert.match(panel, /confirmTopupWithReference\(/);
+  assert.match(service, /"admin_confirm_marketplace_topup_with_reference"/);
+  assert.match(service, /target_payment_reference: paymentReference/);
+  assert.match(types, /confirmTopupWithReference\(projectId:/);
+  assert.match(panel, /Notificar por WhatsApp para enviar el comprobante/);
+});
+
+test("La referencia verificada se conserva en el documento y en el historial de Recargas", () => {
+  const sql = readFileSync(new URL("../supabase/migrations/20261121120705_marketplace_topup_reference_at_confirmation.sql", import.meta.url), "utf8");
+  assert.match(sql, /create table if not exists app_private\.marketplace_topup_received_references/i);
+  assert.match(sql, /recorded_by uuid not null/);
+  assert.match(sql, /admin_confirm_marketplace_topup_with_reference/);
+  assert.match(sql, /return public\.admin_confirm_marketplace_topup\(/);
+  assert.match(sql, /app_private\.issue_marketplace_topup_receipt/);
+  assert.match(sql, /public\.admin_list_marketplace_topups/);
+  assert.match(sql, /PAYMENT_REFERENCE_ALREADY_RECORDED/);
+  assert.match(sql, /revoke all on app_private\.marketplace_topup_received_references from public, anon, authenticated/);
+});
+
+test("El servidor impide acreditar transferencias sin referencia aunque Admin esté desactualizada", () => {
+  const sql = readFileSync(new URL("../supabase/migrations/20261121120912_marketplace_topup_confirm_requires_reference.sql", import.meta.url), "utf8");
+  assert.match(sql, /topup_record\.method='transfer'/);
+  assert.match(sql, /topup_record\.reference/);
+  assert.match(sql, /marketplace_topup_received_references/);
+  assert.match(sql, /PAYMENT_REFERENCE_REQUIRED_FOR_CONFIRMATION/);
+  assert.match(sql, /prior_balance:=app_private\.marketplace_wallet_total_balance/);
+  assert.ok(sql.indexOf("PAYMENT_REFERENCE_REQUIRED_FOR_CONFIRMATION") < sql.indexOf("prior_balance:=app_private.marketplace_wallet_total_balance"));
+});
