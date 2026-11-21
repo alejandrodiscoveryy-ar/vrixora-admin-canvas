@@ -22,17 +22,18 @@ test("billeteras: un resumen responsive, importes críticos visibles y desglose 
   assert.match(wallets, /PaginationButton query=\{wallets\}/);
 });
 
-test("recargas: importe y estado visibles, gestión de pendientes dentro del detalle", () => {
+test("recargas: importe y estado visibles, gestión de pendientes accesible sin desplegar", () => {
   assert.equal((topups.match(/filteredTopupRows\.map/g) ?? []).length, 1);
   const summary = topups.slice(0, topups.indexOf("<details"));
   assert.match(summary, /<StatusBadge status=\{item\.status\} \/>/);
   assert.match(summary, /formatAmount\(item\.amount, item\.currency\)/);
+  assert.match(summary, /Gestionar recarga pendiente/);
+  assert.match(summary, /Enviar datos de pago/);
+  assert.match(summary, /canManagePayments && item\.status === "requested"/);
+  assert.match(summary, /setTopup\(\{/);
+  assert.match(summary, /crypto\.randomUUID\(\)/);
   const detail = topups.slice(topups.indexOf("<details"));
-  assert.doesNotMatch(summary, /Gestionar recarga pendiente/);
-  assert.match(detail, /Gestionar recarga pendiente/);
-  assert.match(detail, /canManagePayments && item\.status === "requested"/);
-  assert.match(detail, /setTopup\(\{/);
-  assert.match(detail, /crypto\.randomUUID\(\)/);
+  assert.doesNotMatch(detail, /Gestionar recarga pendiente/);
   assert.match(topups, /Ver detalles de la recarga/);
 });
 

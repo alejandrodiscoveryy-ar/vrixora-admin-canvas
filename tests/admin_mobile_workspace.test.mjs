@@ -170,3 +170,26 @@ test("El servidor impide acreditar transferencias sin referencia aunque Admin es
   assert.match(sql, /prior_balance:=app_private\.marketplace_wallet_total_balance/);
   assert.ok(sql.indexOf("PAYMENT_REFERENCE_REQUIRED_FOR_CONFIRMATION") < sql.indexOf("prior_balance:=app_private.marketplace_wallet_total_balance"));
 });
+
+test("Recargas premium reutiliza sistema grafito aprobado y mantiene acciones críticas accesibles", () => {
+  const recargas = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<PaginationButton query={topups}'));
+  const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const account = source("MarketplaceTopupPaymentDestination.tsx");
+  assert.match(recargas, /marketplace-topup-toolbar/);
+  assert.match(recargas, /premiumHeaderSurface/);
+  assert.match(recargas, /<h2[^>]*>Recargas<\/h2>/);
+  assert.match(recargas, /data-topup-status=\{item\.status\}/);
+  assert.match(recargas, /marketplace-topup-main/);
+  assert.match(recargas, /marketplace-topup-amount/);
+  assert.match(recargas, /marketplace-topup-actions/);
+  assert.match(recargas, /<details className="marketplace-record-details group">/);
+  assert.match(recargas, /href=\{instructionLink\.desktop\}/);
+  assert.match(recargas, /href=\{notificationLink\.desktop\}/);
+  assert.match(recargas, /setReceivedPaymentReference\(item\.reference \?\? ""\)/);
+  assert.match(recargas, /setVerifiedPaymentReceived\(false\)/);
+  assert.match(account, /premiumHeaderSurface/);
+  assert.match(account, /data-topup-account-panel/);
+  assert.match(styles, /\.marketplace-record-workspace\[aria-label="Recargas"\] \{ max-inline-size: min\(100%, 82rem\); \}/);
+  assert.match(styles, /@container \(max-width: 520px\)/);
+  assert.doesNotMatch(recargas, /grid-cols-3 xl:grid-cols-4/);
+});
