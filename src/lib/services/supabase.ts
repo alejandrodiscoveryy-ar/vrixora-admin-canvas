@@ -3141,6 +3141,19 @@ export const supabaseServices: AdminServices = {
       });
       throwIfError(error);
     },
+    async reverseTopup(projectId, topupId, reason, idempotencyKey) {
+      await requireOnline("Anular recarga confirmada");
+      if (reason.trim().length < 8 || reason.trim().length > 1000) {
+        throw new Error("El motivo de anulación debe tener entre 8 y 1000 caracteres.");
+      }
+      const { error } = await getSupabaseClient().rpc("admin_reverse_marketplace_topup", {
+        target_project_id: projectId,
+        target_topup_id: topupId,
+        target_reason: reason.trim(),
+        target_idempotency_key: idempotencyKey,
+      });
+      throwIfError(error);
+    },
     async updateFinancialSettings(projectId, input) {
       await requireOnline("Actualizar configuración financiera");
       const { error } = await getSupabaseClient().rpc("admin_set_marketplace_financial_settings", {
