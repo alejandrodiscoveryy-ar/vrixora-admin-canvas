@@ -221,3 +221,18 @@ test("Billeteras: filtro de estado local no altera saldos ni registros financier
   assert.match(view, /aria-label="Filtrar billeteras"/);
   assert.match(view, /setWalletFilter\(""\)/);
 });
+
+test("Colores y marcas financieras no cambian búsquedas, saldos ni confirmaciones", () => {
+  const wallet = panel.slice(panel.indexOf('<TabsContent value="billeteras"'), panel.indexOf('<TabsContent value="recargas"'));
+  const topup = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
+  for (const balance of ["wallet.availableBalance", "wallet.totalBalance", "wallet.realReservedBalance", "wallet.promotionalReservedBalance"]) {
+    assert.ok(wallet.includes(balance), balance);
+  }
+  assert.match(wallet, /filteredWalletRows\.map/);
+  assert.match(wallet, /setWalletFilter\(value\)/);
+  assert.match(topup, /filteredTopupRows\.map/);
+  assert.match(topup, /setTopupStatus\(value\)/);
+  assert.match(topup, /setVerifiedPaymentReceived\(false\)/);
+  assert.match(topup, /href=\{instructionLink\.desktop\}/);
+  assert.match(topup, /href=\{notificationLink\.desktop\}/);
+});
