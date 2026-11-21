@@ -68,6 +68,7 @@ import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { usePendingDriverVerifications } from "@/hooks/usePendingDriverVerifications";
 import { matchesDriverVerification, matchesPendingDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
+import MarketplaceTopupFinancialPulse from "@/features/admin/MarketplaceTopupFinancialPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
 import { MarketplaceTopupPaymentDestination, useTopupPaymentDestination, topupPaymentInstructionsMessage } from "@/features/admin/MarketplaceTopupPaymentDestination";
@@ -1757,6 +1758,17 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               <ChevronDown className={`h-4 w-4 transition-transform ${showAllPulseMetrics ? "rotate-180" : ""}`} />
             </button>
           </section>
+          <MarketplaceTopupFinancialPulse
+            projectId={projectId}
+            enabled={tab === "resumen" && canPayments}
+            onViewTopups={() => {
+              void navigate({
+                to: "/admin/proyectos/$id/$section",
+                params: { id: projectId, section: "trabajos" },
+                search: { vista: "recargas" },
+              });
+            }}
+          />
           <MarketplaceFleetPulse projectId={projectId} enabled={tab === "resumen"} onOpenDriver={setDriver360Id} />
         </TabsContent>
         <TabsContent value="trabajos" className="mt-3">
