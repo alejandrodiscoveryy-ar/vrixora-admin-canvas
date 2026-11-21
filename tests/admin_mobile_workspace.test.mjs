@@ -194,3 +194,16 @@ test("Recargas premium reutiliza sistema grafito aprobado y mantiene acciones cr
   assert.match(styles, /@container \(max-width: 560px\)/);
   assert.doesNotMatch(recargas, /grid-cols-3 xl:grid-cols-4/);
 });
+
+test("Billeteras premium solo altera presentación y conserva operaciones financieras", () => {
+  const walletView = panel.slice(panel.indexOf('<TabsContent value="billeteras"'), panel.indexOf('<TabsContent value="recargas"'));
+  const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(walletView, /filteredWalletRows\.map\(\(wallet\) =>/);
+  assert.match(walletView, /reserved = Number\(wallet\.realReservedBalance\) \+ Number\(wallet\.promotionalReservedBalance\)/);
+  assert.match(walletView, /labelText="Disponible"/);
+  assert.match(walletView, /labelText="Reservado"/);
+  assert.match(walletView, /labelText="Saldo total"/);
+  assert.match(walletView, /RecordSearch value=\{walletSearch\}/);
+  assert.match(styles, /\.marketplace-record-workspace\[aria-label="Billeteras"\] \{\s*max-inline-size: none;/);
+  assert.match(styles, /@container \(max-width: 420px\)/);
+});
