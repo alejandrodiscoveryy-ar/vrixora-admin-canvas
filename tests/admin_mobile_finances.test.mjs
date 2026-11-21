@@ -114,3 +114,25 @@ test("billeteras premium: ancho completo, saldos alineados y jerarquía compacta
   assert.match(walletBlock, /PaginationButton query=\{wallets\}/);
   assert.match(walletBlock, /<details className="marketplace-record-details group">/);
 });
+
+test("Billeteras filtra depósitos y disponibilidad con las mismas pastillas que Recargas", () => {
+  const walletView = source.slice(source.indexOf('<TabsContent value="billeteras"'), source.indexOf('<TabsContent value="recargas"'));
+  assert.match(source, /const \[walletFilter, setWalletFilter\] = useState/);
+  assert.match(source, /case "deposit_pending": return !wallet\.initialDepositConfirmed/);
+  assert.match(source, /case "deposit_confirmed": return wallet\.initialDepositConfirmed/);
+  assert.match(source, /case "has_available": return Number\(wallet\.availableBalance\) > 0/);
+  assert.match(source, /case "no_available": return Number\(wallet\.availableBalance\) <= 0/);
+  assert.match(source, /recordMatches\(walletSearch, wallet\.driverDisplayName, wallet\.driverPhone\)/);
+  assert.match(walletView, /aria-label="Filtrar billeteras"/);
+  for (const label of ["Todas", "Depósito pendiente", "Depósito OK", "Con disponible", "Sin disponible"]) {
+    assert.ok(walletView.includes(`"${label}"`), label);
+  }
+  assert.match(walletView, /className="marketplace-record-filter min-h-11 sm:min-h-8"/);
+  assert.match(walletView, /aria-pressed=\{walletFilter === value\}/);
+  assert.match(walletView, /onClick=\{\(\) => setWalletFilter\(value\)\}/);
+  assert.match(walletView, /setWalletSearch\(" "\)/.source ? /setWalletSearch\(" "\)/.source : /setWalletSearch/);
+  assert.match(walletView, /setWalletFilter\(""\)/);
+  assert.match(walletView, /No hay billeteras con estos filtros/);
+  assert.match(walletView, /Los filtros se aplican a las billeteras cargadas/);
+  assert.match(walletView, /PaginationButton query=\{wallets\}/);
+});
