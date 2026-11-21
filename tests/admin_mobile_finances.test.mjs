@@ -86,7 +86,7 @@ test("Recargas premium alinea importes y estados en columnas compartidas, con ma
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-actions\s*\{\s*grid-column: 4/);
   assert.match(css, /@container \(max-width: 1160px\)/);
   assert.match(css, /@container \(max-width: 560px\)/);
-  assert.match(recargas, /<WalletCards aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(recargas, /<Banknote aria-hidden="true" className="pointer-events-none absolute/);
   assert.match(account, /data-topup-account-panel/);
   assert.match(account, /<Banknote aria-hidden="true" className="pointer-events-none absolute/);
   assert.match(recargas, /setTopup\(\{/);
@@ -135,4 +135,25 @@ test("Billeteras filtra depósitos y disponibilidad con las mismas pastillas que
   assert.match(walletView, /No hay billeteras con estos filtros/);
   assert.match(walletView, /Los filtros se aplican a las billeteras cargadas/);
   assert.match(walletView, /PaginationButton query=\{wallets\}/);
+});
+
+test("Finanzas premium: marcas de agua visibles y colores semánticos de estados", () => {
+  const wallet = source.slice(source.indexOf('<TabsContent value="billeteras"'), source.indexOf('<TabsContent value="recargas"'));
+  const topup = source.slice(source.indexOf('<TabsContent value="recargas"'), source.indexOf('<TabsContent value="incidencias"'));
+  const account = readFileSync(new URL("../src/features/admin/MarketplaceTopupPaymentDestination.tsx", import.meta.url), "utf8");
+  assert.match(wallet, /<WalletCards aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark"/);
+  assert.match(topup, /<Banknote aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark"/);
+  assert.match(account, /marketplace-finance-watermark-account/);
+  assert.match(wallet, /data-deposit-state=\{wallet\.initialDepositConfirmed \? "confirmed" : "pending"\}/);
+  assert.match(wallet, /data-finance-tone=\{value === "deposit_pending"/);
+  assert.match(topup, /data-finance-tone=\{value === "requested"/);
+  assert.match(css, /\.marketplace-record-filter\[data-finance-tone="warning"\]/);
+  assert.match(css, /\.marketplace-record-filter\[data-finance-tone="success"\]/);
+  assert.match(css, /\.marketplace-record-filter\[data-finance-tone="danger"\]/);
+  assert.match(css, /\.marketplace-wallet-row\[data-deposit-state="confirmed"\]/);
+  assert.match(css, /\.marketplace-topup-row::before \{ inline-size: 4px; \}/);
+  assert.match(css, /\.dark \.marketplace-wallet-toolbar \.marketplace-finance-watermark/);
+  assert.match(css, /@container \(max-width: 600px\)/);
+  assert.doesNotMatch(wallet, /marketplace-finance-watermark[^"]*hidden/);
+  assert.doesNotMatch(topup, /marketplace-finance-watermark[^"]*hidden/);
 });
