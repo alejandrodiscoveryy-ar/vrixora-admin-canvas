@@ -1206,3 +1206,88 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 .marketplace-360-link { color: var(--record-360-ink); }
 .marketplace-360-panel { min-inline-size: 0; }
 .marketplace-360-content { min-inline-size: 0; overflow-wrap: anywhere; }
+
+
+/* Recargas premium: misma familia grafito y densidad de Usuarios app.
+   Contrato local: no afecta Billeteras ni modifica la semántica financiera. */
+.marketplace-record-workspace[aria-label="Recargas"] { max-inline-size: min(100%, 82rem); }
+.marketplace-topup-toolbar { isolation: isolate; }
+.marketplace-topup-row {
+  --topup-state-ink: var(--text-secondary);
+  overflow: visible;
+  padding: 11px 52px 11px 15px;
+}
+.marketplace-topup-row[data-topup-status="requested"] { --topup-state-ink: var(--semantic-warning); }
+.marketplace-topup-row[data-topup-status="confirmed"],
+.marketplace-topup-row[data-topup-status="reconciled"] { --topup-state-ink: var(--semantic-success); }
+.marketplace-topup-row[data-topup-status="rejected"] { --topup-state-ink: var(--semantic-danger); }
+.marketplace-topup-row::before {
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  inline-size: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--topup-state-ink);
+  content: "";
+  pointer-events: none;
+}
+.marketplace-topup-row .marketplace-topup-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.marketplace-topup-row .marketplace-topup-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, .38fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+.marketplace-topup-row .marketplace-topup-amount .marketplace-value-accent {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.marketplace-topup-row .marketplace-topup-status {
+  justify-self: end;
+}
+.marketplace-topup-row .marketplace-topup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+.marketplace-topup-row .marketplace-topup-actions .marketplace-finance-action {
+  margin-block-start: 0;
+}
+.marketplace-topup-row .marketplace-topup-actions a,
+.marketplace-topup-row .marketplace-topup-actions button {
+  white-space: normal;
+  text-align: center;
+}
+.marketplace-topup-row .marketplace-record-details[open] {
+  margin-block-start: 10px;
+}
+.marketplace-topup-row .marketplace-record-detail-grid {
+  padding-block: 12px 4px;
+}
+@container (max-width: 990px) {
+  .marketplace-topup-row .marketplace-topup-main { grid-template-columns: minmax(0, 1fr); }
+  .marketplace-topup-row .marketplace-topup-actions {
+    justify-content: flex-start;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 8px;
+  }
+}
+@container (max-width: 520px) {
+  .marketplace-topup-row .marketplace-topup-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 10px;
+  }
+  .marketplace-topup-row .marketplace-topup-summary > :first-child { grid-column: 1 / -1; }
+  .marketplace-topup-row .marketplace-topup-status { align-self: center; }
+  .marketplace-topup-row .marketplace-topup-actions > * { flex: 1 1 100%; max-inline-size: none; }
+}
