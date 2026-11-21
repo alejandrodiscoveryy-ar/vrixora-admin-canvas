@@ -135,8 +135,9 @@ export function MarketplaceTopupPaymentDestination({
   });
 
   return (
-    <details data-topup-account-panel className={cn("group rounded-[var(--radius-card)] border px-3 py-2.5 shadow-[var(--shadow-xs)]", premiumHeaderSurface)}>
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--border-focus)] [&::-webkit-details-marker]:hidden">
+    <details data-topup-account-panel className={cn("group relative isolate overflow-hidden rounded-[var(--radius-card)] border px-3 py-2.5 shadow-[var(--shadow-xs)]", premiumHeaderSurface)}>
+      <Banknote aria-hidden="true" className="pointer-events-none absolute -bottom-5 right-12 h-20 w-20 text-text-secondary opacity-[0.06] dark:opacity-[0.08] sm:-bottom-7 sm:right-16 sm:h-24 sm:w-24" />
+      <summary className="relative z-10 flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--border-focus)] [&::-webkit-details-marker]:hidden">
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]" aria-hidden="true">
             <Banknote className="h-4 w-4" />
@@ -155,7 +156,7 @@ export function MarketplaceTopupPaymentDestination({
           <ChevronDown aria-hidden="true" className="h-4 w-4 text-text-secondary transition-transform group-open:rotate-180 motion-reduce:transition-none" />
         </span>
       </summary>
-      <div className="mt-2 space-y-3 border-t border-border-default pt-3">
+      <div className="relative z-10 mt-2 space-y-3 border-t border-border-default pt-3">
         <p className="text-xs text-text-secondary">
           Se incluyen en los mensajes de pago a los conductores. Puedes cambiarlos aquí sin modificar la aplicación. El teléfono de la tarjeta y el WhatsApp pueden ser distintos.
         </p>
