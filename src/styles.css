@@ -1347,3 +1347,73 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
     max-inline-size: none;
   }
 }
+
+
+/* Billeteras premium: misma distribución operativa que Recargas.
+   Reglas limitadas al módulo; los valores de saldos y su procedencia no cambian. */
+.marketplace-record-workspace[aria-label="Billeteras"] {
+  max-inline-size: none;
+  inline-size: 100%;
+}
+.marketplace-wallet-toolbar-top {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+@container (min-width: 860px) {
+  .marketplace-wallet-toolbar-top {
+    grid-template-columns: minmax(260px, .72fr) minmax(300px, 1.28fr);
+    column-gap: 16px;
+  }
+}
+.marketplace-wallet-row {
+  padding: 9px 52px 9px 15px;
+}
+.marketplace-wallet-row .marketplace-wallet-summary {
+  display: grid;
+  grid-template-columns: minmax(230px, .88fr) minmax(0, 2.12fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.marketplace-wallet-row .marketplace-wallet-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+.marketplace-wallet-row .marketplace-wallet-metrics > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.marketplace-wallet-row .marketplace-wallet-metrics .marketplace-value-available,
+.marketplace-wallet-row .marketplace-wallet-metrics .marketplace-value-reserved {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.marketplace-wallet-row .marketplace-wallet-metrics > :last-child {
+  font-variant-numeric: tabular-nums;
+}
+.marketplace-wallet-row .marketplace-wallet-metrics > :last-child .font-semibold {
+  font-variant-numeric: tabular-nums;
+}
+@container (max-width: 760px) {
+  .marketplace-wallet-row .marketplace-wallet-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .marketplace-wallet-row .marketplace-wallet-metrics {
+    gap: 8px 12px;
+  }
+}
+@container (max-width: 420px) {
+  .marketplace-wallet-row .marketplace-wallet-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 290px) {
+  .marketplace-wallet-row .marketplace-wallet-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

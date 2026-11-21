@@ -93,3 +93,24 @@ test("Recargas premium alinea importes y estados en columnas compartidas, con ma
   assert.match(recargas, /href=\{instructionLink\.desktop\}/);
   assert.match(recargas, /href=\{notificationLink\.desktop\}/);
 });
+
+test("billeteras premium: ancho completo, saldos alineados y jerarquía compacta", () => {
+  const walletBlock = source.slice(source.indexOf('<TabsContent value="billeteras"'), source.indexOf('<TabsContent value="recargas"'));
+  assert.match(walletBlock, /marketplace-wallet-toolbar/);
+  assert.match(walletBlock, /premiumHeaderSurface/);
+  assert.match(walletBlock, /<h2[^>]*>Billeteras<\/h2>/);
+  assert.match(walletBlock, /<WalletCards aria-hidden="true" className="pointer-events-none absolute/);
+  assert.match(walletBlock, /marketplace-wallet-search/);
+  assert.match(walletBlock, /marketplace-wallet-row/);
+  assert.match(walletBlock, /marketplace-wallet-metrics/);
+  assert.match(css, /\.marketplace-record-workspace\[aria-label="Billeteras"\] \{\s*max-inline-size: none;/);
+  assert.match(css, /\.marketplace-wallet-row \.marketplace-wallet-summary\s*\{[\s\S]*?grid-template-columns: minmax\(230px, \.88fr\) minmax\(0, 2\.12fr\)/);
+  assert.match(css, /\.marketplace-wallet-row \.marketplace-wallet-metrics\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(css, /@container \(max-width: 760px\)/);
+  assert.match(css, /@container \(max-width: 420px\)/);
+  for (const term of ['wallet.availableBalance', 'wallet.totalBalance', 'wallet.initialDepositConfirmed', 'wallet.realBalance', 'wallet.promotionalBalance', 'wallet.realReservedBalance', 'wallet.promotionalReservedBalance']) {
+    assert.ok(walletBlock.includes(term), "Indicador conservado: "+term);
+  }
+  assert.match(walletBlock, /PaginationButton query=\{wallets\}/);
+  assert.match(walletBlock, /<details className="marketplace-record-details group">/);
+});

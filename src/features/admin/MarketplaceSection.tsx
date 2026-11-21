@@ -2458,12 +2458,26 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <>
           <TabsContent value="billeteras" className="mt-3">
             <section aria-label="Billeteras" data-nav-tone="finanzas" className="marketplace-record-workspace min-w-0 space-y-2.5">
-              <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
+              <div className={cn("marketplace-record-toolbar marketplace-wallet-toolbar relative isolate overflow-hidden rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
+                <WalletCards aria-hidden="true" className="pointer-events-none absolute -top-4 right-[35%] hidden h-20 w-20 text-text-secondary opacity-[0.06] dark:opacity-[0.08] lg:block" />
+                <div className="marketplace-wallet-toolbar-top relative grid min-w-0 gap-2.5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]">
+                      <Wallet className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="text-base font-semibold leading-snug text-foreground sm:text-lg">Billeteras</h2>
+                      <p className="text-xs text-text-secondary">Saldos disponibles, reservas y depósitos</p>
+                    </div>
+                  </div>
+                  <div className="marketplace-wallet-search min-w-0">
+                    <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
+                  </div>
+                </div>
+                <div className="relative mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+                  <span aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
                   {walletSearch ? <Button variant="ghost" size="sm" onClick={() => setWalletSearch("")}>Limpiar</Button> : null}
                 </div>
-                <p className="mt-2 text-xs text-text-secondary" aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</p>
               </div>
               {wallets.isError ? <RecordLoadError onRetry={() => void wallets.refetch()} /> : null}
               {wallets.isLoading ? <LoadingState /> : !filteredWalletRows.length ? (
@@ -2472,13 +2486,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <div className="space-y-2">
                   {filteredWalletRows.map((wallet) => {
                     const reserved = Number(wallet.realReservedBalance) + Number(wallet.promotionalReservedBalance);
-                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet">
+                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet">
                       <div className="marketplace-wallet-summary">
                         <RecordIdentity icon={Wallet} name={wallet.driverDisplayName}>
                           <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
                           <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}</span>
                         </RecordIdentity>
-                        <div className="marketplace-record-metrics grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                        <div className="marketplace-record-metrics marketplace-wallet-metrics grid min-w-0">
                           <RecordMetric labelText="Disponible" value={formatAmount(wallet.availableBalance, wallet.currency)} tone="available" />
                           <RecordMetric labelText="Reservado" value={formatAmount(reserved, wallet.currency)} tone="reserved" />
                           <RecordMetric labelText="Saldo total" value={formatAmount(wallet.totalBalance, wallet.currency)} />
