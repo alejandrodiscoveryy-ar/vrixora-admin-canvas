@@ -2621,6 +2621,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
                             <p className="break-words">{paymentMethodLabel(item.method)}</p>
                           </RecordIdentity>
+                          <div className="marketplace-topup-phone min-w-0">
+                            <span className="block text-xs text-text-secondary">Teléfono</span>
+                            <p className="marketplace-topup-detail-value font-semibold text-foreground">{item.driverPhone || "Sin registrar"}</p>
+                          </div>
+                          <div className="marketplace-topup-reference min-w-0">
+                            <span className="block text-xs text-text-secondary">Referencia</span>
+                            <p className={cn("marketplace-topup-detail-value font-semibold", item.reference ? "text-foreground" : "text-text-secondary")}>
+                              {item.reference || (item.method === "transfer" ? "Sin referencia" : "No aplica")}
+                            </p>
+                          </div>
                           <div className="marketplace-topup-amount">
                             <RecordMetric labelText="Importe" value={formatAmount(item.amount, item.currency)} tone="accent" />
                           </div>
@@ -2659,9 +2669,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {item.driverPhone ? <RecordMetric labelText="Teléfono" value={item.driverPhone} /> : null}
                           <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
-                          {item.reference ? <RecordMetric labelText="Referencia" value={item.reference} /> : null}
                           {item.notes ? <RecordMetric labelText="Notas" value={item.notes} /> : null}
                           {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="danger" /> : null}
                           {item.confirmedAt ? <RecordMetric labelText="Confirmada" value={<time dateTime={item.confirmedAt}>{formatDate(item.confirmedAt)}</time>} /> : null}

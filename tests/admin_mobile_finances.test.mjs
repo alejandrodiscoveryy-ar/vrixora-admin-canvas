@@ -74,17 +74,17 @@ test("finanzas: filas compactas y flecha accesible sin barra adicional", () => {
 test("Recargas premium alinea importes y estados en columnas compartidas, con marcas de agua de cabecera", () => {
   const recargas = source.slice(source.indexOf('<TabsContent value="recargas"'), source.indexOf('<TabsContent value="incidencias"'));
   const account = readFileSync(new URL("../src/features/admin/MarketplaceTopupPaymentDestination.tsx", import.meta.url), "utf8");
-  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 136px 112px 398px/);
-  assert.match(css, /@container \(max-width: 1160px\)/);
+  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 135px 165px 128px 112px 398px/);
+  assert.match(css, /@container \(max-width: 1250px\)/);
   assert.match(css, /@container \(min-width: 1000px\)/);
   assert.match(recargas, /marketplace-topup-toolbar-top/);
   assert.match(recargas, /marketplace-topup-search/);
   assert.match(recargas, /marketplace-topup-create/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-summary\s*\{\s*display: contents/);
-  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-amount\s*\{\s*grid-column: 2/);
-  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-status\s*\{\s*grid-column: 3/);
-  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-actions\s*\{\s*grid-column: 4/);
-  assert.match(css, /@container \(max-width: 1160px\)/);
+  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-amount\s*\{\s*grid-column: 4/);
+  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-status\s*\{\s*grid-column: 5/);
+  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-actions\s*\{\s*grid-column: 6/);
+  assert.match(css, /@container \(max-width: 1250px\)/);
   assert.match(css, /@container \(max-width: 560px\)/);
   assert.match(recargas, /<Banknote aria-hidden="true" className="pointer-events-none absolute/);
   assert.match(account, /data-topup-account-panel/);
@@ -156,4 +156,22 @@ test("Finanzas premium: marcas de agua visibles y colores semánticos de estados
   assert.match(css, /@container \(max-width: 600px\)/);
   assert.doesNotMatch(wallet, /marketplace-finance-watermark[^"]*hidden/);
   assert.doesNotMatch(topup, /marketplace-finance-watermark[^"]*hidden/);
+});
+test("Recargas muestra teléfono y referencia en todas las filas sin duplicarlos en el detalle", () => {
+  const summary = topups.slice(0, topups.indexOf('<details className="marketplace-record-details group">'));
+  const detail = topups.slice(topups.indexOf('<details className="marketplace-record-details group">'));
+  assert.match(summary, /className="marketplace-topup-phone min-w-0"/);
+  assert.match(summary, /item\.driverPhone \|\| "Sin registrar"/);
+  assert.match(summary, /className="marketplace-topup-reference min-w-0"/);
+  assert.match(summary, /item\.reference \|\| \(item\.method === "transfer" \? "Sin referencia" : "No aplica"\)/);
+  assert.match(summary, /marketplace-topup-amount/);
+  assert.match(summary, /marketplace-topup-status/);
+  assert.match(summary, /marketplace-topup-actions/);
+  assert.doesNotMatch(detail, /labelText="Teléfono" value=\{item\.driverPhone\}/);
+  assert.doesNotMatch(detail, /labelText="Referencia" value=\{item\.reference\}/);
+  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-phone \{ grid-column: 2; \}/);
+  assert.match(css, /\.marketplace-topup-row \.marketplace-topup-reference \{ grid-column: 3; \}/);
+  assert.match(css, /overflow-wrap: anywhere/);
+  assert.match(css, /@container \(max-width: 900px\)/);
+  assert.match(css, /@container \(max-width: 560px\)/);
 });
