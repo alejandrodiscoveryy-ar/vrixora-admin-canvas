@@ -236,3 +236,16 @@ test("Colores y marcas financieras no cambian búsquedas, saldos ni confirmacion
   assert.match(topup, /href=\{instructionLink\.desktop\}/);
   assert.match(topup, /href=\{notificationLink\.desktop\}/);
 });
+test("Recargas mantiene los datos y acciones financieras mientras muestra teléfono y referencia", () => {
+  const view = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
+  const top = view.slice(0, view.indexOf('<details className="marketplace-record-details group">'));
+  assert.match(top, /item\.driverDisplayName/);
+  assert.match(top, /item\.driverPhone \|\| "Sin registrar"/);
+  assert.match(top, /item\.reference \|\| \(item\.method === "transfer"/);
+  assert.match(top, /<StatusBadge status=\{item\.status\} \/>/);
+  assert.match(top, /formatAmount\(item\.amount, item\.currency\)/);
+  assert.match(top, /Gestionar recarga pendiente/);
+  assert.match(top, /Enviar datos de pago/);
+  assert.match(view, /href=\{notificationLink\.desktop\}/);
+  assert.match(view, /receiptsByTopup\.get\(item\.topupId\)/);
+});
