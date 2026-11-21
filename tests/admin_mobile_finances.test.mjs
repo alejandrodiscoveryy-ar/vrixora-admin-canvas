@@ -130,7 +130,7 @@ test("Billeteras filtra depósitos y disponibilidad con las mismas pastillas que
   assert.match(walletView, /className="marketplace-record-filter min-h-11 sm:min-h-8"/);
   assert.match(walletView, /aria-pressed=\{walletFilter === value\}/);
   assert.match(walletView, /onClick=\{\(\) => setWalletFilter\(value\)\}/);
-  assert.match(walletView, /setWalletSearch\(" "\)/.source ? /setWalletSearch\(" "\)/.source : /setWalletSearch/);
+  assert.match(walletView, /setWalletSearch\(""\)/);
   assert.match(walletView, /setWalletFilter\(""\)/);
   assert.match(walletView, /No hay billeteras con estos filtros/);
   assert.match(walletView, /Los filtros se aplican a las billeteras cargadas/);
