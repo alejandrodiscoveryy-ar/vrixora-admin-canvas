@@ -37,7 +37,7 @@ test("Carencias de carreras, cancelaciones y clientes son fuente de decisiones",
   assert.match(panel, /admin_get_agency_vitality_v1/);
   assert.match(panel, /parseAgencyVitality/);
   assert.match(panel, /rides\.cancelled \/ rides\.requested/);
-  assert.match(panel, /Carreras solicitadas/);
+  assert.match(panel, /Solicitudes · 7 fechas/);
   assert.match(panel, /Completadas/);
   assert.match(panel, /Canceladas/);
   assert.match(panel, /Clientes nuevos/);
