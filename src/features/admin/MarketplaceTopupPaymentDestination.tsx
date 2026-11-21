@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Banknote, Loader2, Save } from "lucide-react";
+import { Banknote, ChevronDown, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { premiumHeaderSurface } from "@/components/admin/density";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -133,17 +135,27 @@ export function MarketplaceTopupPaymentDestination({
   });
 
   return (
-    <details className="rounded-xl border border-border/65 bg-surface-1 px-3 py-2.5">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center gap-2 text-sm font-semibold">
-          <Banknote className="h-4 w-4 shrink-0 text-text-secondary" aria-hidden="true" />
-          Datos para recibir recargas
+    <details data-topup-account-panel className={cn("group rounded-[var(--radius-card)] border px-3 py-2.5 shadow-[var(--shadow-xs)]", premiumHeaderSurface)}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--border-focus)] [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]" aria-hidden="true">
+            <Banknote className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-foreground">Datos para recibir recargas</span>
+            <span className="block text-xs text-text-secondary">Cuenta receptora para transferencias</span>
+          </span>
         </span>
-        <span className="text-xs text-text-secondary">
-          {destination?.cardNumber && destination?.paymentPhone ? "Configurados" : "Sin configurar"}
+        <span className="flex shrink-0 items-center gap-2">
+          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", destination?.cardNumber && destination?.paymentPhone
+            ? "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]"
+            : "border-border-default bg-surface-3 text-text-secondary")}>
+            {isLoading ? "Cargando" : isError ? "No disponible" : destination?.cardNumber && destination?.paymentPhone ? "Configurados" : "Sin configurar"}
+          </span>
+          <ChevronDown aria-hidden="true" className="h-4 w-4 text-text-secondary transition-transform group-open:rotate-180 motion-reduce:transition-none" />
         </span>
       </summary>
-      <div className="space-y-3 border-t border-border/50 pt-3">
+      <div className="mt-2 space-y-3 border-t border-border-default pt-3">
         <p className="text-xs text-text-secondary">
           Se incluyen en los mensajes de pago a los conductores. Puedes cambiarlos aquí sin modificar la aplicación. El teléfono de la tarjeta y el WhatsApp pueden ser distintos.
         </p>
