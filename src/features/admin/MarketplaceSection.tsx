@@ -188,6 +188,11 @@ const errorText = (error: unknown) =>
           "La recarga ya fue procesada o dejó de estar pendiente. Actualiza la lista.",
         IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION:
           "La operación ya fue procesada. Actualiza la lista antes de volver a intentarlo.",
+        TOPUP_ALREADY_REVERSED: "Esta recarga ya fue anulada. Actualiza la lista.",
+        TOPUP_NOT_REVERSIBLE: "La recarga no permite anulación. Actualiza la lista y revisa su estado.",
+        TOPUP_REVERSAL_REAL_BALANCE_RESERVED: "El saldo de esta recarga está reservado y no puede retirarse hasta liberar las reservas.",
+        TOPUP_LEDGER_NOT_FOUND: "No se encontró el movimiento original; no se efectuó ninguna anulación.",
+        PERMISSION_DENIED: "Tu usuario no tiene permisos para corregir pagos.",
       }[error.message] ?? error.message)
     : "No se pudo completar la operación.";
 
@@ -1047,6 +1052,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   } | null>(null);
   const [receivedPaymentReference, setReceivedPaymentReference] = useState("");
   const [verifiedPaymentReceived, setVerifiedPaymentReceived] = useState(false);
+  const [topupReversal, setTopupReversal] = useState<{
+    id: string;
+    driver: string;
+    amount: number;
+    currency: string;
+    documentNumber: string | null;
+    idempotencyKey: string;
+  } | null>(null);
+  const [topupReversalReason, setTopupReversalReason] = useState("");
+  const [topupReversalAcknowledged, setTopupReversalAcknowledged] = useState(false);
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("requested");
   const [walletSearch, setWalletSearch] = useState("");
@@ -1065,6 +1080,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const canCustomers = permissions.includes("customers.view");
   const canPayments = permissions.includes("payments.view");
   const canManagePayments = permissions.includes("payments.manage");
+  const canCorrectPayments = permissions.includes("payments.correct");
   const canSettings = permissions.includes("settings.view");
   const canManageSettings = permissions.includes("settings.manage");
   const canManageMarketplace = permissions.includes("marketplace.manage");
@@ -1186,7 +1202,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     queryKey: ["marketplace-topups", projectId, topupStatus],
     queryFn: ({ pageParam }) =>
       supabaseServices.marketplace.listTopups(projectId, {
-        status: topupStatus || undefined,
+        status: topupStatus === "reversed" ? undefined : topupStatus || undefined,
         limit: PAGE_SIZE,
         cursor: pageParam,
       }),
@@ -1465,6 +1481,39 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     },
   });
 
+  const reverse = useMutation({
+    mutationFn: async () => {
+      if (!canCorrectPayments || !topupReversal || !topupReversalAcknowledged ||
+          topupReversalReason.trim().length < 8 || topupReversalReason.trim().length > 1000) {
+        throw new Error("Confirma la operación e indica un motivo de 8 a 1000 caracteres.");
+      }
+      return supabaseServices.marketplace.reverseTopup(
+        projectId,
+        topupReversal.id,
+        topupReversalReason,
+        topupReversal.idempotencyKey,
+      );
+    },
+    onSuccess: () => {
+      setTopupReversal(null);
+      setTopupReversalReason("");
+      setTopupReversalAcknowledged(false);
+      toast.success("Recarga anulada: crédito compensado y nota de corrección emitida.");
+      void invalidate(
+        "marketplace-topups",
+        "marketplace-wallets",
+        "marketplace-overview",
+        "marketplace-drivers",
+        "marketplace-financial-documents",
+        "marketplace-driver-financial-360",
+      );
+    },
+    onError: (mutationError) => {
+      toast.error(errorText(mutationError));
+      void invalidate("marketplace-topups", "marketplace-wallets", "marketplace-financial-documents");
+    },
+  });
+
   const reject = useMutation({
     mutationFn: () => supabaseServices.marketplace.rejectTopup(projectId, topup!.id, reason),
     onSuccess: () => {
@@ -1657,14 +1706,28 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       default: return true;
     }
   });
-  const filteredTopupRows = topupRows.filter((item) => recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference));
   const receiptsByTopup = useMemo(() => {
     const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
     for (const document of financialDocuments.data ?? []) {
-      if (document.topupId && !byTopup.has(document.topupId)) byTopup.set(document.topupId, document);
+      if (document.documentType === "topup_receipt" && document.topupId) byTopup.set(document.topupId, document);
     }
     return byTopup;
   }, [financialDocuments.data]);
+  const creditNotesByTopup = useMemo(() => {
+    const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
+    for (const document of financialDocuments.data ?? []) {
+      if (document.documentType === "credit_note" && document.topupId) byTopup.set(document.topupId, document);
+    }
+    return byTopup;
+  }, [financialDocuments.data]);
+  const financialDocumentHistoryComplete = financialDocuments.isSuccess && (financialDocuments.data?.length ?? 0) < 200;
+  const filteredTopupRows = topupRows.filter((item) => {
+    if (!recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference)) return false;
+    const reversed = creditNotesByTopup.has(item.topupId);
+    if (topupStatus === "reversed") return reversed;
+    if ((topupStatus === "confirmed" || topupStatus === "reconciled") && reversed) return false;
+    return true;
+  });
   const selectedPaymentMethod = paymentMethods.data?.find((item) => item.code === method);
   const paymentMethodLabel = (code: string) =>
     paymentMethods.data?.find((item) => item.code === code)?.name ?? code;
@@ -2590,7 +2653,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 </div>
                 <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
-                    {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
+                    {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["reversed", "Anuladas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
                       <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" data-finance-tone={value === "requested" ? "warning" : value === "rejected" ? "danger" : value === "confirmed" || value === "reconciled" ? "success" : "neutral"} variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
                     ))}
                   </div>
@@ -2607,7 +2670,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <div className="space-y-2" data-topup-record-list>
                   {filteredTopupRows.map((item) => {
                     const receipt = receiptsByTopup.get(item.topupId);
-                    const canNotifyTopup = ["confirmed", "reconciled", "rejected"].includes(item.status);
+                    const creditNote = creditNotesByTopup.get(item.topupId);
+                    const isTopupReversed = Boolean(creditNote);
+                    const canNotifyTopup = !isTopupReversed && ["confirmed", "reconciled", "rejected"].includes(item.status);
                     const account = paymentDestination.data;
                     const instructionLink = canManagePayments && item.status === "requested" && item.method === "transfer" &&
                       account?.cardNumber && account.paymentPhone
@@ -2622,7 +2687,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           topupWhatsAppMessage(item, paymentMethodLabel(item.method), receipt?.documentNumber),
                         )
                       : null;
-                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={item.status}>
+                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status}>
                       <div className="marketplace-topup-main">
                         <div className="marketplace-topup-summary">
                           <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
@@ -2643,7 +2708,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             <RecordMetric labelText="Importe" value={formatAmount(item.amount, item.currency)} tone="accent" />
                           </div>
                           <div className="marketplace-topup-status">
-                            <StatusBadge status={item.status} />
+                            {isTopupReversed ? (
+                              <span className="inline-flex rounded-full border border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--semantic-danger-foreground)]">
+                                Anulada
+                              </span>
+                            ) : <StatusBadge status={item.status} />}
                           </div>
                         </div>
                         {canManagePayments && item.status === "requested" ? (
@@ -2670,6 +2739,26 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             }}>Gestionar recarga pendiente</Button>
                           </div>
                         ) : null}
+                        {canCorrectPayments && canManagePayments && ["confirmed", "reconciled"].includes(item.status) && !isTopupReversed && financialDocumentHistoryComplete ? (
+                          <div className="marketplace-topup-actions">
+                            <Button type="button" variant="outline" size="sm"
+                              className="marketplace-finance-action min-h-11 border-[var(--semantic-danger-border)] text-[var(--semantic-danger-foreground)]"
+                              onClick={() => {
+                                setTopupReversal({
+                                  id: item.topupId,
+                                  driver: item.driverDisplayName,
+                                  amount: item.amount,
+                                  currency: item.currency,
+                                  documentNumber: receipt?.documentNumber ?? null,
+                                  idempotencyKey: crypto.randomUUID(),
+                                });
+                                setTopupReversalReason("");
+                                setTopupReversalAcknowledged(false);
+                              }}>
+                              Anular recarga
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
                       <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
@@ -2682,7 +2771,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="danger" /> : null}
                           {item.confirmedAt ? <RecordMetric labelText="Confirmada" value={<time dateTime={item.confirmedAt}>{formatDate(item.confirmedAt)}</time>} /> : null}
                           {item.rejectedAt ? <RecordMetric labelText="Rechazada" value={<time dateTime={item.rejectedAt}>{formatDate(item.rejectedAt)}</time>} /> : null}
-                          {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante" value={receipt.documentNumber} tone="available" /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
+                          {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante original" value={receipt.documentNumber} tone={isTopupReversed ? undefined : "available"} /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
+                          {creditNote ? <div className="min-w-0"><RecordMetric labelText="Nota de corrección" value={creditNote.documentNumber} tone="danger" /><p className="mt-0.5 text-xs text-text-secondary">Anulada: {formatDate(creditNote.issuedAt)}</p><p className="mt-1 text-xs text-text-secondary">El crédito de esta recarga se compensó; el comprobante original permanece por auditoría.</p></div> : null}
                         </div>
                         {notificationLink ? (
                           <div className="mt-2 flex justify-end">
@@ -3329,6 +3419,74 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             )}
             Registrar recarga
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(topupReversal)}
+        onOpenChange={(open) => {
+          if (!open && !reverse.isPending) {
+            setTopupReversal(null);
+            setTopupReversalReason("");
+            setTopupReversalAcknowledged(false);
+          }
+        }}
+      >
+        <DialogContent className="admin-graphite-dialog">
+          <DialogHeader>
+            <DialogTitle>Anular recarga confirmada</DialogTitle>
+            <DialogDescription>
+              Esta operación compensa el crédito acreditado y emite una nota de corrección.
+              No elimina el historial ni crea una solicitud pendiente.
+            </DialogDescription>
+          </DialogHeader>
+          {topupReversal ? (
+            <div className="space-y-3">
+              <div className={cn("rounded-xl border border-[var(--semantic-danger-border)] p-3", premiumHeaderSurface)}>
+                <p className="text-sm font-semibold text-foreground">{topupReversal.driver}</p>
+                <p className="mt-1 text-lg font-bold tabular-nums text-[var(--semantic-danger-foreground)]">{formatAmount(topupReversal.amount, topupReversal.currency)}</p>
+                <p className="mt-1 text-xs text-text-secondary">
+                  {topupReversal.documentNumber ? `Comprobante original: ${topupReversal.documentNumber}` : "El comprobante original se conservará."}
+                </p>
+                <p className="mt-1 text-xs text-text-secondary">
+                  Si el saldo ya fue utilizado o está reservado, el sistema bloqueará la anulación.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="topup-reversal-reason">Motivo de la anulación (obligatorio)</Label>
+                <Textarea
+                  id="topup-reversal-reason"
+                  value={topupReversalReason}
+                  onChange={(event) => setTopupReversalReason(event.target.value)}
+                  placeholder="Ej.: solicitud creada por error y confirmada sin recibir pago real"
+                  maxLength={1000}
+                  disabled={reverse.isPending}
+                />
+                <p className="text-xs text-text-secondary">Entre 8 y 1000 caracteres. Quedará registrado en la nota de corrección.</p>
+              </div>
+              <label className="flex cursor-pointer items-start gap-2 text-sm text-foreground">
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary"
+                  checked={topupReversalAcknowledged}
+                  disabled={reverse.isPending}
+                  onChange={(event) => setTopupReversalAcknowledged(event.target.checked)}
+                />
+                <span>Confirmo que esta recarga debe anularse y que el saldo acreditado debe retirarse.</span>
+              </label>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button type="button" variant="outline" disabled={reverse.isPending} onClick={() => {
+                  setTopupReversal(null);
+                  setTopupReversalReason("");
+                  setTopupReversalAcknowledged(false);
+                }}>Cancelar</Button>
+                <Button type="button" variant="destructive"
+                  disabled={reverse.isPending || !topupReversalAcknowledged || topupReversalReason.trim().length < 8 || topupReversalReason.trim().length > 1000}
+                  onClick={() => reverse.mutate()}>
+                  {reverse.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Anular y corregir saldo
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
 

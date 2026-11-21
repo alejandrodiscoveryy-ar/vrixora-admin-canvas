@@ -178,7 +178,7 @@ test("Recargas premium reutiliza sistema grafito aprobado y mantiene acciones cr
   assert.match(recargas, /marketplace-topup-toolbar/);
   assert.match(recargas, /premiumHeaderSurface/);
   assert.match(recargas, /<h2[^>]*>Recargas<\/h2>/);
-  assert.match(recargas, /data-topup-status=\{item\.status\}/);
+  assert.match(recargas, /data-topup-status=\{isTopupReversed \? "reversed" : item\.status\}/);
   assert.match(recargas, /marketplace-topup-main/);
   assert.match(recargas, /marketplace-topup-amount/);
   assert.match(recargas, /marketplace-topup-actions/);
