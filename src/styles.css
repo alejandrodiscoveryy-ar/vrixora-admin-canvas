@@ -1417,3 +1417,99 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Finanzas premium — marcas de agua y semáforo: tokens de marca existentes.
+   La profundidad se concentra en cabeceras, no se repite por cada registro. */
+.marketplace-wallet-toolbar,
+.marketplace-topup-toolbar,
+[data-topup-account-panel] {
+  box-shadow: var(--shadow-xs), inset 0 1px 0 color-mix(in oklab, var(--text-secondary) 9%, transparent);
+}
+.marketplace-wallet-toolbar .marketplace-finance-watermark,
+.marketplace-topup-toolbar .marketplace-finance-watermark,
+[data-topup-account-panel] > .marketplace-finance-watermark {
+  position: absolute;
+  z-index: 0;
+  inset-block-start: -26px;
+  inset-inline-end: clamp(12px, 8%, 120px);
+  width: clamp(92px, 12cqi, 164px);
+  height: clamp(92px, 12cqi, 164px);
+  color: color-mix(in oklab, var(--nav-accent, var(--module-pagos)) 66%, var(--text-secondary) 34%);
+  opacity: .11;
+  stroke-width: 1.8;
+  pointer-events: none;
+  user-select: none;
+}
+.dark .marketplace-wallet-toolbar .marketplace-finance-watermark,
+.dark .marketplace-topup-toolbar .marketplace-finance-watermark,
+.dark [data-topup-account-panel] > .marketplace-finance-watermark {
+  opacity: .15;
+}
+[data-topup-account-panel] > .marketplace-finance-watermark {
+  inset-block-start: -21px;
+  inset-inline-end: 8%;
+  width: 120px;
+  height: 120px;
+}
+.marketplace-wallet-toolbar > :not(.marketplace-finance-watermark),
+.marketplace-topup-toolbar > :not(.marketplace-finance-watermark),
+[data-topup-account-panel] > :not(.marketplace-finance-watermark) {
+  position: relative;
+  z-index: 1;
+}
+/* Los filtros tienen los mismos colores que las situaciones que representan. */
+.marketplace-record-filter[data-finance-tone="neutral"] {
+  --finance-filter-ink: var(--nav-accent, var(--module-pagos));
+}
+.marketplace-record-filter[data-finance-tone="success"] {
+  --finance-filter-ink: var(--semantic-success);
+}
+.marketplace-record-filter[data-finance-tone="warning"] {
+  --finance-filter-ink: var(--semantic-warning);
+}
+.marketplace-record-filter[data-finance-tone="danger"] {
+  --finance-filter-ink: var(--semantic-danger);
+}
+.marketplace-record-filter[data-finance-tone]:not([aria-pressed="true"]) {
+  color: color-mix(in oklab, var(--finance-filter-ink) 64%, var(--text-primary) 36%);
+}
+.marketplace-record-filter[data-finance-tone][aria-pressed="true"] {
+  border-color: color-mix(in oklab, var(--finance-filter-ink) 42%, var(--border-default));
+  background-color: color-mix(in oklab, var(--finance-filter-ink) 17%, var(--surface-2));
+  color: color-mix(in oklab, var(--finance-filter-ink) 72%, var(--text-primary) 28%);
+}
+/* Semáforo de depósitos: visible sin depender únicamente del color. */
+.marketplace-wallet-row {
+  --wallet-deposit-ink: var(--semantic-warning);
+  --record-accent: var(--wallet-deposit-ink);
+}
+.marketplace-wallet-row[data-deposit-state="confirmed"] {
+  --wallet-deposit-ink: var(--semantic-success);
+}
+.marketplace-wallet-row::before {
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  inline-size: 4px;
+  border-radius: 0 4px 4px 0;
+  background-color: var(--wallet-deposit-ink);
+  content: "";
+  pointer-events: none;
+}
+.marketplace-topup-row {
+  --record-accent: var(--topup-state-ink);
+}
+.marketplace-topup-row::before { inline-size: 4px; }
+@container (max-width: 600px) {
+  .marketplace-wallet-toolbar .marketplace-finance-watermark,
+  .marketplace-topup-toolbar .marketplace-finance-watermark {
+    inset-block-start: -12px;
+    inset-inline-end: 7px;
+    width: 92px;
+    height: 92px;
+    opacity: .08;
+  }
+  .dark .marketplace-wallet-toolbar .marketplace-finance-watermark,
+  .dark .marketplace-topup-toolbar .marketplace-finance-watermark { opacity: .11; }
+}
