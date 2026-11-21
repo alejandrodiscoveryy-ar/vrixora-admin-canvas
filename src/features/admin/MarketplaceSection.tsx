@@ -1050,6 +1050,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("");
   const [walletSearch, setWalletSearch] = useState("");
+  const [walletFilter, setWalletFilter] = useState<"" | "deposit_pending" | "deposit_confirmed" | "has_available" | "no_available">("");
   const [topupSearch, setTopupSearch] = useState("");
   const [topupDriver, setTopupDriver] = useState("");
   const [amount, setAmount] = useState("");
@@ -1636,7 +1637,18 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const customerRows = rows(customers);
   const walletRows = rows(wallets);
   const topupRows = rows(topups);
-  const filteredWalletRows = walletRows.filter((wallet) => recordMatches(walletSearch, wallet.driverDisplayName, wallet.driverPhone));
+  // Los filtros de Billeteras son solo locales sobre los registros cargados.
+  // Un saldo disponible de 0 no significa necesariamente saldo total de 0 (puede estar reservado).
+  const filteredWalletRows = walletRows.filter((wallet) => {
+    if (!recordMatches(walletSearch, wallet.driverDisplayName, wallet.driverPhone)) return false;
+    switch (walletFilter) {
+      case "deposit_pending": return !wallet.initialDepositConfirmed;
+      case "deposit_confirmed": return wallet.initialDepositConfirmed;
+      case "has_available": return Number(wallet.availableBalance) > 0;
+      case "no_available": return Number(wallet.availableBalance) <= 0;
+      default: return true;
+    }
+  });
   const filteredTopupRows = topupRows.filter((item) => recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference));
   const receiptsByTopup = useMemo(() => {
     const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
@@ -2474,14 +2486,36 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
                   </div>
                 </div>
-                <div className="relative mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
-                  <span aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
-                  {walletSearch ? <Button variant="ghost" size="sm" onClick={() => setWalletSearch("")}>Limpiar</Button> : null}
+                <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar billeteras">
+                    {([
+                      ["", "Todas"],
+                      ["deposit_pending", "Depósito pendiente"],
+                      ["deposit_confirmed", "Depósito OK"],
+                      ["has_available", "Con disponible"],
+                      ["no_available", "Sin disponible"],
+                    ] as const).map(([value, name]) => (
+                      <Button
+                        key={value || "all"}
+                        size="sm"
+                        className="marketplace-record-filter min-h-11 sm:min-h-8"
+                        variant={walletFilter === value ? "default" : "ghost"}
+                        aria-pressed={walletFilter === value}
+                        onClick={() => setWalletFilter(value)}
+                      >
+                        {name}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-text-secondary">
+                    <span aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
+                    {walletSearch || walletFilter ? <Button variant="ghost" size="sm" onClick={() => { setWalletSearch(""); setWalletFilter(""); }}>Limpiar filtros</Button> : null}
+                  </div>
                 </div>
               </div>
               {wallets.isError ? <RecordLoadError onRetry={() => void wallets.refetch()} /> : null}
               {wallets.isLoading ? <LoadingState /> : !filteredWalletRows.length ? (
-                !wallets.isError ? <EmptyMarketplaceState appearance="premium" title={walletSearch ? "Sin coincidencias en billeteras cargadas" : "No hay billeteras"} description={walletSearch ? "Prueba otro nombre o teléfono; puedes cargar más registros." : "No existen billeteras disponibles para mostrar."} icon={Wallet} /> : null
+                !wallets.isError ? <EmptyMarketplaceState appearance="premium" title={walletSearch || walletFilter ? "No hay billeteras con estos filtros" : "No hay billeteras"} description={walletSearch || walletFilter ? "Los filtros se aplican a las billeteras cargadas. Puedes cargar más registros o limpiar los filtros." : "No existen billeteras disponibles para mostrar."} icon={Wallet} /> : null
               ) : (
                 <div className="space-y-2">
                   {filteredWalletRows.map((wallet) => {
