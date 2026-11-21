@@ -92,3 +92,27 @@ test("Las recargas resueltas ofrecen WhatsApp con datos reales y envío manual",
   assert.match(panel, /formatCustomerDateTime\(handledAt\)/);
   assert.doesNotMatch(topups, /navigator\.share\(/);
 });
+
+test("Billeteras permite configurar cuenta receptora independiente de WhatsApp", () => {
+  const payments = readFileSync(new URL("../src/features/admin/MarketplaceTopupPaymentDestination.tsx", import.meta.url), "utf8");
+  assert.match(panel, /<MarketplaceTopupPaymentDestination/);
+  assert.match(panel, /canManagePayments\s*\?\s*\(/);
+  assert.match(payments, /admin_get_marketplace_topup_payment_destination/);
+  assert.match(payments, /admin_set_marketplace_topup_payment_destination/);
+  for (const field of ["topup-destination-card", "topup-destination-phone", "topup-destination-whatsapp"]) {
+    assert.ok(payments.includes(field), "Falta el campo: " + field);
+  }
+  assert.match(payments, /paymentPhone: normalizedPaymentPhone/);
+  assert.match(payments, /whatsappPhone: normalizedWhatsappPhone/);
+  assert.match(payments, /cardValid && paymentPhoneValid && whatsappPhoneValid && pairComplete/);
+  assert.match(payments, /tu billetera se acreditará únicamente cuando confirmemos la recepción del dinero/i);
+});
+
+test("Recargas pendientes de transferencia envían datos guardados a WhatsApp Desktop", () => {
+  const topups = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
+  assert.match(topups, /item\.status === "requested" && item\.method === "transfer"/);
+  assert.match(topups, /topupPaymentInstructionsMessage\(item\.driverDisplayName/);
+  assert.match(topups, /href=\{instructionLink\.desktop\}/);
+  assert.match(topups, /Enviar datos de pago/);
+  assert.match(topups, /Configura la tarjeta y el teléfono en Billeteras/);
+});
