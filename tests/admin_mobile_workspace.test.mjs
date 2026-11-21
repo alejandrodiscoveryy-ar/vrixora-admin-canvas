@@ -207,3 +207,17 @@ test("Billeteras premium solo altera presentación y conserva operaciones financ
   assert.match(styles, /\.marketplace-record-workspace\[aria-label="Billeteras"\] \{\s*max-inline-size: none;/);
   assert.match(styles, /@container \(max-width: 420px\)/);
 });
+
+test("Billeteras: filtro de estado local no altera saldos ni registros financieros", () => {
+  const view = panel.slice(panel.indexOf('<TabsContent value="billeteras"'), panel.indexOf('<TabsContent value="recargas"'));
+  assert.match(panel, /const filteredWalletRows = walletRows\.filter/);
+  assert.match(panel, /switch \(walletFilter\)/);
+  assert.match(view, /filteredWalletRows\.map\(\(wallet\) =>/);
+  assert.match(view, /wallet\.realReservedBalance/);
+  assert.match(view, /wallet\.promotionalReservedBalance/);
+  assert.match(view, /wallet\.totalBalance/);
+  assert.match(view, /wallet\.availableBalance/);
+  assert.match(view, /PaginationButton query=\{wallets\}/);
+  assert.match(view, /aria-label="Filtrar billeteras"/);
+  assert.match(view, /setWalletFilter\(""\)/);
+});
