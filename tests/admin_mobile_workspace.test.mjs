@@ -160,3 +160,13 @@ test("La referencia verificada se conserva en el documento y en el historial de 
   assert.match(sql, /PAYMENT_REFERENCE_ALREADY_RECORDED/);
   assert.match(sql, /revoke all on app_private\.marketplace_topup_received_references from public, anon, authenticated/);
 });
+
+test("El servidor impide acreditar transferencias sin referencia aunque Admin esté desactualizada", () => {
+  const sql = readFileSync(new URL("../supabase/migrations/20261121120912_marketplace_topup_confirm_requires_reference.sql", import.meta.url), "utf8");
+  assert.match(sql, /topup_record\.method='transfer'/);
+  assert.match(sql, /topup_record\.reference/);
+  assert.match(sql, /marketplace_topup_received_references/);
+  assert.match(sql, /PAYMENT_REFERENCE_REQUIRED_FOR_CONFIRMATION/);
+  assert.match(sql, /prior_balance:=app_private\.marketplace_wallet_total_balance/);
+  assert.ok(sql.indexOf("PAYMENT_REFERENCE_REQUIRED_FOR_CONFIRMATION") < sql.indexOf("prior_balance:=app_private.marketplace_wallet_total_balance"));
+});
