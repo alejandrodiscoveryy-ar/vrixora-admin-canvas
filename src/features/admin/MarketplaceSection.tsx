@@ -70,6 +70,7 @@ import { matchesDriverVerification, matchesPendingDriverVerification } from "@/f
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
+import { MarketplaceTopupPaymentDestination, useTopupPaymentDestination, topupPaymentInstructionsMessage } from "@/features/admin/MarketplaceTopupPaymentDestination";
 
 
 
@@ -1064,6 +1065,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const canManageSettings = permissions.includes("settings.manage");
   const canManageMarketplace = permissions.includes("marketplace.manage");
   const canFinishAdmin = canManageMarketplace && canManagePayments;
+  const paymentDestination = useTopupPaymentDestination(projectId, canManagePayments && (tab === "billeteras" || tab === "recargas"));
 
   const queryClient = useQueryClient();
 
@@ -2449,6 +2451,15 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <>
           <TabsContent value="billeteras" className="mt-3">
             <section aria-label="Billeteras" data-nav-tone="finanzas" className="marketplace-record-workspace min-w-0 space-y-2.5">
+              {canManagePayments ? (
+                <MarketplaceTopupPaymentDestination
+                  projectId={projectId}
+                  destination={paymentDestination.data}
+                  isLoading={paymentDestination.isLoading}
+                  isError={paymentDestination.isError}
+                  onRetry={() => void paymentDestination.refetch()}
+                />
+              ) : null}
               <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
@@ -2521,6 +2532,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   {filteredTopupRows.map((item) => {
                     const receipt = receiptsByTopup.get(item.topupId);
                     const canNotifyTopup = ["confirmed", "reconciled", "rejected"].includes(item.status);
+                    const account = paymentDestination.data;
+                    const instructionLink = canManagePayments && item.status === "requested" && item.method === "transfer" &&
+                      account?.cardNumber && account.paymentPhone
+                      ? driverWhatsAppLinks(
+                          item.driverPhone,
+                          topupPaymentInstructionsMessage(item.driverDisplayName, formatAmount(item.amount, item.currency), account),
+                        )
+                      : null;
                     const notificationLink = canNotifyTopup
                       ? driverWhatsAppLinks(
                           item.driverPhone,
@@ -2572,6 +2591,21 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               </a>
                             </Button>
                           </div>
+                        ) : null}
+                        {canManagePayments && item.status === "requested" && item.method === "transfer" ? (
+                          instructionLink ? (
+                            <div className="mt-2 flex justify-end">
+                              <Button asChild type="button" size="sm" variant="outline" className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]">
+                                <a href={instructionLink.desktop} aria-label={`Enviar por WhatsApp los datos de recarga a ${item.driverDisplayName}`}>
+                                  <Phone aria-hidden="true" className="mr-2 h-4 w-4" />Enviar datos de pago
+                                </a>
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-xs text-text-secondary">
+                              {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono en Billeteras para enviar instrucciones."}
+                            </p>
+                          )
                         ) : null}
                         {canManagePayments && item.status === "requested" ? (
                           <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
