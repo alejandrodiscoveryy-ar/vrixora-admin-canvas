@@ -74,3 +74,16 @@ test("Flota, radar, atención y configuración usan estructuras móviles compact
   assert.match(settings, /canManageSettings && canManageMarketplace/);
   assert.doesNotMatch(settings, /sm:p-2\.5-\[/);
 });
+
+test("Las recargas resueltas ofrecen WhatsApp con datos reales y envío manual", () => {
+  const topups = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
+  assert.match(topups, /\["confirmed", "reconciled", "rejected"\]\.includes\(item\.status\)/);
+  assert.match(topups, /driverWhatsAppLinks\(\s*item\.driverPhone,\s*topupWhatsAppMessage\(item, paymentMethodLabel\(item\.method\), receipt\?\.documentNumber\)/);
+  assert.match(topups, /href=\{notificationLink\.web\}/);
+  assert.match(topups, /Notificar por WhatsApp/);
+  assert.match(topups, /target="_blank"/);
+  assert.match(panel, /item\.rejectionReason \? \[`Motivo: \$\{item\.rejectionReason\}`\]/);
+  assert.match(panel, /receiptNumber \? \[`Comprobante: \$\{receiptNumber\}`\]/);
+  assert.match(panel, /formatCustomerDateTime\(handledAt\)/);
+  assert.doesNotMatch(topups, /navigator\.share\(/);
+});
