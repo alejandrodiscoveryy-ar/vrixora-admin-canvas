@@ -2516,12 +2516,22 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   onRetry={() => void paymentDestination.refetch()}
                 />
               ) : null}
-              <div className={cn("marketplace-record-toolbar rounded-xl border p-2.5", premiumSurface)}>
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <RecordSearch value={topupSearch} onChange={setTopupSearch} placeholder="Buscar conductor, teléfono o referencia" labelText="Buscar recargas cargadas" />
-                  {canManagePayments ? <Button className="min-h-11" onClick={() => { setError(null); setNewTopup(true); }}><Plus className="mr-2 h-4 w-4" />Registrar recarga</Button> : null}
+              <div className={cn("marketplace-record-toolbar marketplace-topup-toolbar relative overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumHeaderSurface)}>
+                <Banknote aria-hidden="true" className="pointer-events-none absolute -right-5 -top-7 h-24 w-24 text-text-secondary opacity-[0.06] sm:h-28 sm:w-28" />
+                <div className="relative flex min-w-0 flex-wrap items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]"><Banknote className="h-5 w-5" /></span>
+                    <div className="min-w-0">
+                      <h2 className="text-base font-semibold leading-snug text-foreground sm:text-lg">Recargas</h2>
+                      <p className="text-xs text-text-secondary">Solicitudes, verificaciones y comprobantes</p>
+                    </div>
+                  </div>
+                  {canManagePayments ? <Button className="min-h-11 shrink-0" onClick={() => { setError(null); setNewTopup(true); }}><Plus className="mr-2 h-4 w-4" />Registrar recarga</Button> : null}
                 </div>
-                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
+                <div className="relative mt-3 flex min-w-0">
+                  <RecordSearch value={topupSearch} onChange={setTopupSearch} placeholder="Buscar conductor, teléfono o referencia" labelText="Buscar recargas cargadas" />
+                </div>
+                <div className="relative mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
                   {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
                     <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
                   ))}
@@ -2535,7 +2545,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               {topups.isLoading ? <LoadingState /> : !filteredTopupRows.length ? (
                 !topups.isError ? <EmptyMarketplaceState appearance="premium" title={topupSearch || topupStatus ? "No hay recargas con estos filtros" : "No hay recargas"} description={topupSearch ? "La búsqueda se aplica a los registros cargados. Puedes cargar más." : "Cuando se registre una recarga aparecerá aquí."} icon={Banknote} /> : null
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2" data-topup-record-list>
                   {filteredTopupRows.map((item) => {
                     const receipt = receiptsByTopup.get(item.topupId);
                     const canNotifyTopup = ["confirmed", "reconciled", "rejected"].includes(item.status);
@@ -2553,21 +2563,48 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           topupWhatsAppMessage(item, paymentMethodLabel(item.method), receipt?.documentNumber),
                         )
                       : null;
-                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row", premiumSurface, "shadow-none")} data-marketplace-record="topup">
-                      <div className="marketplace-topup-summary">
-                        <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
-                          <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
-                          <p className="break-words">{paymentMethodLabel(item.method)}</p>
-                        </RecordIdentity>
-                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
-                          <RecordMetric labelText="Importe" value={formatAmount(item.amount, item.currency)} tone="accent" />
-                          <StatusBadge status={item.status} />
+                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={item.status}>
+                      <div className="marketplace-topup-main">
+                        <div className="marketplace-topup-summary">
+                          <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
+                            <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
+                            <p className="break-words">{paymentMethodLabel(item.method)}</p>
+                          </RecordIdentity>
+                          <div className="marketplace-topup-amount">
+                            <RecordMetric labelText="Importe" value={formatAmount(item.amount, item.currency)} tone="accent" />
+                          </div>
+                          <div className="marketplace-topup-status">
+                            <StatusBadge status={item.status} />
+                          </div>
                         </div>
-
+                        {canManagePayments && item.status === "requested" ? (
+                          <div className="marketplace-topup-actions">
+                            {item.method === "transfer" && (
+                              instructionLink ? (
+                                <Button asChild type="button" size="sm" variant="outline" className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]">
+                                  <a href={instructionLink.desktop} aria-label={`Enviar por WhatsApp los datos de recarga a ${item.driverDisplayName}`}>
+                                    <Phone aria-hidden="true" className="mr-2 h-4 w-4" />Enviar datos de pago
+                                  </a>
+                                </Button>
+                              ) : (
+                                <p className="max-w-56 text-xs leading-snug text-text-secondary">
+                                  {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas, para enviar instrucciones."}
+                                </p>
+                              )
+                            )}
+                            <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
+                              setError(null);
+                              setTopup({ id: item.topupId, driver: item.driverDisplayName, method: item.method, confirmationKey: crypto.randomUUID() });
+                              setReceivedPaymentReference(item.reference ?? "");
+                              setVerifiedPaymentReceived(false);
+                              setReason("");
+                            }}>Gestionar recarga pendiente</Button>
+                          </div>
+                        ) : null}
                       </div>
                       <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-                          <span className="sr-only">Ver detalles de la recarga</span>
+                          <span className="sr-only">Ver detalles de la recarga de {item.driverDisplayName}</span>
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -2598,30 +2635,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               </a>
                             </Button>
                           </div>
-                        ) : null}
-                        {canManagePayments && item.status === "requested" && item.method === "transfer" ? (
-                          instructionLink ? (
-                            <div className="mt-2 flex justify-end">
-                              <Button asChild type="button" size="sm" variant="outline" className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]">
-                                <a href={instructionLink.desktop} aria-label={`Enviar por WhatsApp los datos de recarga a ${item.driverDisplayName}`}>
-                                  <Phone aria-hidden="true" className="mr-2 h-4 w-4" />Enviar datos de pago
-                                </a>
-                              </Button>
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-xs text-text-secondary">
-                              {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas, para enviar instrucciones."}
-                            </p>
-                          )
-                        ) : null}
-                        {canManagePayments && item.status === "requested" ? (
-                          <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
-                            setError(null);
-                            setTopup({ id: item.topupId, driver: item.driverDisplayName, method: item.method, confirmationKey: crypto.randomUUID() });
-                            setReceivedPaymentReference(item.reference ?? "");
-                            setVerifiedPaymentReceived(false);
-                            setReason("");
-                          }}>Gestionar recarga pendiente</Button>
                         ) : null}
                       </details>
                     </article>;
