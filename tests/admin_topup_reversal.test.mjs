@@ -47,3 +47,20 @@ test("Las recargas anuladas no se notifican como confirmadas y conservan comprob
   assert.match(admin, /document\.documentType === "topup_receipt"/);
   assert.match(admin, /document\.documentType === "credit_note"/);
 });
+
+test("La anulación peligrosa queda fuera de la fila y detrás de dos niveles de detalle", () => {
+  const firstRow = topups.slice(topups.indexOf('return <article key={item.topupId}'));
+  const main = firstRow.slice(firstRow.indexOf('<div className="marketplace-topup-main">'), firstRow.indexOf('<details className="marketplace-record-details group">'));
+  const expanded = firstRow.slice(firstRow.indexOf('<details className="marketplace-record-details group">'), firstRow.indexOf('</article>'));
+  const correctionStart = expanded.indexOf('<details className="marketplace-topup-correction');
+  const buttonAt = expanded.indexOf('Anular recarga');
+  assert.doesNotMatch(main, /Anular recarga|setTopupReversal\(\{/);
+  assert.ok(correctionStart > -1, "el control se muestra solo tras abrir el detalle");
+  assert.ok(buttonAt > correctionStart, "el botón está dentro de la sección administrativa");
+  assert.match(expanded, /Correcciones administrativas/);
+  assert.match(expanded, /Anulación excepcional/);
+  assert.match(expanded, /border-t border-border-default pt-3/);
+  assert.match(expanded, /canCorrectPayments && canManagePayments/);
+  assert.match(expanded, /\["confirmed", "reconciled"\]\.includes\(item\.status\) && !isTopupReversed/);
+  assert.match(expanded, /min-h-11 w-full.*sm:w-auto/);
+});
