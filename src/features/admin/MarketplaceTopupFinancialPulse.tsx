@@ -88,7 +88,7 @@ async function loadTopupFinancialPulse(projectId: string): Promise<FinancialPuls
     });
     all.push(...batch.items);
     if (!batch.nextCursor) return summarizeTopups(all);
-    if (batch.nextCursor.at === cursor?.at && batch.nextCursor.id === cursor.id) {
+    if (cursor && batch.nextCursor.at === cursor.at && batch.nextCursor.id === cursor.id) {
       throw new Error("No fue posible completar la paginación financiera.");
     }
     cursor = batch.nextCursor;
