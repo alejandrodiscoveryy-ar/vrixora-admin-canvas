@@ -84,7 +84,7 @@ test("Recargas premium alinea importes y estados en columnas compartidas, con ma
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-amount\s*\{\s*grid-column: 2/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-status\s*\{\s*grid-column: 3/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-actions\s*\{\s*grid-column: 4/);
-  assert.match(css, /@container \(max-width: 920px\)/);
+  assert.match(css, /@container \(max-width: 1160px\)/);
   assert.match(css, /@container \(max-width: 560px\)/);
   assert.match(recargas, /<WalletCards aria-hidden="true" className="pointer-events-none absolute/);
   assert.match(account, /data-topup-account-panel/);
