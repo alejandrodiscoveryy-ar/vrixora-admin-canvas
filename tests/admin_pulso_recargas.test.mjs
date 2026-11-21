@@ -27,7 +27,7 @@ test("Distingue solicitudes de ingresos y calcula el mes por fecha de confirmaci
   for (const status of ["requested", "confirmed", "rejected"]) assert.ok(pulse.includes('row.status === "' + status + '"'));
   assert.match(pulse, /timeZone: "America\/Havana"/);
   assert.match(pulse, /monthInHavana\(row\.confirmedAt\) === month/);
-  assert.match(pulse, /currencies\\.length > 1/);
+  assert.match(pulse, /currencies\.length > 1/);
   assert.match(pulse, /No fue posible calcular el resumen completo/);
   assert.match(pulse, /no equivalen a conciliación bancaria ni a saldo disponible/);
 });
