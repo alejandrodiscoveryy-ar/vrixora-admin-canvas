@@ -2517,7 +2517,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 />
               ) : null}
               <div className={cn("marketplace-record-toolbar marketplace-topup-toolbar relative overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumHeaderSurface)}>
-                <Banknote aria-hidden="true" className="pointer-events-none absolute -right-5 -top-7 h-24 w-24 text-text-secondary opacity-[0.06] sm:h-28 sm:w-28" />
+                <WalletCards aria-hidden="true" className="pointer-events-none absolute bottom-1 right-4 h-20 w-20 text-text-secondary opacity-[0.07] dark:opacity-[0.08] sm:bottom-2 sm:right-7 sm:h-24 sm:w-24" />
                 <div className="relative flex min-w-0 flex-wrap items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border-default bg-surface-3 text-[var(--nav-accent,var(--primary))]"><Banknote className="h-5 w-5" /></span>
@@ -2536,7 +2536,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
                   ))}
                 </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+                <div className="relative mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
                   <span aria-live="polite">{filteredTopupRows.length} de {topupRows.length} recargas cargadas{topups.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
                   {topupSearch || topupStatus ? <Button variant="ghost" size="sm" onClick={() => { setTopupSearch(""); setTopupStatus(""); }}>Limpiar filtros</Button> : null}
                 </div>

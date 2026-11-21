@@ -1233,24 +1233,38 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 }
 .marketplace-topup-row .marketplace-topup-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 136px 112px 335px;
   align-items: center;
-  gap: 12px;
+  column-gap: 14px;
+  row-gap: 8px;
   min-width: 0;
 }
+/* Las cuatro columnas se mantienen incluso cuando una recarga no tiene acciones.
+   display: contents expone identidad, importe y estado al grid padre sin duplicar DOM. */
 .marketplace-topup-row .marketplace-topup-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(100px, .38fr) auto;
-  gap: 12px;
-  align-items: center;
+  display: contents;
 }
-.marketplace-topup-row .marketplace-topup-amount .marketplace-value-accent {
-  font-size: 16px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+.marketplace-topup-row .marketplace-topup-summary > :first-child {
+  grid-column: 1;
+  min-width: 0;
+}
+.marketplace-topup-row .marketplace-topup-amount {
+  grid-column: 2;
+  min-width: 0;
 }
 .marketplace-topup-row .marketplace-topup-status {
+  grid-column: 3;
+  min-width: 0;
   justify-self: end;
+}
+.marketplace-topup-row .marketplace-topup-actions {
+  grid-column: 4;
+}
+.marketplace-topup-row .marketplace-topup-amount .marketplace-value-accent {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .marketplace-topup-row .marketplace-topup-actions {
   display: flex;
@@ -1274,20 +1288,30 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 .marketplace-topup-row .marketplace-record-detail-grid {
   padding-block: 12px 4px;
 }
-@container (max-width: 990px) {
-  .marketplace-topup-row .marketplace-topup-main { grid-template-columns: minmax(0, 1fr); }
+@container (max-width: 920px) {
+  .marketplace-topup-row .marketplace-topup-main {
+    grid-template-columns: minmax(0, 1fr) 136px 112px;
+  }
   .marketplace-topup-row .marketplace-topup-actions {
-    justify-content: flex-start;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
     border-top: 1px solid var(--border-subtle);
     padding-top: 8px;
   }
 }
-@container (max-width: 520px) {
-  .marketplace-topup-row .marketplace-topup-summary {
+@container (max-width: 560px) {
+  .marketplace-topup-row .marketplace-topup-main {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 10px;
+    column-gap: 10px;
   }
-  .marketplace-topup-row .marketplace-topup-summary > :first-child { grid-column: 1 / -1; }
-  .marketplace-topup-row .marketplace-topup-status { align-self: center; }
-  .marketplace-topup-row .marketplace-topup-actions > * { flex: 1 1 100%; max-inline-size: none; }
+  .marketplace-topup-row .marketplace-topup-summary > :first-child {
+    grid-column: 1 / -1;
+  }
+  .marketplace-topup-row .marketplace-topup-amount { grid-column: 1; }
+  .marketplace-topup-row .marketplace-topup-status { grid-column: 2; }
+  .marketplace-topup-row .marketplace-topup-actions { justify-content: flex-start; }
+  .marketplace-topup-row .marketplace-topup-actions > * {
+    flex: 1 1 100%;
+    max-inline-size: none;
+  }
 }
