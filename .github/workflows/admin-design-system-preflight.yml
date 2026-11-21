@@ -35,6 +35,7 @@ on:
       - 'src/lib/utils.ts'
       - 'tests/admin_design_system.test.mjs'
       - 'tests/admin_topup_reversal.test.mjs'
+      - 'tests/admin_pulso_decisiones.test.mjs'
       - 'tests/comercial_integral_ui_contract.test.mjs'
       - 'tests/comercial_graphite_softness_contract.test.mjs'
       - 'tests/comercial_captacion_experiencia_contract.test.mjs'
@@ -73,6 +74,8 @@ jobs:
         run: bun test tests/admin_design_system.test.mjs
       - name: Probar anulacion segura de recargas confirmadas
         run: node --test tests/admin_topup_reversal.test.mjs
+      - name: Validar tablero de decisiones operativas de Pulso
+        run: node --test tests/admin_pulso_decisiones.test.mjs
       - name: Verificar vitalidad real y reglas semafóricas de TukTuk
         run: bun test tests/admin_agency_vitality.test.mjs
       - name: Validar arquitectura integral de Comercial

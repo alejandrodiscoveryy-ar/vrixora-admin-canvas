@@ -68,6 +68,7 @@ import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { usePendingDriverVerifications } from "@/hooks/usePendingDriverVerifications";
 import { matchesDriverVerification, matchesPendingDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
+import MarketplacePulseDecisions from "@/features/admin/MarketplacePulseDecisions";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
 import { MarketplaceTopupPaymentDestination, useTopupPaymentDestination, topupPaymentInstructionsMessage } from "@/features/admin/MarketplaceTopupPaymentDestination";
@@ -1756,6 +1757,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     <div className="min-w-0 space-y-3 sm:space-y-6">
       <Tabs value={tab}>
         <TabsContent value="resumen">
+          <MarketplacePulseDecisions
+            projectId={projectId}
+            overview={overview.data}
+            overviewError={overview.isError}
+            canPayments={canPayments}
+            canManagePayments={canManagePayments}
+            canAnalytics={permissions.includes("analytics.view")}
+          />
           <section
             aria-label="Indicadores operativos de Pulso"
             className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}
