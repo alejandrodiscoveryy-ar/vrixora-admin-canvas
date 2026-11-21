@@ -47,6 +47,12 @@ export function topupPaymentInstructionsMessage(
   amount: string,
   destination: TopupPaymentDestination,
 ) {
+  // Evitar repetir el mismo número cuando el teléfono receptor también es WhatsApp.
+  const sameWhatsAppNumber =
+    Boolean(destination.whatsappPhone) &&
+    destination.whatsappPhone.replace(/\D/g, "") === destination.paymentPhone.replace(/\D/g, "");
+  const separateWhatsAppNumber = Boolean(destination.whatsappPhone) && !sameWhatsAppNumber;
+
   return [
     "🛺 *Agencia TukTuk*",
     "",
@@ -56,11 +62,11 @@ export function topupPaymentInstructionsMessage(
     `💰 *Importe solicitado:* ${amount}`,
     `🏦 *Tarjeta de destino:* ${destination.cardNumber}`,
     `📱 *Teléfono asociado a la tarjeta:* ${destination.paymentPhone}`,
-    ...(destination.whatsappPhone
+    ...(separateWhatsAppNumber
       ? [`💬 *WhatsApp para enviar el comprobante:* ${destination.whatsappPhone}`]
       : []),
     "",
-    destination.whatsappPhone
+    separateWhatsAppNumber
       ? "Cuando hagas la transferencia, envía la referencia o el comprobante al WhatsApp indicado."
       : "Cuando hagas la transferencia, envíanos la referencia o el comprobante respondiendo a este chat.",
     "🔐 Tu billetera se acreditará únicamente cuando confirmemos la recepción del dinero.",
