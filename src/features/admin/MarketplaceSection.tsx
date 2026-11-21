@@ -188,6 +188,11 @@ const errorText = (error: unknown) =>
           "La recarga ya fue procesada o dejó de estar pendiente. Actualiza la lista.",
         IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_OPERATION:
           "La operación ya fue procesada. Actualiza la lista antes de volver a intentarlo.",
+        TOPUP_ALREADY_REVERSED: "Esta recarga ya fue anulada. Actualiza la lista.",
+        TOPUP_NOT_REVERSIBLE: "La recarga no permite anulación. Actualiza la lista y revisa su estado.",
+        TOPUP_REVERSAL_REAL_BALANCE_RESERVED: "El saldo de esta recarga está reservado y no puede retirarse hasta liberar las reservas.",
+        TOPUP_LEDGER_NOT_FOUND: "No se encontró el movimiento original; no se efectuó ninguna anulación.",
+        PERMISSION_DENIED: "Tu usuario no tiene permisos para corregir pagos.",
       }[error.message] ?? error.message)
     : "No se pudo completar la operación.";
 
@@ -1047,6 +1052,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   } | null>(null);
   const [receivedPaymentReference, setReceivedPaymentReference] = useState("");
   const [verifiedPaymentReceived, setVerifiedPaymentReceived] = useState(false);
+  const [topupReversal, setTopupReversal] = useState<{
+    id: string;
+    driver: string;
+    amount: number;
+    currency: string;
+    documentNumber: string | null;
+    idempotencyKey: string;
+  } | null>(null);
+  const [topupReversalReason, setTopupReversalReason] = useState("");
+  const [topupReversalAcknowledged, setTopupReversalAcknowledged] = useState(false);
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("requested");
   const [walletSearch, setWalletSearch] = useState("");
@@ -1065,6 +1080,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const canCustomers = permissions.includes("customers.view");
   const canPayments = permissions.includes("payments.view");
   const canManagePayments = permissions.includes("payments.manage");
+  const canCorrectPayments = permissions.includes("payments.correct");
   const canSettings = permissions.includes("settings.view");
   const canManageSettings = permissions.includes("settings.manage");
   const canManageMarketplace = permissions.includes("marketplace.manage");
@@ -1186,7 +1202,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     queryKey: ["marketplace-topups", projectId, topupStatus],
     queryFn: ({ pageParam }) =>
       supabaseServices.marketplace.listTopups(projectId, {
-        status: topupStatus || undefined,
+        status: topupStatus === "reversed" ? undefined : topupStatus || undefined,
         limit: PAGE_SIZE,
         cursor: pageParam,
       }),
@@ -1465,6 +1481,39 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     },
   });
 
+  const reverse = useMutation({
+    mutationFn: async () => {
+      if (!canCorrectPayments || !topupReversal || !topupReversalAcknowledged ||
+          topupReversalReason.trim().length < 8 || topupReversalReason.trim().length > 1000) {
+        throw new Error("Confirma la operación e indica un motivo de 8 a 1000 caracteres.");
+      }
+      return supabaseServices.marketplace.reverseTopup(
+        projectId,
+        topupReversal.id,
+        topupReversalReason,
+        topupReversal.idempotencyKey,
+      );
+    },
+    onSuccess: () => {
+      setTopupReversal(null);
+      setTopupReversalReason("");
+      setTopupReversalAcknowledged(false);
+      toast.success("Recarga anulada: crédito compensado y nota de corrección emitida.");
+      void invalidate(
+        "marketplace-topups",
+        "marketplace-wallets",
+        "marketplace-overview",
+        "marketplace-drivers",
+        "marketplace-financial-documents",
+        "marketplace-driver-financial-360",
+      );
+    },
+    onError: (mutationError) => {
+      toast.error(errorText(mutationError));
+      void invalidate("marketplace-topups", "marketplace-wallets", "marketplace-financial-documents");
+    },
+  });
+
   const reject = useMutation({
     mutationFn: () => supabaseServices.marketplace.rejectTopup(projectId, topup!.id, reason),
     onSuccess: () => {
@@ -1657,14 +1706,28 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       default: return true;
     }
   });
-  const filteredTopupRows = topupRows.filter((item) => recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference));
   const receiptsByTopup = useMemo(() => {
     const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
     for (const document of financialDocuments.data ?? []) {
-      if (document.topupId && !byTopup.has(document.topupId)) byTopup.set(document.topupId, document);
+      if (document.documentType === "topup_receipt" && document.topupId) byTopup.set(document.topupId, document);
     }
     return byTopup;
   }, [financialDocuments.data]);
+  const creditNotesByTopup = useMemo(() => {
+    const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
+    for (const document of financialDocuments.data ?? []) {
+      if (document.documentType === "credit_note" && document.topupId) byTopup.set(document.topupId, document);
+    }
+    return byTopup;
+  }, [financialDocuments.data]);
+  const financialDocumentHistoryComplete = financialDocuments.isSuccess && (financialDocuments.data?.length ?? 0) < 200;
+  const filteredTopupRows = topupRows.filter((item) => {
+    if (!recordMatches(topupSearch, item.driverDisplayName, item.driverPhone, item.reference)) return false;
+    const reversed = creditNotesByTopup.has(item.topupId);
+    if (topupStatus === "reversed") return reversed;
+    if ((topupStatus === "confirmed" || topupStatus === "reconciled") && reversed) return false;
+    return true;
+  });
   const selectedPaymentMethod = paymentMethods.data?.find((item) => item.code === method);
   const paymentMethodLabel = (code: string) =>
     paymentMethods.data?.find((item) => item.code === code)?.name ?? code;
