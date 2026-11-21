@@ -2561,9 +2561,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)] shadow-none"
                             >
                               <a
-                                href={notificationLink.web}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href={notificationLink.desktop}
                                 aria-label={`Notificar por WhatsApp la recarga ${item.status === "rejected" ? "rechazada" : "confirmada"} a ${item.driverDisplayName}`}
                               >
                                 <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
