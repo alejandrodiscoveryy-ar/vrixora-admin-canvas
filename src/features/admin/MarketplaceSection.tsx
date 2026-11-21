@@ -2739,26 +2739,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             }}>Gestionar recarga pendiente</Button>
                           </div>
                         ) : null}
-                        {canCorrectPayments && canManagePayments && ["confirmed", "reconciled"].includes(item.status) && !isTopupReversed && financialDocumentHistoryComplete ? (
-                          <div className="marketplace-topup-actions">
-                            <Button type="button" variant="outline" size="sm"
-                              className="marketplace-finance-action min-h-11 border-[var(--semantic-danger-border)] text-[var(--semantic-danger-foreground)]"
-                              onClick={() => {
-                                setTopupReversal({
-                                  id: item.topupId,
-                                  driver: item.driverDisplayName,
-                                  amount: item.amount,
-                                  currency: item.currency,
-                                  documentNumber: receipt?.documentNumber ?? null,
-                                  idempotencyKey: crypto.randomUUID(),
-                                });
-                                setTopupReversalReason("");
-                                setTopupReversalAcknowledged(false);
-                              }}>
-                              Anular recarga
-                            </Button>
-                          </div>
-                        ) : null}
                       </div>
                       <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
@@ -2792,6 +2772,45 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               </a>
                             </Button>
                           </div>
+                        ) : null}
+                        {canCorrectPayments && canManagePayments && ["confirmed", "reconciled"].includes(item.status) && !isTopupReversed && financialDocumentHistoryComplete ? (
+                          <details className="marketplace-topup-correction group/correction mt-4 border-t border-border-default pt-3">
+                            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                              <span className="inline-flex items-center gap-2">
+                                <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-text-secondary" />
+                                Correcciones administrativas
+                              </span>
+                              <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open/correction:rotate-180 motion-reduce:transition-none" />
+                            </summary>
+                            <div className="relative mt-3 overflow-hidden rounded-xl border border-[var(--semantic-danger-border)] bg-surface-2 p-3 sm:p-4">
+                              <AlertTriangle aria-hidden="true" className="pointer-events-none absolute -bottom-3 right-3 h-20 w-20 text-[var(--semantic-danger-foreground)] opacity-[0.05]" />
+                              <div className="relative space-y-1">
+                                <p className="text-sm font-semibold text-foreground">Anulación excepcional</p>
+                                <p className="max-w-2xl text-xs leading-relaxed text-text-secondary">
+                                  Solo para recargas confirmadas por error. Compensa el saldo acreditado y genera una nota de corrección sin eliminar el comprobante original. No se utiliza para solicitudes pendientes.
+                                </p>
+                              </div>
+                              <div className="relative mt-3 flex justify-end">
+                                <Button type="button" variant="outline" size="sm"
+                                  className="min-h-11 w-full border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] text-[var(--semantic-danger-foreground)] hover:bg-[var(--semantic-danger-surface)] sm:w-auto"
+                                  onClick={() => {
+                                    setTopupReversal({
+                                      id: item.topupId,
+                                      driver: item.driverDisplayName,
+                                      amount: item.amount,
+                                      currency: item.currency,
+                                      documentNumber: receipt?.documentNumber ?? null,
+                                      idempotencyKey: crypto.randomUUID(),
+                                    });
+                                    setTopupReversalReason("");
+                                    setTopupReversalAcknowledged(false);
+                                  }}>
+                                  <AlertTriangle aria-hidden="true" className="mr-2 h-4 w-4" />
+                                  Anular recarga
+                                </Button>
+                              </div>
+                            </div>
+                          </details>
                         ) : null}
                       </details>
                     </article>;
