@@ -1564,6 +1564,7 @@ export interface MarketplaceAdminService {
     },
   ): Promise<void>;
   confirmTopup(projectId: string, topupId: string, idempotencyKey: string): Promise<void>;
+  confirmTopupWithReference(projectId: string, topupId: string, idempotencyKey: string, paymentReference: string): Promise<void>;
   rejectTopup(projectId: string, topupId: string, reason: string): Promise<void>;
   updateFinancialSettings(
     projectId: string,
