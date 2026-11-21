@@ -3009,8 +3009,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             </DialogTitle>
             <DialogDescription>
               {driver?.suspended
-                ? "La suspensión impedirá que el conductor opere normalmente en Marketplace."
-                : "El conductor recuperará su estado operativo."}
+                ? "La suspensión bloqueará TukTuk Conductor en APK y WebApp actualizadas, y cerrará su sesión. Se conservan saldos e historial."
+                : "El conductor podrá volver a iniciar sesión y recuperar su actividad operativa."}
             </DialogDescription>
           </DialogHeader>
 
