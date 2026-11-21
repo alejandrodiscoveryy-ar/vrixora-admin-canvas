@@ -1210,8 +1210,38 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 
 /* Recargas premium: misma familia grafito y densidad de Usuarios app.
    Contrato local: no afecta Billeteras ni modifica la semántica financiera. */
-.marketplace-record-workspace[aria-label="Recargas"] { max-inline-size: min(100%, 82rem); }
+.marketplace-record-workspace[aria-label="Recargas"] {
+  max-inline-size: none;
+  inline-size: 100%;
+}
 .marketplace-topup-toolbar { isolation: isolate; }
+.marketplace-topup-toolbar-top {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.marketplace-topup-search {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.marketplace-topup-create {
+  grid-column: 2;
+  grid-row: 1;
+}
+@container (min-width: 1000px) {
+  .marketplace-topup-toolbar-top {
+    grid-template-columns: minmax(225px, .75fr) minmax(300px, 1.3fr) auto;
+  }
+  .marketplace-topup-search {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .marketplace-topup-create { grid-column: 3; grid-row: 1; }
+}
+@container (max-width: 380px) {
+  .marketplace-topup-toolbar-top { grid-template-columns: minmax(0, 1fr); }
+  .marketplace-topup-search { grid-column: 1; grid-row: 2; }
+  .marketplace-topup-create { grid-column: 1; grid-row: 3; justify-self: stretch; }
+}
 .marketplace-topup-row {
   --topup-state-ink: var(--text-secondary);
   overflow: visible;
@@ -1233,7 +1263,7 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 }
 .marketplace-topup-row .marketplace-topup-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 136px 112px 335px;
+  grid-template-columns: minmax(0, 1fr) 136px 112px 398px;
   align-items: center;
   column-gap: 14px;
   row-gap: 8px;
@@ -1271,6 +1301,7 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: nowrap;
   gap: 6px;
   min-width: 0;
 }
@@ -1288,13 +1319,14 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
 .marketplace-topup-row .marketplace-record-detail-grid {
   padding-block: 12px 4px;
 }
-@container (max-width: 920px) {
+@container (max-width: 1160px) {
   .marketplace-topup-row .marketplace-topup-main {
     grid-template-columns: minmax(0, 1fr) 136px 112px;
   }
   .marketplace-topup-row .marketplace-topup-actions {
     grid-column: 1 / -1;
     justify-content: flex-end;
+    flex-wrap: wrap;
     border-top: 1px solid var(--border-subtle);
     padding-top: 8px;
   }

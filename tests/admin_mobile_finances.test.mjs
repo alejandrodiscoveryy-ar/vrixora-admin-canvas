@@ -74,12 +74,17 @@ test("finanzas: filas compactas y flecha accesible sin barra adicional", () => {
 test("Recargas premium alinea importes y estados en columnas compartidas, con marcas de agua de cabecera", () => {
   const recargas = source.slice(source.indexOf('<TabsContent value="recargas"'), source.indexOf('<TabsContent value="incidencias"'));
   const account = readFileSync(new URL("../src/features/admin/MarketplaceTopupPaymentDestination.tsx", import.meta.url), "utf8");
-  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 136px 112px 335px/);
+  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 136px 112px 398px/);
+  assert.match(css, /@container \(max-width: 1160px\)/);
+  assert.match(css, /@container \(min-width: 1000px\)/);
+  assert.match(recargas, /marketplace-topup-toolbar-top/);
+  assert.match(recargas, /marketplace-topup-search/);
+  assert.match(recargas, /marketplace-topup-create/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-summary\s*\{\s*display: contents/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-amount\s*\{\s*grid-column: 2/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-status\s*\{\s*grid-column: 3/);
   assert.match(css, /\.marketplace-topup-row \.marketplace-topup-actions\s*\{\s*grid-column: 4/);
-  assert.match(css, /@container \(max-width: 920px\)/);
+  assert.match(css, /@container \(max-width: 1160px\)/);
   assert.match(css, /@container \(max-width: 560px\)/);
   assert.match(recargas, /<WalletCards aria-hidden="true" className="pointer-events-none absolute/);
   assert.match(account, /data-topup-account-panel/);
