@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Activity, AlertTriangle, ArrowUpRight, Banknote, CarFront,
   CheckCircle2, Clock3, MapPin, MapPinOff, ShieldAlert, Users, WalletCards,
 } from "lucide-react";
-import { premiumSurface, premiumHeaderSurface } from "@/components/admin/density";
+import { premiumSurface } from "@/components/admin/density";
 import { parseAgencyVitality } from "@/lib/agency-vitality";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices, type MarketplaceOverview, type MarketplaceTopup } from "@/lib/services";
@@ -101,7 +102,7 @@ async function readFinance(projectId: string, canManage: boolean): Promise<Money
 function OpenView({ projectId, vista, children }: {
   projectId: string;
   vista: "trabajos" | "recargas" | "mapa" | "clientes" | "incidencias" | "conductores";
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Link to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "trabajos" }}
