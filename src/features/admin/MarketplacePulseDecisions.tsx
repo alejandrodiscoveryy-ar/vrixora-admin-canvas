@@ -1,15 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { MetricCard } from "@/components/admin/MetricCard";
 import { Link } from "@tanstack/react-router";
 import {
-  Activity, AlertTriangle, ArrowUpRight, Banknote, CarFront,
+  AlertTriangle, ArrowUpRight, Banknote, CarFront,
   CheckCircle2, Clock3, MapPin, MapPinOff, ShieldAlert, Users, WalletCards,
 } from "lucide-react";
-import { premiumSurface } from "@/components/admin/density";
 import { parseAgencyVitality } from "@/lib/agency-vitality";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices, type MarketplaceOverview, type MarketplaceTopup } from "@/lib/services";
-import { cn } from "@/lib/utils";
 
 type Radar = {
   checked_at: string;
@@ -113,29 +112,6 @@ function OpenView({ projectId, vista, children }: {
   );
 }
 
-function Stat({ label, value, context, icon: Icon, tone = "neutral" }: {
-  label: string; value: string | number; context: string;
-  icon: typeof Users; tone?: "neutral" | "cyan" | "amber" | "red" | "green";
-}) {
-  const colors = {
-    neutral: "border-border-default text-text-primary",
-    cyan: "border-cyan-500/30 text-cyan-300",
-    amber: "border-amber-500/30 text-amber-300",
-    red: "border-rose-500/30 text-rose-300",
-    green: "border-emerald-500/30 text-emerald-300",
-  };
-  return (
-    <div className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border bg-surface-2/80 p-3", colors[tone])}>
-      <Icon aria-hidden="true" strokeWidth={1.25} className="pointer-events-none absolute -bottom-2 right-1 h-16 w-16 opacity-[0.07]" />
-      <div className="relative flex items-center gap-2 text-xs font-medium text-text-secondary">
-        <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />{label}
-      </div>
-      <p className="relative mt-2 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
-      <p className="relative mt-1 text-[11px] leading-snug text-text-secondary">{context}</p>
-    </div>
-  );
-}
-
 export default function MarketplacePulseDecisions({
   projectId, overview, overviewError, canPayments, canManagePayments, canAnalytics,
 }: {
@@ -208,99 +184,105 @@ export default function MarketplacePulseDecisions({
 
   const incomplete = radar.isError || (canPayments && finances.isError) || (canAnalytics && vitality.isError) || overviewError;
   const loading = radar.isPending || (canPayments && finances.isPending) || (canAnalytics && vitality.isPending);
+
+  // Se integra dentro del Pulso aprobado. No crea un segundo panel, cabecera ni tarjetas de otro estilo.
+  const cardBase = {
+    density: "compact" as const,
+    appearance: "premium" as const,
+  };
   return (
-    <section aria-label="Pulso para decisiones operativas" className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
-      <header className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/[0.08] text-cyan-300">
-            <Activity aria-hidden="true" className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-300">TukTuk · Dirección operativa</p>
-            <h2 className="text-lg font-semibold tracking-tight text-text-primary sm:text-xl">Qué requiere atención</h2>
-            <p className="text-xs text-text-secondary">Conductores trabajando, demanda, cancelaciones y recargas; con fuentes verificables.</p>
-          </div>
-        </div>
-        <span role="status" className="rounded-lg border border-border-default bg-surface-2 px-2.5 py-1.5 text-[11px] text-text-secondary">
-          {incomplete ? "Datos parciales" : loading ? "Consultando…" : "Actualización automática · 30–60 s"}
-        </span>
-      </header>
+    <>
       {incomplete ? (
-        <p role="alert" className="mb-3 flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-3 text-xs text-amber-200">
-          <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" /> Una fuente no respondió. Las cifras faltantes se muestran como «—», no como cero.
+        <p role="alert" className="mb-3 flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-xs text-[var(--semantic-warning-foreground)]">
+          <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
+          Datos parciales: las cifras que faltan se muestran como «—», no como cero.
         </p>
       ) : null}
-      <div className="grid gap-2 lg:grid-cols-2" aria-label="Prioridades y acciones">
-        {alerts.map((alert) => (
-          <div key={alert.id} className={cn(
-            "relative flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-3",
-            alert.tone === "red" ? "border-rose-500/25 bg-rose-500/[0.06]" : "border-amber-500/20 bg-amber-500/[0.05]",
-          )}>
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-                {alert.tone === "red" ? <ShieldAlert aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-300" /> :
-                  <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0 text-amber-300" />}
-                {alert.title}
-              </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">{alert.note}</p>
-            </div>
-            <OpenView projectId={projectId} vista={alert.target}>{alert.action}</OpenView>
-          </div>
-        ))}
-        {alerts.length === 0 && loading ? (
-          <p role="status" className="rounded-xl border border-border-default bg-surface-2 p-3 text-sm text-text-secondary">Analizando prioridades actuales…</p>
-        ) : alerts.length === 0 && !incomplete ? (
-          <p className="rounded-xl border border-border-default bg-surface-2 p-3 text-sm text-text-secondary">No hay alertas en los indicadores disponibles. Comprueba la actividad de las carreras antes de tomar decisiones.</p>
+      <div className="relative mb-2.5 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium text-text-secondary">Jornada real, demanda, cancelaciones y dinero comprobable</p>
+        <span className="text-[11px] text-text-tertiary">{loading ? "Consultando…" : "Datos operativos cada 30–60 s"}</span>
+      </div>
+      <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4" aria-label="Indicadores para tomar decisiones">
+        <MetricCard {...cardBase} label="Conductores trabajando" value={live ? number(live.working) : "—"}
+          description="Jornada y aceptación activas" comparison="Operación"
+          icon={CarFront} semanticState="success" isLoading={radar.isPending} />
+        <MetricCard {...cardBase} label="GPS reciente" value={live ? number(live.gps_recent) : "—"}
+          description="Posición de últimos 5 min" comparison="Cobertura"
+          icon={MapPin} module="resumen" isLoading={radar.isPending} />
+        <MetricCard {...cardBase} label="GPS sin actualizar" value={live ? number(live.gps_missing) : "—"}
+          description="Siguen marcados trabajando" comparison="Revisar señal"
+          icon={MapPinOff} semanticState="warning" isLoading={radar.isPending} />
+        <MetricCard {...cardBase} label="Perfiles habilitados" value={overviewError || !overview ? "—" : number(overview.driversActive)}
+          description="No equivale a trabajando" comparison="Equipo" icon={Users}
+          isLoading={!overview && !overviewError} />
+        <MetricCard {...cardBase} label="Solicitudes · 7 fechas" value={rides ? number(rides.requested) : "—"}
+          description="Carreras reales registradas" comparison="Demanda" icon={CarFront}
+          module="resumen" isLoading={canAnalytics && vitality.isPending} />
+        <MetricCard {...cardBase} label="Completadas · 7 fechas" value={rides ? number(rides.completed) : "—"}
+          description="Incluye las liquidadas" comparison="Resultado" icon={CheckCircle2}
+          semanticState="success" isLoading={canAnalytics && vitality.isPending} />
+        <MetricCard {...cardBase} label="Canceladas · 7 fechas" value={rides ? number(rides.cancelled) : "—"}
+          description={cancellationRate == null ? "Sin base para tasa" : Math.round(cancellationRate * 100) + " % de las solicitadas"}
+          comparison="Calidad" icon={ShieldAlert} semanticState={rides && rides.cancelled > 0 ? "danger" : undefined}
+          isLoading={canAnalytics && vitality.isPending} />
+        <MetricCard {...cardBase} label="Clientes nuevos · 7 fechas" value={clients ? number(clients.new) : "—"}
+          description="Registrados en el período" comparison="Captación" icon={Users}
+          module="comercial" isLoading={canAnalytics && vitality.isPending} />
+        <MetricCard {...cardBase} label="Esperando conductor" value={overviewError || !overview ? "—" : number(overview.jobsPublished)}
+          description="Publicadas y vigentes" comparison="Asignación" icon={Clock3}
+          semanticState="warning" isLoading={!overview && !overviewError} />
+        <MetricCard {...cardBase} label="Incidencias abiertas" value={overviewError || !overview ? "—" : number(overview.jobsIncidentOpen)}
+          description="Requieren seguimiento" comparison="Atención" icon={AlertTriangle}
+          semanticState="danger" isLoading={!overview && !overviewError} />
+        {canPayments ? (
+          <>
+            <MetricCard {...cardBase} label="Recargas por verificar" value={finance ? amount(finance.pendingAmount) : "—"}
+              description={finance ? number(finance.pendingCount) + " solicitudes · no ingresado" : "Pendientes de comprobar"}
+              comparison="Finanzas" icon={WalletCards} semanticState="warning" isLoading={finances.isPending} />
+            <MetricCard {...cardBase} label="Recargas vigentes" value={finance?.confirmedNet == null ? "—" : amount(finance.confirmedNet)}
+              description={finance?.confirmedCount == null ? "Sin desglose completo" : number(finance.confirmedCount) + " confirmaciones netas de anulaciones"}
+              comparison="No conciliado" icon={Banknote} semanticState="success" isLoading={finances.isPending} />
+            <MetricCard {...cardBase} label="Valor de carreras liquidadas" value={vitality.data?.finance ? amount(vitality.data.finance.cup) : "—"}
+              description="7 fechas · no es ingreso neto" comparison="CUP"
+              icon={Banknote} isLoading={canAnalytics && vitality.isPending} />
+          </>
         ) : null}
       </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border-default pt-3">
-        <h3 className="text-sm font-semibold text-text-primary">Flota disponible para la operación</h3>
-        <OpenView projectId={projectId} vista="conductores">Ver conductores</OpenView>
+      <div className="relative mt-3 border-t border-border-default pt-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Atención operativa</h3>
+          <OpenView projectId={projectId} vista="trabajos">Ver operaciones</OpenView>
+        </div>
+        <div className="grid gap-2 lg:grid-cols-2" aria-label="Prioridades y acciones">
+          {alerts.map((alert) => (
+            <div key={alert.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border border-border-default bg-surface-2/60 px-3 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+                  {alert.tone === "red" ? <ShieldAlert aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--semantic-danger)]" /> :
+                    <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" />}
+                  {alert.title}
+                </p>
+                <p className="mt-1 text-[11px] leading-snug text-text-secondary">{alert.note}</p>
+              </div>
+              <OpenView projectId={projectId} vista={alert.target}>{alert.action}</OpenView>
+            </div>
+          ))}
+          {alerts.length === 0 && loading ? (
+            <p role="status" className="text-xs text-text-secondary">Consultando las prioridades de la operación…</p>
+          ) : alerts.length === 0 && !incomplete ? (
+            <p className="text-xs text-text-secondary">No hay alertas en los indicadores disponibles.</p>
+          ) : null}
+        </div>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 xl:grid-cols-4">
-        <Stat label="Perfiles habilitados" value={overviewError ? "—" : number(overview?.driversActive)} context="No equivale a trabajando" icon={Users} />
-        <Stat label="Trabajando" value={number(live?.working)} context="Jornada/aceptación activa" icon={CarFront} tone="green" />
-        <Stat label="GPS reciente" value={number(live?.gps_recent)} context="Señal registrada en los últimos 5 min" icon={MapPin} tone="cyan" />
-        <Stat label="GPS sin actualizar" value={number(live?.gps_missing)} context="Siguen marcados como trabajando" icon={MapPinOff} tone="amber" />
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border-default pt-3">
-        <h3 className="text-sm font-semibold text-text-primary">Demanda y resultados · 7 fechas hasta hoy</h3>
-        <OpenView projectId={projectId} vista="trabajos">Ver operaciones</OpenView>
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        <Stat label="Carreras solicitadas" value={number(rides?.requested)} context="Excluye pruebas y eliminadas" icon={CarFront} tone="cyan" />
-        <Stat label="Completadas" value={number(rides?.completed)} context="Completadas o liquidadas" icon={CheckCircle2} tone="green" />
-        <Stat label="Canceladas" value={number(rides?.cancelled)} context={cancellationRate === null ? "Sin base de tasa" : Math.round(cancellationRate * 100) + " % de las solicitadas"} icon={ShieldAlert} tone={rides?.cancelled ? "red" : "neutral"} />
-        <Stat label="Clientes nuevos" value={number(clients?.new)} context="Registrados en el período" icon={Users} />
-        <Stat label="Sin conductor" value={overviewError ? "—" : number(overview?.jobsPublished)} context="Publicadas y no vencidas, ahora" icon={Clock3} tone="amber" />
-      </div>
-      {!canAnalytics ? <p className="mt-2 text-xs text-text-secondary">La actividad histórica requiere permiso de Analítica; se conserva la vista operativa actual.</p> : null}
-
       {canPayments ? (
-        <>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border-default pt-3">
-            <h3 className="text-sm font-semibold text-text-primary">Dinero registrado y por comprobar</h3>
-            <OpenView projectId={projectId} vista="recargas">Revisar recargas</OpenView>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Stat label="Pendiente de verificar" value={finance ? amount(finance.pendingAmount) : "—"}
-              context={finance ? number(finance.pendingCount) + " solicitudes · no ingresado" : "Solicitudes sin verificar"}
-              icon={WalletCards} tone="amber" />
-            <Stat label="Recargas confirmadas vigentes" value={finance?.confirmedNet == null ? "—" : amount(finance.confirmedNet)}
-              context={finance?.confirmedCount == null ? "Sin conciliación completa disponible" : number(finance.confirmedCount) + " confirmaciones, anulaciones descontadas"}
-              icon={Banknote} tone="green" />
-            <Stat label="Importe de carreras liquidadas" value={vitality.data?.finance ? amount(vitality.data.finance.cup) : "—"}
-              context="Últimas 7 fechas · valor de carreras, no ingreso neto"
-              icon={Banknote} />
-          </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-text-secondary">
-            Las recargas confirmadas vigentes excluyen las que tienen nota de corrección; no son ingresos bancarios conciliados ni saldo disponible.
-            {finance?.corrections != null ? " Notas de corrección registradas: " + number(finance.corrections) + "." : ""}
-          </p>
-        </>
+        <p className="mt-2 text-[11px] leading-relaxed text-text-tertiary">
+          Recargas pendientes no son ingresos. Las confirmadas vigentes excluyen las notas de corrección, pero no equivalen a ingresos bancarios conciliados ni a saldo disponible.
+          {finance?.corrections != null ? " Correcciones registradas: " + number(finance.corrections) + "." : ""}
+        </p>
       ) : null}
-    </section>
+      {!canAnalytics ? (
+        <p className="mt-2 text-xs text-text-secondary">Para ver el histórico de clientes y carreras se requiere permiso de Analítica.</p>
+      ) : null}
+    </>
   );
 }
