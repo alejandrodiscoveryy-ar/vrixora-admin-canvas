@@ -283,21 +283,24 @@ function topupWhatsAppMessage(
   const handledAt = rejected ? item.rejectedAt : item.confirmedAt;
 
   return [
-    "Agencia TukTuk",
+    "🛺 *Agencia TukTuk*",
     "",
-    `Hola, ${item.driverDisplayName}.`,
+    `👋 Hola, ${item.driverDisplayName}.`,
+    "",
+    rejected ? "❌ *Recarga rechazada*" : "✅ *Recarga confirmada*",
     rejected
-      ? `Te informamos que tu solicitud de recarga por ${formatAmount(item.amount, item.currency)} fue rechazada.`
-      : `Tu recarga por ${formatAmount(item.amount, item.currency)} fue confirmada y acreditada a tu billetera TukTuk.`,
+      ? "Te informamos que tu solicitud de recarga fue rechazada."
+      : "Tu recarga fue confirmada y acreditada a tu billetera TukTuk.",
     "",
-    `Estado: ${state}`,
-    `Método: ${methodLabel}`,
-    ...(item.reference ? [`Referencia: ${item.reference}`] : []),
-    ...(rejected && item.rejectionReason ? [`Motivo: ${item.rejectionReason}`] : []),
-    ...(!rejected && receiptNumber ? [`Comprobante: ${receiptNumber}`] : []),
-    ...(handledAt ? [`Fecha: ${formatCustomerDateTime(handledAt)} (hora de Cuba)`] : []),
+    `💰 *Importe:* ${formatAmount(item.amount, item.currency)}`,
+    `${rejected ? "❌" : "✅"} *Estado:* ${state}`,
+    `💳 *Método:* ${methodLabel}`,
+    ...(item.reference ? [`🔖 *Referencia:* ${item.reference}`] : []),
+    ...(rejected && item.rejectionReason ? [`⚠️ *Motivo:* ${item.rejectionReason}`] : []),
+    ...(!rejected && receiptNumber ? [`🧾 *Comprobante:* ${receiptNumber}`] : []),
+    ...(handledAt ? [`🗓️ *Fecha:* ${formatCustomerDateTime(handledAt)} (hora de Cuba)`] : []),
     "",
-    "Equipo de Agencia TukTuk",
+    "🤝 *Equipo de Agencia TukTuk*",
   ].join("\n");
 }
 
