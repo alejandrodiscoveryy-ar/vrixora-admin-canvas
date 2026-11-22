@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart3, ChevronDown, ExternalLink, MousePointerClick, RefreshCw, Share2, Users, TrendingUp, AlertCircle, MessageCircle } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from "recharts";
 import { getSupabaseClient } from "@/lib/supabase";
-import { supabaseServices, type MarketplaceCursor } from "@/lib/services";
+import { supabaseServices } from "@/lib/services";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
@@ -89,7 +89,7 @@ async function fetchImpulsaDriverContacts(projectId: string, promoterIds: string
   const pending = new Set(promoterIds);
   const contacts: Record<string, string> = {};
   const cursors = new Set<string>();
-  let cursor: MarketplaceCursor | undefined;
+  let cursor: { at: string; id: string } | undefined;
   // Consulta la RPC existente del directorio (requiere marketplace.view).
   // No expone teléfonos mediante las estadísticas de commercial.view.
   for (let page = 0; page < 50 && pending.size > 0; page++) {
