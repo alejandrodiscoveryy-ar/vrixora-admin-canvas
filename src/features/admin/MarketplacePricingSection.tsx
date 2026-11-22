@@ -439,7 +439,9 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         <div className="min-w-0 space-y-3">
           <header data-nav-tone={adminSubnavTone("precios", selectedPricingView.code)} className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
             <SelectedPricingIcon aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-44 w-44 -rotate-12 admin-nav-watermark opacity-[0.06]" />
-            <div className="relative z-10 grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(235px,320px)]">
+            <div className={`relative z-10 grid min-w-0 items-center gap-3 ${pricingRoute === "global"
+              ? "xl:grid-cols-[minmax(0,1fr)_minmax(185px,230px)_minmax(235px,300px)]"
+              : "lg:grid-cols-[minmax(0,1fr)_minmax(235px,320px)]"}`}>
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90">{selectedPricingView.number} / {selectedPricingView.eyebrow}</p>
                 <div className="mt-2 flex items-center gap-3">
@@ -448,6 +450,30 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 </div>
                 <p className="mt-2 hidden max-w-xl text-xs leading-relaxed text-slate-300 sm:block">{selectedPricingView.description}</p>
               </div>
+              {pricingRoute === "global" ? (
+                <button type="button"
+                  aria-label="Abrir Curva de precios por km de Pasajeros"
+                  aria-pressed={workspace === "curve"}
+                  onClick={() => {
+                    setSelectedService("passenger");
+                    setWorkspace("curve");
+                    setPricingRouteScenario(null);
+                  }}
+                  className={`group relative isolate flex min-h-[78px] w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300
+                    ${workspace === "curve"
+                      ? "border-cyan-300/60 bg-cyan-400/15"
+                      : "border-cyan-400/25 bg-slate-950/35 hover:border-cyan-300/55 hover:bg-cyan-400/10"}`}>
+                  <Activity aria-hidden="true" className="pointer-events-none absolute -right-5 -top-6 z-0 h-20 w-20 -rotate-12 text-cyan-300 opacity-[0.06]" />
+                  <span aria-hidden="true" className="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 text-cyan-300">
+                    <Activity className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="relative z-10 min-w-0 flex-1">
+                    <span className="block text-xs font-semibold leading-snug text-white">Curva de precios por km</span>
+                    <span className="mt-1 block text-[11px] leading-snug text-slate-300">Comparar las 4 modalidades</span>
+                  </span>
+                  <ChevronRight aria-hidden="true" className="relative z-10 size-4 shrink-0 text-cyan-200 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              ) : null}
               <aside aria-label="Tasa USD CUP informativa integrada en Centro de precios" className="min-w-0 rounded-2xl border border-cyan-400/20 bg-slate-950/55 px-3.5 py-3 shadow-inner shadow-black/25 admin-graphite-control">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-2 text-[11px] font-semibold text-slate-200"><DollarSign className="h-4 w-4 text-cyan-300" />Tasa USD/CUP · API</span>
@@ -471,7 +497,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             <p className="text-xs text-muted-foreground">{configuredCount} de {categories.length} tarifas configuradas</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {pricingWorkspaceOptions.filter((item) => selectedService === "passenger" || item.code !== "curve").map((item) => {
+            {pricingWorkspaceOptions.filter((item) => item.code !== "curve").map((item) => {
               const AreaIcon = item.icon;
               return (
                 <button key={item.code} type="button"
@@ -494,14 +520,14 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/65 bg-card/65 p-3 shadow-sm sm:p-4 admin-graphite-inset">
           {workspace !== "global" ? (
             <Button type="button" variant="outline" className="h-10 gap-2" onClick={() => {
-              setWorkspace("service-menu");
+              setWorkspace(workspace === "curve" ? "global" : "service-menu");
               setPricingRouteScenario(null);
             }}>
-              <ArrowLeft className="h-4 w-4" /> Volver al servicio
+              <ArrowLeft className="h-4 w-4" /> {workspace === "curve" ? "Volver a ajuste general" : "Volver al servicio"}
             </Button>
           ) : null}
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">{workspace === "global" ? "Centro de precios / General" : `Centro de precios / ${serviceLabel(selectedService)}`}</p>
+            <p className="text-xs text-muted-foreground">{workspace === "global" || workspace === "curve" ? "Centro de precios / General" : `Centro de precios / ${serviceLabel(selectedService)}`}</p>
             <h3 className="text-lg font-semibold text-foreground">{workspace === "global" ? "Ajuste general" : activeWorkspace?.title}</h3>
           </div>
           <span className="rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">{workspace === "global" ? "Gestión transversal" : activeWorkspace?.note}</span>
