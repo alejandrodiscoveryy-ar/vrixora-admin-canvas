@@ -18,6 +18,8 @@ type Ally = {
   report_expires_at: string;
 };
 type Issue = { slug: string; report_key: string; expires_at: string };
+type AllyIdentityStatus = { id: string; masked: string };
+const carnetValid = (value: string) => /^\d{11}$/.test(value.trim());
 const reasonLabels: Record<string, string> = {
   price: "Precio", comparing: "Comparación", no_driver: "Sin transporte",
   difficult: "Dificultad al solicitar", later: "Más tarde", other: "Otro",
@@ -36,6 +38,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [identityCard, setIdentityCard] = useState("");
   const [rate, setRate] = useState("3");
   const [saving, setSaving] = useState(false);
   const [issued, setIssued] = useState<Issue | null>(null);
@@ -43,6 +46,8 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const [editing, setEditing] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
   const [editedRate, setEditedRate] = useState("");
+  // null conserva el carnet anterior; "" lo elimina explícitamente.
+  const [editedIdentityCard, setEditedIdentityCard] = useState<string | null>(null);
   const [editingPayment, setEditingPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentRef, setPaymentRef] = useState("");
@@ -57,7 +62,23 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
     enabled: Boolean(projectId),
     refetchInterval: 120000,
   });
-  const refresh = () => qc.invalidateQueries({ queryKey: ["marketplace-allies-v1", projectId] });
+  const identityStatus = useQuery({
+    queryKey: ["marketplace-allies-identity-status", projectId],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_ally_identity_status_v1", {
+        target_project_id: projectId,
+      });
+      if (error) throw error;
+      return (Array.isArray(data) ? data : []) as AllyIdentityStatus[];
+    },
+    enabled: canManage && Boolean(projectId),
+    refetchInterval: 120000,
+  });
+  const identityByAlly = new Map((identityStatus.data ?? []).map((row) => [row.id, row.masked]));
+  const refresh = async () => {
+    await qc.invalidateQueries({ queryKey: ["marketplace-allies-v1", projectId] });
+    if (canManage) await qc.invalidateQueries({ queryKey: ["marketplace-allies-identity-status", projectId] });
+  };
   async function create() {
     if (!canManage) return;
     const s = slug.trim().toLowerCase();
@@ -66,32 +87,47 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
       !Number.isFinite(pct) || pct < 0 || pct > 5) {
       toast.error("Revisa el nombre, el alias y el porcentaje (0 a 5%)."); return;
     }
+    if (identityCard && !carnetValid(identityCard)) {
+      toast.error("El carnet de identidad debe tener 11 dígitos."); return;
+    }
     setSaving(true);
     try {
-      const { data, error } = await getSupabaseClient().rpc("admin_create_marketplace_ally_v1", {
+      const { data, error } = await getSupabaseClient().rpc("admin_create_marketplace_ally_with_identity_v1", {
         target_project_id: projectId, target_name: name.trim(), target_slug: s, target_rate: pct / 100,
+        target_identity_card_number: identityCard.trim() || null,
       });
       if (error) throw error;
       setIssued(data as Issue);
-      setName(""); setSlug(""); setRate("3"); setCreateExpanded(false);
+      setName(""); setSlug(""); setRate("3"); setIdentityCard(""); setCreateExpanded(false);
       await refresh();
       toast.success("Aliado creado. Copia sus dos enlaces antes de cerrar esta tarjeta.");
     } catch (e) { toast.error(errorMessage(e)); }
     finally { setSaving(false); }
   }
-  async function update(ally: Ally, status: "active" | "paused", newName = ally.name, newRate = ally.rate * 100) {
+  async function update(
+    ally: Ally, status: "active" | "paused", newName = ally.name,
+    newRate = ally.rate * 100, newIdentityCard: string | null = null,
+  ) {
     if (!canManage) return;
     if (!Number.isFinite(newRate) || newRate < 0 || newRate > 5) {
       toast.error("La comisión del Aliado debe estar entre 0 y 5 %."); return;
     }
+    if (newIdentityCard !== null && newIdentityCard.trim() !== "" && !carnetValid(newIdentityCard)) {
+      toast.error("El carnet de identidad debe tener 11 dígitos."); return;
+    }
     setSaving(true);
     try {
-      const { error } = await getSupabaseClient().rpc("admin_update_marketplace_ally_v1", {
+      const args = {
         target_project_id: projectId, target_ally_id: ally.id,
         target_name: newName, target_rate: newRate / 100, target_status: status,
-      });
+      };
+      const { error } = newIdentityCard === null
+        ? await getSupabaseClient().rpc("admin_update_marketplace_ally_v1", args)
+        : await getSupabaseClient().rpc("admin_update_marketplace_ally_with_identity_v1", {
+            ...args, target_identity_card_number: newIdentityCard.trim(),
+          });
       if (error) throw error;
-      setEditing(null); await refresh();
+      setEditing(null); setEditedIdentityCard(null); await refresh();
       toast.success("Actualizado. Las carreras anteriores conservan su porcentaje.");
     } catch (e) { toast.error(errorMessage(e)); } finally { setSaving(false); }
   }
@@ -211,7 +247,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
             </div>
             <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[10px] font-semibold text-violet-300">Enlace personalizado</span>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_140px_auto] xl:items-end">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_140px_auto] xl:items-end">
             <div className="space-y-1.5">
               <Label htmlFor="ally-name">Responsable del Aliado</Label>
               <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={(event) => setName(event.target.value)} className={cp.control} />
@@ -221,6 +257,13 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
               <Input id="ally-slug" maxLength={24} placeholder="Ej. conuco" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} className={cp.control} />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="ally-identity-card">Carnet de identidad</Label>
+              <Input id="ally-identity-card" inputMode="numeric" maxLength={11}
+                autoComplete="off" placeholder="11 dígitos · opcional" value={identityCard}
+                onChange={(event) => setIdentityCard(event.target.value.replace(/\D/g, "").slice(0, 11))}
+                className={cp.control} />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="ally-pct">Comisión (%)</Label>
               <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={(event) => setRate(event.target.value)} className={cp.control} />
             </div>
@@ -228,6 +271,9 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
               <Plus className="mr-1.5 size-4" aria-hidden="true" />Crear aliado
             </Button>
           </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            El carnet es privado, no se incluye en los enlaces ni en el dashboard personal del gestor.
+          </p>
           <p className="mt-3 break-all text-[11px] text-muted-foreground">
             Enlace público: <span className="font-medium text-foreground">{promo(slug || "nick")}</span>. El nick es único entre Aliados y conductores y no puede cambiarse después de compartirlo. Las ganancias se calculan solo para carreras reales liquidadas; no se transfiere dinero automáticamente.
           </p>
@@ -277,6 +323,12 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                         <span className="font-medium text-violet-300">@{ally.slug}</span>
                         <span aria-hidden="true" className="text-muted-foreground/60">·</span>
                         <span className="text-muted-foreground">{(Number(ally.rate) * 100).toLocaleString("es-CU")}% de comisión</span>
+                        {canManage && identityStatus.isSuccess && (
+                          <>
+                            <span aria-hidden="true" className="text-muted-foreground/60">·</span>
+                            <span className="text-muted-foreground">{identityByAlly.get(ally.id) ? "Carnet " + identityByAlly.get(ally.id) : "Sin carnet"}</span>
+                          </>
+                        )}
                         <span className={"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium " + (ally.status === "active" ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300" : "border-border/60 bg-muted/40 text-muted-foreground")}>
                           <span className={"size-1.5 rounded-full " + (ally.status === "active" ? "bg-emerald-400" : "bg-slate-400")} aria-hidden="true" />
                           {ally.status === "active" ? "Activo" : "Pausado"}
@@ -337,7 +389,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                   <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5">
                     <p className="text-[11px] text-muted-foreground">Enlaces personalizados · pago registrado manualmente</p>
                     <div className="flex flex-wrap items-center gap-1">
-                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); }} aria-label={"Editar " + ally.name}>
+                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); setEditedIdentityCard(null); }} aria-label={"Editar " + ally.name}>
                         <Pencil className="mr-1.5 size-3.5" aria-hidden="true" />Editar
                       </Button>
                       <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" disabled={saving} onClick={() => void update(ally, ally.status === "active" ? "paused" : "active")}>
@@ -358,11 +410,30 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                         <Label>Nombre del aliado</Label>
                         <Input maxLength={80} value={editedName} onChange={(event) => setEditedName(event.target.value)} className={cp.control} />
                       </div>
+                      <div className="min-w-[180px] flex-1 space-y-1">
+                        <Label htmlFor={`ally-edit-card-${ally.id}`}>Carnet de identidad</Label>
+                        <Input id={`ally-edit-card-${ally.id}`} inputMode="numeric" maxLength={11}
+                          autoComplete="off" placeholder={identityByAlly.get(ally.id) ? `Registrado ${identityByAlly.get(ally.id)}` : "11 dígitos · opcional"}
+                          value={editedIdentityCard ?? ""}
+                          onChange={(event) => setEditedIdentityCard(event.target.value.replace(/\D/g, "").slice(0, 11))}
+                          className={cp.control} />
+                        <p className="text-[11px] text-muted-foreground">
+                          {editedIdentityCard === null ? "En blanco conserva el carnet actual." : editedIdentityCard === "" ? "Se quitará el carnet al guardar." : "Se guardará el nuevo número."}
+                        </p>
+                        {identityByAlly.has(ally.id) && (
+                          <Button type="button" size="sm" variant="ghost" className="h-8 text-xs text-muted-foreground"
+                            disabled={saving} onClick={() => {
+                              if (window.confirm("¿Quitar el carnet de identidad registrado de este gestor?")) setEditedIdentityCard("");
+                            }}>
+                            Quitar carnet
+                          </Button>
+                        )}
+                      </div>
                       <div className="min-w-[140px] space-y-1">
                         <Label>Porcentaje futuro</Label>
                         <Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={(event) => setEditedRate(event.target.value)} className={cp.control} />
                       </div>
-                      <Button size="sm" disabled={saving} onClick={() => void update(ally, ally.status, editedName, Number(editedRate))}>Guardar cambios</Button>
+                      <Button size="sm" disabled={saving} onClick={() => void update(ally, ally.status, editedName, Number(editedRate), editedIdentityCard)}>Guardar cambios</Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
                     </div>
                   </div>
