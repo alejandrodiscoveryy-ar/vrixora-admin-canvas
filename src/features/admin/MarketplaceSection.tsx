@@ -1472,7 +1472,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       setTopup(null);
       setReceivedPaymentReference("");
       setVerifiedPaymentReceived(false);
-      toast.success("Recarga confirmada. Despliega el registro y pulsa Notificar por WhatsApp para enviar el comprobante.");
+      toast.success("Recarga confirmada. Pulsa Notificar por WhatsApp para enviar el comprobante.");
       void invalidate(
         "marketplace-topups",
         "marketplace-wallets",
@@ -1526,10 +1526,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       setError(null);
       setTopup(null);
       setReason("");
+      setReceivedPaymentReference("");
+      setVerifiedPaymentReceived(false);
+      toast.success("Solicitud rechazada. No se acreditó saldo.");
       void invalidate("marketplace-topups", "marketplace-overview");
     },
     onError: (mutationError) => {
       setError(errorText(mutationError));
+      toast.error("No se pudo rechazar la solicitud: " + errorText(mutationError));
       void invalidate("marketplace-topups", "marketplace-overview");
     },
   });
@@ -3546,60 +3550,109 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           <DialogHeader>
             <DialogTitle>Gestionar recarga de {topup?.driver}</DialogTitle>
             <DialogDescription>
-              Registra la referencia y comprueba el ingreso antes de confirmar. La confirmación acredita la billetera y emite el comprobante una sola vez.
+              Elige una operación. Rechazar no acredita dinero; confirmar solo corresponde cuando el pago se ha recibido realmente.
             </DialogDescription>
           </DialogHeader>
 
-          {topup?.method === "transfer" ? (
-            <div className="space-y-3 rounded-xl border border-border/60 bg-surface-1 p-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="topup-received-reference">Referencia de la transferencia recibida</Label>
-                <Input
-                  id="topup-received-reference"
-                  value={receivedPaymentReference}
-                  onChange={(event) => setReceivedPaymentReference(event.target.value)}
-                  placeholder="Referencia proporcionada después del pago"
-                  maxLength={160}
-                  autoComplete="off"
-                />
-                <p className="text-xs text-text-secondary">
-                  La referencia quedará asociada al comprobante emitido al confirmar la recarga.
-                </p>
-              </div>
-              <label className="flex cursor-pointer items-start gap-2 text-sm">
-                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary"
-                  checked={verifiedPaymentReceived}
-                  onChange={(event) => setVerifiedPaymentReceived(event.target.checked)}
-                />
-                <span>He comprobado que el ingreso se recibió realmente en la cuenta de la agencia.</span>
-              </label>
+          <section aria-labelledby="topup-reject-heading" className="space-y-3 rounded-xl border border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] p-3 sm:p-4">
+            <div className="space-y-1">
+              <h3 id="topup-reject-heading" className="flex items-center gap-2 text-sm font-semibold text-[var(--semantic-danger-foreground)]">
+                <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
+                Rechazar solicitud
+              </h3>
+              <p className="text-xs leading-relaxed text-text-secondary">
+                Cuando la recarga no procede, no se recibió dinero o se solicitó por error. No se acredita saldo.
+              </p>
             </div>
-          ) : null}
+            <div className="space-y-1.5">
+              <Label htmlFor="topup-rejection-reason">Motivo del rechazo (obligatorio)</Label>
+              <Textarea
+                id="topup-rejection-reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Ej.: No procede, solicitud por error o pago no recibido"
+                aria-describedby="topup-rejection-help"
+                maxLength={1000}
+                disabled={reject.isPending || confirm.isPending}
+                className="min-h-20 border-[var(--semantic-danger-border)] bg-surface-1 text-foreground"
+              />
+              <p id="topup-rejection-help" className="text-xs text-text-secondary">
+                Escribe el motivo aquí (no en «Referencia»). No necesitas marcar la casilla del ingreso.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button type="button" size="sm" variant="outline"
+                className="min-h-10 border-[var(--semantic-danger-border)] bg-surface-2 text-text-secondary"
+                disabled={reject.isPending || confirm.isPending}
+                onClick={() => {
+                  setReason("No procede");
+                  setVerifiedPaymentReceived(false);
+                }}
+              >
+                Usar motivo: No procede
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="min-h-11 w-full sm:w-auto"
+                disabled={reject.isPending || confirm.isPending || !reason.trim()}
+                onClick={() => reject.mutate()}
+              >
+                {reject.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Rechazar solicitud
+              </Button>
+            </div>
+          </section>
 
-          <Textarea
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Motivo obligatorio solo para rechazar"
-          />
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              disabled={confirm.isPending || reject.isPending || (topup?.method === "transfer" && (!receivedPaymentReference.trim() || !verifiedPaymentReceived))}
-              onClick={() => confirm.mutate()}
-            >
-              {confirm.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Confirmar
-            </Button>
-
-            <Button
-              variant="destructive"
-              disabled={reject.isPending || confirm.isPending || !reason.trim()}
-              onClick={() => reject.mutate()}
-            >
-              {reject.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Rechazar
-            </Button>
-          </div>
+          <section aria-labelledby="topup-confirm-heading" className="space-y-3 rounded-xl border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] p-3 sm:p-4">
+            <div className="space-y-1">
+              <h3 id="topup-confirm-heading" className="flex items-center gap-2 text-sm font-semibold text-[var(--semantic-success-foreground)]">
+                <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0" />
+                Confirmar pago recibido
+              </h3>
+              <p className="text-xs leading-relaxed text-text-secondary">
+                Esta operación acredita la billetera y emite el comprobante. Úsala solo si se ha recibido el pago.
+              </p>
+            </div>
+            {topup?.method === "transfer" ? (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="topup-received-reference">Referencia real de la transferencia recibida</Label>
+                  <Input
+                    id="topup-received-reference"
+                    value={receivedPaymentReference}
+                    onChange={(event) => setReceivedPaymentReference(event.target.value)}
+                    placeholder="Referencia bancaria del ingreso comprobado"
+                    maxLength={160}
+                    autoComplete="off"
+                    disabled={reject.isPending || confirm.isPending}
+                  />
+                  <p className="text-xs text-text-secondary">
+                    Este campo es solo para pagos recibidos; no escribas aquí motivos de rechazo.
+                  </p>
+                </div>
+                <label className="flex cursor-pointer items-start gap-2 text-sm">
+                  <input type="checkbox" className="mt-1 h-4 w-4 accent-primary"
+                    checked={verifiedPaymentReceived}
+                    disabled={reject.isPending || confirm.isPending}
+                    onChange={(event) => setVerifiedPaymentReceived(event.target.checked)}
+                  />
+                  <span>He comprobado que el ingreso se recibió realmente en la cuenta de la agencia.</span>
+                </label>
+              </>
+            ) : null}
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                className="min-h-11 w-full sm:w-auto"
+                disabled={confirm.isPending || reject.isPending || (topup?.method === "transfer" && (!receivedPaymentReference.trim() || !verifiedPaymentReceived))}
+                onClick={() => confirm.mutate()}
+              >
+                {confirm.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Confirmar pago recibido
+              </Button>
+            </div>
+          </section>
         </DialogContent>
       </Dialog>
     </div>
