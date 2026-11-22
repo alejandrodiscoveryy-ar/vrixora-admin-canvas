@@ -1533,6 +1533,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     },
     onError: (mutationError) => {
       setError(errorText(mutationError));
+      toast.error("No se pudo rechazar la solicitud: " + errorText(mutationError));
       void invalidate("marketplace-topups", "marketplace-overview");
     },
   });
@@ -3583,7 +3584,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               <Button type="button" size="sm" variant="outline"
                 className="min-h-10 border-[var(--semantic-danger-border)] bg-surface-2 text-text-secondary"
                 disabled={reject.isPending || confirm.isPending}
-                onClick={() => setReason("No procede")}
+                onClick={() => {
+                  setReason("No procede");
+                  setVerifiedPaymentReceived(false);
+                }}
               >
                 Usar motivo: No procede
               </Button>
