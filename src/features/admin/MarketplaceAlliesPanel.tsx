@@ -342,9 +342,9 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     aria-label={`${expanded ? "Plegar" : "Desplegar"} detalles de ${ally.name}`}
                     disabled={saving} onClick={() => toggleAllyDetails(ally.id)}>
                     <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-sm font-bold text-violet-200">{initials}</span>
-                    <div className="min-w-0">
-                      <h4 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground" title={ally.name}>{ally.name}</h4>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                    <span className="block min-w-0">
+                      <span className="block truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground" title={ally.name}>{ally.name}</span>
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
                         <span className="font-medium text-violet-300">@{ally.slug}</span>
                         <span aria-hidden="true" className="text-muted-foreground/60">·</span>
                         <span className="text-muted-foreground">{(Number(ally.rate) * 100).toLocaleString("es-CU")}% de comisión</span>
@@ -358,13 +358,13 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                           <span className={"size-1.5 rounded-full " + (ally.status === "active" ? "bg-emerald-400" : "bg-slate-400")} aria-hidden="true" />
                           {ally.status === "active" ? "Activo" : "Pausado"}
                         </span>
-                      </div>
+                      </span>
                       {!expanded && (
-                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                        <span className="mt-1.5 block text-[11px] text-muted-foreground">
                           {Number(ally.clicks).toLocaleString("es-CU")} visitas · {Number(ally.completed).toLocaleString("es-CU")} viajes completados · {cup(due)} por pagar
-                        </p>
+                        </span>
                       )}
-                    </div>
+                    </span>
                   </button>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button size="sm" variant="outline" className="h-9 border-violet-400/25 bg-violet-500/5" onClick={() => void copy(promo(ally.slug))} aria-label={"Copiar enlace público de " + ally.name}>
