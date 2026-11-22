@@ -5,11 +5,17 @@ import { readFileSync } from 'node:fs';
 const screen = readFileSync(new URL('../src/features/admin/MarketplacePricingSection.tsx', import.meta.url), 'utf8');
 const curve = readFileSync(new URL('../src/features/admin/MarketplacePassengerPriceCurve.tsx', import.meta.url), 'utf8');
 
-test('price curve appears only in passenger pricing workspace', () => {
+test('curve shortcut is placed inside Ajuste general header and removed from Pasajeros tool menu', () => {
   assert.match(screen, /code: "curve", title: "Curva de precios por km"/);
-  assert.match(screen, /selectedService === "passenger" \|\| item.code !== "curve"/);
+  assert.match(screen, /selectedPricingView\.code === "global"/);
+  assert.match(screen, /aria-label="Abrir Curva de precios por km de Pasajeros"/);
+  assert.match(screen, /onClick=\{\(\) => \{\s*setSelectedService\("passenger"\);\s*setWorkspace\("curve"\)/);
+  assert.match(screen, /pricingWorkspaceOptions\.filter\(\(item\) => item\.code !== "curve"\)/);
+  assert.match(screen, /setWorkspace\(workspace === "curve" \? "global" : "service-menu"\)/);
+  assert.match(screen, /Volver a ajuste general/);
   assert.match(screen, /workspace === "curve" && selectedService === "passenger"/);
   assert.match(screen, /<MarketplacePassengerPriceCurve projectId=\{projectId\}/);
+  assert.match(screen, /xl:grid-cols-\[minmax\(0,1fr\)_minmax\(185px,230px\)_minmax\(235px,300px\)\]/);
 });
 
 test('production smart quotes are read only and include all four passenger modes', () => {
