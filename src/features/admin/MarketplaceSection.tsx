@@ -2725,7 +2725,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           topupWhatsAppMessage(item, paymentMethodLabel(item.method), receipt?.documentNumber),
                         )
                       : null;
-                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status}>
+                    // Las solicitudes simples ya muestran todos sus datos. No ofrecer
+                    // un desplegable vacío que únicamente repita "Transferencia".
+                    const hasTopupDetails = Boolean(
+                      item.notes || item.rejectionReason || item.confirmedAt ||
+                      item.rejectedAt || receipt || creditNote || notificationLink ||
+                      (canCorrectPayments && canManagePayments &&
+                        ["confirmed", "reconciled"].includes(item.status) &&
+                        !isTopupReversed && financialDocumentHistoryComplete)
+                    );
+                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status} data-has-details={hasTopupDetails ? "true" : "false"}>
                       <div className="marketplace-topup-main">
                         <div className="marketplace-topup-summary">
                           <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
@@ -2759,7 +2768,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               instructionLink ? (
                                 <Button asChild type="button" size="sm" variant="outline" className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]">
                                   <a href={instructionLink.desktop} aria-label={`Enviar por WhatsApp los datos de recarga a ${item.driverDisplayName}`}>
-                                    <Phone aria-hidden="true" className="mr-2 h-4 w-4" />Enviar datos de pago
+                                    <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
+                                    <span className="marketplace-topup-action-full">Enviar datos de pago</span>
+                                    <span className="marketplace-topup-action-short">Enviar datos</span>
                                   </a>
                                 </Button>
                               ) : (
@@ -2768,23 +2779,28 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                 </p>
                               )
                             )}
-                            <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
+                            <Button size="sm" className="marketplace-finance-action min-h-11" aria-label={`Gestionar recarga pendiente de ${item.driverDisplayName}`} onClick={() => {
                               setError(null);
                               setTopup({ id: item.topupId, driver: item.driverDisplayName, method: item.method, confirmationKey: crypto.randomUUID() });
                               setReceivedPaymentReference(item.reference ?? "");
                               setVerifiedPaymentReceived(false);
                               setReason("");
-                            }}>Gestionar recarga pendiente</Button>
+                            }}>
+                              <span className="marketplace-topup-action-full">Gestionar recarga pendiente</span>
+                              <span className="marketplace-topup-action-short">Gestionar</span>
+                            </Button>
                           </div>
                         ) : null}
                       </div>
-                      <details className="marketplace-record-details group">
+                      {hasTopupDetails ? <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
                           <span className="sr-only">Ver detalles de la recarga de {item.driverDisplayName}</span>
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
+                          <div className="marketplace-topup-detail-method">
+                            <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
+                          </div>
                           {item.notes ? <RecordMetric labelText="Notas" value={item.notes} /> : null}
                           {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="danger" /> : null}
                           {item.confirmedAt ? <RecordMetric labelText="Confirmada" value={<time dateTime={item.confirmedAt}>{formatDate(item.confirmedAt)}</time>} /> : null}
@@ -2850,7 +2866,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             </div>
                           </details>
                         ) : null}
-                      </details>
+                      </details> : null}
                     </article>;
                   })}
                 </div>
