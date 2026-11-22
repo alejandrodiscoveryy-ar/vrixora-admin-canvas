@@ -8,7 +8,7 @@ test("Alta y edición incorporan el carnet de identidad sin cambiar el porcentaj
   assert.match(ui, /htmlFor="ally-identity-card"/);
   assert.match(ui, /inputMode="numeric" maxLength=\{11\}/);
   assert.match(ui, /const carnetValid = \(value: string\) => \/\^\\d\{11\}\$\//);
-  assert.match(ui, /admin_create_marketplace_ally_with_identity_v1/);
+  assert.match(ui, /admin_create_marketplace_ally_with_contact_v1/);
   assert.match(ui, /admin_update_marketplace_ally_with_identity_v1/);
   assert.match(ui, /target_identity_card_number: identityCard\.trim\(\) \|\| null/);
   assert.match(ui, /target_identity_card_number: newIdentityCard\.trim\(\)/);
