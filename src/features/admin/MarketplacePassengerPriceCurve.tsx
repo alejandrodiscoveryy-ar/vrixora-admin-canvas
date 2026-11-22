@@ -173,7 +173,8 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
               <div className="mb-2 flex items-center justify-between gap-2 px-2 text-xs text-muted-foreground">
                 <span>Precio final · CUP</span><span>Distancia · km</span>
               </div>
-              <div className="h-[300px] w-full min-w-0 sm:h-[380px]">
+              <div className="w-full overflow-x-auto pb-1" aria-label="Gráfico de precios, desplazable horizontalmente en móvil" tabIndex={0}>
+                <div className="h-[300px] min-w-[700px] sm:h-[380px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={rows} margin={{ top: 18, right: 14, bottom: 8, left: -14 }}>
                     <CartesianGrid stroke="currentColor" strokeOpacity={0.10} vertical={false} />
@@ -200,6 +201,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                     ))}
                   </LineChart>
                 </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
