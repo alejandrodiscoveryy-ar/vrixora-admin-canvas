@@ -38,3 +38,23 @@ test('production smart quotes are read only and include all four passenger modes
   assert.match(curve, /averageCostPerKm\(selected\?\.\[code\], selected\?\.km\)/);
   assert.match(curve, /no un precio histórico/);
 });
+
+test('Vrixora Premium Consistency is applied without touching the fare engine', () => {
+  assert.match(curve, /from "@\/components\/admin\/density"/);
+  for (const designToken of ['premiumSurface', 'premiumHeaderSurface', 'premiumMetricSurface', 'premiumControlSurface']) {
+    assert.match(curve, new RegExp('\\b' + designToken + '\\b'));
+  }
+  assert.match(curve, /data-appearance="premium"/);
+  assert.match(curve, /data-density="compact"/);
+  assert.match(curve, /aria-label="Distancia de consulta"/);
+  assert.match(curve, /aria-label="Precio por modalidad"/);
+  assert.match(curve, /aria-label="Gráfica comparativa de precios"/);
+  assert.match(curve, /Costo promedio por km/);
+  assert.match(curve, /<details className="group/);
+  assert.match(curve, /<Skeleton /);
+  assert.match(curve, /No se muestra ningún precio supuesto/);
+  assert.match(curve, /aria-pressed=\{focused === code\}/);
+  assert.match(curve, /min-h-11 min-w-\[58px\]/);
+  assert.doesNotMatch(curve, /<h3 className="text-lg font-semibold text-foreground">Curva de precios por km<\/h3>/);
+  assert.doesNotMatch(curve, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
+});
