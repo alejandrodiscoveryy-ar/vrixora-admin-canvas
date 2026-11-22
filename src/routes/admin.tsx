@@ -93,8 +93,9 @@ function AdminChrome() {
   // Solo el mapa operativo móvil elimina el espacio superior del contenedor general.
   const compactMobileMap = compactWorkspace && requestedView === "mapa";
 
-  const { data: currentProject } = useProject(currentProjectId);
-  const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id ?? null);
+  // Esperar a que Supabase restaure/renueve la sesión antes de consultar tablas protegidas.
+  const { data: currentProject } = useProject(loading || !user ? null : currentProjectId);
+  const { data: projects = [], isLoading: projectsLoading } = useUserProjects(loading || !user ? null : user.id);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   useEffect(() => {
