@@ -32,10 +32,13 @@ test('production smart quotes are read only and include all four passenger modes
   assert.match(curve, /2026-11-01T04:00:00Z/);
   assert.match(curve, /2027-11-07T05:00:00Z/);
   assert.match(curve, /scenario_shifted_to_next_week/);
-  assert.match(curve, /const averageCostPerKm =/);
-  assert.match(curve, /fare \/ km/);
-  assert.match(curve, /Costo promedio por km/);
-  assert.match(curve, /averageCostPerKm\(selected\?\.\[code\], selected\?\.km\)/);
+  assert.match(curve, /function oneKmWindow\(/);
+  assert.match(curve, /window\.to\[category\] - window\.from\[category\]/);
+  assert.match(curve, /function moneyPerExtraKm\(/);
+  assert.match(curve, /Aumento por 1 km adicional/);
+  assert.match(curve, /Aumento del último km/);
+  assert.match(curve, /Incluido en la tarifa mínima/);
+  assert.doesNotMatch(curve, /averageCostPerKm|Costo promedio por km|fare \/ km/);
   assert.match(curve, /no un precio histórico/);
 });
 
@@ -49,7 +52,7 @@ test('Vrixora Premium Consistency is applied without touching the fare engine', 
   assert.match(curve, /aria-label="Distancia de consulta"/);
   assert.match(curve, /aria-label="Precio por modalidad"/);
   assert.match(curve, /aria-label="Gráfica comparativa de precios"/);
-  assert.match(curve, /Costo promedio por km/);
+  assert.match(curve, /Aumento por 1 km adicional/);
   assert.match(curve, /<details className="group/);
   assert.match(curve, /<Skeleton /);
   assert.match(curve, /No se muestra ningún precio supuesto/);
@@ -57,4 +60,21 @@ test('Vrixora Premium Consistency is applied without touching the fare engine', 
   assert.match(curve, /min-h-11 min-w-\[58px\]/);
   assert.doesNotMatch(curve, /<h3 className="text-lg font-semibold text-foreground">Curva de precios por km<\/h3>/);
   assert.doesNotMatch(curve, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
+});
+
+test('fare-per-kilometer display uses real fare differences and never total fare divided by distance', () => {
+  assert.match(curve, /const fromKm = isLastKilometer \? current\.km - 1 : current\.km/);
+  assert.match(curve, /const toKm = fromKm \+ 1/);
+  assert.match(curve, /window\.to\[category\] - window\.from\[category\]/);
+  assert.match(curve, /moneyPerExtraKm\(incrementalPricePerKm\(extraKmWindow, code\)\)/);
+  assert.match(curve, /De \$\{extraKmWindow\.from\.km\.toLocaleString\("es-CU"\)\}/);
+  assert.match(curve, /Incluido en la tarifa mínima/);
+  // Historic production smart-engine snapshots at 0.5km and 1.5km:
+  const halfKm = { motorcycle: 575, tricycle: 1247, light_car: 2061, bicitaxi: 772 };
+  const oneAndHalfKm = { motorcycle: 575, tricycle: 1247, light_car: 2061, bicitaxi: 928 };
+  assert.equal(oneAndHalfKm.motorcycle - halfKm.motorcycle, 0);
+  assert.equal(oneAndHalfKm.tricycle - halfKm.tricycle, 0);
+  assert.equal(oneAndHalfKm.light_car - halfKm.light_car, 0);
+  assert.equal(oneAndHalfKm.bicitaxi - halfKm.bicitaxi, 156);
+  assert.notEqual(halfKm.motorcycle / 0.5, oneAndHalfKm.motorcycle - halfKm.motorcycle);
 });
