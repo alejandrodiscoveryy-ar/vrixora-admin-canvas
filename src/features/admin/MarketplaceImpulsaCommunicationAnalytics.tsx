@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, ChevronDown, ExternalLink, MousePointerClick, RefreshCw, Share2, Users, TrendingUp, AlertCircle } from "lucide-react";
+import { BarChart3, ChevronDown, ExternalLink, MousePointerClick, RefreshCw, Share2, Users, TrendingUp, AlertCircle, MessageCircle } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from "recharts";
 import { getSupabaseClient } from "@/lib/supabase";
+import { supabaseServices, type MarketplaceCursor } from "@/lib/services";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
@@ -71,6 +72,43 @@ async function fetchReport(projectId: string, days: PeriodDays): Promise<Report>
   };
 }
 
+
+// Los teléfonos son los ya registrados en el directorio operativo; no se escriben ni se duplican.
+// Solo crear enlaces verificables: Cuba (+53, móvil de 8 dígitos) o E.164 explícito.
+export function normalizeImpulsaDriverWhatsApp(phone: string | null): string | null {
+  const raw = phone?.trim() ?? "";
+  if (!raw || !/^[+0-9() .-]+$/.test(raw) || (raw.includes("+") && !raw.startsWith("+"))) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (/^5\d{7}$/.test(digits)) return "53" + digits;
+  if (/^535\d{7}$/.test(digits)) return digits;
+  if (raw.startsWith("+") && /^[1-9]\d{7,14}$/.test(digits)) return digits;
+  return null;
+}
+
+async function fetchImpulsaDriverContacts(projectId: string, promoterIds: string[]): Promise<Record<string, string>> {
+  const pending = new Set(promoterIds);
+  const contacts: Record<string, string> = {};
+  const cursors = new Set<string>();
+  let cursor: MarketplaceCursor | undefined;
+  // Consulta la RPC existente del directorio (requiere marketplace.view).
+  // No expone teléfonos mediante las estadísticas de commercial.view.
+  for (let page = 0; page < 50 && pending.size > 0; page++) {
+    const result = await supabaseServices.marketplace.listDrivers(projectId, { limit: 200, cursor });
+    for (const driver of result.items) {
+      if (!pending.has(driver.userId)) continue;
+      pending.delete(driver.userId);
+      const normalized = normalizeImpulsaDriverWhatsApp(driver.phone);
+      if (normalized) contacts[driver.userId] = normalized;
+    }
+    if (!result.nextCursor) return contacts;
+    const key = result.nextCursor.at + "/" + result.nextCursor.id;
+    if (cursors.has(key)) throw new Error("IMPULSA_CONTACT_PAGINATION_INVALID");
+    cursors.add(key);
+    cursor = result.nextCursor;
+  }
+  return contacts;
+}
+
 function MiniMetric({label,value,icon:Icon,detail}: {label:string;value:number;icon:typeof Share2;detail?:string}) {
   return <div className={cp.metric}>
     <div className="flex items-center justify-between gap-2 text-muted-foreground">
@@ -81,7 +119,7 @@ function MiniMetric({label,value,icon:Icon,detail}: {label:string;value:number;i
   </div>;
 }
 
-export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {projectId:string}) {
+export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canManage=false}: {projectId:string;canManage?:boolean}) {
   const [days,setDays]=useState<PeriodDays>(30);
   // Las fichas comienzan plegadas y se pueden abrir independientemente.
   const [expanded,setExpanded]=useState<Set<string>>(() => new Set());
@@ -90,6 +128,13 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
     staleTime:60_000,refetchInterval:120_000,refetchIntervalInBackground:false,retry:1,
   });
   const d=query.data,t=d?.totals??zero;
+  const promoterIds=(d?.drivers??[]).map(driver=>driver.driver_user_id);
+  const contacts=useQuery({
+    queryKey:["impulsa-driver-contacts",projectId,promoterIds.join("|")],
+    queryFn:()=>fetchImpulsaDriverContacts(projectId,promoterIds),
+    enabled:canManage && query.isSuccess && promoterIds.length>0,
+    staleTime:60_000,refetchInterval:120_000,refetchIntervalInBackground:false,retry:1,
+  });
   const timeline=useMemo(()=>d?.trend.map(x=>({date:dateLabel(x.day),clics:number(x.clicks),
     cotizaciones:number(x.quotes),solicitudes:number(x.requests),difusiones:number(x.shares)}))??[],[d?.trend]);
   const stages=[{title:"Enlace abierto",value:t.clicks},
@@ -235,10 +280,12 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          </div>
          {d!.drivers.length ? d!.drivers.map(x=>{
            const open=expanded.has(x.driver_user_id);
+           const phone=canManage ? contacts.data?.[x.driver_user_id] : undefined;
            const initials=x.name.trim().split(/\s+/).slice(0,2).map(part=>part[0]??"").join("").toUpperCase()||"C";
            return <article key={x.driver_user_id} data-impulsa-expanded={open?"true":"false"}
              className={cp.inset + " group relative min-w-0 overflow-hidden p-0 shadow-sm transition-colors hover:border-cyan-400/35 sm:p-0"}>
              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-cyan-500/60" />
+             <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-5">
              <button type="button" aria-expanded={open}
                aria-label={`${open?"Plegar":"Desplegar"} detalles de Impulsa de ${x.name}`}
                aria-controls={`impulsa-marketing-driver-${x.driver_user_id}`}
@@ -248,7 +295,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
                  else next.add(x.driver_user_id);
                  return next;
                })}
-               className="flex min-h-16 w-full min-w-0 flex-wrap items-center gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/60 hover:bg-surface-2/60 sm:flex-nowrap sm:px-5">
+               className="flex min-h-16 min-w-0 flex-1 flex-wrap items-center gap-3 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/60 hover:bg-surface-2/60 sm:flex-nowrap">
                <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-sm font-bold text-cyan-200">
                  {initials}
                </span>
@@ -270,6 +317,15 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
                  <ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${open?"rotate-180":""}`}/>
                </span>
              </button>
+             {canManage && phone && (
+               <a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer"
+                 aria-label={`Abrir WhatsApp de ${x.name}`}
+                 title={`Contactar por WhatsApp con ${x.name}`}
+                 className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-400/25 bg-emerald-500/[0.06] px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 sm:min-h-9">
+                 <MessageCircle aria-hidden="true" className="size-4" />WhatsApp
+               </a>
+             )}
+             </div>
              <div id={`impulsa-marketing-driver-${x.driver_user_id}`} hidden={!open} className="border-t border-border-subtle bg-surface-2/35 px-4 pb-4 pt-3 sm:px-5">
                {open && <>
                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">Captación y actividad del enlace</p>
