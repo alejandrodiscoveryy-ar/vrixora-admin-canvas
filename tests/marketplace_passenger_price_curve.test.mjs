@@ -20,6 +20,9 @@ test('production smart quotes are read only and include all four passenger modes
   assert.match(curve, /getSupabaseClient\(\)\.rpc/);
   assert.doesNotMatch(curve, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
   assert.match(curve, /target_step_km: 0\.5/);
-  assert.match(curve, /\[5, 9, 12\]/);
+  assert.match(curve, /const referenceKilometers = \[3, 5, 8, 10, 12, 15, 20, 25\]/);
+  assert.match(curve, /useState\(25\)/);
+  assert.match(curve, /ticks=\{referenceKilometers\.filter/);
+  assert.match(curve, /onClick=\{\(\) => setSelectedKm\(km\)\}/);
   assert.match(curve, /America\/Havana/);
 });
