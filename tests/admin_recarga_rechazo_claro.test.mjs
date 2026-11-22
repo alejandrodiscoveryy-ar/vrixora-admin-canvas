@@ -7,8 +7,8 @@ const api = readFileSync(new URL("../src/lib/services/supabase.ts", import.meta.
 const start = source.indexOf('<DialogTitle>Gestionar recarga de');
 const end = source.indexOf('type JobRadarImpact', start);
 const dialog = source.slice(start, end);
-const rejected = dialog.slice(dialog.indexOf('aria-labelledby="topup-reject-heading"'), dialog.indexOf('aria-labelledby="topup-confirm-heading"'));
-const confirmed = dialog.slice(dialog.indexOf('aria-labelledby="topup-confirm-heading"'));
+const confirmed = dialog.slice(dialog.indexOf('aria-labelledby="topup-confirm-heading"'), dialog.indexOf('aria-labelledby="topup-reject-heading"'));
+const rejected = dialog.slice(dialog.indexOf('aria-labelledby="topup-reject-heading"'));
 
 test("Rechazar tiene un motivo claro, visible y separado de la referencia bancaria", () => {
   assert.ok(start > 0 && end > start);
@@ -50,4 +50,14 @@ test("Ambas operaciones muestran un resultado claro y conservan el cierre del di
   assert.match(source, /setReason\(""\)/);
   assert.match(source, /setReceivedPaymentReference\(""\)/);
   assert.match(source, /setVerifiedPaymentReceived\(false\)/);
+});
+
+test("Confirmar pago recibido queda arriba y Rechazar solicitud abajo sin modificar validaciones", () => {
+  const confirmPosition = dialog.indexOf('aria-labelledby="topup-confirm-heading"');
+  const rejectPosition = dialog.indexOf('aria-labelledby="topup-reject-heading"');
+  assert.ok(confirmPosition >= 0 && rejectPosition > confirmPosition, "La confirmación debe mostrarse primero");
+  assert.match(confirmed, /border-\[var\(--semantic-success-border\)\]/);
+  assert.match(rejected, /border-\[var\(--semantic-danger-border\)\]/);
+  assert.match(confirmed, /onClick=\{\(\) => confirm\.mutate\(\)\}/);
+  assert.match(rejected, /onClick=\{\(\) => reject\.mutate\(\)\}/);
 });
