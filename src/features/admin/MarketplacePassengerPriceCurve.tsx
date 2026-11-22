@@ -9,6 +9,9 @@ type VehicleCode = "motorcycle" | "tricycle" | "light_car" | "bicitaxi";
 type PricePoint = { km: number } & Record<VehicleCode, number>;
 type CurveResponse = { rows?: unknown; scenario_local?: unknown; rate?: unknown; rate_source?: unknown };
 
+// Distancias de consulta seleccionadas para comparar las cuatro modalidades.
+const referenceKilometers = [3, 5, 8, 10, 12, 15, 20, 25] as const;
+
 const vehicles = [
   { code: "motorcycle", name: "Moto", color: "#fb7185", icon: Bike },
   { code: "tricycle", name: "Triciclo", color: "#c084fc", icon: Truck },
@@ -43,8 +46,8 @@ function parsedCurve(value: unknown): PricePoint[] {
 
 /** Quotes calculated by the production engine, strictly read-only. */
 export default function MarketplacePassengerPriceCurve({ projectId }: { projectId: string }) {
-  const [maxKm, setMaxKm] = useState(20);
-  const [selectedKm, setSelectedKm] = useState(9);
+  const [maxKm, setMaxKm] = useState(25);
+  const [selectedKm, setSelectedKm] = useState(8);
   const [focused, setFocused] = useState<VehicleCode | "all">("all");
   const [timeMode, setTimeMode] = useState<"current" | "custom">("current");
   const [localDateTime, setLocalDateTime] = useState(havanaLocalInput);
@@ -96,7 +99,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
               <option value={10}>0,5 a 10 km</option>
               <option value={15}>0,5 a 15 km</option>
               <option value={20}>0,5 a 20 km</option>
-              <option value={30}>0,5 a 30 km</option>
+              <option value={25}>0,5 a 25 km</option>
             </select>
           </label>
           <div className="space-y-1 text-xs font-medium text-muted-foreground">
@@ -174,8 +177,9 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={rows} margin={{ top: 18, right: 14, bottom: 8, left: -14 }}>
                     <CartesianGrid stroke="currentColor" strokeOpacity={0.10} vertical={false} />
-                    <XAxis dataKey="km" type="number" domain={[0, maxKm]} tickCount={6}
-                      tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="km" type="number" domain={[0, maxKm]}
+                      ticks={referenceKilometers.filter((km) => km <= maxKm)} interval={0}
+                      tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis domain={[0, Math.ceil(biggestPrice / 1000) * 1000]}
                       tickFormatter={(value) => Number(value) >= 1000 ? String(Math.round(Number(value) / 1000)) + "k" : String(value)}
                       tick={{ fontSize: 11 }} width={44} axisLine={false} tickLine={false} />
@@ -184,9 +188,8 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                       formatter={(value, name) => [money(Number(value)), vehicles.find((vehicle) => vehicle.code === name)?.name ?? String(name)]}
                       contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }}
                     />
-                    {[5, 9, 12].filter((km) => km <= maxKm).map((km) => (
-                      <ReferenceLine key={km} x={km} stroke="#94a3b8" strokeDasharray="4 4" strokeOpacity={0.65}
-                        label={{ value: String(km) + " km", fontSize: 10, fill: "#94a3b8", position: "top" }} />
+                    {referenceKilometers.filter((km) => km <= maxKm).map((km) => (
+                      <ReferenceLine key={km} x={km} stroke="#94a3b8" strokeDasharray="3 5" strokeOpacity={0.24} />
                     ))}
                     <ReferenceLine x={selected?.km ?? boundedKm} stroke="#22d3ee" strokeWidth={1.5} strokeOpacity={0.9} />
                     {vehicles.map(({ code, color }) => (
@@ -197,6 +200,19 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                     ))}
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-border/70 bg-background/35 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Consulta rápida por kilómetros</p>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8" role="group" aria-label="Kilómetros de referencia">
+                {referenceKilometers.filter((km) => km <= maxKm).map((km) => (
+                  <button key={km} type="button" onClick={() => setSelectedKm(km)}
+                    aria-pressed={selected?.km === km}
+                    className={"min-h-10 rounded-lg border px-2 py-2 text-xs font-semibold tabular-nums transition " +
+                      (selected?.km === km ? "border-cyan-400/70 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300" : "border-border/70 bg-card/75 text-foreground hover:border-cyan-500/40")}
+                  >{km} km</button>
+                ))}
               </div>
             </div>
 
@@ -218,7 +234,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
             </div>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Consulta de solo lectura cada 0,5 km, con recargos por día y horario.
-              Marcas de 5, 9 y 12 km: corrección en recorridos medios.
+              Marcas de consulta: 3, 5, 8, 10, 12, 15, 20 y 25 km. La corrección tarifaria vigente de 5 a 12 km sigue intacta.
               No incluye recargos especiales por destino (por ejemplo, aeropuerto), pasajeros adicionales ni paradas.
               Una sola tarifa por modalidad, sin distinción de combustible.
             </p>
