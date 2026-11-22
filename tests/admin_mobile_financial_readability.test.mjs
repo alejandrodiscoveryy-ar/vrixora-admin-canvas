@@ -58,7 +58,7 @@ test("Gestión de recarga en móvil conserva comprobación de ingreso y modal de
   assert.match(dialog, /max-h-\[calc\(100dvh-1rem\)\]/);
   assert.match(dialog, /w-\[calc\(100vw-1rem\)\]/);
   assert.match(dialog, /overflow-y-auto/);
-  assert.match(dialog, /\[_button\]:min-h-11/);
+  assert.match(dialog, /\[&_button\]:min-h-11/);
   assert.match(dialog, /verifiedPaymentReceived/);
   assert.match(dialog, /receivedPaymentReference\.trim\(\)/);
   assert.match(dialog, /confirm\.mutate\(\)/);
