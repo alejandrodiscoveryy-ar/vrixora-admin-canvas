@@ -23,6 +23,14 @@ const money = (value: number | null | undefined) =>
   value == null || !Number.isFinite(value) ? "—"
   : value.toLocaleString("es-CU", { maximumFractionDigits: 0 }) + " CUP";
 
+// Importe final por distancia, no la tarifa marginal ni el costo de combustible.
+const averageCostPerKm = (fare: number | undefined, km: number | undefined) =>
+  fare == null || km == null || !Number.isFinite(fare) || !Number.isFinite(km) || km <= 0
+    ? "—"
+    : (fare / km).toLocaleString("es-CU", {
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
+      }) + " CUP/km";
+
 function havanaLocalInput(): string {
   const now = new Date();
   // Cuba retained UTC-4 in this period; IANA databases may still report UTC-5.
@@ -171,6 +179,12 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                   </div>
                   <p className="mt-1 break-words text-lg font-bold tabular-nums text-foreground sm:text-xl">{money(selected?.[code])}</p>
                   <span className="text-[11px] text-muted-foreground">a {selected?.km.toLocaleString("es-CU") ?? "—"} km</span>
+                  <div className="mt-2 border-t border-border/60 pt-2">
+                    <span className="block text-[11px] text-muted-foreground">Costo promedio por km</span>
+                    <strong className="mt-0.5 block text-sm font-semibold tabular-nums text-foreground">
+                      {averageCostPerKm(selected?.[code], selected?.km)}
+                    </strong>
+                  </div>
                 </button>
               ))}
             </div>
@@ -249,7 +263,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
               </p>
             ) : null}
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Consulta de solo lectura cada 0,5 km, con recargos por día y horario.
+              Consulta de solo lectura cada 0,5 km, con recargos por día y horario. El costo promedio por km se calcula dividiendo el precio final entre la distancia seleccionada.
               Marcas de consulta: 2, 3, 5, 8, 9, 10, 12, 15, 20 y 25 km. La corrección tarifaria vigente de 5 a 12 km sigue intacta.
               No incluye recargos especiales por destino (por ejemplo, aeropuerto), pasajeros adicionales ni paradas.
               Una sola tarifa por modalidad, sin distinción de combustible.
