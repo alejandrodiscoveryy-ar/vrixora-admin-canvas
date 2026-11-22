@@ -707,6 +707,18 @@ function SummaryItem({
   );
 }
 
+function dateInCuba(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Havana", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date);
+  const part = (kind: string) => parts.find((value) => value.type === kind)?.value ?? "";
+  return [part("year"), part("month"), part("day")].join("-");
+}
+
+function formatCUP(value: number): string {
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 }).format(value) + " CUP";
+}
+
 function formatActivityDate(value: string) {
   return new Intl.DateTimeFormat("es", {
     day: "2-digit",
