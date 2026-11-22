@@ -2621,7 +2621,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-deposit-state={wallet.initialDepositConfirmed ? "confirmed" : "pending"}>
                       <div className="marketplace-wallet-summary">
                         <RecordIdentity icon={Wallet} name={wallet.driverDisplayName}>
-                          <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
+                          <p className="marketplace-wallet-phone break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
                           <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}</span>
                         </RecordIdentity>
                         <div className="marketplace-record-metrics marketplace-wallet-metrics grid min-w-0">
@@ -2725,21 +2725,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           topupWhatsAppMessage(item, paymentMethodLabel(item.method), receipt?.documentNumber),
                         )
                       : null;
-                    // Las solicitudes simples ya muestran todos sus datos. No ofrecer
-                    // un desplegable vacío que únicamente repita "Transferencia".
-                    const hasTopupDetails = Boolean(
-                      item.notes || item.rejectionReason || item.confirmedAt ||
-                      item.rejectedAt || receipt || creditNote || notificationLink ||
-                      (canCorrectPayments && canManagePayments &&
-                        ["confirmed", "reconciled"].includes(item.status) &&
-                        !isTopupReversed && financialDocumentHistoryComplete)
-                    );
-                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status} data-has-details={hasTopupDetails ? "true" : "false"}>
+                    // Todas las recargas permiten expandir los datos y las acciones,
+                    // incluidas las pendientes sin referencias ni comprobantes.
+                    return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status}>
                       <div className="marketplace-topup-main">
                         <div className="marketplace-topup-summary">
                           <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
-                            <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
-                            <p className="break-words">{paymentMethodLabel(item.method)}</p>
+                            <div className="marketplace-topup-identity-meta">
+                              <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
+                              <p className="break-words">{paymentMethodLabel(item.method)}</p>
+                            </div>
                           </RecordIdentity>
                           <div className="marketplace-topup-phone min-w-0">
                             <span className="block text-xs text-text-secondary">Teléfono</span>
@@ -2792,7 +2787,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           </div>
                         ) : null}
                       </div>
-                      {hasTopupDetails ? <details className="marketplace-record-details group">
+                      <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
                           <span className="sr-only">Ver detalles de la recarga de {item.driverDisplayName}</span>
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
@@ -2866,7 +2861,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             </div>
                           </details>
                         ) : null}
-                      </details> : null}
+                      </details>
                     </article>;
                   })}
                 </div>
