@@ -1527,3 +1527,33 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   .dark .marketplace-wallet-toolbar .marketplace-finance-watermark,
   .dark .marketplace-topup-toolbar .marketplace-finance-watermark { opacity: .11; }
 }
+
+
+/* Pricing center mobile selector: reduce navigation height without changing the
+   premium graphite desktop design or any pricing calculation. */
+@media (max-width: 639px) {
+  .tuktuk-pricing-nav-compact .tuktuk-pricing-nav-option {
+    min-height: 56px;
+    padding: 8px;
+    gap: 8px;
+    border-radius: var(--radius-control);
+  }
+  .tuktuk-pricing-nav-compact .tuktuk-pricing-nav-option .admin-nav-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+  .tuktuk-pricing-nav-compact .tuktuk-pricing-nav-option .admin-nav-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .tuktuk-pricing-nav-compact .tuktuk-pricing-nav-option .tuktuk-pricing-nav-number {
+    display: none;
+  }
+  .tuktuk-pricing-nav-compact .tuktuk-pricing-nav-option > svg:first-child {
+    width: 68px;
+    height: 68px;
+    top: -12px;
+    right: -16px;
+  }
+}
