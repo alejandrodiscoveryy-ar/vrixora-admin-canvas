@@ -35,13 +35,14 @@ function ProjectsList() {
   const {
     data: recoveredAccess,
     isLoading: recoveryLoading,
+    isFetching: recoveryFetching,
     isError: recoveryError,
     refetch: retryRecovery,
   } = useProjectAccess(user?.id ?? null, recoveryId);
   const redirectProjectId = singleProjectEntry(projects, {
     loaded: Boolean(user) && !isLoading && !isFetching && !error,
     selectorRequested,
-    recoveredAccess: recoveredAccess === true && !recoveryLoading && !recoveryError,
+    recoveredAccess: recoveredAccess === true && !recoveryLoading && !recoveryFetching && !recoveryError,
   });
 
   useEffect(() => {
@@ -64,7 +65,7 @@ function ProjectsList() {
 
   if (!user) return null;
 
-  if (isLoading || isFetching || redirectProjectId || (recoveryId && recoveryLoading)) {
+  if (isLoading || isFetching || redirectProjectId || (recoveryId && (recoveryLoading || recoveryFetching))) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
