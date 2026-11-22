@@ -3554,56 +3554,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             </DialogDescription>
           </DialogHeader>
 
-          <section aria-labelledby="topup-reject-heading" className="space-y-3 rounded-xl border border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] p-3 sm:p-4">
-            <div className="space-y-1">
-              <h3 id="topup-reject-heading" className="flex items-center gap-2 text-sm font-semibold text-[var(--semantic-danger-foreground)]">
-                <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
-                Rechazar solicitud
-              </h3>
-              <p className="text-xs leading-relaxed text-text-secondary">
-                Cuando la recarga no procede, no se recibió dinero o se solicitó por error. No se acredita saldo.
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="topup-rejection-reason">Motivo del rechazo (obligatorio)</Label>
-              <Textarea
-                id="topup-rejection-reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Ej.: No procede, solicitud por error o pago no recibido"
-                aria-describedby="topup-rejection-help"
-                maxLength={1000}
-                disabled={reject.isPending || confirm.isPending}
-                className="min-h-20 border-[var(--semantic-danger-border)] bg-surface-1 text-foreground"
-              />
-              <p id="topup-rejection-help" className="text-xs text-text-secondary">
-                Escribe el motivo aquí (no en «Referencia»). No necesitas marcar la casilla del ingreso.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button type="button" size="sm" variant="outline"
-                className="min-h-10 border-[var(--semantic-danger-border)] bg-surface-2 text-text-secondary"
-                disabled={reject.isPending || confirm.isPending}
-                onClick={() => {
-                  setReason("No procede");
-                  setVerifiedPaymentReceived(false);
-                }}
-              >
-                Usar motivo: No procede
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                className="min-h-11 w-full sm:w-auto"
-                disabled={reject.isPending || confirm.isPending || !reason.trim()}
-                onClick={() => reject.mutate()}
-              >
-                {reject.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Rechazar solicitud
-              </Button>
-            </div>
-          </section>
-
           <section aria-labelledby="topup-confirm-heading" className="space-y-3 rounded-xl border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] p-3 sm:p-4">
             <div className="space-y-1">
               <h3 id="topup-confirm-heading" className="flex items-center gap-2 text-sm font-semibold text-[var(--semantic-success-foreground)]">
@@ -3650,6 +3600,56 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               >
                 {confirm.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Confirmar pago recibido
+              </Button>
+            </div>
+          </section>
+
+          <section aria-labelledby="topup-reject-heading" className="space-y-3 rounded-xl border border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] p-3 sm:p-4">
+            <div className="space-y-1">
+              <h3 id="topup-reject-heading" className="flex items-center gap-2 text-sm font-semibold text-[var(--semantic-danger-foreground)]">
+                <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
+                Rechazar solicitud
+              </h3>
+              <p className="text-xs leading-relaxed text-text-secondary">
+                Cuando la recarga no procede, no se recibió dinero o se solicitó por error. No se acredita saldo.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="topup-rejection-reason">Motivo del rechazo (obligatorio)</Label>
+              <Textarea
+                id="topup-rejection-reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Ej.: No procede, solicitud por error o pago no recibido"
+                aria-describedby="topup-rejection-help"
+                maxLength={1000}
+                disabled={reject.isPending || confirm.isPending}
+                className="min-h-20 border-[var(--semantic-danger-border)] bg-surface-1 text-foreground"
+              />
+              <p id="topup-rejection-help" className="text-xs text-text-secondary">
+                Escribe el motivo aquí (no en «Referencia»). No necesitas marcar la casilla del ingreso.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button type="button" size="sm" variant="outline"
+                className="min-h-10 border-[var(--semantic-danger-border)] bg-surface-2 text-text-secondary"
+                disabled={reject.isPending || confirm.isPending}
+                onClick={() => {
+                  setReason("No procede");
+                  setVerifiedPaymentReceived(false);
+                }}
+              >
+                Usar motivo: No procede
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="min-h-11 w-full sm:w-auto"
+                disabled={reject.isPending || confirm.isPending || !reason.trim()}
+                onClick={() => reject.mutate()}
+              >
+                {reject.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Rechazar solicitud
               </Button>
             </div>
           </section>
