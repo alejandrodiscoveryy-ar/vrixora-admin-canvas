@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  Activity,
   ArrowLeft,
   CalendarClock,
   ChevronRight,
@@ -45,6 +46,7 @@ import MarketplacePricingV3Hierarchy from "@/features/admin/MarketplacePricingV3
 import MarketplaceTemporalDraftsV3 from "@/features/admin/MarketplaceTemporalDraftsV3";
 import MarketplacePricingMapV3, { type PricingRouteScenario } from "@/features/admin/MarketplacePricingMapV3";
 import MarketplacePricingGlobalAdjustment from "@/features/admin/MarketplacePricingGlobalAdjustment";
+import MarketplacePassengerPriceCurve from "@/features/admin/MarketplacePassengerPriceCurve";
 import { useProjectPermissions } from "@/hooks/useProjects";
 
 type PricingFieldKey =
@@ -59,6 +61,7 @@ type ServiceCode = "passenger" | "cargo" | "courier";
 // El inicio solo muestra rutas de navegación. Cada herramienta se monta al abrir su área.
 const pricingWorkspaceOptions = [
   { code: "tariffs", title: "Tarifas actuales", description: "Revisar y editar precios por vehículo.", note: "Precios reales", icon: DollarSign },
+  { code: "curve", title: "Curva de precios por km", description: "Ver cómo sube el precio de moto, triciclo, auto y bicitaxi.", note: "Gráfica en CUP · precios reales", icon: Activity },
   { code: "temporal", title: "Horarios y recargos", description: "Configurar noche, fines de semana y festivos.", note: "Solo borradores", icon: CalendarClock },
   { code: "simulation", title: "Probar un precio", description: "Elegir una ruta y consultar el importe.", note: "Sin crear viajes", icon: Route },
   { code: "advanced", title: "Herramientas avanzadas", description: "Revisar diagnósticos y comparaciones.", note: "Solo análisis", icon: SlidersHorizontal },
@@ -468,7 +471,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             <p className="text-xs text-muted-foreground">{configuredCount} de {categories.length} tarifas configuradas</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {pricingWorkspaceOptions.map((item) => {
+            {pricingWorkspaceOptions.filter((item) => selectedService === "passenger" || item.code !== "curve").map((item) => {
               const AreaIcon = item.icon;
               return (
                 <button key={item.code} type="button"
@@ -568,6 +571,10 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
             exchangeRate={rate}
           />
         </section>
+      ) : null}
+
+      {workspace === "curve" && selectedService === "passenger" ? (
+        <MarketplacePassengerPriceCurve projectId={projectId} />
       ) : null}
 
       {workspace === "simulation" ? (
