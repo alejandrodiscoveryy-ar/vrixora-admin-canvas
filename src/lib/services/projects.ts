@@ -15,6 +15,13 @@ export interface SupabaseProject {
 export async function getUserProjects(userId: string): Promise<Project[]> {
   const client = getSupabaseClient();
 
+  // Evita solicitudes anónimas mientras el token se restaura o renueva.
+  const { data: authData, error: authError } = await client.auth.getSession();
+  if (authError) throw authError;
+  if (authData.session?.user.id !== userId) {
+    throw new Error("Tu sesión administrativa ha caducado. Vuelve a iniciar sesión.");
+  }
+
   const { data: projects, error } = await client
     .from("projects")
     .select("id, name, slug, description, status, created_at, color, icon_url")
