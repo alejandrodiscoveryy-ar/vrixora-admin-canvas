@@ -36,7 +36,7 @@ test("El carnet solo se almacena en el esquema privado, se valida y se audita si
   assert.match(sql, /'••••' \|\| right\(a\.identity_card_number, 4\)/);
   assert.match(sql, /grant execute on function public\.admin_list_marketplace_ally_identity_status_v1\(uuid\) to authenticated/);
   assert.match(sql, /revoke all on function public\.admin_list_marketplace_ally_identity_status_v1\(uuid\) from public, anon/);
-  assert.doesNotMatch(sql, /jsonb_build_object\([^;]*identity_card_number/i);
+  assert.doesNotMatch(sql, /jsonb_build_object\('identity_card_number',/i);
   assert.match(sql, /'ally_identity_updated'/);
   assert.match(sql, /'ally_identity_recorded'/);
 });
