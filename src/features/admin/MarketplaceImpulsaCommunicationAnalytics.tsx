@@ -77,7 +77,7 @@ async function fetchReport(projectId: string, days: PeriodDays): Promise<Report>
 // Solo crear enlaces verificables: Cuba (+53, móvil de 8 dígitos) o E.164 explícito.
 export function normalizeImpulsaDriverWhatsApp(phone: string | null): string | null {
   const raw = phone?.trim() ?? "";
-  if (!raw || !/^[+0-9() .-]+$/.test(raw) || (raw.includes("+") && !raw.startsWith("+"))) return null;
+  if (!raw || !/^[+0-9() .-]+$/.test(raw) || (raw.includes("+") && !/^[+][^+]+$/.test(raw))) return null;
   const digits = raw.replace(/\D/g, "");
   if (/^5\d{7}$/.test(digits)) return "53" + digits;
   if (/^535\d{7}$/.test(digits)) return digits;
