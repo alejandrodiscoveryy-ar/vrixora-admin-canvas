@@ -64,3 +64,20 @@ test("Gestión de recarga en móvil conserva comprobación de ingreso y modal de
   assert.match(dialog, /confirm\.mutate\(\)/);
   assert.match(dialog, /reject\.mutate\(\)/);
 });
+
+test("Móvil: ficha cerrada solo indica conductor, cifra y estado; al expandir muestra todos los datos", () => {
+  assert.match(topup, /marketplace-topup-identity-meta/);
+  assert.match(topup, /<details className="marketplace-record-details group">/);
+  assert.doesNotMatch(topup, /hasTopupDetails \? <details/);
+  assert.match(wallet, /marketplace-wallet-phone/);
+  const mobile = css.slice(css.indexOf("/* Finanzas móvil: fichas de dos niveles."));
+  assert.ok(mobile.length > 100);
+  assert.match(mobile, /\.marketplace-topup-row:not\(:has\(> \.marketplace-record-details\[open\]\)\)/);
+  for (const key of [".marketplace-topup-identity-meta", ".marketplace-topup-phone", ".marketplace-topup-reference", ".marketplace-topup-actions"]) {
+    assert.ok(mobile.includes(key), key);
+  }
+  assert.match(mobile, /\.marketplace-wallet-phone/);
+  assert.match(mobile, /\.marketplace-wallet-metrics > :nth-child\(n \+ 2\)/);
+  assert.match(mobile, /\.marketplace-topup-action-full \{ display: none; \}/);
+  assert.match(topup, /marketplace-topup-action-short/);
+});
