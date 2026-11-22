@@ -400,7 +400,7 @@ export default function ComercialSection({ projectId }: { projectId: string }) {
       ) : showImpulsa ? (
         <section className="space-y-4" aria-label="Impulsa" data-admin-module="comercial">
           <CommercialPageHeader title="Impulsa" description="Resultados de los conductores que promocionan TukTuk: difusión, solicitudes y viajes reales." icon={UsersRound} />
-          <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} />
+          <MarketplaceImpulsaCommunicationAnalytics projectId={projectId} canManage={canManage && permissions.includes("marketplace.view")} />
         </section>
       ) : commercialView === "configuracion" && isTuktukProject ? (
         <section className="space-y-3" aria-label="Configuración comercial" data-admin-module="comercial">

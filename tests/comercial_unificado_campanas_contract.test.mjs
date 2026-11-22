@@ -17,7 +17,7 @@ test("Comercial has four main areas with existing referrals, offers and CRM pres
   assert.match(commercial,/MarketplaceImpulsaPolicyPanel projectId=/);
   assert.match(commercial,/MarketplaceImpulsaTransitionPanel projectId=/);
   assert.match(commercial,/commercialView === "configuracion"/);
-  assert.match(commercial,/<MarketplaceImpulsaCommunicationAnalytics projectId=\{projectId\} \/>/);
+  assert.match(commercial,/<MarketplaceImpulsaCommunicationAnalytics projectId=\{projectId\} canManage=\{canManage && permissions\.includes\("marketplace\.view"\)\} \/>/);
   assert.match(commercial,/Resultados de campañas oficiales/);
   assert.match(commercial,/mode="generator"/);
   assert.match(commercial,/mode="analytics"/);
