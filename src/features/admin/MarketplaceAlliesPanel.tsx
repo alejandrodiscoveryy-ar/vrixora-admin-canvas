@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck, ChevronDown } from "lucide-react";
+import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck, ChevronDown, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
@@ -19,6 +19,17 @@ type Ally = {
 };
 type Issue = { slug: string; report_key: string; expires_at: string };
 type AllyIdentityStatus = { id: string; masked: string };
+type AllyContact = { id: string; whatsapp: string };
+const normalizeAllyWhatsApp = (raw: string): string | null => {
+  const clean = raw.trim();
+  if (!clean) return null;
+  if (!/^[+0-9() .-]+$/.test(clean) || (clean.includes("+") && !/^\+[^+]+$/.test(clean))) return null;
+  const digits = clean.replace(/\D/g, "");
+  const normalized = clean.startsWith("+") ? "+" + digits
+    : /^5\d{7}$/.test(digits) ? "+53" + digits
+    : /^535\d{7}$/.test(digits) ? "+" + digits : null;
+  return normalized && /^\+[1-9]\d{7,14}$/.test(normalized) ? normalized : null;
+};
 const carnetValid = (value: string) => /^\d{11}$/.test(value.trim());
 const reasonLabels: Record<string, string> = {
   price: "Precio", comparing: "Comparación", no_driver: "Sin transporte",
@@ -39,6 +50,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [identityCard, setIdentityCard] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [rate, setRate] = useState("3");
   const [saving, setSaving] = useState(false);
   const [issued, setIssued] = useState<Issue | null>(null);
@@ -49,6 +61,8 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const [editedRate, setEditedRate] = useState("");
   // null conserva el carnet anterior; "" lo elimina explícitamente.
   const [editedIdentityCard, setEditedIdentityCard] = useState<string | null>(null);
+  // null: conservar; "" eliminar expresamente.
+  const [editedWhatsapp, setEditedWhatsapp] = useState<string | null>(null);
   const [editingPayment, setEditingPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentRef, setPaymentRef] = useState("");
@@ -63,7 +77,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
       return next;
     });
     if (isFolding) {
-      if (editing === id) { setEditing(null); setEditedIdentityCard(null); }
+      if (editing === id) { setEditing(null); setEditedIdentityCard(null); setEditedWhatsapp(null); }
       if (editingPayment === id) {
         setEditingPayment(null);
         setPaymentAmount("");
@@ -94,10 +108,26 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
     enabled: canManage && Boolean(projectId),
     refetchInterval: 120000,
   });
+  const contacts = useQuery({
+    queryKey: ["marketplace-allies-private-whatsapp", projectId],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_list_marketplace_ally_contacts_v1", {
+        target_project_id: projectId,
+      });
+      if (error) throw error;
+      return (Array.isArray(data) ? data : []) as AllyContact[];
+    },
+    enabled: canManage && Boolean(projectId),
+    refetchInterval: 120000,
+  });
+  const contactByAlly = new Map((contacts.data ?? []).map((row) => [row.id, row.whatsapp]));
   const identityByAlly = new Map((identityStatus.data ?? []).map((row) => [row.id, row.masked]));
   const refresh = async () => {
     await qc.invalidateQueries({ queryKey: ["marketplace-allies-v1", projectId] });
-    if (canManage) await qc.invalidateQueries({ queryKey: ["marketplace-allies-identity-status", projectId] });
+    if (canManage) {
+      await qc.invalidateQueries({ queryKey: ["marketplace-allies-identity-status", projectId] });
+      await qc.invalidateQueries({ queryKey: ["marketplace-allies-private-whatsapp", projectId] });
+    }
   };
   async function create() {
     if (!canManage) return;
@@ -107,18 +137,22 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
       !Number.isFinite(pct) || pct < 0 || pct > 5) {
       toast.error("Revisa el nombre, el alias y el porcentaje (0 a 5%)."); return;
     }
+    if (whatsapp.trim() && !normalizeAllyWhatsApp(whatsapp)) {
+      toast.error("Introduce un WhatsApp válido, por ejemplo +5351234567."); return;
+    }
     if (identityCard && !carnetValid(identityCard)) {
       toast.error("El carnet de identidad debe tener 11 dígitos."); return;
     }
     setSaving(true);
     try {
-      const { data, error } = await getSupabaseClient().rpc("admin_create_marketplace_ally_with_identity_v1", {
+      const { data, error } = await getSupabaseClient().rpc("admin_create_marketplace_ally_with_contact_v1", {
         target_project_id: projectId, target_name: name.trim(), target_slug: s, target_rate: pct / 100,
         target_identity_card_number: identityCard.trim() || null,
+        target_whatsapp: whatsapp.trim() ? normalizeAllyWhatsApp(whatsapp) : null,
       });
       if (error) throw error;
       setIssued(data as Issue);
-      setName(""); setSlug(""); setRate("3"); setIdentityCard(""); setCreateExpanded(false);
+      setName(""); setSlug(""); setRate("3"); setIdentityCard(""); setWhatsapp(""); setCreateExpanded(false);
       await refresh();
       toast.success("Aliado creado. Copia sus dos enlaces antes de cerrar esta tarjeta.");
     } catch (e) { toast.error(errorMessage(e)); }
@@ -127,10 +161,14 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   async function update(
     ally: Ally, status: "active" | "paused", newName = ally.name,
     newRate = ally.rate * 100, newIdentityCard: string | null = null,
+    newWhatsapp: string | null = null,
   ) {
     if (!canManage) return;
     if (!Number.isFinite(newRate) || newRate < 0 || newRate > 5) {
       toast.error("La comisión del Aliado debe estar entre 0 y 5 %."); return;
+    }
+    if (newWhatsapp !== null && newWhatsapp.trim() !== "" && !normalizeAllyWhatsApp(newWhatsapp)) {
+      toast.error("Introduce un WhatsApp válido, por ejemplo +5351234567."); return;
     }
     if (newIdentityCard !== null && newIdentityCard.trim() !== "" && !carnetValid(newIdentityCard)) {
       toast.error("El carnet de identidad debe tener 11 dígitos."); return;
@@ -141,13 +179,18 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
         target_project_id: projectId, target_ally_id: ally.id,
         target_name: newName, target_rate: newRate / 100, target_status: status,
       };
-      const { error } = newIdentityCard === null
+      const { error } = newWhatsapp !== null
+        ? await getSupabaseClient().rpc("admin_update_marketplace_ally_with_contact_v1", {
+            ...args, target_identity_card_number: newIdentityCard,
+            target_whatsapp: newWhatsapp.trim() ? normalizeAllyWhatsApp(newWhatsapp) : "",
+          })
+        : newIdentityCard === null
         ? await getSupabaseClient().rpc("admin_update_marketplace_ally_v1", args)
         : await getSupabaseClient().rpc("admin_update_marketplace_ally_with_identity_v1", {
             ...args, target_identity_card_number: newIdentityCard.trim(),
           });
       if (error) throw error;
-      setEditing(null); setEditedIdentityCard(null); await refresh();
+      setEditing(null); setEditedIdentityCard(null); setEditedWhatsapp(null); await refresh();
       toast.success("Actualizado. Las carreras anteriores conservan su porcentaje.");
     } catch (e) { toast.error(errorMessage(e)); } finally { setSaving(false); }
   }
@@ -267,7 +310,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
             </div>
             <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[10px] font-semibold text-violet-300">Enlace personalizado</span>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_140px_auto] xl:items-end">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_140px_auto] xl:items-end">
             <div className="space-y-1.5">
               <Label htmlFor="ally-name">Responsable del Aliado</Label>
               <Input id="ally-name" maxLength={80} placeholder="Ej. Juan Pérez" value={name} onChange={(event) => setName(event.target.value)} className={cp.control} />
@@ -284,6 +327,13 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                 className={cp.control} />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="ally-whatsapp">WhatsApp de contacto</Label>
+              <Input id="ally-whatsapp" type="tel" inputMode="tel" maxLength={24}
+                autoComplete="off" placeholder="+5351234567 · opcional" value={whatsapp}
+                onChange={(event) => setWhatsapp(event.target.value.replace(/[^0-9+() .-]/g, "").slice(0, 24))}
+                className={cp.control} />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="ally-pct">Comisión (%)</Label>
               <Input id="ally-pct" type="number" min="0" max="5" step=".1" value={rate} onChange={(event) => setRate(event.target.value)} className={cp.control} />
             </div>
@@ -292,7 +342,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
             </Button>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            El carnet es privado, no se incluye en los enlaces ni en el dashboard personal del gestor.
+            El carnet y el WhatsApp son datos de contacto internos. No se incluyen en los enlaces ni en el dashboard personal del gestor.
           </p>
           <p className="mt-3 break-all text-[11px] text-muted-foreground">
             Enlace público: <span className="font-medium text-foreground">{promo(slug || "nick")}</span>. El nick es único entre Aliados y conductores y no puede cambiarse después de compartirlo. Las ganancias se calculan solo para carreras reales liquidadas; no se transfiere dinero automáticamente.
@@ -323,6 +373,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
           {q.data.map((ally) => {
             const due = Math.max(0, Number(ally.earned) - Number(ally.paid));
             const expanded = expandedAllies.has(ally.id);
+            const allyPhone = canManage ? contactByAlly.get(ally.id) : undefined;
             const indicators = [
               { label: "Visitas", value: Number(ally.clicks).toLocaleString("es-CU"), tone: "text-foreground" },
               { label: "Viajes atribuidos", value: Number(ally.attributed).toLocaleString("es-CU"), tone: "text-foreground" },
@@ -367,6 +418,17 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     </span>
                   </button>
                   <div className="flex flex-wrap items-center gap-2">
+                    {canManage && allyPhone && /^\+[1-9]\d{7,14}$/.test(allyPhone) && (
+                      <Button asChild size="sm" variant="outline"
+                        className="min-h-11 border-emerald-400/25 bg-emerald-500/[0.06] text-emerald-300 hover:bg-emerald-500/10 sm:min-h-9">
+                        <a href={`https://wa.me/${allyPhone.slice(1)}`}
+                          target="_blank" rel="noopener noreferrer"
+                          title={`Contactar por WhatsApp: ${allyPhone}`}
+                          aria-label={`Abrir WhatsApp de ${ally.name}: ${allyPhone}`}>
+                          <MessageCircle aria-hidden="true" className="mr-1.5 size-4" />WhatsApp
+                        </a>
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="h-9 border-violet-400/25 bg-violet-500/5" onClick={() => void copy(promo(ally.slug))} aria-label={"Copiar enlace público de " + ally.name}>
                       <Link2 className="mr-1.5 size-3.5" aria-hidden="true" />Enlace público
                     </Button>
@@ -428,7 +490,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                   <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5">
                     <p className="text-[11px] text-muted-foreground">Enlaces personalizados · pago registrado manualmente</p>
                     <div className="flex flex-wrap items-center gap-1">
-                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); setEditedIdentityCard(null); }} aria-label={"Editar " + ally.name}>
+                      <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" onClick={() => { setEditing(ally.id); setEditingPayment(null); setEditedName(ally.name); setEditedRate(String(Number(ally.rate) * 100)); setEditedIdentityCard(null); setEditedWhatsapp(null); }} aria-label={"Editar " + ally.name}>
                         <Pencil className="mr-1.5 size-3.5" aria-hidden="true" />Editar
                       </Button>
                       <Button size="sm" variant="ghost" className="min-h-11 px-2.5 text-xs sm:min-h-9" disabled={saving} onClick={() => void update(ally, ally.status === "active" ? "paused" : "active")}>
@@ -468,11 +530,30 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                           </Button>
                         )}
                       </div>
+                      <div className="min-w-[180px] flex-1 space-y-1">
+                        <Label htmlFor={`ally-edit-whatsapp-${ally.id}`}>WhatsApp de contacto</Label>
+                        <Input id={`ally-edit-whatsapp-${ally.id}`} type="tel" inputMode="tel" maxLength={24}
+                          autoComplete="off" placeholder={allyPhone ?? "+5351234567"}
+                          value={editedWhatsapp ?? ""}
+                          onChange={(event) => setEditedWhatsapp(event.target.value.replace(/[^0-9+() .-]/g, "").slice(0, 24))}
+                          className={cp.control} />
+                        <p className="text-[11px] text-muted-foreground">
+                          {editedWhatsapp === null ? "En blanco conserva el contacto actual." : editedWhatsapp === "" ? "Se quitará el WhatsApp al guardar." : "Se guardará este número de contacto."}
+                        </p>
+                        {allyPhone && (
+                          <Button type="button" size="sm" variant="ghost" className="h-8 text-xs text-muted-foreground"
+                            disabled={saving} onClick={() => {
+                              if (window.confirm("¿Quitar el WhatsApp de contacto de este gestor?")) setEditedWhatsapp("");
+                            }}>
+                            Quitar WhatsApp
+                          </Button>
+                        )}
+                      </div>
                       <div className="min-w-[140px] space-y-1">
                         <Label>Porcentaje futuro</Label>
                         <Input type="number" min="0" max="5" step=".1" value={editedRate} onChange={(event) => setEditedRate(event.target.value)} className={cp.control} />
                       </div>
-                      <Button size="sm" disabled={saving} onClick={() => void update(ally, ally.status, editedName, Number(editedRate), editedIdentityCard)}>Guardar cambios</Button>
+                      <Button size="sm" disabled={saving} onClick={() => void update(ally, ally.status, editedName, Number(editedRate), editedIdentityCard, editedWhatsapp)}>Guardar cambios</Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
                     </div>
                   </div>
