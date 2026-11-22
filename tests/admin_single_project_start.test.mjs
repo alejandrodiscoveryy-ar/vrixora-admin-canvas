@@ -30,11 +30,11 @@ test("Selector antiguo: recupera entrada directa solo después de verificar el p
   assert.match(index, /isLoading && !isFetching && !error/);
   assert.match(index, /\(state\.location\.search as Record<string, unknown>\)\.seleccionar === "1"/);
   assert.match(index, /useProjectAccess\(user\?\.id \?\? null, recoveryId\)/);
-  assert.match(index, /recoveredAccess: recoveredAccess === true && !recoveryLoading && !recoveryError/);
+  assert.match(index, /recoveredAccess: recoveredAccess === true && !recoveryLoading && !recoveryFetching && !recoveryError/);
   assert.match(index, /params: \{ id: redirectProjectId \}/);
   assert.match(index, /replace: true/);
   assert.match(project, /search: \{ seleccionar: "1" \}/);
-  assert.match(project, /!accessError && hasAccess === false/);
+  assert.match(project, /!accessFetching && !accessError && hasAccess === false/);
   assert.match(project, /void retryAccess\(\)/);
 });
 
