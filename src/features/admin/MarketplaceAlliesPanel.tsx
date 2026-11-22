@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck } from "lucide-react";
+import { Copy, ExternalLink, Link2, Plus, RefreshCcw, Wallet, Handshake, MousePointerClick, Route, Pencil, PauseCircle, PlayCircle, X, ShieldCheck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase";
 import { CommercialPageHeader } from "@/features/admin/CommercialPageHeader";
@@ -43,6 +43,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const [saving, setSaving] = useState(false);
   const [issued, setIssued] = useState<Issue | null>(null);
   const [createExpanded, setCreateExpanded] = useState(false);
+  const [expandedAllies, setExpandedAllies] = useState<Set<string>>(() => new Set());
   const [editing, setEditing] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
   const [editedRate, setEditedRate] = useState("");
@@ -52,6 +53,25 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentRef, setPaymentRef] = useState("");
   const [period, setPeriod] = useState<"all">("all");
+  function toggleAllyDetails(id: string) {
+    if (saving) return;
+    const isFolding = expandedAllies.has(id);
+    setExpandedAllies((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    if (isFolding) {
+      if (editing === id) { setEditing(null); setEditedIdentityCard(null); }
+      if (editingPayment === id) {
+        setEditingPayment(null);
+        setPaymentAmount("");
+        setPaymentRef("");
+      }
+    }
+  }
+
   const q = useQuery({
     queryKey: ["marketplace-allies-v1", projectId, period],
     queryFn: async () => {
@@ -302,6 +322,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
         <div className="space-y-2.5">
           {q.data.map((ally) => {
             const due = Math.max(0, Number(ally.earned) - Number(ally.paid));
+            const expanded = expandedAllies.has(ally.id);
             const indicators = [
               { label: "Visitas", value: Number(ally.clicks).toLocaleString("es-CU"), tone: "text-foreground" },
               { label: "Viajes atribuidos", value: Number(ally.attributed).toLocaleString("es-CU"), tone: "text-foreground" },
@@ -312,10 +333,14 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
             ];
             const initials = ally.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toUpperCase() || "A";
             return (
-              <article key={ally.id} className={cp.inset + " group relative overflow-hidden p-0 shadow-sm transition-colors hover:border-violet-400/35 sm:p-0"}>
+              <article key={ally.id} data-ally-expanded={expanded ? "true" : "false"}
+                className={cp.inset + " group relative overflow-hidden p-0 shadow-sm transition-colors hover:border-violet-400/35 sm:p-0"}>
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-violet-500/60" aria-hidden="true" />
                 <div className="flex flex-col gap-3 px-4 pb-3 pt-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
-                  <div className="flex min-w-0 items-center gap-3">
+                  <button type="button" className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+                    aria-expanded={expanded} aria-controls={`ally-details-${ally.id}`}
+                    aria-label={`${expanded ? "Plegar" : "Desplegar"} detalles de ${ally.name}`}
+                    disabled={saving} onClick={() => toggleAllyDetails(ally.id)}>
                     <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-sm font-bold text-violet-200">{initials}</span>
                     <div className="min-w-0">
                       <h4 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground" title={ally.name}>{ally.name}</h4>
@@ -334,8 +359,13 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                           {ally.status === "active" ? "Activo" : "Pausado"}
                         </span>
                       </div>
+                      {!expanded && (
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          {Number(ally.clicks).toLocaleString("es-CU")} visitas · {Number(ally.completed).toLocaleString("es-CU")} viajes completados · {cup(due)} por pagar
+                        </p>
+                      )}
                     </div>
-                  </div>
+                  </button>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button size="sm" variant="outline" className="h-9 border-violet-400/25 bg-violet-500/5" onClick={() => void copy(promo(ally.slug))} aria-label={"Copiar enlace público de " + ally.name}>
                       <Link2 className="mr-1.5 size-3.5" aria-hidden="true" />Enlace público
@@ -345,10 +375,19 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                         <ExternalLink className="mr-1.5 size-3.5" aria-hidden="true" />Renovar acceso
                       </Button>
                     )}
+                    <button type="button"
+                      aria-expanded={expanded} aria-controls={`ally-details-${ally.id}`}
+                      aria-label={`${expanded ? "Plegar" : "Desplegar"} información de ${ally.name}`}
+                      disabled={saving} onClick={() => toggleAllyDetails(ally.id)}
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-violet-400/25 bg-violet-500/[0.05] px-3 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60">
+                      {expanded ? "Plegar" : "Detalles"}
+                      <ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} />
+                    </button>
                   </div>
                 </div>
 
-                <div className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/50 sm:mx-5 sm:grid-cols-3 xl:grid-cols-6">
+                <div id={`ally-details-${ally.id}`} className={expanded ? "" : "hidden"}>
+                  <div className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/50 sm:mx-5 sm:grid-cols-3 xl:grid-cols-6">
                   {indicators.map((metric) => (
                     <div key={metric.label} className="min-w-0 bg-surface-2 px-3 py-2.5 dark:bg-[color:color-mix(in_oklab,var(--surface-3)_92%,var(--text-secondary)_8%)]">
                       <p className="text-[10px] font-medium leading-tight text-muted-foreground">{metric.label}</p>
@@ -456,6 +495,7 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     </div>
                   </div>
                 )}
+                </div>
               </article>
             );
           })}
