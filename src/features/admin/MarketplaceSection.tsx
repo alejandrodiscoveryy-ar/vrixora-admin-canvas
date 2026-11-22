@@ -2573,7 +2573,17 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   </div>
                 </div>
                 <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar billeteras">
+                  <div className="marketplace-mobile-finance-filter">
+                    <FilterSelect appearance="premium" labelText="Filtrar billeteras" value={walletFilter} onChange={(value) => setWalletFilter(value as typeof walletFilter)}>
+                      <option value="">Todas las billeteras</option>
+                      <option value="deposit_pending">Depósito pendiente</option>
+                      <option value="deposit_confirmed">Depósito OK</option>
+                      <option value="has_available">Con disponible</option>
+                      <option value="no_available">Sin disponible</option>
+                    </FilterSelect>
+                  </div>
+                  <div className="marketplace-desktop-finance-filters">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar billeteras">
                     {([
                       ["", "Todas"],
                       ["deposit_pending", "Depósito pendiente"],
@@ -2593,6 +2603,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         {name}
                       </Button>
                     ))}
+                    </div>
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-text-secondary">
                     <span aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
@@ -2610,7 +2621,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-deposit-state={wallet.initialDepositConfirmed ? "confirmed" : "pending"}>
                       <div className="marketplace-wallet-summary">
                         <RecordIdentity icon={Wallet} name={wallet.driverDisplayName}>
-                          <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
+                          <p className="marketplace-wallet-phone break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
                           <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}</span>
                         </RecordIdentity>
                         <div className="marketplace-record-metrics marketplace-wallet-metrics grid min-w-0">
@@ -2667,10 +2678,22 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   {canManagePayments ? <Button className="marketplace-topup-create min-h-11 shrink-0" onClick={() => { setError(null); setNewTopup(true); }}><Plus className="mr-2 h-4 w-4" />Registrar recarga</Button> : null}
                 </div>
                 <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
+                  <div className="marketplace-mobile-finance-filter">
+                    <FilterSelect appearance="premium" labelText="Estado de recarga" value={topupStatus} onChange={setTopupStatus}>
+                      <option value="">Todas las recargas</option>
+                      <option value="requested">Pendientes</option>
+                      <option value="confirmed">Confirmadas</option>
+                      <option value="reconciled">Conciliadas</option>
+                      <option value="reversed">Anuladas</option>
+                      <option value="rejected">Rechazadas</option>
+                    </FilterSelect>
+                  </div>
+                  <div className="marketplace-desktop-finance-filters">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
                     {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["reversed", "Anuladas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
                       <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" data-finance-tone={value === "requested" ? "warning" : value === "rejected" ? "danger" : value === "confirmed" || value === "reconciled" ? "success" : "neutral"} variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
                     ))}
+                    </div>
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-text-secondary">
                     <span aria-live="polite">{filteredTopupRows.length} de {topupRows.length} recargas cargadas{topups.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
@@ -2702,12 +2725,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           topupWhatsAppMessage(item, paymentMethodLabel(item.method), receipt?.documentNumber),
                         )
                       : null;
+                    // Todas las recargas permiten expandir los datos y las acciones,
+                    // incluidas las pendientes sin referencias ni comprobantes.
                     return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status}>
                       <div className="marketplace-topup-main">
                         <div className="marketplace-topup-summary">
                           <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
-                            <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
-                            <p className="break-words">{paymentMethodLabel(item.method)}</p>
+                            <div className="marketplace-topup-identity-meta">
+                              <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
+                              <p className="break-words">{paymentMethodLabel(item.method)}</p>
+                            </div>
                           </RecordIdentity>
                           <div className="marketplace-topup-phone min-w-0">
                             <span className="block text-xs text-text-secondary">Teléfono</span>
@@ -2736,7 +2763,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               instructionLink ? (
                                 <Button asChild type="button" size="sm" variant="outline" className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]">
                                   <a href={instructionLink.desktop} aria-label={`Enviar por WhatsApp los datos de recarga a ${item.driverDisplayName}`}>
-                                    <Phone aria-hidden="true" className="mr-2 h-4 w-4" />Enviar datos de pago
+                                    <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
+                                    <span className="marketplace-topup-action-full">Enviar datos de pago</span>
+                                    <span className="marketplace-topup-action-short">Enviar datos</span>
                                   </a>
                                 </Button>
                               ) : (
@@ -2745,13 +2774,16 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                 </p>
                               )
                             )}
-                            <Button size="sm" className="marketplace-finance-action min-h-11" onClick={() => {
+                            <Button size="sm" className="marketplace-finance-action min-h-11" aria-label={`Gestionar recarga pendiente de ${item.driverDisplayName}`} onClick={() => {
                               setError(null);
                               setTopup({ id: item.topupId, driver: item.driverDisplayName, method: item.method, confirmationKey: crypto.randomUUID() });
                               setReceivedPaymentReference(item.reference ?? "");
                               setVerifiedPaymentReceived(false);
                               setReason("");
-                            }}>Gestionar recarga pendiente</Button>
+                            }}>
+                              <span className="marketplace-topup-action-full">Gestionar recarga pendiente</span>
+                              <span className="marketplace-topup-action-short">Gestionar</span>
+                            </Button>
                           </div>
                         ) : null}
                       </div>
@@ -2761,7 +2793,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
+                          <div className="marketplace-topup-detail-method">
+                            <RecordMetric labelText="Método" value={paymentMethodLabel(item.method)} />
+                          </div>
                           {item.notes ? <RecordMetric labelText="Notas" value={item.notes} /> : null}
                           {item.rejectionReason ? <RecordMetric labelText="Motivo de rechazo" value={item.rejectionReason} tone="danger" /> : null}
                           {item.confirmedAt ? <RecordMetric labelText="Confirmada" value={<time dateTime={item.confirmedAt}>{formatDate(item.confirmedAt)}</time>} /> : null}
@@ -3536,7 +3570,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           }
         }}
       >
-        <DialogContent className="admin-graphite-dialog">
+        <DialogContent className="admin-graphite-dialog max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Gestionar recarga de {topup?.driver}</DialogTitle>
             <DialogDescription>
@@ -3576,7 +3610,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             placeholder="Motivo obligatorio solo para rechazar"
           />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 [&_button]:min-h-11">
             <Button
               disabled={confirm.isPending || reject.isPending || (topup?.method === "transfer" && (!receivedPaymentReference.trim() || !verifiedPaymentReceived))}
               onClick={() => confirm.mutate()}
