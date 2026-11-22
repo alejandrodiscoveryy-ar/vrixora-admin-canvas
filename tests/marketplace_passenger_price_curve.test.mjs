@@ -29,4 +29,8 @@ test('production smart quotes are read only and include all four passenger modes
   assert.match(curve, /ticks=\{referenceKilometers\.filter/);
   assert.match(curve, /onClick=\{\(\) => setSelectedKm\(km\)\}/);
   assert.match(curve, /America\/Havana/);
+  assert.match(curve, /2026-11-01T04:00:00Z/);
+  assert.match(curve, /2027-11-07T05:00:00Z/);
+  assert.match(curve, /scenario_shifted_to_next_week/);
+  assert.match(curve, /no un precio histórico/);
 });
