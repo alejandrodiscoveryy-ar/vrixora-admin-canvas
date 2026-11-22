@@ -7,7 +7,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 
 type VehicleCode = "motorcycle" | "tricycle" | "light_car" | "bicitaxi";
 type PricePoint = { km: number } & Record<VehicleCode, number>;
-type CurveResponse = { rows?: unknown; scenario_local?: unknown; rate?: unknown; rate_source?: unknown };
+type CurveResponse = { rows?: unknown; scenario_local?: unknown; rate?: unknown; rate_source?: unknown; scenario_shifted_to_next_week?: unknown; requested_scenario_local?: unknown };
 
 // Distancias de consulta seleccionadas para comparar las cuatro modalidades.
 const referenceKilometers = [2, 3, 5, 8, 9, 10, 12, 15, 20, 25] as const;
@@ -24,10 +24,16 @@ const money = (value: number | null | undefined) =>
   : value.toLocaleString("es-CU", { maximumFractionDigits: 0 }) + " CUP";
 
 function havanaLocalInput(): string {
+  const now = new Date();
+  // Cuba retained UTC-4 in this period; IANA databases may still report UTC-5.
+  if (now.getTime() >= Date.parse("2026-11-01T04:00:00Z")
+      && now.getTime() < Date.parse("2027-11-07T05:00:00Z")) {
+    return new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString().slice(0, 16);
+  }
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Havana", year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).formatToParts(new Date());
+  }).formatToParts(now);
   const f = (name: string) => parts.find((item) => item.type === name)?.value ?? "";
   return [f("year"), f("month"), f("day")].join("-") + "T" + f("hour") + ":" + f("minute");
 }
@@ -148,7 +154,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
           <div className="flex h-64 items-center justify-center text-sm text-muted-foreground" role="status">Consultando las cuatro tarifas reales…</div>
         ) : curve.isError ? (
           <div role="alert" className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-foreground">
-            No pudimos consultar la curva de precios. Revisa los permisos y vuelve a intentarlo.
+            No pudimos consultar la curva de precios. {curve.error instanceof Error ? curve.error.message : "Comprueba la conexión y vuelve a intentarlo."}
             <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void curve.refetch()}>Reintentar</Button>
           </div>
         ) : !rows.length ? (
@@ -236,6 +242,12 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
               <span>Escenario: {String(curve.data?.scenario_local ?? "—")} · hora oficial de Cuba</span>
               <span>1 USD = {Number(curve.data?.rate).toLocaleString("es-CU")} CUP · {String(curve.data?.rate_source ?? "tasa vigente")}</span>
             </div>
+            {curve.data?.scenario_shifted_to_next_week === true ? (
+              <p role="status" className="rounded-xl border border-cyan-500/30 bg-cyan-500/[0.06] p-3 text-xs leading-relaxed text-foreground">
+                La hora seleccionada ya pasó. Para mostrar las tarifas vigentes se usa el siguiente día equivalente:
+                {" "}{String(curve.data.scenario_local)} (hora oficial de Cuba). Es una simulación actual, no un precio histórico.
+              </p>
+            ) : null}
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Consulta de solo lectura cada 0,5 km, con recargos por día y horario.
               Marcas de consulta: 2, 3, 5, 8, 9, 10, 12, 15, 20 y 25 km. La corrección tarifaria vigente de 5 a 12 km sigue intacta.
