@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, Bike, CalendarClock, CarFront, RefreshCw, ShieldCheck, Truck } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
+import { premiumSurface, premiumHeaderSurface, premiumMetricSurface, premiumControlSurface } from "@/components/admin/density";
 import { getSupabaseClient } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 type VehicleCode = "motorcycle" | "tricycle" | "light_car" | "bicitaxi";
 type PricePoint = { km: number } & Record<VehicleCode, number>;
@@ -90,25 +92,30 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
     Math.max(greatest, row.light_car, row.tricycle, row.motorcycle, row.bicitaxi), 0);
 
   return (
-    <section aria-label="Curva de precios por km" className="relative overflow-hidden rounded-[22px] border border-border/70 bg-card/80 shadow-sm admin-graphite-panel">
-      <Activity aria-hidden="true" className="pointer-events-none absolute -right-9 -top-8 h-40 w-40 opacity-[0.04]" />
-      <header className="relative flex flex-wrap items-start justify-between gap-3 border-b border-border/65 px-4 py-4 sm:px-5">
-        <div className="min-w-0">
-          <h3 className="text-lg font-semibold text-foreground">Curva de precios por km</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Precios finales de pasajeros en CUP, calculados por el motor vigente.</p>
+    <section aria-label="Curva de precios por km" data-appearance="premium" data-density="compact"
+      className={cn("relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
+      <header className={cn("flex flex-wrap items-center justify-between gap-3 border-b border-border-default px-3 py-3 sm:px-4", premiumHeaderSurface)}>
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-compact)] border border-[var(--module-border,var(--border-default))] bg-[var(--module-surface,var(--surface-1))] text-primary" aria-hidden="true">
+            <Activity className="size-4.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">Análisis tarifario · Pasajeros</p>
+            <p className="mt-0.5 text-sm leading-snug text-text-secondary">Compara el precio final y el promedio por kilómetro de cada vehículo.</p>
+          </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.06] px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-300">
-          <ShieldCheck className="h-3.5 w-3.5" /> Consulta sin cambios
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--semantic-success-border,var(--border-default))] bg-[var(--semantic-success-surface,var(--surface-2))] px-2.5 py-1 text-xs font-medium text-text-secondary">
+          <ShieldCheck className="size-3.5 text-[var(--semantic-success)]" aria-hidden="true" /> Consulta sin cambios
         </span>
       </header>
-      <div className="space-y-4 p-3 sm:p-5">
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+      <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
+        <div className={cn("grid min-w-0 gap-3 rounded-[var(--radius-card)] border p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:p-4", premiumHeaderSurface)}>
           <label className="space-y-1 text-xs font-medium text-muted-foreground">
             Rango de distancia
             <select
               aria-label="Rango máximo de kilómetros" value={maxKm}
               onChange={(event) => { const next = Number(event.target.value); setMaxKm(next); setSelectedKm((value) => Math.min(value, next)); }}
-              className="block h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+              className={cn("block min-h-11 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-1 px-3 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", premiumControlSurface)}
             >
               <option value={10}>0,5 a 10 km</option>
               <option value={15}>0,5 a 15 km</option>
@@ -118,44 +125,41 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
           </label>
           <div className="space-y-1 text-xs font-medium text-muted-foreground">
             <span className="block">Escenario de Cuba</span>
-            <div className="flex h-10 items-center gap-1 rounded-xl border border-border bg-background p-1">
+            <div className={cn("flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] border border-border-default bg-surface-1 p-1", premiumControlSurface)}>
               {(["current", "custom"] as const).map((mode) => (
                 <button
                   key={mode} type="button" aria-pressed={timeMode === mode}
                   onClick={() => setTimeMode(mode)}
-                  className={"h-8 flex-1 rounded-lg px-2 text-xs font-semibold transition " +
-                    (timeMode === mode ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300" : "text-muted-foreground hover:text-foreground")}
+                  className={"min-h-9 flex-1 rounded-md px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary " +
+                    (timeMode === mode ? "bg-primary/15 text-text-primary" : "text-text-secondary hover:bg-surface-2 hover:text-text-primary")}
                 >{mode === "current" ? "Ahora" : "Elegir fecha/hora"}</button>
               ))}
             </div>
           </div>
-          <Button type="button" variant="outline" size="sm" className="h-10 gap-1.5" disabled={curve.isFetching} onClick={() => void curve.refetch()}>
+          <Button type="button" variant="outline" size="sm" className="min-h-11 gap-1.5 max-sm:w-full" disabled={curve.isFetching} onClick={() => void curve.refetch()}>
             <RefreshCw className={"h-3.5 w-3.5 " + (curve.isFetching ? "animate-spin" : "")} /> Actualizar
           </Button>
         </div>
 
         {timeMode === "custom" ? (
-          <label className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <CalendarClock className="h-4 w-4 shrink-0 text-cyan-500" />
-            Fecha y hora de La Habana
+          <label className="grid min-w-0 gap-2 rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-3 text-xs font-medium text-text-secondary sm:flex sm:items-center">
+            <span className="flex items-center gap-2"><CalendarClock className="size-4 shrink-0 text-primary" aria-hidden="true" /> Fecha y hora de La Habana</span>
             <input type="datetime-local" aria-label="Fecha y hora local de Cuba" value={localDateTime}
               onChange={(event) => setLocalDateTime(event.target.value)}
-              className="min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground sm:max-w-64" />
+              className={cn("min-h-11 min-w-0 w-full rounded-[var(--radius-control)] border border-border-default bg-surface-1 px-3 text-sm text-text-primary sm:ml-auto sm:w-[270px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", premiumControlSurface)} />
           </label>
         ) : null}
 
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Destacar modalidad">
-          <button type="button" aria-pressed={focused === "all"} onClick={() => setFocused("all")}
-            className={"rounded-full border px-3 py-1.5 text-xs font-semibold " +
-              (focused === "all" ? "border-cyan-500/40 bg-cyan-500/10 text-foreground" : "border-border text-muted-foreground")}>Todas</button>
-          {vehicles.map(({ code, name, color }) => (
-            <button key={code} type="button" aria-pressed={focused === code}
-              onClick={() => setFocused(focused === code ? "all" : code)}
-              className={"inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold " +
-                (focused === code ? "border-border bg-muted text-foreground" : "border-border/70 text-muted-foreground")}>
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} /> {name}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">Comparativa del recorrido</span>
+            <p className="text-sm font-medium text-text-secondary">Consulta cada tramo en CUP, sin modificar las tarifas.</p>
+          </div>
+          <Button type="button" variant="outline" size="sm"
+            className="min-h-10 gap-2 text-xs"
+            disabled={focused === "all"} onClick={() => setFocused("all")}>
+            <Activity className="size-4" aria-hidden="true" /> Todas las curvas
+          </Button>
         </div>
 
         {curve.isLoading ? (
@@ -169,22 +173,35 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
           <div role="status" className="rounded-xl border border-border p-4 text-sm text-muted-foreground">No hay precios verificados para este escenario.</div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4" aria-label="Precio por modalidad">
               {vehicles.map(({ code, name, color, icon: VehicleIcon }) => (
                 <button key={code} type="button" onClick={() => setFocused(focused === code ? "all" : code)}
+                  aria-label={name + ": " + money(selected?.[code]) + ". Precio promedio: " + averageCostPerKm(selected?.[code], selected?.km) + ". Destacar curva"}
                   aria-pressed={focused === code}
-                  className="min-w-0 rounded-xl border border-border/70 bg-background/50 p-3 text-left transition hover:border-cyan-500/40 admin-graphite-inset">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <VehicleIcon className="h-4 w-4 shrink-0" style={{ color }} /> {name}
-                  </div>
-                  <p className="mt-1 break-words text-lg font-bold tabular-nums text-foreground sm:text-xl">{money(selected?.[code])}</p>
-                  <span className="text-[11px] text-muted-foreground">a {selected?.km.toLocaleString("es-CU") ?? "—"} km</span>
-                  <div className="mt-2 border-t border-border/60 pt-2">
-                    <span className="block text-[11px] text-muted-foreground">Costo promedio por km</span>
-                    <strong className="mt-0.5 block text-sm font-semibold tabular-nums text-foreground">
-                      {averageCostPerKm(selected?.[code], selected?.km)}
-                    </strong>
-                  </div>
+                  className={cn(
+                    "group relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 text-left transition-[border-color,box-shadow] duration-[var(--motion-interaction)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4",
+                    premiumMetricSurface,
+                    focused === code ? "border-primary ring-1 ring-primary/40" : "hover:border-border-strong"
+                  )}>
+                  <span className="absolute inset-x-3 top-0 h-0.5 rounded-full opacity-90" style={{ backgroundColor: color }} aria-hidden="true" />
+                  <VehicleIcon className="pointer-events-none absolute bottom-4 right-3 size-14 opacity-[0.05] sm:size-16" aria-hidden="true" style={{ color }} />
+                  <span className="relative z-10 block">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-text-secondary">
+                      <VehicleIcon className="size-4 shrink-0" aria-hidden="true" style={{ color }} />
+                      <span className="min-w-0 truncate">{name}</span>
+                      {focused === code ? <span className="ml-auto size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" /> : null}
+                    </span>
+                    <span className="mt-2 block break-words text-xl font-semibold leading-tight tracking-tight tabular-nums text-text-primary sm:text-2xl">
+                      {money(selected?.[code])}
+                    </span>
+                    <span className="mt-1 block text-xs text-text-tertiary">Precio final · a {selected?.km.toLocaleString("es-CU") ?? "—"} km</span>
+                    <span className="mt-3 block border-t border-border-default/65 pt-2.5">
+                      <span className="block text-xs text-text-secondary">Costo promedio por km</span>
+                      <strong className="mt-1 block break-words text-sm font-semibold tabular-nums text-text-primary sm:text-base">
+                        {averageCostPerKm(selected?.[code], selected?.km)}
+                      </strong>
+                    </span>
+                  </span>
                 </button>
               ))}
             </div>
