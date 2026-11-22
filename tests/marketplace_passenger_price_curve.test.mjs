@@ -32,5 +32,9 @@ test('production smart quotes are read only and include all four passenger modes
   assert.match(curve, /2026-11-01T04:00:00Z/);
   assert.match(curve, /2027-11-07T05:00:00Z/);
   assert.match(curve, /scenario_shifted_to_next_week/);
+  assert.match(curve, /const averageCostPerKm =/);
+  assert.match(curve, /fare \/ km/);
+  assert.match(curve, /Costo promedio por km/);
+  assert.match(curve, /averageCostPerKm\(selected\?\.\[code\], selected\?\.km\)/);
   assert.match(curve, /no un precio histórico/);
 });
