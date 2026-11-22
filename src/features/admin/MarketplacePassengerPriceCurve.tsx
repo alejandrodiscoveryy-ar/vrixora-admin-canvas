@@ -26,13 +26,31 @@ const money = (value: number | null | undefined) =>
   value == null || !Number.isFinite(value) ? "—"
   : value.toLocaleString("es-CU", { maximumFractionDigits: 0 }) + " CUP";
 
-// Importe final por distancia, no la tarifa marginal ni el costo de combustible.
-const averageCostPerKm = (fare: number | undefined, km: number | undefined) =>
-  fare == null || km == null || !Number.isFinite(fare) || !Number.isFinite(km) || km <= 0
-    ? "—"
-    : (fare / km).toLocaleString("es-CU", {
-        minimumFractionDigits: 2, maximumFractionDigits: 2,
-      }) + " CUP/km";
+// Diferencia real entre dos cotizaciones para trayectos separados exactamente 1 km.
+// No divide el precio final entre la distancia: esa operación incluye el precio mínimo.
+type OneKmWindow = { from: PricePoint; to: PricePoint; isLastKilometer: boolean };
+
+function oneKmWindow(points: PricePoint[], current: PricePoint | null, limitKm: number): OneKmWindow | null {
+  if (!current) return null;
+  const isLastKilometer = current.km + 1 > limitKm;
+  const fromKm = isLastKilometer ? current.km - 1 : current.km;
+  const toKm = fromKm + 1;
+  if (fromKm < 0.5) return null;
+  const from = points.find((point) => Math.abs(point.km - fromKm) < 0.001);
+  const to = points.find((point) => Math.abs(point.km - toKm) < 0.001);
+  return from && to ? { from, to, isLastKilometer } : null;
+}
+
+function incrementalPricePerKm(window: OneKmWindow | null, category: VehicleCode): number | null {
+  if (!window) return null;
+  const difference = window.to[category] - window.from[category];
+  return Number.isFinite(difference) ? difference : null;
+}
+
+function moneyPerExtraKm(amount: number | null): string {
+  if (amount === null) return "—";
+  return (amount > 0 ? "+" : "") + amount.toLocaleString("es-CU", { maximumFractionDigits: 0 }) + " CUP/km";
+}
 
 function havanaLocalInput(): string {
   const now = new Date();
@@ -91,6 +109,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
     );
   const biggestPrice = rows.reduce((greatest, row) =>
     Math.max(greatest, row.light_car, row.tricycle, row.motorcycle, row.bicitaxi), 0);
+  const extraKmWindow = oneKmWindow(rows, selected, maxKm);
 
   return (
     <section aria-label="Curva de precios por km" data-appearance="premium" data-density="compact"
@@ -102,7 +121,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
           </span>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">Análisis tarifario · Pasajeros</p>
-            <p className="mt-0.5 text-sm leading-snug text-text-secondary">Compara el precio final y el promedio por kilómetro de cada vehículo.</p>
+            <p className="mt-0.5 text-sm leading-snug text-text-secondary">Compara el precio final y cuánto aumenta cada viaje por un kilómetro adicional.</p>
           </div>
         </div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--semantic-success-border,var(--border-default))] bg-[var(--semantic-success-surface,var(--surface-2))] px-2.5 py-1 text-xs font-medium text-text-secondary">
@@ -230,7 +249,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4" aria-label="Precio por modalidad">
               {vehicles.map(({ code, name, color, icon: VehicleIcon }) => (
                 <button key={code} type="button" onClick={() => setFocused(focused === code ? "all" : code)}
-                  aria-label={name + ": " + money(selected?.[code]) + ". Precio promedio: " + averageCostPerKm(selected?.[code], selected?.km) + ". Destacar curva"}
+                  aria-label={name + ": " + money(selected?.[code]) + ". Aumento por un kilómetro: " + moneyPerExtraKm(incrementalPricePerKm(extraKmWindow, code)) + ". Destacar curva"}
                   aria-pressed={focused === code}
                   className={cn(
                     "group relative isolate min-w-0 overflow-hidden rounded-[var(--radius-card)] border p-3 text-left transition-[border-color,box-shadow] duration-[var(--motion-interaction)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4",
@@ -250,10 +269,18 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                     </span>
                     <span className="mt-1 block text-xs text-text-tertiary">Precio final · a {selected?.km.toLocaleString("es-CU") ?? "—"} km</span>
                     <span className="mt-3 block border-t border-border-default/65 pt-2.5">
-                      <span className="block text-xs text-text-secondary">Costo promedio por km</span>
+                      <span className="block text-xs text-text-secondary">
+                        {extraKmWindow?.isLastKilometer ? "Aumento del último km" : "Aumento por 1 km adicional"}
+                      </span>
                       <strong className="mt-1 block break-words text-sm font-semibold tabular-nums text-text-primary sm:text-base">
-                        {averageCostPerKm(selected?.[code], selected?.km)}
+                        {moneyPerExtraKm(incrementalPricePerKm(extraKmWindow, code))}
                       </strong>
+                      <span className="mt-1 block text-[11px] leading-snug text-text-tertiary">
+                        {extraKmWindow
+                          ? `De ${extraKmWindow.from.km.toLocaleString("es-CU")} a ${extraKmWindow.to.km.toLocaleString("es-CU")} km`
+                          : "Sin datos para comparar"}
+                        {incrementalPricePerKm(extraKmWindow, code) === 0 ? " · Incluido en la tarifa mínima" : ""}
+                      </span>
                     </span>
                   </span>
                 </button>
@@ -333,7 +360,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
               </summary>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                 Consulta de solo lectura cada 0,5 km, con recargos por día y horario.
-                El costo promedio por km es el precio final dividido entre la distancia seleccionada.
+                El aumento por km es la diferencia entre dos precios finales separados exactamente 1 km. Cuando opera la tarifa mínima, el aumento puede ser 0 CUP/km. En el límite del gráfico se compara el último kilómetro.
                 Marcas de consulta: 2, 3, 5, 8, 9, 10, 12, 15, 20 y 25 km.
                 La corrección tarifaria vigente de 5 a 12 km sigue intacta.
                 No incluye recargos especiales por destino (por ejemplo, aeropuerto), pasajeros adicionales ni paradas.
