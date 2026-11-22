@@ -4,13 +4,15 @@ import test from "node:test";
 
 const dashboard = readFileSync(new URL("../src/routes/admin.proyectos.$id.index.tsx", import.meta.url), "utf8");
 
-test("panel general prioriza cuatro indicadores en dos columnas móviles", () => {
+test("panel general prioriza cuatro indicadores operativos y no confunde perfiles con jornada", () => {
   assert.match(dashboard, /aria-label="Panel general móvil"/);
   assert.match(dashboard, /className="grid grid-cols-2 gap-2" aria-label="Indicadores principales"/);
+  assert.match(dashboard, /label="Sin conductor"/);
+  assert.match(dashboard, /label="En servicio"/);
+  assert.match(dashboard, /label="Trabajando"/);
+  assert.match(dashboard, /label="Incidencias"/);
   assert.match(dashboard, /label="Usuarios app"/);
-  assert.match(dashboard, /label="Conductores"/);
-  assert.match(dashboard, /label="Servicios activos"/);
-  assert.match(dashboard, /label="Incidencias abiertas"/);
+  assert.match(dashboard, /No equivale a trabajando/);
 });
 
 test("móvil dispone de acceso directo al mapa y los detalles no saturan la pantalla", () => {
@@ -27,7 +29,8 @@ test("móvil dispone de acceso directo al mapa y los detalles no saturan la pant
 
 test("panel original de escritorio y controles de permisos permanecen", () => {
   assert.match(dashboard, /className="hidden sm:block"/);
-  assert.match(dashboard, /label="Trabajos publicados"/);
+  assert.match(dashboard, /label="Sin conductor"/);
+  assert.match(dashboard, /label="Conductores trabajando"/);
   assert.match(dashboard, /canViewUsers/);
   assert.match(dashboard, /canViewMarketplace/);
   assert.match(dashboard, /canViewCommercial/);
