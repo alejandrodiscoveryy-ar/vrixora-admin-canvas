@@ -73,9 +73,11 @@ export async function canAccessProject(userId: string, projectId: string): Promi
 
   const { data, error } = await client.from("projects").select("id").eq("id", projectId).single();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
+    if (error.code === "PGRST116") return false;
+    // No confundir errores transitorios/401 con una denegación auténtica.
     console.error("Error checking project access:", error);
-    return false;
+    throw error;
   }
 
   return !!data;
