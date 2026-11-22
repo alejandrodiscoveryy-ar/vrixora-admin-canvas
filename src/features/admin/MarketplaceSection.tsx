@@ -959,6 +959,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const requestedView = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).vista,
   });
+  const pulsoTopupState = useRouterState({
+    select: (state) => (state.location.search as Record<string, unknown>).estadoRecarga,
+  });
   const alertDriverId = useRouterState({
     select: (state) => (state.location.search as Record<string, unknown>).conductor,
   });
@@ -1099,9 +1102,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   // Los otros filtros siguen siendo seleccionables durante la visita.
   useEffect(() => {
     if (tab !== "recargas") return;
-    setTopupStatus("requested");
+    // Desde Pulso, «Recargas vigentes» debe abrir Confirmadas, no Pendientes.
+    // En la navegación ordinaria se conserva Pendientes como filtro inicial.
+    setTopupStatus(pulsoTopupState === "confirmed" ? "confirmed" : "requested");
     setTopupSearch("");
-  }, [tab]);
+  }, [tab, pulsoTopupState]);
 
   useEffect(() => {
     // No competir con los datos del panel inicial. Precalentar al entrar en Mapa,
@@ -1784,6 +1789,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
               canPayments={canPayments}
               canManagePayments={canManagePayments}
               canAnalytics={permissions.includes("analytics.view")}
+              canCustomers={canCustomers}
             />
             <details className="group mt-3 border-t border-border-default pt-3">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-[var(--radius-control)] border border-border-default bg-surface-2/65 px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-3 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
