@@ -16,7 +16,7 @@ begin
   ) then
     alter table app_private.marketplace_allies
       add constraint marketplace_allies_whatsapp_e164
-      check (whatsapp_contact is null or whatsapp_contact ~ '^\\+[1-9][0-9]{7,14}$');
+      check (whatsapp_contact is null or whatsapp_contact ~ '^[+][1-9][0-9]{7,14}$');
   end if;
 end;
 $constraint$;
@@ -34,7 +34,7 @@ declare input_phone text := btrim(raw_phone);
 begin
   if input_phone is null or input_phone = '' then return null; end if;
   if input_phone !~ '^[+0-9() .-]+$'
-     or (position('+' in input_phone) > 0 and input_phone !~ '^\\+[^+]+$') then
+     or (position('+' in input_phone) > 0 and input_phone !~ '^[+][^+]+$') then
     raise exception 'INVALID_ALLY_WHATSAPP' using errcode='22023';
   end if;
   digits := regexp_replace(input_phone, '[^0-9]', '', 'g');
@@ -47,7 +47,7 @@ begin
   else
     raise exception 'INVALID_ALLY_WHATSAPP' using errcode='22023';
   end if;
-  if normalized !~ '^\\+[1-9][0-9]{7,14}$' then
+  if normalized !~ '^[+][1-9][0-9]{7,14}$' then
     raise exception 'INVALID_ALLY_WHATSAPP' using errcode='22023';
   end if;
   return normalized;
