@@ -38,6 +38,7 @@ on:
       - 'tests/admin_recarga_rechazo_claro.test.mjs'
       - 'tests/admin_aliados_carnet.test.mjs'
       - 'tests/tuktuk_allies_collapsible.test.mjs'
+      - 'tests/tuktuk_allies_whatsapp.test.mjs'
       - 'tests/admin_pulso_decisiones.test.mjs'
       - 'tests/admin_pulso_navegacion.test.mjs'
       - 'tests/comercial_integral_ui_contract.test.mjs'
@@ -84,6 +85,8 @@ jobs:
         run: node --test tests/admin_aliados_carnet.test.mjs
       - name: Validar fichas plegables y accesibles de Aliados
         run: node --test tests/tuktuk_allies_collapsible.test.mjs
+      - name: Validar WhatsApp privado de contacto en Aliados
+        run: node --test tests/tuktuk_allies_whatsapp.test.mjs
       - name: Validar tablero de decisiones operativas de Pulso
         run: node --test tests/admin_pulso_decisiones.test.mjs
       - name: Validar enlaces de conceptos de Pulso

@@ -44,7 +44,7 @@ test("La tarjeta cerrada muestra información esencial y oculta los detalles com
 
 test("Al plegar se cierran formularios de edición/pago sin ejecutar transacciones", () => {
   assert.match(ui, /if \(isFolding\) \{/);
-  assert.match(ui, /if \(editing === id\) \{ setEditing\(null\); setEditedIdentityCard\(null\); \}/);
+  assert.match(ui, /if \(editing === id\) \{ setEditing\(null\); setEditedIdentityCard\(null\); setEditedWhatsapp\(null\); \}/);
   assert.match(ui, /if \(editingPayment === id\)/);
   assert.match(ui, /setPaymentAmount\(""\)/);
   assert.match(ui, /setPaymentRef\(""\)/);
