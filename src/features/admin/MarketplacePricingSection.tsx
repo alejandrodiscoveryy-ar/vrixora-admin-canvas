@@ -399,13 +399,13 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
   return (
     <section aria-label="Centro de precios" className="tuktuk-pricing-v3-sheet min-w-0">
       <div className="grid min-w-0 items-start gap-3.5 xl:grid-cols-[252px_minmax(0,1fr)]">
-        <nav data-nav-tone="tarifas" aria-label="Secciones del Centro de precios" className="relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4 admin-graphite-panel">
+        <nav data-nav-tone="tarifas" aria-label="Secciones del Centro de precios" className="tuktuk-pricing-nav-compact relative isolate overflow-hidden rounded-[22px] border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-cyan-950/[0.09] p-2 sm:p-2.5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.8)] xl:sticky xl:top-4 admin-graphite-panel">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 z-0 h-52 w-52 rounded-full bg-cyan-400/[0.045] blur-3xl" />
-          <div className="relative z-10 px-2.5 pb-2 pt-2">
+          <div className="relative z-10 px-2.5 pb-1.5 pt-1.5 sm:pb-2 sm:pt-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400/85">Centro de precios</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Gestión económica del proyecto</p>
           </div>
-          <div className="relative z-10 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="relative z-10 grid grid-cols-2 gap-1.5 xl:grid-cols-1">
             {PRICING_WORKSPACE_VIEWS.map((view) => {
               const Icon = view.icon;
               const selected = view.code === selectedPricingView.code;
@@ -413,14 +413,17 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 <Link key={view.code} to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "planes" }} search={{ precio: view.code }}
                   aria-current={selected ? "page" : undefined}
                   data-nav-tone={adminSubnavTone("precios", view.code)}
-                  className={`group relative isolate flex admin-graphite-nav-item min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${selected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}>
+                  className={`tuktuk-pricing-nav-option group relative isolate flex admin-graphite-nav-item min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${selected ? "border-primary/40 bg-primary/10 text-foreground shadow-none" : "border-transparent bg-transparent text-foreground/85 hover:border-border/65 hover:bg-surface-3"}`}>
                   <Icon aria-hidden="true" className={`pointer-events-none absolute -right-4 -top-5 z-0 h-28 w-28 -rotate-12 ${selected ? "admin-nav-watermark opacity-[0.075]" : "text-muted-foreground opacity-[0.045]"}`} />
                   <span className="admin-nav-icon relative z-10" aria-hidden="true">
                     <Icon aria-hidden="true" strokeWidth={2} />
                   </span>
                   <span className="relative z-10 min-w-0 flex-1">
-                    <span className="block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{view.number}</span>
-                    <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">{view.label}</span>
+                    <span className="tuktuk-pricing-nav-number block text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">{view.number}</span>
+                    <span className="mt-0.5 block text-sm font-semibold leading-tight text-foreground">
+                      <span className="sm:hidden">{view.code === "global" ? "General" : view.label}</span>
+                      <span className="hidden sm:inline">{view.label}</span>
+                    </span>
                     <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground xl:block">{view.subtitle}</span>
                   </span>
                   <ChevronRight data-nav-chevron aria-hidden="true" className="relative z-10 hidden h-4 w-4 shrink-0 xl:block" />
@@ -428,7 +431,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
               );
             })}
           </div>
-          <div className="relative z-10 mt-2 border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground">Precios y accesos según permisos</div>
+          <div className="relative z-10 mt-2 hidden border-t border-border/50 px-2.5 pt-2.5 text-[10px] text-muted-foreground sm:block">Precios y accesos según permisos</div>
         </nav>
         <div className="min-w-0 space-y-3">
           <header data-nav-tone={adminSubnavTone("precios", selectedPricingView.code)} className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
@@ -440,7 +443,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                   <span className="admin-workspace-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/[0.08] text-cyan-200"><SelectedPricingIcon className="h-5 w-5" /></span>
                   <h2 className="text-xl font-semibold tracking-tight text-white">{selectedPricingView.label}</h2>
                 </div>
-                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">{selectedPricingView.description}</p>
+                <p className="mt-2 hidden max-w-xl text-xs leading-relaxed text-slate-300 sm:block">{selectedPricingView.description}</p>
               </div>
               <aside aria-label="Tasa USD CUP informativa integrada en Centro de precios" className="min-w-0 rounded-2xl border border-cyan-400/20 bg-slate-950/55 px-3.5 py-3 shadow-inner shadow-black/25 admin-graphite-control">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -501,6 +504,28 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
           <span className="rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">{workspace === "global" ? "Gestión transversal" : activeWorkspace?.note}</span>
         </div>
       )}
+
+      {workspace === "global" ? (
+        <section aria-label="Estado de precios vigentes" className="grid grid-cols-2 gap-2 rounded-[var(--radius-card)] border border-border/70 bg-card/75 p-2.5 shadow-sm admin-graphite-inset">
+          <div className="min-w-0 rounded-xl border border-border/60 bg-background/35 px-3 py-2">
+            <p className="text-[11px] font-medium text-muted-foreground">Tarifas configuradas</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">
+              {tariffs.isLoading ? "…" : tariffs.isError ? "—" : tariffs.data?.length ?? 0}
+            </p>
+          </div>
+          <div className="min-w-0 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] px-3 py-2">
+            <p className="text-[11px] font-medium text-muted-foreground">Modalidades visibles</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-emerald-500 dark:text-emerald-300">
+              {publication.isLoading ? "…" : publication.isError ? "—" : (publication.data?.filter((item) => item.isPublished).length ?? 0)}
+            </p>
+          </div>
+          {tariffs.isError || publication.isError ? (
+            <p role="alert" className="col-span-2 text-xs text-amber-500">No se pudo consultar todo el catálogo; no se muestran cifras estimadas.</p>
+          ) : (
+            <p className="col-span-2 text-[11px] leading-snug text-muted-foreground">Resumen del catálogo. Los importes y la visibilidad de cada vehículo se consultan en su servicio.</p>
+          )}
+        </section>
+      ) : null}
 
       {workspace === "global" ? (
         <MarketplacePricingGlobalAdjustment
