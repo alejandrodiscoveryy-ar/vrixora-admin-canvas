@@ -443,7 +443,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                   <span className="admin-workspace-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/[0.08] text-cyan-200"><SelectedPricingIcon className="h-5 w-5" /></span>
                   <h2 className="text-xl font-semibold tracking-tight text-white">{selectedPricingView.label}</h2>
                 </div>
-                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">{selectedPricingView.description}</p>
+                <p className="mt-2 hidden max-w-xl text-xs leading-relaxed text-slate-300 sm:block">{selectedPricingView.description}</p>
               </div>
               <aside aria-label="Tasa USD CUP informativa integrada en Centro de precios" className="min-w-0 rounded-2xl border border-cyan-400/20 bg-slate-950/55 px-3.5 py-3 shadow-inner shadow-black/25 admin-graphite-control">
                 <div className="flex flex-wrap items-center justify-between gap-2">
