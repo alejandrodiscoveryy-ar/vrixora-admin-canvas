@@ -439,7 +439,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
         <div className="min-w-0 space-y-3">
           <header data-nav-tone={adminSubnavTone("precios", selectedPricingView.code)} className="relative isolate overflow-hidden rounded-[22px] border border-cyan-400/20 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/75 px-4 py-4 text-white shadow-[0_18px_42px_-35px_rgba(14,165,233,0.45)] sm:px-5 admin-graphite-header">
             <SelectedPricingIcon aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 z-0 h-44 w-44 -rotate-12 admin-nav-watermark opacity-[0.06]" />
-            <div className={`relative z-10 grid min-w-0 items-center gap-3 ${pricingRoute === "global"
+            <div className={`relative z-10 grid min-w-0 items-center gap-3 ${selectedPricingView.code === "global"
               ? "xl:grid-cols-[minmax(0,1fr)_minmax(185px,230px)_minmax(235px,300px)]"
               : "lg:grid-cols-[minmax(0,1fr)_minmax(235px,320px)]"}`}>
               <div className="min-w-0">
@@ -450,7 +450,7 @@ export default function MarketplacePricingSection({ projectId }: { projectId: st
                 </div>
                 <p className="mt-2 hidden max-w-xl text-xs leading-relaxed text-slate-300 sm:block">{selectedPricingView.description}</p>
               </div>
-              {pricingRoute === "global" ? (
+              {selectedPricingView.code === "global" ? (
                 <button type="button"
                   aria-label="Abrir Curva de precios por km de Pasajeros"
                   aria-pressed={workspace === "curve"}
