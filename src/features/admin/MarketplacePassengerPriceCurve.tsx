@@ -173,6 +173,42 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
           <div role="status" className="rounded-xl border border-border p-4 text-sm text-muted-foreground">No hay precios verificados para este escenario.</div>
         ) : (
           <>
+            <section aria-label="Distancia de consulta" className={cn(
+              "min-w-0 space-y-3 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumHeaderSurface
+            )}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-baseline gap-2.5">
+                  <span className="text-xs font-medium text-text-secondary">Distancia seleccionada</span>
+                  <strong className="text-2xl font-semibold leading-none tabular-nums text-text-primary">
+                    {selected?.km.toLocaleString("es-CU") ?? "—"} <span className="text-base text-text-secondary">km</span>
+                  </strong>
+                </div>
+                <span className="text-xs text-text-tertiary">4 modalidades · CUP</span>
+              </div>
+              <div className="-mx-1 flex min-w-0 snap-x gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Kilómetros de referencia" tabIndex={0}>
+                {referenceKilometers.filter((km) => km <= maxKm).map((km) => (
+                  <button key={km} type="button" onClick={() => setSelectedKm(km)}
+                    aria-pressed={selected?.km === km}
+                    className={cn(
+                      "min-h-11 min-w-[58px] shrink-0 snap-start rounded-[var(--radius-control)] border px-3 py-2 text-sm font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                      selected?.km === km ? "border-primary bg-primary/15 text-text-primary" : "border-border-default bg-surface-1 text-text-secondary hover:border-primary/40 hover:text-text-primary"
+                    )}>
+                    {km} km
+                  </button>
+                ))}
+              </div>
+              <label className="block min-w-0 space-y-2">
+                <span className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+                  <span>Distancia intermedia · pasos de 0,5 km</span>
+                  <span className="tabular-nums">{selected?.km.toLocaleString("es-CU") ?? "—"} / {maxKm} km</span>
+                </span>
+                <input type="range" aria-label="Kilómetros para comparar las cuatro modalidades"
+                  min={0.5} max={maxKm} step={0.5} value={boundedKm}
+                  onChange={(event) => setSelectedKm(Number(event.target.value))}
+                  className="block min-h-6 w-full accent-primary" />
+              </label>
+            </section>
+
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4" aria-label="Precio por modalidad">
               {vehicles.map(({ code, name, color, icon: VehicleIcon }) => (
                 <button key={code} type="button" onClick={() => setFocused(focused === code ? "all" : code)}
@@ -206,12 +242,26 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
               ))}
             </div>
 
-            <div className="rounded-xl border border-border/65 bg-background/35 px-2 py-3 sm:px-3 admin-graphite-inset">
-              <div className="mb-2 flex items-center justify-between gap-2 px-2 text-xs text-muted-foreground">
-                <span>Precio final · CUP</span><span>Distancia · km</span>
-              </div>
+            <section aria-label="Gráfica comparativa de precios" className={cn(
+              "min-w-0 overflow-hidden rounded-[var(--radius-card)] border", premiumSurface
+            )}>
+              <header className={cn("flex flex-wrap items-center justify-between gap-2 border-b border-border-default px-3 py-3 sm:px-4", premiumHeaderSurface)}>
+                <div>
+                  <h4 className="text-sm font-semibold text-text-primary">Evolución del precio por distancia</h4>
+                  <p className="mt-0.5 text-xs text-text-secondary">CUP frente a kilómetros. Toca una tarjeta para destacar su línea.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label="Leyenda de modalidades">
+                  {vehicles.map(({ code, name, color }) => (
+                    <span key={code} className={cn("inline-flex items-center gap-1.5 text-xs", focused === "all" || focused === code ? "text-text-primary" : "text-text-tertiary")}>
+                      <span className="size-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </header>
+              <div className="px-2 py-3 sm:px-3">
               <div className="w-full overflow-x-auto pb-1" aria-label="Gráfico de precios, desplazable horizontalmente en móvil" tabIndex={0}>
-                <div className="h-[300px] min-w-[700px] sm:h-[380px]">
+                <div className="h-[310px] min-w-[700px] sm:h-[370px] lg:h-[420px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={rows} margin={{ top: 18, right: 14, bottom: 8, left: -14 }}>
                     <CartesianGrid stroke="currentColor" strokeOpacity={0.10} vertical={false} />
@@ -224,7 +274,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                     <Tooltip
                       labelFormatter={(value) => Number(value).toLocaleString("es-CU") + " km"}
                       formatter={(value, name) => [money(Number(value)), vehicles.find((vehicle) => vehicle.code === name)?.name ?? String(name)]}
-                      contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }}
+                      contentStyle={{ backgroundColor: "var(--surface-overlay)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-compact)", color: "var(--text-primary)", boxShadow: "var(--shadow-overlay)" }}
                     />
                     {referenceKilometers.filter((km) => km <= maxKm).map((km) => (
                       <ReferenceLine key={km} x={km} stroke="#94a3b8" strokeDasharray="3 5" strokeOpacity={0.24} />
@@ -240,38 +290,18 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                 </ResponsiveContainer>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-background/35 p-3">
-              <p className="text-xs font-medium text-muted-foreground">Consulta rápida por kilómetros</p>
-              <div className="-mx-1 overflow-x-auto px-1 pb-1" role="group" aria-label="Kilómetros de referencia" tabIndex={0}>
-                <div className="flex w-max gap-2">
-                {referenceKilometers.filter((km) => km <= maxKm).map((km) => (
-                  <button key={km} type="button" onClick={() => setSelectedKm(km)}
-                    aria-pressed={selected?.km === km}
-                    className={"min-h-11 min-w-[58px] shrink-0 snap-start rounded-lg border px-3 py-2 text-xs font-semibold tabular-nums transition " +
-                      (selected?.km === km ? "border-cyan-400/70 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300" : "border-border/70 bg-card/75 text-foreground hover:border-cyan-500/40")}
-                  >{km} km</button>
-                ))}
-                </div>
+              <p className="mt-2 px-2 text-xs text-text-tertiary sm:hidden">Desliza horizontalmente para ver todos los kilómetros.</p>
               </div>
-            </div>
+            </section>
 
-            <label className="block space-y-2 rounded-xl border border-border/70 bg-background/35 p-3 text-xs text-muted-foreground">
-              <span className="flex flex-wrap items-center justify-between gap-2">
-                <span>Desliza para consultar un kilómetro</span>
-                <strong className="text-base text-foreground tabular-nums">{selected?.km.toLocaleString("es-CU") ?? "—"} km</strong>
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border-default/70 pt-3 text-xs text-text-secondary">
+              <span className="inline-flex items-center gap-1.5"><CalendarClock className="size-3.5 text-primary" aria-hidden="true" />
+                {String(curve.data?.scenario_local ?? "—")} · hora oficial de Cuba
               </span>
-              <input type="range" aria-label="Kilómetros para comparar las cuatro modalidades"
-                min={0.5} max={maxKm} step={0.5} value={boundedKm}
-                onChange={(event) => setSelectedKm(Number(event.target.value))}
-                className="w-full accent-cyan-500" />
-              <span className="flex justify-between text-[11px] text-muted-foreground"><span>0,5 km</span><span>{maxKm} km</span></span>
-            </label>
-
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-              <span>Escenario: {String(curve.data?.scenario_local ?? "—")} · hora oficial de Cuba</span>
-              <span>1 USD = {Number(curve.data?.rate).toLocaleString("es-CU")} CUP · {String(curve.data?.rate_source ?? "tasa vigente")}</span>
+              <span className="tabular-nums">
+                1 USD = {Number(curve.data?.rate).toLocaleString("es-CU")} CUP
+                <span className="ml-1 text-text-tertiary">· {String(curve.data?.rate_source ?? "tasa vigente")}</span>
+              </span>
             </div>
             {curve.data?.scenario_shifted_to_next_week === true ? (
               <p role="status" className="rounded-xl border border-cyan-500/30 bg-cyan-500/[0.06] p-3 text-xs leading-relaxed text-foreground">
@@ -279,12 +309,19 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
                 {" "}{String(curve.data.scenario_local)} (hora oficial de Cuba). Es una simulación actual, no un precio histórico.
               </p>
             ) : null}
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Consulta de solo lectura cada 0,5 km, con recargos por día y horario. El costo promedio por km se calcula dividiendo el precio final entre la distancia seleccionada.
-              Marcas de consulta: 2, 3, 5, 8, 9, 10, 12, 15, 20 y 25 km. La corrección tarifaria vigente de 5 a 12 km sigue intacta.
-              No incluye recargos especiales por destino (por ejemplo, aeropuerto), pasajeros adicionales ni paradas.
-              Una sola tarifa por modalidad, sin distinción de combustible.
-            </p>
+            <details className="group rounded-[var(--radius-compact)] border border-border-default bg-surface-2 px-3 py-2.5">
+              <summary className="cursor-pointer text-xs font-medium text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                Criterios del cálculo y alcance
+              </summary>
+              <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                Consulta de solo lectura cada 0,5 km, con recargos por día y horario.
+                El costo promedio por km es el precio final dividido entre la distancia seleccionada.
+                Marcas de consulta: 2, 3, 5, 8, 9, 10, 12, 15, 20 y 25 km.
+                La corrección tarifaria vigente de 5 a 12 km sigue intacta.
+                No incluye recargos especiales por destino (por ejemplo, aeropuerto), pasajeros adicionales ni paradas.
+                Una sola tarifa por modalidad, sin distinción de combustible.
+              </p>
+            </details>
           </>
         )}
       </div>
