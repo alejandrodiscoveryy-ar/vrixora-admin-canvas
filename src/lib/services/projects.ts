@@ -48,7 +48,10 @@ export async function getProjectById(projectId: string): Promise<Project | null>
 
   if (error) {
     console.error("Error fetching project:", error);
-    return null;
+    if (error.code === "PGRST116") return null;
+    // Un fallo de red o una sesión temporalmente no válida NO significa
+    // que se haya eliminado el proyecto.
+    throw error;
   }
 
   if (!data) return null;
