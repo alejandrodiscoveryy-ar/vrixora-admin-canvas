@@ -382,83 +382,49 @@ function ResumenPage() {
         </PageAlert>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetric
-          label="Usuarios app"
-          value={users.length}
-          comparison={`${newUsersPeriod} nuevos en el período`}
-          icon={Users}
-          tone="cyan"
-          isLoading={usersApp.isLoading}
-        />
-
-        <DashboardMetric
-          label="Conductores"
-          value={overview?.driversTotal ?? 0}
-          comparison={`${overview?.driversActive ?? 0} activos`}
-          icon={Users}
-          tone="blue"
-          isLoading={marketplace.isLoading}
-        />
-
-        <DashboardMetric
-          label="Trabajos publicados"
-          value={overview?.jobsPublished ?? 0}
-          comparison={`${overview?.jobsActive ?? 0} activos ahora`}
-          icon={BriefcaseBusiness}
-          tone="emerald"
-          isLoading={marketplace.isLoading}
-        />
-
-        <DashboardMetric
-          label="Incidencias abiertas"
-          value={overview?.jobsIncidentOpen ?? 0}
-          comparison={`${overview?.jobsIncidentResolved ?? 0} resueltas`}
-          icon={AlertTriangle}
-          tone={(overview?.jobsIncidentOpen ?? 0) > 0 ? "rose" : "emerald"}
-          isLoading={marketplace.isLoading}
-        />
-
-        <DashboardMetric
-          label="Leads del período"
-          value={periodLeads.length}
-          comparison={`${contactedLeads} contactados`}
-          icon={Megaphone}
-          tone="violet"
-          isLoading={commercialLeads.isLoading}
-        />
-
-        <DashboardMetric
-          label="Registrados"
-          value={registeredLeads}
-          comparison={`${interestedLeads} interesados`}
-          icon={Users}
-          tone="emerald"
-          isLoading={commercialLeads.isLoading}
-        />
-
-        <DashboardMetric
-          label="Conversión a registro"
-          value={conversionRate === null ? "Sin datos" : `${conversionRate}%`}
-          comparison={
-            conversionRate === null
-              ? "Sin leads en el período"
-              : `${registeredLeads} de ${periodLeads.length} leads`
-          }
-          icon={TrendingUp}
-          tone="cyan"
-          isLoading={commercialLeads.isLoading}
-        />
-
-        <DashboardMetric
-          label="Recargas pendientes"
-          value={overview?.pendingTopups ?? 0}
-          comparison="Operación financiera"
-          icon={WalletCards}
-          tone={(overview?.pendingTopups ?? 0) > 0 ? "amber" : "emerald"}
-          isLoading={marketplace.isLoading}
-        />
+      <section className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores de gestión del negocio">
+        {canViewMarketplace ? (
+          <>
+            <DashboardMetric label="Sin conductor" value={countOrDash(overview?.jobsPublished)} comparison="Carreras publicadas y vigentes" icon={Clock3} tone="amber" isLoading={marketplace.isLoading} />
+            <DashboardMetric label="En servicio" value={countOrDash(overview?.jobsActive)} comparison="Carreras activas ahora" icon={BriefcaseBusiness} tone="emerald" isLoading={marketplace.isLoading} />
+            <DashboardMetric label="Conductores trabajando" value={countOrDash(operating?.working)} comparison="Jornada y aceptación activas" icon={CarFront} tone="blue" isLoading={radar.isLoading} />
+            <DashboardMetric label="Incidencias abiertas" value={countOrDash(overview?.jobsIncidentOpen)} comparison="Necesitan seguimiento" icon={AlertTriangle} tone={(overview?.jobsIncidentOpen ?? 0) > 0 ? "rose" : "emerald"} isLoading={marketplace.isLoading} />
+            {canViewAnalytics ? (
+              <>
+                <DashboardMetric label="Solicitadas · 7 fechas" value={countOrDash(rides?.requested)} comparison="Carreras reales en Cuba" icon={CarFront} tone="cyan" isLoading={vitality.isLoading} />
+                <DashboardMetric label="Completadas · 7 fechas" value={countOrDash(rides?.completed)} comparison="Incluye las liquidadas" icon={CheckCircle2} tone="emerald" isLoading={vitality.isLoading} />
+                <DashboardMetric label="Canceladas · 7 fechas" value={countOrDash(rides?.cancelled)} comparison={rides?.requested ? Math.round(rides.cancelled / rides.requested * 100) + "% de solicitudes" : "Sin tasa calculable"} icon={AlertTriangle} tone={(rides?.cancelled ?? 0) > 0 ? "amber" : "blue"} isLoading={vitality.isLoading} />
+                {vitality.data?.clients ? <DashboardMetric label="Clientes nuevos · 7 fechas" value={countOrDash(newClients)} comparison="Registrados en Cuba" icon={Users} tone="violet" isLoading={vitality.isLoading} /> : null}
+              </>
+            ) : null}
+            {canViewPayments ? <DashboardMetric label="Recargas por verificar" value={countOrDash(overview?.pendingTopups)} comparison="No son ingresos confirmados" icon={WalletCards} tone={(overview?.pendingTopups ?? 0) > 0 ? "amber" : "emerald"} isLoading={marketplace.isLoading} /> : null}
+          </>
+        ) : (
+          <>
+            {canViewUsers ? <DashboardMetric label="Usuarios app" value={usersApp.isError ? "—" : users.length} comparison={`${newUsersPeriod} nuevos en el período`} icon={Users} tone="cyan" isLoading={usersApp.isLoading} /> : null}
+            {canViewCommercial ? (
+              <>
+                <DashboardMetric label="Leads del período" value={commercialLeads.isError ? "—" : periodLeads.length} comparison={`${contactedLeads} contactados`} icon={Megaphone} tone="violet" isLoading={commercialLeads.isLoading} />
+                <DashboardMetric label="Registrados" value={commercialLeads.isError ? "—" : registeredLeads} comparison={`${interestedLeads} interesados`} icon={Users} tone="emerald" isLoading={commercialLeads.isLoading} />
+                <DashboardMetric label="Conversión a registro" value={commercialLeads.isError || conversionRate === null ? "—" : `${conversionRate}%`} comparison={conversionRate === null ? "Sin leads en el período" : `${registeredLeads} de ${periodLeads.length} leads`} icon={TrendingUp} tone="cyan" isLoading={commercialLeads.isLoading} />
+              </>
+            ) : null}
+          </>
+        )}
       </section>
+
+      {canViewMarketplace ? (
+        <OperationalSummaryPriorities
+          projectId={id}
+          waiting={overview?.jobsPublished ?? null}
+          incidents={overview?.jobsIncidentOpen ?? null}
+          topups={canViewPayments ? overview?.pendingTopups ?? null : null}
+          gpsMissing={operating?.gpsMissing ?? null}
+          cancellations={rides ? { requested: rides.requested, cancelled: rides.cancelled } : null}
+          loading={operationalLoading}
+          incomplete={operationalIncomplete}
+        />
+      ) : null}
 
       <section className="grid gap-3 xl:grid-cols-2">
         <SectionCard density="compact" appearance="premium"
@@ -527,26 +493,15 @@ function ResumenPage() {
 
           {canViewMarketplace ? (
             <div className="relative z-10 grid gap-3 sm:grid-cols-2">
-              <SummaryItem
-                label="Conductores activos"
-                value={overview?.driversActive ?? 0}
-                description={`De ${overview?.driversTotal ?? 0} registrados`}
-              />
-              <SummaryItem
-                label="Conductores suspendidos"
-                value={overview?.driversSuspended ?? 0}
-                description="Requieren control administrativo"
-              />
-              <SummaryItem
-                label="Trabajos activos"
-                value={overview?.jobsActive ?? 0}
-                description="Servicios en curso"
-              />
-              <SummaryItem
-                label="Incidencias abiertas"
-                value={overview?.jobsIncidentOpen ?? 0}
-                description="Pendientes de resolución"
-              />
+              <SummaryItem label="Perfiles habilitados" value={countOrDash(overview?.driversActive)} description="No equivale a trabajando" />
+              <SummaryItem label="GPS reciente" value={countOrDash(operating?.gpsRecent)} description="Ubicación actualizada en 5 min" />
+              <SummaryItem label="GPS sin actualizar" value={countOrDash(operating?.gpsMissing)} description="Siguen trabajando; revisar señal" />
+              <SummaryItem label="Conductores suspendidos" value={countOrDash(overview?.driversSuspended)} description="No disponibles para nuevas carreras" />
+              {canViewPayments && vitality.data?.finance ? (
+                <div className="sm:col-span-2">
+                  <SummaryItem label="Valor de carreras liquidadas · 7 fechas" value={formatCUP(vitality.data.finance.cup)} description="Importe en CUP, no ingreso ni comisión de la agencia" />
+                </div>
+              ) : null}
             </div>
           ) : (
             <EmptyState density="compact" appearance="premium"
@@ -686,39 +641,7 @@ function ResumenPage() {
             </Button>
           </SectionCard>
 
-          {canViewMarketplace &&
-          ((overview?.jobsIncidentOpen ?? 0) > 0 ||
-            (overview?.driversSuspended ?? 0) > 0 ||
-            (overview?.pendingTopups ?? 0) > 0) ? (
-            <SectionCard density="compact" appearance="premium"
-              title="Requiere atención"
-              module="resumen"
-              className="relative isolate"
-              headerClassName="px-4 py-3 sm:px-4"
-              contentClassName="space-y-2 p-3 sm:p-3"
-            >
-              {(overview?.jobsIncidentOpen ?? 0) > 0 ? (
-                <AttentionItem
-                  label="Incidencias abiertas"
-                  value={overview?.jobsIncidentOpen ?? 0}
-                />
-              ) : null}
 
-              {(overview?.driversSuspended ?? 0) > 0 ? (
-                <AttentionItem
-                  label="Conductores suspendidos"
-                  value={overview?.driversSuspended ?? 0}
-                />
-              ) : null}
-
-              {(overview?.pendingTopups ?? 0) > 0 ? (
-                <AttentionItem
-                  label="Recargas pendientes"
-                  value={overview?.pendingTopups ?? 0}
-                />
-              ) : null}
-            </SectionCard>
-          ) : null}
         </div>
       </section>
       </div>
@@ -780,23 +703,6 @@ function SummaryItem({
           {description}
         </p>
       </div>
-    </div>
-  );
-}
-
-function AttentionItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2.5">
-      <span className="text-sm text-text-primary">{label}</span>
-      <Badge variant="warning" className="font-mono">
-        {value}
-      </Badge>
     </div>
   );
 }
