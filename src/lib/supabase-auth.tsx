@@ -47,6 +47,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         if (mounted) setSession(data.session);
       } catch (error) {
         console.error("Auth initialization error:", error);
+        // Nunca habilitar consultas de Admin si no se pudo validar la sesión restaurada.
+        if (mounted) setSession(null);
       } finally {
         if (mounted) setLoading(false);
       }
