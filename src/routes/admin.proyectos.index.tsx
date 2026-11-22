@@ -1,7 +1,7 @@
 import { Link, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
-import { useUserProjects } from "@/hooks/useProjects";
+import { useProjectAccess, useUserProjects } from "@/hooks/useProjects";
 import { singleProjectEntry } from "@/lib/admin-project-entry";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,9 +28,20 @@ function ProjectsList() {
     select: (state) => (state.location.search as Record<string, unknown>).seleccionar === "1",
   });
   const navigate = useNavigate();
+  // Si una comprobación anterior falló, el selector puede conservar
+  // seleccionar=1. Con un único proyecto, verificar de nuevo el acceso
+  // permite recuperar el inicio automático sin arriesgar un bucle.
+  const recoveryId = selectorRequested && projects.length === 1 ? projects[0].id : null;
+  const {
+    data: recoveredAccess,
+    isLoading: recoveryLoading,
+    isError: recoveryError,
+    refetch: retryRecovery,
+  } = useProjectAccess(user?.id ?? null, recoveryId);
   const redirectProjectId = singleProjectEntry(projects, {
     loaded: Boolean(user) && !isLoading && !isFetching && !error,
     selectorRequested,
+    recoveredAccess: recoveredAccess === true && !recoveryLoading && !recoveryError,
   });
 
   useEffect(() => {
@@ -53,7 +64,7 @@ function ProjectsList() {
 
   if (!user) return null;
 
-  if (isLoading || isFetching || redirectProjectId) {
+  if (isLoading || isFetching || redirectProjectId || (recoveryId && recoveryLoading)) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -65,6 +76,16 @@ function ProjectsList() {
     return (
       <div className="p-4 rounded-lg bg-destructive/10 text-destructive">
         Error al cargar proyectos: {error.message}
+      </div>
+    );
+  }
+
+  if (recoveryError) {
+    return (
+      <div role="alert" className="space-y-3 rounded-lg border border-border/70 bg-card p-4">
+        <p className="text-sm text-foreground">No fue posible comprobar el acceso a TukTuk Control.</p>
+        <p className="text-xs text-muted-foreground">La sesión puede estar recuperándose. No se ha perdido ningún proyecto.</p>
+        <Button variant="outline" onClick={() => void retryRecovery()}>Reintentar acceso</Button>
       </div>
     );
   }
