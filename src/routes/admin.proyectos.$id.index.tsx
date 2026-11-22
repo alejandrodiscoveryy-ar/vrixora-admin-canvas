@@ -7,9 +7,13 @@ import {
   AlertTriangle,
   ArrowRight,
   BriefcaseBusiness,
+  CarFront,
+  CheckCircle2,
+  Clock3,
   ChevronDown,
   Gauge,
   MapPin,
+  MapPinOff,
   Megaphone,
   RefreshCw,
   TrendingUp,
@@ -18,6 +22,9 @@ import {
 } from "lucide-react";
 
 import { supabaseServices } from "@/lib/services";
+import { getSupabaseClient } from "@/lib/supabase";
+import { parseAgencyVitality } from "@/lib/agency-vitality";
+import { OperationalSummaryPriorities } from "@/features/admin/OperationalSummaryPriorities";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +57,8 @@ function ResumenPage() {
   const canViewMarketplace = permissions.includes("marketplace.view");
   const canViewCommercial = permissions.includes("commercial.view");
   const canViewAudit = permissions.includes("audit.view");
+  const canViewPayments = permissions.includes("payments.view");
+  const canViewAnalytics = permissions.includes("analytics.view");
 
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:summary-range:${id}`,
@@ -68,6 +77,47 @@ function ResumenPage() {
     queryFn: () => supabaseServices.marketplace.overview(id),
     enabled: !permissionsLoading && canViewMarketplace,
     refetchInterval: REFRESH_INTERVAL,
+  });
+
+  // Reutiliza los mismos contratos y claves de caché que Pulso; no se infiere
+  // disponibilidad a partir de perfiles habilitados ni de GPS sin actualizar.
+  const radar = useQuery({
+    queryKey: ["marketplace-radar-readiness", id],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_marketplace_radar_readiness", {
+        target_project_id: id,
+      });
+      if (error) throw error;
+      if (!data || typeof data !== "object") throw new Error("RADAR_UNAVAILABLE");
+      const row = data as Record<string, unknown>;
+      for (const field of ["working", "gps_recent", "gps_missing"]) {
+        if (typeof row[field] !== "number" || !Number.isFinite(row[field]) || Number(row[field]) < 0) {
+          throw new Error("RADAR_INVALID");
+        }
+      }
+      return { working: Number(row.working), gpsRecent: Number(row.gps_recent), gpsMissing: Number(row.gps_missing) };
+    },
+    enabled: !permissionsLoading && canViewMarketplace,
+    refetchInterval: REFRESH_INTERVAL,
+    staleTime: 10_000,
+    retry: 1,
+  });
+
+  const cubaToday = dateInCuba(new Date());
+  const cubaWeekStart = dateInCuba(new Date(Date.now() - 6 * 86_400_000));
+  const vitality = useQuery({
+    queryKey: ["agency-vitality-v1", id, cubaWeekStart, cubaToday],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_agency_vitality_v1", {
+        target_project_id: id, target_from: cubaWeekStart, target_to: cubaToday,
+      });
+      if (error) throw error;
+      return parseAgencyVitality(data);
+    },
+    enabled: !permissionsLoading && canViewMarketplace && canViewAnalytics,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: 1,
   });
 
   const commercialLeads = useQuery({
@@ -128,27 +178,25 @@ function ResumenPage() {
       : null;
 
   const queryError = [
-    usersApp,
-    marketplace,
-    commercialLeads,
-    audit,
+    usersApp, marketplace, radar, vitality, commercialLeads, audit,
   ].find((query) => query.isError)?.error;
 
   const allLoading = [
-    usersApp,
-    marketplace,
-    commercialLeads,
-    audit,
+    usersApp, marketplace, radar, vitality, commercialLeads, audit,
   ].some((query) => query.isLoading);
 
   const dataUpdatedAt = Math.max(
-    usersApp.dataUpdatedAt,
-    marketplace.dataUpdatedAt,
-    commercialLeads.dataUpdatedAt,
-    audit.dataUpdatedAt,
+    usersApp.dataUpdatedAt, marketplace.dataUpdatedAt, radar.dataUpdatedAt,
+    vitality.dataUpdatedAt, commercialLeads.dataUpdatedAt, audit.dataUpdatedAt,
   );
 
   const overview = marketplace.data;
+  const rides = vitality.data?.rides ?? null;
+  const newClients = vitality.data?.clients?.new ?? null;
+  const operating = radar.data ?? null;
+  const operationalLoading = marketplace.isLoading || radar.isLoading || (canViewAnalytics && vitality.isLoading);
+  const operationalIncomplete = marketplace.isError || radar.isError || (canViewAnalytics && vitality.isError);
+  const countOrDash = (value: number | null | undefined) => value == null || !Number.isFinite(value) ? "—" : value;
   const recentActivity = (audit.data ?? []).slice(0, 7);
 
   return (
