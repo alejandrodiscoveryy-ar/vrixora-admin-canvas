@@ -83,7 +83,8 @@ function MiniMetric({label,value,icon:Icon,detail}: {label:string;value:number;i
 
 export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {projectId:string}) {
   const [days,setDays]=useState<PeriodDays>(30);
-  const [expanded,setExpanded]=useState<string|null>(null);
+  // Las fichas comienzan plegadas y se pueden abrir independientemente.
+  const [expanded,setExpanded]=useState<Set<string>>(() => new Set());
   const query=useQuery({queryKey:["impulsa-communication-analytics",projectId,days],
     queryFn:()=>fetchReport(projectId,days),enabled:Boolean(projectId),
     staleTime:60_000,refetchInterval:120_000,refetchIntervalInBackground:false,retry:1,
@@ -110,7 +111,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
       </div>
       <div className="flex items-center gap-1" role="group" aria-label="Periodo de análisis">
         {([7,30,90] as const).map(period=><button type="button" key={period}
-          aria-pressed={period===days} onClick={()=>{setDays(period);setExpanded(null);}}
+          aria-pressed={period===days} onClick={()=>{setDays(period);setExpanded(new Set());}}
           className={`min-h-11 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-semibold ${period===days?"border-border-strong bg-surface-3 text-text-primary":"border-border-subtle text-text-secondary hover:bg-surface-2"}`}>
           {period}d</button>)}
       </div>
@@ -220,43 +221,86 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId}: {p
          </div>
        </details>
 
-       <div className={cp.inset + " p-0 sm:p-0"}>
-         <div className="border-b border-border-subtle p-3"><h4 className="text-base font-semibold text-text-primary">Aportación de cada conductor</h4>
-           <p className="mt-1 text-[11px] text-muted-foreground">Toca una fila para ver cómo se comporta su enlace.</p></div>
-         <div className="divide-y divide-border/40">
-           {d!.drivers.length ? d!.drivers.map((x,i)=>{
-             const open=expanded===x.driver_user_id;
-             return <div key={x.driver_user_id}>
-               <button type="button" aria-expanded={open}
-                 aria-controls={`impulsa-marketing-driver-${x.driver_user_id}`}
-                 onClick={()=>setExpanded(open?null:x.driver_user_id)}
-                 className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-500">
-                 <span className="w-5 text-xs font-bold text-muted-foreground">{i+1}</span>
-                 <span className="min-w-0 flex-1 truncate text-xs font-semibold">{x.name}</span>
-                 {!x.active&&<span className="text-[10px] text-amber-600">Inactivo</span>}
-                 <span className="shrink-0 text-[11px] font-bold tabular-nums">{fmt(number(x.clicks))} clics</span>
-                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open?"rotate-180":""}`}/>
-               </button>
-               <div id={`impulsa-marketing-driver-${x.driver_user_id}`} hidden={!open} className="bg-muted/10 px-3 pb-3">
-                 {open && <div className="grid grid-cols-2 gap-2 pt-2 text-xs sm:grid-cols-4">
-                   {[
-                     ["Compartir",x.shares],["Copias",x.copies],["Descargas",x.downloads],
-                     ["Clics",x.clicks],["Sesiones",x.sessions],["Cotizaciones",x.quotes],
-                     ["Solicitudes de app",x.requests],["Viajes reales",x.attributed_real],
-                     ["Completados reales",x.completed_real],
-                   ].map(([label,value])=><div key={String(label)} className="rounded-md border border-border/40 p-2">
-                     <p className="text-[10px] text-muted-foreground">{label}</p><p className="font-bold tabular-nums">{fmt(number(value))}</p>
-                   </div>)}
-                   <div className="col-span-2 rounded-md border border-border/40 p-2 sm:col-span-3">
-                     <p className="text-[10px] text-muted-foreground">Solicitudes de app / clics registrados</p>
-                     <p className="font-bold tabular-nums">{pct(number(x.requests),number(x.clicks))}</p>
-                   </div>
-                 </div>}
-               </div>
-             </div>;
-           }) : <p className="px-3 py-5 text-xs text-muted-foreground">Todavía no hay conductores con perfil Impulsa para analizar.</p>}
+       <section aria-label="Conductores de Impulsa" className="min-w-0 space-y-2.5">
+         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default/60 pb-2">
+           <div className="min-w-0">
+             <h4 className="text-sm font-semibold text-text-primary">Aportación de cada conductor</h4>
+             <p className="mt-1 text-[11px] text-muted-foreground">
+               Cada ficha se abre por separado para consultar la captación y los viajes atribuidos.
+             </p>
+           </div>
+           <span className="rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium tabular-nums text-text-secondary">
+             {fmt(d!.drivers.length)} conductores
+           </span>
          </div>
-       </div>
+         {d!.drivers.length ? d!.drivers.map(x=>{
+           const open=expanded.has(x.driver_user_id);
+           const initials=x.name.trim().split(/\s+/).slice(0,2).map(part=>part[0]??"").join("").toUpperCase()||"C";
+           return <article key={x.driver_user_id} data-impulsa-expanded={open?"true":"false"}
+             className={cp.inset + " group relative min-w-0 overflow-hidden p-0 shadow-sm transition-colors hover:border-cyan-400/35 sm:p-0"}>
+             <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-cyan-500/60" />
+             <button type="button" aria-expanded={open}
+               aria-label={`${open?"Plegar":"Desplegar"} detalles de Impulsa de ${x.name}`}
+               aria-controls={`impulsa-marketing-driver-${x.driver_user_id}`}
+               onClick={() => setExpanded(current => {
+                 const next=new Set(current);
+                 if(next.has(x.driver_user_id))next.delete(x.driver_user_id);
+                 else next.add(x.driver_user_id);
+                 return next;
+               })}
+               className="flex min-h-16 w-full min-w-0 flex-wrap items-center gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/60 hover:bg-surface-2/60 sm:flex-nowrap sm:px-5">
+               <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-sm font-bold text-cyan-200">
+                 {initials}
+               </span>
+               <span className="min-w-0 flex-1">
+                 <span className="block truncate text-sm font-semibold text-text-primary" title={x.name}>{x.name}</span>
+                 <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-text-secondary">
+                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${x.active?"border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300":"border-amber-400/25 bg-amber-400/[0.08] text-amber-300"}`}>
+                     {x.active?"Activo":"Inactivo"}
+                   </span>
+                   <span>{fmt(number(x.clicks))} clics</span>
+                   <span aria-hidden="true">·</span>
+                   <span>{fmt(number(x.attributed_real))} viajes atribuidos</span>
+                   <span aria-hidden="true">·</span>
+                   <span>{fmt(number(x.completed_real))} completados</span>
+                 </span>
+               </span>
+               <span className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-cyan-400/25 bg-cyan-500/[0.05] px-3 text-xs font-semibold text-cyan-200">
+                 {open?"Plegar":"Detalles"}
+                 <ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${open?"rotate-180":""}`}/>
+               </span>
+             </button>
+             <div id={`impulsa-marketing-driver-${x.driver_user_id}`} hidden={!open} className="border-t border-border-subtle bg-surface-2/35 px-4 pb-4 pt-3 sm:px-5">
+               {open && <>
+                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">Captación y actividad del enlace</p>
+                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+                   {[
+                     ["Intentos de compartir",x.shares],["Enlace copiado",x.copies],["Descargas",x.downloads],
+                     ["Clics",x.clicks],["Sesiones",x.sessions],["Cotizaciones",x.quotes],
+                     ["Solicitudes en Cliente",x.requests],["Viajes atribuidos",x.attributed_real],
+                     ["Completados",x.completed_real],
+                   ].map(([label,value])=><div key={String(label)}
+                     className="min-w-0 rounded-xl border border-border-subtle bg-surface-2/80 px-3 py-2.5">
+                     <p className="text-[11px] leading-snug text-text-secondary">{label}</p>
+                     <p className="mt-1 text-lg font-semibold tabular-nums text-text-primary">{fmt(number(value))}</p>
+                   </div>)}
+                   <div className="col-span-2 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.045] px-3 py-2.5 sm:col-span-3 xl:col-span-1">
+                     <p className="text-[11px] leading-snug text-text-secondary">Solicitudes / clics registrados</p>
+                     <p className="mt-1 text-lg font-semibold tabular-nums text-cyan-300">{pct(number(x.requests),number(x.clicks))}</p>
+                   </div>
+                 </div>
+                 <p className="mt-2 text-[11px] leading-relaxed text-text-secondary">
+                   El seguimiento refleja acciones registradas, no identifica personas únicas ni confirma ganancias.
+                 </p>
+               </>}
+             </div>
+           </article>;
+         }) : (
+           <p className={cp.inset + " px-3 py-5 text-xs text-muted-foreground"}>
+             Todavía no hay conductores con perfil Impulsa para analizar.
+           </p>
+         )}
+       </section>
        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
          <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0"/>
          Las cifras de difusión son acciones de la WebApp, no confirmaciones de envío en WhatsApp o Facebook. Las sesiones son pestañas, no personas identificadas. Los viajes reales se toman de la base operativa y nunca se mezclan con pruebas.
