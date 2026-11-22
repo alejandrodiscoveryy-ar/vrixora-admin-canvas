@@ -10,7 +10,7 @@ type PricePoint = { km: number } & Record<VehicleCode, number>;
 type CurveResponse = { rows?: unknown; scenario_local?: unknown; rate?: unknown; rate_source?: unknown };
 
 // Distancias de consulta seleccionadas para comparar las cuatro modalidades.
-const referenceKilometers = [3, 5, 8, 10, 12, 15, 20, 25] as const;
+const referenceKilometers = [2, 3, 5, 8, 9, 10, 12, 15, 20, 25] as const;
 
 const vehicles = [
   { code: "motorcycle", name: "Moto", color: "#fb7185", icon: Bike },
@@ -205,14 +205,16 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
 
             <div className="space-y-2 rounded-xl border border-border/70 bg-background/35 p-3">
               <p className="text-xs font-medium text-muted-foreground">Consulta rápida por kilómetros</p>
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8" role="group" aria-label="Kilómetros de referencia">
+              <div className="-mx-1 overflow-x-auto px-1 pb-1" role="group" aria-label="Kilómetros de referencia" tabIndex={0}>
+                <div className="flex w-max gap-2">
                 {referenceKilometers.filter((km) => km <= maxKm).map((km) => (
                   <button key={km} type="button" onClick={() => setSelectedKm(km)}
                     aria-pressed={selected?.km === km}
-                    className={"min-h-10 rounded-lg border px-2 py-2 text-xs font-semibold tabular-nums transition " +
+                    className={"min-h-11 min-w-[58px] shrink-0 snap-start rounded-lg border px-3 py-2 text-xs font-semibold tabular-nums transition " +
                       (selected?.km === km ? "border-cyan-400/70 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300" : "border-border/70 bg-card/75 text-foreground hover:border-cyan-500/40")}
                   >{km} km</button>
                 ))}
+                </div>
               </div>
             </div>
 
@@ -234,7 +236,7 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
             </div>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Consulta de solo lectura cada 0,5 km, con recargos por día y horario.
-              Marcas de consulta: 3, 5, 8, 10, 12, 15, 20 y 25 km. La corrección tarifaria vigente de 5 a 12 km sigue intacta.
+              Marcas de consulta: 2, 3, 5, 8, 9, 10, 12, 15, 20 y 25 km. La corrección tarifaria vigente de 5 a 12 km sigue intacta.
               No incluye recargos especiales por destino (por ejemplo, aeropuerto), pasajeros adicionales ni paradas.
               Una sola tarifa por modalidad, sin distinción de combustible.
             </p>
