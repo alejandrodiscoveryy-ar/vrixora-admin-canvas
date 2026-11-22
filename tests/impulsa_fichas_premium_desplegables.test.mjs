@@ -12,7 +12,8 @@ test("Impulsa replica las fichas premium de Aliados sin un segundo panel", () =>
   assert.match(impulsa, /absolute inset-y-0 left-0 w-\[3px\]/);
   assert.match(impulsa, /bg-surface-2\/80/);
   assert.match(impulsa, /rounded-xl border border-border-subtle/);
-  assert.match(impulsa, /flex size-10 shrink-0 items-center justify-center rounded-xl/);
+  assert.match(impulsa, /ImpulsaDriverPortrait name=\{x\.name\} media=\{photo\}/);
+  assert.match(impulsa, /flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full/);
   assert.match(impulsa, /aria-label="Impulsa Analytics — Comunicación y conversión"/);
 });
 

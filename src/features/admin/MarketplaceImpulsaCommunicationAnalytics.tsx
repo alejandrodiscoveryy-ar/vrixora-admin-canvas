@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, ChevronDown, ExternalLink, MousePointerClick, RefreshCw, Share2, Users, TrendingUp, AlertCircle, MessageCircle } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from "recharts";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
+import { getMarketplaceDirectoryDriverMedia, type MarketplaceDirectoryDriverMedia } from "@/lib/marketplace-map";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
@@ -109,6 +110,34 @@ async function fetchImpulsaDriverContacts(projectId: string, promoterIds: string
   return contacts;
 }
 
+// Igual que Conductores y Driver 360: foto propia → foto de Google → iniciales.
+function ImpulsaDriverPortrait({
+  name, media,
+}: {
+  name: string;
+  media: MarketplaceDirectoryDriverMedia | undefined;
+}) {
+  const uploaded = media?.avatarUrl ?? null;
+  const google = media?.googleAvatarUrl ?? null;
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
+  useEffect(() => setFailedUrls([]), [uploaded, google]);
+  const activeUrl = [uploaded, google].find((url) => url && !failedUrls.includes(url));
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toUpperCase() || "C";
+
+  return (
+    <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/25 bg-cyan-500/10 text-sm font-bold text-cyan-100">
+      {initials}
+      {activeUrl ? (
+        <img key={activeUrl} src={activeUrl} alt={`Foto de ${name}`}
+          loading="lazy" referrerPolicy="no-referrer"
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={() => setFailedUrls((old) => old.includes(activeUrl) ? old : [...old, activeUrl])}
+        />
+      ) : null}
+    </span>
+  );
+}
+
 function MiniMetric({label,value,icon:Icon,detail}: {label:string;value:number;icon:typeof Share2;detail?:string}) {
   return <div className={cp.metric}>
     <div className="flex items-center justify-between gap-2 text-muted-foreground">
@@ -129,6 +158,15 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canM
   });
   const d=query.data,t=d?.totals??zero;
   const promoterIds=(d?.drivers??[]).map(driver=>driver.driver_user_id);
+  const driverMedia=useQuery({
+    queryKey:["marketplace-driver-directory-media",projectId,promoterIds],
+    queryFn:()=>getMarketplaceDirectoryDriverMedia(projectId,promoterIds),
+    enabled:canManage && query.isSuccess && promoterIds.length>0,
+    staleTime:5*60_000,
+    refetchInterval:12*60_000, // renovar URLs privadas firmadas antes de que expiren
+    refetchIntervalInBackground:false,
+    retry:1,
+  });
   const contacts=useQuery({
     queryKey:["impulsa-driver-contacts",projectId,promoterIds.join("|")],
     queryFn:()=>fetchImpulsaDriverContacts(projectId,promoterIds),
@@ -274,14 +312,22 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canM
                Cada ficha se abre por separado para consultar la captación y los viajes atribuidos.
              </p>
            </div>
-           <span className="rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium tabular-nums text-text-secondary">
-             {fmt(d!.drivers.length)} conductores
-           </span>
+           <div className="flex flex-wrap items-center gap-2">
+             {canManage && driverMedia.isError && (
+               <button type="button" onClick={() => void driverMedia.refetch()}
+                 className="min-h-9 rounded-lg border border-amber-400/25 bg-amber-500/[0.06] px-2.5 text-[11px] font-semibold text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                 Reintentar fotos
+               </button>
+             )}
+             <span className="rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium tabular-nums text-text-secondary">
+               {fmt(d!.drivers.length)} conductores
+             </span>
+           </div>
          </div>
          {d!.drivers.length ? d!.drivers.map(x=>{
            const open=expanded.has(x.driver_user_id);
            const phone=canManage ? contacts.data?.[x.driver_user_id] : undefined;
-           const initials=x.name.trim().split(/\s+/).slice(0,2).map(part=>part[0]??"").join("").toUpperCase()||"C";
+           const photo=canManage ? driverMedia.data?.[x.driver_user_id] : undefined;
            return <article key={x.driver_user_id} data-impulsa-expanded={open?"true":"false"}
              className={cp.inset + " group relative min-w-0 overflow-hidden p-0 shadow-sm transition-colors hover:border-cyan-400/35 sm:p-0"}>
              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-cyan-500/60" />
@@ -296,9 +342,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canM
                  return next;
                })}
                className="flex min-h-16 min-w-0 flex-1 flex-wrap items-center gap-3 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/60 hover:bg-surface-2/60 sm:flex-nowrap">
-               <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-sm font-bold text-cyan-200">
-                 {initials}
-               </span>
+               <ImpulsaDriverPortrait name={x.name} media={photo} />
                <span className="min-w-0 flex-1">
                  <span className="block truncate text-sm font-semibold text-text-primary" title={x.name}>{x.name}</span>
                  <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-text-secondary">
