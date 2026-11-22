@@ -1632,3 +1632,74 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Finanzas móvil: fichas de dos niveles.
+   Cerrada: identidad + dato principal. Abierta: teléfonos, referencias,
+   saldos secundarios y operaciones existentes, sin modificar su lógica. */
+@container (max-width: 600px) {
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-identity-meta,
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-phone,
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-reference,
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-actions {
+    display: none;
+  }
+  .marketplace-wallet-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-wallet-phone,
+  .marketplace-wallet-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-wallet-metrics > :nth-child(n + 2) {
+    display: none;
+  }
+
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-main {
+    row-gap: 6px;
+  }
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-summary > :first-child {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-amount {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .marketplace-topup-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-topup-status {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .marketplace-wallet-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-wallet-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(88px, .6fr);
+    align-items: center;
+    gap: 8px;
+  }
+  .marketplace-wallet-row:not(:has(> .marketplace-record-details[open]))
+    .marketplace-wallet-metrics {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    align-items: center;
+  }
+  .marketplace-wallet-row:has(> .marketplace-record-details[open])
+    .marketplace-wallet-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* El método ya se lee junto a la fecha al expandir. No repetirlo debajo. */
+  .marketplace-topup-row .marketplace-topup-detail-method { display: none; }
+
+  /* Textos de acciones cortos, sin quitar descripciones accesibles. */
+  .marketplace-topup-action-full { display: none; }
+  .marketplace-topup-action-short { display: inline; }
+}
+
+/* Acciones completas en escritorio, conservando el texto y patrón aprobado. */
+@container (min-width: 601px) {
+  .marketplace-topup-action-short { display: none; }
+}
