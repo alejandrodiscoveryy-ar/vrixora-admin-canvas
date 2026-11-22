@@ -47,7 +47,7 @@ test("Ambas operaciones muestran un resultado claro y conservan el cierre del di
   assert.match(source, /Solicitud rechazada\. No se acreditó saldo/);
   assert.match(source, /No se pudo rechazar la solicitud/);
   assert.match(source, /Recarga confirmada\. Pulsa Notificar por WhatsApp para enviar el comprobante/);
-  assert.match(dialog, /setReason\(""\)/);
-  assert.match(dialog, /setReceivedPaymentReference\(""\)/);
-  assert.match(dialog, /setVerifiedPaymentReceived\(false\)/);
+  assert.match(source, /setReason\(""\)/);
+  assert.match(source, /setReceivedPaymentReference\(""\)/);
+  assert.match(source, /setVerifiedPaymentReceived\(false\)/);
 });
