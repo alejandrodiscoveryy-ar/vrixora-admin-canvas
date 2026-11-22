@@ -207,21 +207,39 @@ function ResumenPage() {
           <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">VRIXORA · Panel general</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <h1 className="text-lg font-semibold text-foreground">Resumen operativo</h1>
-            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[10px] text-[var(--semantic-success)]">{allLoading ? "Cargando" : "En vivo"}</span>
+            <span className={cn("shrink-0 rounded-full border px-2 py-1 text-[10px] font-medium",
+              queryError ? "border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] text-[var(--semantic-warning-foreground)]" :
+              "border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]")}>
+              {allLoading ? "Consultando" : queryError ? "Datos parciales" : dataUpdatedAt ? "Actualizado" : "Sin datos"}
+            </span>
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">{buildFreshnessLabel(dataUpdatedAt, allLoading)}</p>
         </header>
         {queryError ? <PageAlert tone="error" title="Error al actualizar">{friendlyError(queryError)}</PageAlert> : null}
         <section className="grid grid-cols-2 gap-2" aria-label="Indicadores principales">
-          {canViewUsers ? <MobileDashboardStat label="Usuarios app" value={users.length} note={String(newUsersPeriod) + " nuevos"} icon={Users} loading={usersApp.isLoading} /> : null}
           {canViewMarketplace ? (
             <>
-              <MobileDashboardStat label="Conductores" value={overview?.driversTotal ?? 0} note={String(overview?.driversActive ?? 0) + " activos"} icon={Users} loading={marketplace.isLoading} />
-              <MobileDashboardStat label="Servicios activos" value={overview?.jobsActive ?? 0} note="En curso" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
-              <MobileDashboardStat label="Incidencias abiertas" value={overview?.jobsIncidentOpen ?? 0} note="Por atender" icon={AlertTriangle} loading={marketplace.isLoading} warning={(overview?.jobsIncidentOpen ?? 0) > 0} />
+              <MobileDashboardStat label="Sin conductor" value={countOrDash(overview?.jobsPublished)} note="Esperando asignación" icon={Clock3} loading={marketplace.isLoading} warning={(overview?.jobsPublished ?? 0) > 0} />
+              <MobileDashboardStat label="En servicio" value={countOrDash(overview?.jobsActive)} note="Carreras en curso" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
+              <MobileDashboardStat label="Trabajando" value={countOrDash(operating?.working)} note="Jornada y aceptación activas" icon={CarFront} loading={radar.isLoading} />
+              <MobileDashboardStat label="Incidencias" value={countOrDash(overview?.jobsIncidentOpen)} note="Sin resolver" icon={AlertTriangle} loading={marketplace.isLoading} warning={(overview?.jobsIncidentOpen ?? 0) > 0} />
             </>
+          ) : canViewUsers ? (
+            <MobileDashboardStat label="Usuarios app" value={usersApp.isError ? "—" : users.length} note={String(newUsersPeriod) + " nuevos en el período"} icon={Users} loading={usersApp.isLoading} />
           ) : null}
         </section>
+        {canViewMarketplace ? (
+          <OperationalSummaryPriorities
+            projectId={id}
+            waiting={overview?.jobsPublished ?? null}
+            incidents={overview?.jobsIncidentOpen ?? null}
+            topups={canViewPayments ? overview?.pendingTopups ?? null : null}
+            gpsMissing={operating?.gpsMissing ?? null}
+            cancellations={rides ? { requested: rides.requested, cancelled: rides.cancelled } : null}
+            loading={operationalLoading}
+            incomplete={operationalIncomplete}
+          />
+        ) : null}
         <nav className="grid grid-cols-2 gap-2" aria-label="Accesos directos">
           {canViewMarketplace ? (
             <>
@@ -241,11 +259,33 @@ function ResumenPage() {
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Más indicadores <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
             <div className="space-y-3 border-t border-border/50 p-3">
               {canViewMarketplace ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <MobileDashboardStat label="Recargas pendientes" value={overview?.pendingTopups ?? 0} note="Finanzas" icon={WalletCards} loading={marketplace.isLoading} />
-                  <MobileDashboardStat label="Suspendidos" value={overview?.driversSuspended ?? 0} note="Conductores" icon={AlertTriangle} loading={marketplace.isLoading} />
-                  <MobileDashboardStat label="Trabajos publicados" value={overview?.jobsPublished ?? 0} note="Histórico" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
-                </div>
+                <section className="space-y-2" aria-label="Cobertura y resultados">
+                  <p className="text-xs font-semibold text-primary">Cobertura actual</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <MobileDashboardStat label="GPS reciente" value={countOrDash(operating?.gpsRecent)} note="Ubicación en últimos 5 min" icon={MapPin} loading={radar.isLoading} />
+                    <MobileDashboardStat label="GPS antiguo" value={countOrDash(operating?.gpsMissing)} note="Siguen trabajando" icon={MapPinOff} loading={radar.isLoading} warning={(operating?.gpsMissing ?? 0) > 0} />
+                    <MobileDashboardStat label="Habilitados" value={countOrDash(overview?.driversActive)} note="No equivale a trabajando" icon={Users} loading={marketplace.isLoading} />
+                    {canViewPayments ? <MobileDashboardStat label="Recargas pendientes" value={countOrDash(overview?.pendingTopups)} note="Sin verificar, no ingresos" icon={WalletCards} loading={marketplace.isLoading} warning={(overview?.pendingTopups ?? 0) > 0} /> :
+                      <MobileDashboardStat label="Suspendidos" value={countOrDash(overview?.driversSuspended)} note="Conductores" icon={AlertTriangle} loading={marketplace.isLoading} />}
+                  </div>
+                  {canViewAnalytics ? (
+                    <>
+                      <p className="pt-1 text-xs font-semibold text-primary">Resultados · 7 fechas en Cuba</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <MobileDashboardStat label="Solicitadas" value={countOrDash(rides?.requested)} note="Carreras reales" icon={CarFront} loading={vitality.isLoading} />
+                        <MobileDashboardStat label="Completadas" value={countOrDash(rides?.completed)} note="Incluye liquidadas" icon={CheckCircle2} loading={vitality.isLoading} />
+                        <MobileDashboardStat label="Canceladas" value={countOrDash(rides?.cancelled)} note={rides?.requested ? Math.round((rides.cancelled / rides.requested) * 100) + "% de solicitudes" : "Sin tasa calculable"} icon={AlertTriangle} loading={vitality.isLoading} warning={(rides?.cancelled ?? 0) > 0} />
+                        <MobileDashboardStat label="Clientes nuevos" value={countOrDash(newClients)} note="Registrados en el período" icon={Users} loading={vitality.isLoading} />
+                        {canViewPayments && vitality.data?.finance ? (
+                          <div className="col-span-2">
+                            <MobileDashboardStat label="Valor de carreras liquidadas" value={formatCUP(vitality.data.finance.cup)} note="Importe en CUP · no ingreso de la agencia" icon={WalletCards} loading={vitality.isLoading} />
+                          </div>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : <p className="text-xs text-text-secondary">El histórico de carreras y clientes requiere permiso de Analítica.</p>}
+                  {canViewUsers ? <p className="text-xs text-text-secondary">Usuarios app registrados: {usersApp.isError ? "—" : users.length}. Nuevos en el período comercial: {usersApp.isError ? "—" : newUsersPeriod}.</p> : null}
+                </section>
               ) : null}
               {canViewCommercial ? (
                 <section className="space-y-2" aria-label="Captación comercial">
