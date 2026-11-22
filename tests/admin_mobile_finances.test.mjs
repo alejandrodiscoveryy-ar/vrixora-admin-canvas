@@ -178,7 +178,9 @@ test("Recargas muestra teléfono y referencia en todas las filas sin duplicarlos
 
 test("Recargas abre en Pendientes y restablece esa vista al regresar", () => {
   assert.match(source, /const \[topupStatus, setTopupStatus\] = useState\("requested"\)/);
-  assert.match(source, /useEffect\(\(\) => \{\s*if \(tab !== "recargas"\) return;\s*setTopupStatus\("requested"\);\s*setTopupSearch\(""\);\s*\}, \[tab\]\)/);
+  assert.match(source, /if \(tab !== "recargas"\) return;/);
+  assert.match(source, /setTopupStatus\(pulsoTopupState === "confirmed" \? "confirmed" : "requested"\)/);
+  assert.match(source, /setTopupSearch\(""\)/);
   assert.match(source, /queryKey: \["marketplace-topups", projectId, topupStatus\]/);
   assert.match(source, /status: topupStatus === "reversed" \? undefined : topupStatus \|\| undefined/);
   assert.match(topups, /\["", "Todas"\]/);

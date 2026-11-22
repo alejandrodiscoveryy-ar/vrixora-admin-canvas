@@ -112,8 +112,36 @@ function OpenView({ projectId, vista, children }: {
   );
 }
 
+type PulseDestination = "trabajos" | "recargas" | "mapa" | "clientes" | "incidencias" | "conductores";
+
+// El enlace envuelve la tarjeta aprobada: mismo diseño premium, sin panel adicional.
+function PulseMetricLink({
+  projectId, vista, label, children, enabled = true, estadoRecarga,
+}: {
+  projectId: string;
+  vista: PulseDestination;
+  label: string;
+  children: ReactNode;
+  enabled?: boolean;
+  estadoRecarga?: "requested" | "confirmed";
+}) {
+  if (!enabled) return <>{children}</>;
+  return (
+    <Link
+      to="/admin/proyectos/$id/$section"
+      params={{ id: projectId, section: "trabajos" }}
+      search={estadoRecarga ? { vista, estadoRecarga } : { vista }}
+      aria-label={`Abrir ${label} en ${vista}`}
+      title={`Abrir ${label}`}
+      className="group block h-full min-w-0 cursor-pointer rounded-[var(--radius-card)] transition-[filter] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      {children}
+    </Link>
+  );
+}
+
 export default function MarketplacePulseDecisions({
-  projectId, overview, overviewError, canPayments, canManagePayments, canAnalytics,
+  projectId, overview, overviewError, canPayments, canManagePayments, canAnalytics, canCustomers,
 }: {
   projectId: string;
   overview: MarketplaceOverview | undefined;
@@ -121,6 +149,7 @@ export default function MarketplacePulseDecisions({
   canPayments: boolean;
   canManagePayments: boolean;
   canAnalytics: boolean;
+  canCustomers: boolean;
 }) {
   const today = dateInCuba(new Date());
   const weekStart = dateInCuba(new Date(Date.now() - 6 * 86_400_000));
@@ -203,48 +232,74 @@ export default function MarketplacePulseDecisions({
         <span className="text-[11px] text-text-tertiary">{loading ? "Consultando…" : "Datos operativos cada 30–60 s"}</span>
       </div>
       <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4" aria-label="Indicadores para tomar decisiones">
-        <MetricCard {...cardBase} label="Conductores trabajando" value={live ? number(live.working) : "—"}
+        <PulseMetricLink projectId={projectId} vista="conductores" label="Conductores trabajando">
+          <MetricCard {...cardBase} label="Conductores trabajando" value={live ? number(live.working) : "—"}
           description="Jornada y aceptación activas" comparison="Operación"
           icon={CarFront} semanticState="success" isLoading={radar.isPending} />
-        <MetricCard {...cardBase} label="GPS reciente" value={live ? number(live.gps_recent) : "—"}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="mapa" label="GPS reciente">
+          <MetricCard {...cardBase} label="GPS reciente" value={live ? number(live.gps_recent) : "—"}
           description="Posición de últimos 5 min" comparison="Cobertura"
           icon={MapPin} module="resumen" isLoading={radar.isPending} />
-        <MetricCard {...cardBase} label="GPS sin actualizar" value={live ? number(live.gps_missing) : "—"}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="mapa" label="GPS sin actualizar">
+          <MetricCard {...cardBase} label="GPS sin actualizar" value={live ? number(live.gps_missing) : "—"}
           description="Siguen marcados trabajando" comparison="Revisar señal"
           icon={MapPinOff} semanticState="warning" isLoading={radar.isPending} />
-        <MetricCard {...cardBase} label="Perfiles habilitados" value={overviewError || !overview ? "—" : number(overview.driversActive)}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="conductores" label="Perfiles habilitados">
+          <MetricCard {...cardBase} label="Perfiles habilitados" value={overviewError || !overview ? "—" : number(overview.driversActive)}
           description="No equivale a trabajando" comparison="Equipo" icon={Users}
           isLoading={!overview && !overviewError} />
-        <MetricCard {...cardBase} label="Solicitudes · 7 fechas" value={rides ? number(rides.requested) : "—"}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="trabajos" label="Solicitudes · 7 fechas">
+          <MetricCard {...cardBase} label="Solicitudes · 7 fechas" value={rides ? number(rides.requested) : "—"}
           description="Carreras reales registradas" comparison="Demanda" icon={CarFront}
           module="resumen" isLoading={canAnalytics && vitality.isPending} />
-        <MetricCard {...cardBase} label="Completadas · 7 fechas" value={rides ? number(rides.completed) : "—"}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="trabajos" label="Completadas · 7 fechas">
+          <MetricCard {...cardBase} label="Completadas · 7 fechas" value={rides ? number(rides.completed) : "—"}
           description="Incluye las liquidadas" comparison="Resultado" icon={CheckCircle2}
           semanticState="success" isLoading={canAnalytics && vitality.isPending} />
-        <MetricCard {...cardBase} label="Canceladas · 7 fechas" value={rides ? number(rides.cancelled) : "—"}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="trabajos" label="Canceladas · 7 fechas">
+          <MetricCard {...cardBase} label="Canceladas · 7 fechas" value={rides ? number(rides.cancelled) : "—"}
           description={cancellationRate == null ? "Sin base para tasa" : Math.round(cancellationRate * 100) + " % de las solicitadas"}
           comparison="Calidad" icon={ShieldAlert} semanticState={rides && rides.cancelled > 0 ? "danger" : undefined}
           isLoading={canAnalytics && vitality.isPending} />
-        <MetricCard {...cardBase} label="Clientes nuevos · 7 fechas" value={clients ? number(clients.new) : "—"}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="clientes" label="Clientes nuevos · 7 fechas" enabled={canCustomers}>
+          <MetricCard {...cardBase} label="Clientes nuevos · 7 fechas" value={clients ? number(clients.new) : "—"}
           description="Registrados en el período" comparison="Captación" icon={Users}
           module="comercial" isLoading={canAnalytics && vitality.isPending} />
-        <MetricCard {...cardBase} label="Esperando conductor" value={overviewError || !overview ? "—" : number(overview.jobsPublished)}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="trabajos" label="Esperando conductor">
+          <MetricCard {...cardBase} label="Esperando conductor" value={overviewError || !overview ? "—" : number(overview.jobsPublished)}
           description="Publicadas y vigentes" comparison="Asignación" icon={Clock3}
           semanticState="warning" isLoading={!overview && !overviewError} />
-        <MetricCard {...cardBase} label="Incidencias abiertas" value={overviewError || !overview ? "—" : number(overview.jobsIncidentOpen)}
+        </PulseMetricLink>
+        <PulseMetricLink projectId={projectId} vista="incidencias" label="Incidencias abiertas">
+          <MetricCard {...cardBase} label="Incidencias abiertas" value={overviewError || !overview ? "—" : number(overview.jobsIncidentOpen)}
           description="Requieren seguimiento" comparison="Atención" icon={AlertTriangle}
           semanticState="danger" isLoading={!overview && !overviewError} />
+        </PulseMetricLink>
         {canPayments ? (
           <>
-            <MetricCard {...cardBase} label="Recargas por verificar" value={finance ? amount(finance.pendingAmount) : "—"}
+            <PulseMetricLink projectId={projectId} vista="recargas" label="Recargas por verificar" estadoRecarga="requested">
+          <MetricCard {...cardBase} label="Recargas por verificar" value={finance ? amount(finance.pendingAmount) : "—"}
               description={finance ? number(finance.pendingCount) + " solicitudes · no ingresado" : "Pendientes de comprobar"}
               comparison="Finanzas" icon={WalletCards} semanticState="warning" isLoading={finances.isPending} />
-            <MetricCard {...cardBase} label="Recargas vigentes" value={finance?.confirmedNet == null ? "—" : amount(finance.confirmedNet)}
+        </PulseMetricLink>
+            <PulseMetricLink projectId={projectId} vista="recargas" label="Recargas vigentes" estadoRecarga="confirmed">
+          <MetricCard {...cardBase} label="Recargas vigentes" value={finance?.confirmedNet == null ? "—" : amount(finance.confirmedNet)}
               description={finance?.confirmedCount == null ? "Sin desglose completo" : number(finance.confirmedCount) + " confirmaciones netas de anulaciones"}
               comparison="No conciliado" icon={Banknote} semanticState="success" isLoading={finances.isPending} />
-            <MetricCard {...cardBase} label="Valor de carreras liquidadas" value={vitality.data?.finance ? amount(vitality.data.finance.cup) : "—"}
+        </PulseMetricLink>
+            <PulseMetricLink projectId={projectId} vista="trabajos" label="Valor de carreras liquidadas">
+          <MetricCard {...cardBase} label="Valor de carreras liquidadas" value={vitality.data?.finance ? amount(vitality.data.finance.cup) : "—"}
               description="7 fechas · no es ingreso neto" comparison="CUP"
               icon={Banknote} isLoading={canAnalytics && vitality.isPending} />
+        </PulseMetricLink>
           </>
         ) : null}
       </div>
