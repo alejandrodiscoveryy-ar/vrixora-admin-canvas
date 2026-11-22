@@ -6,8 +6,11 @@
  */
 export function singleProjectEntry(
   projects: readonly { id: string }[],
-  options: { loaded: boolean; selectorRequested: boolean },
+  options: { loaded: boolean; selectorRequested: boolean; recoveredAccess?: boolean },
 ): string | null {
-  if (!options.loaded || options.selectorRequested || projects.length !== 1) return null;
+  if (!options.loaded || projects.length !== 1) return null;
+  // Si el selector se abrió tras un error anterior, reingresar únicamente
+  // cuando una nueva consulta confirme el acceso; evita bucles de permisos.
+  if (options.selectorRequested && !options.recoveredAccess) return null;
   return projects[0].id;
 }
