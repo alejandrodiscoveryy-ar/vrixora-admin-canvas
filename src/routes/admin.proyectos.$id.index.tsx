@@ -237,7 +237,7 @@ function ResumenPage() {
               <MobileDashboardStat label="Incidencias" value={countOrDash(overview?.jobsIncidentOpen)} note="Sin resolver" icon={AlertTriangle} loading={marketplace.isLoading} warning={(overview?.jobsIncidentOpen ?? 0) > 0} />
             </>
           ) : canViewUsers ? (
-            <MobileDashboardStat label="Usuarios app" value={usersApp.isError ? "—" : users.length} note={String(newUsersPeriod) + " nuevos en el período"} icon={Users} loading={usersApp.isLoading} />
+            <MobileDashboardStat label="Usuarios app" value={usersApp.isError ? "—" : users.length} note={usersApp.isError ? "Dato no disponible" : String(newUsersPeriod) + " nuevos en el período"} icon={Users} loading={usersApp.isLoading} />
           ) : null}
         </section>
         {canViewMarketplace ? (
@@ -306,10 +306,10 @@ function ResumenPage() {
                     <AdminPeriodSelector appearance="premium" value={period} range={dateRange} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setDateRange(nextRange); }} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <MobileDashboardStat label="Leads" value={periodLeads.length} note="Recibidos" icon={Megaphone} loading={commercialLeads.isLoading} />
-                    <MobileDashboardStat label="Contactados" value={contactedLeads} note="Atendidos" icon={Users} loading={commercialLeads.isLoading} />
-                    <MobileDashboardStat label="Registrados" value={registeredLeads} note="Convertidos" icon={Users} loading={commercialLeads.isLoading} />
-                    <MobileDashboardStat label="Conversión" value={conversionRate === null ? "—" : String(conversionRate) + "%"} note={conversionRate === null ? "Sin leads" : "A registro"} icon={TrendingUp} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Leads" value={commercialLeads.isError ? "—" : periodLeads.length} note="Recibidos" icon={Megaphone} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Contactados" value={commercialLeads.isError ? "—" : contactedLeads} note="Atendidos" icon={Users} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Registrados" value={commercialLeads.isError ? "—" : registeredLeads} note="Convertidos" icon={Users} loading={commercialLeads.isLoading} />
+                    <MobileDashboardStat label="Conversión" value={commercialLeads.isError || conversionRate === null ? "—" : String(conversionRate) + "%"} note={commercialLeads.isError ? "Sin datos" : conversionRate === null ? "Sin leads" : "A registro"} icon={TrendingUp} loading={commercialLeads.isLoading} />
                   </div>
                 </section>
               ) : null}
@@ -320,7 +320,7 @@ function ResumenPage() {
           <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Actividad reciente <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
             <div className="border-t border-border/50 p-3">
-              {recentActivity.length ? (
+              {audit.isError ? <p role="alert" className="text-xs text-[var(--semantic-warning)]">No se pudo consultar la actividad reciente.</p> : recentActivity.length ? (
                 <ol className="divide-y divide-border/40">
                   {recentActivity.slice(0, 3).map((event) => (
                     <li key={event.id} className="min-w-0 py-2">
@@ -454,7 +454,9 @@ function ResumenPage() {
             className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
           />
 
-          {periodLeads.length ? (
+          {commercialLeads.isError ? (
+            <p role="alert" className="relative z-10 text-xs text-[var(--semantic-warning)]">No se pudieron consultar los resultados de captación.</p>
+          ) : periodLeads.length ? (
             <div className="relative z-10 grid gap-3 sm:grid-cols-2">
               <SummaryItem
                 label="Leads"
@@ -555,7 +557,9 @@ function ResumenPage() {
               className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
             />
 
-            {recentActivity.length ? (
+            {audit.isError ? (
+              <p role="alert" className="text-xs text-[var(--semantic-warning)]">No se pudo consultar la actividad reciente.</p>
+            ) : recentActivity.length ? (
               <ol className="relative z-10 divide-y divide-border-subtle">
                 {recentActivity.map((event) => (
                   <li
