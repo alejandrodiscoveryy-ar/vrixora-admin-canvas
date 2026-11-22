@@ -64,3 +64,19 @@ test("La anulación peligrosa queda fuera de la fila y detrás de dos niveles de
   assert.match(expanded, /\["confirmed", "reconciled"\]\.includes\(item\.status\) && !isTopupReversed/);
   assert.match(expanded, /min-h-11 w-full.*sm:w-auto/);
 });
+
+test("Notificar por WhatsApp está en la fila, no exige abrir los detalles de Confirmadas", () => {
+  const firstRow = topups.slice(topups.indexOf('return <article key={item.topupId}'), topups.indexOf('</article>'));
+  const main = firstRow.slice(firstRow.indexOf('<div className="marketplace-topup-main">'), firstRow.indexOf('<details className="marketplace-record-details group">'));
+  const detail = firstRow.slice(firstRow.indexOf('<details className="marketplace-record-details group">'));
+  assert.match(main, /className="marketplace-topup-actions marketplace-topup-actions--notification"/);
+  assert.match(main, /href=\{notificationLink\.desktop\}/);
+  assert.match(main, /Notificar por WhatsApp/);
+  assert.match(main, /min-h-11/);
+  assert.doesNotMatch(detail, /Notificar por WhatsApp|href=\{notificationLink\.desktop\}/);
+  assert.match(topups, /!isTopupReversed && \["confirmed", "reconciled", "rejected"\]\.includes\(item\.status\)/);
+  assert.match(topups, /topupWhatsAppMessage\(item, paymentMethodLabel\(item\.method\), receipt\?\.documentNumber\)/);
+  assert.match(detail, /Correcciones administrativas/);
+  assert.doesNotMatch(main, /Anular recarga|setTopupReversal\(\{/);
+  assert.match(detail, /Anular recarga/);
+});
