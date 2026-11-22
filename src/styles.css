@@ -1527,3 +1527,108 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   .dark .marketplace-wallet-toolbar .marketplace-finance-watermark,
   .dark .marketplace-topup-toolbar .marketplace-finance-watermark { opacity: .11; }
 }
+
+
+/* Mobile-first financial workspace refinements: preserve approved graphite surfaces,
+   semantic finance tones, watermark hierarchy and all existing record details. */
+.marketplace-mobile-finance-filter { display: none; min-inline-size: 0; }
+.marketplace-desktop-finance-filters { min-inline-size: 0; }
+
+@container (max-width: 600px) {
+  /* One usable status control instead of three or four lines of filter chips. */
+  .marketplace-mobile-finance-filter { display: block; inline-size: 100%; }
+  .marketplace-desktop-finance-filters { display: none; }
+  .marketplace-mobile-finance-filter > label {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+  .marketplace-finance-row {
+    padding-inline-start: 12px;
+    padding-inline-end: 48px; /* reserve the 44px detail disclosure */
+  }
+  .marketplace-topup-row { padding-block: 10px; }
+  .marketplace-topup-toolbar-top { grid-template-columns: minmax(0, 1fr); }
+  .marketplace-topup-search { grid-column: 1; grid-row: 2; }
+  .marketplace-topup-create {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: stretch;
+    inline-size: 100%;
+  }
+  /* Prioritize amount and state immediately after the conductor's identity. */
+  .marketplace-topup-row .marketplace-topup-main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 8px;
+    row-gap: 9px;
+  }
+  .marketplace-topup-row .marketplace-topup-summary > :first-child {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .marketplace-topup-row .marketplace-topup-amount {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: center;
+  }
+  .marketplace-topup-row .marketplace-topup-status {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    align-self: center;
+  }
+  .marketplace-topup-row .marketplace-topup-phone { grid-column: 1; grid-row: 3; }
+  .marketplace-topup-row .marketplace-topup-reference { grid-column: 2; grid-row: 3; }
+  .marketplace-topup-row .marketplace-topup-amount .marketplace-value-accent {
+    font-size: 16px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .marketplace-topup-row .marketplace-topup-actions {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    justify-content: stretch;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 8px;
+  }
+  .marketplace-topup-row .marketplace-topup-actions > * {
+    flex: 1 1 100%;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+  /* Two primary balances and the total on an easy-to-scan third line. */
+  .marketplace-wallet-row .marketplace-wallet-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .marketplace-wallet-row .marketplace-wallet-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+  }
+  .marketplace-wallet-row .marketplace-wallet-metrics > :last-child {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .marketplace-wallet-row .marketplace-wallet-metrics > :last-child > p { margin-top: 0; }
+  .marketplace-wallet-row .marketplace-wallet-metrics .marketplace-value-available,
+  .marketplace-wallet-row .marketplace-wallet-metrics .marketplace-value-reserved {
+    font-size: 15px;
+  }
+}
+
+@container (max-width: 330px) {
+  /* Very narrow displays: preserve entire phone and reference without squeezing. */
+  .marketplace-topup-row .marketplace-topup-phone { grid-column: 1 / -1; grid-row: 3; }
+  .marketplace-topup-row .marketplace-topup-reference { grid-column: 1 / -1; grid-row: 4; }
+  .marketplace-topup-row .marketplace-topup-actions { grid-row: 5; }
+  .marketplace-wallet-row .marketplace-wallet-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
