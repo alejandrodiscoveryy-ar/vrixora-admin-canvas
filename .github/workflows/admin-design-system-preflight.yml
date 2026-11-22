@@ -39,6 +39,7 @@ on:
       - 'tests/admin_aliados_carnet.test.mjs'
       - 'tests/tuktuk_allies_collapsible.test.mjs'
       - 'tests/impulsa_fichas_premium_desplegables.test.mjs'
+      - 'tests/impulsa_whatsapp_contacto.test.mjs'
       - 'tests/tuktuk_allies_whatsapp.test.mjs'
       - 'tests/admin_pulso_decisiones.test.mjs'
       - 'tests/admin_pulso_navegacion.test.mjs'
@@ -88,6 +89,8 @@ jobs:
         run: node --test tests/tuktuk_allies_collapsible.test.mjs
       - name: Validar fichas premium plegables de Impulsa
         run: node --test tests/impulsa_fichas_premium_desplegables.test.mjs
+      - name: Validar WhatsApp existente en fichas de Impulsa
+        run: node --test tests/impulsa_whatsapp_contacto.test.mjs
       - name: Validar WhatsApp privado de contacto en Aliados
         run: node --test tests/tuktuk_allies_whatsapp.test.mjs
       - name: Validar tablero de decisiones operativas de Pulso
