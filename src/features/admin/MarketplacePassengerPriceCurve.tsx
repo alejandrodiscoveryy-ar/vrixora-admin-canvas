@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, Bike, CalendarClock, CarFront, RefreshCw, ShieldCheck, Truck } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { premiumSurface, premiumHeaderSurface, premiumMetricSurface, premiumControlSurface } from "@/components/admin/density";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -163,14 +164,31 @@ export default function MarketplacePassengerPriceCurve({ projectId }: { projectI
         </div>
 
         {curve.isLoading ? (
-          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground" role="status">Consultando las cuatro tarifas reales…</div>
+          <div role="status" aria-busy="true" className="space-y-3">
+            <p className="text-sm text-text-secondary">Consultando las tarifas vigentes de las cuatro modalidades…</p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+              {vehicles.map(({ code, name }) => (
+                <div key={code} className={cn("space-y-3 rounded-[var(--radius-card)] border p-3", premiumMetricSurface)}>
+                  <span className="text-sm font-medium text-text-secondary">{name}</span>
+                  <Skeleton className="h-7 w-3/4 rounded-md" />
+                  <Skeleton className="h-4 w-1/2 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : curve.isError ? (
-          <div role="alert" className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-foreground">
-            No pudimos consultar la curva de precios. {curve.error instanceof Error ? curve.error.message : "Comprueba la conexión y vuelve a intentarlo."}
-            <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void curve.refetch()}>Reintentar</Button>
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border,var(--border-default))] bg-[var(--semantic-warning-surface,var(--surface-2))] p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text-primary">No se pudieron cargar los precios</p>
+              <p className="mt-1 text-xs text-text-secondary">Comprueba la conexión e inténtalo de nuevo. No se muestra ningún precio supuesto.</p>
+            </div>
+            <Button type="button" size="sm" variant="outline" className="min-h-11 gap-1.5"
+              onClick={() => void curve.refetch()}><RefreshCw className="size-4" aria-hidden="true" /> Reintentar</Button>
           </div>
         ) : !rows.length ? (
-          <div role="status" className="rounded-xl border border-border p-4 text-sm text-muted-foreground">No hay precios verificados para este escenario.</div>
+          <div role="status" className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2 p-4 text-sm text-text-secondary">
+            No hay precios verificados para este escenario. Prueba otro horario o vuelve a actualizar.
+          </div>
         ) : (
           <>
             <section aria-label="Distancia de consulta" className={cn(
