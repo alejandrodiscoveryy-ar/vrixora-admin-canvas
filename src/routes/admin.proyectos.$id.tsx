@@ -22,13 +22,13 @@ function ProjectLayout() {
   const { id } = Route.useParams();
   const { user } = useSupabaseAuth();
   const { data: project, isLoading: projectLoading, isError: projectError, refetch: retryProject } = useProject(id);
-  const { data: hasAccess, isLoading: accessLoading, isError: accessError, refetch: retryAccess } = useProjectAccess(user?.id ?? null, id);
+  const { data: hasAccess, isLoading: accessLoading, isFetching: accessFetching, isError: accessError, refetch: retryAccess } = useProjectAccess(user?.id ?? null, id);
   const { data: permissions = [], isLoading: permissionsLoading } = useProjectPermissions(id);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) navigate({ to: "/admin/login" });
-    else if (!accessLoading && !accessError && hasAccess === false) {
+    else if (!accessLoading && !accessFetching && !accessError && hasAccess === false) {
       // No volver a abrir automáticamente un proyecto sin acceso.
       // El selector de recuperación sigue disponible aunque exista solo uno.
       void navigate({
@@ -37,7 +37,7 @@ function ProjectLayout() {
         replace: true,
       });
     }
-  }, [user, hasAccess, accessLoading, accessError, navigate]);
+  }, [user, hasAccess, accessLoading, accessFetching, accessError, navigate]);
 
   if (projectError || accessError) {
     return (
@@ -55,7 +55,7 @@ function ProjectLayout() {
     );
   }
 
-  if (!user || projectLoading || accessLoading || permissionsLoading || !project || !hasAccess) {
+  if (!user || projectLoading || accessLoading || accessFetching || permissionsLoading || !project || !hasAccess) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
