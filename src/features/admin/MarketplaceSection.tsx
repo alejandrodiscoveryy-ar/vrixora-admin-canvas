@@ -2754,6 +2754,25 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                             }}>Gestionar recarga pendiente</Button>
                           </div>
                         ) : null}
+                        {notificationLink ? (
+                          <div className="marketplace-topup-actions marketplace-topup-actions--notification">
+                            <Button
+                              asChild
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="marketplace-finance-action min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)] shadow-none"
+                            >
+                              <a
+                                href={notificationLink.desktop}
+                                aria-label={`Notificar por WhatsApp la recarga ${item.status === "rejected" ? "rechazada" : "confirmada"} a ${item.driverDisplayName}`}
+                              >
+                                <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
+                                Notificar por WhatsApp
+                              </a>
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
                       <details className="marketplace-record-details group">
                         <summary className="marketplace-record-summary flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
@@ -2769,25 +2788,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           {receipt ? <div className="min-w-0"><RecordMetric labelText="Comprobante original" value={receipt.documentNumber} tone={isTopupReversed ? undefined : "available"} /><p className="mt-0.5 text-xs text-text-secondary">Emitido: {formatDate(receipt.issuedAt)}</p></div> : null}
                           {creditNote ? <div className="min-w-0"><RecordMetric labelText="Nota de corrección" value={creditNote.documentNumber} tone="danger" /><p className="mt-0.5 text-xs text-text-secondary">Anulada: {formatDate(creditNote.issuedAt)}</p><p className="mt-1 text-xs text-text-secondary">El crédito de esta recarga se compensó; el comprobante original permanece por auditoría.</p></div> : null}
                         </div>
-                        {notificationLink ? (
-                          <div className="mt-2 flex justify-end">
-                            <Button
-                              asChild
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)] shadow-none"
-                            >
-                              <a
-                                href={notificationLink.desktop}
-                                aria-label={`Notificar por WhatsApp la recarga ${item.status === "rejected" ? "rechazada" : "confirmada"} a ${item.driverDisplayName}`}
-                              >
-                                <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
-                                Notificar por WhatsApp
-                              </a>
-                            </Button>
-                          </div>
-                        ) : null}
                         {canCorrectPayments && canManagePayments && ["confirmed", "reconciled"].includes(item.status) && !isTopupReversed && financialDocumentHistoryComplete ? (
                           <details className="marketplace-topup-correction group/correction mt-4 border-t border-border-default pt-3">
                             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
