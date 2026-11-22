@@ -48,6 +48,18 @@ export const Route = createFileRoute("/admin/proyectos/$id/")({
 
 const REFRESH_INTERVAL = 30_000;
 
+// Mismo contrato de consulta que Pulso: una caché compartida nunca debe
+// devolver formas de datos incompatibles al cambiar de pantalla.
+type AdminRadar = {
+  checked_at: string;
+  working: number;
+  gps_recent: number;
+  gps_missing: number;
+  profile_ready: number;
+  profile_blocked: number;
+  radar_reachable: number;
+};
+
 function ResumenPage() {
   const { id } = Route.useParams();
   const { data: permissions = [], isLoading: permissionsLoading } =
@@ -90,12 +102,12 @@ function ResumenPage() {
       if (error) throw error;
       if (!data || typeof data !== "object") throw new Error("RADAR_UNAVAILABLE");
       const row = data as Record<string, unknown>;
-      for (const field of ["working", "gps_recent", "gps_missing"]) {
+      for (const field of ["working", "gps_recent", "gps_missing", "profile_ready", "profile_blocked", "radar_reachable"]) {
         if (typeof row[field] !== "number" || !Number.isFinite(row[field]) || Number(row[field]) < 0) {
           throw new Error("RADAR_INVALID");
         }
       }
-      return { working: Number(row.working), gpsRecent: Number(row.gps_recent), gpsMissing: Number(row.gps_missing) };
+      return data as AdminRadar;
     },
     enabled: !permissionsLoading && canViewMarketplace,
     refetchInterval: REFRESH_INTERVAL,
@@ -234,7 +246,7 @@ function ResumenPage() {
             waiting={overview?.jobsPublished ?? null}
             incidents={overview?.jobsIncidentOpen ?? null}
             topups={canViewPayments ? overview?.pendingTopups ?? null : null}
-            gpsMissing={operating?.gpsMissing ?? null}
+            gpsMissing={operating?.gps_missing ?? null}
             cancellations={rides ? { requested: rides.requested, cancelled: rides.cancelled } : null}
             loading={operationalLoading}
             incomplete={operationalIncomplete}
@@ -262,8 +274,8 @@ function ResumenPage() {
                 <section className="space-y-2" aria-label="Cobertura y resultados">
                   <p className="text-xs font-semibold text-primary">Cobertura actual</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <MobileDashboardStat label="GPS reciente" value={countOrDash(operating?.gpsRecent)} note="Ubicación en últimos 5 min" icon={MapPin} loading={radar.isLoading} />
-                    <MobileDashboardStat label="GPS antiguo" value={countOrDash(operating?.gpsMissing)} note="Siguen trabajando" icon={MapPinOff} loading={radar.isLoading} warning={(operating?.gpsMissing ?? 0) > 0} />
+                    <MobileDashboardStat label="GPS reciente" value={countOrDash(operating?.gps_recent)} note="Ubicación en últimos 5 min" icon={MapPin} loading={radar.isLoading} />
+                    <MobileDashboardStat label="GPS antiguo" value={countOrDash(operating?.gps_missing)} note="Siguen trabajando" icon={MapPinOff} loading={radar.isLoading} warning={(operating?.gps_missing ?? 0) > 0} />
                     <MobileDashboardStat label="Habilitados" value={countOrDash(overview?.driversActive)} note="No equivale a trabajando" icon={Users} loading={marketplace.isLoading} />
                     {canViewPayments ? <MobileDashboardStat label="Recargas pendientes" value={countOrDash(overview?.pendingTopups)} note="Sin verificar, no ingresos" icon={WalletCards} loading={marketplace.isLoading} warning={(overview?.pendingTopups ?? 0) > 0} /> :
                       <MobileDashboardStat label="Suspendidos" value={countOrDash(overview?.driversSuspended)} note="Conductores" icon={AlertTriangle} loading={marketplace.isLoading} />}
@@ -419,7 +431,7 @@ function ResumenPage() {
           waiting={overview?.jobsPublished ?? null}
           incidents={overview?.jobsIncidentOpen ?? null}
           topups={canViewPayments ? overview?.pendingTopups ?? null : null}
-          gpsMissing={operating?.gpsMissing ?? null}
+          gpsMissing={operating?.gps_missing ?? null}
           cancellations={rides ? { requested: rides.requested, cancelled: rides.cancelled } : null}
           loading={operationalLoading}
           incomplete={operationalIncomplete}
@@ -494,8 +506,8 @@ function ResumenPage() {
           {canViewMarketplace ? (
             <div className="relative z-10 grid gap-3 sm:grid-cols-2">
               <SummaryItem label="Perfiles habilitados" value={countOrDash(overview?.driversActive)} description="No equivale a trabajando" />
-              <SummaryItem label="GPS reciente" value={countOrDash(operating?.gpsRecent)} description="Ubicación actualizada en 5 min" />
-              <SummaryItem label="GPS sin actualizar" value={countOrDash(operating?.gpsMissing)} description="Siguen trabajando; revisar señal" />
+              <SummaryItem label="GPS reciente" value={countOrDash(operating?.gps_recent)} description="Ubicación actualizada en 5 min" />
+              <SummaryItem label="GPS sin actualizar" value={countOrDash(operating?.gps_missing)} description="Siguen trabajando; revisar señal" />
               <SummaryItem label="Conductores suspendidos" value={countOrDash(overview?.driversSuspended)} description="No disponibles para nuevas carreras" />
               {canViewPayments && vitality.data?.finance ? (
                 <div className="sm:col-span-2">
