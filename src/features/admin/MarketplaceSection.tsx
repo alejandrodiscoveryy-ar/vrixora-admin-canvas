@@ -2097,131 +2097,129 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                     </div>
                                   </div>
                                 </div>
-                              <aside aria-label="Programación y acciones de la carrera" className={cn("mt-2 flex min-w-0 flex-col gap-2.5 rounded-xl border p-2.5 sm:flex-row sm:items-center sm:justify-between", premiumColumnHeaderSurface)}>
-                                <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span>Programado</span>
-                                    <span className="text-right font-medium text-foreground">
-                                      {formatDate(job.scheduledFor)}
-                                    </span>
-                                  </div>
-                                  {job.commissionAmountSnapshot != null ? (
+                                <aside aria-label="Programación y acciones de la carrera" className={cn("mt-2 flex min-w-0 flex-col gap-2.5 rounded-xl border p-2.5 sm:flex-row sm:items-center sm:justify-between", premiumColumnHeaderSurface)}>
+                                  <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
                                     <div className="flex items-center justify-between gap-3">
-                                      <span>Comisión</span>
-                                      <span className="font-medium text-foreground">
-                                        {formatOperationPrice(
-                                          job.commissionAmountSnapshot,
-                                          job.currency,
-                                        )}
+                                      <span>Programado</span>
+                                      <span className="text-right font-medium text-foreground">
+                                        {formatDate(job.scheduledFor)}
                                       </span>
                                     </div>
-                                  ) : null}
-                                </div>
-
-                                <div className="grid w-full min-w-0 gap-2 sm:w-[220px] sm:shrink-0">
-                                  <Button
-                                    className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-[var(--semantic-success)] hover:bg-emerald-500/[0.12] max-sm:min-h-11"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setJobId(job.jobId)}
-                                  >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    Abrir detalle
-                                  </Button>
-
-                                  {canManageMarketplace &&
-                                  assistedJobIds.data?.has(job.jobId) &&
-                                  ["published", "accepted", "en_route", "pickup"]
-                                    .includes(job.status) ? (
+                                    {job.commissionAmountSnapshot != null ? (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span>Comisión</span>
+                                        <span className="font-medium text-foreground">
+                                          {formatOperationPrice(
+                                            job.commissionAmountSnapshot,
+                                            job.currency,
+                                          )}
+                                        </span>
+                                      </div>
+                                    ) : null}
+                                  </div>
+  
+                                  <div className="grid w-full min-w-0 gap-2 sm:w-[220px] sm:shrink-0">
                                     <Button
-                                      className="h-auto min-h-11 w-full whitespace-normal px-2 py-2 text-center text-xs leading-snug"
-                                      size="sm"
-                                      variant="destructive"
-                                      disabled={assistedCancelMutation.isPending}
-                                      onClick={() => {
-                                        setAssistedCancel({
-                                          jobId: job.jobId,
-                                          status: job.status,
-                                          customer: job.customerDisplayName || "Cliente",
-                                          key: crypto.randomUUID(),
-                                        });
-                                        setAssistedCancelReason("");
-                                        setAssistedCancelError(null);
-                                      }}
-                                    >
-                                      <AlertCircle className="h-4 w-4 shrink-0" />
-                                      <span className="min-w-0 whitespace-normal break-words text-center">Cancelar por solicitud del cliente</span>
-                                    </Button>
-                                  ) : null}
-                                  {canFinishAdmin &&
-                                  ["accepted", "en_route", "pickup", "in_progress"].includes(
-                                    job.status,
-                                  ) ? (
-                                    <Button
-                                      className="w-full max-sm:min-h-11"
+                                      className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-[var(--semantic-success)] hover:bg-emerald-500/[0.12] max-sm:min-h-11"
                                       size="sm"
                                       variant="outline"
-                                      disabled={adminFinishMutation.isPending}
-                                      onClick={() => {
-                                        setAdminFinish({
-                                          jobId: job.jobId,
-                                          idempotencyKey: crypto.randomUUID(),
-                                        });
-                                        setAdminFinishReason("");
-                                        setAdminFinishError(null);
-                                      }}
+                                      onClick={() => setJobId(job.jobId)}
                                     >
-                                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                                      Finalizar carrera
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      Abrir detalle
                                     </Button>
-                                  ) : null}
-                                  {job.isTest && canManageMarketplace ? (
-                                    <Button
-                                      className="w-full max-sm:min-h-11"
-                                      size="sm"
-                                      variant="destructive"
-                                      disabled={deleteTestJob.isPending}
-                                      onClick={() => {
-                                        const why = window.prompt(
-                                          "Motivo de eliminación de esta carrera de prueba:",
-                                          "Prueba operativa",
-                                        );
-
-                                        if (!why?.trim()) return;
-
-                                        if (
-                                          !window.confirm(
-                                            "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
-                                          )
-                                        ) {
-                                          return;
-                                        }
-
-                                        deleteTestJob.mutate({
-                                          jobId: job.jobId,
-                                          reason: why.trim(),
-                                        });
-                                      }}
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Eliminar prueba
-                                    </Button>
-                                  ) : null}
-                                </div>
-                              </aside>
-
+  
+                                    {canManageMarketplace &&
+                                    assistedJobIds.data?.has(job.jobId) &&
+                                    ["published", "accepted", "en_route", "pickup"]
+                                      .includes(job.status) ? (
+                                      <Button
+                                        className="h-auto min-h-11 w-full whitespace-normal px-2 py-2 text-center text-xs leading-snug"
+                                        size="sm"
+                                        variant="destructive"
+                                        disabled={assistedCancelMutation.isPending}
+                                        onClick={() => {
+                                          setAssistedCancel({
+                                            jobId: job.jobId,
+                                            status: job.status,
+                                            customer: job.customerDisplayName || "Cliente",
+                                            key: crypto.randomUUID(),
+                                          });
+                                          setAssistedCancelReason("");
+                                          setAssistedCancelError(null);
+                                        }}
+                                      >
+                                        <AlertCircle className="h-4 w-4 shrink-0" />
+                                        <span className="min-w-0 whitespace-normal break-words text-center">Cancelar por solicitud del cliente</span>
+                                      </Button>
+                                    ) : null}
+                                    {canFinishAdmin &&
+                                    ["accepted", "en_route", "pickup", "in_progress"].includes(
+                                      job.status,
+                                    ) ? (
+                                      <Button
+                                        className="w-full max-sm:min-h-11"
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={adminFinishMutation.isPending}
+                                        onClick={() => {
+                                          setAdminFinish({
+                                            jobId: job.jobId,
+                                            idempotencyKey: crypto.randomUUID(),
+                                          });
+                                          setAdminFinishReason("");
+                                          setAdminFinishError(null);
+                                        }}
+                                      >
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Finalizar carrera
+                                      </Button>
+                                    ) : null}
+                                    {job.isTest && canManageMarketplace ? (
+                                      <Button
+                                        className="w-full max-sm:min-h-11"
+                                        size="sm"
+                                        variant="destructive"
+                                        disabled={deleteTestJob.isPending}
+                                        onClick={() => {
+                                          const why = window.prompt(
+                                            "Motivo de eliminación de esta carrera de prueba:",
+                                            "Prueba operativa",
+                                          );
+  
+                                          if (!why?.trim()) return;
+  
+                                          if (
+                                            !window.confirm(
+                                              "Se eliminará esta carrera de prueba y se revertirá su efecto financiero si corresponde. ¿Continuar?",
+                                            )
+                                          ) {
+                                            return;
+                                          }
+  
+                                          deleteTestJob.mutate({
+                                            jobId: job.jobId,
+                                            reason: why.trim(),
+                                          });
+                                        }}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Eliminar prueba
+                                      </Button>
+                                    ) : null}
+                                  </div>
+                                </aside>
                               </div>
 
-                              <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[360px] xl:w-[420px]">
-
-                              <JobRadarShortcut
-                                projectId={projectId}
-                                jobId={job.jobId}
-                                onOpen={() => {
-                                  setJobDetailInitialTab("radar");
-                                  setJobId(job.jobId);
-                                }}
-                              />
+                              <div className="w-full min-w-0 shrink-0 lg:w-[360px] xl:w-[420px]">
+                                <JobRadarShortcut
+                                  projectId={projectId}
+                                  jobId={job.jobId}
+                                  onOpen={() => {
+                                    setJobDetailInitialTab("radar");
+                                    setJobId(job.jobId);
+                                  }}
+                                />
                               </div>
                             </div>
                           </div>
