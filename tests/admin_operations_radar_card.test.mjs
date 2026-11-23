@@ -67,7 +67,7 @@ test('clic muestra recorrido por radios reales de cada carrera sin inventar etap
 test('detalle expandido utiliza el alto necesario sin espacios artificiales', () => {
   assert.match(s, /className="relative mt-2 border-t border-border\/50 pt-3"/);
   assert.match(s, /flex flex-col gap-2\.5 lg:flex-row lg:items-start lg:justify-between lg:gap-3/);
-  assert.match(s, /w-full min-w-0 shrink-0 space-y-2 lg:w-\[200px\]/);
+  assert.match(s, /w-full min-w-0 shrink-0 space-y-2 lg:w-\[360px\] xl:w-\[420px\]/);
   // The route, client and driver now use the same compact graphite inset.
   const operations = s.slice(s.indexOf('<TabsContent value="trabajos"'), s.indexOf('<TabsContent value="atencion"'));
   assert.equal((operations.match(/cn\("rounded-xl border p-3", premiumColumnHeaderSurface\)/g) ?? []).length, 3);
