@@ -3959,9 +3959,82 @@ function JobNotificationReach({
     );
   }
 
+  // Vista operativa breve. El informe anterior queda plegado a demanda.
+  // Contamos exclusivamente las primeras etapas registradas, no las posiciones GPS actuales.
+  const overviewImpacts = radar.data?.impacts ?? [];
+  const overviewStages = [1, 2, 3].map((stage) => {
+    const matches = overviewImpacts.filter((impact) => impact.radius_stage === stage);
+    const recordedRadius = matches.find((impact) => impact.radius_limit_km != null)?.radius_limit_km;
+    return {
+      stage,
+      count: matches.length,
+      radius: recordedRadius ?? configuredRadii[stage - 1] ?? null,
+    };
+  });
+  const overviewUnknown = overviewImpacts.filter(
+    (impact) => ![1, 2, 3].includes(impact.radius_stage ?? -1)
+  ).length;
+
   return (
-    <section className="rounded-[24px] border border-cyan-500/20 bg-cyan-500/[0.035] p-4 sm:p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Alcance de la solicitud</p>
+    <section aria-label="Resumen rápido del radar" className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-foreground sm:text-base">
+          <Radar className="h-4 w-4 text-cyan-300" aria-hidden="true" />
+          Radar de esta carrera
+        </h3>
+        <span className={"rounded-full border px-2.5 py-1 text-[11px] font-semibold " +
+          (radar.data?.status === "yes" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-slate-500/30 bg-slate-500/10 text-text-secondary")}>
+          {radarLabel === "Sí" ? "Utilizado" : radarLabel}
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className={cn("min-w-0 rounded-xl border px-3 py-2", premiumColumnHeaderSurface)}>
+          <span className="block text-[11px] text-text-secondary">Conductores impactados</span>
+          <strong className="mt-1 block text-xl font-bold tabular-nums text-foreground">{radar.data?.status === "yes" ? overviewImpacts.length : "—"}</strong>
+        </div>
+        <div className={cn("min-w-0 rounded-xl border px-3 py-2", premiumColumnHeaderSurface)}>
+          <span className="block text-[11px] text-text-secondary">Avisos enviados</span>
+          <strong className="mt-1 block text-xl font-bold tabular-nums text-emerald-300">{sent}</strong>
+        </div>
+        <div className={cn("col-span-2 min-w-0 rounded-xl border px-3 py-2 sm:col-span-1", premiumColumnHeaderSurface)}>
+          <span className="block text-[11px] text-text-secondary">Más cercano al aviso</span>
+          <strong className="mt-1 block text-xl font-bold tabular-nums text-foreground">{nearest == null ? "Sin registro" : kilometers(nearest)}</strong>
+        </div>
+      </div>
+      {radar.isPending ? (
+        <p role="status" className="mt-3 text-xs text-text-secondary">Consultando las etapas del radar…</p>
+      ) : radar.isError ? (
+        <p role="alert" className="mt-3 text-xs text-amber-300">No fue posible consultar las etapas históricas.</p>
+      ) : radar.data?.status === "yes" ? (
+        <>
+          <div aria-label="Conductores por rango" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {overviewStages.map(({ stage, count, radius }) => (
+              <div key={stage} className="flex min-w-0 items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.05] px-3 py-2">
+                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/35 bg-cyan-400/10 text-xs font-bold text-cyan-100">{stage}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-semibold text-foreground">Rango {stage}</span>
+                  <span className="block text-[10px] text-text-secondary">{radius == null ? "Sin radio guardado" : "Hasta " + kilometers(radius)}</span>
+                </span>
+                <strong className="text-lg font-bold tabular-nums text-cyan-100" aria-label={count + " conductores"}>{count}</strong>
+              </div>
+            ))}
+          </div>
+          {overviewUnknown > 0 ? <p className="mt-2 text-[11px] text-amber-200">{overviewUnknown} registro(s) sin rango identificado.</p> : null}
+          <p className="mt-2 text-[11px] text-text-secondary">Registros de primer aviso; no ubicación GPS. Un rango vacío no confirma su ejecución.</p>
+        </>
+      ) : (
+        <p className="mt-3 text-xs text-text-secondary">
+          {radar.data?.status === "no" ? "El radar no se utilizó en esta carrera." : "Esta carrera no tiene historial radial confirmado."}
+        </p>
+      )}
+      {simulated > 0 ? <p className="mt-2 text-xs text-violet-300">Prueba: {simulated} destinatarios simulados.</p> : null}
+      <details className="group mt-3 rounded-xl border border-border/50 bg-background/30">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-semibold text-cyan-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 [&::-webkit-details-marker]:hidden">
+          Ver historial completo de avisos y distancias
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="border-t border-border/50 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Alcance de la solicitud</p>
       <h4 className="mt-1 text-base font-semibold text-foreground sm:text-lg">Conductores y distancias al aviso</h4>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-xl border border-border/55 bg-background/50 p-3">
@@ -4160,6 +4233,8 @@ function JobNotificationReach({
         Distancia aproximada en línea recta al generar un aviso, solo con GPS de hasta cinco minutos de antigüedad.
         Los viajes anteriores no tienen distancia recuperable si no fue registrada. «Enviado» no confirma que se haya visto en el móvil.
       </p>
+        </div>
+      </details>
     </section>
   );
 }
@@ -4237,7 +4312,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview", canShare
             </div>
           </div>
         ) : null}
-        <div className="relative mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 md:grid-cols-4">
+        {activeTab !== "radar" ? <div className="relative mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 md:grid-cols-4">
           {[
             { title: "Estado", value: label(state), icon: CheckCircle2 },
             { title: "Conductor", value: hasDriver ? "Asignado" : "Sin asignar", icon: CarFront },
@@ -4249,7 +4324,7 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview", canShare
               <div className="mt-1.5 break-words text-[15px] font-bold text-foreground">{value}</div>
             </div>
           ))}
-        </div>
+        </div> : null}
       </section>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="min-w-0">
@@ -4325,14 +4400,8 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview", canShare
           </>
         </TabsContent>
 
-        <TabsContent value="radar" className="min-w-0 space-y-3">
-          <section aria-label="Radar y alcance de la carrera" className="space-y-4">
-            <div className={cn("marketplace-360-panel relative min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
-              {sectionTitle("Inteligencia operativa", "Radar y alcance real", "Ejecuciones, conductores impactados, distancias históricas y etapas de distribución.")}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-300" />Las distancias proceden de registros históricos; nunca se sustituyen por el GPS actual.</div>
-            </div>
-            <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
-          </section>
+        <TabsContent value="radar" className="min-w-0 space-y-2">
+          <JobNotificationReach projectId={projectId} jobId={jobId} assignedDriverId={typeof assignment?.driver_user_id === "string" ? assignment.driver_user_id : null} />
         </TabsContent>
 
         <TabsContent value="finance" className="min-w-0 space-y-3">
