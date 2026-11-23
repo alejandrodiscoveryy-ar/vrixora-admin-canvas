@@ -6,7 +6,7 @@ const s = readFileSync('src/features/admin/MarketplaceSection.tsx', 'utf8');
 
 test('tarjeta en el lateral de la carrera expandida', () => {
   assert.match(s, /<JobRadarShortcut[\s\S]*?jobId=\{job\.jobId\}/);
-  assert.match(s, /lg:w-\[200px\]/);
+  assert.match(s, /lg:w-\[360px\] xl:w-\[420px\]/);
   assert.match(s, /Ver recorrido por km/);
 });
 test('estados historicos separados de configuracion actual', () => {
@@ -67,7 +67,7 @@ test('clic muestra recorrido por radios reales de cada carrera sin inventar etap
 test('detalle expandido utiliza el alto necesario sin espacios artificiales', () => {
   assert.match(s, /className="relative mt-2 border-t border-border\/50 pt-3"/);
   assert.match(s, /flex flex-col gap-2\.5 lg:flex-row lg:items-start lg:justify-between lg:gap-3/);
-  assert.match(s, /w-full min-w-0 shrink-0 space-y-2 lg:w-\[200px\]/);
+  assert.match(s, /w-full min-w-0 shrink-0 space-y-2 lg:w-\[360px\] xl:w-\[420px\]/);
   // The route, client and driver now use the same compact graphite inset.
   const operations = s.slice(s.indexOf('<TabsContent value="trabajos"'), s.indexOf('<TabsContent value="atencion"'));
   assert.equal((operations.match(/cn\("rounded-xl border p-3", premiumColumnHeaderSurface\)/g) ?? []).length, 3);
@@ -77,9 +77,9 @@ test('detalle expandido utiliza el alto necesario sin espacios artificiales', ()
   assert.match(s, /mt-2 flex flex-wrap items-center gap-x-3 gap-y-1/);
 });
 
-test('tarjeta radar conserva su estado e historial pero sin imponer altura al detalle', () => {
-  assert.match(s, /min-h-\[104px\] w-full min-w-0 items-center gap-2\.5/);
-  assert.match(s, /h-\[62px\] w-\[62px\]/);
+test('tarjeta radar ampliada conserva estados e historial con puntos por etapa', () => {
+  assert.match(s, /min-h-\[222px\] w-full min-w-0 grid-cols-1 items-center gap-3/);
+  assert.match(s, /max-w-\[198px\]/);
   assert.doesNotMatch(s, /min-h-\[176px\]/);
   assert.match(s, /motion-safe:animate-\[spin_6s_linear_infinite\]/);
   assert.match(s, /border-slate-600\/45/);
@@ -126,4 +126,28 @@ test('Cliente 360 y Carrera 360 comparten identidad premium y pestañas accesibl
   assert.match(job, /<JobNotificationReach projectId=\{projectId\} jobId=\{jobId\}/);
   assert.match(job, /timeline.map/);
   assert.match(job, /financial.reservation_status/);
+});
+
+
+test('radar muestra un punto por impacto documentado en cada uno de los tres rangos', () => {
+  assert.match(s, /const stages = \[1, 2, 3\]\.map/);
+  assert.match(s, /impacts\.filter\(\(impact\) => impact\.radius_stage === stage\)\.length/);
+  assert.match(s, /dots: Array\.from\(\{ length: visible \}/);
+  assert.match(s, /active && visibleDots\.map/);
+  assert.match(s, /Rango \{stage\}/);
+  assert.match(s, /tabular-nums text-emerald-200">\{count\}/);
+  assert.match(s, /withoutStage > 0/);
+  assert.match(s, /hiddenCount > 0/);
+  assert.match(s, /no ubicación GPS/);
+  assert.doesNotMatch(s, /Puntos simulados:/);
+});
+
+test('radar respeta configuracion historica y estados de carga, error e inactividad', () => {
+  assert.match(s, /radius_limit_km/);
+  assert.match(s, /radar_settings\?\.\[key\]/);
+  assert.match(s, /analysis\.isPending \? "Consultando radar"/);
+  assert.match(s, /analysis\.isError \? "Radar no disponible"/);
+  assert.match(s, /state === "no" \? "Radar no utilizado"/);
+  assert.match(s, /aria-label=\{radarLabel\}/);
+  assert.match(s, /motion-safe:animate-\[spin_6s_linear_infinite\]/);
 });
