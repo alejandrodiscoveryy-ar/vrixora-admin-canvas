@@ -2099,7 +2099,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                 </div>
                               </div>
 
-                              <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[200px]">
+                              <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[360px] xl:w-[420px]">
                               <aside className={cn("rounded-xl border p-2.5", premiumColumnHeaderSurface)}>
                                 <div className="space-y-2 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
@@ -3705,7 +3705,8 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
     ? "unknown"
     : analysis.data?.status === "yes" ? "yes"
     : analysis.data?.status === "no" ? "no" : "unknown";
-  const total = Array.isArray(analysis.data?.impacts) ? analysis.data.impacts.length : 0;
+  const impacts = Array.isArray(analysis.data?.impacts) ? analysis.data.impacts : [];
+  const total = impacts.length;
   const queued = analysis.data?.total_offers_enqueued ?? 0;
   const headline = analysis.isPending ? "Consultando radar"
     : analysis.isError ? "Radar no disponible"
@@ -3719,39 +3720,112 @@ function JobRadarShortcut({ projectId, jobId, onOpen }: {
       ? "border-slate-600/45 bg-gradient-to-br from-[#1d2730] to-[#121920] text-slate-400 hover:border-slate-500/70"
       : "border-slate-500/30 bg-[#131d24] text-slate-300 hover:border-slate-400/55";
 
+  // Cada punto representa un registro histórico de conductor impactado en esa etapa.
+  // El ángulo es esquemático, NO expresa posición GPS ni candidatos sin aviso.
+  const ringRadii = [31, 57, 83];
+  const maxVisibleDots = [14, 24, 34];
+  const radiusKeys = ["r1", "r2", "r3"] as const;
+  const stages = [1, 2, 3].map((stage, index) => {
+    const count = impacts.filter((impact) => impact.radius_stage === stage).length;
+    const key = radiusKeys[index];
+    const configuredKm = key ? analysis.data?.radar_settings?.[key] : null;
+    const savedKm = impacts.find((impact) => impact.radius_stage === stage)?.radius_limit_km;
+    const radiusKm = typeof savedKm === "number" && savedKm > 0
+      ? savedKm : typeof configuredKm === "number" && configuredKm > 0 ? configuredKm : null;
+    const visible = Math.min(count, maxVisibleDots[index] ?? 14);
+    const ringRadius = ringRadii[index] ?? 31;
+    return {
+      stage,
+      count,
+      radiusKm,
+      hiddenCount: count - visible,
+      dots: Array.from({ length: visible }, (_, dot) => {
+        const angle = -Math.PI / 2 + (2 * Math.PI * (dot + 0.5)) / visible + index * 0.4;
+        return {
+          x: 100 + ringRadius * Math.cos(angle),
+          y: 100 + ringRadius * Math.sin(angle),
+        };
+      }),
+    };
+  });
+  const classified = stages.reduce((sum, stage) => sum + stage.count, 0);
+  const withoutStage = total - classified;
+  const visibleDots = stages.flatMap(({ stage, dots }) =>
+    dots.map(({ x, y }, index) => ({ key: stage + "-" + index, x, y }))
+  );
+  const summary = stages.map(({ stage, count }) => "Rango " + stage + ": " + count).join("; ");
+  const radarLabel = headline + (active
+    ? ". " + total + " conductores registrados. " + summary
+      + (withoutStage > 0 ? "; " + withoutStage + " sin etapa" : "")
+      + ". Abrir recorrido por kilómetros."
+    : ". Abrir análisis del radar.");
+
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={headline + ". Ver recorrido de notificaciones por kilómetros de esta carrera"}
-      title={headline + ". Abrir etapas y distancias de notificación"}
-      className={"group relative flex min-h-[104px] w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-[16px] border px-2.5 py-2.5 text-left outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300 " + tone}
+      aria-label={radarLabel}
+      title={radarLabel}
+      className={"group relative grid min-h-[222px] w-full min-w-0 grid-cols-1 items-center gap-3 overflow-hidden rounded-[18px] border px-3 py-3 text-left outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300 sm:grid-cols-[minmax(166px,220px)_minmax(0,1fr)] lg:grid-cols-[minmax(148px,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(180px,1fr)_minmax(0,1fr)] " + tone}
     >
       <span aria-hidden="true" className={"pointer-events-none absolute -right-10 -top-14 h-28 w-28 rounded-full blur-3xl " + (active ? "bg-cyan-300/[0.10]" : "bg-slate-300/[0.025]")} />
-      <span aria-hidden="true" className="relative flex h-[62px] w-[62px] shrink-0 items-center justify-center">
-        <span className={"absolute inset-0 rounded-full border " + (active ? "border-cyan-300/40" : "border-slate-500/45")} />
-        <span className={"absolute inset-[10px] rounded-full border " + (active ? "border-cyan-300/25" : "border-slate-500/25")} />
-        <span className={"absolute inset-[20px] rounded-full border " + (active ? "border-cyan-300/20" : "border-slate-500/20")} />
+      <span aria-hidden="true" className="relative mx-auto block aspect-square w-full max-w-[198px] shrink-0">
         {active ? (
           <span
-            className="absolute inset-0 rounded-full motion-safe:animate-[spin_6s_linear_infinite]"
+            className="absolute inset-[7%] rounded-full motion-safe:animate-[spin_6s_linear_infinite]"
             style={{ background: "conic-gradient(from 0deg, transparent 0deg, transparent 302deg, rgba(34,211,238,.24) 342deg, transparent 360deg)" }}
           />
         ) : null}
-        <span className={"absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full " + (active ? "bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,.8)]" : "bg-slate-500")} />
-        {active && total > 0 ? (
-          <span className="absolute right-[7px] top-[12px] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,.9)]" />
-        ) : null}
+        <svg viewBox="0 0 200 200" className="relative h-full w-full" focusable="false">
+          <circle cx="100" cy="100" r="91" fill={active ? "rgba(8,69,82,0.25)" : "rgba(51,65,85,0.14)"} />
+          {[83, 57, 31].map((radius, index) => (
+            <circle
+              key={radius}
+              cx="100" cy="100" r={radius}
+              fill="none"
+              stroke={active ? (index === 0 ? "rgba(103,232,249,.7)" : "rgba(34,211,238,.53)") : "rgba(100,116,139,.52)"}
+              strokeWidth={index === 0 ? 1.6 : 1.3}
+            />
+          ))}
+          <circle cx="100" cy="100" r="15" fill={active ? "rgba(34,211,238,.14)" : "rgba(100,116,139,.12)"} />
+          <circle cx="100" cy="100" r="5" fill={active ? "#67e8f9" : "#64748b"} />
+          {active && visibleDots.map((dot) => (
+            <circle
+              key={dot.key} cx={dot.x} cy={dot.y} r="5.2"
+              fill="#a7f3d0" stroke="#064e5e" strokeWidth="1.5"
+              className="drop-shadow-[0_0_4px_rgba(110,231,183,.9)]"
+            />
+          ))}
+        </svg>
       </span>
-      <span className="relative flex min-w-0 flex-1 flex-col items-start gap-1">
-        <span className={"rounded-full border px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] " + (active ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
+      <span className="relative flex min-w-0 flex-1 flex-col items-start gap-1.5">
+        <span className={"rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] " + (active ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100" : "border-slate-500/35 bg-slate-500/10 text-slate-400")}>
           {active ? "Activo" : inactive ? "Inactivo" : "Sin confirmar"}
         </span>
-        <span className="text-[11px] font-bold leading-tight">{headline}</span>
+        <span className="text-sm font-bold leading-tight">{headline}</span>
         {active ? (
-          <span className="text-[10px] leading-tight text-cyan-100/75">{total} registros · {queued} avisos encolados</span>
+          <>
+            <span className="text-[11px] leading-snug text-cyan-100/75">{total} registros · {queued} avisos encolados</span>
+            <span className="mt-1 flex w-full flex-col gap-1.5 border-t border-cyan-300/20 pt-2">
+              {stages.map(({ stage, count, radiusKm, hiddenCount }) => (
+                <span key={stage} className="flex min-w-0 items-center gap-2 text-[11px] leading-tight">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-cyan-300/40 bg-cyan-400/[0.08] font-bold text-cyan-200">{stage}</span>
+                  <span className="min-w-0 flex-1 text-cyan-100/85">
+                    Rango {stage}
+                    {radiusKm != null ? <span className="block text-[10px] text-cyan-100/60">Hasta {radiusKm} km</span> : null}
+                    {hiddenCount > 0 ? <span className="block text-[9px] text-cyan-100/60">+{hiddenCount} sin dibujar</span> : null}
+                  </span>
+                  <strong className="shrink-0 text-sm tabular-nums text-emerald-200">{count}</strong>
+                </span>
+              ))}
+              {withoutStage > 0 ? (
+                <span className="text-[10px] text-amber-200">{withoutStage} sin rango registrado</span>
+              ) : null}
+            </span>
+            <span className="text-[10px] leading-snug text-cyan-100/60">Puntos por etapa, no ubicación GPS.</span>
+          </>
         ) : null}
-        <span className={"text-[10px] font-semibold leading-tight " + (active ? "text-cyan-200" : "text-slate-400")}>
+        <span className={"mt-1 text-[11px] font-semibold leading-tight " + (active ? "text-cyan-200" : "text-slate-400")}>
           Ver recorrido por km
         </span>
       </span>
