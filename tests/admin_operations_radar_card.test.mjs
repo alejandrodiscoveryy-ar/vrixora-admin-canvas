@@ -195,7 +195,7 @@ test('cada rango es pulsable y despliega exclusivamente sus conductores', () => 
 
 test('avisos sin rango no quedan ocultos y el historial sigue separado', () => {
   const component = s.slice(s.indexOf('function JobNotificationReach('), s.indexOf('function JobDetail('));
-  assert.match(component, /!\\[1, 2, 3\\]\.includes\(impact\.radius_stage \?\? -1\)/);
+  assert.match(component, /!\[1, 2, 3\]\.includes\(impact\.radius_stage \?\? -1\)/);
   assert.match(component, /registro\(s\) sin rango identificado · Ver conductores/);
   assert.match(component, /Ver historial completo de avisos y distancias/);
   assert.match(component, /<details className="group mt-3 rounded-xl/);
