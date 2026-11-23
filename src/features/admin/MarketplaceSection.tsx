@@ -2097,11 +2097,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-
-                              <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[360px] xl:w-[420px]">
-                              <aside className={cn("rounded-xl border p-2.5", premiumColumnHeaderSurface)}>
-                                <div className="space-y-2 text-xs text-muted-foreground">
+                              <aside aria-label="Programación y acciones de la carrera" className={cn("mt-2 flex min-w-0 flex-col gap-2.5 rounded-xl border p-2.5 sm:flex-row sm:items-center sm:justify-between", premiumColumnHeaderSurface)}>
+                                <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
                                   <div className="flex items-center justify-between gap-3">
                                     <span>Programado</span>
                                     <span className="text-right font-medium text-foreground">
@@ -2121,7 +2118,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                   ) : null}
                                 </div>
 
-                                <div className="mt-2 grid min-w-0 gap-2">
+                                <div className="grid w-full min-w-0 gap-2 sm:w-[220px] sm:shrink-0">
                                   <Button
                                     className="w-full justify-center border-emerald-500/25 bg-emerald-500/[0.07] text-[var(--semantic-success)] hover:bg-emerald-500/[0.12] max-sm:min-h-11"
                                     size="sm"
@@ -2212,6 +2209,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                   ) : null}
                                 </div>
                               </aside>
+
+                              </div>
+
+                              <div className="w-full min-w-0 shrink-0 space-y-2 lg:w-[360px] xl:w-[420px]">
+
                               <JobRadarShortcut
                                 projectId={projectId}
                                 jobId={job.jobId}
