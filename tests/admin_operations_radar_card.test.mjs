@@ -175,3 +175,31 @@ test('historial completo conserva etapas, avisos y detalle de destinatarios', ()
   assert.match(s, /Sin avisos conservados para este radio/);
   assert.match(s, /no una ruta GPS/);
 });
+
+
+test('cada rango es pulsable y despliega exclusivamente sus conductores', () => {
+  const component = s.slice(s.indexOf('function JobNotificationReach('), s.indexOf('function JobDetail('));
+  assert.match(component, /const \[selectedRadarStage, setSelectedRadarStage\] = useState/);
+  assert.match(component, /onClick=\{\(\) => setSelectedRadarStage\(\(current\) => current === stage \? null : stage\)\}/);
+  assert.match(component, /aria-expanded=\{selectedRadarStage === stage\}/);
+  assert.match(component, /selectedRadarStage === "unclassified"/);
+  assert.match(component, /selectedImpacts = selectedRadarStage == null \? \[\] : overviewImpacts\.filter/);
+  assert.match(component, /impact\.radius_stage === selectedRadarStage/);
+  assert.match(component, /const recipient = actual\.find\(\(item\) => item\.driverUserId === impact\.driver_user_id\)/);
+  assert.match(component, /selectedDrivers\.map/);
+  assert.match(component, /driver\.name/);
+  assert.match(component, /driver\.distanceKm/);
+  assert.match(component, /driver\.deliveryStatus/);
+  assert.match(component, /Sin conductores registrados en este rango/);
+});
+
+test('avisos sin rango no quedan ocultos y el historial sigue separado', () => {
+  const component = s.slice(s.indexOf('function JobNotificationReach('), s.indexOf('function JobDetail('));
+  assert.match(component, /!\[1, 2, 3\]\.includes\(impact\.radius_stage \?\? -1\)/);
+  assert.match(component, /registro\(s\) sin rango identificado · Ver conductores/);
+  assert.match(component, /Ver historial completo de avisos y distancias/);
+  assert.match(component, /<details className="group mt-3 rounded-xl/);
+  assert.match(component, /selectedRadarStage !== null/);
+  assert.match(component, /Aviso enviado por push/);
+  assert.match(component, /«Enviado» no confirma lectura/);
+});
