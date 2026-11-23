@@ -67,13 +67,13 @@ test('clic muestra recorrido por radios reales de cada carrera sin inventar etap
 test('detalle expandido utiliza el alto necesario sin espacios artificiales', () => {
   assert.match(s, /className="relative mt-2 border-t border-border\/50 pt-3"/);
   assert.match(s, /flex flex-col gap-2\.5 lg:flex-row lg:items-start lg:justify-between lg:gap-3/);
-  assert.match(s, /w-full min-w-0 shrink-0 space-y-2 lg:w-\[360px\] xl:w-\[420px\]/);
+  assert.match(s, /w-full min-w-0 shrink-0 lg:w-\[360px\] xl:w-\[420px\]/);
   // The route, client and driver now use the same compact graphite inset.
   const operations = s.slice(s.indexOf('<TabsContent value="trabajos"'), s.indexOf('<TabsContent value="atencion"'));
   assert.equal((operations.match(/cn\("rounded-xl border p-3", premiumColumnHeaderSurface\)/g) ?? []).length, 3);
   assert.match(operations, /mt-2 grid gap-2 sm:grid-cols-2/);
-  assert.match(operations, /cn\("rounded-xl border p-2\.5", premiumColumnHeaderSurface\)/);
-  assert.match(operations, /className="mt-2 grid min-w-0 gap-2"/);
+  assert.match(operations, /aria-label="Programación y acciones de la carrera"/);
+  assert.match(operations, /className="grid w-full min-w-0 gap-2 sm:w-\[220px\] sm:shrink-0"/);
   assert.match(s, /mt-2 flex flex-wrap items-center gap-x-3 gap-y-1/);
 });
 
@@ -202,4 +202,21 @@ test('avisos sin rango no quedan ocultos y el historial sigue separado', () => {
   assert.match(component, /selectedRadarStage !== null/);
   assert.match(component, /Aviso enviado por push/);
   assert.match(component, /«Enviado» no confirma lectura/);
+});
+
+
+test('operaciones: programacion y acciones pasan bajo cliente y conductor; radar queda libre', () => {
+  const operations = s.slice(s.indexOf('<TabsContent value="trabajos"'), s.indexOf('<TabsContent value="atencion"'));
+  const clients = operations.indexOf('job.customerDisplayName || "Sin nombre registrado"');
+  const actions = operations.indexOf('aria-label="Programación y acciones de la carrera"');
+  const asideRail = operations.indexOf('lg:w-[360px] xl:w-[420px]');
+  const radar = operations.indexOf('<JobRadarShortcut', asideRail);
+  assert.ok(clients >= 0 && actions > clients && asideRail > actions && radar > asideRail);
+  assert.doesNotMatch(operations.slice(asideRail, radar), /<aside/);
+  assert.match(operations, /sm:flex-row sm:items-center sm:justify-between/);
+  assert.match(operations, /grid w-full min-w-0 gap-2 sm:w-\[220px\] sm:shrink-0/);
+  assert.match(operations, /onClick=\{\(\) => setJobId\(job\.jobId\)\}/);
+  assert.match(operations, /formatDate\(job\.scheduledFor\)/);
+  assert.match(operations, /adminFinishMutation\.isPending/);
+  assert.match(operations, /deleteTestJob\.isPending/);
 });
