@@ -151,3 +151,27 @@ test('radar respeta configuracion historica y estados de carga, error e inactivi
   assert.match(s, /aria-label=\{radarLabel\}/);
   assert.match(s, /motion-safe:animate-\[spin_6s_linear_infinite\]/);
 });
+
+
+test('clic en radar muestra un resumen corto y deja el historial plegado', () => {
+  assert.match(s, /aria-label="Resumen rápido del radar"/);
+  assert.match(s, /Conductores impactados/);
+  assert.match(s, /Más cercano al aviso/);
+  assert.match(s, /const overviewStages = \[1, 2, 3\]\.map/);
+  assert.match(s, /overviewImpacts\.filter\(\(impact\) => impact\.radius_stage === stage\)/);
+  assert.match(s, /overviewStages\.map/);
+  assert.match(s, /Ver historial completo de avisos y distancias/);
+  assert.match(s, /<details className="group mt-3 rounded-xl/);
+  assert.match(s, /<summary className="flex min-h-11 cursor-pointer/);
+  assert.match(s, /activeTab !== "radar"/);
+  assert.doesNotMatch(s, /<summary[^>]+open=/);
+});
+
+test('historial completo conserva etapas, avisos y detalle de destinatarios', () => {
+  assert.match(s, /notificationRoute\.map/);
+  assert.match(s, /Ver avisos de esta etapa/);
+  assert.match(s, /order\.map\(\(item\) =>/);
+  assert.match(s, /El radar no se utilizó en esta carrera/);
+  assert.match(s, /Sin avisos conservados para este radio/);
+  assert.match(s, /no una ruta GPS/);
+});
