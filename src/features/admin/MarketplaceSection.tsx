@@ -3841,6 +3841,8 @@ function JobNotificationReach({
   assignedDriverId?: string | null;
   compact?: boolean;
 }) {
+  const [selectedRadarStage, setSelectedRadarStage] = useState<number | "unclassified" | null>(null);
+  useEffect(() => setSelectedRadarStage(null), [jobId]);
   const radar = useQuery({
     queryKey: ["marketplace-job-radar-analysis", projectId, jobId],
     queryFn: async () => {
@@ -3974,6 +3976,21 @@ function JobNotificationReach({
   const overviewUnknown = overviewImpacts.filter(
     (impact) => ![1, 2, 3].includes(impact.radius_stage ?? -1)
   ).length;
+  const selectedImpacts = selectedRadarStage == null ? [] : overviewImpacts.filter((impact) =>
+    selectedRadarStage === "unclassified"
+      ? ![1, 2, 3].includes(impact.radius_stage ?? -1)
+      : impact.radius_stage === selectedRadarStage
+  );
+  const selectedDrivers = selectedImpacts.map((impact) => {
+    const recipient = actual.find((item) => item.driverUserId === impact.driver_user_id);
+    return {
+      id: impact.driver_user_id,
+      name: recipient?.driverDisplayName || "Nombre no conservado",
+      distanceKm: impact.distance_km_at_selection ?? recipient?.distanceKm ?? null,
+      deliveryStatus: recipient?.deliveryStatus ?? null,
+      wasAssigned: assignedDriverId === impact.driver_user_id,
+    };
+  });
 
   return (
     <section aria-label="Resumen rápido del radar" className={cn("min-w-0 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
@@ -4009,18 +4026,90 @@ function JobNotificationReach({
         <>
           <div aria-label="Conductores por rango" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {overviewStages.map(({ stage, count, radius }) => (
-              <div key={stage} className="flex min-w-0 items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.05] px-3 py-2">
+              <button
+                type="button"
+                key={stage}
+                aria-expanded={selectedRadarStage === stage}
+                onClick={() => setSelectedRadarStage((current) => current === stage ? null : stage)}
+                className={cn(
+                  "group flex min-h-12 min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300",
+                  selectedRadarStage === stage
+                    ? "border-cyan-300/70 bg-cyan-400/[0.13] text-cyan-100"
+                    : "border-cyan-400/20 bg-cyan-400/[0.05] hover:border-cyan-300/45 hover:bg-cyan-400/[0.10]",
+                )}
+              >
                 <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/35 bg-cyan-400/10 text-xs font-bold text-cyan-100">{stage}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-semibold text-foreground">Rango {stage}</span>
                   <span className="block text-[10px] text-text-secondary">{radius == null ? "Sin radio guardado" : "Hasta " + kilometers(radius)}</span>
                 </span>
                 <strong className="text-lg font-bold tabular-nums text-cyan-100" aria-label={count + " conductores"}>{count}</strong>
-              </div>
+                <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-cyan-300 transition-transform", selectedRadarStage === stage && "rotate-180")} aria-hidden="true" />
+              </button>
             ))}
           </div>
-          {overviewUnknown > 0 ? <p className="mt-2 text-[11px] text-amber-200">{overviewUnknown} registro(s) sin rango identificado.</p> : null}
-          <p className="mt-2 text-[11px] text-text-secondary">Registros de primer aviso; no ubicación GPS. Un rango vacío no confirma su ejecución.</p>
+          {overviewUnknown > 0 ? (
+            <button
+              type="button"
+              aria-expanded={selectedRadarStage === "unclassified"}
+              onClick={() => setSelectedRadarStage((current) => current === "unclassified" ? null : "unclassified")}
+              className={cn(
+                "mt-2 flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amber-300",
+                selectedRadarStage === "unclassified"
+                  ? "border-amber-300/50 bg-amber-400/10 text-amber-100"
+                  : "border-amber-400/20 bg-amber-400/[0.04] text-amber-200 hover:bg-amber-400/10",
+              )}
+            >
+              <span>{overviewUnknown} registro(s) sin rango identificado · Ver conductores</span>
+              <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", selectedRadarStage === "unclassified" && "rotate-180")} aria-hidden="true" />
+            </button>
+          ) : null}
+          {selectedRadarStage !== null ? (
+            <section aria-label="Conductores del rango seleccionado" className="mt-2 rounded-xl border border-cyan-400/30 bg-background/55 p-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-xs font-semibold text-cyan-100">
+                  {selectedRadarStage === "unclassified"
+                    ? "Conductores sin rango identificado"
+                    : "Conductores del rango " + selectedRadarStage}
+                </h4>
+                <span className="text-[11px] tabular-nums text-text-secondary">
+                  {selectedImpacts.length} registro(s)
+                </span>
+              </div>
+              {selectedDrivers.length > 0 ? (
+                <ul className="divide-y divide-border/40" aria-live="polite">
+                  {selectedDrivers.map((driver, index) => (
+                    <li key={driver.id + "-" + index} className="flex min-w-0 flex-col gap-1 py-2 first:pt-1 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <div className="min-w-0">
+                        <p className="break-words text-xs font-semibold text-foreground">
+                          {driver.name}
+                          {driver.wasAssigned ? <span className="ml-2 text-[11px] text-emerald-300">Asignado</span> : null}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-text-secondary">
+                          {driver.deliveryStatus === "sent"
+                            ? "Aviso enviado por push"
+                            : driver.deliveryStatus === "failed"
+                              ? "Envío fallido"
+                              : driver.deliveryStatus == null
+                                ? "Sin detalle de aviso conservado"
+                                : "Aviso en cola / pendiente"}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-cyan-200">
+                        {driver.distanceKm == null ? "Distancia no registrada" : kilometers(driver.distanceKm)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-text-secondary">Sin conductores registrados en este rango para esta carrera.</p>
+              )}
+              <p className="mt-2 text-[10px] text-text-secondary">
+                Distancias históricas aproximadas al aviso. «Enviado» no confirma lectura.
+              </p>
+            </section>
+          ) : null}
+          <p className="mt-2 text-[11px] text-text-secondary">Selecciona un rango para ver sus conductores. Los datos son del primer aviso, no de GPS actual.</p>
         </>
       ) : (
         <p className="mt-3 text-xs text-text-secondary">
