@@ -44,6 +44,8 @@ import type { AdminStatus } from "@/components/admin/types";
 import { useProjectPermissions } from "@/hooks/useProjects";
 import { PreparePreinvoiceDialog } from "@/features/admin/PreinvoiceBillingDialog";
 import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
+import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
 import { isValidClientPhone, updateClientContact } from "@/lib/client-contact";
 import {
   adoptionBadgeVariant,
@@ -368,16 +370,13 @@ export default function Cliente360Section({
                 {data.client.phone ? "Editar móvil" : "Agregar móvil"}
               </Button>
             ) : null}
-            {validWhatsapp ? (
-              <Button asChild className="flex-1 sm:flex-none">
-                <a
-                  href={`https://wa.me/${data.client.phone!.slice(1)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <MessageCircle className="h-4 w-4" /> WhatsApp
-                </a>
-              </Button>
+            {validWhatsapp && driverWhatsAppLinks(data.client.phone) ? (
+              <AdminWhatsAppOpenChooser
+                links={driverWhatsAppLinks(data.client.phone)!}
+                driverName={data.client.name ?? "cliente"}
+                inviteToGroup={false}
+                buttonClassName="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground sm:flex-none"
+              />
             ) : null}
           </div>
         </div>
