@@ -57,3 +57,25 @@ test("un punto del mapa previsualiza radios y requiere confirmacion antes del pu
   assert.match(map,/test-lab-point-radar-fill/);
   assert.match(map,/driver\.gpsRecent \? "#22d3ee" : "#f59e0b"/);
 });
+
+
+test("el radar de prueba ocupa toda la altura y no deja un fondo negro", () => {
+  assert.match(ui,/heightClassName="h-80 w-full lg:h-full lg:min-h-\[420px\]"/);
+  assert.match(ui,/pickLabel="punto de prueba"/);
+  assert.match(map,/resizeObserver = new ResizeObserver/);
+  assert.match(map,/resizeObserver\.observe\(mount\.current\)/);
+  assert.match(map,/resizeObserver\?\.disconnect\(\)/);
+  assert.match(map,/radarRadiiKm \? "h-full" : ""/);
+  assert.match(map,/line-width": 2\.5/);
+});
+
+test("los envíos parciales se separan de los avisos fallidos y se explican al administrador", () => {
+  const patch = read("supabase/migrations/20261124161000_marketplace_radar_probe_partial_delivery_status.sql");
+  assert.match(patch,/last_error like 'Partial delivery:%'/);
+  assert.match(patch,/'partial',count\(\*\) filter/);
+  assert.match(patch,/require_project_permission\(target_project_id,'marketplace\.manage'\)/);
+  assert.match(patch,/require_project_permission\(target_project_id,'settings\.manage'\)/);
+  assert.match(ui,/Entrega parcial:/);
+  assert.match(ui,/Aviso parcial:/);
+  assert.match(ui,/delivery\.partial/);
+});

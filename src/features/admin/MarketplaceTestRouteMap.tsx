@@ -17,6 +17,7 @@ interface Props {
   onPick: (kind: "origin" | "destination", lat: number, lon: number) => void;
   heightClassName?: string;
   ariaLabel?: string;
+  pickLabel?: string;
   radarRadiiKm?: number[];
   radarDrivers?: Array<{ driverUserId: string; displayName: string; lat: number; lon: number; stage: number; gpsRecent: boolean }>;
 }
@@ -35,6 +36,7 @@ export default function MarketplaceTestRouteMap({
   onPick,
   heightClassName,
   ariaLabel,
+  pickLabel,
   radarRadiiKm,
   radarDrivers,
 }: Props) {
@@ -57,6 +59,7 @@ export default function MarketplaceTestRouteMap({
     if (!mount.current) return;
     let disposed = false;
     let created: mapboxgl.Map | null = null;
+    let resizeObserver: ResizeObserver | null = null;
     setReady(false);
     setError(null);
     void getMarketplaceOperationalMapConfig(projectId)
@@ -75,6 +78,8 @@ export default function MarketplaceTestRouteMap({
           attributionControl: false,
         });
         map.current = created;
+        resizeObserver = new ResizeObserver(() => { if (!disposed) created?.resize(); });
+        resizeObserver.observe(mount.current);
         created.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
         created.addControl(new mapboxgl.AttributionControl({ compact: true }));
         created.on("load", () => {
@@ -97,6 +102,7 @@ export default function MarketplaceTestRouteMap({
       pins.current = [];
       radarPins.current.forEach((m) => m.remove());
       radarPins.current = [];
+      resizeObserver?.disconnect();
       created?.remove();
       map.current = null;
     };
@@ -108,7 +114,7 @@ export default function MarketplaceTestRouteMap({
     pins.current.forEach((p) => p.remove());
     pins.current = [];
     for (const [kind, point, color] of [
-      ["origin", origin, "#34d399"],
+      ["origin", origin, radarRadiiKm ? "#f8fafc" : "#34d399"],
       ["destination", destination, "#22d3ee"],
     ] as const) {
       if (!point) continue;
@@ -116,7 +122,7 @@ export default function MarketplaceTestRouteMap({
         .setLngLat([point.lon, point.lat])
         .addTo(m);
       marker.getElement().title =
-        kind === "origin" ? "Origen: arrastra para ajustar" : "Destino: arrastra para ajustar";
+        kind === "origin" ? (radarRadiiKm ? "Punto de prueba: arrastra para ajustar" : "Origen: arrastra para ajustar") : "Destino: arrastra para ajustar";
       marker.on("dragend", () => {
         const c = marker.getLngLat();
         pickRef.current(kind, c.lat, c.lng);
@@ -197,13 +203,13 @@ export default function MarketplaceTestRouteMap({
       if (!m.getLayer(radarFillId)) {
         m.addLayer({
           id: radarFillId, type: "fill", source: radarSourceId,
-          paint: { "fill-color": "#22d3ee", "fill-opacity": 0.055 },
+          paint: { "fill-color": "#22d3ee", "fill-opacity": 0.075 },
         });
       }
       if (!m.getLayer(radarLineId)) {
         m.addLayer({
           id: radarLineId, type: "line", source: radarSourceId,
-          paint: { "line-color": "#67e8f9", "line-width": 1.5, "line-opacity": 0.75 },
+          paint: { "line-color": "#67e8f9", "line-width": 2.5, "line-opacity": 0.95, "line-dasharray": [3, 2] },
         });
       }
       (m.getSource(radarSourceId) as mapboxgl.GeoJSONSource).setData({
@@ -231,7 +237,7 @@ export default function MarketplaceTestRouteMap({
   }, [origin, radarDrivers, radarRadiiKm, ready]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-slate-950/80">
+    <div className={`relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-slate-950/80 ${radarRadiiKm ? "h-full" : ""}`}>
       <div
         ref={mount}
         className={`${heightClassName ?? "h-60 w-full sm:h-72"} ${picking ? "cursor-crosshair" : ""}`}
@@ -240,7 +246,7 @@ export default function MarketplaceTestRouteMap({
       />
       {picking && (
         <div className="pointer-events-none absolute left-3 top-3 rounded-xl border border-cyan-300/40 bg-slate-950/90 px-3 py-2 text-xs font-semibold text-cyan-100">
-          Pulsa en el mapa para marcar {picking === "origin" ? "origen" : "destino"}
+          Pulsa en el mapa para marcar {pickLabel ?? (picking === "origin" ? "origen" : "destino")}
         </div>
       )}
       {!ready && !error && (
