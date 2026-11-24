@@ -79,7 +79,7 @@ test("Las recargas resueltas ofrecen WhatsApp con datos reales y envío manual",
   const topups = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
   assert.match(topups, /\["confirmed", "reconciled", "rejected"\]\.includes\(item\.status\)/);
   assert.match(topups, /driverWhatsAppLinks\(\s*item\.driverPhone,\s*topupWhatsAppMessage\(item, paymentMethodLabel\(item\.method\), receipt\?\.documentNumber\)/);
-  assert.match(topups, /href=\{notificationLink\.desktop\}/);
+  assert.match(topups, /links=\{notificationLink\}/);
   assert.match(topups, /Notificar por WhatsApp/);
   assert.doesNotMatch(topups, /href=\{notificationLink\.web\}/);
   assert.doesNotMatch(topups, /target="_blank"/);
@@ -115,7 +115,7 @@ test("Recargas pendientes de transferencia envían datos guardados a WhatsApp De
   const topups = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
   assert.match(topups, /item\.status === "requested" && item\.method === "transfer"/);
   assert.match(topups, /topupPaymentInstructionsMessage\(item\.driverDisplayName/);
-  assert.match(topups, /href=\{instructionLink\.desktop\}/);
+  assert.match(topups, /links=\{instructionLink\}/);
   assert.match(topups, /Enviar datos de pago/);
   assert.match(topups, /Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas/);
 });
@@ -183,8 +183,8 @@ test("Recargas premium reutiliza sistema grafito aprobado y mantiene acciones cr
   assert.match(recargas, /marketplace-topup-amount/);
   assert.match(recargas, /marketplace-topup-actions/);
   assert.match(recargas, /<details className="marketplace-record-details group">/);
-  assert.match(recargas, /href=\{instructionLink\.desktop\}/);
-  assert.match(recargas, /href=\{notificationLink\.desktop\}/);
+  assert.match(recargas, /links=\{instructionLink\}/);
+  assert.match(recargas, /links=\{notificationLink\}/);
   assert.match(recargas, /setReceivedPaymentReference\(item\.reference \?\? ""\)/);
   assert.match(recargas, /setVerifiedPaymentReceived\(false\)/);
   assert.match(account, /premiumHeaderSurface/);
@@ -233,8 +233,8 @@ test("Colores y marcas financieras no cambian búsquedas, saldos ni confirmacion
   assert.match(topup, /filteredTopupRows\.map/);
   assert.match(topup, /setTopupStatus\(value\)/);
   assert.match(topup, /setVerifiedPaymentReceived\(false\)/);
-  assert.match(topup, /href=\{instructionLink\.desktop\}/);
-  assert.match(topup, /href=\{notificationLink\.desktop\}/);
+  assert.match(topup, /links=\{instructionLink\}/);
+  assert.match(topup, /links=\{notificationLink\}/);
 });
 test("Recargas mantiene los datos y acciones financieras mientras muestra teléfono y referencia", () => {
   const view = panel.slice(panel.indexOf('<TabsContent value="recargas"'), panel.indexOf('<TabsContent value="incidencias"'));
@@ -246,7 +246,7 @@ test("Recargas mantiene los datos y acciones financieras mientras muestra teléf
   assert.match(top, /formatAmount\(item\.amount, item\.currency\)/);
   assert.match(top, /Gestionar recarga pendiente/);
   assert.match(top, /Enviar datos de pago/);
-  assert.match(view, /href=\{notificationLink\.desktop\}/);
+  assert.match(view, /links=\{notificationLink\}/);
   assert.match(view, /receiptsByTopup\.get\(item\.topupId\)/);
 });
 test("La suspensión administrativa explica el bloqueo completo de Conductor", () => {
