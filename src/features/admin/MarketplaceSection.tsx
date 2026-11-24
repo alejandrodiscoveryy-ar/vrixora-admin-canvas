@@ -2370,7 +2370,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             ) : verificationFilterUnavailable ? (
               <div role="alert" className={cn("rounded-xl border p-4 text-sm", premiumSurface)}>
                 <p>No se pudo confirmar la verificación de todos los conductores. No se mostrarán resultados incompletos.</p>
-                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => void driverVerifications.refetch()}>Reintentar verificación</Button>
+                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => { void driverVerifications.refetch(); if (canManageMarketplace) void pendingVerifications.refetch(); }}>Reintentar verificación</Button>
               </div>
             ) : !driverRows.length ? (
               <EmptyMarketplaceState appearance="premium"
