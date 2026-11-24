@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import MarketplaceImpulsaEarnings from "@/features/admin/MarketplaceImpulsaEarnings";
-import { Copy, ExternalLink, MessageCircle, RefreshCw, ShieldCheck, Share2 } from "lucide-react";
+import { Copy, ExternalLink, RefreshCw, ShieldCheck, Share2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import { getSupabaseClient } from "@/lib/supabase";
 import { suggestDriverPromoAlias, validDriverPromoAlias } from "@/lib/marketplace-promo-alias";
 import { driverWhatsAppLinks, impulsaGroupInviteMessage } from "@/lib/driver-whatsapp";
+import ImpulsaWhatsAppOpenChooser from "./ImpulsaWhatsAppOpenChooser";
 
 export default function MarketplaceDriverPromotionPreview({ projectId, driverUserId, driverDisplayName, contactPhone, active, canManage, verified, onOpenExpediente }: {
   projectId: string; driverUserId: string; driverDisplayName: string; contactPhone: string | null; active: boolean; canManage: boolean; verified: boolean | null; onOpenExpediente: () => void;
@@ -213,11 +214,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
             <p className="text-sm font-semibold">Invitar al grupo de Impulsa</p>
             <p className="mt-1 text-xs text-text-secondary">Abre WhatsApp con un mensaje de bienvenida y el enlace al grupo. Revisa y envía el mensaje manualmente.</p>
           </div>
-          <a href={inviteWhatsApp.web} target="_blank" rel="noopener noreferrer"
-            aria-label="Escribir al conductor para invitarlo al grupo de Impulsa"
-            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60">
-            <MessageCircle className="size-4" aria-hidden="true"/> Invitar por WhatsApp
-          </a>
+          <ImpulsaWhatsAppOpenChooser links={inviteWhatsApp} driverName={driverDisplayName} inviteToGroup={true} />
         </div>
       ) : null}
       <form className={cn("space-y-2 rounded-xl border p-3", premiumColumnHeaderSurface)} onSubmit={event => { event.preventDefault(); void saveAlias(); }}>
