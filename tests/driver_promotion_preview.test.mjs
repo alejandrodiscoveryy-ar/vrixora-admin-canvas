@@ -29,13 +29,13 @@ test("La ficha 360 solo consulta el estado al abrir y activa después de pulsar"
 });
 
 test("No exige acta, folio ni segunda confirmación tras el consentimiento propio", () => {
-  assert.match(card, /consentimiento del conductor para publicar su nombre y fotografía ya registrado/);
+  assert.match(card, /consentimiento para publicar nombre y fotografía ya registrado/);
   assert.match(card, /Nombre comercial propuesto/);
   assert.match(card, /disabled=\{!validDriverPromoAlias\(aliasInput\.trim\(\)\.toLowerCase\(\)\) \|\| busy\}/);
   assert.doesNotMatch(card, /impulsa-authorization-reference|Referencia de autorización documentada|Número de acta, folio o registro/);
   assert.doesNotMatch(card, /setReference|setConfirmed|reference\.trim\(\)|!confirmed/);
   assert.doesNotMatch(card, /Confirmo que cuento con autorización documentada/);
-  assert.match(card, /El conductor aún no tiene una aceptación vigente/);
+  assert.match(card, /El conductor debe autorizar desde su aplicación/);
 });
 
 test("La función de activación solo acepta el consentimiento original vigente y los datos actuales", () => {
@@ -55,6 +55,7 @@ test("La función de activación solo acepta el consentimiento original vigente 
     "marketplace_driver_identity_verified_v1",
     "IMPULSA_CONSENT_REQUIRED",
     "PROMO_PHOTO_NOT_AVAILABLE",
+    "values(d.project_id,d.user_id,legal_name,photo,'mi-tuktuk-v1',a.consent_accepted_at)",
   ]) assert.ok(migration.includes(token), "Falta protección: " + token);
   assert.match(migration, /require_project_permission\(target_project_id,'marketplace.manage'\)/);
   assert.match(migration, /revoke all on function app_private\.marketplace_impulsa_current_consent_v1/);
