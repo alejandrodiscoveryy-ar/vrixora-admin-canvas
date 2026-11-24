@@ -12,7 +12,10 @@ test("pending verification filter queries only pending applications with admin p
   assert.match(sql, /a\.status='pending'/);
   assert.match(sql, /revoke all on function public\.admin_list_marketplace_pending_impulsa_verifications_v1/);
   assert.match(hook, /admin_list_marketplace_pending_impulsa_verifications_v1/);
-  assert.match(ui, /<option value="pending">Solicitan verificación<\/option>/);
+  assert.match(ui, /<option value="pending">Solicitan verificación\{pendingDriverCount !== null/);
+  assert.match(ui, /tab === "conductores" && canManageMarketplace &&/);
+  assert.doesNotMatch(ui, /driverVerificationFilter === "pending" &&\s*canManageMarketplace/);
+  assert.match(ui, /countPendingDriverVerifications\(/);
   assert.match(ui, /pendingVerifications\.data\?\.has\(item\.userId\)/);
 });
 
@@ -32,4 +35,20 @@ test("verified identity never appears again as an active pending verification", 
   assert.match(migration, /revoke all on function public\.admin_list_marketplace_pending_impulsa_verifications_v1/);
   assert.match(ui, /matchesPendingDriverVerification\(/);
   assert.match(ui, /driverVerifications\.isError \|\| !verificationComplete/);
+});
+
+test("el contador coincide con el filtro y no convierte errores en cero", async () => {
+  const { countPendingDriverVerifications } = await import("../src/features/admin/driver-verification-filter.ts");
+  const ids = ["pendiente", "ya-verificado", "sin-solicitud"];
+  const solicitudes = new Set(["pendiente", "ya-verificado"]);
+  const verificaciones = {
+    pendiente: { verified: false },
+    "ya-verificado": { verified: true },
+    "sin-solicitud": { verified: false },
+  };
+  assert.equal(countPendingDriverVerifications(ids, solicitudes, verificaciones), 1);
+  assert.equal(countPendingDriverVerifications(ids, new Set(), verificaciones), 0);
+  assert.equal(countPendingDriverVerifications(ids, undefined, verificaciones), null);
+  assert.equal(countPendingDriverVerifications(ids, solicitudes, undefined), null);
+  assert.equal(countPendingDriverVerifications(ids, solicitudes, { pendiente: { verified: false } }), null);
 });
