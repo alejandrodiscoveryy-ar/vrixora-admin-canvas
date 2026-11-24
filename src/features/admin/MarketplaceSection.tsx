@@ -71,6 +71,7 @@ import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import MarketplacePulseDecisions from "@/features/admin/MarketplacePulseDecisions";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
 import { driverWhatsAppLinks, driverWelcomeMessage } from "@/lib/driver-whatsapp";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
 import { MarketplaceTopupPaymentDestination, useTopupPaymentDestination, topupPaymentInstructionsMessage } from "@/features/admin/MarketplaceTopupPaymentDestination";
 
 
@@ -632,7 +633,7 @@ function Customer360Detail({
             </div>
           </div>
           <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
-            {whatsapp ? <Button variant="outline" size="sm" asChild><a href={whatsapp.web} target="_blank" rel="noopener noreferrer" className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />WhatsApp</a></Button> : null}
+            {whatsapp ? <AdminWhatsAppOpenChooser links={whatsapp} driverName={detail.customer.displayName} inviteToGroup={false} buttonClassName="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-default px-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10" /> : null}
             {phone ? <Button variant="outline" size="sm" asChild><a href={`tel:${phone}`} className="min-h-11"><Phone className="mr-1.5 h-4 w-4" />Llamar</a></Button> : null}
             {detail.customer.email ? <Button variant="outline" size="sm" asChild><a href={`mailto:${detail.customer.email}`} className="min-h-11"><Mail className="mr-1.5 h-4 w-4" />Correo</a></Button> : null}
           </div>
@@ -2466,29 +2467,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
 
                         <div className="pointer-events-none relative z-20 col-span-2 flex min-w-0 items-center justify-between gap-2 xl:col-span-1 xl:justify-end">
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary xl:hidden">Ver ficha 360 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></span>
-                          {driverWhatsAppLinks(item.phone) ? (
-                            <Button
-                              asChild
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="pointer-events-auto min-h-11 shrink-0 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
-                            >
-                              <a
-                                href={welcomeDrivers
-                                  ? driverWhatsAppLinks(item.phone, driverWelcomeMessage(item.displayName))!.desktop
-                                  : driverWhatsAppLinks(item.phone)!.web}
-                                onClick={() => {
-                                  if (welcomeDrivers) void copyDriverWelcome(driverWelcomeMessage(item.displayName));
-                                }}
-                                target={welcomeDrivers ? undefined : "_blank"}
-                                rel="noopener noreferrer"
-                                aria-label={welcomeDrivers ? `Abrir aplicación de WhatsApp con bienvenida para ${item.displayName}` : `Abrir WhatsApp Web con ${item.displayName}`}
-                                title={welcomeDrivers ? "Abrir aplicación de WhatsApp; si no aparece el mensaje, pega con Ctrl+V" : undefined}
-                              >
-                                WhatsApp
-                              </a>
-                            </Button>
+                          {driverWhatsAppLinks(item.phone, welcomeDrivers ? driverWelcomeMessage(item.displayName) : undefined) ? (
+                            <AdminWhatsAppOpenChooser
+                              links={driverWhatsAppLinks(item.phone, welcomeDrivers ? driverWelcomeMessage(item.displayName) : undefined)!}
+                              driverName={item.displayName}
+                              inviteToGroup={false}
+                              onChooseApplication={welcomeDrivers ? () => { void copyDriverWelcome(driverWelcomeMessage(item.displayName)); } : undefined}
+                              buttonClassName="pointer-events-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-xs font-semibold text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
+                            />
                           ) : <ChevronRight className="hidden h-4 w-4 shrink-0 text-text-secondary xl:block" aria-hidden="true" />}
                         </div>
                       </div>
@@ -2744,11 +2730,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           <div className="marketplace-topup-actions">
                             {item.method === "transfer" && (
                               instructionLink ? (
-                                <Button asChild type="button" size="sm" variant="outline" className="min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)]">
-                                  <a href={instructionLink.desktop} aria-label={`Enviar por WhatsApp los datos de recarga a ${item.driverDisplayName}`}>
-                                    <Phone aria-hidden="true" className="mr-2 h-4 w-4" />Enviar datos de pago
-                                  </a>
-                                </Button>
+                                <AdminWhatsAppOpenChooser links={instructionLink}
+                                  driverName={item.driverDisplayName} inviteToGroup={false}
+                                  buttonLabel="Enviar datos de pago"
+                                  buttonClassName="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-3 text-xs font-semibold text-[var(--semantic-success-foreground)]" />
                               ) : (
                                 <p className="max-w-56 text-xs leading-snug text-text-secondary">
                                   {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas, para enviar instrucciones."}
@@ -2766,21 +2751,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         ) : null}
                         {notificationLink ? (
                           <div className="marketplace-topup-actions marketplace-topup-actions--notification">
-                            <Button
-                              asChild
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="marketplace-finance-action min-h-11 border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] text-[var(--semantic-success-foreground)] shadow-none"
-                            >
-                              <a
-                                href={notificationLink.desktop}
-                                aria-label={`Notificar por WhatsApp la recarga ${item.status === "rejected" ? "rechazada" : "confirmada"} a ${item.driverDisplayName}`}
-                              >
-                                <Phone aria-hidden="true" className="mr-2 h-4 w-4" />
-                                Notificar por WhatsApp
-                              </a>
-                            </Button>
+                            <AdminWhatsAppOpenChooser links={notificationLink}
+                              driverName={item.driverDisplayName} inviteToGroup={false}
+                              buttonLabel="Notificar por WhatsApp"
+                              buttonClassName="marketplace-finance-action inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-3 text-xs font-semibold text-[var(--semantic-success-foreground)] shadow-none" />
                           </div>
                         ) : null}
                       </div>
