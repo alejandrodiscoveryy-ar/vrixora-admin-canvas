@@ -51,3 +51,21 @@ test("La consulta de contactos exige gestión comercial y permiso operativo", ()
   assert.match(analytics, /admin_get_marketplace_impulsa_communications_v1/);
   assert.doesNotMatch(analytics, /admin_update_marketplace_driver|admin_save_marketplace/);
 });
+
+
+test("Conductor Impulsa confirmado recibe invitación con el enlace proporcionado; el inactivo no", () => {
+  const message = readFileSync(new URL("../src/lib/driver-whatsapp.ts", import.meta.url), "utf8");
+  const promo = readFileSync(new URL("../src/features/admin/MarketplaceDriverPromotionPreview.tsx", import.meta.url), "utf8");
+  const record = readFileSync(new URL("../src/features/admin/MarketplaceDriver360Record.tsx", import.meta.url), "utf8");
+  assert.match(message, /TUKTUK_IMPULSA_GROUP_URL = "https:\/\/chat\.whatsapp\.com\/K9fQVIsf2ZqHR4upRYHHeP"/);
+  assert.match(message, /export function impulsaGroupInviteMessage/);
+  assert.match(message, /Tu perfil de TukTuk Impulsa ya está confirmado y activo/);
+  assert.match(message, /Para entrar al grupo, pulsa este enlace:/);
+  assert.match(analytics, /x\.active \? "\?text=" \+ encodeURIComponent\(impulsaGroupInviteMessage\(x\.name\)\) : ""/);
+  assert.match(analytics, /x\.active \? "Invitar al grupo" : "WhatsApp"/);
+  assert.match(promo, /const inviteWhatsApp = renderer \? driverWhatsAppLinks\(contactPhone, impulsaGroupInviteMessage\(driverDisplayName\)\) : null/);
+  assert.match(promo, /Invitar por WhatsApp/);
+  assert.match(promo, /href=\{inviteWhatsApp\.web\} target="_blank" rel="noopener noreferrer"/);
+  assert.match(record, /contactPhone=\{contactPhone\}/);
+  assert.doesNotMatch(promo, /sendMessage\(|autoSend|fetch\(['"]https:\/\/wa\.me/);
+});
