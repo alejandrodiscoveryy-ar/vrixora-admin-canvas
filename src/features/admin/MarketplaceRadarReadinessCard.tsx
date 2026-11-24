@@ -56,11 +56,12 @@ async function getRadarFunnel(projectId: string): Promise<RadarFunnel> {
     typeof job.created_at === "string" &&
     Date.parse(job.created_at) >= cutoff);
   const cancelled = recent.filter((job) => job.status === "cancelled_by_customer");
+  const unassigned = cancelled.filter((job) => !job.driver_user_id);
   let noOffers = 0;
   let offersWithoutAssignment = 0;
   // Consultas acotadas por lotes; no disparar docenas de peticiones en paralelo.
-  for (let offset = 0; offset < cancelled.length; offset += 4) {
-    const batch = cancelled.slice(offset, offset + 4);
+  for (let offset = 0; offset < unassigned.length; offset += 4) {
+    const batch = unassigned.slice(offset, offset + 4);
     const results = await Promise.all(batch.map((job) =>
       client.rpc("admin_get_marketplace_job_radar_analysis", {
         target_project_id: projectId,
@@ -285,9 +286,9 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
                           <Metric label="Solicitudes reales" value={funnel.data.requests} icon={UsersRound} />
                           <Metric label="Finalizadas" value={funnel.data.settled} tone="eligible" icon={ShieldCheck} />
                           <Metric label="Sin ofertas" value={funnel.data.noOffers} icon={RadioTower} />
-                          <Metric label="Ofertas sin aceptar" value={funnel.data.offersWithoutAssignment} tone="signal" icon={BellRing} />
+                          <Metric label="Ofertas sin asignación" value={funnel.data.offersWithoutAssignment} tone="signal" icon={BellRing} />
                         </div>
-                        <p>Cancelaciones del cliente: {funnel.data.cancelled}. «Sin ofertas» significa ninguna oferta encolada; «Ofertas sin aceptar» significa que se encolaron avisos, no que llegaron al teléfono.</p>
+                        <p>Cancelaciones del cliente: {funnel.data.cancelled}. Los dos grupos de ofertas solo incluyen solicitudes nunca asignadas. «Sin ofertas» significa ninguna oferta encolada; «Ofertas sin asignación» significa que hubo avisos encolados, no que llegaron al teléfono.</p>
                         <p>Para identificar la causa, abre la carrera en «Trabajos» y consulta «Radar y cobertura» y sus destinatarios. Una notificación «enviada» no equivale a recepción confirmada.</p>
                         {funnel.data.limited ? <p className="text-amber-200">Muestra limitada a las últimas 200 carreras: cifras parciales, no un total general de 14 días.</p> : null}
                       </>
