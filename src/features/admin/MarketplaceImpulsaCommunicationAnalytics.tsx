@@ -7,7 +7,7 @@ import { supabaseServices } from "@/lib/services";
 import { getMarketplaceDirectoryDriverMedia, type MarketplaceDirectoryDriverMedia } from "@/lib/marketplace-map";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
-import { impulsaGroupInviteMessage } from "@/lib/driver-whatsapp";
+import { driverWhatsAppLinks, impulsaGroupInviteMessage } from "@/lib/driver-whatsapp";
 
 type PeriodDays = 7 | 30 | 90;
 type Numbers = {
@@ -363,7 +363,7 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canM
                </span>
              </button>
              {canManage && phone && (
-               <a href={`https://wa.me/${phone}${x.active ? "?text=" + encodeURIComponent(impulsaGroupInviteMessage(x.name)) : ""}`}
+               <a href={driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)?.web}
                  target="_blank" rel="noopener noreferrer"
                  aria-label={x.active ? `Invitar a ${x.name} al grupo de Impulsa por WhatsApp` : `Abrir WhatsApp de ${x.name}`}
                  title={x.active ? "Abrir mensaje de invitación al grupo de Impulsa para envío manual" : `Contactar por WhatsApp con ${x.name}`}
