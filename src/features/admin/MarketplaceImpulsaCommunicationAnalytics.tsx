@@ -8,6 +8,7 @@ import { getMarketplaceDirectoryDriverMedia, type MarketplaceDirectoryDriverMedi
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 import { driverWhatsAppLinks, impulsaGroupInviteMessage } from "@/lib/driver-whatsapp";
+import ImpulsaWhatsAppOpenChooser from "./ImpulsaWhatsAppOpenChooser";
 
 type PeriodDays = 7 | 30 | 90;
 type Numbers = {
@@ -362,14 +363,12 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canM
                  <ChevronDown aria-hidden="true" className={`size-4 transition-transform motion-reduce:transition-none ${open?"rotate-180":""}`}/>
                </span>
              </button>
-             {canManage && phone && (
-               <a href={driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)?.web}
-                 target="_blank" rel="noopener noreferrer"
-                 aria-label={x.active ? `Invitar a ${x.name} al grupo de Impulsa por WhatsApp` : `Abrir WhatsApp de ${x.name}`}
-                 title={x.active ? "Abrir mensaje de invitación al grupo de Impulsa para envío manual" : `Contactar por WhatsApp con ${x.name}`}
-                 className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-400/25 bg-emerald-500/[0.06] px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 sm:min-h-9">
-                 <MessageCircle aria-hidden="true" className="size-4" />{x.active ? "Invitar al grupo" : "WhatsApp"}
-               </a>
+             {canManage && phone && driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined) && (
+               <ImpulsaWhatsAppOpenChooser
+                 links={driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)!}
+                 driverName={x.name}
+                 inviteToGroup={x.active}
+               />
              )}
              </div>
              <div id={`impulsa-marketing-driver-${x.driver_user_id}`} hidden={!open} className="border-t border-border-subtle bg-surface-2/35 px-4 pb-4 pt-3 sm:px-5">
