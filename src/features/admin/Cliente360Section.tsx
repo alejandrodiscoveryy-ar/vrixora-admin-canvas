@@ -373,7 +373,7 @@ export default function Cliente360Section({
             {validWhatsapp && driverWhatsAppLinks(data.client.phone) ? (
               <AdminWhatsAppOpenChooser
                 links={driverWhatsAppLinks(data.client.phone)!}
-                driverName={data.client.name ?? "cliente"}
+                driverName={data.client.displayName ?? "cliente"}
                 inviteToGroup={false}
                 buttonClassName="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground sm:flex-none"
               />
