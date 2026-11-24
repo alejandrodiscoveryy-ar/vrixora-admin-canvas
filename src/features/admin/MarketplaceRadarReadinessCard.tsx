@@ -30,6 +30,66 @@ type RadarReadiness = {
 
 type MetricTone = "neutral" | "signal" | "eligible";
 
+type RadarFunnel = {
+  requests: number;
+  settled: number;
+  cancelled: number;
+  noOffers: number;
+  offersWithoutAssignment: number;
+  limited: boolean;
+  inspectedJobs: number;
+};
+
+// Diagnostico bajo demanda para ahorrar datos moviles: permisos existentes
+// marketplace.view, sin nueva RPC ni exponer datos de otros proyectos.
+async function getRadarFunnel(projectId: string): Promise<RadarFunnel> {
+  const client = getSupabaseClient();
+  const { data: rows, error } = await client.rpc("admin_list_marketplace_jobs", {
+    target_project_id: projectId,
+    target_limit: 200,
+  });
+  if (error) throw error;
+  if (!Array.isArray(rows)) throw new Error("RADAR_FUNNEL_RESPONSE_INVALID");
+  const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const recent = (rows as Record<string, unknown>[]).filter((job) =>
+    job.is_test !== true &&
+    typeof job.created_at === "string" &&
+    Date.parse(job.created_at) >= cutoff);
+  const cancelled = recent.filter((job) => job.status === "cancelled_by_customer");
+  let noOffers = 0;
+  let offersWithoutAssignment = 0;
+  // Consultas acotadas por lotes; no disparar docenas de peticiones en paralelo.
+  for (let offset = 0; offset < cancelled.length; offset += 4) {
+    const batch = cancelled.slice(offset, offset + 4);
+    const results = await Promise.all(batch.map((job) =>
+      client.rpc("admin_get_marketplace_job_radar_analysis", {
+        target_project_id: projectId,
+        target_job_id: job.job_id,
+      })));
+    for (const result of results) {
+      if (result.error || !result.data ||
+          result.data.status === "unrecorded") {
+        throw new Error("RADAR_FUNNEL_TRACE_UNAVAILABLE");
+      }
+      const offers = Number(result.data.total_offers_enqueued);
+      if (!Number.isFinite(offers) || offers < 0) {
+        throw new Error("RADAR_FUNNEL_TRACE_INVALID");
+      }
+      if (offers === 0) noOffers++;
+      else offersWithoutAssignment++;
+    }
+  }
+  return {
+    requests: recent.length,
+    settled: recent.filter((job) => job.status === "settled").length,
+    cancelled: cancelled.length,
+    noOffers,
+    offersWithoutAssignment,
+    limited: rows.length === 200,
+    inspectedJobs: recent.length,
+  };
+}
+
 function Metric({
   label,
   value,
@@ -95,6 +155,7 @@ function Metric({
 
 export default function MarketplaceRadarReadinessCard({ projectId }: { projectId: string }) {
   const [diagnosisOpen, setDiagnosisOpen] = useState(false);
+  const [funnelOpen, setFunnelOpen] = useState(false);
   const diagnosisId = useId();
   const readiness = useQuery({
     queryKey: ["marketplace-radar-readiness", projectId],
@@ -108,6 +169,13 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
     },
     refetchInterval: 30_000,
     staleTime: 10_000,
+    retry: 1,
+  });
+  const funnel = useQuery({
+    queryKey: ["marketplace-radar-funnel-14d", projectId],
+    queryFn: () => getRadarFunnel(projectId),
+    enabled: diagnosisOpen && funnelOpen,
+    staleTime: 5 * 60_000,
     retry: 1,
   });
   const d = readiness.data;
@@ -201,6 +269,32 @@ export default function MarketplaceRadarReadinessCard({ projectId }: { projectId
               </div>
               <p>La selección definitiva depende de radio, expansión, prioridad, servicio y compatibilidad.</p>
               <p>Los indicadores pueden solaparse. El diagnóstico no cambia el estado de los conductores.</p>
+              <div className="border-t border-white/10 pt-3">
+                <button type="button" onClick={() => setFunnelOpen((open) => !open)}
+                  aria-expanded={funnelOpen}
+                  className="rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-100">
+                  {funnelOpen ? "Ocultar diagnóstico de solicitudes" : "Analizar solicitudes sin conductor · 14 días"}
+                </button>
+                {funnelOpen ? (
+                  <div className="mt-3 space-y-2" role="status">
+                    {funnel.isPending ? <p>Consultando radar de carreras reales…</p> : null}
+                    {funnel.isError ? <p className="text-amber-200">No se pudo completar la auditoría; no mostramos cifras parciales.</p> : null}
+                    {funnel.data ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          <Metric label="Solicitudes reales" value={funnel.data.requests} icon={UsersRound} />
+                          <Metric label="Finalizadas" value={funnel.data.settled} tone="eligible" icon={ShieldCheck} />
+                          <Metric label="Sin ofertas" value={funnel.data.noOffers} icon={RadioTower} />
+                          <Metric label="Ofertas sin aceptar" value={funnel.data.offersWithoutAssignment} tone="signal" icon={BellRing} />
+                        </div>
+                        <p>Cancelaciones del cliente: {funnel.data.cancelled}. «Sin ofertas» significa ninguna oferta encolada; «Ofertas sin aceptar» significa que se encolaron avisos, no que llegaron al teléfono.</p>
+                        <p>Para identificar la causa, abre la carrera en «Trabajos» y consulta «Radar y cobertura» y sus destinatarios. Una notificación «enviada» no equivale a recepción confirmada.</p>
+                        {funnel.data.limited ? <p className="text-amber-200">Muestra limitada a las últimas 200 carreras: cifras parciales, no un total general de 14 días.</p> : null}
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </>
