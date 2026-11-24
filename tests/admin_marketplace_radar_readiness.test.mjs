@@ -37,3 +37,17 @@ test('El radar cuenta GPS y perfil sin exigir prueba ni deposito', () => {
   assert.match(migration, /'radar_reachable',count\(distinct driver_user_id\) filter\(where onboarding_complete and profile_active and gps_recent\)/);
   assert.match(migration, /RADAR_ELIGIBILITY_SOURCE_CHANGED/);
 });
+
+test('el embudo consulta solo carreras reales y se abre a demanda sin exponer GPS', () => {
+  assert.match(card, /enabled: diagnosisOpen && funnelOpen/);
+  assert.match(card, /admin_list_marketplace_jobs/);
+  assert.match(card, /admin_get_marketplace_job_radar_analysis/);
+  assert.match(card, /job\.is_test !== true/);
+  assert.match(card, /job\.status === "cancelled_by_customer"/);
+  assert.match(card, /!job\.driver_user_id/);
+  assert.match(card, /total_offers_enqueued/);
+  assert.match(card, /Sin ofertas/);
+  assert.match(card, /Ofertas sin asignación/);
+  assert.match(card, /Muestra limitada a las últimas 200 carreras/);
+  assert.match(card, /notificación «enviada» no equivale a recepción confirmada/);
+});
