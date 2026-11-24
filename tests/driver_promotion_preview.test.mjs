@@ -113,3 +113,18 @@ test("Enlace editable, nombre propuesto y sin colisiones", () => {
   assert.match(card, /PROMO_ALIAS_TAKEN/);
   assert.match(card, /setAlias\(fallback\.data\)/);
 });
+
+
+test("La activación Impulsa no reutiliza el alias SQL de la solicitud como variable PL/pgSQL", () => {
+  const patch = read("supabase/migrations/20261124181000_impulsa_fix_ambiguous_driver_alias_v2.sql");
+  assert.match(patch, /v_consent app_private\.marketplace_impulsa_applications%rowtype/);
+  assert.match(patch, /select \* into v_consent from app_private\.marketplace_impulsa_applications/);
+  assert.match(patch, /public\.driver_vehicle_assignments a/);
+  assert.match(patch, /a\.project_id=d\.project_id and a\.driver_user_id=d\.user_id/);
+  assert.match(patch, /v_consent\.consent_accepted_at/);
+  assert.match(patch, /v_consent\.consent_version/);
+  assert.doesNotMatch(patch, /\ba app_private\.marketplace_impulsa_applications%rowtype/);
+  assert.match(patch, /app_private\.marketplace_impulsa_current_consent_v1/);
+  assert.match(patch, /app_private\.marketplace_driver_identity_verified_v1/);
+  assert.match(patch, /app_private\.require_project_permission/);
+});
