@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Copy, MessageCircle } from "lucide-react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
