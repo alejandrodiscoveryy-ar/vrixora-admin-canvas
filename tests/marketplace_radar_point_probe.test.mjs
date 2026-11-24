@@ -7,6 +7,9 @@ const sql = read("supabase/migrations/20261124153500_marketplace_radar_point_pro
 const ui = read("src/features/admin/MarketplaceRadarPointProbe.tsx");
 const map = read("src/features/admin/MarketplaceTestRouteMap.tsx");
 const config = read("src/features/admin/MarketplaceConfigurationWorkspace.tsx");
+const testCenter = read("src/features/admin/MarketplaceTestCenterV2.tsx");
+const testRadarToggle = read("src/features/admin/MarketplaceTestRadarToggle.tsx");
+const dispatchSettings = read("src/features/admin/MarketplaceDispatchSettingsCard.tsx");
 
 test("solo Admin autorizado puede consultar y notificar, sin permiso anonimo", () => {
   assert.match(sql,/require_project_permission\(target_project_id,'marketplace\.manage'\)/);
@@ -45,7 +48,8 @@ test("notificacion generica marcada PRUEBA, deduplicada, con cooldown y sin carr
 });
 
 test("un punto del mapa previsualiza radios y requiere confirmacion antes del push", () => {
-  assert.match(config,/<MarketplaceRadarPointProbe projectId=\{projectId\}/);
+  assert.match(testCenter,/<MarketplaceRadarPointProbe projectId=\{projectId\}/);
+  assert.doesNotMatch(config,/<MarketplaceRadarPointProbe/);
   assert.match(ui,/picking="origin"/);
   assert.match(ui,/admin_preview_marketplace_radar_point_probe_v1/);
   assert.match(ui,/admin_send_marketplace_radar_point_probe_v1/);
@@ -78,4 +82,27 @@ test("los envíos parciales se separan de los avisos fallidos y se explican al a
   assert.match(ui,/Entrega parcial:/);
   assert.match(ui,/Aviso parcial:/);
   assert.match(ui,/delivery\.partial/);
+});
+
+
+test("ambas pruebas de radar se encuentran exclusivamente en Centro de pruebas", () => {
+  assert.match(config, /active === "pruebas"[\s\S]*?<MarketplaceTestCenterV2/);
+  assert.match(testCenter, /<MarketplaceTestRadarToggle projectId=\{projectId\} canManage=\{canManage\} \/>/);
+  assert.match(testCenter, /<MarketplaceRadarPointProbe projectId=\{projectId\} canManage=\{canManage\} \/>/);
+  const settingsPanel = config.slice(config.indexOf('active === "operacion"'));
+  assert.doesNotMatch(settingsPanel, /<MarketplaceRadarPointProbe/);
+  assert.doesNotMatch(settingsPanel, /<MarketplaceTestRadarToggle/);
+  assert.doesNotMatch(dispatchSettings, /Aplicar a carreras de prueba/);
+  assert.doesNotMatch(dispatchSettings, /setApplyToTestJobs/);
+});
+
+test("activar el radar de carreras de prueba guarda automáticamente sin perder otros ajustes", () => {
+  assert.match(testRadarToggle, /aria-label="Aplicar a carreras de prueba"/);
+  assert.match(testRadarToggle, /supabaseServices\.marketplace\.dispatchSettings\(projectId\)/);
+  assert.match(testRadarToggle, /supabaseServices\.marketplace\.updateDispatchSettings\(projectId,/);
+  assert.match(testRadarToggle, /\.\.\.input,\s*applyToTestJobs: nextEnabled/);
+  assert.match(testRadarToggle, /onCheckedChange=\{\(checked\) => toggle\.mutate\(checked\)\}/);
+  assert.match(testRadarToggle, /saved\.applyToTestJobs !== nextEnabled/);
+  assert.match(dispatchSettings, /applyToTestJobs: settings\.data\?\.applyToTestJobs \?\? false/);
+  assert.match(testRadarToggle, /disabled=\{disabled\}/);
 });

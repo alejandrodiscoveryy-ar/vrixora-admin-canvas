@@ -140,11 +140,6 @@ export default function MarketplaceDispatchSettingsCard({
     setAllowOutsideMaxRadius,
   ] = useState(false);
 
-  const [
-    applyToTestJobs,
-    setApplyToTestJobs,
-  ] = useState(false);
-
   const [tieBreaker, setTieBreaker] =
     useState<TieBreaker>(
       "rating_then_distance",
@@ -229,10 +224,6 @@ export default function MarketplaceDispatchSettingsCard({
 
     setAllowOutsideMaxRadius(
       settings.data.allowOutsideMaxRadius,
-    );
-
-    setApplyToTestJobs(
-      settings.data.applyToTestJobs,
     );
 
     setTieBreaker(
@@ -395,7 +386,7 @@ export default function MarketplaceDispatchSettingsCard({
 
           allowOutsideMaxRadius,
 
-          applyToTestJobs,
+          applyToTestJobs: settings.data?.applyToTestJobs ?? false,
 
           tieBreaker,
         },
@@ -874,33 +865,6 @@ export default function MarketplaceDispatchSettingsCard({
                   </div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/[0.11] via-background/80 to-background/70 p-3.5 shadow-[0_20px_55px_-38px_rgba(139,92,246,1)] admin-graphite-panel">
-                  <img
-                    src="/admin-premium/test-lab.svg"
-                    alt=""
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-0 top-0 h-full w-48 object-cover opacity-24 mix-blend-screen"
-                  />
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-violet-300">
-                        Pruebas
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">
-                        Aplicar a carreras de prueba
-                      </p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                        Apagado: las pruebas siguen usando directamente el conductor seleccionado.
-                      </p>
-                    </div>
-
-                    <Switch
-                      checked={applyToTestJobs}
-                      disabled={!canManage}
-                      onCheckedChange={setApplyToTestJobs}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
 
