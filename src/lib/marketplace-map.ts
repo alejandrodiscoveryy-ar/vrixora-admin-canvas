@@ -330,6 +330,7 @@ export interface MarketplaceJobNotificationRecipient {
   deliveryStatus: string;
   notificationCount: number;
   firstNotificationAt: string | null;
+  firstOpenedAt: string | null;
   distanceKm: number | null;
   distanceGpsAt: string | null;
   isTestRecipient: boolean;
@@ -353,6 +354,7 @@ export async function getMarketplaceJobNotificationRecipients(
       deliveryStatus: String(row.delivery_status ?? "pending"),
       notificationCount: Number(row.notification_count ?? 0),
       firstNotificationAt: row.first_notification_at == null ? null : String(row.first_notification_at),
+      firstOpenedAt: row.first_opened_at == null ? null : String(row.first_opened_at),
       distanceKm: row.distance_km == null || !Number.isFinite(Number(row.distance_km))
         ? null : Math.max(0, Number(row.distance_km)),
       distanceGpsAt: row.distance_gps_at == null ? null : String(row.distance_gps_at),
