@@ -2473,7 +2473,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                               driverName={item.displayName}
                               inviteToGroup={false}
                               onChooseApplication={welcomeDrivers ? () => { void copyDriverWelcome(driverWelcomeMessage(item.displayName)); } : undefined}
-                              buttonClassName="pointer-events-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-xs font-semibold text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
+                              buttonClassName="pointer-events-auto min-h-11 inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-2.5 text-xs font-semibold text-[var(--semantic-success-foreground)] shadow-none xl:min-h-8"
                             />
                           ) : <ChevronRight className="hidden h-4 w-4 shrink-0 text-text-secondary xl:block" aria-hidden="true" />}
                         </div>
