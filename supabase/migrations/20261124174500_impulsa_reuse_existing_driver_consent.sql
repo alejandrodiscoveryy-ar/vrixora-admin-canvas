@@ -99,6 +99,11 @@ begin
     where id=target_project_id and slug='tuktuk-control'
   ) then raise exception 'PROMO_PROJECT_INVALID' using errcode='22023'; end if;
 
+  -- Misma secuencia de locks que el flujo de aprobación Impulsa:
+  -- solicitud -> perfil conductor -> perfil promocional.
+  select * into a from app_private.marketplace_impulsa_applications
+    where project_id=target_project_id and driver_user_id=target_driver_user_id
+    for update;
   select * into d from public.driver_profiles
     where project_id=target_project_id and user_id=target_driver_user_id
     for update;
@@ -131,7 +136,8 @@ begin
   then raise exception 'PROMO_SERVICE_NOT_ACTIVE' using errcode='22023'; end if;
 
   select * into p from app_private.marketplace_driver_promo_profiles
-    where project_id=d.project_id and driver_user_id=d.user_id;
+    where project_id=d.project_id and driver_user_id=d.user_id
+    for update;
   if p.code is not null and p.revoked_at is null then
     return jsonb_build_object('enabled',true,'code',p.code);
   end if;
@@ -141,10 +147,6 @@ begin
   ) then
     raise exception 'IMPULSA_CONSENT_REQUIRED' using errcode='22023';
   end if;
-
-  select * into a from app_private.marketplace_impulsa_applications
-    where project_id=d.project_id and driver_user_id=d.user_id
-    for update;
 
   select left(btrim(display_name),80) into legal_name
     from public.profiles where id=d.user_id;
@@ -161,8 +163,8 @@ begin
   end if;
 
   insert into app_private.marketplace_driver_promo_profiles(
-    project_id,driver_user_id,public_name,consent_photo_asset_id,consent_version
-  ) values(d.project_id,d.user_id,legal_name,photo,a.consent_version)
+    project_id,driver_user_id,public_name,consent_photo_asset_id,consent_version,consented_at
+  ) values(d.project_id,d.user_id,legal_name,photo,a.consent_version,a.consent_accepted_at)
   on conflict(project_id,driver_user_id) do update set
     code=replace(gen_random_uuid()::text,'-',''),
     public_name=excluded.public_name,
@@ -212,7 +214,20 @@ create or replace function public.admin_activate_marketplace_promo_card_v1(
 language plpgsql security definer
 set search_path to ''
 as $function$
+declare p app_private.marketplace_driver_promo_profiles%rowtype;
 begin
+  -- El frontend antiguo consulta el perfil pasando false y sin referencia:
+  -- debe continuar siendo una lectura sin efectos secundarios.
+  if target_authorization_confirmed is distinct from true then
+    if auth.uid() is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
+    perform app_private.require_project_permission(target_project_id,'marketplace.manage');
+    select * into p from app_private.marketplace_driver_promo_profiles
+      where project_id=target_project_id and driver_user_id=target_driver_user_id;
+    if p.code is not null and p.revoked_at is null then
+      return jsonb_build_object('enabled',true,'code',p.code);
+    end if;
+    raise exception 'IMPULSA_CONSENT_REQUIRED' using errcode='22023';
+  end if;
   return public.admin_activate_marketplace_promo_card_v2(
     target_project_id,target_driver_user_id
   );
