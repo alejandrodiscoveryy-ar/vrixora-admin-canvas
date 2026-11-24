@@ -49,6 +49,6 @@ test("No altera el diseño, las métricas, los detalles plegables ni WhatsApp", 
   assert.match(impulsa, /aria-expanded=\{open\}/);
   assert.match(impulsa, /Captación y actividad del enlace/);
   assert.match(impulsa, /Solicitudes \/ clics registrados/);
-  assert.match(impulsa, /driverWhatsAppLinks\(phone, x\.active \? impulsaGroupInviteMessage\(x\.name\) : undefined\)\?\.web/);
+  assert.match(impulsa, /<ImpulsaWhatsAppOpenChooser/);
   assert.match(impulsa, /border-emerald-400\/25/);
 });
