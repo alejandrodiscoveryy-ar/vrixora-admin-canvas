@@ -11,6 +11,7 @@ export default function ImpulsaWhatsAppOpenChooser({
   buttonLabel,
   buttonClassName,
   onChoose,
+  onChooseApplication,
 }: {
   links: WhatsAppLinks;
   driverName: string;
@@ -18,6 +19,7 @@ export default function ImpulsaWhatsAppOpenChooser({
   buttonLabel?: string;
   buttonClassName?: string;
   onChoose?: () => void;
+  onChooseApplication?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -43,7 +45,7 @@ export default function ImpulsaWhatsAppOpenChooser({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
-          <a href={links.desktop} onClick={() => { onChoose?.(); setOpen(false); }}
+          <a href={links.desktop} onClick={() => { onChooseApplication?.(); onChoose?.(); setOpen(false); }}
             className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/[0.07] px-3 py-4 text-center text-sm font-semibold text-foreground hover:bg-emerald-400/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60">
             <Smartphone className="size-6 text-emerald-300" aria-hidden="true"/>
             Abrir aplicación
