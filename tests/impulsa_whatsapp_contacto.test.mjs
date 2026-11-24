@@ -33,7 +33,7 @@ test("Valida el teléfono, acepta móvil cubano y E164, sin inventar contactos",
 test("WhatsApp está en la ficha cerrada, fuera del control para desplegar", () => {
   assert.ok(first > 0 && last > first);
   assert.match(main, /canManage && phone &&/);
-  assert.ok(main.includes("https://wa.me/"));
+  assert.ok(main.includes("driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)?.web"));
   assert.match(main, /target="_blank" rel="noopener noreferrer"/);
   assert.ok(main.includes("Abrir WhatsApp de"));
   assert.match(main, /MessageCircle/);
@@ -61,11 +61,22 @@ test("Conductor Impulsa confirmado recibe invitación con el enlace proporcionad
   assert.match(message, /export function impulsaGroupInviteMessage/);
   assert.match(message, /Tu perfil de TukTuk Impulsa ya está confirmado y activo/);
   assert.match(message, /Para entrar al grupo, pulsa este enlace:/);
-  assert.match(analytics, /x\.active \? "\?text=" \+ encodeURIComponent\(impulsaGroupInviteMessage\(x\.name\)\) : ""/);
+  assert.match(analytics, /driverWhatsAppLinks\(phone, x\.active \? impulsaGroupInviteMessage\(x\.name\) : undefined\)\?\.web/);
   assert.match(analytics, /x\.active \? "Invitar al grupo" : "WhatsApp"/);
   assert.match(promo, /const inviteWhatsApp = renderer \? driverWhatsAppLinks\(contactPhone, impulsaGroupInviteMessage\(driverDisplayName\)\) : null/);
   assert.match(promo, /Invitar por WhatsApp/);
   assert.match(promo, /href=\{inviteWhatsApp\.web\} target="_blank" rel="noopener noreferrer"/);
   assert.match(record, /contactPhone=\{contactPhone\}/);
   assert.doesNotMatch(promo, /sendMessage\(|autoSend|fetch\(['"]https:\/\/wa\.me/);
+});
+
+test("La invitación Impulsa abre WhatsApp Web y no intenta lanzar la aplicación", () => {
+  const shared = readFileSync(new URL("../src/lib/driver-whatsapp.ts", import.meta.url), "utf8");
+  const preview = readFileSync(new URL("../src/features/admin/MarketplaceDriverPromotionPreview.tsx", import.meta.url), "utf8");
+  assert.ok(shared.includes("https://web.whatsapp.com/send?phone="));
+  assert.ok(shared.includes("encodeURIComponent(message)"));
+  assert.ok(analytics.includes("driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)?.web"));
+  assert.ok(preview.includes("href={inviteWhatsApp.web}"));
+  assert.doesNotMatch(analytics, /https:\/\/wa\.me\//);
+  assert.doesNotMatch(analytics, /whatsapp:\/\/send/);
 });
