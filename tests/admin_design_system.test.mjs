@@ -382,7 +382,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   const directory = panel.slice(panel.indexOf('<TabsContent value="conductores">'), panel.indexOf('<TabsContent value="clientes">'));
   assert.equal((directory.match(/<FilterSelect appearance="premium"/g) ?? []).length, 5);
   assert.match(directory, /driverSearch/);
-  assert.match(directory, /driverWhatsAppLinks\(item.phone\)/);
+  assert.match(directory, /driverWhatsAppLinks\(item.phone,/);
   assert.match(directory, /onClick=\{\(\) => setDriver360Id\(item.userId\)\}/);
   const rows = directory.slice(directory.indexOf("{visibleDriverRows.map"), directory.indexOf("{visibleDriverRows.length < filteredDriverRows.length"));
   assert.match(rows, /data-driver-row="compact"/);
@@ -403,7 +403,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(rows, /aria-label=\{\x60Abrir ficha 360 de/);
   assert.match(rows, /pointer-events-none relative z-20/);
   assert.match(rows, /pointer-events-auto min-h-11/);
-  assert.match(rows, /href=\{welcomeDrivers\s*\? driverWhatsAppLinks\(item\.phone, driverWelcomeMessage\(item\.displayName\)\)!\.desktop\s*:\s*driverWhatsAppLinks\(item\.phone\)!\.web\}/);
+  assert.match(rows, /<AdminWhatsAppOpenChooser/);
   assert.match(rows, /Ver ficha 360/);
   assert.match(rows, /xl:min-h-8/);
   const record = source("MarketplaceDriver360Record.tsx");
@@ -415,7 +415,7 @@ test("Driver premium directory and 360: responsive surfaces, contact, navigation
   assert.match(record, /canSeeFinancial/);
   assert.match(record, /canManageDriver/);
   assert.match(record, /onChangeSuspension/);
-  assert.match(record, /href=\{whatsApp.web\}/);
+  assert.match(record, /links=\{whatsApp\}/);
   assert.match(record, /marketplace-360-avatar relative overflow-hidden/);
   const avatarCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   assert.match(avatarCss, /\.marketplace-360-avatar\s*\{[^}]*border-radius: 999px;/);
@@ -462,7 +462,7 @@ test("Driver welcome: scoped to TukTuk directory; 360 remains ordinary contact",
   const record = readFileSync(new URL("../src/features/admin/MarketplaceDriver360Record.tsx", import.meta.url), "utf8");
   assert.match(route, /welcomeDrivers=\{project\.slug === "tuktuk-control"\}/);
   assert.match(directory, /welcomeDrivers = false/);
-  assert.match(directory, /if \(welcomeDrivers\) void copyDriverWelcome\(driverWelcomeMessage\(item\.displayName\)\)/);
+  assert.match(directory, /onChooseApplication=\{welcomeDrivers/);
   assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
   assert.doesNotMatch(record, /driverWelcomeMessage/);
 });
@@ -470,9 +470,9 @@ test("Driver welcome: scoped to TukTuk directory; 360 remains ordinary contact",
 test("Driver WhatsApp: installed app protocol, web alternative and clipboard are independent", () => {
   const directory = readFileSync(new URL("../src/features/admin/MarketplaceSection.tsx", import.meta.url), "utf8");
   const rows = directory.slice(directory.indexOf("{visibleDriverRows.map"), directory.indexOf("{visibleDriverRows.length < filteredDriverRows.length"));
-  assert.match(rows, /href=\{welcomeDrivers\s*\? driverWhatsAppLinks\(item\.phone, driverWelcomeMessage\(item\.displayName\)\)!\.desktop\s*:\s*driverWhatsAppLinks\(item\.phone\)!\.web\}/);
-  assert.match(rows, /if \(welcomeDrivers\) void copyDriverWelcome\(driverWelcomeMessage\(item\.displayName\)\)/);
-  assert.match(rows, /target=\{welcomeDrivers \? undefined : "_blank"\}/);
+  assert.match(rows, /<AdminWhatsAppOpenChooser/);
+  assert.match(rows, /onChooseApplication=\{welcomeDrivers/);
+  assert.match(rows, /driverName=\{item\.displayName\}/);
   assert.doesNotMatch(rows, /preventDefault|window\.open/);
   assert.match(directory, /await navigator\.clipboard\.writeText\(message\)/);
   assert.match(directory, /setWelcomeCopyFallback\(message\)/);
