@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Copy, MessageCircle } from "lucide-react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   supabaseServices,
@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPreinvoiceNumber } from "@/lib/preinvoice-number";
+import { whatsappMessageLinks } from "@/lib/driver-whatsapp";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
 
 const dt = (value: string) =>
   new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" }).format(
@@ -117,11 +119,8 @@ export function PreparePreinvoiceDialog({
       setCreated({ ...created, status: "sent" });
       onCreated();
     }
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+    // La selección de aplicación o Web ya abrió el borrador; esta acción conserva
+    // el estado administrativo previo «enviada», que el operador confirma manualmente.
   };
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -163,10 +162,13 @@ export function PreparePreinvoiceDialog({
                 <Copy className="mr-2 h-4 w-4" />
                 Copiar
               </Button>
-              <Button onClick={() => void share()}>
-                <MessageCircle className="mr-2 h-4 w-4" />
-                Compartir y marcar enviada
-              </Button>
+              {whatsappMessageLinks(message) ? (
+                <AdminWhatsAppOpenChooser links={whatsappMessageLinks(message)!}
+                  driverName={clientName} inviteToGroup={false}
+                  onChoose={() => { void share(); }}
+                  buttonLabel="Compartir y marcar enviada"
+                  buttonClassName="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground" />
+              ) : null}
             </div>
           </div>
         ) : (

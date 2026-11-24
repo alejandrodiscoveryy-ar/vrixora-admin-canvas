@@ -13,13 +13,13 @@ test("WhatsApp Desktop y alternativa web con borrador de bienvenida optativo, si
   assert.match(code, /const draft = message\?\.trim\(\) \?/);
   const list = file("src/features/admin/MarketplaceSection.tsx");
   const record = file("src/features/admin/MarketplaceDriver360Record.tsx");
-  assert.match(list, /driverWhatsAppLinks\(item\.phone\)/);
+  assert.match(list, /driverWhatsAppLinks\(item\.phone, welcomeDrivers \?/);
   assert.match(record, /driverWhatsAppLinks\(contactPhone\)/);
-  assert.match(list, /href=\{welcomeDrivers\s*\? driverWhatsAppLinks\(item\.phone, driverWelcomeMessage\(item\.displayName\)\)!\.desktop\s*:\s*driverWhatsAppLinks\(item\.phone\)!\.web\}/);
-  assert.match(list, /target=\{welcomeDrivers \? undefined : "_blank"\}/);
+  assert.match(list, /<AdminWhatsAppOpenChooser/);
+  assert.match(list, /onChooseApplication=\{welcomeDrivers/);
   assert.match(list, /if \(welcomeDrivers\) void copyDriverWelcome\(driverWelcomeMessage\(item\.displayName\)\)/);
   assert.match(list, /navigator\.clipboard\.writeText\(message\)/);
-  assert.match(record, /href=\{whatsApp\.web\}\s+target="_blank"/);
+  assert.match(record, /links=\{whatsApp\}/);
 });
 
 test("Ficha 360 muestra requisitos, documentos seguros e historial", () => {
@@ -75,7 +75,7 @@ test("UX directorio de conductores: fila 360, WhatsApp único y suspensión sepa
   const row = list.split("{visibleDriverRows.map((item) => (")[1]?.split("</article>")[0] ?? "";
   assert.match(row, /className="absolute inset-0 z-10 cursor-pointer/);
   assert.match(row, /onClick=\{\(\) => setDriver360Id\(item\.userId\)\}/);
-  assert.equal((row.match(/WhatsApp\s*<\/a>/g) ?? []).length, 1);
+  assert.equal((row.match(/<AdminWhatsAppOpenChooser/g) ?? []).length, 1);
   assert.doesNotMatch(row, /setDriver\(\{/);
   assert.match(record, /onChangeSuspension\(detail\.driver\.status !== "suspended"\)/);
   const conductor = record.indexOf("Expediente del conductor");

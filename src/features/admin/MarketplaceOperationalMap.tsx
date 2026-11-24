@@ -1,5 +1,7 @@
 import MarketplaceServiceShareButton from "@/features/admin/MarketplaceServiceShareButton";
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
+import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import MarketplaceDriverConsistencyPanel from "@/features/admin/MarketplaceDriverConsistencyPanel";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -2077,7 +2079,7 @@ export default function MarketplaceOperationalMap({
 
   const customer = selectedCustomer.data?.customer ?? null;
   const customerPhone = customer?.whatsappPhone ?? null;
-  const whatsappUrl = customerPhone ? `https://wa.me/${customerPhone.replace(/\D/g, "")}` : null;
+  const customerWhatsApp = driverWhatsAppLinks(customerPhone);
 
   const selectedDriver = selectedJob?.driverUserId
     ? (data.drivers.find(
@@ -3055,19 +3057,15 @@ export default function MarketplaceOperationalMap({
                                       </div>
 
                                       <div className="mt-3 grid grid-cols-2 gap-1.5">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={!whatsappUrl}
-                                          onClick={() => {
-                                            if (whatsappUrl) {
-                                              window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-                                            }
-                                          }}
-                                        >
-                                          <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                                          WhatsApp
-                                        </Button>
+                                        {customerWhatsApp ? (
+                                          <AdminWhatsAppOpenChooser links={customerWhatsApp}
+                                            driverName={customer?.displayName ?? "cliente"} inviteToGroup={false}
+                                            buttonClassName="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-border-default px-3 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10" />
+                                        ) : (
+                                          <Button size="sm" variant="outline" disabled>
+                                            <MessageCircle className="mr-1.5 h-3.5 w-3.5" />WhatsApp
+                                          </Button>
+                                        )}
 
                                         <Button
                                           size="sm"

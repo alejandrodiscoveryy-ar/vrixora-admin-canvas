@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 
 import { premiumSurface, premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
 import MarketplaceDriverManagementPanel from "@/features/admin/MarketplaceDriverManagementPanel";
 import MarketplaceDriverVehicleEditor from "@/features/admin/MarketplaceDriverVehicleEditor";
 import MarketplaceDriverPromotionPreview from "@/features/admin/MarketplaceDriverPromotionPreview";
@@ -285,16 +286,9 @@ export default function MarketplaceDriver360Record({
           </div>
           <div className="flex min-w-0 flex-wrap gap-2 [&_a]:min-h-11 sm:justify-end">
             {whatsApp ? (
-              <Button size="sm" variant="outline" asChild>
-                <a
-                  className="marketplace-value-available"
-                  href={whatsApp.web}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  WhatsApp
-                </a>
-              </Button>
+              <AdminWhatsAppOpenChooser links={whatsApp} driverName={displayName}
+                inviteToGroup={false}
+                buttonClassName="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-default px-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10" />
             ) : null}
             {contactPhone ? (
               <Button size="sm" variant="outline" asChild>

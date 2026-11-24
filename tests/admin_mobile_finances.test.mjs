@@ -90,8 +90,8 @@ test("Recargas premium alinea importes y estados en columnas compartidas, con ma
   assert.match(account, /data-topup-account-panel/);
   assert.match(account, /<Banknote aria-hidden="true" className="pointer-events-none absolute/);
   assert.match(recargas, /setTopup\(\{/);
-  assert.match(recargas, /href=\{instructionLink\.desktop\}/);
-  assert.match(recargas, /href=\{notificationLink\.desktop\}/);
+  assert.match(recargas, /links=\{instructionLink\}/);
+  assert.match(recargas, /links=\{notificationLink\}/);
 });
 
 test("billeteras premium: ancho completo, saldos alineados y jerarquía compacta", () => {

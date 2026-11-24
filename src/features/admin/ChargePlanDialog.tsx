@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Download, Eye, Printer, ReceiptText, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { whatsappMessageLinks } from "@/lib/driver-whatsapp";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
 import {
   supabaseServices,
   type BillingPreview,
@@ -345,10 +347,7 @@ export function ReceiptDialog({
           files: navigator.canShare?.({ files: [file] }) ? [file] : undefined,
         });
       else
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(`Recibo ${receipt.identitySnapshot?.name || receipt.projectName} ${receipt.receiptNumber}`)}`,
-          "_blank",
-        );
+        toast.info("Para WhatsApp, usa el botón específico y elige aplicación o Web.");
     } catch {
       toast.error("No fue posible compartir el recibo.");
     }
@@ -374,6 +373,14 @@ export function ReceiptDialog({
             <Share2 className="mr-2 h-4 w-4" />
             Compartir
           </Button>
+          {whatsappMessageLinks("Recibo " + (receipt.identitySnapshot?.name || receipt.projectName) + " " + receipt.receiptNumber) ? (
+            <AdminWhatsAppOpenChooser
+              links={whatsappMessageLinks("Recibo " + (receipt.identitySnapshot?.name || receipt.projectName) + " " + receipt.receiptNumber)!}
+              driverName={receipt.identitySnapshot?.name || receipt.projectName}
+              inviteToGroup={false}
+              buttonLabel="WhatsApp"
+              buttonClassName="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border-default px-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10" />
+          ) : null}
           <Button onClick={onClose}>Cerrar</Button>
         </DialogFooter>
       </DialogContent>

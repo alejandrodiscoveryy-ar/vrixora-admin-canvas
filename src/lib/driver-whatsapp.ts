@@ -13,6 +13,16 @@ export function driverWhatsAppLinks(phone: string | null | undefined, message?: 
   };
 }
 
+/** Compartir un texto sin destinatario preseleccionado; el operador elige el chat. */
+export function whatsappMessageLinks(message: string) {
+  if (!message.trim()) return null;
+  const draft = encodeURIComponent(message);
+  return {
+    desktop: `whatsapp://send?text=${draft}`,
+    web: `https://web.whatsapp.com/send?text=${draft}`,
+  };
+}
+
 /** Owner-supplied invitation; used only for the TukTuk driver directory welcome. */
 export const TUKTUK_DRIVER_GROUP_URL = "https://chat.whatsapp.com/DjmuiDfi6a0CdtqFgqujkb?s=cl&p=a&iam=2";
 
