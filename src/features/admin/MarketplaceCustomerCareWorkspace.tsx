@@ -704,7 +704,7 @@ export default function MarketplaceCustomerCareWorkspace({
                     <p className="mt-1 text-xs text-muted-foreground">{missingWhatsAppFields.join(" · ")}</p>
                     {whatsappQuestionLink ? (
                       <AdminWhatsAppOpenChooser links={whatsappQuestionLink}
-                        driverName={customer?.display_name ?? clientName.trim() || "cliente"}
+                        driverName={customer?.display_name || clientName.trim() || "cliente"}
                         inviteToGroup={false} buttonLabel="Preguntar datos al cliente por WhatsApp"
                         buttonClassName="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg border border-emerald-400/30 px-3 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/10" />
                     ) : null}
