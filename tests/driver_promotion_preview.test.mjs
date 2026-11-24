@@ -84,14 +84,18 @@ test("Si hay rechazo se conserva el formulario y se explica la causa", () => {
   assert.match(card, /\{activationError && <p role="alert"/);
 });
 
-test("Impulsa centraliza promoción y no modifica la identidad", () => {
+test("Impulsa centraliza promoción y la suspensión retira verificación", () => {
   const management = read("src/features/admin/MarketplaceDriverManagementPanel.tsx");
   const directory = read("src/features/admin/MarketplaceSection.tsx");
   const hook = read("src/hooks/useDriverVerifications.ts");
   const badge = read("src/features/admin/DriverVerifiedBadge.tsx");
   assert.match(card, /Nombre de usuario comercial/);
   assert.match(card, /admin_deactivate_marketplace_promo_card_v1/);
-  assert.match(card, /Confirmar desactivación/);
+  assert.match(card, /Confirmar suspensión y retirada de verificación/);
+  assert.match(card, /Suspender Impulsa retira también la verificación de identidad/);
+  const suspension = read("supabase/migrations/20261124194500_impulsa_suspension_revokes_identity_and_resets_application.sql");
+  assert.match(suspension, /admin_set_marketplace_driver_identity_review_v1/);
+  assert.match(suspension, /status='withdrawn'/);
   assert.match(card, /Copiar enlace/);
   assert.match(record, /identity\?\.verified === true && <DriverVerifiedBadge/);
   assert.match(directory, /driverVerifications\.data\?\.\[item\.userId\]\?\.verified === true && <DriverVerifiedBadge compact/);

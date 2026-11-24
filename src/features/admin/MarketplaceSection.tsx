@@ -66,7 +66,7 @@ import MarketplaceDriver360Record from "@/features/admin/MarketplaceDriver360Rec
 import DriverVerifiedBadge from "@/features/admin/DriverVerifiedBadge";
 import { useDriverVerifications } from "@/hooks/useDriverVerifications";
 import { usePendingDriverVerifications } from "@/hooks/usePendingDriverVerifications";
-import { matchesDriverVerification, matchesPendingDriverVerification } from "@/features/admin/driver-verification-filter";
+import { countPendingDriverVerifications, matchesDriverVerification, matchesPendingDriverVerification } from "@/features/admin/driver-verification-filter";
 import MarketplaceFleetPulse from "@/features/admin/MarketplaceFleetPulse";
 import MarketplacePulseDecisions from "@/features/admin/MarketplacePulseDecisions";
 import { EmptyMarketplaceState, LoadingState, PaginationButton, FilterSelect } from "@/features/admin/MarketplaceListPrimitives";
@@ -1622,9 +1622,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   // Fetch verification for the entire loaded directory before applying filters or slicing visible rows.
   const driverVerifications = useDriverVerifications(projectId, driverRows.map((row) => row.userId),
     tab === "conductores" && !drivers.hasNextPage && !drivers.isLoading && !drivers.isError);
+  // Fetch pending requests for the filter label even before that filter is selected.
+  // The server excludes already verified drivers; results are scoped to the full directory.
   const pendingVerifications = usePendingDriverVerifications(projectId, driverRows.map((row) => row.userId),
-    tab === "conductores" && driverVerificationFilter === "pending" &&
-    canManageMarketplace && !drivers.hasNextPage && !drivers.isLoading && !drivers.isError);
+    tab === "conductores" && canManageMarketplace &&
+    !drivers.hasNextPage && !drivers.isLoading && !drivers.isError);
   const verificationComplete = driverRows.every((row) =>
     typeof driverVerifications.data?.[row.userId]?.verified === "boolean");
   const verificationFilterLoading = driverVerificationFilter === "pending"
@@ -1639,6 +1641,14 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       : driverVerifications.isError || !verificationComplete);
   const verifiedDriverCount = verificationComplete && !drivers.isLoading && !drivers.hasNextPage && !drivers.isError && !driverVerifications.isError
     ? driverRows.filter((row) => driverVerifications.data?.[row.userId]?.verified === true).length : null;
+  const pendingDriverCount = !drivers.isLoading && !drivers.hasNextPage && !drivers.isError &&
+    canManageMarketplace && !pendingVerifications.isError && !driverVerifications.isError
+    ? driverRows.length === 0 ? 0 : countPendingDriverVerifications(
+        driverRows.map((row) => row.userId),
+        pendingVerifications.data,
+        driverVerifications.data,
+      )
+    : null;
   const driverCategories = [...new Set(
     driverRows.map((item) => item.vehicleCategoryCode).filter((code): code is string => Boolean(code)),
   )].sort();
@@ -2316,7 +2326,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <FilterSelect appearance="premium" labelText="Verificación" value={driverVerificationFilter} onChange={setDriverVerificationFilter}>
                   <option value="">Todos</option>
                   <option value="verified">Verificados{verifiedDriverCount !== null ? ` (${verifiedDriverCount})` : ""}</option>
-                  <option value="pending">Solicitan verificación</option>
+                  <option value="pending">Solicitan verificación{pendingDriverCount !== null ? ` (${pendingDriverCount})` : ""}</option>
                   <option value="unverified">No verificados{verifiedDriverCount !== null ? ` (${driverRows.length - verifiedDriverCount})` : ""}</option>
                 </FilterSelect>
                 <FilterSelect appearance="premium" labelText="Inscripción" value={driverPeriodFilter} onChange={setDriverPeriodFilter}>
@@ -2360,7 +2370,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
             ) : verificationFilterUnavailable ? (
               <div role="alert" className={cn("rounded-xl border p-4 text-sm", premiumSurface)}>
                 <p>No se pudo confirmar la verificación de todos los conductores. No se mostrarán resultados incompletos.</p>
-                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => void driverVerifications.refetch()}>Reintentar verificación</Button>
+                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => { void driverVerifications.refetch(); if (canManageMarketplace) void pendingVerifications.refetch(); }}>Reintentar verificación</Button>
               </div>
             ) : !driverRows.length ? (
               <EmptyMarketplaceState appearance="premium"
