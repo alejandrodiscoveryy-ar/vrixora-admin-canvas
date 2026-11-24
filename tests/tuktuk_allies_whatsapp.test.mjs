@@ -28,10 +28,10 @@ test("El WhatsApp es un botón de contacto disponible sin expandir la ficha", ()
   assert.ok(detailsStart > 0);
   const header = row.slice(0, detailsStart);
   assert.match(header, /canManage && allyPhone/);
-  assert.match(header, /https:\/\/wa\.me\/\$\{allyPhone\.slice\(1\)\}/);
-  assert.match(header, /target="_blank" rel="noopener noreferrer"/);
-  assert.match(header, /Abrir WhatsApp de/);
-  assert.match(header, /MessageCircle/);
+  assert.match(header, /driverWhatsAppLinks\(allyPhone\)/);
+  assert.match(header, /<AdminWhatsAppOpenChooser/);
+  assert.match(header, /driverName=\{ally\.name\}/);
+  assert.match(header, /buttonClassName=/);
   assert.match(header, /Enlace público/);
   assert.match(header, /Renovar acceso/);
   assert.match(header, /aria-expanded=\{expanded\}/);
