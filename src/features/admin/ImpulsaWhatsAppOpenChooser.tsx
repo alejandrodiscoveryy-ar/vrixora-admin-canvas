@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, MessageCircle, MonitorSmartphone, Smartphone } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import type { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
-
-type WhatsAppLinks = NonNullable<ReturnType<typeof driverWhatsAppLinks>>;
+type WhatsAppLinks = { desktop: string; web: string };
 
 /** El usuario elige cómo abrir WhatsApp. Ninguna opción envía el mensaje. */
 export default function ImpulsaWhatsAppOpenChooser({
