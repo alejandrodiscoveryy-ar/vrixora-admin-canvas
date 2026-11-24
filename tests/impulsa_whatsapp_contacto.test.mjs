@@ -33,15 +33,13 @@ test("Valida el teléfono, acepta móvil cubano y E164, sin inventar contactos",
 test("WhatsApp está en la ficha cerrada, fuera del control para desplegar", () => {
   assert.ok(first > 0 && last > first);
   assert.match(main, /canManage && phone &&/);
-  assert.ok(main.includes("driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)?.web"));
-  assert.match(main, /target="_blank" rel="noopener noreferrer"/);
-  assert.ok(main.includes("Abrir WhatsApp de"));
-  assert.match(main, /MessageCircle/);
-  assert.ok(main.indexOf("</button>") < main.indexOf("<a href="), "El enlace no debe anidarse en el botón");
+  assert.match(main, /<ImpulsaWhatsAppOpenChooser/);
+  assert.match(main, /driverWhatsAppLinks\(phone, x\.active \? impulsaGroupInviteMessage\(x\.name\) : undefined\)/);
+  assert.match(main, /driverName=\{x\.name\}/);
+  assert.match(main, /inviteToGroup=\{x\.active\}/);
+  assert.ok(main.indexOf("</button>") < main.indexOf("<ImpulsaWhatsAppOpenChooser"), "El selector no debe anidarse en el botón de detalles");
   assert.match(main, /aria-expanded=\{open\}/);
   assert.ok(main.includes('"Plegar":"Detalles"'));
-  assert.match(main, /min-h-11/);
-  assert.match(main, /border-emerald-400\/25/);
 });
 
 test("La consulta de contactos exige gestión comercial y permiso operativo", () => {
@@ -61,22 +59,31 @@ test("Conductor Impulsa confirmado recibe invitación con el enlace proporcionad
   assert.match(message, /export function impulsaGroupInviteMessage/);
   assert.match(message, /Tu perfil de TukTuk Impulsa ya está confirmado y activo/);
   assert.match(message, /Para entrar al grupo, pulsa este enlace:/);
-  assert.match(analytics, /driverWhatsAppLinks\(phone, x\.active \? impulsaGroupInviteMessage\(x\.name\) : undefined\)\?\.web/);
-  assert.match(analytics, /x\.active \? "Invitar al grupo" : "WhatsApp"/);
+  assert.match(analytics, /driverWhatsAppLinks\(phone, x\.active \? impulsaGroupInviteMessage\(x\.name\) : undefined\)/);
+  assert.match(analytics, /inviteToGroup=\{x\.active\}/);
   assert.match(promo, /const inviteWhatsApp = renderer \? driverWhatsAppLinks\(contactPhone, impulsaGroupInviteMessage\(driverDisplayName\)\) : null/);
-  assert.match(promo, /Invitar por WhatsApp/);
-  assert.match(promo, /href=\{inviteWhatsApp\.web\} target="_blank" rel="noopener noreferrer"/);
+  assert.match(promo, /Invitar al grupo de Impulsa/);
+  assert.match(promo, /<ImpulsaWhatsAppOpenChooser links=\{inviteWhatsApp\} driverName=\{driverDisplayName\} inviteToGroup=\{true\}/);
   assert.match(record, /contactPhone=\{contactPhone\}/);
   assert.doesNotMatch(promo, /sendMessage\(|autoSend|fetch\(['"]https:\/\/wa\.me/);
 });
 
-test("La invitación Impulsa abre WhatsApp Web y no intenta lanzar la aplicación", () => {
+test("Al tocar WhatsApp se pregunta aplicación o WhatsApp Web; no se envía mensaje", () => {
   const shared = readFileSync(new URL("../src/lib/driver-whatsapp.ts", import.meta.url), "utf8");
   const preview = readFileSync(new URL("../src/features/admin/MarketplaceDriverPromotionPreview.tsx", import.meta.url), "utf8");
+  const chooser = readFileSync(new URL("../src/features/admin/ImpulsaWhatsAppOpenChooser.tsx", import.meta.url), "utf8");
+  assert.ok(shared.includes("whatsapp://send?phone="));
   assert.ok(shared.includes("https://web.whatsapp.com/send?phone="));
   assert.ok(shared.includes("encodeURIComponent(message)"));
-  assert.ok(analytics.includes("driverWhatsAppLinks(phone, x.active ? impulsaGroupInviteMessage(x.name) : undefined)?.web"));
-  assert.ok(preview.includes("href={inviteWhatsApp.web}"));
-  assert.doesNotMatch(analytics, /https:\/\/wa\.me\//);
-  assert.doesNotMatch(analytics, /whatsapp:\/\/send/);
+  assert.ok(analytics.includes("ImpulsaWhatsAppOpenChooser"));
+  assert.ok(preview.includes("ImpulsaWhatsAppOpenChooser"));
+  assert.match(chooser, /<DialogTrigger asChild>/);
+  assert.match(chooser, /<DialogContent/);
+  assert.match(chooser, /¿Cómo quieres abrir WhatsApp\?/);
+  assert.match(chooser, /href=\{links\.desktop\}/);
+  assert.match(chooser, /Abrir aplicación/);
+  assert.match(chooser, /href=\{links\.web\} target="_blank" rel="noopener noreferrer"/);
+  assert.match(chooser, /Abrir WhatsApp Web/);
+  assert.match(chooser, /El mensaje no se enviará hasta que tú lo confirmes/);
+  assert.doesNotMatch(chooser, /fetch\(|autoSend|sendMessage\(/);
 });
