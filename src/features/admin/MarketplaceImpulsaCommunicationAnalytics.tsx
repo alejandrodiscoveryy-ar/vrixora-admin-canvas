@@ -7,6 +7,7 @@ import { supabaseServices } from "@/lib/services";
 import { getMarketplaceDirectoryDriverMedia, type MarketplaceDirectoryDriverMedia } from "@/lib/marketplace-map";
 import { commercialPremium as cp } from "@/features/admin/commercial-premium";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
+import { impulsaGroupInviteMessage } from "@/lib/driver-whatsapp";
 
 type PeriodDays = 7 | 30 | 90;
 type Numbers = {
@@ -362,11 +363,12 @@ export default function MarketplaceImpulsaCommunicationAnalytics({projectId,canM
                </span>
              </button>
              {canManage && phone && (
-               <a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer"
-                 aria-label={`Abrir WhatsApp de ${x.name}`}
-                 title={`Contactar por WhatsApp con ${x.name}`}
+               <a href={`https://wa.me/${phone}${x.active ? "?text=" + encodeURIComponent(impulsaGroupInviteMessage(x.name)) : ""}`}
+                 target="_blank" rel="noopener noreferrer"
+                 aria-label={x.active ? `Invitar a ${x.name} al grupo de Impulsa por WhatsApp` : `Abrir WhatsApp de ${x.name}`}
+                 title={x.active ? "Abrir mensaje de invitación al grupo de Impulsa para envío manual" : `Contactar por WhatsApp con ${x.name}`}
                  className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-400/25 bg-emerald-500/[0.06] px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 sm:min-h-9">
-                 <MessageCircle aria-hidden="true" className="size-4" />WhatsApp
+                 <MessageCircle aria-hidden="true" className="size-4" />{x.active ? "Invitar al grupo" : "WhatsApp"}
                </a>
              )}
              </div>

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import MarketplaceImpulsaEarnings from "@/features/admin/MarketplaceImpulsaEarnings";
-import { Copy, ExternalLink, RefreshCw, ShieldCheck, Share2 } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, RefreshCw, ShieldCheck, Share2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { premiumSurface, premiumColumnHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import { getSupabaseClient } from "@/lib/supabase";
 import { suggestDriverPromoAlias, validDriverPromoAlias } from "@/lib/marketplace-promo-alias";
+import { driverWhatsAppLinks, impulsaGroupInviteMessage } from "@/lib/driver-whatsapp";
 
-export default function MarketplaceDriverPromotionPreview({ projectId, driverUserId, driverDisplayName, active, canManage, verified, onOpenExpediente }: {
-  projectId: string; driverUserId: string; driverDisplayName: string; active: boolean; canManage: boolean; verified: boolean | null; onOpenExpediente: () => void;
+export default function MarketplaceDriverPromotionPreview({ projectId, driverUserId, driverDisplayName, contactPhone, active, canManage, verified, onOpenExpediente }: {
+  projectId: string; driverUserId: string; driverDisplayName: string; contactPhone: string | null; active: boolean; canManage: boolean; verified: boolean | null; onOpenExpediente: () => void;
 }) {
   const queryClient = useQueryClient();
   const [code, setCode] = useState<string | null>(null);
@@ -155,6 +156,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
   }
   const renderer = code && verified === true && active && canManage ? "https://www.vrixora.com/tuktuk/app/?promo_card=" + code : null;
   const customer = alias && renderer ? "https://www.vrixora.com/tuk/" + alias : null;
+  const inviteWhatsApp = renderer ? driverWhatsAppLinks(contactPhone, impulsaGroupInviteMessage(driverDisplayName)) : null;
   return <section aria-label="Gestión de TukTuk Impulsa" className={cn("min-w-0 space-y-3 rounded-[var(--radius-card)] border p-3 sm:p-4", premiumSurface)}>
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-500"><Share2 className="h-5 w-5"/></span><div><p className="marketplace-360-kicker">Gestión comercial del conductor</p><h3 className="text-lg font-semibold">TukTuk Impulsa</h3><p className="text-xs text-muted-foreground">Nombre de usuario · Enlace personal · Tarjetas promocionales</p></div></div>
@@ -205,6 +207,19 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
     </div> : status ? <p role="status" className="text-sm text-muted-foreground">{status}</p> : null}
     {renderer ? <>
       <div className="flex flex-wrap items-center gap-2 text-sm text-emerald-500"><ShieldCheck className="h-4 w-4"/> Perfil promocional activo y verificado</div>
+      {inviteWhatsApp ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-400/25 bg-emerald-500/[0.045] px-3 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Invitar al grupo de Impulsa</p>
+            <p className="mt-1 text-xs text-text-secondary">Abre WhatsApp con un mensaje de bienvenida y el enlace al grupo. Revisa y envía el mensaje manualmente.</p>
+          </div>
+          <a href={inviteWhatsApp.web} target="_blank" rel="noopener noreferrer"
+            aria-label="Escribir al conductor para invitarlo al grupo de Impulsa"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60">
+            <MessageCircle className="size-4" aria-hidden="true"/> Invitar por WhatsApp
+          </a>
+        </div>
+      ) : null}
       <form className={cn("space-y-2 rounded-xl border p-3", premiumColumnHeaderSurface)} onSubmit={event => { event.preventDefault(); void saveAlias(); }}>
         <label className="block text-sm font-medium">Nombre de usuario comercial</label>
         <div className="flex flex-wrap items-center gap-2">

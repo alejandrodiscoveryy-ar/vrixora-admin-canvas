@@ -26,3 +26,22 @@ export function driverWelcomeMessage(displayName: string | null | undefined) {
     "¡Gracias por confiar en nosotros! Seguimos creciendo juntos. Equipo TukTuk.",
   ].join("\n\n");
 }
+
+
+/**
+ * Invitacion de Impulsa para conductores con perfil promocional confirmado.
+ * Independiente del grupo general de bienvenida de la Agencia TukTuk.
+ * Preparar el mensaje no implica que WhatsApp lo haya enviado.
+ */
+export const TUKTUK_IMPULSA_GROUP_URL = "https://chat.whatsapp.com/K9fQVIsf2ZqHR4upRYHHeP";
+
+export function impulsaGroupInviteMessage(displayName: string | null | undefined) {
+  const firstName = displayName?.trim().split(/\s+/)[0];
+  return [
+    firstName ? "¡Hola, " + firstName + "! 👋" : "¡Hola! 👋",
+    "Tu perfil de TukTuk Impulsa ya está confirmado y activo.",
+    "Te invitamos a formar parte de nuestro grupo de WhatsApp de Impulsa para recibir novedades, información y orientaciones sobre la promoción de tus servicios.",
+    "Para entrar al grupo, pulsa este enlace:\n" + TUKTUK_IMPULSA_GROUP_URL,
+    "¡Bienvenido! Equipo TukTuk.",
+  ].join("\n\n");
+}
