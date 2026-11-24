@@ -6,7 +6,7 @@ import MarketplaceTestRouteMap, { type TestPoint } from "./MarketplaceTestRouteM
 
 type Driver = { driverUserId: string; displayName: string; category: string; lat: number; lon: number; distanceKm: number; stage: number; gpsRecent: boolean };
 type Preview = { checkedAt: string; radiiKm: number[]; count: number; drivers: Driver[] };
-type Delivery = { count: number; sent: number; failed: number; skipped: number; pending: number };
+type Delivery = { count: number; sent: number; partial: number; failed: number; skipped: number; pending: number; recipients: Array<{ driverUserId: string; status: string; partial: boolean; sentAt: string | null }> };
 
 export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
   projectId: string; canManage: boolean;
@@ -103,7 +103,8 @@ export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
         <MarketplaceTestRouteMap projectId={projectId} origin={point}
           destination={null} route={[]} picking="origin" onPick={selectPoint}
           ariaLabel="Toca un punto para buscar conductores en el radar"
-          heightClassName="h-72 w-full sm:h-80"
+          pickLabel="punto de prueba"
+          heightClassName="h-80 w-full lg:h-full lg:min-h-[420px]"
           radarRadiiKm={preview?.radiiKm ?? [1,2,6]}
           radarDrivers={preview?.drivers ?? []}/>
         <div className="flex min-w-0 flex-col gap-3">
@@ -135,6 +136,9 @@ export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold">{driver.displayName}</p>
                     <p className="text-[11px] text-text-secondary">{driver.category} · {Number(driver.distanceKm).toFixed(2)} km</p>
+                    {delivery?.recipients?.find((recipient) => recipient.driverUserId === driver.driverUserId)?.partial ? (
+                      <p className="text-[11px] font-medium text-amber-300">Aviso parcial: algún dispositivo falló</p>
+                    ) : null}
                   </div>
                   <span className={driver.gpsRecent
                     ? "shrink-0 rounded-md bg-cyan-400/10 px-2 py-1 text-[10px] text-cyan-200"
@@ -156,6 +160,7 @@ export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
             <div role="status" className="rounded-xl border border-emerald-400/25 bg-emerald-400/[0.06] p-3 text-xs">
               <p className="flex items-center gap-2 font-semibold"><ShieldCheck className="size-4 text-emerald-300"/> Avisos registrados</p>
               <p className="mt-2">Enviados: {delivery?.sent ?? "…"} · Pendientes: {delivery?.pending ?? "…"} · Fallidos: {delivery?.failed ?? "…"} · Omitidos: {delivery?.skipped ?? "…"}</p>
+              {delivery?.partial ? <p className="mt-1 font-medium text-amber-300">Entrega parcial: {delivery.partial} conductor(es) con fallo en alguno de sus dispositivos.</p> : null}
               <p className="mt-1 text-text-secondary">Enviado no significa recibido o abierto. Se actualiza cada 8 segundos.</p>
               <button type="button" className="mt-2 flex items-center gap-1.5 text-cyan-200 underline"
                 onClick={() => { setPoint(null); setPreview(null); setRunId(null); setDelivery(null); setError(null); }}>
