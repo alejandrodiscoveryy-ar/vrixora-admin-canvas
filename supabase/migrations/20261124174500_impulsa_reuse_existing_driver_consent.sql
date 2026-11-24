@@ -62,7 +62,7 @@ begin
   where project_id=target_project_id and driver_user_id=target_driver_user_id;
 
   return jsonb_build_object(
-    'enabled',p.code is not null and p.revoked_at is null,
+    'enabled',coalesce(p.code is not null and p.revoked_at is null,false),
     'code',case when p.revoked_at is null then p.code else null end,
     'consent_ready',app_private.marketplace_impulsa_current_consent_v1(
        target_project_id,target_driver_user_id
@@ -164,7 +164,7 @@ begin
 
   insert into app_private.marketplace_driver_promo_profiles(
     project_id,driver_user_id,public_name,consent_photo_asset_id,consent_version,consented_at
-  ) values(d.project_id,d.user_id,legal_name,photo,a.consent_version,a.consent_accepted_at)
+  ) values(d.project_id,d.user_id,legal_name,photo,'mi-tuktuk-v1',a.consent_accepted_at)
   on conflict(project_id,driver_user_id) do update set
     code=replace(gen_random_uuid()::text,'-',''),
     public_name=excluded.public_name,
