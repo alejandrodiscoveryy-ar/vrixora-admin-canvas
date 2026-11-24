@@ -627,7 +627,7 @@ export default function MarketplaceTestCenterV2({
               className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-background/55 px-3 py-2 text-xs font-semibold text-cyan-200 admin-graphite-control"
             >
               <Users className="h-4 w-4" />
-              {broadcastMode ? "Destinatarios: Trabajando" : `${selectedIds.length} conductores del grupo tradicional`}
+              {broadcastMode ? "Destinatarios" : "Conductores del grupo"}: {broadcastMode ? "Trabajando" : `${selectedIds.length} seleccionados`}
               {driversOpen ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
