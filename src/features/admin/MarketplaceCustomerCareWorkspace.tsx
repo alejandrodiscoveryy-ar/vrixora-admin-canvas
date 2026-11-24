@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getSupabaseClient } from "@/lib/supabase";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
+import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
 import { getMarketplaceOperationalMap } from "@/lib/marketplace-map";
 import MarketplaceLiteContactCard from "@/features/admin/MarketplaceLiteContactCard";
 import MarketplaceTestRouteMap, { type TestPoint } from "@/features/admin/MarketplaceTestRouteMap";
@@ -371,7 +373,7 @@ export default function MarketplaceCustomerCareWorkspace({
     ].join("\n")
     : "";
   const quoteWhatsAppLink = validPhone(normalizedPhone) && whatsappQuote
-    ? "https://wa.me/" + normalizedPhone.replace(/\D/g, "") + "?text=" + encodeURIComponent(quoteWhatsAppText)
+    ? driverWhatsAppLinks(normalizedPhone, quoteWhatsAppText)
     : null;
   const missingWhatsAppFields = [
     !validPhone(normalizedPhone) ? "teléfono del cliente" : null,
@@ -387,7 +389,7 @@ export default function MarketplaceCustomerCareWorkspace({
       + customerQuestions.join(", ") + ". ¿Puedes facilitarnos estos datos? Gracias."
     : "";
   const whatsappQuestionLink = validPhone(normalizedPhone) && whatsappQuestion
-    ? "https://wa.me/" + normalizedPhone.replace(/\D/g, "") + "?text=" + encodeURIComponent(whatsappQuestion)
+    ? driverWhatsAppLinks(normalizedPhone, whatsappQuestion)
     : null;
   const recoverWhatsAppQuote = (saved: WhatsAppQuote) => {
     if (!saved.whatsapp_phone) return;
@@ -701,10 +703,10 @@ export default function MarketplaceCustomerCareWorkspace({
                     <p className="text-xs font-semibold text-amber-200">Datos pendientes</p>
                     <p className="mt-1 text-xs text-muted-foreground">{missingWhatsAppFields.join(" · ")}</p>
                     {whatsappQuestionLink ? (
-                      <a href={whatsappQuestionLink} target="_blank" rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-200 hover:underline">
-                        <MessageCircle className="h-3.5 w-3.5" /> Preguntar datos al cliente por WhatsApp
-                      </a>
+                      <AdminWhatsAppOpenChooser links={whatsappQuestionLink}
+                        driverName={customer?.display_name ?? clientName.trim() || "cliente"}
+                        inviteToGroup={false} buttonLabel="Preguntar datos al cliente por WhatsApp"
+                        buttonClassName="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg border border-emerald-400/30 px-3 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/10" />
                     ) : null}
                   </div>
                 ) : null}
@@ -868,11 +870,11 @@ export default function MarketplaceCustomerCareWorkspace({
                     ) : null}
                     <Textarea rows={6} readOnly value={quoteWhatsAppText} aria-label="Texto de cotización para enviar al cliente" className="text-xs" />
                     {quoteWhatsAppLink && quoteMatchesCurrent ? (
-                      <a href={quoteWhatsAppLink} onClick={() => setWhatsappOpened(true)}
-                        target="_blank" rel="noopener noreferrer"
-                        className="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20">
-                        <MessageCircle className="h-4 w-4" /> Abrir WhatsApp con cotización
-                      </a>
+                      <AdminWhatsAppOpenChooser links={quoteWhatsAppLink}
+                        driverName={customer?.display_name ?? "cliente"}
+                        inviteToGroup={false} buttonLabel="Abrir WhatsApp con cotización"
+                        onChoose={() => setWhatsappOpened(true)}
+                        buttonClassName="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20" />
                     ) : null}
                     {whatsappQuote.status === "quoted" && quoteMatchesCurrent ? (
                       <div className="space-y-2">
