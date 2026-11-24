@@ -62,7 +62,7 @@ test("Conductor Impulsa confirmado recibe invitación con el enlace proporcionad
   assert.match(analytics, /driverWhatsAppLinks\(phone, x\.active \? impulsaGroupInviteMessage\(x\.name\) : undefined\)/);
   assert.match(analytics, /inviteToGroup=\{x\.active\}/);
   assert.match(promo, /const inviteWhatsApp = renderer \? driverWhatsAppLinks\(contactPhone, impulsaGroupInviteMessage\(driverDisplayName\)\) : null/);
-  assert.match(promo, /Invitar por WhatsApp/);
+  assert.match(promo, /Invitar al grupo de Impulsa/);
   assert.match(promo, /<ImpulsaWhatsAppOpenChooser links=\{inviteWhatsApp\} driverName=\{driverDisplayName\} inviteToGroup=\{true\}/);
   assert.match(record, /contactPhone=\{contactPhone\}/);
   assert.doesNotMatch(promo, /sendMessage\(|autoSend|fetch\(['"]https:\/\/wa\.me/);
