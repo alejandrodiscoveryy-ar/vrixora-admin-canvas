@@ -118,7 +118,7 @@ test('Cliente 360 y Carrera 360 comparten identidad premium y pestañas accesibl
   assert.match(customer, /<TabsContent value="activity"/);
   assert.match(customer, /<TabsContent value="modalities"/);
   assert.match(customer, /formatCustomerDateTime\(detail.customer.createdAt\)/);
-  assert.match(customer, /href=\{whatsapp.web\}/);
+  assert.match(customer, /links=\{whatsapp\}/);
   assert.match(customer, /onOpenJob\(item.jobId\)/);
   assert.match(s, /onOpenJob=\{permissions.includes\("marketplace.view"\) \?/);
   assert.match(job, /<TabsContent value="radar"/);
