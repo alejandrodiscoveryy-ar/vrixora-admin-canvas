@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'src/features/admin/MarketplaceRadarPointProbe.tsx'
+      - 'src/features/admin/MarketplaceTestRadarToggle.tsx'
+      - 'src/features/admin/MarketplaceDispatchSettingsCard.tsx'
+      - 'src/features/admin/MarketplaceTestCenterV2.tsx'
       - 'src/features/admin/MarketplaceTestRouteMap.tsx'
       - 'src/features/admin/MarketplaceConfigurationWorkspace.tsx'
       - 'supabase/migrations/20261124153500_marketplace_radar_point_probe_v1.sql'
