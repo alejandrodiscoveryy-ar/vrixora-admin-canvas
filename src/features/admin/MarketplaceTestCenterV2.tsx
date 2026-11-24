@@ -18,6 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import { getSupabaseClient } from "@/lib/supabase";
 import { supabaseServices } from "@/lib/services";
 import MarketplaceTestRouteMap, { type TestPoint } from "./MarketplaceTestRouteMap";
+import MarketplaceTestRadarToggle from "./MarketplaceTestRadarToggle";
+import MarketplaceRadarPointProbe from "./MarketplaceRadarPointProbe";
 import "./MarketplaceTestCenterPremium.css";
 
 interface TestQuote {
@@ -668,6 +670,8 @@ export default function MarketplaceTestCenterV2({
           ))}
         </div>
       </div>
+      <MarketplaceTestRadarToggle projectId={projectId} canManage={canManage} />
+      <MarketplaceRadarPointProbe projectId={projectId} canManage={canManage} />
       {error ? (
         <p
           role="alert"
