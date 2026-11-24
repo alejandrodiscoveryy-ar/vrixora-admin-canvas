@@ -3876,6 +3876,7 @@ function JobNotificationReach({
   const all = recipients.data;
   const actual = all.filter((item) => !item.isTestRecipient);
   const sent = actual.filter((item) => item.deliveryStatus === "sent").length;
+  const opened = actual.filter((item) => item.firstOpenedAt != null).length;
   const simulated = all.filter((item) => item.isTestRecipient).length;
   const nearest = actual.reduce<number | null>((previous, item) =>
     item.distanceKm == null ? previous : previous == null
@@ -3955,6 +3956,7 @@ function JobNotificationReach({
         <span className="text-foreground">Radar: <strong>{radarLabel}</strong></span>
         <span className="text-foreground">Destinatarios: <strong>{actual.length}</strong></span>
         <span className="text-foreground">Avisos enviados: <strong>{sent}</strong></span>
+        <span className="text-emerald-200">Alertas abiertas: <strong>{opened}</strong></span>
         {simulated > 0 ? <span className="text-violet-300">Prueba: {simulated} seleccionados</span> : null}
         <span className="text-muted-foreground">Más cercano: {nearest == null ? "Sin dato histórico" : kilometers(nearest)}</span>
       </div>
@@ -4291,6 +4293,9 @@ function JobNotificationReach({
                   {item.isTestRecipient ? "Seleccionado para prueba" : item.deliveryStatus === "sent" ? "Enviado por sistema push" :
                     item.deliveryStatus === "failed" ? "Falló el envío" : "En cola / pendiente"}
                   {!item.isTestRecipient && item.notificationCount > 1 ? " · " + item.notificationCount + " avisos registrados" : ""}
+                  {!item.isTestRecipient && item.firstOpenedAt != null
+                    ? " · Abrió la alerta: " + new Date(item.firstOpenedAt).toLocaleString("es-CU")
+                    : ""}
                 </p>
                 {!item.isTestRecipient ? (
                   <p className="mt-1 text-[11px] text-cyan-200/80">

@@ -17,3 +17,15 @@ test('Acceso restringido y lenguaje honesto', () => {
   assert.ok(map.includes('refetchInterval: selectedJob?.status === "published" ? 5_000 : false'));
   assert.ok(map.includes('no confirma recepción en el teléfono'));
 });
+
+test('registro de apertura diferencia envío de pulsación real sin ampliar privilegios', () => {
+  const section = readFileSync(new URL('../src/features/admin/MarketplaceSection.tsx', import.meta.url), 'utf8');
+  const receipt = readFileSync(new URL('../supabase/migrations/20261124113424_marketplace_job_opened_push_audit.sql', import.meta.url), 'utf8');
+  assert.ok(receipt.includes('require_project_permission'));
+  assert.ok(receipt.includes('min(n.read_at) as first_opened_at'));
+  assert.ok(receipt.includes("'first_opened_at', a.first_opened_at"));
+  assert.ok(lib.includes('firstOpenedAt'));
+  assert.ok(section.includes('Alertas abiertas:'));
+  assert.ok(section.includes('Abrió la alerta:'));
+  assert.ok(section.includes('Avisos enviados:'));
+});
