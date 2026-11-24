@@ -8,7 +8,6 @@ import MarketplaceTerritoryCatalog from "@/features/admin/MarketplaceTerritoryCa
 import MarketplaceDispatchSettingsCard from "@/features/admin/MarketplaceDispatchSettingsCard";
 import MarketplaceJobReminderSettingsCard from "@/features/admin/MarketplaceJobReminderSettingsCard";
 import MarketplaceTestCenterV2 from "@/features/admin/MarketplaceTestCenterV2";
-import MarketplaceRadarPointProbe from "@/features/admin/MarketplaceRadarPointProbe";
 import MarketplaceCancellationPolicyCard from "@/features/admin/MarketplaceCancellationPolicyCard";
 
 const SECTIONS = [
@@ -140,7 +139,6 @@ export default function MarketplaceConfigurationWorkspace({
           {active === "operacion" ? (
             <div className="grid min-w-0 gap-3.5 xl:grid-cols-2" aria-label="Radar: despacho y avisos">
               <MarketplaceDispatchSettingsCard projectId={projectId} canManage={canManageSettings} />
-              <MarketplaceRadarPointProbe projectId={projectId} canManage={canManageSettings && canManageMarketplace} />
               <MarketplaceJobReminderSettingsCard projectId={projectId} canManage={canManageSettings} />
               <div className={`flex min-w-0 items-center gap-2 rounded-[var(--radius-compact)] border px-3 py-2.5 text-xs text-text-secondary xl:col-span-2 ${premiumSurface}`}>
                 <BellRing aria-hidden="true" className="h-4 w-4 shrink-0 text-cyan-400" />
