@@ -17,9 +17,14 @@ interface Props {
   onPick: (kind: "origin" | "destination", lat: number, lon: number) => void;
   heightClassName?: string;
   ariaLabel?: string;
+  radarRadiiKm?: number[];
+  radarDrivers?: Array<{ driverUserId: string; displayName: string; lat: number; lon: number; stage: number; gpsRecent: boolean }>;
 }
 const sourceId = "test-lab-route-source";
 const layerId = "test-lab-route-layer";
+const radarSourceId = "test-lab-point-radar-source";
+const radarFillId = "test-lab-point-radar-fill";
+const radarLineId = "test-lab-point-radar-line";
 
 export default function MarketplaceTestRouteMap({
   projectId,
@@ -30,10 +35,13 @@ export default function MarketplaceTestRouteMap({
   onPick,
   heightClassName,
   ariaLabel,
+  radarRadiiKm,
+  radarDrivers,
 }: Props) {
   const mount = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const pins = useRef<mapboxgl.Marker[]>([]);
+  const radarPins = useRef<mapboxgl.Marker[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const originRef = useRef(origin);
@@ -87,6 +95,8 @@ export default function MarketplaceTestRouteMap({
       disposed = true;
       pins.current.forEach((m) => m.remove());
       pins.current = [];
+      radarPins.current.forEach((m) => m.remove());
+      radarPins.current = [];
       created?.remove();
       map.current = null;
     };
@@ -121,8 +131,8 @@ export default function MarketplaceTestRouteMap({
       );
       m.fitBounds(bounds, { padding: 62, maxZoom: 14, duration: 350 });
     } else if (points.length === 1)
-      m.easeTo({ center: [points[0].lon, points[0].lat], zoom: 13, duration: 250 });
-  }, [origin, destination, ready]);
+      m.easeTo({ center: [points[0].lon, points[0].lat], zoom: radarRadiiKm?.length ? 11.8 : 13, duration: 250 });
+  }, [origin, destination, ready, radarRadiiKm?.length]);
 
   useEffect(() => {
     const m = map.current;
@@ -158,6 +168,67 @@ export default function MarketplaceTestRouteMap({
     if (m.isStyleLoaded()) update();
     else m.once("style.load", update);
   }, [route, ready]);
+
+
+  // Solo el simulacro puntual muestra anillos; el mapa normal de rutas no cambia.
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m || !radarRadiiKm) return;
+    const rings = [...radarRadiiKm]
+      .filter((km) => Number.isFinite(km) && km > 0 && km <= 50)
+      .reverse().map((km) => {
+        const coordinates: number[][] = [];
+        if (!origin) return null;
+        for (let index = 0; index <= 72; index++) {
+          const angle = index * 2 * Math.PI / 72;
+          coordinates.push([
+            origin.lon + km * Math.cos(angle) / (111.32 * Math.cos(origin.lat * Math.PI / 180)),
+            origin.lat + km * Math.sin(angle) / 111.32,
+          ]);
+        }
+        return { type: "Feature", properties: { km }, geometry: { type: "Polygon", coordinates: [coordinates] } };
+      }).filter((ring) => ring !== null);
+    const draw = () => {
+      if (!m.getSource(radarSourceId)) {
+        m.addSource(radarSourceId, {
+          type: "geojson", data: { type: "FeatureCollection", features: [] },
+        });
+      }
+      if (!m.getLayer(radarFillId)) {
+        m.addLayer({
+          id: radarFillId, type: "fill", source: radarSourceId,
+          paint: { "fill-color": "#22d3ee", "fill-opacity": 0.055 },
+        });
+      }
+      if (!m.getLayer(radarLineId)) {
+        m.addLayer({
+          id: radarLineId, type: "line", source: radarSourceId,
+          paint: { "line-color": "#67e8f9", "line-width": 1.5, "line-opacity": 0.75 },
+        });
+      }
+      (m.getSource(radarSourceId) as mapboxgl.GeoJSONSource).setData({
+        type: "FeatureCollection", features: rings,
+      } as Parameters<mapboxgl.GeoJSONSource["setData"]>[0]);
+    };
+    if (m.isStyleLoaded()) draw();
+    else m.once("style.load", draw);
+    radarPins.current.forEach((marker) => marker.remove());
+    radarPins.current = [];
+    for (const driver of radarDrivers ?? []) {
+      if (!Number.isFinite(driver.lon) || !Number.isFinite(driver.lat)) continue;
+      const marker = new mapboxgl.Marker({ color: driver.gpsRecent ? "#22d3ee" : "#f59e0b" })
+        .setLngLat([driver.lon, driver.lat]).addTo(m);
+      marker.getElement().title = driver.displayName + " · Rango " + driver.stage +
+        " · " + (driver.gpsRecent ? "GPS reciente" : "Última posición, no en vivo");
+      marker.getElement().addEventListener("click", (event) => event.stopPropagation());
+      radarPins.current.push(marker);
+    }
+    return () => {
+      m.off("style.load", draw);
+      radarPins.current.forEach((marker) => marker.remove());
+      radarPins.current = [];
+    };
+  }, [origin, radarDrivers, radarRadiiKm, ready]);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-slate-950/80">
