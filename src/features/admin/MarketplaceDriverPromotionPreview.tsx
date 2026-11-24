@@ -51,7 +51,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
         else if (!error && data?.consent_ready === true) {
           setStatus("authorization");
         } else if (!error) {
-          setStatus("El conductor aún no tiene una aceptación vigente para publicar su perfil y fotografía en Impulsa. Debe autorizarlo desde su aplicación; no necesita actas ni folios.");
+          setStatus("El conductor debe autorizar desde su aplicación la publicación de su perfil y fotografía en Impulsa.");
         } else {
           setStatus("No se pudo consultar el perfil promocional. Comprueba permisos y vehículo operativo.");
         }
@@ -165,8 +165,7 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
     {status === "authorization" ? <div className="space-y-3 rounded-xl border border-border-default bg-surface-2/50 p-3 sm:p-4">
       <p className="flex items-start gap-2 text-sm leading-relaxed text-emerald-300">
         <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true"/>
-        Identidad verificada y consentimiento del conductor para publicar su nombre y fotografía ya registrado en Impulsa.
-        No hace falta aportar otra acta, folio ni número.
+        Identidad verificada y consentimiento para publicar nombre y fotografía ya registrado en Impulsa.
       </p>
       <div className="space-y-1.5">
         <label htmlFor="impulsa-suggested-alias" className="block text-sm font-medium">Nombre comercial propuesto</label>
