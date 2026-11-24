@@ -6,6 +6,8 @@ import {
   ChevronRight,
   Clock3,
   FlaskConical,
+  Radar,
+  Route,
   MapPin,
   Search,
   Send,
@@ -135,6 +137,7 @@ export default function MarketplaceTestCenterV2({
   const [driversOpen, setDriversOpen] = useState(false);
   const [driverSearch, setDriverSearch] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [activeTool, setActiveTool] = useState<"rides" | "radar">("rides");
   const [historyPage, setHistoryPage] = useState(0);
   const [historyCursors, setHistoryCursors] = useState<
     Array<{ createdAt: string; jobId: string } | null>
@@ -615,7 +618,7 @@ export default function MarketplaceTestCenterV2({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            {activeTool === "rides" ? <button
               type="button"
               aria-expanded={driversOpen}
               aria-controls="test-drivers-settings"
@@ -624,13 +627,13 @@ export default function MarketplaceTestCenterV2({
               className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-background/55 px-3 py-2 text-xs font-semibold text-cyan-200 admin-graphite-control"
             >
               <Users className="h-4 w-4" />
-              {broadcastMode ? "Destinatarios: Trabajando" : `${selectedIds.length} conductores del grupo tradicional`}
+              {broadcastMode ? "Destinatarios" : "Conductores del grupo"}: {broadcastMode ? "Trabajando" : `${selectedIds.length} seleccionados`}
               {driversOpen ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
-            </button>
+            </button> : null}
             <label className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/55 px-3 py-2 text-sm font-medium text-foreground admin-graphite-inset">
               {enabled ? "Activado" : "Desactivado"}
               <Switch
@@ -642,36 +645,54 @@ export default function MarketplaceTestCenterV2({
             </label>
           </div>
         </div>
-        <div
-          className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
-          aria-label="Resumen del laboratorio"
-        >
-          {[
-            { label: broadcastMode ? "Destinatarios" : "Conductores del grupo", value: broadcastMode ? "Automáticos" : String(selectedIds.length) },
-            {
-              label: "En esta página",
-              value: history.isSuccess ? String(history.data.items.length) : "—",
-            },
-            { label: "Activas en página", value: history.isSuccess ? String(activeCount) : "—" },
-            {
-              label: "Terminadas en página",
-              value: history.isSuccess ? String(completeCount) : "—",
-            },
-          ].map((metric) => (
-            <div
-              key={metric.label}
-              className="rounded-xl border border-border/45 bg-background/55 px-3 py-2 admin-graphite-inset"
-            >
-              <span className="text-[11px] text-muted-foreground">{metric.label}</span>
-              <p className="mt-0.5 text-lg font-bold leading-tight tabular-nums text-foreground">
-                {metric.value}
-              </p>
-            </div>
-          ))}
-        </div>
       </div>
+      <div role="tablist" aria-label="Herramientas del centro de pruebas" className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+        <button type="button" id="test-tool-rides-tab" role="tab"
+          aria-selected={activeTool === "rides"} aria-controls="test-center-rides"
+          onClick={() => setActiveTool("rides")}
+          className={"min-w-0 rounded-2xl border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 " +
+            (activeTool === "rides"
+              ? "border-violet-400/45 bg-gradient-to-r from-violet-400/[0.13] to-background/85 shadow-[inset_0_-2px_rgba(167,139,250,0.75)]"
+              : "border-border/60 bg-background/40 hover:border-violet-400/30 hover:bg-violet-400/[0.04]")}>
+          <span className="flex items-start gap-3">
+            <span className={"grid size-10 shrink-0 place-items-center rounded-xl border " +
+              (activeTool === "rides" ? "border-violet-400/35 bg-violet-400/15 text-violet-200" : "border-border/55 bg-background/45 text-text-secondary")}>
+              <Route className="size-5" aria-hidden="true"/>
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-violet-300">01 · Carrera</span>
+              <strong className="mt-0.5 block text-sm text-foreground">Crear carrera de prueba</strong>
+              <span className="mt-1 block text-xs leading-relaxed text-text-secondary">Elegir recorrido, destinatarios y comprobar una solicitud simulada.</span>
+            </span>
+          </span>
+        </button>
+        <button type="button" id="test-tool-radar-tab" role="tab"
+          aria-selected={activeTool === "radar"} aria-controls="test-center-radar"
+          onClick={() => setActiveTool("radar")}
+          className={"min-w-0 rounded-2xl border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 " +
+            (activeTool === "radar"
+              ? "border-cyan-400/45 bg-gradient-to-r from-cyan-400/[0.12] to-background/85 shadow-[inset_0_-2px_rgba(34,211,238,0.65)]"
+              : "border-border/60 bg-background/40 hover:border-cyan-400/30 hover:bg-cyan-400/[0.04]")}>
+          <span className="flex items-start gap-3">
+            <span className={"grid size-10 shrink-0 place-items-center rounded-xl border " +
+              (activeTool === "radar" ? "border-cyan-400/35 bg-cyan-400/15 text-cyan-200" : "border-border/55 bg-background/45 text-text-secondary")}>
+              <Radar className="size-5" aria-hidden="true"/>
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-300">02 · Cobertura</span>
+              <strong className="mt-0.5 block text-sm text-foreground">Probar radar y avisos</strong>
+              <span className="mt-1 block text-xs leading-relaxed text-text-secondary">Tocar un punto, ver conductores por rango y enviar avisos de prueba.</span>
+            </span>
+          </span>
+        </button>
+      </div>
+      <div id="test-center-radar" role="tabpanel" aria-labelledby="test-tool-radar-tab"
+        hidden={activeTool !== "radar"} className="min-w-0">
+        {activeTool === "radar" ? <MarketplaceRadarPointProbe projectId={projectId} canManage={canManage} /> : null}
+      </div>
+      <div id="test-center-rides" role="tabpanel" aria-labelledby="test-tool-rides-tab"
+        hidden={activeTool !== "rides"} className="min-w-0 space-y-3">
       <MarketplaceTestRadarToggle projectId={projectId} canManage={canManage} />
-      <MarketplaceRadarPointProbe projectId={projectId} canManage={canManage} />
       {error ? (
         <p
           role="alert"
@@ -1251,7 +1272,7 @@ export default function MarketplaceTestCenterV2({
                 )}
               </button>
               <span className="text-xs text-muted-foreground">
-                {historyOpen ? "10 registros por página · historial completo" : "Abrir historial"}
+                {historyOpen ? `En esta página: ${activeCount} activas · ${completeCount} terminadas` : "Consultar carreras de prueba anteriores"}
               </span>
             </div>
             {historyOpen && (
@@ -1442,6 +1463,7 @@ export default function MarketplaceTestCenterV2({
           </section>
         </>
       ) : null}
+      </div>
     </section>
   );
 }

@@ -64,7 +64,7 @@ test("un punto del mapa previsualiza radios y requiere confirmacion antes del pu
 
 
 test("el radar de prueba ocupa toda la altura y no deja un fondo negro", () => {
-  assert.match(ui,/heightClassName="h-80 w-full lg:h-full lg:min-h-\[420px\]"/);
+  assert.match(ui,/heightClassName="h-\[310px\] w-full sm:h-\[360px\] lg:h-\[380px\]"/);
   assert.match(ui,/pickLabel="punto de prueba"/);
   assert.match(map,/resizeObserver = new ResizeObserver/);
   assert.match(map,/resizeObserver\.observe\(mount\.current\)/);
@@ -105,4 +105,40 @@ test("activar el radar de carreras de prueba guarda automáticamente sin perder 
   assert.match(testRadarToggle, /saved\.applyToTestJobs !== nextEnabled/);
   assert.match(dispatchSettings, /applyToTestJobs: settings\.data\?\.applyToTestJobs \?\? false/);
   assert.match(testRadarToggle, /disabled=\{disabled\}/);
+});
+
+
+test("Centro de pruebas prioriza crear carreras y coloca el radar en una vista exclusiva", () => {
+  assert.match(testCenter, /useState<"rides" \| "radar">\("rides"\)/);
+  assert.match(testCenter, /role="tablist" aria-label="Herramientas del centro de pruebas"/);
+  assert.match(testCenter, /Crear carrera de prueba<\/strong>/);
+  assert.match(testCenter, /Probar radar y avisos<\/strong>/);
+  assert.match(testCenter, /id="test-center-radar" role="tabpanel"/);
+  assert.match(testCenter, /hidden=\{activeTool !== "radar"\}/);
+  assert.match(testCenter, /activeTool === "radar" \? <MarketplaceRadarPointProbe/);
+  assert.match(testCenter, /id="test-center-rides" role="tabpanel"/);
+  assert.match(testCenter, /hidden=\{activeTool !== "rides"\}/);
+  assert.match(testCenter, /<MarketplaceTestRadarToggle projectId=\{projectId\}/);
+  assert.match(testCenter, /<section className="tt-lab-v4-create/);
+  assert.match(testCenter, /aria-label="Historial de pruebas"/);
+  assert.doesNotMatch(testCenter, /Resumen del laboratorio/);
+});
+
+test("Radar de prueba sin punto no muestra un CTA de notificación vacío ni deja un mapa sobredimensionado", () => {
+  assert.match(ui, /\{!point \? \(/);
+  assert.match(ui, /Cómo funciona/);
+  assert.match(ui, /\{point && preview\?\.count === 0 \? \(/);
+  assert.match(ui, /\{\(preview\?\.count \?\? 0\) > 0 \|\| runId \? \(/);
+  assert.match(ui, /Notificar a los encontrados/);
+  assert.match(ui, /h-\[310px\]/);
+  assert.doesNotMatch(ui, /lg:min-h-\[420px\]/);
+});
+
+test("No se alteran cobros, ruta, audiencia, ni protocolo de envío del radar", () => {
+  assert.match(testCenter, /admin_set_marketplace_test_audience/);
+  assert.match(testCenter, /operation: "test_lab_create_v3"/);
+  assert.match(testCenter, /target_force_wallet_commission: forceRealCommission/);
+  assert.match(testCenter, /aria-label="Activar modo de prueba"/);
+  assert.match(ui, /admin_send_marketplace_radar_point_probe_v1/);
+  assert.match(ui, /window\.confirm/);
 });

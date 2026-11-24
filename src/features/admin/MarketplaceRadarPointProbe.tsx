@@ -86,7 +86,7 @@ export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
 
   return (
     <section aria-label="Simulador de radar por punto"
-      className="min-w-0 rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-400/[0.08] via-background to-background p-3.5 sm:p-4 xl:col-span-2">
+      className="min-w-0 rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-400/[0.08] via-background to-background p-3.5 sm:p-4">
       <div className="mb-3 flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 text-cyan-200">
           <Radar className="size-5"/>
@@ -99,12 +99,12 @@ export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
           </p>
         </div>
       </div>
-      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
+      <div className="grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.95fr)]">
         <MarketplaceTestRouteMap projectId={projectId} origin={point}
           destination={null} route={[]} picking="origin" onPick={selectPoint}
           ariaLabel="Toca un punto para buscar conductores en el radar"
           pickLabel="punto de prueba"
-          heightClassName="h-80 w-full lg:h-full lg:min-h-[420px]"
+          heightClassName="h-[310px] w-full sm:h-[360px] lg:h-[380px]"
           radarRadiiKm={preview?.radiiKm ?? [1,2,6]}
           radarDrivers={preview?.drivers ?? []}/>
         <div className="flex min-w-0 flex-col gap-3">
@@ -150,12 +150,27 @@ export default function MarketplaceRadarPointProbe({ projectId, canManage }: {
             </div>
           ) : null}
           {error ? <p role="alert" className="rounded-lg border border-rose-400/25 bg-rose-400/10 p-2 text-xs text-rose-200">{error}</p> : null}
-          <Button className="min-h-11 w-full"
-            disabled={!canManage || !preview || !preview.count || loading || sending || Boolean(runId)}
-            onClick={() => { void notify(); }}>
-            {sending ? <Loader2 className="mr-2 size-4 animate-spin"/> : <BellRing className="mr-2 size-4"/>}
-            {runId ? "Prueba enviada" : "Notificar a los encontrados"}
-          </Button>
+          {!point ? (
+            <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.045] p-3 text-xs leading-relaxed text-text-secondary">
+              <p className="font-semibold text-foreground">Cómo funciona</p>
+              <p className="mt-1">1. Toca un punto del mapa para buscar conductores.</p>
+              <p className="mt-1">2. Revisa los resultados en los anillos de 1, 2 y 6 km.</p>
+              <p className="mt-1">3. Confirma el aviso únicamente cuando haya destinatarios.</p>
+            </div>
+          ) : null}
+          {point && preview?.count === 0 ? (
+            <p role="status" className="rounded-lg border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2 text-xs text-amber-200">
+              No hay conductores disponibles en este punto. Toca otra ubicación.
+            </p>
+          ) : null}
+          {(preview?.count ?? 0) > 0 || runId ? (
+            <Button className="min-h-11 w-full"
+              disabled={!canManage || !preview || !preview.count || loading || sending || Boolean(runId)}
+              onClick={() => { void notify(); }}>
+              {sending ? <Loader2 className="mr-2 size-4 animate-spin"/> : <BellRing className="mr-2 size-4"/>}
+              {runId ? "Prueba enviada" : "Notificar a los encontrados"}
+            </Button>
+          ) : null}
           {runId ? (
             <div role="status" className="rounded-xl border border-emerald-400/25 bg-emerald-400/[0.06] p-3 text-xs">
               <p className="flex items-center gap-2 font-semibold"><ShieldCheck className="size-4 text-emerald-300"/> Avisos registrados</p>
