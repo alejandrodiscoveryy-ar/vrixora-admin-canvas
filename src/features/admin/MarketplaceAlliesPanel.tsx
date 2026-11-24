@@ -9,6 +9,8 @@ import { MetricCard } from "@/components/admin/MetricCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { driverWhatsAppLinks } from "@/lib/driver-whatsapp";
+import AdminWhatsAppOpenChooser from "@/features/admin/AdminWhatsAppOpenChooser";
 
 type Ally = {
   id: string; name: string; slug: string; rate: number; status: "active" | "paused";
@@ -418,17 +420,11 @@ export default function MarketplaceAlliesPanel({ projectId, canManage }: { proje
                     </span>
                   </button>
                   <div className="flex flex-wrap items-center gap-2">
-                    {canManage && allyPhone && /^\+[1-9]\d{7,14}$/.test(allyPhone) && (
-                      <Button asChild size="sm" variant="outline"
-                        className="min-h-11 border-emerald-400/25 bg-emerald-500/[0.06] text-emerald-300 hover:bg-emerald-500/10 sm:min-h-9">
-                        <a href={`https://wa.me/${allyPhone.slice(1)}`}
-                          target="_blank" rel="noopener noreferrer"
-                          title={`Contactar por WhatsApp: ${allyPhone}`}
-                          aria-label={`Abrir WhatsApp de ${ally.name}: ${allyPhone}`}>
-                          <MessageCircle aria-hidden="true" className="mr-1.5 size-4" />WhatsApp
-                        </a>
-                      </Button>
-                    )}
+                    {canManage && allyPhone && driverWhatsAppLinks(allyPhone) ? (
+                      <AdminWhatsAppOpenChooser links={driverWhatsAppLinks(allyPhone)!}
+                        driverName={ally.name} inviteToGroup={false}
+                        buttonClassName="inline-flex min-h-11 items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-500/[0.06] px-3 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 sm:min-h-9" />
+                    ) : null}
                     <Button size="sm" variant="outline" className="h-9 border-violet-400/25 bg-violet-500/5" onClick={() => void copy(promo(ally.slug))} aria-label={"Copiar enlace público de " + ally.name}>
                       <Link2 className="mr-1.5 size-3.5" aria-hidden="true" />Enlace público
                     </Button>
