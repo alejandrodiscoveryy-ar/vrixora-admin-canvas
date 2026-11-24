@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FlaskConical, Loader2, Radar } from "lucide-react";
+import { FlaskConical, Radar } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabaseServices } from "@/lib/services";
 
