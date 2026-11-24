@@ -150,7 +150,13 @@ export default function MarketplaceDriverPromotionPreview({ projectId, driverUse
       });
       if (error) throw error;
       setCode(null); setAlias(null); setDeactivateOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["driver-identity-review", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-driver-verifications", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-impulsa-application", projectId, driverUserId] }),
+        queryClient.invalidateQueries({ queryKey: ["marketplace-pending-driver-verifications", projectId] }),
+      ]);
+      setActionMessage("Impulsa suspendido y verificación retirada. Se requiere una nueva solicitud.");
       setRevision(value => value + 1);
     } catch { setActionMessage("No se pudo desactivar Impulsa. Revisa los permisos e inténtalo de nuevo."); }
     finally { setBusy(false); }
