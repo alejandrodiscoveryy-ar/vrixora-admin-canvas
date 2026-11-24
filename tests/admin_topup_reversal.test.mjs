@@ -70,10 +70,10 @@ test("Notificar por WhatsApp está en la fila, no exige abrir los detalles de Co
   const main = firstRow.slice(firstRow.indexOf('<div className="marketplace-topup-main">'), firstRow.indexOf('<details className="marketplace-record-details group">'));
   const detail = firstRow.slice(firstRow.indexOf('<details className="marketplace-record-details group">'));
   assert.match(main, /className="marketplace-topup-actions marketplace-topup-actions--notification"/);
-  assert.match(main, /href=\{notificationLink\.desktop\}/);
+  assert.match(main, /links=\{notificationLink\}/);
   assert.match(main, /Notificar por WhatsApp/);
   assert.match(main, /min-h-11/);
-  assert.doesNotMatch(detail, /Notificar por WhatsApp|href=\{notificationLink\.desktop\}/);
+  assert.doesNotMatch(detail, /Notificar por WhatsApp|links=\{notificationLink\}/);
   assert.match(topups, /!isTopupReversed && \["confirmed", "reconciled", "rejected"\]\.includes\(item\.status\)/);
   assert.match(topups, /topupWhatsAppMessage\(item, paymentMethodLabel\(item\.method\), receipt\?\.documentNumber\)/);
   assert.match(detail, /Correcciones administrativas/);
