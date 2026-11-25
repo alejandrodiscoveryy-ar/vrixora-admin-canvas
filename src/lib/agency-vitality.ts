@@ -196,3 +196,9 @@ export function agencyVitalitySignals(data: AgencyVitality): VitalitySignal[] {
       "Solicitudes de recarga pendientes ahora, no filtradas por fecha"),
   ];
 }
+
+/** Ratio de eventos del mismo canal y período, no una cohorte de visitantes. */
+export function channelEventConversion(clicks:unknown,requests:unknown):number|undefined {
+  if(typeof clicks!=="number"||!Number.isFinite(clicks)||clicks<=0||typeof requests!=="number"||!Number.isFinite(requests)||requests<0||requests>clicks) return undefined;
+  return requests/clicks;
+}
