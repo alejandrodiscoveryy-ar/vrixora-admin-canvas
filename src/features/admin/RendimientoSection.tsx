@@ -31,8 +31,8 @@ import {
   type UsageAnalyticsDay,
 } from "@/lib/services";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
-import { useProjectPermissions } from "@/hooks/useProjects";
-import { periodRange } from "@/components/admin/admin-period";
+import { useProject, useProjectPermissions } from "@/hooks/useProjects";
+import { adminPeriodOptions, periodRange } from "@/components/admin/admin-period";
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
 import {
   identifyAdminPeriod,
@@ -79,6 +79,11 @@ export default function RendimientoSection({
   projectId: string;
 }) {
   const isMobile = useIsMobile();
+  const {data:project}=useProject(projectId);
+  const today=periodRange("today").to;
+  const projectStart=project?.createdAt?.slice(0,10);
+  const allRange=projectStart && /^\d{4}-\d{2}-\d{2}$/.test(projectStart) && projectStart<=today ? {from:projectStart,to:today} : undefined;
+  const options=allRange ? [...adminPeriodOptions,{value:"all" as const,label:"Todo"}] : adminPeriodOptions;
 
   const { data: permissions = [], isLoading: permissionsLoading } =
     useProjectPermissions(projectId);
@@ -97,8 +102,8 @@ export default function RendimientoSection({
   const [campaign, setCampaign] = useState("all");
   const [version, setVersion] = useState("all");
 
-  const fromDate = dateRange.from;
-  const toDate = dateRange.to;
+  const fromDate = period==="all" && allRange ? allRange.from : dateRange.from;
+  const toDate = period==="all" && allRange ? allRange.to : dateRange.to;
 
   const periodDays =
     Math.max(
@@ -110,9 +115,8 @@ export default function RendimientoSection({
       ) + 1,
     );
 
-  const analyticsFrom = isoDate(
-    addDays(new Date(`${fromDate}T12:00:00`), -periodDays),
-  );
+  const analyticsFrom = period==="all" ? fromDate : isoDate(addDays(new Date(`${fromDate}T12:00:00`), -periodDays));
+  const rangeSupported=periodDays<=401;
 
   const analyticsFilters = {
     from: analyticsFrom,
@@ -124,8 +128,17 @@ export default function RendimientoSection({
 
   const analytics = useQuery({
     queryKey: ["usage-analytics-v2", projectId, analyticsFilters],
-    queryFn: () =>
-      supabaseServices.usageAnalytics.series(projectId, analyticsFilters),
+    queryFn: async () => {
+      const chunks: UsageAnalyticsDay[]=[];
+      for(let start=analyticsFrom;start<=toDate;){
+        const end=isoDate(addDays(new Date(`${start}T12:00:00`),400));
+        const until=end<toDate?end:toDate;
+        chunks.push(...await supabaseServices.usageAnalytics.series(projectId,{...analyticsFilters,from:start,to:until}));
+        start=isoDate(addDays(new Date(`${until}T12:00:00`),1));
+      }
+      return chunks;
+    },
+    enabled:rangeSupported,
     refetchInterval: 30_000,
   });
 
@@ -323,7 +336,7 @@ export default function RendimientoSection({
         icon={Activity}
         actions={
           <AdminPeriodSelector appearance="premium"
-            value={period} range={dateRange}
+            value={period} range={{from:fromDate,to:toDate}} options={options} allRange={allRange} maxCustomDays={401}
             onChange={(nextPeriod, nextRange) => {
               setPeriod(nextPeriod);
               setDateRange(nextRange);
@@ -331,9 +344,9 @@ export default function RendimientoSection({
           />
         }
       />
-      <AgencyVitalityOverview projectId={projectId} from={fromDate} to={toDate} />
+      {rangeSupported ? <AgencyVitalityOverview projectId={projectId} from={fromDate} to={toDate} /> : <p role="alert" className="text-sm text-text-secondary">El historial supera el límite actual de 401 días de Vitalidad. Selecciona un período menor; no se recortan los datos automáticamente.</p>}
       {canViewCommercial ? <CommercialChannelSummary projectId={projectId}/> : null}
-      <details className="group min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1/70 shadow-[var(--shadow-xs)]">
+      {rangeSupported ? <details className="group min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1/70 shadow-[var(--shadow-xs)]">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-text-primary marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
           <span className="inline-flex items-center gap-2">
             <BarChart3 className="size-4 text-[var(--module-accent)]" aria-hidden="true"/>
@@ -723,7 +736,7 @@ export default function RendimientoSection({
           </>
           )}
         </div>
-      </details>
+      </details> : null}
     </div>
   );
 }
