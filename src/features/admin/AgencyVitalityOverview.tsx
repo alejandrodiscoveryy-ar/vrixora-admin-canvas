@@ -6,6 +6,7 @@ import {
   CheckCircle2, CircleHelp, Clock3, ShieldAlert,
   TrendingDown, UserRound, Users, Wallet,
 } from "lucide-react";
+import { useProjectPermissions } from "@/hooks/useProjects";
 import { getSupabaseClient } from "@/lib/supabase";
 import {
   agencyVitalitySignals,
@@ -108,12 +109,12 @@ function ControlConversionFunnel({ data, projectId }: {
   return (
     <SectionCard density="compact" appearance="premium" module="rendimiento"
       title="Control → Conductor → Primera carrera"
-      description="Seguimiento de una misma cohorte, desde el registro hasta el primer servicio real"
+      description="Usuarios registrados en la APK Control y conversión a conductor habilitado"
       contentClassName="space-y-3 p-3 sm:p-4">
       <div className="space-y-2" aria-label="Etapas de incorporación">
         {funnel.stages.map((stage, index) => (
           <div key={stage.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-[var(--radius-compact)] bg-surface-2/65 px-3 py-2">
-            <span className="text-sm font-medium text-text-primary">{stage.label}</span>
+            <span className="text-sm font-medium text-text-primary">{stage.id==="registered" ? "Usuarios registrados en APK Control" : stage.label}</span>
             <strong className="text-lg tabular-nums text-text-primary">{number(stage.value)}</strong>
             <div className="h-2 overflow-hidden rounded-full bg-surface-3" role="progressbar" aria-label={stage.label}
               aria-valuemin={0} aria-valuemax={100} aria-valuenow={stage.share == null || !funnel.consistent ? undefined : Math.min(100,stage.share)}>
@@ -269,12 +270,16 @@ export default function AgencyVitalityOverview({
             </Link>
           </SectionCard>
           <SectionCard density="compact" appearance="premium" module="rendimiento"
-            title="Economía" description="Valor de los viajes liquidados"
+            title="Economía" description="Base tarifaria USD · finanzas en MN"
             contentClassName="p-3 sm:p-4">
-            <InlineStat label="Valor de carreras liquidadas" value={d.finance ? money(d.finance.cup,"CUP") : null}/>
-            <InlineStat label="Volumen USD" value={d.finance ? money(d.finance.usd,"USD") : null}/>
-            <InlineStat label="Volumen EUR" value={d.finance ? money(d.finance.eur,"EUR") : null}/>
-            <p className="mt-2 text-xs text-text-secondary">Valores de carreras, no ingresos netos ni comisiones.</p>
+            <InlineStat label="Viajes liquidados en MN" value={d.finance ? money(d.finance.cup,"MN") : null}/>
+            {d.finance && d.finance.usd>0 ? <InlineStat label="Viajes liquidados en USD" value={money(d.finance.usd,"USD")}/> : null}
+            {d.finance && d.finance.eur>0 ? <InlineStat label="Viajes liquidados en EUR" value={money(d.finance.eur,"EUR")}/> : null}
+            {d.finance && d.finance.other>0 ? <InlineStat label="Viajes en otras monedas" value={d.finance.other}/> : null}
+            <FinanceDebt projectId={projectId}/>
+            <InlineStat label="Comisiones generadas (MN)" value={null}/>
+            <InlineStat label="Comisiones cobradas (MN)" value={null}/>
+            <p className="mt-2 text-xs text-text-secondary">Valores de carreras, no ingresos netos ni comisiones. — = dato no disponible. No se convierten monedas sin tipo de cambio registrado.</p>
           </SectionCard>
           <SectionCard density="compact" appearance="premium" module="rendimiento" title="Flota" description="Situación actual" contentClassName="p-3 sm:p-4">
             <InlineStat label="Conductores habilitados" value={d.operation?.profiles_active}/>
@@ -307,4 +312,26 @@ function RideConversion({data}:{data:AgencyVitality["rides"]}) {
       </div>
     </div>}
   </SectionCard>;
+}
+
+function FinanceDebt({projectId}:{projectId:string}){
+  const {data:permissions=[]}=useProjectPermissions(projectId);
+  const enabled=permissions.includes("payments.view")&&permissions.includes("commercial.view");
+  const debt=useQuery({
+    queryKey:["analytics-wallet-transition-summary",projectId],
+    enabled,
+    queryFn:async()=>{
+      const {data,error}=await getSupabaseClient().rpc("admin_get_marketplace_wallet_transition_summary_v1",{target_project_id:projectId});
+      if(error)throw error;
+      const result=data as {debt_cup?:number;pending_withdrawal_cup?:number}|null;
+      if(!result || typeof result.debt_cup!=="number" || !Number.isFinite(result.debt_cup) || typeof result.pending_withdrawal_cup!=="number" || !Number.isFinite(result.pending_withdrawal_cup))throw Error("INVALID_FINANCE_SUMMARY");
+      return result;
+    },staleTime:60_000,
+  });
+  const d=enabled&&!debt.isError?debt.data:undefined;
+  return <>
+    <InlineStat label="Deuda de billeteras · actual" value={money(d?.debt_cup,"MN")}/>
+    <InlineStat label="Retiradas Impulsa pendientes · actual" value={money(d?.pending_withdrawal_cup,"MN")}/>
+    {enabled?<Link className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"billeteras"}}>Consultar billeteras <ArrowUpRight className="size-3.5" aria-hidden="true"/></Link>:null}
+  </>;
 }
