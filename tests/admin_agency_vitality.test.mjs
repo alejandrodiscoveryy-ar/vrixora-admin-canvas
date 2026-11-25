@@ -194,3 +194,13 @@ test("embudo compacto distingue etapas, tasas y pérdidas sin inventar proporcio
   assert.match(board,/lg:grid-cols-\[minmax\(0,1.25fr\)_minmax\(0,1fr\)\]/);
   assert.match(board,/bottleneck && bottleneck.lost>0/);
 });
+
+test("resumen compacto sin cabecera redundante y alertas plegables",()=>{
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  assert.doesNotMatch(board,/title="Indicadores del período"/);
+  assert.match(board,/aria-label="Indicadores del período"/);
+  assert.match(board,/min-h-\[76px\]/);
+  assert.match(board,/priorities\.map\(item/);
+  assert.match(board,/Criterios ·/);
+  assert.match(board,/Etapas esquemáticas/);
+});
