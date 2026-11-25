@@ -106,38 +106,44 @@ function ControlConversionFunnel({ data, projectId }: {
   data: AgencyVitality["control"]; projectId: string;
 }) {
   const funnel = controlConversionFunnel(data);
+  const colors = ["#0e7490","#2563eb","#15803d","#b45309"];
+  const names = ["Usuarios de Control","Iniciaron el alta","Conductores habilitados","Primera carrera"];
+  const transitions = funnel.stages.slice(1).map((stage,index)=>{
+    const previous=funnel.stages[index].value;
+    return {label:["Inicio del alta","Alta a habilitado","Habilitado a viaje"][index], rate:funnel.consistent&&previous>0?stage.value*100/previous:null, lost:previous-stage.value};
+  });
+  const bottleneck=transitions.reduce<(typeof transitions)[number]|null>((worst,t)=>t.rate!==null&&(worst?.rate==null||t.rate<worst.rate)?t:worst,null);
   return (
     <SectionCard density="compact" appearance="premium" module="rendimiento"
       title="Control → Conductor → Primera carrera"
-      description="Usuarios registrados en la APK Control y conversión a conductor habilitado"
-      contentClassName="space-y-3 p-3 sm:p-4">
-      <div className="space-y-2" aria-label="Etapas de incorporación">
-        {funnel.stages.map((stage, index) => (
-          <div key={stage.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-[var(--radius-compact)] bg-surface-2/65 px-3 py-2">
-            <span className="text-sm font-medium text-text-primary">{stage.id==="registered" ? "Usuarios registrados en APK Control" : stage.label}</span>
-            <strong className="text-lg tabular-nums text-text-primary">{number(stage.value)}</strong>
-            <div className="h-5 overflow-hidden rounded-md bg-surface-3" role="progressbar" aria-label={stage.label}
-              aria-valuemin={0} aria-valuemax={100} aria-valuenow={stage.share == null || !funnel.consistent ? undefined : Math.min(100,stage.share)}>
-              <div className="h-full mx-auto rounded-md bg-[var(--module-accent)]" style={{width: funnel.consistent && stage.share != null ? Math.min(100,stage.share)+"%" : "0%", opacity:1-index*.12}}/>
-            </div>
-            <span className="text-xs tabular-nums text-text-secondary">{stage.share == null || !funnel.consistent ? "—" : number(stage.share)+"%"}</span>
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[var(--radius-control)] border border-border-subtle bg-surface-2/40 px-3 py-2">
-        <span className="text-xs text-text-secondary">
-          Solo Control: <strong className="tabular-nums text-text-primary">{number(data.only_control)}</strong>
-        </span>
-        <span className="text-xs text-text-secondary">
-          Conversión a conductor: <strong className="tabular-nums text-text-primary">
-            {funnel.consistent && data.registered ? `${(data.activated * 100 / data.registered).toFixed(1)} %` : "—"}
-          </strong>
-        </span>
-        <span className="text-xs text-text-secondary">
-          Con primera carrera: <strong className="tabular-nums text-text-primary">
-            {funnel.consistent && data.registered ? `${(data.first_ride * 100 / data.registered).toFixed(1)} %` : "—"}
-          </strong>
-        </span>
+      description="Conversión de usuarios registrados en APK Control"
+      contentClassName="space-y-2 p-3 sm:p-4">
+      <div className="grid min-w-0 items-center gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <div aria-label="Etapas de incorporación" className="min-w-0">
+          <svg viewBox="0 0 340 228" className="mx-auto block w-full max-w-[420px]" role="img" aria-label={funnel.stages.map((stage,index)=>names[index]+": "+number(stage.value)).join(", ")}>
+            {funnel.stages.map((stage,index)=>{
+              const widths=[330,282,234,186,138];
+              const top=widths[index],bottom=widths[index+1],y=index*57;
+              const share=funnel.consistent && stage.share != null ? number(stage.share)+"%" : "—";
+              return <g key={stage.id}>
+                <path d={"M"+(340-top)/2+" "+(y+2)+" H"+(340+top)/2+" L"+(340+bottom)/2+" "+(y+53)+" H"+(340-bottom)/2+" Z"} fill={colors[index]}/>
+                <text x="170" y={y+17} textAnchor="middle" fill="white" fontSize="11" fontWeight="500">{names[index]}</text>
+                <text x="170" y={y+37} textAnchor="middle" fill="white" fontSize="20" fontWeight="700">{number(stage.value)}</text>
+                <text x="170" y={y+49} textAnchor="middle" fill="white" fontSize="10">{share}</text>
+              </g>;
+            })}
+          </svg>
+          <p className="mt-1 text-center text-[11px] text-text-secondary">Etapas esquemáticas · % del registro inicial</p>
+        </div>
+        <div className="min-w-0 space-y-2">
+          <h4 className="text-xs font-semibold text-text-secondary">Conversión entre etapas</h4>
+          {transitions.map((t,index)=><div key={t.label} className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-2/50 px-3 py-2">
+            <span className="flex min-w-0 items-center gap-2 text-xs"><span className="size-2.5 shrink-0 rounded-full" style={{background:colors[index+1]}}/>{t.label}</span>
+            <strong className="shrink-0 text-xl tabular-nums" style={{color:colors[index+1]}}>{t.rate==null?"—":number(t.rate)+"%"}</strong>
+          </div>)}
+          {bottleneck && bottleneck.lost>0 ? <div className="rounded-lg border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] p-2.5 text-xs text-text-primary"><strong className="block text-[var(--semantic-warning-foreground)]">Mayor pérdida proporcional</strong>{bottleneck.label}: {number(bottleneck.lost)} aún no alcanzan la siguiente etapa.</div>:null}
+          <p className="text-xs text-text-secondary">Solo Control: <strong className="text-text-primary">{number(data.only_control)}</strong></p>
+        </div>
       </div>
       {!funnel.consistent && (
         <p role="status" className="text-xs text-[var(--semantic-warning-foreground)]">
