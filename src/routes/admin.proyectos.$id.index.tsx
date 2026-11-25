@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
-import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel } from "@/lib/agency-vitality";
+import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel, type AgencyVitality } from "@/lib/agency-vitality";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
@@ -165,7 +165,7 @@ function ResumenPage() {
   const hasPendingActions = pendingTopups > 0 || openIncidents > 0 || suspendedDrivers > 0;
 
   return (
-    <div className="min-w-0 space-y-3 md:space-y-4" aria-label="Panel estratégico de TukTuk">
+    <div className="min-w-0 space-y-2 md:space-y-3" aria-label="Panel estratégico de TukTuk">
       <header className={cn("rounded-[var(--radius-card)] border px-3 py-3 sm:px-4", premiumHeaderSurface)}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -471,7 +471,7 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
       if (error) throw error;
       return parseAgencyVitality(data);
     },
-    staleTime: 30_000, refetchInterval: 60_000, retry: 1,
+    staleTime: 60_000, refetchInterval: 60_000, refetchOnWindowFocus: false, retry: 1,
   });
   const d = query.isError ? undefined : query.data;
   const fmt = (v: number) => new Intl.NumberFormat("es-CU", { maximumFractionDigits: 1 }).format(v);
@@ -500,16 +500,25 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
           <DashboardMetric label="Viajes completados" value={rides ? fmt(rides.completed) : "—"} comparison={rides ? delta(rides.completed,rides.previous_completed) : "No disponible"} icon={BriefcaseBusiness} tone="emerald" isLoading={loading}/>
         </SummaryLink>
         <SummaryLink projectId={projectId} section="rendimiento">
-          <DashboardMetric label="Volumen liquidado" value={d?.finance ? fmt(d.finance.cup)+" CUP" : "—"} comparison="Valor de viajes, no comisión" icon={WalletCards} tone="cyan" isLoading={loading}/>
+          <DashboardMetric label="Volumen liquidado" value={d?.finance ? fmt(d.finance.cup)+" MN" : "—"} comparison="Liquidado en MN · base tarifaria USD" icon={WalletCards} tone="cyan" isLoading={loading}/>
         </SummaryLink>
       </div>
 
+      <div className="grid min-w-0 gap-2 lg:grid-cols-2">
+        <SectionCard density="compact" appearance="premium" module="resumen" title="De solicitud a servicio" description="Carreras reales del período" contentClassName="p-3">
+          {rides && rides.requested>=rides.completed+rides.cancelled+rides.unassigned && rides.settled<=rides.completed ? <HomeServiceFunnel rides={rides}/> : <p className="text-sm text-muted-foreground">Datos no disponibles o inconsistentes.</p>}
+        </SectionCard>
+        <SectionCard density="compact" appearance="premium" module="resumen" title="Capacidad operativa" description="Flota habilitada · estado actual" contentClassName="p-3">
+          {d?.operation && d.operation.profiles_active<=d.operation.profiles_total ? <HomeDonut total={d.operation.profiles_total} center={fmt(d.operation.profiles_total)} subtitle="Registrados" rows={[{label:"Habilitados",value:d.operation.profiles_active,color:"#06b6d4"},{label:"No habilitados",value:d.operation.profiles_total-d.operation.profiles_active,color:"#64748b"}]}/> : <p className="text-sm text-muted-foreground">Datos de flota no disponibles.</p>}
+          <p className="mt-2 text-xs text-muted-foreground">Habilitado no significa conectado.</p>
+        </SectionCard>
+      </div>
       <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <SectionCard density="compact" appearance="premium" module="rendimiento"
           title="Crecimiento y demanda" description="Actual frente al período anterior equivalente"
           contentClassName="p-3">
           {loading ? <p className="text-xs text-muted-foreground">Consultando…</p> : !d ? <p className="text-xs text-muted-foreground">Sin datos disponibles.</p> : <>
-            <div className="h-48 min-w-0 sm:h-52">
+            <div className="h-44 min-w-0 sm:h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={rows} margin={{top:8,right:8,left:-18,bottom:4}}>
                   <CartesianGrid stroke="var(--border-subtle)" vertical={false} strokeDasharray="3 3"/>
@@ -517,8 +526,8 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
                   <YAxis allowDecimals={false} tick={{fontSize:11,fill:"var(--text-secondary)"}} axisLine={false} tickLine={false}/>
                   <Tooltip {...adminChartTooltipProps}/>
                   <Legend wrapperStyle={{fontSize:11}}/>
-                  <Bar dataKey="anterior" name="Anterior" fill="var(--semantic-inactive)" radius={[4,4,0,0]} maxBarSize={30}/>
-                  <Bar dataKey="actual" name="Actual" fill="var(--primary)" radius={[4,4,0,0]} maxBarSize={30}/>
+                  <Bar dataKey="anterior" name="Anterior" fill="var(--semantic-inactive)" radius={[4,4,0,0]} maxBarSize={42}/>
+                  <Bar dataKey="actual" name="Actual" fill="var(--primary)" radius={[4,4,0,0]} maxBarSize={42}/>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -530,34 +539,43 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
         <SectionCard density="compact" appearance="premium" module="rendimiento"
           title="Conversión de viajes" description="Solicitudes del período · excluye pruebas"
           contentClassName="p-3">
-          {rides ? <div className="grid min-w-0 grid-cols-[minmax(88px,0.8fr)_minmax(0,1.2fr)] items-center gap-3">
-            <div className="relative mx-auto w-full max-w-[150px]" aria-label={conversion === null ? "Sin base de conversión" : fmt(conversion)+"% completadas"}>
-              <svg viewBox="0 0 120 120" className="w-full" aria-hidden="true">
-                <circle cx="60" cy="60" r="48" fill="none" stroke="var(--border-default)" strokeWidth="10"/>
-                {conversion !== null ? <circle cx="60" cy="60" r="48" fill="none" stroke="var(--semantic-success)" strokeWidth="10" pathLength="100" strokeDasharray={String(conversion)+" 100"} transform="rotate(-90 60 60)" strokeLinecap="round"/> : null}
-                <text x="60" y="59" textAnchor="middle" fill="var(--text-primary)" fontSize="21" fontWeight="600">{conversion === null ? "—" : fmt(conversion)+"%"}</text>
-                <text x="60" y="76" textAnchor="middle" fill="var(--text-secondary)" fontSize="9">Completadas</text>
-              </svg>
-            </div>
-            <div className="space-y-2">
-              {[{label:"Completadas",value:rides.completed,color:"var(--semantic-success)"},{label:"Canceladas",value:rides.cancelled,color:"var(--semantic-danger)"},{label:"Sin asignar",value:rides.unassigned,color:"var(--semantic-warning)"}].map(row => (
-                <div key={row.label} className="flex items-center justify-between gap-1 text-xs"><span className="flex items-center gap-1.5"><span className="size-2 shrink-0 rounded-full" style={{background:row.color}}/>{row.label}</span><strong className="tabular-nums">{fmt(row.value)}</strong></div>
-              ))}
-              <p className="border-t border-border-subtle pt-2 text-xs text-muted-foreground">{fmt(rides.requested)} solicitudes totales</p>
-              {rides.requested === 0 ? <p className="text-xs text-muted-foreground">Sin solicitudes para calcular conversión.</p> : null}
-            </div>
-          </div> : <p className="text-xs text-muted-foreground">Datos de carreras no disponibles.</p>}
+          {rides && rides.requested>=rides.completed+rides.cancelled+rides.unassigned ? <HomeDonut total={rides.requested} center={conversion===null?"—":fmt(conversion)+"%"} subtitle="Completadas" rows={[{label:"Completadas",value:rides.completed,color:"#22c55e"},{label:"Canceladas",value:rides.cancelled,color:"#ef4444"},{label:"Sin asignar",value:rides.unassigned,color:"#f59e0b"},{label:"Otros estados",value:rides.requested-rides.completed-rides.cancelled-rides.unassigned,color:"#64748b"}]}/> : <p className="text-sm text-muted-foreground">Datos de carreras no disponibles.</p>}
         </SectionCard>
       </div>
 
       <SectionCard density="compact" appearance="premium" module="rendimiento"
-        title="Prioridad estratégica"
+        title="Prioridades"
         actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4" aria-hidden="true"/></Link>}
         contentClassName="space-y-2 p-3">
-        {priorities.length ? priorities.map(p => <p key={p.id} className="text-sm"><strong>{p.label}:</strong> {p.explanation}</p>) : <p className="text-sm text-muted-foreground">{!d ? "Sin datos para evaluar prioridades." : rides?.requested === 0 ? "Priorizar captación de solicitudes reales de pasajeros." : "Sin alertas de demanda con base suficiente; revisar evolución."}</p>}
+        {priorities.length ? <div className="flex flex-wrap gap-2">{priorities.map(p => <Link key={p.id} to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} title={p.explanation} className="flex min-h-10 items-center gap-2 rounded-lg border border-border-subtle bg-surface-2 px-3 text-xs"><span>{p.label}</span><strong className={p.tone==="red"?"text-[var(--semantic-danger)]":"text-[var(--semantic-warning)]"}>{p.value==null?"—":fmt(p.value)+(p.id==="cancelled"?"%":"")}</strong><ArrowRight className="size-3"/></Link>)}</div> : <p className="text-sm text-muted-foreground">{!d ? "Sin datos para evaluar prioridades." : rides?.requested === 0 ? "Priorizar captación de solicitudes reales de pasajeros." : "Sin alertas de demanda con base suficiente; revisar evolución."}</p>}
         {funnel?.consistent && d && d.control.registered > 0 ? <p className="text-xs text-muted-foreground">Cohorte Control: {fmt(d.control.registered)} altas → {fmt(d.control.activated)} habilitados → {fmt(d.control.first_ride)} primera carrera liquidada.</p> : null}
         {d?.finance ? <p className="text-xs text-muted-foreground">Volumen de viajes, no ingresos de la agencia. {fmt(d.finance.usd)} USD · {fmt(d.finance.eur)} EUR{d.finance.other > 0 ? " · Otras monedas registradas" : ""}.</p> : null}
       </SectionCard>
     </section>
   );
+}
+
+function HomeServiceFunnel({rides}:{rides:NonNullable<AgencyVitality["rides"]>}){
+  const stages=[{label:"Solicitudes reales",value:rides.requested,color:"#0e7490"},{label:"Completadas",value:rides.completed,color:"#15803d"},{label:"Liquidadas",value:rides.settled,color:"#b45309"}];
+  return <div className="grid min-w-0 items-center gap-3 sm:grid-cols-2">
+    <svg viewBox="0 0 280 174" className="mx-auto w-full max-w-[310px]" role="img" aria-label={stages.map(x=>x.label+": "+x.value).join(", ")}>
+      {stages.map((stage,i)=>{const top=270-i*46,bottom=top-40,y=i*58;return <g key={stage.label}><path d={"M"+(280-top)/2+" "+(y+2)+" H"+(280+top)/2+" L"+(280+bottom)/2+" "+(y+55)+" H"+(280-bottom)/2+" Z"} fill={stage.color}/><text x="140" y={y+17} textAnchor="middle" fill="white" fontSize="11">{stage.label}</text><text x="140" y={y+36} textAnchor="middle" fill="white" fontSize="20" fontWeight="700">{stage.value}</text><text x="140" y={y+49} textAnchor="middle" fill="white" fontSize="10">{rides.requested>0?(stage.value*100/rides.requested).toFixed(1)+"%":"—"}</text></g>;})}
+    </svg>
+    <div className="space-y-2">
+      <div className="rounded-lg border border-border-subtle bg-surface-2/50 p-3"><p className="text-xs text-muted-foreground">Canceladas</p><strong className="text-xl text-[var(--semantic-danger)]">{rides.cancelled}</strong></div>
+      <div className="rounded-lg border border-border-subtle bg-surface-2/50 p-3"><p className="text-xs text-muted-foreground">Sin asignar</p><strong className="text-xl">{rides.unassigned}</strong></div>
+      <p className="text-[11px] text-muted-foreground">Etapas esquemáticas. No se conoce el total histórico de asignaciones.</p>
+    </div>
+  </div>;
+}
+function HomeDonut({total,center,subtitle,rows}:{total:number;center:string;subtitle:string;rows:{label:string;value:number;color:string}[]}){
+  let offset=0;
+  return <div className="grid min-w-0 items-center gap-3 sm:grid-cols-2">
+    <svg viewBox="0 0 140 140" className="mx-auto w-full max-w-[200px]" role="img" aria-label={rows.map(r=>r.label+": "+r.value).join(", ")}>
+      <circle cx="70" cy="70" r="53" fill="none" stroke="var(--border-default)" strokeWidth="18"/>
+      {total>0&&rows.map(r=>{const share=r.value*100/total,start=offset;offset+=share;return share>0?<circle key={r.label} cx="70" cy="70" r="53" fill="none" stroke={r.color} strokeWidth="18" pathLength="100" strokeDasharray={share+" 100"} strokeDashoffset={-start} transform="rotate(-90 70 70)"/>:null;})}
+      <text x="70" y="70" textAnchor="middle" fill="var(--text-primary)" fontSize="23" fontWeight="600">{center}</text><text x="70" y="85" textAnchor="middle" fill="var(--text-secondary)" fontSize="10">{subtitle}</text>
+    </svg>
+    <div className="space-y-2">{rows.map(r=><div key={r.label} className="flex justify-between gap-2 text-xs"><span className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-full" style={{background:r.color}}/>{r.label}</span><strong className="tabular-nums">{r.value}</strong></div>)}<p className="text-xs text-muted-foreground">{total===0?"Sin registros":total+" en total"}</p></div>
+  </div>;
 }
