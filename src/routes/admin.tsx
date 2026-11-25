@@ -91,6 +91,7 @@ function AdminChrome() {
         : adminNavTone(currentSection);
   const compactWorkspace = currentSection === "trabajos";
   const wideAnalytics = currentSection === "rendimiento";
+  const wideSummary = Boolean(currentProjectId) && (!currentSection || currentSection === "resumen");
   // Solo el mapa operativo móvil elimina el espacio superior del contenedor general.
   const compactMobileMap = compactWorkspace && requestedView === "mapa";
 
@@ -137,7 +138,7 @@ function AdminChrome() {
       className="admin-shell min-h-screen w-full bg-background"
       data-admin-reference-shell="graphite"
     >
-      <div className={`mx-auto flex min-h-screen w-full ${wideAnalytics ? "max-w-none" : "max-w-[1920px]"}`}>
+      <div className={`mx-auto flex min-h-screen w-full ${(wideAnalytics || wideSummary) ? "max-w-none" : "max-w-[1920px]"}`}>
         <DesktopSidebar
           projects={projects}
           projectsLoading={projectsLoading}
@@ -162,7 +163,7 @@ function AdminChrome() {
               compactMobileMap ? "lg:px-5 lg:py-2" : compactWorkspace ? "lg:px-5 lg:py-5" : "lg:px-8 lg:py-8"
             }`}
           >
-            <div className={`mx-auto w-full ${compactWorkspace || wideAnalytics ? "max-w-none" : "max-w-[1480px]"}`}>
+            <div className={`mx-auto w-full ${compactWorkspace || wideAnalytics || wideSummary ? "max-w-none" : "max-w-[1480px]"}`}>
               <Outlet />
             </div>
           </main>
