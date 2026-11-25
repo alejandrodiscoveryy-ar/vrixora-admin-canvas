@@ -67,20 +67,20 @@ function SignalCard({ signal }: { signal: VitalitySignal }) {
   const Icon = signalIcons[signal.id as keyof typeof signalIcons] ?? Activity;
   return (
     <details className={`group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumSurface}`}>
-      <summary className="flex min-h-[104px] cursor-pointer list-none flex-col justify-between gap-1 py-2 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
-        <span aria-hidden="true" className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${toneRail[signal.tone]}`}/>
+      <summary className="flex min-h-[76px] cursor-pointer list-none flex-col justify-between gap-0.5 py-2 pl-3 pr-2 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
+        <span aria-hidden="true" className={`absolute inset-y-2 left-0 w-0.5 rounded-r-full ${toneRail[signal.tone]}`}/>
         <span className="flex min-w-0 items-start justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-text-secondary">
+          <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-text-secondary">
             <Icon className="size-4 shrink-0 text-[var(--module-accent)]" aria-hidden="true"/>{signal.label}
           </span>
           <ArrowUpRight className="size-4 shrink-0 text-text-tertiary group-open:rotate-90" aria-hidden="true"/>
         </span>
-        <strong className="text-3xl font-semibold tabular-nums text-text-primary">
+        <strong className="text-2xl font-semibold tabular-nums text-text-primary">
           {signal.id === "cancelled" && signal.value != null
             ? `${signal.value.toFixed(1)} %`
             : number(signal.value)}
         </strong>
-        <StatusPill tone={signal.tone}/>
+        <span className="flex items-center gap-1 text-[11px] text-text-secondary"><span className={`size-1.5 rounded-full ${toneRail[signal.tone]}`}/>{vitalityToneName[signal.tone]}</span>
       </summary>
       <div className="space-y-2 border-t border-border-subtle px-3 pb-3 pt-2.5 text-xs sm:px-4" aria-label={`Detalle de ${signal.label}`}>
         <p className="leading-relaxed text-text-primary">{signal.explanation}</p>
@@ -179,22 +179,10 @@ export default function AgencyVitalityOverview({
 
   return (
     <section aria-label="Vitalidad de la Agencia TukTuk" data-admin-module="rendimiento" className="space-y-3">
-      <SectionCard density="compact" appearance="premium" module="rendimiento"
-        title="Indicadores del período"
-        description="Los grises indican que falta base suficiente."
-        contentClassName="space-y-3 p-3 sm:p-4">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-          <span className="inline-flex items-center gap-1.5"><Activity className="size-4 text-[var(--module-accent)]" aria-hidden="true"/>
-            Período: {from} a {to}
-          </span>
-          <span aria-hidden="true" className="text-text-tertiary">·</span>
-          <span>Comparaciones contra período anterior de igual duración</span>
-          {d?.computed_at && <span title="Momento de consulta">· Actualizado {new Intl.DateTimeFormat("es-ES", {dateStyle:"short",timeStyle:"short",timeZone:"America/Havana"}).format(new Date(d.computed_at))} (Cuba)</span>}
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {d && <p className="text-xs font-medium tabular-nums text-text-secondary">
-            {priorities.length} señales con atención · {assessed} de {signals.length} evaluables
-          </p>}
+      <section aria-label="Indicadores del período" className="min-w-0 space-y-2 rounded-[var(--radius-card)] border border-border-subtle bg-surface-1/70 p-2 sm:p-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-text-secondary">
+          <span>Período: {from} a {to}</span>
+          {d?.computed_at && <span title="Comparaciones contra período anterior de igual duración">Actualizado {new Intl.DateTimeFormat("es-ES", {dateStyle:"short",timeStyle:"short",timeZone:"America/Havana"}).format(new Date(d.computed_at))} (Cuba)</span>}
         </div>
         {vitality.isLoading ? (
           <div role="status" className="min-h-32 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-4 text-sm text-text-secondary">
@@ -213,34 +201,22 @@ export default function AgencyVitalityOverview({
             <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
               {signals.map(signal => <SignalCard key={signal.id} signal={signal}/>)}
             </div>
-            <section aria-label="Prioridades de intervención" className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/60 p-3">
-              <div className="mb-2 flex items-center gap-2">
-                <AlertTriangle className="size-4 text-[var(--semantic-warning)]" aria-hidden="true"/>
-                <h3 className="text-sm font-semibold text-text-primary">Prioridades de intervención</h3>
-              </div>
-              {priorities.length ? (
-                <ol className="space-y-2">
-                  {priorities.slice(0,4).map(item => (
-                    <li key={item.id} className="flex flex-wrap items-start justify-between gap-2 rounded-[var(--radius-control)] border border-border-subtle bg-surface-1/50 px-3 py-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-text-primary">{item.label}</p>
-                        <details className="text-xs text-text-secondary"><summary className="cursor-pointer">Ver motivo</summary>{item.explanation}</details>
-                      </div>
-                      <StatusPill tone={item.tone}/>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="text-xs text-text-secondary">No hay alertas con las reglas y los datos disponibles. Los indicadores grises aún no permiten evaluar su estado.</p>
-              )}
-              <details className="group mt-3 text-xs text-text-secondary">
-                <summary className="min-h-9 cursor-pointer py-2 font-medium text-text-primary">Cómo se asignan los colores</summary>
-                <p>Caídas de clientes/carreras con al menos 5 casos en el período anterior: amarillo desde 10 %, naranja desde 25 %, rojo desde 40 %. Cancelaciones con al menos 5 solicitudes: 10 %, 20 % y 35 %. Incidencias abiertas: 1 / 2 / 4. Recargas pendientes: 1 / 4 / 11. Sin base, permisos u objetivo: gris. Reglas iniciales de seguimiento, no decisiones automáticas.</p>
+            <div className="flex min-w-0 flex-wrap items-start gap-2 border-t border-border-subtle pt-2" aria-label="Prioridades de intervención">
+              <span className="inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold"><AlertTriangle className="size-4 text-[var(--semantic-warning)]" aria-hidden="true"/> Prioridades</span>
+              {priorities.length ? priorities.map(item=>(
+                <details key={item.id} className="min-w-0 max-w-full rounded-lg border border-border-subtle bg-surface-2/50">
+                  <summary className="flex min-h-9 cursor-pointer flex-wrap items-center gap-2 px-2 text-xs font-medium"><span>{item.label}</span><StatusPill tone={item.tone}/></summary>
+                  <p className="max-w-sm px-3 pb-3 text-xs text-text-secondary">{item.explanation}</p>
+                </details>
+              )):<span className="self-center text-xs text-text-secondary">Sin alertas evaluables</span>}
+              <details className="min-w-0 text-xs text-text-secondary sm:ml-auto">
+                <summary className="min-h-9 cursor-pointer py-2" title="Los grises indican que falta base suficiente.">Criterios · {priorities.length} señales con atención · {assessed}/{signals.length} evaluables</summary>
+                <p className="max-w-sm pb-2">Los grises indican que falta base suficiente. Comparaciones contra período anterior de igual duración. Caídas de clientes/carreras con al menos 5 casos anteriores: amarillo desde 10 %, naranja desde 25 %, rojo desde 40 %. Cancelaciones con al menos 5 solicitudes: 10 %, 20 % y 35 %. Incidencias: 1 / 2 / 4. Recargas: 1 / 4 / 11.</p>
               </details>
-            </section>
+            </div>
           </>
         )}
-      </SectionCard>
+      </section>
       {d && (
         <>
         <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
