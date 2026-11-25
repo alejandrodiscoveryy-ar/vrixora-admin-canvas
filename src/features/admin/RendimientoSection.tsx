@@ -941,11 +941,35 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
     description="Período móvil independiente · Aliados: histórico"
     actions={<div className="flex flex-wrap gap-1">{([7,30,90] as const).map(n=><button key={n} type="button" aria-pressed={days===n} onClick={()=>setDays(n)} className={days===n?"rounded-md bg-primary/15 px-3 py-2 text-xs font-semibold text-primary":"rounded-md px-3 py-2 text-xs text-muted-foreground"}>{n} d</button>)}</div>}
     contentClassName="p-3 sm:p-4">
-    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs text-muted-foreground"><tr><th className="py-2 pr-2">Canal</th><th className="px-2">Clics</th><th className="px-2">Solicitudes</th><th className="px-2">Viajes liquidados</th></tr></thead><tbody>
-      {rows.map(row=><tr key={row.name} className="border-t border-border-subtle"><th className="py-3 pr-2 font-medium">{row.name}<span className="block text-xs font-normal text-muted-foreground">{row.period}</span></th><td className="px-2 tabular-nums">{observedCount(row.clicks)}</td><td className="px-2 tabular-nums">{observedCount(row.requests)}</td><td className="px-2 tabular-nums">{observedCount(row.completed)}</td></tr>)}
-    </tbody></table></div>
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {([{key:"clicks",label:"Clics",color:"#a78bfa"},{key:"requests",label:"Solicitudes",color:"var(--module-accent)"},{key:"completed",label:"Viajes liquidados",color:"var(--semantic-success)"}] as const).map(metric=>{
+          const comparable=rows.slice(0,2);
+          const max=Math.max(1,...comparable.map(row=>row[metric.key]??0));
+          return <div key={metric.key} className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
+            <h4 className="text-sm font-semibold">{metric.label}</h4>
+            {comparable.map(row=><div key={row.name} className="mt-3">
+              <div className="mb-1 flex items-center justify-between gap-1 text-xs"><span>{row.name.startsWith("TukTuk")?"TukTuk oficial":row.name}</span><strong className="tabular-nums">{observedCount(row[metric.key])}</strong></div>
+              {row[metric.key]!=null?<div className="h-3 rounded-md bg-surface-3" aria-hidden="true"><div className="h-full rounded-md" style={{width:row[metric.key]!*100/max+"%",background:metric.color}}/></div>:<p className="text-xs text-muted-foreground">Sin dato</p>}
+            </div>)}
+          </div>;
+        })}
+      </div>
+      <div className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
+        <h4 className="text-sm font-semibold">Aliados · Histórico</h4>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Liquidados"}] as const).map(m=><div key={m.key}><p className="text-xl font-semibold tabular-nums">{observedCount(rows[2][m.key])}</p><p className="text-xs text-muted-foreground">{m.label}</p></div>)}
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">Histórico independiente.</p>
+      </div>
+    </div>
+    <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Ver campañas y cifras exactas</summary>
+      {rows.map(row=><p key={row.name} className="py-1">{row.name} · {row.period}: {observedCount(row.clicks)} clics, {observedCount(row.requests)} solicitudes, {observedCount(row.completed)} liquidados.</p>)}
+      {o?.campaigns?.map(c=><p key={c.campaign} className="py-1">{c.campaign}: {observedCount(c.link_opens)} clics · {observedCount(c.requests_created)} solicitudes</p>)}
+      <p>— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Las campañas forman parte de TukTuk oficial.</p>
+    </details>
     {official.isError||impulsa.isError||allies.isError ? <p role="alert" className="text-xs text-muted-foreground">Alguna fuente no está disponible.</p>:null}
-    <p className="mt-2 text-xs text-muted-foreground">— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Las campañas forman parte de TukTuk oficial.</p>
+
     <Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"comercial"}} className="mt-2 inline-flex min-h-10 items-center text-xs font-semibold text-primary">Consultar campañas y canales</Link>
   </SectionCard>;
 }
