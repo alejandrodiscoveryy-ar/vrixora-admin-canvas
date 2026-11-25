@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel, toneFromDecline,
-  toneFromCancellation, toneFromPending, VITALITY_RULES,
+  toneFromCancellation, toneFromPending, VITALITY_RULES, channelEventConversion,
 } from "../src/lib/agency-vitality.ts";
 
 const sample = {
@@ -171,7 +171,8 @@ test("visualización estratégica sin sumar estados superpuestos ni mezclar per�
   assert.match(dashboard,/const comparable=rows.slice\(0,2\)/);
   assert.match(dashboard,/Aliados · Histórico/);
   assert.match(dashboard,/typeof value==="number"&&Number.isFinite\(value\)&&value>=0/);
-  assert.match(dashboard,/90-value!\*65\/max/);
+  assert.match(dashboard,/row\.clicks\/maxClicks\*100/);
+  assert.doesNotMatch(dashboard,/<svg viewBox="0 0 180 112"/);
 });
 
 test("Analítica elimina consultas del panel legado y adapta gráficos a móvil",()=>{
@@ -212,4 +213,19 @@ test("clientes y finanzas usan gráficos válidos y captación no suma canales",
  assert.match(board,/d.debt_cup===0&&d.pending_withdrawal_cup===0/);
  assert.match(dashboard,/Comparación incompleta/);
  assert.match(dashboard,/no se suman entre canales/);
+});
+
+test("captación: comparación compacta por canal, histórico separado y conversión de eventos",()=>{
+  const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+  assert.match(dashboard,/data-channel-comparison/);
+  assert.match(dashboard,/data-channel-history/);
+  assert.match(dashboard,/role="table"/);
+  assert.match(dashboard,/md:grid-cols-\[/);
+  assert.match(dashboard,/premiumControlSurface/);
+  assert.match(dashboard,/Acumulado · independiente del filtro/);
+  assert.match(dashboard,/no sobre personas únicas/);
+  assert.match(dashboard,/channelEventConversion\(row.clicks,row.requests\)/);
+  assert.equal(channelEventConversion(50,3),0.06);
+  assert.equal(channelEventConversion(4,0),0);
+  for(const [clicks,requests] of [[0,0],[0,1],[undefined,0],[3,undefined],[2,3],[-1,0],[4,-1],[NaN,1],["50",3],[Infinity,2]]) assert.equal(channelEventConversion(clicks,requests),undefined);
 });
