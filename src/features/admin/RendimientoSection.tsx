@@ -52,7 +52,6 @@ export default function RendimientoSection({projectId}:{projectId:string}) {
         appearance="premium"
         module="rendimiento"
         title="Analítica · Vitalidad de la Agencia TukTuk"
-        description="Evolución histórica y conversión del negocio"
         icon={Activity}
         actions={
           <AdminPeriodSelector appearance="premium"
