@@ -188,3 +188,12 @@ test("Recargas abre en Pendientes y restablece esa vista al regresar", () => {
   assert.match(topups, /onClick=\{\(\) => setTopupStatus\(value\)\}/);
   assert.match(topups, /setTopupStatus\(""\)/);
 });
+
+test("recargas y billeteras reutilizan el retrato estándar por identidad del conductor",()=>{
+  assert.match(wallets, /portrait=\{<DriverDirectoryPortrait name=\{wallet.driverDisplayName\} url=\{financeMedia.data\?\.\[wallet.userId\]\?\.avatarUrl/);
+  assert.match(topups, /portrait=\{<DriverDirectoryPortrait name=\{item.driverDisplayName\} url=\{financeMedia.data\?\.\[item.userId\]\?\.avatarUrl/);
+  assert.match(source,/enabled: canPayments && permissions.includes\("marketplace.view"\)/);
+  assert.match(source,/getMarketplaceDirectoryDriverMedia\(projectId, financeMediaIds\)/);
+  assert.match(source,/tab === "billeteras" \? filteredWalletRows : tab === "recargas" \? filteredTopupRows/);
+  assert.match(source,/portrait \?\? <span className="marketplace-record-icon"/);
+});
