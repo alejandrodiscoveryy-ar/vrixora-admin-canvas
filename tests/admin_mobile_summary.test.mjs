@@ -33,27 +33,23 @@ test("fuentes verificadas, comparación y conversión sin inventar cifras", () =
   assert.match(dashboard, /<ResponsiveContainer/);
   assert.match(dashboard, /pathLength="100"/);
   assert.match(dashboard, /identifyAdminPeriod\(dateRange\)/);
-  assert.match(dashboard, /no indica conexión/);
-  assert.match(dashboard, /Sin tasa calculable/);
+  assert.match(dashboard, /No indica conexión/);
 });
-test("permisos y detalles conservados", () => {
-  assert.equal((dashboard.match(/<details className=/g) ?? []).length, 2);
-  assert.match(dashboard, /Más indicadores · detalle por área/);
-  assert.match(dashboard, /Actividad administrativa reciente/);
-  assert.match(dashboard, /recentActivity\.slice\(0, 3\)/);
+test("permisos y navegación conservados sin consultas administrativas redundantes", () => {
+  assert.doesNotMatch(dashboard,/Más indicadores · detalle por área|Actividad administrativa reciente|commercial\.listLeads|audit\.list/);
   assert.match(dashboard, /vista="mapa"/);
   assert.match(dashboard, /search=\{\{ vista: "recargas" \}\}/);
-  for (const permission of ["canViewUsers","canViewMarketplace","canViewPayments","canViewCommercial","canViewAudit"]) assert.ok(dashboard.includes(permission));
+  for (const permission of ["canViewUsers","canViewMarketplace","canViewPayments","canViewAnalytics"]) assert.ok(dashboard.includes(permission));
   assert.match(dashboard, /<AdminPeriodSelector/);
 });
-
-test("portada ejecutiva con embudo y gráficos de estados compatibles",()=>{
-  assert.match(dashboard,/title="De solicitud a servicio"/);
-  assert.match(dashboard,/title="Capacidad operativa"/);
-  assert.match(dashboard,/rides.settled<=rides.completed/);
+test("cada bloque ejecutivo tiene una función distinta",()=>{
+  assert.doesNotMatch(dashboard,/HomeServiceFunnel|title="Capacidad operativa"/);
+  assert.match(dashboard,/title="Oferta y demanda"/);
+  assert.match(dashboard,/title="Rendimiento económico"/);
+  assert.match(dashboard,/title="Decisiones estratégicas"/);
   assert.match(dashboard,/rides.requested-rides.completed-rides.cancelled-rides.unassigned/);
-  assert.match(dashboard,/profiles_total-d.operation.profiles_active/);
-  assert.match(dashboard,/No se conoce el total histórico de asignaciones/);
+  assert.match(dashboard,/Habilitado no indica conexión ni disponibilidad real/);
+  assert.match(dashboard,/Sin fuente contable agregada validada/);
   assert.match(dashboard,/Liquidado en MN · base tarifaria USD/);
   assert.match(dashboard,/refetchOnWindowFocus: false/);
 });

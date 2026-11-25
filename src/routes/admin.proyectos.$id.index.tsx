@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
-import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel, type AgencyVitality } from "@/lib/agency-vitality";
+import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel } from "@/lib/agency-vitality";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
@@ -8,11 +8,9 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   type LucideIcon,
-  Activity,
   AlertTriangle,
   ArrowRight,
   BriefcaseBusiness,
-  ChevronDown,
   Gauge,
   MapPin,
   RefreshCw,
@@ -23,7 +21,6 @@ import {
 import { supabaseServices } from "@/lib/services";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
 import { adminPeriodOptions, periodRange, identifyAdminPeriod, type AdminPeriodKey } from "@/components/admin/admin-period";
@@ -34,7 +31,6 @@ import { MetricCard } from "@/components/admin/MetricCard";
 import { premiumSurface, premiumHeaderSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import type { AdminModuleKey, SemanticState } from "@/components/admin/types";
-import { EmptyState } from "@/components/admin/EmptyState";
 
 import { PageAlert } from "@/components/admin/PageAlert";
 
@@ -51,9 +47,7 @@ function ResumenPage() {
 
   const canViewUsers = permissions.includes("customers.view");
   const canViewMarketplace = permissions.includes("marketplace.view");
-  const canViewCommercial = permissions.includes("commercial.view");
   const canViewPayments = permissions.includes("payments.view");
-  const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
 
   const {data:project}=useProject(id);
@@ -78,20 +72,6 @@ function ResumenPage() {
     refetchInterval: REFRESH_INTERVAL,
   });
 
-  const commercialLeads = useQuery({
-    queryKey: ["commercial-leads", id],
-    queryFn: () => supabaseServices.commercial.listLeads(id),
-    enabled: !permissionsLoading && canViewCommercial,
-    refetchInterval: REFRESH_INTERVAL,
-  });
-
-  const audit = useQuery({
-    queryKey: ["admin-audit", id],
-    queryFn: () => supabaseServices.audit.list(id, 30),
-    enabled: !permissionsLoading && canViewAudit,
-    refetchInterval: REFRESH_INTERVAL,
-  });
-
   const range = useMemo(
     () => ({
       start: new Date(`${dateRange.from}T00:00:00`),
@@ -101,63 +81,28 @@ function ResumenPage() {
   );
 
   const users = useMemo(() => usersApp.data ?? [], [usersApp.data]);
-  const leads = useMemo(() => commercialLeads.data ?? [], [commercialLeads.data]);
 
   const newUsersPeriod = users.filter((user) => {
     const createdAt = new Date(user.registeredAt).getTime();
     return createdAt >= range.start.getTime() && createdAt <= range.end.getTime();
   }).length;
 
-  const periodLeads = leads.filter((lead) => {
-    if (lead.archivedAt) return false;
-    const createdAt = new Date(lead.createdAt).getTime();
-    return createdAt >= range.start.getTime() && createdAt <= range.end.getTime();
-  });
-
-  const contactedLeads = periodLeads.filter(
-    (lead) =>
-      Boolean(lead.lastInteractionAt) ||
-      ["contacted", "interested", "trial", "ready_to_charge", "customer"].includes(
-        lead.status,
-      ),
-  ).length;
-
-  const interestedLeads = periodLeads.filter((lead) =>
-    ["interested", "trial", "ready_to_charge", "customer"].includes(lead.status),
-  ).length;
-
-  const registeredLeads = periodLeads.filter(
-    (lead) => lead.registered || lead.status === "customer",
-  ).length;
-
-  const conversionRate =
-    periodLeads.length > 0
-      ? Math.round((registeredLeads / periodLeads.length) * 100)
-      : null;
-
   const queryError = [
     usersApp,
     marketplace,
-    commercialLeads,
-    audit,
   ].find((query) => query.isError)?.error;
 
   const allLoading = [
     usersApp,
     marketplace,
-    commercialLeads,
-    audit,
   ].some((query) => query.isLoading);
 
   const dataUpdatedAt = Math.max(
     usersApp.dataUpdatedAt,
     marketplace.dataUpdatedAt,
-    commercialLeads.dataUpdatedAt,
-    audit.dataUpdatedAt,
   );
 
   const overview = marketplace.isError ? undefined : marketplace.data;
-  const recentActivity = (audit.data ?? []).slice(0, 7);
 
   const pendingTopups = overview?.pendingTopups ?? 0;
   const openIncidents = overview?.jobsIncidentOpen ?? 0;
@@ -270,91 +215,13 @@ function ResumenPage() {
         </section>
       ) : null}
 
-      {canViewAnalytics ? (Math.round((Date.parse(dateRange.to)-Date.parse(dateRange.from))/86400000)<=400 ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} /> : <p role="alert" className="text-xs text-muted-foreground">El historial supera los 401 días admitidos por los gráficos de Vitalidad.</p>) : null}
+      {canViewAnalytics ? (Math.round((Date.parse(dateRange.to)-Date.parse(dateRange.from))/86400000)<=400 ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} fleet={overview ? {enabled:overview.driversActive,total:overview.driversTotal,inProgress:overview.jobsActive}:undefined} appUsers={usersApp.isError||!usersApp.data?undefined:{total:users.length,newCount:newUsersPeriod}} /> : <p role="alert" className="text-xs text-muted-foreground">El historial supera los 401 días admitidos por los gráficos de Vitalidad.</p>) : null}
 
-      <section aria-label="Indicadores principales" className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-3">
-        {canViewMarketplace ? (
-          <>
-            <SummaryLink projectId={id} section="trabajos" vista="conductores">
-              <DashboardMetric label="Conductores habilitados" value={overview?.driversActive ?? "—"}
-                comparison={overview ? String(overview.driversTotal) + " registrados · no indica conexión" : "Sin datos disponibles"}
-                icon={Users} tone="blue" isLoading={marketplace.isLoading}/>
-            </SummaryLink>
-            <SummaryLink projectId={id} section="trabajos" vista="mapa">
-              <DashboardMetric label="Servicios en curso" value={overview?.jobsActive ?? "—"}
-                comparison="Ahora · abrir mapa" icon={MapPin} tone="cyan" isLoading={marketplace.isLoading}/>
-            </SummaryLink>
-          </>
-        ) : null}
-        {canViewUsers ? (
-          <SummaryLink projectId={id} section="clientes">
-            <DashboardMetric label="Usuarios de la app" value={usersApp.isError || !usersApp.data ? "—" : users.length}
-              comparison={usersApp.isError || !usersApp.data ? "Sin datos disponibles" : String(newUsersPeriod) + " nuevos en el período"}
-              icon={Users} tone="cyan" isLoading={usersApp.isLoading}/>
-          </SummaryLink>
-        ) : null}
-      </section>
+      {!canViewAnalytics && <section aria-label="Indicadores principales" className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-3">
+        {canViewMarketplace && <><SummaryLink projectId={id} section="trabajos" vista="conductores"><DashboardMetric label="Conductores habilitados" value={overview?.driversActive ?? "—"} comparison="No indica conexión" icon={Users} tone="blue" isLoading={marketplace.isLoading}/></SummaryLink><SummaryLink projectId={id} section="trabajos" vista="mapa"><DashboardMetric label="Servicios en curso" value={overview?.jobsActive ?? "—"} comparison="Ahora · abrir mapa" icon={MapPin} tone="cyan" isLoading={marketplace.isLoading}/></SummaryLink></>}
+        {canViewUsers && <SummaryLink projectId={id} section="clientes"><DashboardMetric label="Usuarios de la app" value={usersApp.isError||!usersApp.data?"—":users.length} comparison="Registrados" icon={Users} tone="cyan" isLoading={usersApp.isLoading}/></SummaryLink>}
+      </section>}
 
-      {(canViewCommercial || canViewMarketplace) ? (
-        <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-semibold text-foreground sm:px-4 [&::-webkit-details-marker]:hidden">
-            Más indicadores · detalle por área
-            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
-          </summary>
-          <div className="grid gap-3 border-t border-border-subtle p-3 lg:grid-cols-2 sm:p-4">
-            {canViewCommercial ? (
-              <section aria-label="Detalle comercial">
-                <h2 className="mb-2 text-sm font-semibold text-foreground">Seguimiento comercial · período seleccionado</h2>
-                <div className="grid grid-cols-2 gap-2">
-                  <SummaryItem label="Contactos" value={periodLeads.length} description="Registrados en CRM" />
-                  <SummaryItem label="Contactados" value={contactedLeads} description="Con interacción" />
-                  <SummaryItem label="Interesados" value={interestedLeads} description="Según su estado" />
-                  <SummaryItem label="Registrados" value={registeredLeads} description={conversionRate === null ? "Sin tasa calculable" : String(conversionRate) + "% de los contactos"} />
-                </div>
-              </section>
-            ) : null}
-            {canViewMarketplace ? (
-              <section aria-label="Detalle operativo">
-                <h2 className="mb-2 text-sm font-semibold text-foreground">Operación · estado actual</h2>
-                <div className="grid grid-cols-2 gap-2">
-                  <SummaryItem label="Conductores registrados" value={overview?.driversTotal ?? 0} description="Total histórico" />
-                  <SummaryItem label="En curso" value={overview?.jobsActive ?? 0} description="Servicios actuales" />
-                  <SummaryItem label="Incidencias abiertas" value={openIncidents} description="Por resolver" />
-                  <SummaryItem label="Suspendidos" value={suspendedDrivers} description="Estado administrativo" />
-                </div>
-              </section>
-            ) : null}
-          </div>
-        </details>
-      ) : null}
-
-      {canViewAudit ? (
-        <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-semibold text-foreground sm:px-4 [&::-webkit-details-marker]:hidden">
-            Actividad administrativa reciente
-            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
-          </summary>
-          <div className="border-t border-border-subtle p-3 sm:p-4">
-            {recentActivity.length ? (
-              <ol className="divide-y divide-border-subtle">
-                {recentActivity.slice(0, 3).map((event) => (
-                  <li key={event.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                    <span className="min-w-0 truncate text-foreground">{auditActionLabel(event.action)}</span>
-                    <time dateTime={event.createdAt} className="text-xs text-muted-foreground">{formatActivityDate(event.createdAt)}</time>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <EmptyState density="compact" appearance="premium" icon={Activity} title="Sin actividad reciente" description="Los movimientos administrativos aparecerán aquí." module="resumen" />
-            )}
-            <Button asChild size="sm" variant="ghost" className="mt-2">
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }}>
-                Ver auditoría <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-        </details>
-      ) : null}
     </div>
   );
 }
@@ -380,41 +247,6 @@ function DashboardMetric({
   return <MetricCard density="compact" appearance="premium" label={label} value={value}
     description={comparison} icon={Icon} isLoading={isLoading} {...dashboardMetricAccents[tone]} />;
 }
-function SummaryItem({
-  label,
-  value,
-  description,
-}: {
-  label: string;
-  value: number | string;
-  description: string;
-}) {
-  return (
-    <div className={cn("relative min-w-0 overflow-hidden rounded-[var(--radius-compact)] border p-3", premiumSurface, "shadow-none")}>
-      <div className="relative">
-        <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
-          {label}
-        </p>
-        <p className="mt-1 font-mono text-xl font-bold tracking-tight text-foreground">
-          {value}
-        </p>
-        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function formatActivityDate(value: string) {
-  return new Intl.DateTimeFormat("es", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
 function buildFreshnessLabel(timestamp: number, loading: boolean) {
   if (loading) return "Cargando datos...";
   if (!timestamp) return "Sin datos recientes";
@@ -442,26 +274,12 @@ function friendlyError(error: unknown) {
   return `Error al cargar datos: ${message}`;
 }
 
-function auditActionLabel(action: string) {
-  const labels: Record<string, string> = {
-    insert: "Registro creado",
-    update: "Registro actualizado",
-    delete: "Registro eliminado",
-    payment_recorded: "Pago registrado",
-    payment_created: "Pago registrado",
-    license_renewed: "Licencia renovada",
-    license_created: "Licencia creada",
-  };
-
-  return labels[action] ?? action.replaceAll("_", " ");
-}
-
 function SummaryLink({projectId, section, vista, children}: {projectId:string; section:"trabajos"|"clientes"|"rendimiento"|"comercial"; vista?:"trabajos"|"conductores"|"mapa"|"clientes"; children:ReactNode}) {
   return <Link to="/admin/proyectos/$id/$section" params={{id:projectId,section}} search={vista ? {vista} : {}}
     className="block min-w-0 rounded-[var(--radius-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:brightness-105">{children}</Link>;
 }
 
-function StrategicCharts({ projectId, from, to }: { projectId: string; from: string; to: string }) {
+function StrategicCharts({ projectId, from, to, fleet, appUsers }: { projectId: string; from: string; to: string; fleet?: {enabled:number;total:number;inProgress:number}; appUsers?:{total:number;newCount:number} }) {
   const query = useQuery({
     queryKey: ["agency-vitality-v1", projectId, from, to],
     queryFn: async () => {
@@ -504,18 +322,9 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
         </SummaryLink>
       </div>
 
-      <div className="grid min-w-0 gap-2 lg:grid-cols-2">
-        <SectionCard density="compact" appearance="premium" module="resumen" title="De solicitud a servicio" description="Carreras reales del período" contentClassName="p-3">
-          {rides && rides.requested>=rides.completed+rides.cancelled+rides.unassigned && rides.settled<=rides.completed ? <HomeServiceFunnel rides={rides}/> : <p className="text-sm text-muted-foreground">Datos no disponibles o inconsistentes.</p>}
-        </SectionCard>
-        <SectionCard density="compact" appearance="premium" module="resumen" title="Capacidad operativa" description="Flota habilitada · estado actual" contentClassName="p-3">
-          {d?.operation && d.operation.profiles_active<=d.operation.profiles_total ? <HomeDonut total={d.operation.profiles_total} center={fmt(d.operation.profiles_total)} subtitle="Registrados" rows={[{label:"Habilitados",value:d.operation.profiles_active,color:"#06b6d4"},{label:"No habilitados",value:d.operation.profiles_total-d.operation.profiles_active,color:"#64748b"}]}/> : <p className="text-sm text-muted-foreground">Datos de flota no disponibles.</p>}
-          <p className="mt-2 text-xs text-muted-foreground">Habilitado no significa conectado.</p>
-        </SectionCard>
-      </div>
       <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <SectionCard density="compact" appearance="premium" module="rendimiento"
-          title="Crecimiento y demanda" description="Actual frente al período anterior equivalente"
+          title="Crecimiento del negocio" description="Actual frente al período anterior equivalente"
           contentClassName="p-3">
           {loading ? <p className="text-xs text-muted-foreground">Consultando…</p> : !d ? <p className="text-xs text-muted-foreground">Sin datos disponibles.</p> : <>
             <div className="h-44 min-w-0 sm:h-48">
@@ -531,6 +340,7 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {appUsers && <Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"clientes"}} className="flex flex-wrap items-center gap-2 text-xs text-primary">{fmt(appUsers.total)} usuarios app · {fmt(appUsers.newCount)} nuevos <ArrowRight className="size-3"/></Link>}
             <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
               {rows.map(row=><span key={row.name}>{row.name}: <strong className="text-foreground">{fmt(row.actual)}</strong> / {fmt(row.anterior)}</span>)}
             </div>
@@ -543,30 +353,33 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
         </SectionCard>
       </div>
 
-      <SectionCard density="compact" appearance="premium" module="rendimiento"
-        title="Prioridades"
-        actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4" aria-hidden="true"/></Link>}
-        contentClassName="space-y-2 p-3">
-        {priorities.length ? <div className="flex flex-wrap gap-2">{priorities.map(p => <Link key={p.id} to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} title={p.explanation} className="flex min-h-10 items-center gap-2 rounded-lg border border-border-subtle bg-surface-2 px-3 text-xs"><span>{p.label}</span><strong className={p.tone==="red"?"text-[var(--semantic-danger)]":"text-[var(--semantic-warning)]"}>{p.value==null?"—":fmt(p.value)+(p.id==="cancelled"?"%":"")}</strong><ArrowRight className="size-3"/></Link>)}</div> : <p className="text-sm text-muted-foreground">{!d ? "Sin datos para evaluar prioridades." : rides?.requested === 0 ? "Priorizar captación de solicitudes reales de pasajeros." : "Sin alertas de demanda con base suficiente; revisar evolución."}</p>}
-        {funnel?.consistent && d && d.control.registered > 0 ? <p className="text-xs text-muted-foreground">Cohorte Control: {fmt(d.control.registered)} altas → {fmt(d.control.activated)} habilitados → {fmt(d.control.first_ride)} primera carrera liquidada.</p> : null}
-        {d?.finance ? <p className="text-xs text-muted-foreground">Volumen de viajes, no ingresos de la agencia. {fmt(d.finance.usd)} USD · {fmt(d.finance.eur)} EUR{d.finance.other > 0 ? " · Otras monedas registradas" : ""}.</p> : null}
+      <div className="grid min-w-0 gap-2 lg:grid-cols-2">
+        <SectionCard density="compact" appearance="premium" module="resumen" title="Oferta y demanda" description="Flota actual · demanda del período" contentClassName="p-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border-subtle bg-surface-2/50 p-3"><Users className="size-5 text-primary"/><p className="mt-2 text-3xl font-semibold tabular-nums">{fleet?fmt(fleet.enabled):"—"}</p><p className="text-xs text-muted-foreground">Conductores habilitados</p><p className="text-xs text-muted-foreground">{fleet?fmt(fleet.total)+" registrados":"Sin datos"}</p></div>
+            <div className="rounded-xl border border-border-subtle bg-surface-2/50 p-3"><BriefcaseBusiness className="size-5 text-primary"/><p className="mt-2 text-3xl font-semibold tabular-nums">{rides?fmt(rides.requested):"—"}</p><p className="text-xs text-muted-foreground">Solicitudes del período</p></div>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">Habilitado no indica conexión ni disponibilidad real.</p>
+          {fleet && <SummaryLink projectId={projectId} section="trabajos" vista="mapa"><span className="mt-2 inline-flex min-h-10 items-center gap-2 text-sm text-primary"><MapPin className="size-4"/>{fmt(fleet.inProgress)} servicios en curso · Abrir mapa</span></SummaryLink>}
+        </SectionCard>
+        <SectionCard density="compact" appearance="premium" module="resumen" title="Rendimiento económico" description="Base tarifaria USD · importes en MN" contentClassName="p-3">
+          <p className="text-3xl font-semibold tabular-nums">{d?.finance?fmt(d.finance.cup)+" MN":"—"}</p><p className="text-xs text-muted-foreground">Volumen de viajes, no ingresos de la agencia</p>
+          {d?.finance && d.finance.usd>0 && <p className="text-sm">{fmt(d.finance.usd)} USD liquidados</p>}
+          {d?.finance && d.finance.eur>0 && <p className="text-sm">{fmt(d.finance.eur)} EUR liquidados</p>}
+          <div className="mt-3 border-t border-border-subtle pt-2"><p className="text-xs text-muted-foreground">Comisiones cobradas</p><p className="text-xl font-semibold">—</p><p className="text-xs text-muted-foreground">Sin fuente contable agregada validada.</p></div>
+        </SectionCard>
+      </div>
+      <SectionCard density="compact" appearance="premium" module="resumen" title="Decisiones estratégicas" actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4"/></Link>} contentClassName="grid gap-2 p-3 lg:grid-cols-3">
+        {priorities.some(p=>p.id==="cancelled"||p.id==="rides") ? <Decision title="Conversión de servicios" text="Revisar las causas de cancelación y el proceso de asignación antes de aumentar la captación." urgent/> : <Decision title="Conversión de servicios" text={!rides?"Datos de carreras no disponibles.":rides.requested===0?"Priorizar captación de solicitudes reales.":"Revisar la evolución de solicitudes y servicios completados."}/>}
+        <Decision title="Activación de conductores" text={funnel?.consistent && d && d.control.activated>0 && d.control.first_ride<d.control.activated ? fmt(d.control.activated-d.control.first_ride)+" habilitados de la cohorte aún sin primera carrera liquidada. Revisar incorporación y oportunidades de servicio.":"Revisar la primera carrera de la cohorte en Analítica."}/>
+        <Decision title="Crecimiento comercial" text={d?.clients && d.clients.previous_new>=5 && d.clients.new>d.clients.previous_new?"Aprovechar el crecimiento de nuevos clientes para impulsar solicitudes efectivas.":d?.clients?"Revisar la captación y su conversión en pasajeros.":"Sin datos suficientes de clientes."}/>
       </SectionCard>
     </section>
   );
 }
 
-function HomeServiceFunnel({rides}:{rides:NonNullable<AgencyVitality["rides"]>}){
-  const stages=[{label:"Solicitudes reales",value:rides.requested,color:"#0e7490"},{label:"Completadas",value:rides.completed,color:"#15803d"},{label:"Liquidadas",value:rides.settled,color:"#b45309"}];
-  return <div className="grid min-w-0 items-center gap-3 sm:grid-cols-2">
-    <svg viewBox="0 0 280 174" className="mx-auto w-full max-w-[310px]" role="img" aria-label={stages.map(x=>x.label+": "+x.value).join(", ")}>
-      {stages.map((stage,i)=>{const top=270-i*46,bottom=top-40,y=i*58;return <g key={stage.label}><path d={"M"+(280-top)/2+" "+(y+2)+" H"+(280+top)/2+" L"+(280+bottom)/2+" "+(y+55)+" H"+(280-bottom)/2+" Z"} fill={stage.color}/><text x="140" y={y+17} textAnchor="middle" fill="white" fontSize="11">{stage.label}</text><text x="140" y={y+36} textAnchor="middle" fill="white" fontSize="20" fontWeight="700">{stage.value}</text><text x="140" y={y+49} textAnchor="middle" fill="white" fontSize="10">{rides.requested>0?(stage.value*100/rides.requested).toFixed(1)+"%":"—"}</text></g>;})}
-    </svg>
-    <div className="space-y-2">
-      <div className="rounded-lg border border-border-subtle bg-surface-2/50 p-3"><p className="text-xs text-muted-foreground">Canceladas</p><strong className="text-xl text-[var(--semantic-danger)]">{rides.cancelled}</strong></div>
-      <div className="rounded-lg border border-border-subtle bg-surface-2/50 p-3"><p className="text-xs text-muted-foreground">Sin asignar</p><strong className="text-xl">{rides.unassigned}</strong></div>
-      <p className="text-[11px] text-muted-foreground">Etapas esquemáticas. No se conoce el total histórico de asignaciones.</p>
-    </div>
-  </div>;
+function Decision({title,text,urgent=false}:{title:string;text:string;urgent?:boolean}){
+  return <div className="flex gap-2 rounded-lg border border-border-subtle bg-surface-2/50 p-3"><AlertTriangle className={cn("mt-0.5 size-4 shrink-0",urgent?"text-[var(--semantic-danger)]":"text-primary")} aria-hidden="true"/><div className="min-w-0"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 text-xs text-muted-foreground">{text}</p></div></div>;
 }
 function HomeDonut({total,center,subtitle,rows}:{total:number;center:string;subtitle:string;rows:{label:string;value:number;color:string}[]}){
   let offset=0;
