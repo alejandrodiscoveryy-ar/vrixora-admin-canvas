@@ -167,11 +167,11 @@ test("visualización estratégica sin sumar estados superpuestos ni mezclar per�
   assert.match(board,/Liquidadas \(incluidas en completadas\)/);
   assert.match(board,/pathLength="100"/);
   assert.doesNotMatch(board,/VisualBars/);
-  assert.match(board,/<NumberTile label="Nuevos"/);
+  assert.match(board,/d.clients.total-d.clients.new/);
   assert.match(dashboard,/const comparable=rows.slice\(0,2\)/);
   assert.match(dashboard,/Aliados · Histórico/);
   assert.match(dashboard,/typeof value==="number"&&Number.isFinite\(value\)&&value>=0/);
-  assert.match(dashboard,/height:value!\*100\/max/);
+  assert.match(dashboard,/90-value!\*65\/max/);
 });
 
 test("Analítica elimina consultas del panel legado y adapta gráficos a móvil",()=>{
@@ -203,4 +203,13 @@ test("resumen compacto sin cabecera redundante y alertas plegables",()=>{
   assert.match(board,/priorities\.map\(item/);
   assert.match(board,/Criterios ·/);
   assert.match(board,/Etapas esquemáticas/);
+});
+
+test("clientes y finanzas usan gráficos válidos y captación no suma canales",()=>{
+ const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+ const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+ assert.match(board,/d.clients.new<=d.clients.total/);
+ assert.match(board,/d.debt_cup===0&&d.pending_withdrawal_cup===0/);
+ assert.match(dashboard,/Comparación incompleta/);
+ assert.match(dashboard,/no se suman entre canales/);
 });
