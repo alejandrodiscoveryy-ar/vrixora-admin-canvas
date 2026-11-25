@@ -226,13 +226,12 @@ export default function AgencyVitalityOverview({
         <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <SectionCard density="compact" appearance="premium" module="rendimiento" title="Clientes" description="Crecimiento y servicio" contentClassName="p-4">
             {d.clients ? <>
-              <div className="text-3xl font-semibold tabular-nums">{number(d.clients.total)} <span className="text-xs font-normal text-text-secondary">registrados al cierre</span></div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <NumberTile label="Nuevos" value={number(d.clients.new)} note={number(d.clients.previous_new)+" en período anterior"}/>
+              {d.clients.new<=d.clients.total ? <Donut total={d.clients.total} rows={[{label:"Nuevos del período",value:d.clients.new,color:"#0891b2"},{label:"Registrados anteriormente",value:d.clients.total-d.clients.new,color:"#64748b"}]} center={number(d.clients.total)} sub="Registrados"/> : <p className="text-sm text-text-secondary">Datos de clientes inconsistentes.</p>}
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <NumberTile label="Atendidos" value={number(d.clients.served)} note="Con carrera completada"/>
                 <NumberTile label="Recurrentes" value={number(d.clients.recurrent)} note="Histórico · 2+ viajes"/>
               </div>
-              <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle</summary><p>Atendidos y nuevos pueden coincidir; no se suman.</p></details>
+              <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle</summary><p>Nuevos del período anterior: {number(d.clients.previous_new)}. Atendidos y nuevos pueden coincidir; no se suman.</p></details>
             </>:<p className="text-sm text-text-secondary">Datos no disponibles.</p>}
             <Link className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs font-medium text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"clientes"}}>Consultar clientes <ArrowUpRight className="size-3.5"/></Link>
           </SectionCard>
@@ -310,9 +309,12 @@ function FinanceDebt({projectId}:{projectId:string}){
   });
   const d=enabled&&!debt.isError?debt.data:undefined;
   return <>
-    <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
-      <NumberTile label="Deuda de billeteras" value={money(d?.debt_cup,"MN")} note="Saldo actual"/>
-      <NumberTile label="Retiradas pendientes" value={money(d?.pending_withdrawal_cup,"MN")} note="Impulsa · actual"/>
+    <div className="mt-3 grid items-center gap-3 sm:grid-cols-[minmax(90px,0.75fr)_minmax(0,1fr)]">
+      <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-border-subtle p-3">
+        {d ? (d.debt_cup===0&&d.pending_withdrawal_cup===0 ? <CheckCircle2 className="size-12 text-[var(--semantic-success)]" aria-hidden="true"/> : <Wallet className="size-12 text-[var(--semantic-warning)]" aria-hidden="true"/>) : <CircleHelp className="size-12 text-text-secondary" aria-hidden="true"/>}
+        <p className="text-center text-xs font-medium">{!d?"Sin datos":d.debt_cup===0&&d.pending_withdrawal_cup===0?"Sin estos pendientes":"Pendientes financieros"}</p>
+      </div>
+      <div className="space-y-1"><InlineStat label="Deuda actual" value={money(d?.debt_cup,"MN")}/><InlineStat label="Retiradas pendientes" value={money(d?.pending_withdrawal_cup,"MN")}/></div>
     </div>
     {enabled?<Link className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"billeteras"}}>Consultar billeteras <ArrowUpRight className="size-3.5" aria-hidden="true"/></Link>:null}
   </>;
