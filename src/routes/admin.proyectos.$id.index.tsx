@@ -21,12 +21,12 @@ import {
 } from "lucide-react";
 
 import { supabaseServices } from "@/lib/services";
-import { useProjectPermissions } from "@/hooks/useProjects";
+import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
+
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
-import { identifyAdminPeriod, type AdminPeriodKey } from "@/components/admin/admin-period";
+import { adminPeriodOptions, periodRange, identifyAdminPeriod, type AdminPeriodKey } from "@/components/admin/admin-period";
 
 
 import { SectionCard } from "@/components/admin/SectionCard";
@@ -56,9 +56,12 @@ function ResumenPage() {
   const canViewAudit = permissions.includes("audit.view");
   const canViewAnalytics = permissions.includes("analytics.view");
 
-  const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
-    `vrixora:summary-range:${id}`,
-  );
+  const {data:project}=useProject(id);
+  const today=periodRange("today").to;
+  const projectStart=project?.createdAt?.slice(0,10);
+  const allRange=projectStart && /^\d{4}-\d{2}-\d{2}$/.test(projectStart) && projectStart<=today ? {from:projectStart,to:today} : undefined;
+  const options=allRange ? [...adminPeriodOptions,{value:"all" as const,label:"Todo"}] : adminPeriodOptions;
+  const [dateRange, setDateRange] = useState(() => periodRange("7d"));
   const [period, setPeriod] = useState<AdminPeriodKey>(() => identifyAdminPeriod(dateRange));
 
   const usersApp = useQuery({
@@ -181,6 +184,7 @@ function ResumenPage() {
               appearance="premium"
               value={period}
               range={dateRange}
+              options={options} allRange={allRange} maxCustomDays={401}
               onChange={(nextPeriod, nextRange) => {
                 setPeriod(nextPeriod);
                 setDateRange(nextRange);
@@ -266,7 +270,7 @@ function ResumenPage() {
         </section>
       ) : null}
 
-      {canViewAnalytics ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} /> : null}
+      {canViewAnalytics ? (Math.round((Date.parse(dateRange.to)-Date.parse(dateRange.from))/86400000)<=400 ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} /> : <p role="alert" className="text-xs text-muted-foreground">El historial supera los 401 días admitidos por los gráficos de Vitalidad.</p>) : null}
 
       <section aria-label="Indicadores principales" className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-3">
         {canViewMarketplace ? (

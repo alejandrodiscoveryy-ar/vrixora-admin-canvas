@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useProject } from "@/hooks/useProjects";
 import {
   AlertTriangle,
   ChevronDown,
@@ -41,6 +42,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AUDIT_PERIOD_OPTIONS: AdminPeriodOption[] = [
+  { value: "yesterday", label: "Ayer" },
   { value: "today", label: "Hoy" },
   { value: "7d", label: "7 días" },
   { value: "30d", label: "30 días" },
@@ -149,6 +151,10 @@ type OperationFact = {
 };
 
 export default function AuditoriaSection({ projectId }: { projectId: string }) {
+  const {data:project}=useProject(projectId);
+  const today=periodRange("today").to;
+  const projectStart=project?.createdAt?.slice(0,10);
+  const allRange=projectStart && /^\d{4}-\d{2}-\d{2}$/.test(projectStart) && projectStart<=today ? {from:projectStart,to:today} : undefined;
   const [period, setPeriod] = useState<AdminPeriodKey>("today");
   const [range, setRange] = useState<AdminDateRange>(() => periodRange("today"));
   const [view, setView] = useState<AuditView>("summary");
@@ -245,7 +251,8 @@ export default function AuditoriaSection({ projectId }: { projectId: string }) {
           value={period}
           range={range}
           onChange={handlePeriodChange}
-          options={AUDIT_PERIOD_OPTIONS}
+          options={allRange ? [...AUDIT_PERIOD_OPTIONS,{value:"all",label:"Todo"}] : AUDIT_PERIOD_OPTIONS}
+          allRange={allRange}
         />
       </div>
       {error ? (
