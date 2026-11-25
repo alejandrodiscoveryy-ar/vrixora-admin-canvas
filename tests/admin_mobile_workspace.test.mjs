@@ -198,7 +198,7 @@ test("Recargas premium reutiliza sistema grafito aprobado y mantiene acciones cr
 test("Billeteras premium solo altera presentación y conserva operaciones financieras", () => {
   const walletView = panel.slice(panel.indexOf('<TabsContent value="billeteras"'), panel.indexOf('<TabsContent value="recargas"'));
   const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
-  assert.match(walletView, /filteredWalletRows\.map\(\(wallet\) =>/);
+  assert.match(walletView, /sortedWalletRows\.map\(\(wallet\) =>/);
   assert.match(walletView, /reserved = Number\(wallet\.realReservedBalance\) \+ Number\(wallet\.promotionalReservedBalance\)/);
   assert.match(walletView, /labelText="Disponible"/);
   assert.match(walletView, /labelText="Reservado"/);
@@ -212,14 +212,14 @@ test("Billeteras: filtro de estado local no altera saldos ni registros financier
   const view = panel.slice(panel.indexOf('<TabsContent value="billeteras"'), panel.indexOf('<TabsContent value="recargas"'));
   assert.match(panel, /const filteredWalletRows = walletRows\.filter/);
   assert.match(panel, /switch \(walletFilter\)/);
-  assert.match(view, /filteredWalletRows\.map\(\(wallet\) =>/);
+  assert.match(view, /sortedWalletRows\.map\(\(wallet\) =>/);
   assert.match(view, /wallet\.realReservedBalance/);
   assert.match(view, /wallet\.promotionalReservedBalance/);
   assert.match(view, /wallet\.totalBalance/);
   assert.match(view, /wallet\.availableBalance/);
-  assert.match(view, /PaginationButton query=\{wallets\}/);
+  assert.doesNotMatch(view, /PaginationButton query=\{wallets\}/);
   assert.match(view, /aria-label="Filtrar billeteras"/);
-  assert.match(view, /setWalletFilter\(""\)/);
+  assert.match(view, /setWalletFilter\("has_available"\)/);
 });
 
 test("Colores y marcas financieras no cambian búsquedas, saldos ni confirmaciones", () => {
@@ -228,7 +228,7 @@ test("Colores y marcas financieras no cambian búsquedas, saldos ni confirmacion
   for (const balance of ["wallet.availableBalance", "wallet.totalBalance", "wallet.realReservedBalance", "wallet.promotionalReservedBalance"]) {
     assert.ok(wallet.includes(balance), balance);
   }
-  assert.match(wallet, /filteredWalletRows\.map/);
+  assert.match(wallet, /sortedWalletRows\.map/);
   assert.match(wallet, /setWalletFilter\(value\)/);
   assert.match(topup, /filteredTopupRows\.map/);
   assert.match(topup, /setTopupStatus\(value\)/);
