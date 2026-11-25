@@ -108,14 +108,14 @@ test("billeteras premium: ancho completo, saldos alineados y jerarquía compacta
   assert.match(css, /\.marketplace-wallet-row \.marketplace-wallet-metrics\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /@container \(max-width: 760px\)/);
   assert.match(css, /@container \(max-width: 420px\)/);
-  for (const term of ['wallet.availableBalance', 'wallet.totalBalance', 'wallet.initialDepositConfirmed', 'wallet.realBalance', 'wallet.promotionalBalance', 'wallet.realReservedBalance', 'wallet.promotionalReservedBalance']) {
+  for (const term of ['wallet.availableBalance', 'wallet.totalBalance', 'wallet.realBalance', 'wallet.promotionalBalance', 'wallet.realReservedBalance', 'wallet.promotionalReservedBalance']) {
     assert.ok(walletBlock.includes(term), "Indicador conservado: "+term);
   }
   assert.doesNotMatch(walletBlock, /PaginationButton query=\{wallets\}/);
   assert.match(walletBlock, /<details className="marketplace-record-details group">/);
 });
 
-test("Billeteras filtra depósitos y disponibilidad con las mismas pastillas que Recargas", () => {
+test("Billeteras filtra disponibilidad y reservas con las mismas pastillas que Recargas", () => {
   const walletView = source.slice(source.indexOf('<TabsContent value="billeteras"'), source.indexOf('<TabsContent value="recargas"'));
   assert.match(source, /const \[walletFilter, setWalletFilter\] = useState/);
 
@@ -206,4 +206,8 @@ test("inventario completo sin resultados parciales, historial diferido y orden g
   assert.match(wallets,/canManagePayments && <WalletFinancialHistory/);
   assert.match(source,/enabled:open,staleTime:30_000/);
   assert.match(source,/No es el libro completo de movimientos/);
+});
+
+test("Todas es el último filtro de Billeteras",()=>{
+  assert.match(wallets,/\["has_available", "Con saldo"\],\s*\["no_available", "Sin disponible"\],\s*\["reserved", "Con reservas"\],\s*\["", "Todas"\],\s*\] as const/);
 });
