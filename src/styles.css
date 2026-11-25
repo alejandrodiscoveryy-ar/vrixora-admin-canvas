@@ -1493,13 +1493,13 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   background-color: color-mix(in oklab, var(--finance-filter-ink) 17%, var(--surface-2));
   color: color-mix(in oklab, var(--finance-filter-ink) 72%, var(--text-primary) 28%);
 }
-/* Semáforo de depósitos: visible sin depender únicamente del color. */
+/* Semáforo de saldo disponible; los importes visibles indican el estado. */
 .marketplace-wallet-row {
-  --wallet-deposit-ink: var(--semantic-warning);
-  --record-accent: var(--wallet-deposit-ink);
+  --wallet-balance-ink: var(--semantic-warning);
+  --record-accent: var(--wallet-balance-ink);
 }
-.marketplace-wallet-row[data-deposit-state="confirmed"] {
-  --wallet-deposit-ink: var(--semantic-success);
+.marketplace-wallet-row[data-balance-state="available"] {
+  --wallet-balance-ink: var(--semantic-success);
 }
 .marketplace-wallet-row::before {
   position: absolute;
@@ -1507,7 +1507,7 @@ header.admin-graphite-header[data-nav-tone] .admin-workspace-icon {
   inset-inline-start: 0;
   inline-size: 4px;
   border-radius: 0 4px 4px 0;
-  background-color: var(--wallet-deposit-ink);
+  background-color: var(--wallet-balance-ink);
   content: "";
   pointer-events: none;
 }

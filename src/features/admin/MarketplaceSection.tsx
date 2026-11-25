@@ -1072,7 +1072,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("requested");
   const [walletSearch, setWalletSearch] = useState("");
-  const [walletFilter, setWalletFilter] = useState<"" | "deposit_pending" | "deposit_confirmed" | "has_available" | "no_available" | "reserved">("has_available");
+  const [walletFilter, setWalletFilter] = useState<"" | "has_available" | "no_available" | "reserved">("has_available");
   const [topupSearch, setTopupSearch] = useState("");
   const [topupDriver, setTopupDriver] = useState("");
   const [amount, setAmount] = useState("");
@@ -1733,8 +1733,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const filteredWalletRows = walletRows.filter((wallet) => {
     if (!recordMatches(walletSearch, wallet.driverDisplayName, wallet.driverPhone)) return false;
     switch (walletFilter) {
-      case "deposit_pending": return !wallet.initialDepositConfirmed;
-      case "deposit_confirmed": return wallet.initialDepositConfirmed;
       case "has_available": return Number(wallet.availableBalance) > 0;
       case "no_available": return Number(wallet.availableBalance) <= 0;
       case "reserved": return Number(wallet.reservedBalance) > 0;
@@ -1742,7 +1740,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     }
   });
   const sortedWalletRows = [...filteredWalletRows].sort((a,b)=>b.availableBalance-a.availableBalance || a.driverDisplayName.localeCompare(b.driverDisplayName,"es"));
-  const walletCounts = {all:walletRows.length,has_available:walletRows.filter(w=>w.availableBalance>0).length,no_available:walletRows.filter(w=>w.availableBalance<=0).length,reserved:walletRows.filter(w=>w.reservedBalance>0).length,deposit_pending:walletRows.filter(w=>!w.initialDepositConfirmed).length,deposit_confirmed:walletRows.filter(w=>w.initialDepositConfirmed).length};
+  const walletCounts = {all:walletRows.length,has_available:walletRows.filter(w=>w.availableBalance>0).length,no_available:walletRows.filter(w=>w.availableBalance<=0).length,reserved:walletRows.filter(w=>w.reservedBalance>0).length};
   const walletCurrencies = [...new Set(walletRows.map(w=>w.currency))];
   const receiptsByTopup = useMemo(() => {
     const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
@@ -2604,7 +2602,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     </span>
                     <div className="min-w-0">
                       <h2 className="text-base font-semibold leading-snug text-foreground sm:text-lg">Billeteras</h2>
-                      <p className="text-xs text-text-secondary">Saldos disponibles, reservas y depósitos</p>
+                      <p className="text-xs text-text-secondary">Saldos disponibles, reservas y actividad financiera</p>
                     </div>
                   </div>
                   <div className="marketplace-wallet-search min-w-0">
@@ -2618,14 +2616,12 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                       ["no_available", "Sin disponible"],
                       ["reserved", "Con reservas"],
                       ["", "Todas"],
-                      ["deposit_pending", "Depósito inicial pendiente"],
-                      ["deposit_confirmed", "Depósito inicial confirmado"],
                     ] as const).map(([value, name]) => (
                       <Button
                         key={value || "all"}
                         size="sm"
                         className="marketplace-record-filter min-h-11 sm:min-h-8"
-                        data-finance-tone={value === "deposit_pending" || value === "no_available" ? "warning" : value === "deposit_confirmed" || value === "has_available" ? "success" : "neutral"}
+                        data-finance-tone={value === "no_available" || value === "reserved" ? "warning" : value === "has_available" ? "success" : "neutral"}
                         variant={walletFilter === value ? "default" : "ghost"}
                         aria-pressed={walletFilter === value}
                         onClick={() => setWalletFilter(value)}
@@ -2636,7 +2632,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-text-secondary">
                     <span aria-live="polite">{wallets.isSuccess&&!wallets.isError ? filteredWalletRows.length+" de "+walletRows.length+" billeteras" : "Consultando inventario"} · Mayor saldo primero</span>
-                    {walletSearch || walletFilter ? <Button variant="ghost" size="sm" onClick={() => { setWalletSearch(""); setWalletFilter("has_available"); }}>Limpiar filtros</Button> : null}
+                    {walletSearch || walletFilter !== "has_available" ? <Button variant="ghost" size="sm" onClick={() => { setWalletSearch(""); setWalletFilter("has_available"); }}>Limpiar filtros</Button> : null}
                   </div>
                 </div>
               </div>
@@ -2653,11 +2649,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 <div className="space-y-2">
                   {sortedWalletRows.map((wallet) => {
                     const reserved = Number(wallet.realReservedBalance) + Number(wallet.promotionalReservedBalance);
-                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-deposit-state={wallet.initialDepositConfirmed ? "confirmed" : "pending"}>
+                    return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-balance-state={wallet.availableBalance > 0 ? "available" : "empty"}>
                       <div className="marketplace-wallet-summary">
                         <RecordIdentity icon={Wallet} name={wallet.driverDisplayName} portrait={<DriverDirectoryPortrait name={wallet.driverDisplayName} url={financeMedia.data?.[wallet.userId]?.avatarUrl ?? null} googleUrl={financeMedia.data?.[wallet.userId]?.googleAvatarUrl ?? null}/>}>
                           <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
-                          <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito inicial confirmado" : "Depósito inicial pendiente"}</span>
                         </RecordIdentity>
                         <div className="marketplace-record-metrics marketplace-wallet-metrics grid min-w-0">
                           <RecordMetric labelText="Disponible" value={formatWalletAmount(wallet.availableBalance, wallet.currency)} tone="available" />
