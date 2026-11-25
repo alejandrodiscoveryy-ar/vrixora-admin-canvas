@@ -84,8 +84,8 @@ test("interfaz principal separa Vitalidad del análisis legado y comunica semáf
   const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
   const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
   assert.match(dashboard, /<AgencyVitalityOverview projectId=\{projectId\} from=\{fromDate\} to=\{toDate\}/);
-  assert.match(dashboard, /Análisis detallado · Usuarios, captación y gráficos/);
-  assert.match(dashboard, /La retención es acumulada, no del período/);
+  assert.doesNotMatch(dashboard, /Análisis detallado · Usuarios, captación y gráficos/);
+  assert.doesNotMatch(dashboard, /usageAnalytics\.retention/);
   assert.match(board, /Prioridades de intervención/);
   assert.match(board, /toneClasses/);
   assert.match(board, /Vitalidad no disponible todavía/);
@@ -114,9 +114,9 @@ test("Analítica inicia en el período actual, filtra por fecha y muestra gráfi
   const shell=readFileSync(new URL("../src/routes/admin.tsx",import.meta.url),"utf8");
   assert.match(dashboard,/useState\(\(\) => periodRange\("7d"\)\)/);
   assert.doesNotMatch(dashboard,/usePersistentAnalyticsDateRange/);
-  assert.match(dashboard,/row.date >= fromDate && row.date <= toDate/);
-  assert.ok(dashboard.indexOf("<CommercialChannelSummary")<dashboard.indexOf("Análisis detallado · Usuarios"));
-  assert.ok(dashboard.indexOf('title="Actividad de usuarios de la app"')>dashboard.indexOf("Análisis detallado · Usuarios"));
+  assert.match(dashboard,/from=\{fromDate\} to=\{toDate\}/);
+  assert.match(dashboard,/<CommercialChannelSummary/);
+  assert.doesNotMatch(dashboard,/Actividad de usuarios de la app/);
   assert.match(shell,/wideAnalytics = currentSection === "rendimiento"/);
   assert.match(board,/title="Conversión de solicitudes"/);
   assert.match(board,/data.requested>0/);
@@ -148,7 +148,7 @@ test("selector de Analítica admite Todo y fechas personalizadas válidas",()=>{
   const selector=readFileSync(new URL("../src/components/admin/AdminPeriodSelector.tsx",import.meta.url),"utf8");
   assert.match(dashboard,/value:"all" as const,label:"Todo"/);
   assert.match(dashboard,/project\?\.createdAt/);
-  assert.match(dashboard,/period==="all" \? fromDate/);
+  assert.match(dashboard,/period==="all" && allRange \? allRange.from/);
   assert.match(dashboard,/rangeSupported=periodDays<=401/);
   assert.match(dashboard,/maxCustomDays=\{401\}/);
   assert.match(selector,/next === "all" && allRange/);
@@ -170,4 +170,15 @@ test("visualización estratégica sin sumar estados superpuestos ni mezclar per�
   assert.match(dashboard,/const comparable=rows.slice\(0,2\)/);
   assert.match(dashboard,/Aliados · Histórico/);
   assert.match(dashboard,/row\[metric.key\]!=null/);
+});
+
+test("Analítica elimina consultas del panel legado y adapta gráficos a móvil",()=>{
+  const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  assert.doesNotMatch(dashboard,/usageAnalytics|listLeads|marketplace\.overview|MobileMetricsGrid|Análisis detallado/);
+  assert.equal((dashboard.match(/useQuery\(\{/g)||[]).length,3);
+  assert.match(dashboard,/refetchOnWindowFocus:false/);
+  assert.match(board,/min-\[360px\]:grid-cols-2/);
+  assert.match(board,/max-w-\[240px\]/);
+  assert.match(board,/refetchOnWindowFocus: false/);
 });
