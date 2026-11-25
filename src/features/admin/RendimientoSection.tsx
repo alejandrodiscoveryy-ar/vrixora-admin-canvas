@@ -101,34 +101,33 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
     description="Comparación de TukTuk e Impulsa · Aliados: histórico"
     actions={<div className="flex flex-wrap gap-1">{([7,30,90] as const).map(n=><button key={n} type="button" aria-pressed={days===n} onClick={()=>setDays(n)} className={days===n?"min-h-11 rounded-md bg-primary/15 px-3 py-2 text-xs font-semibold text-primary":"min-h-11 rounded-md px-3 py-2 text-xs text-muted-foreground"}>{n} d</button>)}</div>}
     contentClassName="p-3 sm:p-4">
-    <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-violet-400"/>TukTuk oficial</span><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[var(--module-accent)]"/>Impulsa</span><span>— Sin dato</span></div>
+    <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-violet-400"/>TukTuk oficial</span><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[#0e7490]"/>Impulsa</span><span>— Sin dato</span></div>
     <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="grid min-w-0 gap-3 md:grid-cols-3">
-        {([{key:"clicks",label:"Clics",color:"#a78bfa"},{key:"requests",label:"Solicitudes",color:"var(--module-accent)"},{key:"completed",label:"Viajes liquidados",color:"var(--semantic-success)"}] as const).map(metric=>{
+        {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Viajes liquidados"}] as const).map(metric=>{
           const comparable=rows.slice(0,2);
-          const max=Math.max(1,...comparable.map(row=>{const v=row[metric.key];return typeof v==="number"&&Number.isFinite(v)&&v>=0?v:0;}));
-          return <div key={metric.key} className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
+          const values=comparable.map(row=>row[metric.key]);
+          const valid=values.every(value=>typeof value==="number"&&Number.isFinite(value)&&value>=0);
+          const max=Math.max(1,...values.map(v=>typeof v==="number"&&Number.isFinite(v)&&v>=0?v:0));
+          return <div key={metric.key} className="min-w-0 rounded-xl border border-border-subtle bg-surface-2/40 p-3">
             <h4 className="text-sm font-semibold">{metric.label}</h4>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              {comparable.map((row,index)=>{
-                const value=row[metric.key];
-                const valid=typeof value==="number"&&Number.isFinite(value)&&value>=0;
-                return <div key={row.name} className="min-w-0 text-center">
-                  <strong className="text-lg tabular-nums">{observedCount(value)}</strong>
-                  <div className="relative mx-auto mt-1 flex h-24 w-full max-w-16 items-end justify-center border-b border-border-default" aria-hidden="true">
-                    {valid?<div className="w-3/5 rounded-t-md" style={{height:value!*100/max+"%",background:index===0?"#a78bfa":"var(--module-accent)"}}/>:<span className="self-center text-xs text-muted-foreground">—</span>}
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">{index===0?"TukTuk":"Impulsa"}</p>
-                </div>;
+            <svg viewBox="0 0 180 112" className="mx-auto my-2 block w-full max-w-[230px]" role="img" aria-label={metric.label+": "+comparable.map((row,index)=>row.name+" "+observedCount(values[index])).join(", ")}>
+              <line x1="12" y1="90" x2="168" y2="90" stroke="var(--border-default)"/>
+              {values.map((value,index)=>{
+                const known=typeof value==="number"&&Number.isFinite(value)&&value>=0;
+                const x=48+84*index,y=known?90-value!*65/max:55,color=index===0?"#a78bfa":"#0e7490";
+                return <g key={index}>{known?<><line x1={x} y1="90" x2={x} y2={y} stroke={color} strokeWidth="3"/><circle cx={x} cy={y} r="7" fill={color}/></>:null}<text x={x} y={known?y-12:55} textAnchor="middle" fontSize="13" fontWeight="600" fill="currentColor">{observedCount(value)}</text><text x={x} y="106" textAnchor="middle" fontSize="10" fill="var(--text-secondary)">{index===0?"TukTuk":"Impulsa"}</text></g>;
               })}
-            </div>
+            </svg>
+            {!valid?<p className="text-center text-xs text-muted-foreground">Comparación incompleta</p>:null}
+            {comparable.map((row,index)=><div key={row.name} className="flex items-center justify-between gap-2 py-1 text-xs"><span className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{background:index===0?"#a78bfa":"#0e7490"}}/>{index===0?"TukTuk":"Impulsa"}</span><strong>{observedCount(values[index])}</strong></div>)}
           </div>;
         })}
       </div>
       <div className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
         <h4 className="text-sm font-semibold">Aliados · Histórico</h4>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Liquidados"}] as const).map(m=><div key={m.key}><p className="break-words text-xl font-semibold tabular-nums">{observedCount(rows[2][m.key])}</p><p className="text-xs text-muted-foreground">{m.label}</p></div>)}
+        <div className="mt-3 grid gap-2">
+          {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Liquidados"}] as const).map(m=><div key={m.key} className="flex flex-row-reverse items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"><p className="break-words text-2xl font-semibold tabular-nums">{observedCount(rows[2][m.key])}</p><p className="text-xs text-muted-foreground">{m.label}</p></div>)}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">Histórico independiente.</p>
       </div>
@@ -136,7 +135,7 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
     <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Ver campañas y cifras exactas</summary>
       {rows.map(row=><p key={row.name} className="py-1">{row.name} · {row.period}: {observedCount(row.clicks)} clics, {observedCount(row.requests)} solicitudes, {observedCount(row.completed)} liquidados.</p>)}
       {o?.campaigns?.map(c=><p key={c.campaign} className="py-1">{c.campaign}: {observedCount(c.link_opens)} clics · {observedCount(c.requests_created)} solicitudes</p>)}
-      <p>— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Las campañas forman parte de TukTuk oficial.</p>
+      <p>— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Aliados se muestra aparte. Las campañas forman parte de TukTuk oficial.</p>
     </details>
     {official.isError||impulsa.isError||allies.isError ? <p role="alert" className="text-xs text-muted-foreground">Alguna fuente no está disponible.</p>:null}
 
