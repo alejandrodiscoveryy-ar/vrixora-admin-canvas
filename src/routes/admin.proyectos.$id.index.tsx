@@ -1,4 +1,9 @@
 import { useMemo, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabase";
+import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel } from "@/lib/agency-vitality";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { adminChartTooltipProps } from "@/lib/chart-theme";
+
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -49,7 +54,9 @@ function ResumenPage() {
   const canViewUsers = permissions.includes("customers.view");
   const canViewMarketplace = permissions.includes("marketplace.view");
   const canViewCommercial = permissions.includes("commercial.view");
+  const canViewPayments = permissions.includes("payments.view");
   const canViewAudit = permissions.includes("audit.view");
+  const canViewAnalytics = permissions.includes("analytics.view");
 
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:summary-range:${id}`,
@@ -151,123 +158,30 @@ function ResumenPage() {
   const overview = marketplace.data;
   const recentActivity = (audit.data ?? []).slice(0, 7);
 
+  const pendingTopups = overview?.pendingTopups ?? 0;
+  const openIncidents = overview?.jobsIncidentOpen ?? 0;
+  const suspendedDrivers = overview?.driversSuspended ?? 0;
+  const hasPendingActions = pendingTopups > 0 || openIncidents > 0 || suspendedDrivers > 0;
+
   return (
-    <>
-
-      <div className="space-y-3 sm:hidden" aria-label="Panel general móvil">
-        <header className={cn("rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">VRIXORA · Panel general</p>
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <h1 className="text-lg font-semibold text-foreground">Resumen operativo</h1>
-            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[10px] text-[var(--semantic-success)]">{allLoading ? "Cargando" : "En vivo"}</span>
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">{buildFreshnessLabel(dataUpdatedAt, allLoading)}</p>
-        </header>
-        {queryError ? <PageAlert tone="error" title="Error al actualizar">{friendlyError(queryError)}</PageAlert> : null}
-        <section className="grid grid-cols-2 gap-2" aria-label="Indicadores principales">
-          {canViewUsers ? <MobileDashboardStat label="Usuarios app" value={users.length} note={String(newUsersPeriod) + " nuevos"} icon={Users} loading={usersApp.isLoading} /> : null}
-          {canViewMarketplace ? (
-            <>
-              <MobileDashboardStat label="Conductores" value={overview?.driversTotal ?? 0} note={String(overview?.driversActive ?? 0) + " activos"} icon={Users} loading={marketplace.isLoading} />
-              <MobileDashboardStat label="Servicios activos" value={overview?.jobsActive ?? 0} note="En curso" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
-              <MobileDashboardStat label="Incidencias abiertas" value={overview?.jobsIncidentOpen ?? 0} note="Por atender" icon={AlertTriangle} loading={marketplace.isLoading} warning={(overview?.jobsIncidentOpen ?? 0) > 0} />
-            </>
-          ) : null}
-        </section>
-        <nav className="grid grid-cols-2 gap-2" aria-label="Accesos directos">
-          {canViewMarketplace ? (
-            <>
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "mapa" }} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-2 text-xs font-semibold text-primary">
-                <MapPin className="h-4 w-4 shrink-0" /> Mapa en vivo
-              </Link>
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "trabajos" }} search={{ vista: "trabajos" }} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border p-2 text-xs font-semibold text-foreground", premiumSurface)}>
-                <BriefcaseBusiness className="h-4 w-4 shrink-0" /> Carreras
-              </Link>
-            </>
-          ) : null}
-          {canViewUsers ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "clientes" }} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border p-2 text-xs font-semibold text-foreground", premiumSurface)}><Users className="h-4 w-4 shrink-0" /> Usuarios</Link> : null}
-          {canViewCommercial ? <Link to="/admin/proyectos/$id/$section" params={{ id, section: "comercial" }} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border p-2 text-xs font-semibold text-foreground", premiumSurface)}><Megaphone className="h-4 w-4 shrink-0" /> Comercial</Link> : null}
-        </nav>
-        {(canViewMarketplace || canViewCommercial) ? (
-          <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Más indicadores <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
-            <div className="space-y-3 border-t border-border/50 p-3">
-              {canViewMarketplace ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <MobileDashboardStat label="Recargas pendientes" value={overview?.pendingTopups ?? 0} note="Finanzas" icon={WalletCards} loading={marketplace.isLoading} />
-                  <MobileDashboardStat label="Suspendidos" value={overview?.driversSuspended ?? 0} note="Conductores" icon={AlertTriangle} loading={marketplace.isLoading} />
-                  <MobileDashboardStat label="Trabajos publicados" value={overview?.jobsPublished ?? 0} note="Histórico" icon={BriefcaseBusiness} loading={marketplace.isLoading} />
-                </div>
-              ) : null}
-              {canViewCommercial ? (
-                <section className="space-y-2" aria-label="Captación comercial">
-                  <p className="text-xs font-semibold text-[var(--module-comercial)]">Captación del período</p>
-                  <div className="max-w-full overflow-x-auto">
-                    <AdminPeriodSelector appearance="premium" value={period} range={dateRange} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setDateRange(nextRange); }} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <MobileDashboardStat label="Leads" value={periodLeads.length} note="Recibidos" icon={Megaphone} loading={commercialLeads.isLoading} />
-                    <MobileDashboardStat label="Contactados" value={contactedLeads} note="Atendidos" icon={Users} loading={commercialLeads.isLoading} />
-                    <MobileDashboardStat label="Registrados" value={registeredLeads} note="Convertidos" icon={Users} loading={commercialLeads.isLoading} />
-                    <MobileDashboardStat label="Conversión" value={conversionRate === null ? "—" : String(conversionRate) + "%"} note={conversionRate === null ? "Sin leads" : "A registro"} icon={TrendingUp} loading={commercialLeads.isLoading} />
-                  </div>
-                </section>
-              ) : null}
-            </div>
-          </details>
-        ) : null}
-        {canViewAudit ? (
-          <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">Actividad reciente <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
-            <div className="border-t border-border/50 p-3">
-              {recentActivity.length ? (
-                <ol className="divide-y divide-border/40">
-                  {recentActivity.slice(0, 3).map((event) => (
-                    <li key={event.id} className="min-w-0 py-2">
-                      <div className="flex min-w-0 items-center justify-between gap-2">
-                        <span className="min-w-0 truncate text-xs text-foreground">{auditActionLabel(event.action)}</span>
-                        <time dateTime={event.createdAt} className="shrink-0 text-[10px] text-muted-foreground">{formatActivityDate(event.createdAt)}</time>
-                      </div>
-                      <p className="truncate text-[10px] text-muted-foreground">{event.actorEmail ?? "Sistema"}</p>
-                    </li>
-                  ))}
-                </ol>
-              ) : <p className="text-xs text-muted-foreground">Sin movimientos recientes.</p>}
-              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary">Ver auditoría completa <ArrowRight className="h-3.5 w-3.5" /></Link>
-            </div>
-          </details>
-        ) : null}
-      </div>
-      <div className="hidden sm:block">
-    <div className="min-w-0">
-      <div className="space-y-3 md:space-y-4">
-      <section className={cn("relative overflow-hidden rounded-[var(--radius-card)] border px-3 py-3 sm:px-4", premiumHeaderSurface)}>
-
-
-        <div className="relative flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+    <div className="min-w-0 space-y-3 md:space-y-4" aria-label="Panel estratégico de TukTuk">
+      <header className={cn("rounded-[var(--radius-card)] border px-3 py-3 sm:px-4", premiumHeaderSurface)}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.09] text-primary shadow-[0_0_26px_-14px_rgba(34,211,238,0.95)]">
-                <Gauge className="h-4 w-4" />
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-primary/85">
-                  Panel general
-                </p>
-                <h1 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
-                  Estado del negocio
-                </h1>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/[0.09] text-primary">
+                <Gauge className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Panel general</p>
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">Estado del negocio</h1>
               </div>
             </div>
-
-            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-              Operación, captación y alertas principales en una sola vista.
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Prioridades, operación y crecimiento en una sola vista.</p>
           </div>
-
-          <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center xl:justify-end">
-            <AdminPeriodSelector appearance="premium"
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <AdminPeriodSelector
+              appearance="premium"
               value={period}
               range={dateRange}
               onChange={(nextPeriod, nextRange) => {
@@ -275,380 +189,286 @@ function ResumenPage() {
                 setDateRange(nextRange);
               }}
             />
-
-            <Badge
-              variant="outline"
-              className="w-fit gap-2 border-cyan-400/20 bg-cyan-500/[0.07] px-3 py-1.5 text-[10px] shadow-inner shadow-cyan-500/[0.03]"
-            >
-              <RefreshCw
-                className={`h-3 w-3 text-primary ${allLoading ? "animate-spin" : ""}`}
-              />
+            <Badge variant="outline" className="w-fit gap-2 border-cyan-400/20 bg-cyan-500/[0.07] px-3 py-1.5 text-[10px]">
+              <RefreshCw className={cn("h-3 w-3 text-primary", allLoading && "animate-spin")} aria-hidden="true" />
               {buildFreshnessLabel(dataUpdatedAt, allLoading)}
             </Badge>
           </div>
         </div>
-      </section>
+        <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+          Las fechas filtran altas y captación comercial, y los gráficos estratégicos. Conductores e incidencias reflejan el estado actual; trabajos publicados es acumulado.
+        </p>
+      </header>
+
       {queryError ? (
-        <PageAlert tone="error" title="No fue posible actualizar el resumen">
+        <PageAlert tone="error" title="No fue posible actualizar todo el resumen">
           {friendlyError(queryError)}
         </PageAlert>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetric
-          label="Usuarios app"
-          value={users.length}
-          comparison={`${newUsersPeriod} nuevos en el período`}
-          icon={Users}
-          tone="cyan"
-          isLoading={usersApp.isLoading}
-        />
-
-        <DashboardMetric
-          label="Conductores"
-          value={overview?.driversTotal ?? 0}
-          comparison={`${overview?.driversActive ?? 0} activos`}
-          icon={Users}
-          tone="blue"
-          isLoading={marketplace.isLoading}
-        />
-
-        <DashboardMetric
-          label="Trabajos publicados"
-          value={overview?.jobsPublished ?? 0}
-          comparison={`${overview?.jobsActive ?? 0} activos ahora`}
-          icon={BriefcaseBusiness}
-          tone="emerald"
-          isLoading={marketplace.isLoading}
-        />
-
-        <DashboardMetric
-          label="Incidencias abiertas"
-          value={overview?.jobsIncidentOpen ?? 0}
-          comparison={`${overview?.jobsIncidentResolved ?? 0} resueltas`}
-          icon={AlertTriangle}
-          tone={(overview?.jobsIncidentOpen ?? 0) > 0 ? "rose" : "emerald"}
-          isLoading={marketplace.isLoading}
-        />
-
-        <DashboardMetric
-          label="Leads del período"
-          value={periodLeads.length}
-          comparison={`${contactedLeads} contactados`}
-          icon={Megaphone}
-          tone="violet"
-          isLoading={commercialLeads.isLoading}
-        />
-
-        <DashboardMetric
-          label="Registrados"
-          value={registeredLeads}
-          comparison={`${interestedLeads} interesados`}
-          icon={Users}
-          tone="emerald"
-          isLoading={commercialLeads.isLoading}
-        />
-
-        <DashboardMetric
-          label="Conversión a registro"
-          value={conversionRate === null ? "Sin datos" : `${conversionRate}%`}
-          comparison={
-            conversionRate === null
-              ? "Sin leads en el período"
-              : `${registeredLeads} de ${periodLeads.length} leads`
-          }
-          icon={TrendingUp}
-          tone="cyan"
-          isLoading={commercialLeads.isLoading}
-        />
-
-        <DashboardMetric
-          label="Recargas pendientes"
-          value={overview?.pendingTopups ?? 0}
-          comparison="Operación financiera"
-          icon={WalletCards}
-          tone={(overview?.pendingTopups ?? 0) > 0 ? "amber" : "emerald"}
-          isLoading={marketplace.isLoading}
-        />
-      </section>
-
-      <section className="grid gap-3 xl:grid-cols-2">
-        <SectionCard density="compact" appearance="premium"
-          title="Captación"
-          description="Recorrido comercial del período seleccionado"
-          module="comercial"
-          className="relative isolate"
-          headerClassName="relative z-10 px-4 py-3 sm:px-4"
-          contentClassName="p-3 sm:p-4"
-        >
-          <img
-            src="/admin-premium/customers.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
-          />
-
-          {periodLeads.length ? (
-            <div className="relative z-10 grid gap-3 sm:grid-cols-2">
-              <SummaryItem
-                label="Leads"
-                value={periodLeads.length}
-                description="Personas captadas"
-              />
-              <SummaryItem
-                label="Contactados"
-                value={contactedLeads}
-                description="Con interacción comercial"
-              />
-              <SummaryItem
-                label="Interesados"
-                value={interestedLeads}
-                description="Con interés identificado"
-              />
-              <SummaryItem
-                label="Registrados"
-                value={registeredLeads}
-                description="Convertidos en usuarios"
-              />
-            </div>
-          ) : (
-            <EmptyState density="compact" appearance="premium"
-              icon={Megaphone}
-              title="Sin captación en el período"
-              description="No hay leads comerciales registrados en las fechas seleccionadas."
-              module="comercial"
-              className="relative z-10 min-h-[116px] py-3"
-            />
-          )}
-        </SectionCard>
-
-        <SectionCard density="compact" appearance="premium"
-          title="Operación Marketplace"
-          description="Situación operativa actual"
+      {canViewMarketplace ? (
+        <SectionCard
+          density="compact"
+          appearance="premium"
+          title="Por atender ahora"
+          description="Solo gestiones que requieren seguimiento"
           module="resumen"
-          className="relative isolate"
-          headerClassName="relative z-10 px-4 py-3 sm:px-4"
           contentClassName="p-3 sm:p-4"
         >
-          <img
-            src="/admin-premium/operations.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
-          />
-
-          {canViewMarketplace ? (
-            <div className="relative z-10 grid gap-3 sm:grid-cols-2">
-              <SummaryItem
-                label="Conductores activos"
-                value={overview?.driversActive ?? 0}
-                description={`De ${overview?.driversTotal ?? 0} registrados`}
-              />
-              <SummaryItem
-                label="Conductores suspendidos"
-                value={overview?.driversSuspended ?? 0}
-                description="Requieren control administrativo"
-              />
-              <SummaryItem
-                label="Trabajos activos"
-                value={overview?.jobsActive ?? 0}
-                description="Servicios en curso"
-              />
-              <SummaryItem
-                label="Incidencias abiertas"
-                value={overview?.jobsIncidentOpen ?? 0}
-                description="Pendientes de resolución"
-              />
-            </div>
-          ) : (
-            <EmptyState density="compact" appearance="premium"
-              icon={BriefcaseBusiness}
-              title="Sin acceso a Marketplace"
-              description="No tienes permisos para consultar los indicadores operativos."
-              module="resumen"
-              className="relative z-10 min-h-[116px] py-3"
-            />
-          )}
-        </SectionCard>
-      </section>
-
-      <section className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
-        {canViewAudit ? (
-          <SectionCard density="compact" appearance="premium"
-            title="Actividad reciente"
-            description="Últimos movimientos administrativos"
-            module="resumen"
-            className="relative isolate"
-            headerClassName="relative z-10 px-4 py-3 sm:px-4"
-            contentClassName="p-3.5 sm:p-4"
-            actions={
-              <Button asChild variant="ghost" size="sm">
+          {marketplace.isLoading ? (
+            <p className="text-sm text-muted-foreground">Consultando pendientes...</p>
+          ) : marketplace.isError ? (
+            <p className="text-sm text-muted-foreground">No se pueden comprobar los pendientes. Revisa la conexión.</p>
+          ) : hasPendingActions ? (
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {pendingTopups > 0 ? (
+                canViewPayments ? (
+                  <Link
+                    to="/admin/proyectos/$id/$section"
+                    params={{ id, section: "trabajos" }}
+                    search={{ vista: "recargas" }}
+                    className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 font-medium">Revisar recargas pendientes</span>
+                    <Badge variant="warning" className="font-mono">{pendingTopups}</Badge>
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <div className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground">
+                    <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 font-medium">Recargas pendientes · área de Finanzas</span>
+                    <Badge variant="warning" className="font-mono">{pendingTopups}</Badge>
+                  </div>
+                )
+              ) : null}
+              {openIncidents > 0 ? (
                 <Link
                   to="/admin/proyectos/$id/$section"
-                  params={{ id, section: "auditoria" }}
+                  params={{ id, section: "trabajos" }}
+                  search={{ vista: "incidencias" }}
+                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 >
-                  Ver auditoría
-                  <ArrowRight className="h-4 w-4" />
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 font-medium">Resolver incidencias abiertas</span>
+                  <Badge variant="warning" className="font-mono">{openIncidents}</Badge>
+                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                 </Link>
-              </Button>
-            }
-          >
-            <img
-              src="/admin-premium/activity.svg"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
+              ) : null}
+              {suspendedDrivers > 0 ? (
+                <Link
+                  to="/admin/proyectos/$id/$section"
+                  params={{ id, section: "trabajos" }}
+                  search={{ vista: "conductores" }}
+                  className={cn("flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
+                >
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 font-medium">Conductores suspendidos · seguimiento</span>
+                  <Badge variant="outline" className="font-mono">{suspendedDrivers}</Badge>
+                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                </Link>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Sin recargas pendientes, incidencias abiertas ni conductores suspendidos.</p>
+          )}
+        </SectionCard>
+      ) : null}
+
+      <section aria-label="Indicadores principales" className="grid grid-cols-1 gap-2.5 min-[430px]:grid-cols-2 xl:grid-cols-3">
+        {canViewMarketplace ? (
+          <>
+            <DashboardMetric
+              label="Trabajos publicados"
+              value={overview?.jobsPublished ?? 0}
+              comparison={String(overview?.jobsActive ?? 0) + " en curso · acumulado"}
+              icon={BriefcaseBusiness}
+              tone="cyan"
+              isLoading={marketplace.isLoading}
             />
+            <DashboardMetric
+              label="Conductores activos"
+              value={overview?.driversActive ?? 0}
+              comparison={"De " + String(overview?.driversTotal ?? 0) + " registrados · no indica conexión"}
+              icon={Users}
+              tone="blue"
+              isLoading={marketplace.isLoading}
+            />
+          </>
+        ) : null}
+        {canViewUsers ? (
+          <DashboardMetric
+            label="Usuarios de la app"
+            value={users.length}
+            comparison={String(newUsersPeriod) + " nuevos en el período"}
+            icon={Users}
+            tone="emerald"
+            isLoading={usersApp.isLoading}
+          />
+        ) : null}
+      </section>
 
+      {canViewAnalytics ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} /> : null}
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(17rem,0.7fr)]">
+        <SectionCard
+          density="compact"
+          appearance="premium"
+          title="Lectura del negocio"
+          description="Qué significan los datos para la siguiente decisión"
+          module="resumen"
+          contentClassName="space-y-3 p-3 sm:p-4"
+        >
+          {canViewMarketplace ? (
+            <div className="flex gap-3">
+              <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              {marketplace.isLoading ? (
+                <p className="text-sm text-muted-foreground">Revisando la actividad...</p>
+              ) : marketplace.isError ? (
+                <p className="text-sm text-muted-foreground">La lectura operativa no está disponible por un error de carga.</p>
+              ) : (overview?.jobsPublished ?? 0) === 0 ? (
+                <p className="text-sm leading-relaxed text-foreground">
+                  Hay conductores registrados, pero todavía no figuran trabajos publicados en este resumen.
+                  La prioridad es generar y verificar solicitudes reales de pasajeros, no ampliar indicadores.
+                </p>
+              ) : (overview?.jobsActive ?? 0) > 0 ? (
+                <p className="text-sm leading-relaxed text-foreground">
+                  Hay servicios en curso. Prioriza su seguimiento y revisa las incidencias o recargas que aparecen arriba.
+                </p>
+              ) : (
+                <p className="text-sm leading-relaxed text-foreground">
+                  Hay trabajos publicados en el histórico, pero ninguno está en curso ahora. Revisa la demanda y la conversión de solicitudes.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">El resumen de la operación solo aparece para los perfiles con permiso.</p>
+          )}
+          {canViewCommercial && canViewUsers ? (
+            <div className="border-t border-border-subtle pt-3">
+              <p className="text-sm text-foreground">
+                <strong>{newUsersPeriod} nuevos usuarios</strong> de la app y <strong>{periodLeads.length} contactos comerciales</strong> registrados en el período.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Las altas de la app y los leads del seguimiento comercial son fuentes diferentes; no equivalen a pasajeros que hayan solicitado viajes.</p>
+            </div>
+          ) : canViewCommercial ? (
+            <p className="border-t border-border-subtle pt-3 text-sm text-foreground">{periodLeads.length} contactos comerciales registrados en el período.</p>
+          ) : null}
+        </SectionCard>
+
+        <SectionCard
+          density="compact"
+          appearance="premium"
+          title="Ir a gestionar"
+          description="Accesos operativos esenciales"
+          module="resumen"
+          contentClassName="grid gap-2 p-3 sm:p-4"
+        >
+          {canViewMarketplace ? (
+            <>
+              <Link
+                to="/admin/proyectos/$id/$section"
+                params={{ id, section: "trabajos" }}
+                search={{ vista: "mapa" }}
+                className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
+              >
+                <MapPin className="h-4 w-4 text-primary" aria-hidden="true" /> Mapa en vivo <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                to="/admin/proyectos/$id/$section"
+                params={{ id, section: "trabajos" }}
+                search={{ vista: "trabajos" }}
+                className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
+              >
+                <BriefcaseBusiness className="h-4 w-4 text-primary" aria-hidden="true" /> Carreras <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
+              </Link>
+            </>
+          ) : null}
+          {canViewCommercial ? (
+            <Link
+              to="/admin/proyectos/$id/$section"
+              params={{ id, section: "comercial" }}
+              className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
+            >
+              <Megaphone className="h-4 w-4 text-primary" aria-hidden="true" /> Comercial <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : null}
+          {canViewUsers ? (
+            <Link
+              to="/admin/proyectos/$id/$section"
+              params={{ id, section: "clientes" }}
+              className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
+            >
+              <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Usuarios app <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : null}
+        </SectionCard>
+      </div>
+
+      {(canViewCommercial || canViewMarketplace) ? (
+        <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-semibold text-foreground sm:px-4 [&::-webkit-details-marker]:hidden">
+            Más indicadores · detalle por área
+            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="grid gap-3 border-t border-border-subtle p-3 lg:grid-cols-2 sm:p-4">
+            {canViewCommercial ? (
+              <section aria-label="Detalle comercial">
+                <h2 className="mb-2 text-sm font-semibold text-foreground">Seguimiento comercial · período seleccionado</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <SummaryItem label="Contactos" value={periodLeads.length} description="Registrados en CRM" />
+                  <SummaryItem label="Contactados" value={contactedLeads} description="Con interacción" />
+                  <SummaryItem label="Interesados" value={interestedLeads} description="Según su estado" />
+                  <SummaryItem label="Registrados" value={registeredLeads} description={conversionRate === null ? "Sin tasa calculable" : String(conversionRate) + "% de los contactos"} />
+                </div>
+              </section>
+            ) : null}
+            {canViewMarketplace ? (
+              <section aria-label="Detalle operativo">
+                <h2 className="mb-2 text-sm font-semibold text-foreground">Operación · estado actual</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <SummaryItem label="Conductores registrados" value={overview?.driversTotal ?? 0} description="Total histórico" />
+                  <SummaryItem label="En curso" value={overview?.jobsActive ?? 0} description="Servicios actuales" />
+                  <SummaryItem label="Incidencias abiertas" value={openIncidents} description="Por resolver" />
+                  <SummaryItem label="Suspendidos" value={suspendedDrivers} description="Estado administrativo" />
+                </div>
+              </section>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
+
+      {canViewAudit ? (
+        <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-semibold text-foreground sm:px-4 [&::-webkit-details-marker]:hidden">
+            Actividad administrativa reciente
+            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="border-t border-border-subtle p-3 sm:p-4">
             {recentActivity.length ? (
-              <ol className="relative z-10 divide-y divide-border-subtle">
-                {recentActivity.map((event) => (
-                  <li
-                    key={event.id}
-                    className="flex gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--module-border)] bg-[var(--module-surface)] text-[var(--module-foreground)]">
-                      <Activity className="h-4 w-4" />
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="truncate text-sm font-medium text-text-primary">
-                          {auditActionLabel(event.action)}
-                        </p>
-                        <time
-                          className="shrink-0 text-xs text-text-tertiary"
-                          dateTime={event.createdAt}
-                        >
-                          {formatActivityDate(event.createdAt)}
-                        </time>
-                      </div>
-
-                      <p className="mt-0.5 truncate text-xs text-text-secondary">
-                        {event.actorEmail ?? "Sistema"}
-                      </p>
-                    </div>
+              <ol className="divide-y divide-border-subtle">
+                {recentActivity.slice(0, 3).map((event) => (
+                  <li key={event.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                    <span className="min-w-0 truncate text-foreground">{auditActionLabel(event.action)}</span>
+                    <time dateTime={event.createdAt} className="text-xs text-muted-foreground">{formatActivityDate(event.createdAt)}</time>
                   </li>
                 ))}
               </ol>
             ) : (
-              <EmptyState density="compact" appearance="premium"
-                icon={Activity}
-                title="Sin actividad reciente"
-                description="Los próximos movimientos auditados aparecerán aquí."
-                module="resumen"
-                className="relative z-10 min-h-[116px] py-3"
-              />
+              <EmptyState density="compact" appearance="premium" icon={Activity} title="Sin actividad reciente" description="Los movimientos administrativos aparecerán aquí." module="resumen" />
             )}
-          </SectionCard>
-        ) : null}
-
-        <div className="space-y-4">
-          <SectionCard density="compact" appearance="premium"
-            title="Accesos rápidos"
-            module="resumen"
-            className="relative isolate"
-            headerClassName="relative z-10 px-4 py-3 sm:px-4"
-            contentClassName="grid gap-2 p-3 sm:p-3"
-          >
-            <img
-              src="/admin-premium/shortcuts.svg"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-3 right-3 h-16 w-16 object-contain opacity-[0.06] dark:opacity-[0.07]"
-            />
-            <Button asChild variant="subtle" className="relative z-10 justify-start">
-              <Link
-                to="/admin/proyectos/$id/$section"
-                params={{ id, section: "trabajos" }}
-              >
-                <BriefcaseBusiness className="h-4 w-4" />
-                Operación Marketplace
+            <Button asChild size="sm" variant="ghost" className="mt-2">
+              <Link to="/admin/proyectos/$id/$section" params={{ id, section: "auditoria" }}>
+                Ver auditoría <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-
-            <Button asChild variant="outline" className="relative z-10 justify-start">
-              <Link
-                to="/admin/proyectos/$id/$section"
-                params={{ id, section: "clientes" }}
-              >
-                <Users className="h-4 w-4" />
-                Usuarios app
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="relative z-10 justify-start">
-              <Link
-                to="/admin/proyectos/$id/$section"
-                params={{ id, section: "comercial" }}
-              >
-                <Megaphone className="h-4 w-4" />
-                Comercial
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="relative z-10 justify-start">
-              <Link
-                to="/admin/proyectos/$id/$section"
-                params={{ id, section: "planes" }}
-              >
-                <TrendingUp className="h-4 w-4" />
-                Tarifas
-              </Link>
-            </Button>
-          </SectionCard>
-
-          {canViewMarketplace &&
-          ((overview?.jobsIncidentOpen ?? 0) > 0 ||
-            (overview?.driversSuspended ?? 0) > 0 ||
-            (overview?.pendingTopups ?? 0) > 0) ? (
-            <SectionCard density="compact" appearance="premium"
-              title="Requiere atención"
-              module="resumen"
-              className="relative isolate"
-              headerClassName="px-4 py-3 sm:px-4"
-              contentClassName="space-y-2 p-3 sm:p-3"
-            >
-              {(overview?.jobsIncidentOpen ?? 0) > 0 ? (
-                <AttentionItem
-                  label="Incidencias abiertas"
-                  value={overview?.jobsIncidentOpen ?? 0}
-                />
-              ) : null}
-
-              {(overview?.driversSuspended ?? 0) > 0 ? (
-                <AttentionItem
-                  label="Conductores suspendidos"
-                  value={overview?.driversSuspended ?? 0}
-                />
-              ) : null}
-
-              {(overview?.pendingTopups ?? 0) > 0 ? (
-                <AttentionItem
-                  label="Recargas pendientes"
-                  value={overview?.pendingTopups ?? 0}
-                />
-              ) : null}
-            </SectionCard>
-          ) : null}
-        </div>
-      </section>
-      </div>
+          </div>
+        </details>
+      ) : null}
     </div>
-      </div>
-    </>
   );
 }
 
-function MobileDashboardStat({
-  label, value, note, icon: Icon, loading, warning = false,
-}: {
-  label: string; value: number | string; note: string; icon: LucideIcon; loading: boolean; warning?: boolean;
-}) {
-  return <MetricCard density="compact" appearance="premium" label={label} value={value}
-    description={note} icon={Icon} isLoading={loading}
-    semanticState={warning ? "warning" : "info"} />;
-}
 
 type DashboardTone = "cyan" | "blue" | "emerald" | "rose" | "violet" | "amber";
 
@@ -692,23 +512,6 @@ function SummaryItem({
           {description}
         </p>
       </div>
-    </div>
-  );
-}
-
-function AttentionItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2.5">
-      <span className="text-sm text-text-primary">{label}</span>
-      <Badge variant="warning" className="font-mono">
-        {value}
-      </Badge>
     </div>
   );
 }
@@ -761,4 +564,86 @@ function auditActionLabel(action: string) {
   };
 
   return labels[action] ?? action.replaceAll("_", " ");
+}
+
+function StrategicCharts({ projectId, from, to }: { projectId: string; from: string; to: string }) {
+  const query = useQuery({
+    queryKey: ["agency-vitality-v1", projectId, from, to],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_agency_vitality_v1", {
+        target_project_id: projectId, target_from: from, target_to: to,
+      });
+      if (error) throw error;
+      return parseAgencyVitality(data);
+    },
+    staleTime: 30_000, refetchInterval: 60_000, retry: 1,
+  });
+  const d = query.isError ? undefined : query.data;
+  const fmt = (v: number) => new Intl.NumberFormat("es-CU", { maximumFractionDigits: 1 }).format(v);
+  const rows = d ? [
+    { name: "Altas Control", actual: d.control.registered, anterior: d.control.previous_registered },
+    ...(d.clients ? [{ name: "Clientes nuevos", actual: d.clients.new, anterior: d.clients.previous_new }] : []),
+    ...(d.rides ? [{ name: "Carreras completadas", actual: d.rides.completed, anterior: d.rides.previous_completed }] : []),
+  ] : [];
+  const priorities = d ? agencyVitalitySignals(d).filter(x => ["clients", "rides", "cancelled"].includes(x.id) && x.priority >= 2).sort((a,b) => b.priority-a.priority) : [];
+  const funnel = d ? controlConversionFunnel(d.control) : null;
+  const rides = d?.rides;
+  return (
+    <SectionCard density="compact" appearance="premium" module="rendimiento"
+      title="Inteligencia del negocio" description="Período seleccionado frente al anterior de igual duración · datos reales"
+      contentClassName="space-y-3 p-3 sm:p-4"
+      actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4" aria-hidden="true"/></Link>}>
+      {query.isLoading ? <p role="status" className="text-sm text-muted-foreground">Consultando indicadores estratégicos...</p>
+      : !d ? <p role="alert" className="text-sm text-muted-foreground">Datos estratégicos no disponibles. No se sustituyen por ceros.</p>
+      : <>
+        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <section className="min-w-0" aria-label="Comparación de crecimiento y demanda">
+            <h3 className="text-sm font-semibold">¿Está creciendo el negocio?</h3>
+            <p className="text-xs text-muted-foreground">Altas instrumentadas de Control, nuevos clientes y carreras reales completadas; fuentes independientes.</p>
+            <div className="mt-3 h-60 min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={rows} margin={{top:8,right:8,left:-18,bottom:12}}>
+                  <CartesianGrid stroke="var(--border-subtle)" vertical={false} strokeDasharray="3 3"/>
+                  <XAxis dataKey="name" tick={{fontSize:10,fill:"var(--text-secondary)"}} interval={0} tickLine={false} axisLine={false}/>
+                  <YAxis allowDecimals={false} tick={{fontSize:11,fill:"var(--text-secondary)"}} axisLine={false} tickLine={false}/>
+                  <Tooltip {...adminChartTooltipProps}/>
+                  <Legend wrapperStyle={{fontSize:11}}/>
+                  <Bar dataKey="anterior" name="Anterior" fill="var(--semantic-inactive)" radius={[4,4,0,0]} maxBarSize={30}/>
+                  <Bar dataKey="actual" name="Actual" fill="var(--primary)" radius={[4,4,0,0]} maxBarSize={30}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer min-h-9 py-2">Ver cifras exactas</summary>
+              {rows.map(row => <p key={row.name} className="py-1">{row.name}: {fmt(row.actual)} actual · {fmt(row.anterior)} anterior</p>)}
+            </details>
+          </section>
+          <section className="min-w-0 border-t border-border-subtle pt-3 xl:border-l xl:border-t-0 xl:pl-4 xl:pt-0" aria-label="Resultados de las carreras">
+            <h3 className="text-sm font-semibold">¿Convertimos solicitudes en viajes?</h3>
+            <p className="text-xs text-muted-foreground">Carreras creadas en el período, según su estado actual. Excluye pruebas.</p>
+            {rides ? <div className="mt-4 space-y-3">
+              <p className="text-2xl font-semibold tabular-nums">{fmt(rides.requested)} <span className="text-xs font-normal text-muted-foreground">solicitudes</span></p>
+              {[{label:"Completadas",value:rides.completed,color:"var(--semantic-success)"},{label:"Canceladas",value:rides.cancelled,color:"var(--semantic-danger)"},{label:"Sin asignar",value:rides.unassigned,color:"var(--semantic-warning)"}].map(row => (
+                <div key={row.label}>
+                  <div className="mb-1 flex justify-between gap-2 text-xs"><span>{row.label}</span><strong className="tabular-nums">{fmt(row.value)}{rides.requested > 0 ? " · "+fmt(row.value*100/rides.requested)+"%" : ""}</strong></div>
+                  <div className="h-2 rounded-full bg-surface-3" aria-hidden="true"><div className="h-full rounded-full" style={{width:rides.requested>0 ? Math.min(100,row.value*100/rides.requested)+"%" : "0%",background:row.color}}/></div>
+                </div>
+              ))}
+            </div> : <p className="mt-4 text-sm text-muted-foreground">Sin acceso a datos de carreras.</p>}
+          </section>
+        </div>
+        <div className="grid gap-3 border-t border-border-subtle pt-3 lg:grid-cols-2">
+          <section aria-label="Valor de viajes liquidados">
+            <h3 className="text-sm font-semibold">Valor de viajes liquidados</h3>
+            {d.finance ? <><p className="mt-1 text-xl font-semibold tabular-nums">{fmt(d.finance.cup)} CUP</p><p className="text-xs text-muted-foreground">{fmt(d.finance.usd)} USD · {fmt(d.finance.eur)} EUR{d.finance.other > 0 ? " · Hay otras monedas" : ""}. Volumen de viajes, no ingresos de la agencia.</p></> : <p className="text-xs text-muted-foreground">No disponible para este perfil.</p>}
+          </section>
+          <section aria-label="Decisiones estratégicas">
+            <h3 className="text-sm font-semibold">Señales para decidir</h3>
+            {priorities.length ? priorities.map(p => <p key={p.id} className="mt-1 text-xs text-foreground"><strong>{p.label}:</strong> {p.explanation}</p>) : <p className="mt-1 text-xs text-muted-foreground">Sin alertas de demanda con base suficiente. No equivale a confirmar buen rendimiento.</p>}
+            {funnel?.consistent && d.control.registered > 0 ? <p className="mt-2 text-xs text-muted-foreground">De {fmt(d.control.registered)} altas de Control, {fmt(d.control.activated)} habilitados y {fmt(d.control.first_ride)} con primera carrera liquidada (misma cohorte).</p> : null}
+          </section>
+        </div>
+      </>}
+    </SectionCard>
+  );
 }
