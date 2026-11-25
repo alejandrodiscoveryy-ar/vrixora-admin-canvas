@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { getSupabaseClient } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
@@ -330,150 +332,7 @@ export default function RendimientoSection({
         }
       />
       <AgencyVitalityOverview projectId={projectId} from={fromDate} to={toDate} />
-      {analytics.isLoading || (canViewCommercial && commercialLeads.isLoading) ? <p role="status" className="text-sm text-text-secondary">Consultando evolución…</p> : analytics.isError || (canViewCommercial && commercialLeads.isError) ? <p role="alert" className="text-sm text-text-secondary">No se pudieron actualizar los gráficos históricos.</p> : (
-      <section className="grid gap-3 xl:grid-cols-2">
-        <SectionCard density="compact" appearance="premium"
-          title="Registros y accesos"
-          description="Evolución de altas y accesos a la aplicación"
-          module="rendimiento"
-          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.04] via-surface-1 to-background/55"
-          headerClassName="relative z-10 px-4 py-3 sm:px-4"
-          contentClassName="p-3 sm:p-4"
-        >
-          <img
-            src="/admin-premium/analytics.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-16 bottom-0 h-[90%] w-[58%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
-          />
-          {chartRows.length ? (
-            <div className="relative z-10 h-56 w-full md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartRows}
-                  margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    opacity={0.15}
-                  />
-
-                  <XAxis
-                    dataKey="label"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-
-                  <YAxis
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                    allowDecimals={false}
-                  />
-
-                  <Tooltip {...adminChartTooltipProps} />
-
-                  <Bar
-                    dataKey="newUsers"
-                    name="Registros"
-                    fill="var(--module-clientes)"
-                    radius={[4, 4, 0, 0]}
-                  />
-
-                  <Bar
-                    dataKey="logins"
-                    name="Accesos"
-                    fill="var(--module-comercial)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState density="compact" appearance="premium"
-              icon={BarChart3}
-              title="Sin datos de usuarios"
-              description="No hay registros o accesos para el período seleccionado."
-              module="rendimiento"
-              className="relative z-10 min-h-[132px] py-4"
-            />
-          )}
-        </SectionCard>
-
-        <SectionCard density="compact" appearance="premium"
-          title="Fuentes de captación"
-          description="Origen de los leads del período seleccionado"
-          module="comercial"
-          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55"
-          headerClassName="relative z-10 px-4 py-3 sm:px-4"
-          contentClassName="p-3 sm:p-4"
-        >
-          <img
-            src="/admin-premium/acquisition.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-14 bottom-0 h-[92%] w-[60%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
-          />
-          {canViewCommercial && sourceDistribution.length ? (
-            <div className="relative z-10 h-56 w-full md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sourceDistribution}
-                  layout="vertical"
-                  margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={false}
-                    opacity={0.15}
-                  />
-
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-
-                  <YAxis
-                    dataKey="source"
-                    type="category"
-                    width={85}
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-
-                  <Tooltip {...adminChartTooltipProps} />
-
-                  <Bar
-                    dataKey="count"
-                    name="Leads"
-                    fill="var(--module-comercial)"
-                    radius={[0, 6, 6, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState density="compact" appearance="premium"
-              icon={Megaphone}
-              title="Sin datos de captación"
-              description="No hay fuentes comerciales para el período y filtros seleccionados."
-              module="comercial"
-              className="relative z-10 min-h-[132px] py-4"
-            />
-          )}
-        </SectionCard>
-      </section>
-      )}
+      {canViewCommercial ? <CommercialChannelSummary projectId={projectId}/> : null}
       <details className="group min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1/70 shadow-[var(--shadow-xs)]">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-text-primary marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
           <span className="inline-flex items-center gap-2">
@@ -719,6 +578,148 @@ export default function RendimientoSection({
       </SectionCard>
 
 
+      <section className="grid gap-3 xl:grid-cols-2">
+        <SectionCard density="compact" appearance="premium"
+          title="Actividad de usuarios de la app"
+          description="Registros y eventos de inicio de sesión; no mide conversión a conductor"
+          module="rendimiento"
+          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.04] via-surface-1 to-background/55"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
+          contentClassName="p-3 sm:p-4"
+        >
+          <img
+            src="/admin-premium/analytics.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 bottom-0 h-[90%] w-[58%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+          />
+          {chartRows.length ? (
+            <div className="relative z-10 h-56 w-full md:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartRows}
+                  margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    opacity={0.15}
+                  />
+
+                  <XAxis
+                    dataKey="label"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <YAxis
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                    allowDecimals={false}
+                  />
+
+                  <Tooltip {...adminChartTooltipProps} />
+
+                  <Bar
+                    dataKey="newUsers"
+                    name="Registros"
+                    fill="var(--module-clientes)"
+                    radius={[4, 4, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="logins"
+                    name="Accesos"
+                    fill="var(--module-comercial)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState density="compact" appearance="premium"
+              icon={BarChart3}
+              title="Sin datos de usuarios"
+              description="No hay registros o accesos para el período seleccionado."
+              module="rendimiento"
+              className="relative z-10 min-h-[132px] py-4"
+            />
+          )}
+        </SectionCard>
+
+        <SectionCard density="compact" appearance="premium"
+          title="Origen de contactos CRM"
+          description="Contactos comerciales registrados manualmente o en CRM"
+          module="comercial"
+          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
+          contentClassName="p-3 sm:p-4"
+        >
+          <img
+            src="/admin-premium/acquisition.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-14 bottom-0 h-[92%] w-[60%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+          />
+          {canViewCommercial && sourceDistribution.length ? (
+            <div className="relative z-10 h-56 w-full md:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={sourceDistribution}
+                  layout="vertical"
+                  margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    opacity={0.15}
+                  />
+
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <YAxis
+                    dataKey="source"
+                    type="category"
+                    width={85}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <Tooltip {...adminChartTooltipProps} />
+
+                  <Bar
+                    dataKey="count"
+                    name="Leads"
+                    fill="var(--module-comercial)"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState density="compact" appearance="premium"
+              icon={Megaphone}
+              title="Sin datos de captación"
+              description="No hay fuentes comerciales para el período y filtros seleccionados."
+              module="comercial"
+              className="relative z-10 min-h-[132px] py-4"
+            />
+          )}
+        </SectionCard>
+      </section>
           </>
           )}
         </div>
@@ -893,4 +894,45 @@ function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
+}
+
+type ChannelTotals = {link_opens?:number;clicks?:number;requests_created?:number};
+type ChannelReport = {totals?:ChannelTotals;drivers?:{completed_real?:number}[];campaigns?:{campaign:string;link_opens?:number;requests_created?:number}[]};
+type AllyReport = {clicks?:number;requests?:number;completed?:number};
+const observedCount=(v:unknown)=>typeof v==="number" && Number.isFinite(v) && v>=0 ? v.toLocaleString("es-CU") : "—";
+function sumObserved<T>(rows:T[]|undefined,read:(row:T)=>number|undefined):number|undefined {
+  if(!rows || rows.some(row=>typeof read(row)!=="number" || !Number.isFinite(read(row)) || read(row)!<0)) return undefined;
+  return rows.reduce((sum,row)=>sum+read(row)!,0);
+}
+function CommercialChannelSummary({projectId}:{projectId:string}){
+  const [days,setDays]=useState<7|30|90>(30);
+  const official=useQuery({queryKey:["commercial-overview-official",projectId,days],queryFn:async()=>{
+    const {data,error}=await getSupabaseClient().rpc("admin_get_marketplace_tuktuk_communications_v1",{target_project_id:projectId,target_days:days});
+    if(error)throw error;return data as ChannelReport;
+  }});
+  const impulsa=useQuery({queryKey:["commercial-overview-impulsa",projectId,days],queryFn:async()=>{
+    const {data,error}=await getSupabaseClient().rpc("admin_get_marketplace_impulsa_communications_v1",{target_project_id:projectId,target_days:days});
+    if(error)throw error;return data as ChannelReport;
+  }});
+  const allies=useQuery({queryKey:["commercial-overview-allies",projectId],queryFn:async()=>{
+    const {data,error}=await getSupabaseClient().rpc("admin_list_marketplace_allies_v1",{target_project_id:projectId});
+    if(error)throw error;if(!Array.isArray(data))throw Error("INVALID_ALLIES_REPORT");return data as AllyReport[];
+  }});
+  const o=official.isError?undefined:official.data,i=impulsa.isError?undefined:impulsa.data,a=allies.isError?undefined:allies.data;
+  const rows=[
+    {name:"TukTuk oficial · incluye campañas",period:days+" días",clicks:o?.totals?.link_opens,requests:o?.totals?.requests_created,completed:undefined},
+    {name:"Impulsa",period:days+" días",clicks:i?.totals?.clicks,requests:i?.totals?.requests_created,completed:sumObserved(i?.drivers,x=>x.completed_real)},
+    {name:"Aliados",period:"Histórico",clicks:sumObserved(a,x=>x.clicks),requests:sumObserved(a,x=>x.requests),completed:sumObserved(a,x=>x.completed)},
+  ];
+  return <SectionCard density="compact" appearance="premium" module="comercial" title="Captación por canales"
+    description="Período móvil independiente · Aliados: histórico"
+    actions={<div className="flex flex-wrap gap-1">{([7,30,90] as const).map(n=><button key={n} type="button" aria-pressed={days===n} onClick={()=>setDays(n)} className={days===n?"rounded-md bg-primary/15 px-3 py-2 text-xs font-semibold text-primary":"rounded-md px-3 py-2 text-xs text-muted-foreground"}>{n} d</button>)}</div>}
+    contentClassName="p-3 sm:p-4">
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs text-muted-foreground"><tr><th className="py-2 pr-2">Canal</th><th className="px-2">Clics</th><th className="px-2">Solicitudes</th><th className="px-2">Viajes liquidados</th></tr></thead><tbody>
+      {rows.map(row=><tr key={row.name} className="border-t border-border-subtle"><th className="py-3 pr-2 font-medium">{row.name}<span className="block text-xs font-normal text-muted-foreground">{row.period}</span></th><td className="px-2 tabular-nums">{observedCount(row.clicks)}</td><td className="px-2 tabular-nums">{observedCount(row.requests)}</td><td className="px-2 tabular-nums">{observedCount(row.completed)}</td></tr>)}
+    </tbody></table></div>
+    {official.isError||impulsa.isError||allies.isError ? <p role="alert" className="text-xs text-muted-foreground">Alguna fuente no está disponible.</p>:null}
+    <p className="mt-2 text-xs text-muted-foreground">— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Las campañas forman parte de TukTuk oficial.</p>
+    <Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"comercial"}} className="mt-2 inline-flex min-h-10 items-center text-xs font-semibold text-primary">Consultar campañas y canales</Link>
+  </SectionCard>;
 }
