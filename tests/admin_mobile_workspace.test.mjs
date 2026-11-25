@@ -99,7 +99,7 @@ test("Recargas permite configurar cuenta receptora independiente de WhatsApp", (
   const walletsView = panel.slice(panel.indexOf('<TabsContent value="billeteras"'), panel.indexOf('<TabsContent value="recargas"'));
   assert.match(topupsView, /<MarketplaceTopupPaymentDestination/);
   assert.doesNotMatch(walletsView, /<MarketplaceTopupPaymentDestination/);
-  assert.match(panel, /canManagePayments\s*\?\s*\(/);
+  assert.match(topupsView, /canManagePayments\s*\?\s*<div className="marketplace-topup-account[\s\S]*?<MarketplaceTopupPaymentDestination[\s\S]*?<\/div> : null\}/);
   assert.match(payments, /admin_get_marketplace_topup_payment_destination/);
   assert.match(payments, /admin_set_marketplace_topup_payment_destination/);
   for (const field of ["topup-destination-card", "topup-destination-phone", "topup-destination-whatsapp"]) {
