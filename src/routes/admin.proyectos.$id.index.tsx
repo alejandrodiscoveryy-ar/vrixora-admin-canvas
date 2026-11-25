@@ -49,6 +49,7 @@ function ResumenPage() {
   const canViewUsers = permissions.includes("customers.view");
   const canViewMarketplace = permissions.includes("marketplace.view");
   const canViewCommercial = permissions.includes("commercial.view");
+  const canViewPayments = permissions.includes("payments.view");
   const canViewAudit = permissions.includes("audit.view");
 
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
@@ -215,17 +216,25 @@ function ResumenPage() {
           ) : hasPendingActions ? (
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {pendingTopups > 0 ? (
-                <Link
-                  to="/admin/proyectos/$id/$section"
-                  params={{ id, section: "trabajos" }}
-                  search={{ vista: "recargas" }}
-                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                >
-                  <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 font-medium">Revisar recargas pendientes</span>
-                  <Badge variant="warning" className="font-mono">{pendingTopups}</Badge>
-                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-                </Link>
+                canViewPayments ? (
+                  <Link
+                    to="/admin/proyectos/$id/$section"
+                    params={{ id, section: "trabajos" }}
+                    search={{ vista: "recargas" }}
+                    className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 font-medium">Revisar recargas pendientes</span>
+                    <Badge variant="warning" className="font-mono">{pendingTopups}</Badge>
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <div className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground">
+                    <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 font-medium">Recargas pendientes · área de Finanzas</span>
+                    <Badge variant="warning" className="font-mono">{pendingTopups}</Badge>
+                  </div>
+                )
               ) : null}
               {openIncidents > 0 ? (
                 <Link
