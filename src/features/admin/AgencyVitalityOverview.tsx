@@ -67,7 +67,7 @@ function SignalCard({ signal }: { signal: VitalitySignal }) {
   const Icon = signalIcons[signal.id as keyof typeof signalIcons] ?? Activity;
   return (
     <details className={`group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumSurface}`}>
-      <summary className="flex min-h-[128px] cursor-pointer list-none flex-col justify-between gap-2 py-3 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
+      <summary className="flex min-h-[104px] cursor-pointer list-none flex-col justify-between gap-1 py-2 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
         <span aria-hidden="true" className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${toneRail[signal.tone]}`}/>
         <span className="flex min-w-0 items-start justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-text-secondary">
@@ -116,9 +116,9 @@ function ControlConversionFunnel({ data, projectId }: {
           <div key={stage.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-[var(--radius-compact)] bg-surface-2/65 px-3 py-2">
             <span className="text-sm font-medium text-text-primary">{stage.id==="registered" ? "Usuarios registrados en APK Control" : stage.label}</span>
             <strong className="text-lg tabular-nums text-text-primary">{number(stage.value)}</strong>
-            <div className="h-2 overflow-hidden rounded-full bg-surface-3" role="progressbar" aria-label={stage.label}
+            <div className="h-5 overflow-hidden rounded-md bg-surface-3" role="progressbar" aria-label={stage.label}
               aria-valuemin={0} aria-valuemax={100} aria-valuenow={stage.share == null || !funnel.consistent ? undefined : Math.min(100,stage.share)}>
-              <div className="h-full rounded-full bg-[var(--module-accent)]" style={{width: funnel.consistent && stage.share != null ? Math.min(100,stage.share)+"%" : "0%", opacity:1-index*.12}}/>
+              <div className="h-full mx-auto rounded-md bg-[var(--module-accent)]" style={{width: funnel.consistent && stage.share != null ? Math.min(100,stage.share)+"%" : "0%", opacity:1-index*.12}}/>
             </div>
             <span className="text-xs tabular-nums text-text-secondary">{stage.share == null || !funnel.consistent ? "—" : number(stage.share)+"%"}</span>
           </div>
@@ -145,10 +145,10 @@ function ControlConversionFunnel({ data, projectId }: {
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="max-w-2xl text-xs leading-relaxed text-text-secondary">
+        <details className="max-w-2xl text-xs leading-relaxed text-text-secondary"><summary className="cursor-pointer">Cómo se calcula</summary>
           Base: registros identificables de Control en el período; no incluye instalaciones anónimas ni todos los perfiles históricos.
           «Habilitado» no significa conectado o trabajando. La primera carrera solo cuenta cuando está liquidada.
-        </p>
+        </details>
         <Link className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline"
           to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"conductores"}}>
           Consultar conductores <ArrowUpRight className="size-3.5" aria-hidden="true"/>
@@ -218,7 +218,7 @@ export default function AgencyVitalityOverview({
                     <li key={item.id} className="flex flex-wrap items-start justify-between gap-2 rounded-[var(--radius-control)] border border-border-subtle bg-surface-1/50 px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-text-primary">{item.label}</p>
-                        <p className="text-xs text-text-secondary">{item.explanation}</p>
+                        <details className="text-xs text-text-secondary"><summary className="cursor-pointer">Ver motivo</summary>{item.explanation}</details>
                       </div>
                       <StatusPill tone={item.tone}/>
                     </li>
@@ -241,50 +241,32 @@ export default function AgencyVitalityOverview({
           <ControlConversionFunnel data={d.control} projectId={projectId}/>
           <RideConversion data={d.rides}/>
         </div>
-        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <SectionCard density="compact" appearance="premium" module="rendimiento"
-            title="Clientes" description="Pasajeros registrados y atendidos"
-            contentClassName="p-3 sm:p-4">
-            <InlineStat label="Total al cierre del período" value={d.clients?.total}/>
-            <InlineStat label="Nuevos en el período" value={d.clients?.new}/>
-            <InlineStat label="Atendidos con carrera completada" value={d.clients?.served}/>
-            <InlineStat label="Recurrentes históricos (2+)" value={d.clients?.recurrent}/>
-            <p className="mt-2 text-xs text-text-secondary">{d.clients ? "Recurrentes = clientes con al menos dos carreras liquidadas." : "No disponible por permisos de Clientes."}</p>
-            <Link className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"clientes"}}>
-              Consultar clientes <ArrowUpRight className="size-3.5" aria-hidden="true"/>
-            </Link>
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <SectionCard density="compact" appearance="premium" module="rendimiento" title="Clientes" description="Crecimiento y servicio" contentClassName="p-4">
+            {d.clients ? <>
+              <div className="text-3xl font-semibold tabular-nums">{number(d.clients.total)} <span className="text-xs font-normal text-text-secondary">registrados al cierre</span></div>
+              <VisualBars rows={[{label:"Nuevos · actual",value:d.clients.new,color:"var(--module-accent)"},{label:"Nuevos · anterior",value:d.clients.previous_new,color:"#8494a0"},{label:"Atendidos",value:d.clients.served,color:"var(--semantic-success)"}]}/>
+              <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle</summary><InlineStat label="Recurrentes históricos (2+)" value={d.clients.recurrent}/><p>Atendidos y nuevos pueden coincidir; no se suman.</p></details>
+            </>:<p className="text-sm text-text-secondary">Datos no disponibles.</p>}
+            <Link className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs font-medium text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"clientes"}}>Consultar clientes <ArrowUpRight className="size-3.5"/></Link>
           </SectionCard>
-          <SectionCard density="compact" appearance="premium" module="rendimiento"
-            title="Carreras" description="Creadas en el período, según su estado actual"
-            contentClassName="p-3 sm:p-4">
-            <InlineStat label="Solicitadas" value={d.rides?.requested}/>
-            <InlineStat label="Completadas" value={d.rides?.completed}/>
-            <InlineStat label="Liquidadas" value={d.rides?.settled}/>
-            <InlineStat label="Canceladas" value={d.rides?.cancelled}/>
-            <InlineStat label="Sin asignar" value={d.rides?.unassigned}/>
-            <p className="mt-2 text-xs text-text-secondary">Se excluyen carreras de prueba. El estado refleja la consulta actual.</p>
-            <Link className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"trabajos"}}>
-              Consultar operaciones <ArrowUpRight className="size-3.5" aria-hidden="true"/>
-            </Link>
-          </SectionCard>
-          <SectionCard density="compact" appearance="premium" module="rendimiento"
-            title="Economía" description="Base tarifaria USD · finanzas en MN"
-            contentClassName="p-3 sm:p-4">
-            <InlineStat label="Viajes liquidados en MN" value={d.finance ? money(d.finance.cup,"MN") : null}/>
+          <SectionCard density="compact" appearance="premium" module="rendimiento" title="Economía" description="Base tarifaria USD · finanzas en MN" contentClassName="p-4">
+            <p className="text-3xl font-semibold tabular-nums">{money(d.finance?.cup,"MN")}</p><p className="text-xs text-text-secondary">Valor liquidado en MN · no es ingreso de la agencia</p>
             {d.finance && d.finance.usd>0 ? <InlineStat label="Viajes liquidados en USD" value={money(d.finance.usd,"USD")}/> : null}
             {d.finance && d.finance.eur>0 ? <InlineStat label="Viajes liquidados en EUR" value={money(d.finance.eur,"EUR")}/> : null}
             {d.finance && d.finance.other>0 ? <InlineStat label="Viajes en otras monedas" value={d.finance.other}/> : null}
             <FinanceDebt projectId={projectId}/>
-            <InlineStat label="Comisiones generadas (MN)" value={null}/>
-            <InlineStat label="Comisiones cobradas (MN)" value={null}/>
-            <p className="mt-2 text-xs text-text-secondary">Valores de carreras, no ingresos netos ni comisiones. — = dato no disponible. No se convierten monedas sin tipo de cambio registrado.</p>
+            <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Detalle contable</summary>
+              <InlineStat label="Comisiones generadas (MN)" value={null}/><InlineStat label="Comisiones cobradas (MN)" value={null}/>
+              <p>Valores de carreras, no ingresos netos ni comisiones. No se convierten monedas sin tipo de cambio registrado.</p>
+            </details>
           </SectionCard>
-          <SectionCard density="compact" appearance="premium" module="rendimiento" title="Flota" description="Situación actual" contentClassName="p-3 sm:p-4">
-            <InlineStat label="Conductores habilitados" value={d.operation?.profiles_active}/>
-            <InlineStat label="Conductores registrados" value={d.operation?.profiles_total}/>
-            <p className="mt-2 text-xs text-text-secondary">«Habilitado» no significa conectado o trabajando.</p>
+          <SectionCard density="compact" appearance="premium" module="rendimiento" title="Flota" description="Capacidad administrativa actual" contentClassName="p-4">
+            {d.operation && d.operation.profiles_active<=d.operation.profiles_total ? <>
+              <Donut total={d.operation.profiles_total} rows={[{label:"Habilitados",value:d.operation.profiles_active,color:"var(--semantic-success)"},{label:"No habilitados",value:d.operation.profiles_total-d.operation.profiles_active,color:"#8494a0"}]} center={number(d.operation.profiles_total)} sub="Registrados"/>
+              <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle</summary>«Habilitado» no significa conectado o trabajando.</details>
+            </>:<p className="text-sm text-text-secondary">Datos no disponibles o inconsistentes.</p>}
+            <Link className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs font-medium text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"conductores"}}>Consultar conductores <ArrowUpRight className="size-3.5"/></Link>
           </SectionCard>
         </div>
         </>
@@ -293,24 +275,36 @@ export default function AgencyVitalityOverview({
   );
 }
 
+type VisualRow={label:string;value:number;color:string};
+function VisualBars({rows,unit=""}:{rows:VisualRow[];unit?:string}){
+  const max=Math.max(1,...rows.map(r=>r.value));
+  return <div className="mt-3 space-y-3">{rows.map(r=><div key={r.label}>
+    <div className="mb-1 flex justify-between gap-2 text-xs"><span>{r.label}</span><strong className="tabular-nums">{number(r.value)}{unit}</strong></div>
+    <div className="h-3 rounded-md bg-surface-3" aria-hidden="true"><div className="h-full rounded-md" style={{width:r.value*100/max+"%",background:r.color}}/></div>
+  </div>)}</div>;
+}
+function Donut({total,rows,center,sub}:{total:number;rows:VisualRow[];center:string;sub:string}){
+  let offset=0;
+  return <div className="grid min-w-0 items-center gap-3 sm:grid-cols-[minmax(100px,1fr)_minmax(0,1fr)]">
+    <svg viewBox="0 0 140 140" className="mx-auto w-full max-w-[210px]" role="img" aria-label={rows.map(r=>r.label+": "+number(r.value)).join(", ")}>
+      <circle cx="70" cy="70" r="53" fill="none" stroke="var(--border-default)" strokeWidth="19"/>
+      {total>0 && rows.map(r=>{const part=r.value*100/total;const start=offset;offset+=part;return part>0?<circle key={r.label} cx="70" cy="70" r="53" fill="none" stroke={r.color} strokeWidth="19" pathLength="100" strokeDasharray={part+" 100"} strokeDashoffset={-start} transform="rotate(-90 70 70)"/>:null;})}
+      <text x="70" y="70" textAnchor="middle" fill="var(--text-primary)" fontSize="23" fontWeight="600">{center}</text>
+      <text x="70" y="85" textAnchor="middle" fill="var(--text-secondary)" fontSize="9">{sub}</text>
+    </svg>
+    <div className="space-y-2">{rows.map(r=><div key={r.label} className="flex items-center justify-between gap-2 text-xs"><span className="flex items-center gap-2"><span className="size-2.5 shrink-0 rounded-sm" style={{background:r.color}}/>{r.label}</span><strong className="tabular-nums">{number(r.value)}</strong></div>)}</div>
+  </div>;
+}
 function RideConversion({data}:{data:AgencyVitality["rides"]}) {
+  const valid=data && data.requested>=data.completed+data.cancelled+data.unassigned;
   const ratio=data && data.requested>0 && data.completed<=data.requested ? data.completed*100/data.requested : null;
-  return <SectionCard density="compact" appearance="premium" module="rendimiento" title="Conversión de solicitudes" description="Viajes reales creados en el período" contentClassName="p-4">
-    {!data ? <p className="text-sm text-text-secondary">Datos no disponibles.</p> : <div className="grid items-center gap-4 sm:grid-cols-2">
-      <svg viewBox="0 0 140 140" className="mx-auto w-full max-w-[180px]" role="img" aria-label={ratio==null ? "Sin base para calcular conversión" : number(ratio)+"% completadas"}>
-        <circle cx="70" cy="70" r="54" fill="none" stroke="var(--border-default)" strokeWidth="12"/>
-        {ratio!=null && ratio>0 ? <circle cx="70" cy="70" r="54" fill="none" stroke="var(--module-accent)" strokeWidth="12" pathLength="100" strokeDasharray={ratio+" 100"} transform="rotate(-90 70 70)"/> : null}
-        <text x="70" y="70" textAnchor="middle" fill="var(--text-primary)" fontSize="22" fontWeight="600">{ratio==null?"—":number(ratio)+"%"}</text>
-        <text x="70" y="86" textAnchor="middle" fill="var(--text-secondary)" fontSize="10">Completadas</text>
-      </svg>
-      <div>
-        <InlineStat label="Solicitudes" value={data.requested}/>
-        <InlineStat label="Completadas" value={data.completed}/>
-        <InlineStat label="Canceladas" value={data.cancelled}/>
-        <InlineStat label="Sin asignar" value={data.unassigned}/>
-        {ratio==null ? <p className="mt-2 text-xs text-text-secondary">Sin base válida para calcular la tasa.</p>:null}
-      </div>
-    </div>}
+  const cancel=data && valid && data.requested>0?data.cancelled*100/data.requested:null;
+  return <SectionCard density="compact" appearance="premium" module="rendimiento" title="Conversión de solicitudes" description="Distribución de carreras reales del período" contentClassName="p-4">
+    {!data||!valid ? <p className="text-sm text-text-secondary">Datos no disponibles o estados inconsistentes.</p> : <>
+      <Donut total={data.requested} rows={[{label:"Completadas",value:data.completed,color:"var(--semantic-success)"},{label:"Canceladas",value:data.cancelled,color:"var(--semantic-danger)"},{label:"Sin asignar",value:data.unassigned,color:"var(--semantic-warning)"},{label:"Otros estados",value:data.requested-data.completed-data.cancelled-data.unassigned,color:"#8494a0"}]} center={ratio==null?"—":number(ratio)+"%"} sub="Completadas"/>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-2 p-3"><span className="text-sm font-medium">Cancelaciones</span><strong className="text-2xl tabular-nums" style={{color:cancel!=null&&data.requested>=5&&cancel>=35?"var(--semantic-danger)":undefined}}>{cancel==null?"—":number(cancel)+"%"}</strong></div>
+      <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle de carreras</summary><InlineStat label="Solicitadas" value={data.requested}/><InlineStat label="Liquidadas (incluidas en completadas)" value={data.settled}/><p>Excluye pruebas. Estado actual de las carreras creadas en el período.</p></details>
+    </>}
   </SectionCard>;
 }
 
@@ -330,8 +324,7 @@ function FinanceDebt({projectId}:{projectId:string}){
   });
   const d=enabled&&!debt.isError?debt.data:undefined;
   return <>
-    <InlineStat label="Deuda de billeteras · actual" value={money(d?.debt_cup,"MN")}/>
-    <InlineStat label="Retiradas Impulsa pendientes · actual" value={money(d?.pending_withdrawal_cup,"MN")}/>
+    {d ? <VisualBars rows={[{label:"Deuda de billeteras · actual",value:d.debt_cup!,color:"var(--semantic-danger)"},{label:"Retiradas Impulsa pendientes · actual",value:d.pending_withdrawal_cup!,color:"var(--semantic-warning)"}]} unit=" MN"/> : <p className="mt-3 text-xs text-text-secondary">Saldos pendientes no disponibles.</p>}
     {enabled?<Link className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"billeteras"}}>Consultar billeteras <ArrowUpRight className="size-3.5" aria-hidden="true"/></Link>:null}
   </>;
 }
