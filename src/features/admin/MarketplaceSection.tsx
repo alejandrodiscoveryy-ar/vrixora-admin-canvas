@@ -53,6 +53,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogTrigger,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -2684,15 +2685,6 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
           </TabsContent>
           <TabsContent value="recargas">
             <section aria-label="Recargas" data-nav-tone="recargas" className="marketplace-record-workspace min-w-0 space-y-2.5">
-              {canManagePayments ? (
-                <MarketplaceTopupPaymentDestination
-                  projectId={projectId}
-                  destination={paymentDestination.data}
-                  isLoading={paymentDestination.isLoading}
-                  isError={paymentDestination.isError}
-                  onRetry={() => void paymentDestination.refetch()}
-                />
-              ) : null}
               <div className={cn("marketplace-record-toolbar marketplace-topup-toolbar relative overflow-hidden rounded-[var(--radius-card)] border p-3", premiumHeaderSurface)}>
                 <Banknote aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark" />
                 <div className="marketplace-topup-toolbar-top relative grid min-w-0 gap-2.5">
@@ -2703,6 +2695,22 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                       <p className="text-xs text-text-secondary">Solicitudes, verificaciones y comprobantes</p>
                     </div>
                   </div>
+                  {canManagePayments ? <div className="marketplace-topup-account min-w-0">
+                    <Dialog>
+                      <DialogTrigger asChild><Button variant="outline" className="min-h-11 w-full gap-2"><Banknote className="h-4 w-4"/>Datos de recarga</Button></DialogTrigger>
+                      <DialogContent className="admin-graphite-dialog max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-2xl overflow-y-auto">
+                        <DialogHeader><DialogTitle>Datos de recarga</DialogTitle><DialogDescription>Cuenta receptora para transferencias</DialogDescription></DialogHeader>
+                <MarketplaceTopupPaymentDestination
+                  projectId={projectId}
+                  destination={paymentDestination.data}
+                  isLoading={paymentDestination.isLoading}
+                  isError={paymentDestination.isError}
+                  onRetry={() => void paymentDestination.refetch()}
+                />
+
+                      </DialogContent>
+                    </Dialog>
+                  </div> : null}
                   <div className="marketplace-topup-search min-w-0">
                     <RecordSearch value={topupSearch} onChange={setTopupSearch} placeholder="Buscar conductor, teléfono o referencia" labelText="Buscar recargas cargadas" />
                   </div>
@@ -2782,7 +2790,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                                   buttonClassName="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-surface)] px-3 text-xs font-semibold text-[var(--semantic-success-foreground)]" />
                               ) : (
                                 <p className="max-w-56 text-xs leading-snug text-text-secondary">
-                                  {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas, para enviar instrucciones."}
+                                  {paymentDestination.isLoading ? "Cargando datos de pago…" : "Configura la tarjeta y el teléfono en el botón Datos de recarga, para enviar instrucciones."}
                                 </p>
                               )
                             )}
