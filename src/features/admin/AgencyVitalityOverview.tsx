@@ -164,7 +164,7 @@ export default function AgencyVitalityOverview({
   const vitality = useQuery({
     queryKey: ["agency-vitality-v1", projectId, from, to],
     queryFn: () => fetchVitality(projectId, from, to),
-    staleTime: 30_000, refetchInterval: 60_000, retry: 1,
+    staleTime: 60_000, refetchInterval: 60_000, refetchOnWindowFocus: false, retry: 1,
   });
   const signals = useMemo(() => !vitality.isError && vitality.data ? agencyVitalitySignals(vitality.data) : [], [vitality.data, vitality.isError]);
   const priorities = signals.filter(s => s.priority >= 2).sort((a,b) => b.priority - a.priority);
@@ -199,12 +199,12 @@ export default function AgencyVitalityOverview({
             <p className="text-sm font-semibold text-text-primary">Vitalidad no disponible todavía</p>
             <p className="mt-1 text-xs leading-relaxed text-text-secondary">
               No se muestran números sustitutos. Verifica que esté aplicada la función de lectura de Vitalidad en la base de datos y que tu rol tenga permiso de Analítica.
-              Las estadísticas existentes siguen disponibles en «Análisis detallado».
+              Puedes volver a consultar el período desde el selector.
             </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+            <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
               {signals.map(signal => <SignalCard key={signal.id} signal={signal}/>)}
             </div>
             <section aria-label="Prioridades de intervención" className="rounded-[var(--radius-compact)] border border-border-default bg-surface-2/60 p-3">
@@ -285,14 +285,14 @@ function VisualBars({rows,unit=""}:{rows:VisualRow[];unit?:string}){
 }
 function Donut({total,rows,center,sub}:{total:number;rows:VisualRow[];center:string;sub:string}){
   let offset=0;
-  return <div className="grid min-w-0 items-center gap-3 sm:grid-cols-[minmax(100px,1fr)_minmax(0,1fr)]">
-    <svg viewBox="0 0 140 140" className="mx-auto w-full max-w-[210px]" role="img" aria-label={rows.map(r=>r.label+": "+number(r.value)).join(", ")}>
+  return <div className="grid min-w-0 items-center gap-3 sm:grid-cols-[minmax(110px,0.9fr)_minmax(0,1fr)]">
+    <svg viewBox="0 0 140 140" className="mx-auto block w-full max-w-[240px]" role="img" aria-label={rows.map(r=>r.label+": "+number(r.value)).join(", ")}>
       <circle cx="70" cy="70" r="53" fill="none" stroke="var(--border-default)" strokeWidth="19"/>
       {total>0 && rows.map(r=>{const part=r.value*100/total;const start=offset;offset+=part;return part>0?<circle key={r.label} cx="70" cy="70" r="53" fill="none" stroke={r.color} strokeWidth="19" pathLength="100" strokeDasharray={part+" 100"} strokeDashoffset={-start} transform="rotate(-90 70 70)"/>:null;})}
       <text x="70" y="70" textAnchor="middle" fill="var(--text-primary)" fontSize="23" fontWeight="600">{center}</text>
       <text x="70" y="85" textAnchor="middle" fill="var(--text-secondary)" fontSize="9">{sub}</text>
     </svg>
-    <div className="space-y-2">{rows.map(r=><div key={r.label} className="flex items-center justify-between gap-2 text-xs"><span className="flex items-center gap-2"><span className="size-2.5 shrink-0 rounded-sm" style={{background:r.color}}/>{r.label}</span><strong className="tabular-nums">{number(r.value)}</strong></div>)}</div>
+    <div className="space-y-2">{rows.map(r=><div key={r.label} className="flex min-w-0 items-center justify-between gap-2 text-xs"><span className="flex min-w-0 items-center gap-2"><span className="size-2.5 shrink-0 rounded-sm" style={{background:r.color}}/>{r.label}</span><strong className="shrink-0 tabular-nums">{number(r.value)}</strong></div>)}</div>
   </div>;
 }
 function RideConversion({data}:{data:AgencyVitality["rides"]}) {
@@ -320,7 +320,7 @@ function FinanceDebt({projectId}:{projectId:string}){
       const result=data as {debt_cup?:number;pending_withdrawal_cup?:number}|null;
       if(!result || typeof result.debt_cup!=="number" || !Number.isFinite(result.debt_cup) || typeof result.pending_withdrawal_cup!=="number" || !Number.isFinite(result.pending_withdrawal_cup))throw Error("INVALID_FINANCE_SUMMARY");
       return result;
-    },staleTime:60_000,
+    },staleTime:60_000,refetchOnWindowFocus:false,retry:1,
   });
   const d=enabled&&!debt.isError?debt.data:undefined;
   return <>
