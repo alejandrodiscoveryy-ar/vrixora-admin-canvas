@@ -24,7 +24,7 @@ const toneClasses: Record<VitalityTone, string> = {
   red: "border-[var(--semantic-danger-border)] bg-[var(--semantic-danger-surface)] text-[var(--semantic-danger-foreground)]",
   gray: "border-[var(--semantic-inactive-border)] bg-[var(--semantic-inactive-surface)] text-[var(--semantic-inactive-foreground)]",
 };
-const tones: VitalityTone[] = ["green", "yellow", "orange", "red", "gray"];
+
 const toneRail: Record<VitalityTone, string> = {
   green: "bg-[var(--semantic-success)]",
   yellow: "bg-[var(--semantic-warning)]",
@@ -66,7 +66,7 @@ function SignalCard({ signal }: { signal: VitalitySignal }) {
   const Icon = signalIcons[signal.id as keyof typeof signalIcons] ?? Activity;
   return (
     <details className={`group relative min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default ${premiumSurface}`}>
-      <summary className="flex min-h-[114px] cursor-pointer list-none flex-col justify-between gap-2 py-3 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
+      <summary className="flex min-h-[128px] cursor-pointer list-none flex-col justify-between gap-2 py-3 pl-4 pr-3 marker:hidden [&::-webkit-details-marker]:hidden sm:pr-4">
         <span aria-hidden="true" className={`absolute inset-y-3 left-0 w-1 rounded-r-full ${toneRail[signal.tone]}`}/>
         <span className="flex min-w-0 items-start justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-text-secondary">
@@ -74,7 +74,7 @@ function SignalCard({ signal }: { signal: VitalitySignal }) {
           </span>
           <ArrowUpRight className="size-4 shrink-0 text-text-tertiary group-open:rotate-90" aria-hidden="true"/>
         </span>
-        <strong className="text-2xl font-semibold tabular-nums text-text-primary">
+        <strong className="text-3xl font-semibold tabular-nums text-text-primary">
           {signal.id === "cancelled" && signal.value != null
             ? `${signal.value.toFixed(1)} %`
             : number(signal.value)}
@@ -110,26 +110,16 @@ function ControlConversionFunnel({ data, projectId }: {
       title="Control → Conductor → Primera carrera"
       description="Seguimiento de una misma cohorte, desde el registro hasta el primer servicio real"
       contentClassName="space-y-3 p-3 sm:p-4">
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Etapas de incorporación">
+      <div className="space-y-2" aria-label="Etapas de incorporación">
         {funnel.stages.map((stage, index) => (
-          <div key={stage.id} className="min-w-0 rounded-[var(--radius-compact)] border border-border-default bg-surface-2/65 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-                Etapa {index + 1}
-              </span>
-              <span aria-hidden="true" className="h-1.5 w-6 rounded-full bg-[var(--module-accent)] opacity-70"/>
+          <div key={stage.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-[var(--radius-compact)] bg-surface-2/65 px-3 py-2">
+            <span className="text-sm font-medium text-text-primary">{stage.label}</span>
+            <strong className="text-lg tabular-nums text-text-primary">{number(stage.value)}</strong>
+            <div className="h-2 overflow-hidden rounded-full bg-surface-3" role="progressbar" aria-label={stage.label}
+              aria-valuemin={0} aria-valuemax={100} aria-valuenow={stage.share == null || !funnel.consistent ? undefined : Math.min(100,stage.share)}>
+              <div className="h-full rounded-full bg-[var(--module-accent)]" style={{width: funnel.consistent && stage.share != null ? Math.min(100,stage.share)+"%" : "0%", opacity:1-index*.12}}/>
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-text-primary">{number(stage.value)}</p>
-            <p className="mt-0.5 min-h-9 text-sm font-medium leading-snug text-text-primary">{stage.label}</p>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3"
-              role="progressbar" aria-label={stage.label} aria-valuemin={0} aria-valuemax={100}
-              aria-valuenow={stage.share == null ? undefined : Math.min(100, stage.share)}>
-              <div className="h-full rounded-full bg-[var(--module-accent)] transition-[width]"
-                style={{ width: `${Math.min(100, stage.share ?? 0)}%`, opacity: 0.9 - index * 0.12 }} />
-            </div>
-            <p className="mt-2 text-xs tabular-nums text-text-secondary">
-              {stage.share == null ? "Sin base instrumentada" : `${stage.share.toFixed(1)} % de la cohorte`}
-            </p>
+            <span className="text-xs tabular-nums text-text-secondary">{stage.share == null || !funnel.consistent ? "—" : number(stage.share)+"%"}</span>
           </div>
         ))}
       </div>
@@ -139,12 +129,12 @@ function ControlConversionFunnel({ data, projectId }: {
         </span>
         <span className="text-xs text-text-secondary">
           Conversión a conductor: <strong className="tabular-nums text-text-primary">
-            {data.registered ? `${(data.activated * 100 / data.registered).toFixed(1)} %` : "—"}
+            {funnel.consistent && data.registered ? `${(data.activated * 100 / data.registered).toFixed(1)} %` : "—"}
           </strong>
         </span>
         <span className="text-xs text-text-secondary">
           Con primera carrera: <strong className="tabular-nums text-text-primary">
-            {data.registered ? `${(data.first_ride * 100 / data.registered).toFixed(1)} %` : "—"}
+            {funnel.consistent && data.registered ? `${(data.first_ride * 100 / data.registered).toFixed(1)} %` : "—"}
           </strong>
         </span>
       </div>
@@ -177,14 +167,14 @@ export default function AgencyVitalityOverview({
   });
   const signals = useMemo(() => vitality.data ? agencyVitalitySignals(vitality.data) : [], [vitality.data]);
   const priorities = signals.filter(s => s.priority >= 2).sort((a,b) => b.priority - a.priority);
-  const d = vitality.data;
+  const d = vitality.isError ? undefined : vitality.data;
   const assessed = signals.filter(signal => signal.tone !== "gray").length;
 
   return (
     <section aria-label="Vitalidad de la Agencia TukTuk" data-admin-module="rendimiento" className="space-y-3">
       <SectionCard density="compact" appearance="premium" module="rendimiento"
-        title="Vitalidad de la Agencia"
-        description="Semáforo de crecimiento, demanda, calidad y pendientes. Los grises indican que falta base suficiente."
+        title="Indicadores del período"
+        description="Los grises indican que falta base suficiente."
         contentClassName="space-y-3 p-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
           <span className="inline-flex items-center gap-1.5"><Activity className="size-4 text-[var(--module-accent)]" aria-hidden="true"/>
@@ -195,9 +185,6 @@ export default function AgencyVitalityOverview({
           {d?.computed_at && <span title="Momento de consulta">· Actualizado {new Intl.DateTimeFormat("es-ES", {dateStyle:"short",timeStyle:"short",timeZone:"America/Havana"}).format(new Date(d.computed_at))} (Cuba)</span>}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-1.5" aria-label="Leyenda del semáforo">
-            {tones.map(tone => <StatusPill key={tone} tone={tone} />)}
-          </div>
           {d && <p className="text-xs font-medium tabular-nums text-text-secondary">
             {priorities.length} señales con atención · {assessed} de {signals.length} evaluables
           </p>}
@@ -249,8 +236,11 @@ export default function AgencyVitalityOverview({
       </SectionCard>
       {d && (
         <>
-        <ControlConversionFunnel data={d.control} projectId={projectId}/>
-        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+          <ControlConversionFunnel data={d.control} projectId={projectId}/>
+          <RideConversion data={d.rides}/>
+        </div>
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <SectionCard density="compact" appearance="premium" module="rendimiento"
             title="Clientes" description="Pasajeros registrados y atendidos"
             contentClassName="p-3 sm:p-4">
@@ -279,18 +269,42 @@ export default function AgencyVitalityOverview({
             </Link>
           </SectionCard>
           <SectionCard density="compact" appearance="premium" module="rendimiento"
-            title="Economía y flota" description="Volumen liquidado y capacidad registrada"
+            title="Economía" description="Valor de los viajes liquidados"
             contentClassName="p-3 sm:p-4">
             <InlineStat label="Valor de carreras liquidadas" value={d.finance ? money(d.finance.cup,"CUP") : null}/>
             <InlineStat label="Volumen USD" value={d.finance ? money(d.finance.usd,"USD") : null}/>
             <InlineStat label="Volumen EUR" value={d.finance ? money(d.finance.eur,"EUR") : null}/>
-            <InlineStat label="Perfiles de conductor habilitados" value={d.operation?.profiles_active}/>
-            <InlineStat label="Total perfiles de conductor" value={d.operation?.profiles_total}/>
-            <p className="mt-2 text-xs text-text-secondary">Valores de carreras, no ingresos netos ni comisiones. «Habilitado» no significa conectado o trabajando. La flota es una fotografía actual.</p>
+            <p className="mt-2 text-xs text-text-secondary">Valores de carreras, no ingresos netos ni comisiones.</p>
+          </SectionCard>
+          <SectionCard density="compact" appearance="premium" module="rendimiento" title="Flota" description="Situación actual" contentClassName="p-3 sm:p-4">
+            <InlineStat label="Conductores habilitados" value={d.operation?.profiles_active}/>
+            <InlineStat label="Conductores registrados" value={d.operation?.profiles_total}/>
+            <p className="mt-2 text-xs text-text-secondary">«Habilitado» no significa conectado o trabajando.</p>
           </SectionCard>
         </div>
         </>
       )}
     </section>
   );
+}
+
+function RideConversion({data}:{data:AgencyVitality["rides"]}) {
+  const ratio=data && data.requested>0 && data.completed<=data.requested ? data.completed*100/data.requested : null;
+  return <SectionCard density="compact" appearance="premium" module="rendimiento" title="Conversión de solicitudes" description="Viajes reales creados en el período" contentClassName="p-4">
+    {!data ? <p className="text-sm text-text-secondary">Datos no disponibles.</p> : <div className="grid items-center gap-4 sm:grid-cols-2">
+      <svg viewBox="0 0 140 140" className="mx-auto w-full max-w-[180px]" role="img" aria-label={ratio==null ? "Sin base para calcular conversión" : number(ratio)+"% completadas"}>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="var(--border-default)" strokeWidth="12"/>
+        {ratio!=null && ratio>0 ? <circle cx="70" cy="70" r="54" fill="none" stroke="var(--module-accent)" strokeWidth="12" pathLength="100" strokeDasharray={ratio+" 100"} transform="rotate(-90 70 70)"/> : null}
+        <text x="70" y="70" textAnchor="middle" fill="var(--text-primary)" fontSize="22" fontWeight="600">{ratio==null?"—":number(ratio)+"%"}</text>
+        <text x="70" y="86" textAnchor="middle" fill="var(--text-secondary)" fontSize="10">Completadas</text>
+      </svg>
+      <div>
+        <InlineStat label="Solicitudes" value={data.requested}/>
+        <InlineStat label="Completadas" value={data.completed}/>
+        <InlineStat label="Canceladas" value={data.cancelled}/>
+        <InlineStat label="Sin asignar" value={data.unassigned}/>
+        {ratio==null ? <p className="mt-2 text-xs text-text-secondary">Sin base válida para calcular la tasa.</p>:null}
+      </div>
+    </div>}
+  </SectionCard>;
 }
