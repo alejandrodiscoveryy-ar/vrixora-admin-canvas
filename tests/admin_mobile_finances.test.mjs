@@ -11,9 +11,9 @@ test("billeteras: un resumen responsive, importes críticos visibles y desglose 
   assert.match(wallets, /marketplace-wallet-summary/);
   assert.equal((wallets.match(/sortedWalletRows\.map/g) ?? []).length, 1);
   const summary = wallets.slice(0, wallets.indexOf('<details'));
-  assert.match(summary, /labelText="Disponible" value=\{formatAmount\(wallet\.availableBalance, wallet\.currency\)\}/);
-  assert.match(summary, /labelText="Reservado" value=\{formatAmount\(reserved, wallet\.currency\)\}/);
-  assert.match(summary, /labelText="Saldo total" value=\{formatAmount\(wallet\.totalBalance, wallet\.currency\)\}/);
+  assert.match(summary, /labelText="Disponible" value=\{formatWalletAmount\(wallet\.availableBalance, wallet\.currency\)\}/);
+  assert.match(summary, /labelText="Reservado" value=\{formatWalletAmount\(reserved, wallet\.currency\)\}/);
+  assert.match(summary, /labelText="Saldo total" value=\{formatWalletAmount\(wallet\.totalBalance, wallet\.currency\)\}/);
   assert.match(summary, /wallet\.initialDepositConfirmed \? "Depósito inicial confirmado" : "Depósito inicial pendiente"/);
   assert.match(wallets, /<details className="marketplace-record-details group">/);
   assert.match(wallets, /<summary className="marketplace-record-summary flex min-h-11 cursor-pointer/);
