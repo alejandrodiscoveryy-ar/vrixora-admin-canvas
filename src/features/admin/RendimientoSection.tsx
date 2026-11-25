@@ -11,6 +11,7 @@ import AgencyVitalityOverview from "@/features/admin/AgencyVitalityOverview";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
+import { channelEventConversion } from "@/lib/agency-vitality";
 
 export default function RendimientoSection({projectId}:{projectId:string}) {
   const {data:project}=useProject(projectId);
@@ -76,11 +77,6 @@ type ChannelReport = {totals?:ChannelTotals;drivers?:{completed_real?:number}[];
 type AllyReport = {clicks?:number;requests?:number;completed?:number};
 const isObservedCount=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0;
 const observedCount=(v:unknown)=>isObservedCount(v) ? v.toLocaleString("es-CU") : "—";
-// Event ratio within the same channel/window, not a matched visitor conversion.
-export function channelEventConversion(clicks:unknown,requests:unknown):number|undefined {
-  if(!isObservedCount(clicks)||!isObservedCount(requests)||clicks===0||requests>clicks) return undefined;
-  return requests/clicks;
-}
 const conversionLabel=(clicks:unknown,requests:unknown)=>{
   const value=channelEventConversion(clicks,requests);
   return value===undefined?"—":value.toLocaleString("es-CU",{style:"percent",maximumFractionDigits:1});
@@ -139,7 +135,7 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
             <ChannelCountCell label="Clics" value={row.clicks} bar={isObservedCount(row.clicks)?row.clicks/maxClicks*100:undefined} color={color}/>
             <ChannelCountCell label="Solicitudes" value={row.requests}/>
             <ChannelCountCell label="Liquidados" value={row.completed}/>
-            <div role="cell" className="min-w-0"><span className="block text-[11px] text-text-secondary md:sr-only">Conversión*</span><span className={cn("block text-base font-semibold tabular-nums",channelEventConversion(row.clicks,row.requests)!>0?"text-emerald-600 dark:text-emerald-300":"text-text-secondary")}>{conversionLabel(row.clicks,row.requests)}</span></div>
+            <div role="cell" className="min-w-0"><span className="block text-[11px] text-text-secondary md:sr-only">Conversión*</span><span className={cn("block text-base font-semibold tabular-nums",(channelEventConversion(row.clicks,row.requests)??0)>0?"text-emerald-600 dark:text-emerald-300":"text-text-secondary")}>{conversionLabel(row.clicks,row.requests)}</span></div>
           </div>;
         })}
       </div>
