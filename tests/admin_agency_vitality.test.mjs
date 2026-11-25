@@ -184,3 +184,13 @@ test("Analítica elimina consultas del panel legado y adapta gráficos a móvil"
   assert.match(board,/max-w-\[240px\]/);
   assert.match(board,/refetchOnWindowFocus: false/);
 });
+
+test("embudo compacto distingue etapas, tasas y pérdidas sin inventar proporciones",()=>{
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  assert.match(board,/const colors = \["#0e7490","#2563eb","#15803d","#b45309"\]/);
+  assert.match(board,/funnel.consistent&&previous>0\?stage.value\*100\/previous:null/);
+  assert.match(board,/Mayor pérdida proporcional/);
+  assert.match(board,/Etapas esquemáticas/);
+  assert.match(board,/lg:grid-cols-\[minmax\(0,1.25fr\)_minmax\(0,1fr\)\]/);
+  assert.match(board,/bottleneck && bottleneck.lost>0/);
+});
