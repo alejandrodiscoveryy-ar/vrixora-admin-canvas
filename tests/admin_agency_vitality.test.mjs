@@ -141,3 +141,18 @@ test("captación por canales y moneda sin equivalencias falsas",()=>{
   assert.match(board,/money\(d\?\.debt_cup,"MN"\)/);
   assert.match(board,/No se convierten monedas sin tipo de cambio registrado/);
 });
+
+test("selector de Analítica admite Todo y fechas personalizadas válidas",()=>{
+  const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+  const selector=readFileSync(new URL("../src/components/admin/AdminPeriodSelector.tsx",import.meta.url),"utf8");
+  assert.match(dashboard,/value:"all" as const,label:"Todo"/);
+  assert.match(dashboard,/project\?\.createdAt/);
+  assert.match(dashboard,/period==="all" \? fromDate/);
+  assert.match(dashboard,/rangeSupported=periodDays<=401/);
+  assert.match(dashboard,/maxCustomDays=\{401\}/);
+  assert.match(selector,/next === "all" && allRange/);
+  assert.match(selector,/draft.from <= draft.to/);
+  assert.match(selector,/disabled=\{!validDraft\}/);
+  assert.match(selector,/type="date"/);
+  assert.match(selector,/title="Personalizar fechas"/);
+});
