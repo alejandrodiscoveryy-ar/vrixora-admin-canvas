@@ -116,7 +116,7 @@ function ControlConversionFunnel({ data, projectId }: {
   return (
     <SectionCard density="compact" appearance="premium" module="rendimiento"
       title="Control → Conductor → Primera carrera"
-      description="Conversión de usuarios registrados en APK Control"
+      description="Usuarios registrados en APK Control y conversión por etapa"
       contentClassName="space-y-2 p-3 sm:p-4">
       <div className="grid min-w-0 items-center gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div aria-label="Etapas de incorporación" className="min-w-0">
