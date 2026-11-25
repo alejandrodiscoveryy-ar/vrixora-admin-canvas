@@ -9,6 +9,8 @@ import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
 import { ModuleHeader } from "@/components/admin/ModuleHeader";
 import AgencyVitalityOverview from "@/features/admin/AgencyVitalityOverview";
 import { SectionCard } from "@/components/admin/SectionCard";
+import { premiumColumnHeaderSurface, premiumControlSurface } from "@/components/admin/density";
+import { cn } from "@/lib/utils";
 
 export default function RendimientoSection({projectId}:{projectId:string}) {
   const {data:project}=useProject(projectId);
@@ -72,7 +74,25 @@ export default function RendimientoSection({projectId}:{projectId:string}) {
 type ChannelTotals = {link_opens?:number;clicks?:number;requests_created?:number};
 type ChannelReport = {totals?:ChannelTotals;drivers?:{completed_real?:number}[];campaigns?:{campaign:string;link_opens?:number;requests_created?:number}[]};
 type AllyReport = {clicks?:number;requests?:number;completed?:number};
-const observedCount=(v:unknown)=>typeof v==="number" && Number.isFinite(v) && v>=0 ? v.toLocaleString("es-CU") : "—";
+const isObservedCount=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0;
+const observedCount=(v:unknown)=>isObservedCount(v) ? v.toLocaleString("es-CU") : "—";
+// Event ratio within the same channel/window, not a matched visitor conversion.
+export function channelEventConversion(clicks:unknown,requests:unknown):number|undefined {
+  if(!isObservedCount(clicks)||!isObservedCount(requests)||clicks===0||requests>clicks) return undefined;
+  return requests/clicks;
+}
+const conversionLabel=(clicks:unknown,requests:unknown)=>{
+  const value=channelEventConversion(clicks,requests);
+  return value===undefined?"—":value.toLocaleString("es-CU",{style:"percent",maximumFractionDigits:1});
+};
+const channelColumns="grid grid-cols-2 gap-x-4 gap-y-2 md:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-center";
+function ChannelCountCell({label,value,bar,color}:{label:string;value:unknown;bar?:number;color?:string}){
+  return <div role="cell" className="min-w-0">
+    <span className="block text-[11px] text-text-secondary md:sr-only">{label}</span>
+    <span className="block break-words text-base font-semibold tabular-nums">{observedCount(value)}</span>
+    {bar!==undefined?<div aria-hidden="true" className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted/60"><div className="h-full rounded-full" style={{width:bar+"%",backgroundColor:color}}/></div>:null}
+  </div>;
+}
 function sumObserved<T>(rows:T[]|undefined,read:(row:T)=>number|undefined):number|undefined {
   if(!rows || rows.some(row=>typeof read(row)!=="number" || !Number.isFinite(read(row)) || read(row)!<0)) return undefined;
   return rows.reduce((sum,row)=>sum+read(row)!,0);
@@ -97,45 +117,46 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
     {name:"Impulsa",period:days+" días",clicks:i?.totals?.clicks,requests:i?.totals?.requests_created,completed:sumObserved(i?.drivers,x=>x.completed_real)},
     {name:"Aliados",period:"Histórico",clicks:sumObserved(a,x=>x.clicks),requests:sumObserved(a,x=>x.requests),completed:sumObserved(a,x=>x.completed)},
   ];
+  const comparable=rows.slice(0,2);
+  const maxClicks=Math.max(1,...comparable.map(row=>isObservedCount(row.clicks)?row.clicks:0));
+  const comparisonIncomplete=comparable.some(row=>!isObservedCount(row.clicks)||!isObservedCount(row.requests)||!isObservedCount(row.completed));
   return <SectionCard density="compact" appearance="premium" module="comercial" title="Captación por canales"
-    description="Comparación de TukTuk e Impulsa · Aliados: histórico"
+    description="Rendimiento por canal · Aliados: histórico"
     actions={<div className="flex flex-wrap gap-1">{([7,30,90] as const).map(n=><button key={n} type="button" aria-pressed={days===n} onClick={()=>setDays(n)} className={days===n?"min-h-11 rounded-md bg-primary/15 px-3 py-2 text-xs font-semibold text-primary":"min-h-11 rounded-md px-3 py-2 text-xs text-muted-foreground"}>{n} d</button>)}</div>}
     contentClassName="p-3 sm:p-4">
-    <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-violet-400"/>TukTuk oficial</span><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[#0e7490]"/>Impulsa</span><span>— Sin dato</span></div>
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      <div className="grid min-w-0 gap-3 md:grid-cols-3">
-        {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Viajes liquidados"}] as const).map(metric=>{
-          const comparable=rows.slice(0,2);
-          const values=comparable.map(row=>row[metric.key]);
-          const valid=values.every(value=>typeof value==="number"&&Number.isFinite(value)&&value>=0);
-          const max=Math.max(1,...values.map(v=>typeof v==="number"&&Number.isFinite(v)&&v>=0?v:0));
-          return <div key={metric.key} className="min-w-0 rounded-xl border border-border-subtle bg-surface-2/40 p-3">
-            <h4 className="text-sm font-semibold">{metric.label}</h4>
-            <svg viewBox="0 0 180 112" className="mx-auto my-2 block w-full max-w-[230px]" role="img" aria-label={metric.label+": "+comparable.map((row,index)=>row.name+" "+observedCount(values[index])).join(", ")}>
-              <line x1="12" y1="90" x2="168" y2="90" stroke="var(--border-default)"/>
-              {values.map((value,index)=>{
-                const known=typeof value==="number"&&Number.isFinite(value)&&value>=0;
-                const x=48+84*index,y=known?90-value!*65/max:55,color=index===0?"#a78bfa":"#0e7490";
-                return <g key={index}>{known?<><line x1={x} y1="90" x2={x} y2={y} stroke={color} strokeWidth="3"/><circle cx={x} cy={y} r="7" fill={color}/></>:null}<text x={x} y={known?y-12:55} textAnchor="middle" fontSize="13" fontWeight="600" fill="currentColor">{observedCount(value)}</text><text x={x} y="106" textAnchor="middle" fontSize="10" fill="var(--text-secondary)">{index===0?"TukTuk":"Impulsa"}</text></g>;
-              })}
-            </svg>
-            {!valid?<p className="text-center text-xs text-muted-foreground">Comparación incompleta</p>:null}
-            {comparable.map((row,index)=><div key={row.name} className="flex items-center justify-between gap-2 py-1 text-xs"><span className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{background:index===0?"#a78bfa":"#0e7490"}}/>{index===0?"TukTuk":"Impulsa"}</span><strong>{observedCount(values[index])}</strong></div>)}
+    <div className="space-y-3" data-channel-comparison>
+      <div role="table" aria-label={"Rendimiento por canal, últimos "+days+" días"} className="min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-border-default">
+        <div role="row" className={cn(channelColumns,"sr-only px-4 py-2.5 text-xs font-medium text-text-secondary md:not-sr-only md:grid",premiumColumnHeaderSurface)}>
+          {["Canal","Clics","Solicitudes","Liquidados","Conversión*"].map(label=><span key={label} role="columnheader">{label}</span>)}
+        </div>
+        {comparable.map((row,index)=>{
+          const color=index===0?"#a78bfa":"#22b8cf";
+          return <div role="row" key={row.name} className={cn(channelColumns,"border-t border-border-subtle px-3 py-3 sm:px-4",premiumControlSurface)}>
+            <div role="cell" className="col-span-2 flex min-w-0 items-center gap-2 md:col-span-1">
+              <span aria-hidden="true" className="h-8 w-1 shrink-0 rounded-full" style={{backgroundColor:color}}/>
+              <div className="min-w-0"><p className="text-sm font-semibold">{index===0?"TukTuk oficial":"Impulsa"}</p><p className="text-[11px] text-text-secondary">{index===0?"Incluye campañas":"Conductores"}</p></div>
+            </div>
+            <ChannelCountCell label="Clics" value={row.clicks} bar={isObservedCount(row.clicks)?row.clicks/maxClicks*100:undefined} color={color}/>
+            <ChannelCountCell label="Solicitudes" value={row.requests}/>
+            <ChannelCountCell label="Liquidados" value={row.completed}/>
+            <div role="cell" className="min-w-0"><span className="block text-[11px] text-text-secondary md:sr-only">Conversión*</span><span className={cn("block text-base font-semibold tabular-nums",channelEventConversion(row.clicks,row.requests)!>0?"text-emerald-600 dark:text-emerald-300":"text-text-secondary")}>{conversionLabel(row.clicks,row.requests)}</span></div>
           </div>;
         })}
       </div>
-      <div className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
-        <h4 className="text-sm font-semibold">Aliados · Histórico</h4>
-        <div className="mt-3 grid gap-2">
-          {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Liquidados"}] as const).map(m=><div key={m.key} className="flex flex-row-reverse items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"><p className="break-words text-2xl font-semibold tabular-nums">{observedCount(rows[2][m.key])}</p><p className="text-xs text-muted-foreground">{m.label}</p></div>)}
+      <p className="text-xs leading-relaxed text-text-secondary">* Solicitudes ÷ clics del mismo período. Orienta sobre eventos, no sobre personas únicas. — Sin dato o sin base válida.{comparisonIncomplete?" Comparación incompleta.":""}</p>
+      <div className={cn("min-w-0 rounded-xl border border-border-default px-3 py-3 sm:px-4",premiumControlSurface)} data-channel-history>
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          <h4 className="text-sm font-semibold">Aliados · Histórico</h4>
+          <span className="text-xs text-text-secondary">Acumulado · independiente del filtro</span>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Histórico independiente.</p>
+        <dl className="mt-2 grid grid-cols-3 gap-2 divide-x divide-border-subtle">
+          {([{key:"clicks",label:"Clics"},{key:"requests",label:"Solicitudes"},{key:"completed",label:"Liquidados"}] as const).map((m,index)=><div key={m.key} className={cn("min-w-0",index>0&&"pl-3")}><dt className="text-xs text-text-secondary">{m.label}</dt><dd className="mt-1 break-words text-lg font-semibold tabular-nums">{observedCount(rows[2][m.key])}</dd></div>)}
+        </dl>
       </div>
     </div>
-    <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Ver campañas y cifras exactas</summary>
-      {rows.map(row=><p key={row.name} className="py-1">{row.name} · {row.period}: {observedCount(row.clicks)} clics, {observedCount(row.requests)} solicitudes, {observedCount(row.completed)} liquidados.</p>)}
-      {o?.campaigns?.map(c=><p key={c.campaign} className="py-1">{c.campaign}: {observedCount(c.link_opens)} clics · {observedCount(c.requests_created)} solicitudes</p>)}
-      <p>— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Aliados se muestra aparte. Las campañas forman parte de TukTuk oficial.</p>
+    <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer py-2 font-medium">Ver detalle de campañas</summary>
+      {o?.campaigns?.length ? o.campaigns.map(c=><div key={c.campaign} className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle py-2"><span className="break-all font-medium">{c.campaign}</span><span>{observedCount(c.link_opens)} clics · {observedCount(c.requests_created)} solicitudes</span></div>) : <p className="py-2">{official.isPending?"Consultando campañas…":official.isError?"No se pudieron consultar las campañas.":"Sin campañas registradas en este período."}</p>}
+      <p className="py-1">Los eventos no se suman entre canales. Aliados se muestra aparte. Las campañas forman parte de TukTuk oficial.</p>
     </details>
     {official.isError||impulsa.isError||allies.isError ? <p role="alert" className="text-xs text-muted-foreground">Alguna fuente no está disponible.</p>:null}
 
