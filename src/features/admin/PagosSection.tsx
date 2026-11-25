@@ -72,6 +72,7 @@ import { type AdminPeriodKey, type AdminPeriodOption } from "@/components/admin/
 const paymentPeriodOptions: AdminPeriodOption[] = [
   { value: "all", label: "Todo" },
   { value: "today", label: "Hoy" },
+  { value: "yesterday", label: "Ayer" },
   { value: "7d", label: "7 días" },
   { value: "30d", label: "30 días" },
   { value: "month", label: "Mes" },
