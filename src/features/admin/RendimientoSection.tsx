@@ -30,7 +30,7 @@ import {
 } from "@/lib/services";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 import { useProjectPermissions } from "@/hooks/useProjects";
-import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
+import { periodRange } from "@/components/admin/admin-period";
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
 import {
   identifyAdminPeriod,
@@ -84,9 +84,7 @@ export default function RendimientoSection({
   const canViewCommercial = permissions.includes("commercial.view");
   const canViewMarketplace = permissions.includes("marketplace.view");
 
-  const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
-    `vrixora:analytics-range:${projectId}`,
-  );
+  const [dateRange, setDateRange] = useState(() => periodRange("7d"));
 
   const [period, setPeriod] = useState<AdminPeriodKey>(() =>
     identifyAdminPeriod(dateRange),
@@ -159,8 +157,8 @@ export default function RendimientoSection({
 
   const allRows = useMemo(() => analytics.data ?? [], [analytics.data]);
 
-  const current = allRows.slice(-periodDays);
-  const previous = allRows.slice(-periodDays * 2, -periodDays);
+  const current = allRows.filter(row => row.date >= fromDate && row.date <= toDate);
+  const previous = allRows.filter(row => row.date >= analyticsFrom && row.date < fromDate);
 
   const chartRows = aggregateUsage(current, grain);
 
@@ -318,8 +316,8 @@ export default function RendimientoSection({
         density="compact"
         appearance="premium"
         module="rendimiento"
-        title="Vitalidad de la Agencia TukTuk"
-        description="Crecimiento, clientes, carreras y problemas que requieren atención"
+        title="Analítica · Vitalidad de la Agencia TukTuk"
+        description="Evolución histórica y conversión del negocio"
         icon={Activity}
         actions={
           <AdminPeriodSelector appearance="premium"
@@ -332,6 +330,150 @@ export default function RendimientoSection({
         }
       />
       <AgencyVitalityOverview projectId={projectId} from={fromDate} to={toDate} />
+      {analytics.isLoading || (canViewCommercial && commercialLeads.isLoading) ? <p role="status" className="text-sm text-text-secondary">Consultando evolución…</p> : analytics.isError || (canViewCommercial && commercialLeads.isError) ? <p role="alert" className="text-sm text-text-secondary">No se pudieron actualizar los gráficos históricos.</p> : (
+      <section className="grid gap-3 xl:grid-cols-2">
+        <SectionCard density="compact" appearance="premium"
+          title="Registros y accesos"
+          description="Evolución de altas y accesos a la aplicación"
+          module="rendimiento"
+          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.04] via-surface-1 to-background/55"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
+          contentClassName="p-3 sm:p-4"
+        >
+          <img
+            src="/admin-premium/analytics.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 bottom-0 h-[90%] w-[58%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+          />
+          {chartRows.length ? (
+            <div className="relative z-10 h-56 w-full md:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartRows}
+                  margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    opacity={0.15}
+                  />
+
+                  <XAxis
+                    dataKey="label"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <YAxis
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                    allowDecimals={false}
+                  />
+
+                  <Tooltip {...adminChartTooltipProps} />
+
+                  <Bar
+                    dataKey="newUsers"
+                    name="Registros"
+                    fill="var(--module-clientes)"
+                    radius={[4, 4, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="logins"
+                    name="Accesos"
+                    fill="var(--module-comercial)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState density="compact" appearance="premium"
+              icon={BarChart3}
+              title="Sin datos de usuarios"
+              description="No hay registros o accesos para el período seleccionado."
+              module="rendimiento"
+              className="relative z-10 min-h-[132px] py-4"
+            />
+          )}
+        </SectionCard>
+
+        <SectionCard density="compact" appearance="premium"
+          title="Fuentes de captación"
+          description="Origen de los leads del período seleccionado"
+          module="comercial"
+          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55"
+          headerClassName="relative z-10 px-4 py-3 sm:px-4"
+          contentClassName="p-3 sm:p-4"
+        >
+          <img
+            src="/admin-premium/acquisition.svg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-14 bottom-0 h-[92%] w-[60%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
+          />
+          {canViewCommercial && sourceDistribution.length ? (
+            <div className="relative z-10 h-56 w-full md:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={sourceDistribution}
+                  layout="vertical"
+                  margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    opacity={0.15}
+                  />
+
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <YAxis
+                    dataKey="source"
+                    type="category"
+                    width={85}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+
+                  <Tooltip {...adminChartTooltipProps} />
+
+                  <Bar
+                    dataKey="count"
+                    name="Leads"
+                    fill="var(--module-comercial)"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState density="compact" appearance="premium"
+              icon={Megaphone}
+              title="Sin datos de captación"
+              description="No hay fuentes comerciales para el período y filtros seleccionados."
+              module="comercial"
+              className="relative z-10 min-h-[132px] py-4"
+            />
+          )}
+        </SectionCard>
+      </section>
+      )}
       <details className="group min-w-0 rounded-[var(--radius-card)] border border-border-default bg-surface-1/70 shadow-[var(--shadow-xs)]">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-text-primary marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
           <span className="inline-flex items-center gap-2">
@@ -342,7 +484,7 @@ export default function RendimientoSection({
         </summary>
         <div className="space-y-3 border-t border-border-subtle p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-text-secondary">Gráficos y filtros adicionales</span>
+            <span className="text-xs text-text-secondary">Filtros de los gráficos históricos</span>
             <GrainSelect value={grain} onChange={setGrain}/>
           </div>
           <MobileFiltersPanel
@@ -361,7 +503,7 @@ export default function RendimientoSection({
             </div>
           </MobileFiltersPanel>
           <p className="text-xs leading-relaxed text-text-secondary">
-            Los filtros de fuente, campaña y versión afectan solo a estos gráficos heredados.
+            Los filtros de fuente, campaña y versión afectan los gráficos históricos de usuarios; fuente y campaña también filtran los leads.
             La Vitalidad usa las cuentas verificadas del proyecto. La retención es acumulada, no del período.
           </p>
           {isLoading ? (
@@ -576,148 +718,7 @@ export default function RendimientoSection({
         )}
       </SectionCard>
 
-      <section className="grid gap-3 xl:grid-cols-2">
-        <SectionCard density="compact" appearance="premium"
-          title="Registros y accesos"
-          description="Evolución de altas y accesos a la aplicación"
-          module="rendimiento"
-          className="relative isolate border-cyan-400/14 bg-gradient-to-br from-cyan-500/[0.04] via-surface-1 to-background/55"
-          headerClassName="relative z-10 px-4 py-3 sm:px-4"
-          contentClassName="p-3 sm:p-4"
-        >
-          <img
-            src="/admin-premium/analytics.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-16 bottom-0 h-[90%] w-[58%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
-          />
-          {chartRows.length ? (
-            <div className="relative z-10 h-56 w-full md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartRows}
-                  margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    opacity={0.15}
-                  />
 
-                  <XAxis
-                    dataKey="label"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-
-                  <YAxis
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                    allowDecimals={false}
-                  />
-
-                  <Tooltip {...adminChartTooltipProps} />
-
-                  <Bar
-                    dataKey="newUsers"
-                    name="Registros"
-                    fill="var(--module-clientes)"
-                    radius={[4, 4, 0, 0]}
-                  />
-
-                  <Bar
-                    dataKey="logins"
-                    name="Accesos"
-                    fill="var(--module-comercial)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState density="compact" appearance="premium"
-              icon={BarChart3}
-              title="Sin datos de usuarios"
-              description="No hay registros o accesos para el período seleccionado."
-              module="rendimiento"
-              className="relative z-10 min-h-[132px] py-4"
-            />
-          )}
-        </SectionCard>
-
-        <SectionCard density="compact" appearance="premium"
-          title="Fuentes de captación"
-          description="Origen de los leads del período seleccionado"
-          module="comercial"
-          className="relative isolate border-violet-400/14 bg-gradient-to-br from-violet-500/[0.045] via-surface-1 to-background/55"
-          headerClassName="relative z-10 px-4 py-3 sm:px-4"
-          contentClassName="p-3 sm:p-4"
-        >
-          <img
-            src="/admin-premium/acquisition.svg"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-14 bottom-0 h-[92%] w-[60%] object-contain object-right-bottom opacity-[0.075] mix-blend-screen"
-          />
-          {canViewCommercial && sourceDistribution.length ? (
-            <div className="relative z-10 h-56 w-full md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sourceDistribution}
-                  layout="vertical"
-                  margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={false}
-                    opacity={0.15}
-                  />
-
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-
-                  <YAxis
-                    dataKey="source"
-                    type="category"
-                    width={85}
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    stroke="var(--muted-foreground)"
-                  />
-
-                  <Tooltip {...adminChartTooltipProps} />
-
-                  <Bar
-                    dataKey="count"
-                    name="Leads"
-                    fill="var(--module-comercial)"
-                    radius={[0, 6, 6, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState density="compact" appearance="premium"
-              icon={Megaphone}
-              title="Sin datos de captación"
-              description="No hay fuentes comerciales para el período y filtros seleccionados."
-              module="comercial"
-              className="relative z-10 min-h-[132px] py-4"
-            />
-          )}
-        </SectionCard>
-      </section>
           </>
           )}
         </div>
