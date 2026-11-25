@@ -211,3 +211,7 @@ test("inventario completo sin resultados parciales, historial diferido y orden g
 test("Todas es el último filtro de Billeteras",()=>{
   assert.match(wallets,/\["has_available", "Con saldo"\],\s*\["no_available", "Sin disponible"\],\s*\["reserved", "Con reservas"\],\s*\["", "Todas"\],\s*\] as const/);
 });
+
+test("Todas es el último filtro de Recargas",()=>{
+  assert.ok(topups.includes("[[\"requested\", \"Pendientes\"], [\"confirmed\", \"Confirmadas\"], [\"reconciled\", \"Conciliadas\"], [\"reversed\", \"Anuladas\"], [\"rejected\", \"Rechazadas\"], [\"\", \"Todas\"]]"));
+});
