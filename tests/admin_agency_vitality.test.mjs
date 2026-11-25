@@ -115,7 +115,8 @@ test("Analítica inicia en el período actual, filtra por fecha y muestra gráfi
   assert.match(dashboard,/useState\(\(\) => periodRange\("7d"\)\)/);
   assert.doesNotMatch(dashboard,/usePersistentAnalyticsDateRange/);
   assert.match(dashboard,/row.date >= fromDate && row.date <= toDate/);
-  assert.ok(dashboard.indexOf('title="Registros y accesos"')<dashboard.indexOf('Análisis detallado · Usuarios'));
+  assert.ok(dashboard.indexOf("<CommercialChannelSummary")<dashboard.indexOf("Análisis detallado · Usuarios"));
+  assert.ok(dashboard.indexOf('title="Actividad de usuarios de la app"')>dashboard.indexOf("Análisis detallado · Usuarios"));
   assert.match(shell,/wideAnalytics = currentSection === "rendimiento"/);
   assert.match(board,/title="Conversión de solicitudes"/);
   assert.match(board,/data.requested>0/);
@@ -123,4 +124,20 @@ test("Analítica inicia en el período actual, filtra por fecha y muestra gráfi
   assert.match(board,/title="Economía"/);
   assert.match(board,/title="Flota"/);
   assert.doesNotMatch(board,/title="Economía y flota"/);
+});
+
+test("captación por canales y moneda sin equivalencias falsas",()=>{
+  const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  assert.match(dashboard,/admin_get_marketplace_tuktuk_communications_v1/);
+  assert.match(dashboard,/admin_get_marketplace_impulsa_communications_v1/);
+  assert.match(dashboard,/admin_list_marketplace_allies_v1/);
+  assert.match(dashboard,/Aliados: histórico/);
+  assert.match(dashboard,/Las campañas forman parte de TukTuk oficial/);
+  assert.match(board,/Usuarios registrados en APK Control/);
+  assert.match(board,/Base tarifaria USD · finanzas en MN/);
+  assert.match(board,/admin_get_marketplace_wallet_transition_summary_v1/);
+  assert.match(board,/permissions.includes\("payments.view"\)&&permissions.includes\("commercial.view"\)/);
+  assert.match(board,/money\(d\?\.debt_cup,"MN"\)/);
+  assert.match(board,/No se convierten monedas sin tipo de cambio registrado/);
 });
