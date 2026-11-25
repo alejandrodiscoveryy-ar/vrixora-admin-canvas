@@ -35,7 +35,8 @@ test("no confunde el filtro comercial, la disponibilidad, ni el origen de los da
 });
 
 test("los detalles y la auditoría permanecen desplegables y los accesos respetan permisos", () => {
-  assert.equal((dashboard.match(/<details className=/g) ?? []).length, 2);
+  assert.equal((dashboard.match(/<details className=/g) ?? []).length, 3);
+  assert.match(dashboard, /Ver cifras exactas/);
   assert.match(dashboard, /Más indicadores · detalle por área/);
   assert.match(dashboard, /Actividad administrativa reciente/);
   assert.match(dashboard, /recentActivity\.slice\(0, 3\)/);
