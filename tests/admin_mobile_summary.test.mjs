@@ -46,3 +46,14 @@ test("permisos y detalles conservados", () => {
   for (const permission of ["canViewUsers","canViewMarketplace","canViewPayments","canViewCommercial","canViewAudit"]) assert.ok(dashboard.includes(permission));
   assert.match(dashboard, /<AdminPeriodSelector/);
 });
+
+test("portada ejecutiva con embudo y gráficos de estados compatibles",()=>{
+  assert.match(dashboard,/title="De solicitud a servicio"/);
+  assert.match(dashboard,/title="Capacidad operativa"/);
+  assert.match(dashboard,/rides.settled<=rides.completed/);
+  assert.match(dashboard,/rides.requested-rides.completed-rides.cancelled-rides.unassigned/);
+  assert.match(dashboard,/profiles_total-d.operation.profiles_active/);
+  assert.match(dashboard,/No se conoce el total histórico de asignaciones/);
+  assert.match(dashboard,/Liquidado en MN · base tarifaria USD/);
+  assert.match(dashboard,/refetchOnWindowFocus: false/);
+});
