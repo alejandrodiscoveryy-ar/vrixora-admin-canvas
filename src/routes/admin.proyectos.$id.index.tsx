@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel } from "@/lib/agency-vitality";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -15,9 +15,7 @@ import {
   ChevronDown,
   Gauge,
   MapPin,
-  Megaphone,
   RefreshCw,
-  TrendingUp,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -28,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePersistentAnalyticsDateRange } from "@/components/admin/AnalyticsDateRange";
 import { AdminPeriodSelector } from "@/components/admin/AdminPeriodSelector";
-import type { AdminPeriodKey } from "@/components/admin/admin-period";
+import { identifyAdminPeriod, type AdminPeriodKey } from "@/components/admin/admin-period";
 
 
 import { SectionCard } from "@/components/admin/SectionCard";
@@ -61,7 +59,7 @@ function ResumenPage() {
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:summary-range:${id}`,
   );
-  const [period, setPeriod] = useState<AdminPeriodKey>("7d");
+  const [period, setPeriod] = useState<AdminPeriodKey>(() => identifyAdminPeriod(dateRange));
 
   const usersApp = useQuery({
     queryKey: ["admin-clients", id],
@@ -155,7 +153,7 @@ function ResumenPage() {
     audit.dataUpdatedAt,
   );
 
-  const overview = marketplace.data;
+  const overview = marketplace.isError ? undefined : marketplace.data;
   const recentActivity = (audit.data ?? []).slice(0, 7);
 
   const pendingTopups = overview?.pendingTopups ?? 0;
@@ -177,7 +175,6 @@ function ResumenPage() {
                 <h1 className="text-lg font-semibold tracking-tight text-foreground">Estado del negocio</h1>
               </div>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Prioridades, operación y crecimiento en una sola vista.</p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <AdminPeriodSelector
@@ -196,7 +193,7 @@ function ResumenPage() {
           </div>
         </div>
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-          Las fechas filtran altas y captación comercial, y los gráficos estratégicos. Conductores e incidencias reflejan el estado actual; trabajos publicados es acumulado.
+          Período para resultados y altas. Pendientes y flota: situación actual.
         </p>
       </header>
 
@@ -207,27 +204,21 @@ function ResumenPage() {
       ) : null}
 
       {canViewMarketplace ? (
-        <SectionCard
-          density="compact"
-          appearance="premium"
-          title="Por atender ahora"
-          description="Solo gestiones que requieren seguimiento"
-          module="resumen"
-          contentClassName="p-3 sm:p-4"
-        >
+        <section aria-label="Por atender ahora" className={cn("flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] border p-2 sm:px-3", premiumSurface)}>
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><AlertTriangle className="size-4 text-[var(--semantic-warning)]" aria-hidden="true"/> Por atender ahora</span>
           {marketplace.isLoading ? (
             <p className="text-sm text-muted-foreground">Consultando pendientes...</p>
           ) : marketplace.isError ? (
             <p className="text-sm text-muted-foreground">No se pueden comprobar los pendientes. Revisa la conexión.</p>
           ) : hasPendingActions ? (
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            <div className="flex min-w-0 flex-1 flex-wrap gap-2">
               {pendingTopups > 0 ? (
                 canViewPayments ? (
                   <Link
                     to="/admin/proyectos/$id/$section"
                     params={{ id, section: "trabajos" }}
                     search={{ vista: "recargas" }}
-                    className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                    className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                   >
                     <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
                     <span className="min-w-0 flex-1 font-medium">Revisar recargas pendientes</span>
@@ -235,7 +226,7 @@ function ResumenPage() {
                     <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                   </Link>
                 ) : (
-                  <div className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground">
+                  <div className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-2.5 py-1.5 text-xs text-foreground">
                     <WalletCards className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
                     <span className="min-w-0 flex-1 font-medium">Recargas pendientes · área de Finanzas</span>
                     <Badge variant="warning" className="font-mono">{pendingTopups}</Badge>
@@ -247,7 +238,7 @@ function ResumenPage() {
                   to="/admin/proyectos/$id/$section"
                   params={{ id, section: "trabajos" }}
                   search={{ vista: "incidencias" }}
-                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--semantic-warning-border)] bg-[var(--semantic-warning-surface)] px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--semantic-warning)]" aria-hidden="true" />
                   <span className="min-w-0 flex-1 font-medium">Resolver incidencias abiertas</span>
@@ -260,7 +251,7 @@ function ResumenPage() {
                   to="/admin/proyectos/$id/$section"
                   params={{ id, section: "trabajos" }}
                   search={{ vista: "conductores" }}
-                  className={cn("flex min-h-12 items-center gap-3 rounded-[var(--radius-compact)] border px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
+                  className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
                 >
                   <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="min-w-0 flex-1 font-medium">Conductores suspendidos · seguimiento</span>
@@ -272,138 +263,33 @@ function ResumenPage() {
           ) : (
             <p className="text-sm text-muted-foreground">Sin recargas pendientes, incidencias abiertas ni conductores suspendidos.</p>
           )}
-        </SectionCard>
+        </section>
       ) : null}
-
-      <section aria-label="Indicadores principales" className="grid grid-cols-1 gap-2.5 min-[430px]:grid-cols-2 xl:grid-cols-3">
-        {canViewMarketplace ? (
-          <>
-            <DashboardMetric
-              label="Trabajos publicados"
-              value={overview?.jobsPublished ?? 0}
-              comparison={String(overview?.jobsActive ?? 0) + " en curso · acumulado"}
-              icon={BriefcaseBusiness}
-              tone="cyan"
-              isLoading={marketplace.isLoading}
-            />
-            <DashboardMetric
-              label="Conductores activos"
-              value={overview?.driversActive ?? 0}
-              comparison={"De " + String(overview?.driversTotal ?? 0) + " registrados · no indica conexión"}
-              icon={Users}
-              tone="blue"
-              isLoading={marketplace.isLoading}
-            />
-          </>
-        ) : null}
-        {canViewUsers ? (
-          <DashboardMetric
-            label="Usuarios de la app"
-            value={users.length}
-            comparison={String(newUsersPeriod) + " nuevos en el período"}
-            icon={Users}
-            tone="emerald"
-            isLoading={usersApp.isLoading}
-          />
-        ) : null}
-      </section>
 
       {canViewAnalytics ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} /> : null}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(17rem,0.7fr)]">
-        <SectionCard
-          density="compact"
-          appearance="premium"
-          title="Lectura del negocio"
-          description="Qué significan los datos para la siguiente decisión"
-          module="resumen"
-          contentClassName="space-y-3 p-3 sm:p-4"
-        >
-          {canViewMarketplace ? (
-            <div className="flex gap-3">
-              <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-              {marketplace.isLoading ? (
-                <p className="text-sm text-muted-foreground">Revisando la actividad...</p>
-              ) : marketplace.isError ? (
-                <p className="text-sm text-muted-foreground">La lectura operativa no está disponible por un error de carga.</p>
-              ) : (overview?.jobsPublished ?? 0) === 0 ? (
-                <p className="text-sm leading-relaxed text-foreground">
-                  Hay conductores registrados, pero todavía no figuran trabajos publicados en este resumen.
-                  La prioridad es generar y verificar solicitudes reales de pasajeros, no ampliar indicadores.
-                </p>
-              ) : (overview?.jobsActive ?? 0) > 0 ? (
-                <p className="text-sm leading-relaxed text-foreground">
-                  Hay servicios en curso. Prioriza su seguimiento y revisa las incidencias o recargas que aparecen arriba.
-                </p>
-              ) : (
-                <p className="text-sm leading-relaxed text-foreground">
-                  Hay trabajos publicados en el histórico, pero ninguno está en curso ahora. Revisa la demanda y la conversión de solicitudes.
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">El resumen de la operación solo aparece para los perfiles con permiso.</p>
-          )}
-          {canViewCommercial && canViewUsers ? (
-            <div className="border-t border-border-subtle pt-3">
-              <p className="text-sm text-foreground">
-                <strong>{newUsersPeriod} nuevos usuarios</strong> de la app y <strong>{periodLeads.length} contactos comerciales</strong> registrados en el período.
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">Las altas de la app y los leads del seguimiento comercial son fuentes diferentes; no equivalen a pasajeros que hayan solicitado viajes.</p>
-            </div>
-          ) : canViewCommercial ? (
-            <p className="border-t border-border-subtle pt-3 text-sm text-foreground">{periodLeads.length} contactos comerciales registrados en el período.</p>
-          ) : null}
-        </SectionCard>
-
-        <SectionCard
-          density="compact"
-          appearance="premium"
-          title="Ir a gestionar"
-          description="Accesos operativos esenciales"
-          module="resumen"
-          contentClassName="grid gap-2 p-3 sm:p-4"
-        >
-          {canViewMarketplace ? (
-            <>
-              <Link
-                to="/admin/proyectos/$id/$section"
-                params={{ id, section: "trabajos" }}
-                search={{ vista: "mapa" }}
-                className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
-              >
-                <MapPin className="h-4 w-4 text-primary" aria-hidden="true" /> Mapa en vivo <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link
-                to="/admin/proyectos/$id/$section"
-                params={{ id, section: "trabajos" }}
-                search={{ vista: "trabajos" }}
-                className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
-              >
-                <BriefcaseBusiness className="h-4 w-4 text-primary" aria-hidden="true" /> Carreras <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
-              </Link>
-            </>
-          ) : null}
-          {canViewCommercial ? (
-            <Link
-              to="/admin/proyectos/$id/$section"
-              params={{ id, section: "comercial" }}
-              className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
-            >
-              <Megaphone className="h-4 w-4 text-primary" aria-hidden="true" /> Comercial <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
-            </Link>
-          ) : null}
-          {canViewUsers ? (
-            <Link
-              to="/admin/proyectos/$id/$section"
-              params={{ id, section: "clientes" }}
-              className={cn("flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border px-3 text-sm font-medium text-foreground hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary", premiumSurface)}
-            >
-              <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Usuarios app <ArrowRight className="ml-auto h-4 w-4" aria-hidden="true" />
-            </Link>
-          ) : null}
-        </SectionCard>
-      </div>
+      <section aria-label="Indicadores principales" className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-3">
+        {canViewMarketplace ? (
+          <>
+            <SummaryLink projectId={id} section="trabajos" vista="conductores">
+              <DashboardMetric label="Conductores habilitados" value={overview?.driversActive ?? "—"}
+                comparison={overview ? String(overview.driversTotal) + " registrados · no indica conexión" : "Sin datos disponibles"}
+                icon={Users} tone="blue" isLoading={marketplace.isLoading}/>
+            </SummaryLink>
+            <SummaryLink projectId={id} section="trabajos" vista="mapa">
+              <DashboardMetric label="Servicios en curso" value={overview?.jobsActive ?? "—"}
+                comparison="Ahora · abrir mapa" icon={MapPin} tone="cyan" isLoading={marketplace.isLoading}/>
+            </SummaryLink>
+          </>
+        ) : null}
+        {canViewUsers ? (
+          <SummaryLink projectId={id} section="clientes">
+            <DashboardMetric label="Usuarios de la app" value={usersApp.isError || !usersApp.data ? "—" : users.length}
+              comparison={usersApp.isError || !usersApp.data ? "Sin datos disponibles" : String(newUsersPeriod) + " nuevos en el período"}
+              icon={Users} tone="cyan" isLoading={usersApp.isLoading}/>
+          </SummaryLink>
+        ) : null}
+      </section>
 
       {(canViewCommercial || canViewMarketplace) ? (
         <details className={cn("group overflow-hidden rounded-[var(--radius-card)] border", premiumSurface)}>
@@ -566,6 +452,11 @@ function auditActionLabel(action: string) {
   return labels[action] ?? action.replaceAll("_", " ");
 }
 
+function SummaryLink({projectId, section, vista, children}: {projectId:string; section:"trabajos"|"clientes"|"rendimiento"|"comercial"; vista?:"trabajos"|"conductores"|"mapa"|"clientes"; children:ReactNode}) {
+  return <Link to="/admin/proyectos/$id/$section" params={{id:projectId,section}} search={vista ? {vista} : {}}
+    className="block min-w-0 rounded-[var(--radius-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:brightness-105">{children}</Link>;
+}
+
 function StrategicCharts({ projectId, from, to }: { projectId: string; from: string; to: string }) {
   const query = useQuery({
     queryKey: ["agency-vitality-v1", projectId, from, to],
@@ -581,30 +472,44 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
   const d = query.isError ? undefined : query.data;
   const fmt = (v: number) => new Intl.NumberFormat("es-CU", { maximumFractionDigits: 1 }).format(v);
   const rows = d ? [
-    { name: "Altas Control", actual: d.control.registered, anterior: d.control.previous_registered },
-    ...(d.clients ? [{ name: "Clientes nuevos", actual: d.clients.new, anterior: d.clients.previous_new }] : []),
-    ...(d.rides ? [{ name: "Carreras completadas", actual: d.rides.completed, anterior: d.rides.previous_completed }] : []),
+    { name: "Control", actual: d.control.registered, anterior: d.control.previous_registered },
+    ...(d.clients ? [{ name: "Clientes", actual: d.clients.new, anterior: d.clients.previous_new }] : []),
+    ...(d.rides ? [{ name: "Viajes", actual: d.rides.completed, anterior: d.rides.previous_completed }] : []),
   ] : [];
   const priorities = d ? agencyVitalitySignals(d).filter(x => ["clients", "rides", "cancelled"].includes(x.id) && x.priority >= 2).sort((a,b) => b.priority-a.priority) : [];
   const funnel = d ? controlConversionFunnel(d.control) : null;
   const rides = d?.rides;
+  const conversion = rides && rides.requested > 0 && rides.completed <= rides.requested ? rides.completed*100/rides.requested : null;
+  const delta = (current:number, previous:number) => previous >= 5 ? ((current-previous)*100/previous > 0 ? "+" : "") + fmt((current-previous)*100/previous) + "% vs. anterior" : "Sin base anterior suficiente";
+  const loading = query.isLoading;
   return (
-    <SectionCard density="compact" appearance="premium" module="rendimiento"
-      title="Inteligencia del negocio" description="Período seleccionado frente al anterior de igual duración · datos reales"
-      contentClassName="space-y-3 p-3 sm:p-4"
-      actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4" aria-hidden="true"/></Link>}>
-      {query.isLoading ? <p role="status" className="text-sm text-muted-foreground">Consultando indicadores estratégicos...</p>
-      : !d ? <p role="alert" className="text-sm text-muted-foreground">Datos estratégicos no disponibles. No se sustituyen por ceros.</p>
-      : <>
-        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <section className="min-w-0" aria-label="Comparación de crecimiento y demanda">
-            <h3 className="text-sm font-semibold">¿Está creciendo el negocio?</h3>
-            <p className="text-xs text-muted-foreground">Altas instrumentadas de Control, nuevos clientes y carreras reales completadas; fuentes independientes.</p>
-            <div className="mt-3 h-60 min-w-0">
+    <section aria-label="Inteligencia del negocio" className="space-y-2">
+      {query.isError ? <p role="alert" className="text-xs text-muted-foreground">Datos estratégicos no disponibles. No se sustituyen por ceros.</p> : null}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <SummaryLink projectId={projectId} section="rendimiento">
+          <DashboardMetric label="Clientes nuevos" value={d?.clients ? fmt(d.clients.new) : "—"} comparison={d?.clients ? delta(d.clients.new,d.clients.previous_new) : "No disponible"} icon={Users} tone="blue" isLoading={loading}/>
+        </SummaryLink>
+        <SummaryLink projectId={projectId} section="rendimiento">
+          <DashboardMetric label="Solicitudes reales" value={rides ? fmt(rides.requested) : "—"} comparison="En el período" icon={BriefcaseBusiness} tone="cyan" isLoading={loading}/>
+        </SummaryLink>
+        <SummaryLink projectId={projectId} section="rendimiento">
+          <DashboardMetric label="Viajes completados" value={rides ? fmt(rides.completed) : "—"} comparison={rides ? delta(rides.completed,rides.previous_completed) : "No disponible"} icon={BriefcaseBusiness} tone="emerald" isLoading={loading}/>
+        </SummaryLink>
+        <SummaryLink projectId={projectId} section="rendimiento">
+          <DashboardMetric label="Volumen liquidado" value={d?.finance ? fmt(d.finance.cup)+" CUP" : "—"} comparison="Valor de viajes, no comisión" icon={WalletCards} tone="cyan" isLoading={loading}/>
+        </SummaryLink>
+      </div>
+
+      <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <SectionCard density="compact" appearance="premium" module="rendimiento"
+          title="Crecimiento y demanda" description="Actual frente al período anterior equivalente"
+          contentClassName="p-3">
+          {loading ? <p className="text-xs text-muted-foreground">Consultando…</p> : !d ? <p className="text-xs text-muted-foreground">Sin datos disponibles.</p> : <>
+            <div className="h-48 min-w-0 sm:h-52">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={rows} margin={{top:8,right:8,left:-18,bottom:12}}>
+                <BarChart data={rows} margin={{top:8,right:8,left:-18,bottom:4}}>
                   <CartesianGrid stroke="var(--border-subtle)" vertical={false} strokeDasharray="3 3"/>
-                  <XAxis dataKey="name" tick={{fontSize:10,fill:"var(--text-secondary)"}} interval={0} tickLine={false} axisLine={false}/>
+                  <XAxis dataKey="name" tick={{fontSize:11,fill:"var(--text-secondary)"}} interval={0} tickLine={false} axisLine={false}/>
                   <YAxis allowDecimals={false} tick={{fontSize:11,fill:"var(--text-secondary)"}} axisLine={false} tickLine={false}/>
                   <Tooltip {...adminChartTooltipProps}/>
                   <Legend wrapperStyle={{fontSize:11}}/>
@@ -613,37 +518,42 @@ function StrategicCharts({ projectId, from, to }: { projectId: string; from: str
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <details className="text-xs text-muted-foreground">
-              <summary className="cursor-pointer min-h-9 py-2">Ver cifras exactas</summary>
-              {rows.map(row => <p key={row.name} className="py-1">{row.name}: {fmt(row.actual)} actual · {fmt(row.anterior)} anterior</p>)}
-            </details>
-          </section>
-          <section className="min-w-0 border-t border-border-subtle pt-3 xl:border-l xl:border-t-0 xl:pl-4 xl:pt-0" aria-label="Resultados de las carreras">
-            <h3 className="text-sm font-semibold">¿Convertimos solicitudes en viajes?</h3>
-            <p className="text-xs text-muted-foreground">Carreras creadas en el período, según su estado actual. Excluye pruebas.</p>
-            {rides ? <div className="mt-4 space-y-3">
-              <p className="text-2xl font-semibold tabular-nums">{fmt(rides.requested)} <span className="text-xs font-normal text-muted-foreground">solicitudes</span></p>
+            <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              {rows.map(row=><span key={row.name}>{row.name}: <strong className="text-foreground">{fmt(row.actual)}</strong> / {fmt(row.anterior)}</span>)}
+            </div>
+          </>}
+        </SectionCard>
+        <SectionCard density="compact" appearance="premium" module="rendimiento"
+          title="Conversión de viajes" description="Solicitudes del período · excluye pruebas"
+          contentClassName="p-3">
+          {rides ? <div className="grid min-w-0 grid-cols-[minmax(88px,0.8fr)_minmax(0,1.2fr)] items-center gap-3">
+            <div className="relative mx-auto w-full max-w-[150px]" aria-label={conversion === null ? "Sin base de conversión" : fmt(conversion)+"% completadas"}>
+              <svg viewBox="0 0 120 120" className="w-full" aria-hidden="true">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="var(--border-default)" strokeWidth="10"/>
+                {conversion !== null ? <circle cx="60" cy="60" r="48" fill="none" stroke="var(--semantic-success)" strokeWidth="10" pathLength="100" strokeDasharray={String(conversion)+" 100"} transform="rotate(-90 60 60)" strokeLinecap="round"/> : null}
+                <text x="60" y="59" textAnchor="middle" fill="var(--text-primary)" fontSize="21" fontWeight="600">{conversion === null ? "—" : fmt(conversion)+"%"}</text>
+                <text x="60" y="76" textAnchor="middle" fill="var(--text-secondary)" fontSize="9">Completadas</text>
+              </svg>
+            </div>
+            <div className="space-y-2">
               {[{label:"Completadas",value:rides.completed,color:"var(--semantic-success)"},{label:"Canceladas",value:rides.cancelled,color:"var(--semantic-danger)"},{label:"Sin asignar",value:rides.unassigned,color:"var(--semantic-warning)"}].map(row => (
-                <div key={row.label}>
-                  <div className="mb-1 flex justify-between gap-2 text-xs"><span>{row.label}</span><strong className="tabular-nums">{fmt(row.value)}{rides.requested > 0 ? " · "+fmt(row.value*100/rides.requested)+"%" : ""}</strong></div>
-                  <div className="h-2 rounded-full bg-surface-3" aria-hidden="true"><div className="h-full rounded-full" style={{width:rides.requested>0 ? Math.min(100,row.value*100/rides.requested)+"%" : "0%",background:row.color}}/></div>
-                </div>
+                <div key={row.label} className="flex items-center justify-between gap-1 text-xs"><span className="flex items-center gap-1.5"><span className="size-2 shrink-0 rounded-full" style={{background:row.color}}/>{row.label}</span><strong className="tabular-nums">{fmt(row.value)}</strong></div>
               ))}
-            </div> : <p className="mt-4 text-sm text-muted-foreground">Sin acceso a datos de carreras.</p>}
-          </section>
-        </div>
-        <div className="grid gap-3 border-t border-border-subtle pt-3 lg:grid-cols-2">
-          <section aria-label="Valor de viajes liquidados">
-            <h3 className="text-sm font-semibold">Valor de viajes liquidados</h3>
-            {d.finance ? <><p className="mt-1 text-xl font-semibold tabular-nums">{fmt(d.finance.cup)} CUP</p><p className="text-xs text-muted-foreground">{fmt(d.finance.usd)} USD · {fmt(d.finance.eur)} EUR{d.finance.other > 0 ? " · Hay otras monedas" : ""}. Volumen de viajes, no ingresos de la agencia.</p></> : <p className="text-xs text-muted-foreground">No disponible para este perfil.</p>}
-          </section>
-          <section aria-label="Decisiones estratégicas">
-            <h3 className="text-sm font-semibold">Señales para decidir</h3>
-            {priorities.length ? priorities.map(p => <p key={p.id} className="mt-1 text-xs text-foreground"><strong>{p.label}:</strong> {p.explanation}</p>) : <p className="mt-1 text-xs text-muted-foreground">Sin alertas de demanda con base suficiente. No equivale a confirmar buen rendimiento.</p>}
-            {funnel?.consistent && d.control.registered > 0 ? <p className="mt-2 text-xs text-muted-foreground">De {fmt(d.control.registered)} altas de Control, {fmt(d.control.activated)} habilitados y {fmt(d.control.first_ride)} con primera carrera liquidada (misma cohorte).</p> : null}
-          </section>
-        </div>
-      </>}
-    </SectionCard>
+              <p className="border-t border-border-subtle pt-2 text-xs text-muted-foreground">{fmt(rides.requested)} solicitudes totales</p>
+              {rides.requested === 0 ? <p className="text-xs text-muted-foreground">Sin solicitudes para calcular conversión.</p> : null}
+            </div>
+          </div> : <p className="text-xs text-muted-foreground">Datos de carreras no disponibles.</p>}
+        </SectionCard>
+      </div>
+
+      <SectionCard density="compact" appearance="premium" module="rendimiento"
+        title="Prioridad estratégica"
+        actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4" aria-hidden="true"/></Link>}
+        contentClassName="space-y-2 p-3">
+        {priorities.length ? priorities.map(p => <p key={p.id} className="text-sm"><strong>{p.label}:</strong> {p.explanation}</p>) : <p className="text-sm text-muted-foreground">{!d ? "Sin datos para evaluar prioridades." : rides?.requested === 0 ? "Priorizar captación de solicitudes reales de pasajeros." : "Sin alertas de demanda con base suficiente; revisar evolución."}</p>}
+        {funnel?.consistent && d && d.control.registered > 0 ? <p className="text-xs text-muted-foreground">Cohorte Control: {fmt(d.control.registered)} altas → {fmt(d.control.activated)} habilitados → {fmt(d.control.first_ride)} primera carrera liquidada.</p> : null}
+        {d?.finance ? <p className="text-xs text-muted-foreground">Volumen de viajes, no ingresos de la agencia. {fmt(d.finance.usd)} USD · {fmt(d.finance.eur)} EUR{d.finance.other > 0 ? " · Otras monedas registradas" : ""}.</p> : null}
+      </SectionCard>
+    </section>
   );
 }
