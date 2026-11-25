@@ -99,20 +99,30 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
     {name:"Aliados",period:"Histórico",clicks:sumObserved(a,x=>x.clicks),requests:sumObserved(a,x=>x.requests),completed:sumObserved(a,x=>x.completed)},
   ];
   return <SectionCard density="compact" appearance="premium" module="comercial" title="Captación por canales"
-    description="Período móvil independiente · Aliados: histórico"
+    description="Comparación de TukTuk e Impulsa · Aliados: histórico"
     actions={<div className="flex flex-wrap gap-1">{([7,30,90] as const).map(n=><button key={n} type="button" aria-pressed={days===n} onClick={()=>setDays(n)} className={days===n?"min-h-11 rounded-md bg-primary/15 px-3 py-2 text-xs font-semibold text-primary":"min-h-11 rounded-md px-3 py-2 text-xs text-muted-foreground"}>{n} d</button>)}</div>}
     contentClassName="p-3 sm:p-4">
+    <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-violet-400"/>TukTuk oficial</span><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[var(--module-accent)]"/>Impulsa</span><span>— Sin dato</span></div>
     <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="grid min-w-0 gap-3 md:grid-cols-3">
         {([{key:"clicks",label:"Clics",color:"#a78bfa"},{key:"requests",label:"Solicitudes",color:"var(--module-accent)"},{key:"completed",label:"Viajes liquidados",color:"var(--semantic-success)"}] as const).map(metric=>{
           const comparable=rows.slice(0,2);
-          const max=Math.max(1,...comparable.map(row=>row[metric.key]??0));
+          const max=Math.max(1,...comparable.map(row=>{const v=row[metric.key];return typeof v==="number"&&Number.isFinite(v)&&v>=0?v:0;}));
           return <div key={metric.key} className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
             <h4 className="text-sm font-semibold">{metric.label}</h4>
-            {comparable.map(row=><div key={row.name} className="mt-3">
-              <div className="mb-1 flex items-center justify-between gap-1 text-xs"><span>{row.name.startsWith("TukTuk")?"TukTuk oficial":row.name}</span><strong className="tabular-nums">{observedCount(row[metric.key])}</strong></div>
-              {row[metric.key]!=null?<div className="h-3 rounded-md bg-surface-3" aria-hidden="true"><div className="h-full rounded-md" style={{width:row[metric.key]!*100/max+"%",background:metric.color}}/></div>:<p className="text-xs text-muted-foreground">Sin dato</p>}
-            </div>)}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {comparable.map((row,index)=>{
+                const value=row[metric.key];
+                const valid=typeof value==="number"&&Number.isFinite(value)&&value>=0;
+                return <div key={row.name} className="min-w-0 text-center">
+                  <strong className="text-lg tabular-nums">{observedCount(value)}</strong>
+                  <div className="relative mx-auto mt-1 flex h-24 w-full max-w-16 items-end justify-center border-b border-border-default" aria-hidden="true">
+                    {valid?<div className="w-3/5 rounded-t-md" style={{height:value!*100/max+"%",background:index===0?"#a78bfa":"var(--module-accent)"}}/>:<span className="self-center text-xs text-muted-foreground">—</span>}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{index===0?"TukTuk":"Impulsa"}</p>
+                </div>;
+              })}
+            </div>
           </div>;
         })}
       </div>

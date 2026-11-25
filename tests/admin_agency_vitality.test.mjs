@@ -138,8 +138,8 @@ test("captación por canales y moneda sin equivalencias falsas",()=>{
   assert.match(board,/Base tarifaria USD · finanzas en MN/);
   assert.match(board,/admin_get_marketplace_wallet_transition_summary_v1/);
   assert.match(board,/permissions.includes\("payments.view"\)&&permissions.includes\("commercial.view"\)/);
-  assert.match(board,/value:d.debt_cup!/);
-  assert.match(board,/unit=" MN"/);
+  assert.match(board,/money\(d\?\.debt_cup,"MN"\)/);
+  assert.match(board,/money\(d\?\.pending_withdrawal_cup,"MN"\)/);
   assert.match(board,/No se convierten monedas sin tipo de cambio registrado/);
 });
 
@@ -166,10 +166,12 @@ test("visualización estratégica sin sumar estados superpuestos ni mezclar per�
   assert.match(board,/profiles_total-d.operation.profiles_active/);
   assert.match(board,/Liquidadas \(incluidas en completadas\)/);
   assert.match(board,/pathLength="100"/);
-  assert.match(board,/VisualBars/);
+  assert.doesNotMatch(board,/VisualBars/);
+  assert.match(board,/<NumberTile label="Nuevos"/);
   assert.match(dashboard,/const comparable=rows.slice\(0,2\)/);
   assert.match(dashboard,/Aliados · Histórico/);
-  assert.match(dashboard,/row\[metric.key\]!=null/);
+  assert.match(dashboard,/typeof value==="number"&&Number.isFinite\(value\)&&value>=0/);
+  assert.match(dashboard,/height:value!\*100\/max/);
 });
 
 test("Analítica elimina consultas del panel legado y adapta gráficos a móvil",()=>{

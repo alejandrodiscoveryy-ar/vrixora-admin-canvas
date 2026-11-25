@@ -245,8 +245,12 @@ export default function AgencyVitalityOverview({
           <SectionCard density="compact" appearance="premium" module="rendimiento" title="Clientes" description="Crecimiento y servicio" contentClassName="p-4">
             {d.clients ? <>
               <div className="text-3xl font-semibold tabular-nums">{number(d.clients.total)} <span className="text-xs font-normal text-text-secondary">registrados al cierre</span></div>
-              <VisualBars rows={[{label:"Nuevos · actual",value:d.clients.new,color:"var(--module-accent)"},{label:"Nuevos · anterior",value:d.clients.previous_new,color:"#8494a0"},{label:"Atendidos",value:d.clients.served,color:"var(--semantic-success)"}]}/>
-              <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle</summary><InlineStat label="Recurrentes históricos (2+)" value={d.clients.recurrent}/><p>Atendidos y nuevos pueden coincidir; no se suman.</p></details>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <NumberTile label="Nuevos" value={number(d.clients.new)} note={number(d.clients.previous_new)+" en período anterior"}/>
+                <NumberTile label="Atendidos" value={number(d.clients.served)} note="Con carrera completada"/>
+                <NumberTile label="Recurrentes" value={number(d.clients.recurrent)} note="Histórico · 2+ viajes"/>
+              </div>
+              <details className="mt-2 text-xs text-text-secondary"><summary className="cursor-pointer">Ver detalle</summary><p>Atendidos y nuevos pueden coincidir; no se suman.</p></details>
             </>:<p className="text-sm text-text-secondary">Datos no disponibles.</p>}
             <Link className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs font-medium text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"clientes"}}>Consultar clientes <ArrowUpRight className="size-3.5"/></Link>
           </SectionCard>
@@ -276,12 +280,12 @@ export default function AgencyVitalityOverview({
 }
 
 type VisualRow={label:string;value:number;color:string};
-function VisualBars({rows,unit=""}:{rows:VisualRow[];unit?:string}){
-  const max=Math.max(1,...rows.map(r=>r.value));
-  return <div className="mt-3 space-y-3">{rows.map(r=><div key={r.label}>
-    <div className="mb-1 flex justify-between gap-2 text-xs"><span>{r.label}</span><strong className="tabular-nums">{number(r.value)}{unit}</strong></div>
-    <div className="h-3 rounded-md bg-surface-3" aria-hidden="true"><div className="h-full rounded-md" style={{width:r.value*100/max+"%",background:r.color}}/></div>
-  </div>)}</div>;
+function NumberTile({label,value,note}:{label:string;value:string;note?:string}){
+  return <div className="min-w-0 rounded-lg border border-border-subtle bg-surface-2/50 p-3">
+    <p className="text-xs font-medium text-text-secondary">{label}</p>
+    <p className="mt-1 break-words text-2xl font-semibold tabular-nums text-text-primary">{value}</p>
+    {note?<p className="mt-1 text-xs text-text-secondary">{note}</p>:null}
+  </div>;
 }
 function Donut({total,rows,center,sub}:{total:number;rows:VisualRow[];center:string;sub:string}){
   let offset=0;
@@ -324,7 +328,10 @@ function FinanceDebt({projectId}:{projectId:string}){
   });
   const d=enabled&&!debt.isError?debt.data:undefined;
   return <>
-    {d ? <VisualBars rows={[{label:"Deuda de billeteras · actual",value:d.debt_cup!,color:"var(--semantic-danger)"},{label:"Retiradas Impulsa pendientes · actual",value:d.pending_withdrawal_cup!,color:"var(--semantic-warning)"}]} unit=" MN"/> : <p className="mt-3 text-xs text-text-secondary">Saldos pendientes no disponibles.</p>}
+    <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+      <NumberTile label="Deuda de billeteras" value={money(d?.debt_cup,"MN")} note="Saldo actual"/>
+      <NumberTile label="Retiradas pendientes" value={money(d?.pending_withdrawal_cup,"MN")} note="Impulsa · actual"/>
+    </div>
     {enabled?<Link className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary" to="/admin/proyectos/$id/$section" params={{id:projectId,section:"trabajos"}} search={{vista:"billeteras"}}>Consultar billeteras <ArrowUpRight className="size-3.5" aria-hidden="true"/></Link>:null}
   </>;
 }
