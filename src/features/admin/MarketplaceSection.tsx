@@ -2710,7 +2710,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 </div>
                 <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar por estado de recarga">
-                    {[["", "Todas"], ["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["reversed", "Anuladas"], ["rejected", "Rechazadas"]].map(([value, name]) => (
+                    {[["requested", "Pendientes"], ["confirmed", "Confirmadas"], ["reconciled", "Conciliadas"], ["reversed", "Anuladas"], ["rejected", "Rechazadas"], ["", "Todas"]].map(([value, name]) => (
                       <Button key={value || "all"} size="sm" className="marketplace-record-filter min-h-11 sm:min-h-8" data-finance-tone={value === "requested" ? "warning" : value === "rejected" ? "danger" : value === "confirmed" || value === "reconciled" ? "success" : "neutral"} variant={topupStatus === value ? "default" : "ghost"} aria-pressed={topupStatus === value} onClick={() => setTopupStatus(value)}>{name}</Button>
                     ))}
                   </div>
