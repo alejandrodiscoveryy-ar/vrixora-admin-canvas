@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
-  Activity, AlertTriangle, ArrowUpRight, Banknote, CarFront,
-  CheckCircle2, CircleHelp, ClipboardList, Clock3, ShieldAlert,
+  Activity, AlertTriangle, ArrowUpRight, CarFront,
+  CheckCircle2, CircleHelp, Clock3, ShieldAlert,
   TrendingDown, UserRound, Users, Wallet,
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -165,7 +165,7 @@ export default function AgencyVitalityOverview({
     queryFn: () => fetchVitality(projectId, from, to),
     staleTime: 30_000, refetchInterval: 60_000, retry: 1,
   });
-  const signals = useMemo(() => vitality.data ? agencyVitalitySignals(vitality.data) : [], [vitality.data]);
+  const signals = useMemo(() => !vitality.isError && vitality.data ? agencyVitalitySignals(vitality.data) : [], [vitality.data, vitality.isError]);
   const priorities = signals.filter(s => s.priority >= 2).sort((a,b) => b.priority - a.priority);
   const d = vitality.isError ? undefined : vitality.data;
   const assessed = signals.filter(signal => signal.tone !== "gray").length;
