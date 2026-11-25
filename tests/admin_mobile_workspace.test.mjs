@@ -117,7 +117,7 @@ test("Recargas pendientes de transferencia envían datos guardados a WhatsApp De
   assert.match(topups, /topupPaymentInstructionsMessage\(item\.driverDisplayName/);
   assert.match(topups, /links=\{instructionLink\}/);
   assert.match(topups, /Enviar datos de pago/);
-  assert.match(topups, /Configura la tarjeta y el teléfono arriba, en Datos para recibir recargas/);
+  assert.match(topups, /Configura la tarjeta y el teléfono en el botón Datos de recarga/);
 });
 
 test("Mensaje de recarga evita duplicar WhatsApp cuando coincide con teléfono de tarjeta", () => {
@@ -255,4 +255,12 @@ test("La suspensión administrativa explica el bloqueo completo de Conductor", (
   assert.match(panel, /Se conservan saldos e historial/);
   assert.match(panel, /podrá volver a iniciar sesión/);
   assert.match(panel, /setDriverSuspension\(projectId/);
+});
+
+test("Recargas integra los datos de pago antes del buscador",()=>{
+ const panel=source("MarketplaceSection.tsx");
+ const view=panel.slice(panel.indexOf('<TabsContent value="recargas"'));
+ assert.ok(view.indexOf("marketplace-topup-toolbar-top")<view.indexOf("<MarketplaceTopupPaymentDestination"));
+ assert.ok(view.indexOf("<MarketplaceTopupPaymentDestination")<view.indexOf("marketplace-topup-search"));
+ assert.match(view,/DialogTrigger asChild/);
 });
