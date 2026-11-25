@@ -30,6 +30,8 @@ export function AdminPeriodSelector({
   options = adminPeriodOptions,
   className,
   appearance = "standard",
+  allRange,
+  maxCustomDays,
 }: {
   value: AdminPeriodKey;
   range: AdminDateRange;
@@ -37,9 +39,12 @@ export function AdminPeriodSelector({
   options?: AdminPeriodOption[];
   className?: string;
   appearance?: AdminAppearance;
+  allRange?: AdminDateRange;
+  maxCustomDays?: number;
 }) {
   const [customOpen, setCustomOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>(() => toCalendarRange(range));
+  const validDraft = Boolean(draft?.from && draft.to && draft.from <= draft.to && (!maxCustomDays || Math.round((draft.to.getTime()-draft.from.getTime())/86_400_000)+1 <= maxCustomDays));
   const currentRange = useMemo(() => currentPeriodRange(value, range), [range, value]);
   const isCurrent = value !== "all" && rangesEqual(range, currentRange);
   const canNavigate = value !== "all" && Boolean(range.from && range.to);
@@ -54,7 +59,7 @@ export function AdminPeriodSelector({
       setCustomOpen(true);
       return;
     }
-    onChange(next, periodRange(next));
+    onChange(next, next === "all" && allRange ? allRange : periodRange(next));
   };
 
   const move = (direction: -1 | 1) => {
@@ -63,7 +68,7 @@ export function AdminPeriodSelector({
   };
 
   const applyCustom = () => {
-    if (!draft?.from || !draft.to) return;
+    if (!validDraft || !draft?.from || !draft.to) return;
     onChange("custom", { from: toIsoDate(draft.from), to: toIsoDate(draft.to) });
     setCustomOpen(false);
   };
@@ -110,12 +115,17 @@ export function AdminPeriodSelector({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="sr-only"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-surface-2"
               aria-label="Abrir selector de rango personalizado"
-            />
+              title="Personalizar fechas"
+            ><CalendarDays className="size-4" aria-hidden="true"/></button>
           </PopoverTrigger>
           <PopoverContent align="center" className={cn("w-auto max-w-[calc(100vw-1rem)] p-0", appearance === "premium" && premiumHeaderSurface)}>
             <div className="overflow-x-auto p-2">
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <label className="text-xs text-text-secondary">Desde<input type="date" className="block w-full rounded border border-border-default bg-surface-1 p-2 text-sm" value={draft?.from ? toIsoDate(draft.from) : ""} onChange={e=>setDraft(old=>({from:e.target.value?fromIsoDate(e.target.value):undefined,to:old?.to}))}/></label>
+                <label className="text-xs text-text-secondary">Hasta<input type="date" className="block w-full rounded border border-border-default bg-surface-1 p-2 text-sm" value={draft?.to ? toIsoDate(draft.to) : ""} onChange={e=>setDraft(old=>({from:old?.from,to:e.target.value?fromIsoDate(e.target.value):undefined}))}/></label>
+              </div>
               <Calendar
                 className={appearance === "premium" ? "bg-transparent dark:bg-transparent" : undefined}
                 mode="range"
@@ -131,6 +141,7 @@ export function AdminPeriodSelector({
                 ? formatRange({ from: toIsoDate(draft.from), to: toIsoDate(draft.to) })
                 : "Selecciona fecha inicial y final"}
             </div>
+            {draft?.from && draft.to && !validDraft ? <p role="alert" className="px-3 py-2 text-xs text-destructive">Comprueba el orden de las fechas y el límite del período.</p> : null}
             <div className="flex justify-end gap-2 border-t border-border-subtle p-3">
               <Button type="button" variant="ghost" size="sm" onClick={() => setCustomOpen(false)}>
                 Cancelar
@@ -138,7 +149,7 @@ export function AdminPeriodSelector({
               <Button
                 type="button"
                 size="sm"
-                disabled={!draft?.from || !draft.to}
+                disabled={!validDraft}
                 onClick={applyCustom}
               >
                 Aplicar
