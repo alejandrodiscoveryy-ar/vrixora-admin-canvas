@@ -1,4 +1,9 @@
 import { useMemo, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabase";
+import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel } from "@/lib/agency-vitality";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { adminChartTooltipProps } from "@/lib/chart-theme";
+
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -51,6 +56,7 @@ function ResumenPage() {
   const canViewCommercial = permissions.includes("commercial.view");
   const canViewPayments = permissions.includes("payments.view");
   const canViewAudit = permissions.includes("audit.view");
+  const canViewAnalytics = permissions.includes("analytics.view");
 
   const [dateRange, setDateRange] = usePersistentAnalyticsDateRange(
     `vrixora:summary-range:${id}`,
@@ -190,7 +196,7 @@ function ResumenPage() {
           </div>
         </div>
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-          Las fechas filtran altas y captación comercial. Conductores e incidencias reflejan el estado actual; trabajos publicados es acumulado.
+          Las fechas filtran altas y captación comercial, y los gráficos estratégicos. Conductores e incidencias reflejan el estado actual; trabajos publicados es acumulado.
         </p>
       </header>
 
@@ -301,6 +307,8 @@ function ResumenPage() {
           />
         ) : null}
       </section>
+
+      {canViewAnalytics ? <StrategicCharts projectId={id} from={dateRange.from} to={dateRange.to} /> : null}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(17rem,0.7fr)]">
         <SectionCard
@@ -556,4 +564,86 @@ function auditActionLabel(action: string) {
   };
 
   return labels[action] ?? action.replaceAll("_", " ");
+}
+
+function StrategicCharts({ projectId, from, to }: { projectId: string; from: string; to: string }) {
+  const query = useQuery({
+    queryKey: ["agency-vitality-v1", projectId, from, to],
+    queryFn: async () => {
+      const { data, error } = await getSupabaseClient().rpc("admin_get_agency_vitality_v1", {
+        target_project_id: projectId, target_from: from, target_to: to,
+      });
+      if (error) throw error;
+      return parseAgencyVitality(data);
+    },
+    staleTime: 30_000, refetchInterval: 60_000, retry: 1,
+  });
+  const d = query.isError ? undefined : query.data;
+  const fmt = (v: number) => new Intl.NumberFormat("es-CU", { maximumFractionDigits: 1 }).format(v);
+  const rows = d ? [
+    { name: "Altas Control", actual: d.control.registered, anterior: d.control.previous_registered },
+    ...(d.clients ? [{ name: "Clientes nuevos", actual: d.clients.new, anterior: d.clients.previous_new }] : []),
+    ...(d.rides ? [{ name: "Carreras completadas", actual: d.rides.completed, anterior: d.rides.previous_completed }] : []),
+  ] : [];
+  const priorities = d ? agencyVitalitySignals(d).filter(x => ["clients", "rides", "cancelled"].includes(x.id) && x.priority >= 2).sort((a,b) => b.priority-a.priority) : [];
+  const funnel = d ? controlConversionFunnel(d.control) : null;
+  const rides = d?.rides;
+  return (
+    <SectionCard density="compact" appearance="premium" module="rendimiento"
+      title="Inteligencia del negocio" description="Período seleccionado frente al anterior de igual duración · datos reales"
+      contentClassName="space-y-3 p-3 sm:p-4"
+      actions={<Link to="/admin/proyectos/$id/$section" params={{id:projectId,section:"rendimiento"}} className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary">Ver análisis <ArrowRight className="size-4" aria-hidden="true"/></Link>}>
+      {query.isLoading ? <p role="status" className="text-sm text-muted-foreground">Consultando indicadores estratégicos...</p>
+      : !d ? <p role="alert" className="text-sm text-muted-foreground">Datos estratégicos no disponibles. No se sustituyen por ceros.</p>
+      : <>
+        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <section className="min-w-0" aria-label="Comparación de crecimiento y demanda">
+            <h3 className="text-sm font-semibold">¿Está creciendo el negocio?</h3>
+            <p className="text-xs text-muted-foreground">Altas instrumentadas de Control, nuevos clientes y carreras reales completadas; fuentes independientes.</p>
+            <div className="mt-3 h-60 min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={rows} margin={{top:8,right:8,left:-18,bottom:12}}>
+                  <CartesianGrid stroke="var(--border-subtle)" vertical={false} strokeDasharray="3 3"/>
+                  <XAxis dataKey="name" tick={{fontSize:10,fill:"var(--text-secondary)"}} interval={0} tickLine={false} axisLine={false}/>
+                  <YAxis allowDecimals={false} tick={{fontSize:11,fill:"var(--text-secondary)"}} axisLine={false} tickLine={false}/>
+                  <Tooltip {...adminChartTooltipProps}/>
+                  <Legend wrapperStyle={{fontSize:11}}/>
+                  <Bar dataKey="anterior" name="Anterior" fill="var(--semantic-inactive)" radius={[4,4,0,0]} maxBarSize={30}/>
+                  <Bar dataKey="actual" name="Actual" fill="var(--primary)" radius={[4,4,0,0]} maxBarSize={30}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer min-h-9 py-2">Ver cifras exactas</summary>
+              {rows.map(row => <p key={row.name} className="py-1">{row.name}: {fmt(row.actual)} actual · {fmt(row.anterior)} anterior</p>)}
+            </details>
+          </section>
+          <section className="min-w-0 border-t border-border-subtle pt-3 xl:border-l xl:border-t-0 xl:pl-4 xl:pt-0" aria-label="Resultados de las carreras">
+            <h3 className="text-sm font-semibold">¿Convertimos solicitudes en viajes?</h3>
+            <p className="text-xs text-muted-foreground">Carreras creadas en el período, según su estado actual. Excluye pruebas.</p>
+            {rides ? <div className="mt-4 space-y-3">
+              <p className="text-2xl font-semibold tabular-nums">{fmt(rides.requested)} <span className="text-xs font-normal text-muted-foreground">solicitudes</span></p>
+              {[{label:"Completadas",value:rides.completed,color:"var(--semantic-success)"},{label:"Canceladas",value:rides.cancelled,color:"var(--semantic-danger)"},{label:"Sin asignar",value:rides.unassigned,color:"var(--semantic-warning)"}].map(row => (
+                <div key={row.label}>
+                  <div className="mb-1 flex justify-between gap-2 text-xs"><span>{row.label}</span><strong className="tabular-nums">{fmt(row.value)}{rides.requested > 0 ? " · "+fmt(row.value*100/rides.requested)+"%" : ""}</strong></div>
+                  <div className="h-2 rounded-full bg-surface-3" aria-hidden="true"><div className="h-full rounded-full" style={{width:rides.requested>0 ? Math.min(100,row.value*100/rides.requested)+"%" : "0%",background:row.color}}/></div>
+                </div>
+              ))}
+            </div> : <p className="mt-4 text-sm text-muted-foreground">Sin acceso a datos de carreras.</p>}
+          </section>
+        </div>
+        <div className="grid gap-3 border-t border-border-subtle pt-3 lg:grid-cols-2">
+          <section aria-label="Valor de viajes liquidados">
+            <h3 className="text-sm font-semibold">Valor de viajes liquidados</h3>
+            {d.finance ? <><p className="mt-1 text-xl font-semibold tabular-nums">{fmt(d.finance.cup)} CUP</p><p className="text-xs text-muted-foreground">{fmt(d.finance.usd)} USD · {fmt(d.finance.eur)} EUR{d.finance.other > 0 ? " · Hay otras monedas" : ""}. Volumen de viajes, no ingresos de la agencia.</p></> : <p className="text-xs text-muted-foreground">No disponible para este perfil.</p>}
+          </section>
+          <section aria-label="Decisiones estratégicas">
+            <h3 className="text-sm font-semibold">Señales para decidir</h3>
+            {priorities.length ? priorities.map(p => <p key={p.id} className="mt-1 text-xs text-foreground"><strong>{p.label}:</strong> {p.explanation}</p>) : <p className="mt-1 text-xs text-muted-foreground">Sin alertas de demanda con base suficiente. No equivale a confirmar buen rendimiento.</p>}
+            {funnel?.consistent && d.control.registered > 0 ? <p className="mt-2 text-xs text-muted-foreground">De {fmt(d.control.registered)} altas de Control, {fmt(d.control.activated)} habilitados y {fmt(d.control.first_ride)} con primera carrera liquidada (misma cohorte).</p> : null}
+          </section>
+        </div>
+      </>}
+    </SectionCard>
+  );
 }
