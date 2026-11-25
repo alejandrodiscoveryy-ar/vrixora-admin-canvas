@@ -107,3 +107,20 @@ test("embudo de Control muestra tasas verificables sin convertir la ausencia de 
   assert.match(board,/Consultar conductores/);
   assert.match(board,/señales con atención/);
 });
+
+test("Analítica inicia en el período actual, filtra por fecha y muestra gráficos sin desplegar",()=>{
+  const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  const shell=readFileSync(new URL("../src/routes/admin.tsx",import.meta.url),"utf8");
+  assert.match(dashboard,/useState\(\(\) => periodRange\("7d"\)\)/);
+  assert.doesNotMatch(dashboard,/usePersistentAnalyticsDateRange/);
+  assert.match(dashboard,/row.date >= fromDate && row.date <= toDate/);
+  assert.ok(dashboard.indexOf('title="Registros y accesos"')<dashboard.indexOf('Análisis detallado · Usuarios'));
+  assert.match(shell,/wideAnalytics = currentSection === "rendimiento"/);
+  assert.match(board,/title="Conversión de solicitudes"/);
+  assert.match(board,/data.requested>0/);
+  assert.match(board,/funnel.consistent && stage.share != null/);
+  assert.match(board,/title="Economía"/);
+  assert.match(board,/title="Flota"/);
+  assert.doesNotMatch(board,/title="Economía y flota"/);
+});
