@@ -1029,6 +1029,21 @@ export default function MarketplaceOperationalMap({
     [operational.data?.jobs, customerDetailsJobId],
   );
 
+  // Indicadores locales de flota: misma categoría no equivale a elegibilidad del radar.
+  const selectedJobFleet = useMemo(() => {
+    if (!selectedJob?.vehicleCategoryCode || !operational.data) return null;
+    const working = operational.data.drivers.filter((driver) => driver.acceptingJobs);
+    const sameCategory = working.filter((driver) =>
+      driver.isAvailable && !driver.activeJobId &&
+      driver.vehicleCategoryCode === selectedJob.vehicleCategoryCode
+    );
+    return {
+      working: new Set(working.map((driver) => driver.driverUserId)).size,
+      sameCategory: new Set(sameCategory.map((driver) => driver.driverUserId)).size,
+      fresh: new Set(sameCategory.filter((driver) => driver.locationFresh).map((driver) => driver.driverUserId)).size,
+    };
+  }, [operational.data, selectedJob]);
+
   // Los destinatarios se consultan aparte para no ralentizar el mapa.
   const jobRecipients = useQuery({
     queryKey: ["marketplace-job-notification-recipients", projectId, selectedJobId],
@@ -2973,10 +2988,22 @@ export default function MarketplaceOperationalMap({
                                         </p>
                                       </div>
 
+                                      {selectedJob.status === "published" && selectedJobFleet ? (
+                                        <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] px-3 py-2.5" aria-label="Disponibilidad de la flota para esta solicitud">
+                                          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-300">Disponibilidad de flota</p>
+                                          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                                            <div><strong className="block text-base tabular-nums text-foreground">{selectedJobFleet.working}</strong><span className="text-[10px] text-muted-foreground">En trabajo</span></div>
+                                            <div><strong className="block text-base tabular-nums text-foreground">{selectedJobFleet.sameCategory}</strong><span className="text-[10px] text-muted-foreground">Misma categoría</span></div>
+                                            <div><strong className={`block text-base tabular-nums ${selectedJobFleet.fresh === 0 ? "text-amber-300" : "text-foreground"}`}>{selectedJobFleet.fresh}</strong><span className="text-[10px] text-muted-foreground">GPS reciente</span></div>
+                                          </div>
+                                          <p className="mt-2 text-[10px] text-muted-foreground">Misma categoría: disponibles sin servicio activo; el radar aplica requisitos adicionales.</p>
+                                        </div>
+                                      ) : null}
+
                                       <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] px-3 py-2.5">
                                         <div className="flex items-center justify-between gap-2">
                                           <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-300">
-                                            Conductores notificados / prueba
+                                            Conductores notificados
                                           </p>
                                           {jobRecipients.data ? (
                                             <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
@@ -3008,6 +3035,12 @@ export default function MarketplaceOperationalMap({
                                             ))}
                                           </ul>
                                         )}
+                                        {!jobRecipients.isError && jobRecipients.data ? (
+                                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                                            <span>Envíos: <strong className="text-foreground">{jobRecipients.data.reduce((sum, recipient) => sum + (recipient.isTestRecipient ? 0 : recipient.notificationCount), 0)}</strong></span>
+                                            <span>Abiertos: <strong className="text-foreground">{jobRecipients.data.filter((recipient) => !recipient.isTestRecipient && recipient.firstOpenedAt != null).length}</strong></span>
+                                          </div>
+                                        ) : null}
                                         <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
                                           «Despachada» indica procesamiento por el sistema push, no confirma recepción en el teléfono.
                                         </p>
