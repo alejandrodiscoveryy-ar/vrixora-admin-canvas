@@ -49,3 +49,18 @@ test("los detalles y la auditoría permanecen desplegables y los accesos respeta
   assert.match(dashboard, /canViewAudit/);
   assert.match(dashboard, /<AdminPeriodSelector/);
 });
+
+test("inteligencia estratégica utiliza la fuente de vitalidad y comparaciones reales", () => {
+  assert.match(dashboard, /permissions\.includes\("analytics\.view"\)/);
+  assert.match(dashboard, /canViewAnalytics \? <StrategicCharts/);
+  assert.match(dashboard, /admin_get_agency_vitality_v1/);
+  assert.match(dashboard, /target_from: from, target_to: to/);
+  assert.match(dashboard, /return parseAgencyVitality\(data\)/);
+  assert.match(dashboard, /<ResponsiveContainer/);
+  assert.match(dashboard, /previous_completed/);
+  assert.match(dashboard, /previous_new/);
+  assert.match(dashboard, /No se sustituyen por ceros/);
+  assert.match(dashboard, /Volumen de viajes, no ingresos de la agencia/);
+  assert.match(dashboard, /rides\.requested > 0/);
+  assert.match(dashboard, /agencyVitalitySignals\(d\)/);
+});
