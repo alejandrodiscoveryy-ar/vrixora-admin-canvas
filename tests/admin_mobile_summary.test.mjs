@@ -44,6 +44,7 @@ test("los detalles y la auditoría permanecen desplegables y los accesos respeta
   assert.match(dashboard, /search=\{\{ vista: "recargas" \}\}/);
   assert.match(dashboard, /canViewUsers/);
   assert.match(dashboard, /canViewMarketplace/);
+  assert.match(dashboard, /canViewPayments/);
   assert.match(dashboard, /canViewCommercial/);
   assert.match(dashboard, /canViewAudit/);
   assert.match(dashboard, /<AdminPeriodSelector/);
