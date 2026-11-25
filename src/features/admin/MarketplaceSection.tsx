@@ -532,9 +532,9 @@ function RecordMetric({ labelText, value, tone }: { labelText: string; value: Re
   </div>;
 }
 
-function RecordIdentity({ icon: Icon, name, children }: { icon: typeof UserRound; name: string; children?: ReactNode }) {
+function RecordIdentity({ icon: Icon, name, children, portrait }: { icon: typeof UserRound; name: string; children?: ReactNode; portrait?: ReactNode }) {
   return <div className="flex min-w-0 items-center gap-2.5">
-    <span className="marketplace-record-icon" aria-hidden="true"><Icon className="h-5 w-5" /></span>
+    {portrait ?? <span className="marketplace-record-icon" aria-hidden="true"><Icon className="h-5 w-5" /></span>}
     <div className="min-w-0 flex-1">
       <p className="break-words text-sm font-semibold leading-snug text-foreground">{name}</p>
       <div className="mt-0.5 min-w-0 space-y-0.5 text-xs text-text-secondary">{children}</div>
@@ -1749,6 +1749,22 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     if ((topupStatus === "confirmed" || topupStatus === "reconciled") && reversed) return false;
     return true;
   });
+  // Reuse the permission-checked directory portraits, only for the visible finance list.
+  const financeMediaIds = Array.from(new Set(
+    (tab === "billeteras" ? filteredWalletRows : tab === "recargas" ? filteredTopupRows : [])
+      .map(row => row.userId).filter(Boolean),
+  )).sort();
+  const financeMedia = useQuery({
+    queryKey: ["marketplace-driver-directory-media", projectId, financeMediaIds],
+    queryFn: () => getMarketplaceDirectoryDriverMedia(projectId, financeMediaIds),
+    enabled: canPayments && permissions.includes("marketplace.view") &&
+      (tab === "billeteras" || tab === "recargas") && financeMediaIds.length > 0,
+    staleTime: 10 * 60_000,
+    refetchInterval: 10 * 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
   const selectedPaymentMethod = paymentMethods.data?.find((item) => item.code === method);
   const paymentMethodLabel = (code: string) =>
     paymentMethods.data?.find((item) => item.code === code)?.name ?? code;
@@ -2615,7 +2631,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     const reserved = Number(wallet.realReservedBalance) + Number(wallet.promotionalReservedBalance);
                     return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-deposit-state={wallet.initialDepositConfirmed ? "confirmed" : "pending"}>
                       <div className="marketplace-wallet-summary">
-                        <RecordIdentity icon={Wallet} name={wallet.driverDisplayName}>
+                        <RecordIdentity icon={Wallet} name={wallet.driverDisplayName} portrait={<DriverDirectoryPortrait name={wallet.driverDisplayName} url={financeMedia.data?.[wallet.userId]?.avatarUrl ?? null} googleUrl={financeMedia.data?.[wallet.userId]?.googleAvatarUrl ?? null}/>}>
                           <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
                           <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}</span>
                         </RecordIdentity>
@@ -2711,7 +2727,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     return <article key={item.topupId} className={cn("marketplace-record marketplace-finance-row marketplace-topup-row", premiumSurface, "shadow-none")} data-marketplace-record="topup" data-topup-status={isTopupReversed ? "reversed" : item.status}>
                       <div className="marketplace-topup-main">
                         <div className="marketplace-topup-summary">
-                          <RecordIdentity icon={Banknote} name={item.driverDisplayName}>
+                          <RecordIdentity icon={Banknote} name={item.driverDisplayName} portrait={<DriverDirectoryPortrait name={item.driverDisplayName} url={financeMedia.data?.[item.userId]?.avatarUrl ?? null} googleUrl={financeMedia.data?.[item.userId]?.googleAvatarUrl ?? null}/>}>
                             <p className="break-words">Solicitada: <time dateTime={item.requestedAt}>{formatDate(item.requestedAt)}</time></p>
                             <p className="break-words">{paymentMethodLabel(item.method)}</p>
                           </RecordIdentity>
