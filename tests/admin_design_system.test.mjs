@@ -530,7 +530,7 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
   const wallet = workspace.slice(workspace.indexOf('<TabsContent value="billeteras"'), workspace.indexOf('<TabsContent value="configuracion"'));
   assert.match(wallet, /marketplace-record-workspace/);
   assert.match(wallet, /premiumSurface/);
-  assert.match(wallet, /formatAmount\(wallet.availableBalance, wallet.currency\)/);
+  assert.match(wallet, /formatWalletAmount\(wallet.availableBalance, wallet.currency\)/);
   assert.match(wallet, /topupStatus === value/);
   assert.match(wallet, /setNewTopup\(true\)/);
   const map = workspace.slice(workspace.indexOf('<TabsContent value="mapa"'), workspace.indexOf('<TabsContent value="conductores">'));

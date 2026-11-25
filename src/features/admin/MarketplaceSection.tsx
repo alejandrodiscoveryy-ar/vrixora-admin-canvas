@@ -227,6 +227,8 @@ const formatOperationPrice = (value: unknown, currency = "CUP") => {
   })} ${currency}`;
 };
 
+const formatWalletAmount = (value:unknown,currency:string) => formatAmount(value,currency==="CUP"?"MN":currency);
+
 const operationRowClasses = (status: string | null) => {
   if (["completed", "settled", "confirmed", "reconciled"].includes(status ?? "")) {
     return "border-emerald-500/45 border-l-4 border-l-emerald-400 bg-emerald-500/[0.10] hover:bg-emerald-500/[0.15] dark:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_84%,var(--text-secondary)_16%)_93%,var(--semantic-success)_7%)] dark:hover:bg-[color:color-mix(in_oklab,color-mix(in_oklab,var(--surface-3)_80%,var(--text-secondary)_20%)_90%,var(--semantic-success)_10%)]";
@@ -1070,7 +1072,7 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const [newTopup, setNewTopup] = useState(false);
   const [topupStatus, setTopupStatus] = useState("requested");
   const [walletSearch, setWalletSearch] = useState("");
-  const [walletFilter, setWalletFilter] = useState<"" | "deposit_pending" | "deposit_confirmed" | "has_available" | "no_available">("");
+  const [walletFilter, setWalletFilter] = useState<"" | "deposit_pending" | "deposit_confirmed" | "has_available" | "no_available" | "reserved">("has_available");
   const [topupSearch, setTopupSearch] = useState("");
   const [topupDriver, setTopupDriver] = useState("");
   const [amount, setAmount] = useState("");
@@ -1193,16 +1195,27 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     enabled: tab === "clientes" && canCustomers,
   });
 
-  const wallets = useInfiniteQuery({
-    queryKey: ["marketplace-wallets", projectId],
-    queryFn: ({ pageParam }) =>
-      supabaseServices.marketplace.listWallets(projectId, {
-        limit: PAGE_SIZE,
-        cursor: pageParam,
-      }),
-    initialPageParam: null as null | { at: string; id: string },
-    getNextPageParam: (page) => page.nextCursor,
+  const wallets = useQuery({
+    queryKey: ["marketplace-wallets", projectId, "complete"],
+    queryFn: async ({signal}) => {
+      const all = new Map<string, Awaited<ReturnType<typeof supabaseServices.marketplace.listWallets>>["items"][number]>();
+      let cursor: {at:string;id:string}|null = null;
+      const seen = new Set<string>();
+      for (let page=0;page<100;page++) {
+        if(signal.aborted) throw new Error("Consulta cancelada");
+        const result = await supabaseServices.marketplace.listWallets(projectId,{limit:200,cursor});
+        for(const item of result.items) if(!all.has(item.userId)) all.set(item.userId,item);
+        if(!result.nextCursor) return [...all.values()];
+        const key=JSON.stringify(result.nextCursor);
+        if(seen.has(key)) throw new Error("Paginación de billeteras inconsistente");
+        seen.add(key);
+        cursor=result.nextCursor;
+      }
+      throw new Error("No se pudo completar el inventario de billeteras");
+    },
     enabled: tab === "billeteras" && canPayments,
+    staleTime: 30_000,
+    refetchInterval: tab === "billeteras" ? 60_000 : false,
   });
 
   const topups = useInfiniteQuery({
@@ -1713,9 +1726,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     } satisfies MarketplaceDirectoryDriverMedia;
   }, [driver360Id, selectedDriverMedia.data, driverMedia.data]);
   const customerRows = rows(customers);
-  const walletRows = rows(wallets);
+  const walletRows = wallets.data ?? [];
   const topupRows = rows(topups);
-  // Los filtros de Billeteras son solo locales sobre los registros cargados.
+  // Filtros sobre el inventario completo; no mostrar resultados parciales como globales.
   // Un saldo disponible de 0 no significa necesariamente saldo total de 0 (puede estar reservado).
   const filteredWalletRows = walletRows.filter((wallet) => {
     if (!recordMatches(walletSearch, wallet.driverDisplayName, wallet.driverPhone)) return false;
@@ -1724,9 +1737,13 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
       case "deposit_confirmed": return wallet.initialDepositConfirmed;
       case "has_available": return Number(wallet.availableBalance) > 0;
       case "no_available": return Number(wallet.availableBalance) <= 0;
+      case "reserved": return Number(wallet.reservedBalance) > 0;
       default: return true;
     }
   });
+  const sortedWalletRows = [...filteredWalletRows].sort((a,b)=>b.availableBalance-a.availableBalance || a.driverDisplayName.localeCompare(b.driverDisplayName,"es"));
+  const walletCounts = {all:walletRows.length,has_available:walletRows.filter(w=>w.availableBalance>0).length,no_available:walletRows.filter(w=>w.availableBalance<=0).length,reserved:walletRows.filter(w=>w.reservedBalance>0).length,deposit_pending:walletRows.filter(w=>!w.initialDepositConfirmed).length,deposit_confirmed:walletRows.filter(w=>w.initialDepositConfirmed).length};
+  const walletCurrencies = [...new Set(walletRows.map(w=>w.currency))];
   const receiptsByTopup = useMemo(() => {
     const byTopup = new Map<string, NonNullable<typeof financialDocuments.data>[number]>();
     for (const document of financialDocuments.data ?? []) {
@@ -2591,17 +2608,18 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                     </div>
                   </div>
                   <div className="marketplace-wallet-search min-w-0">
-                    <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar billeteras cargadas" />
+                    <RecordSearch value={walletSearch} onChange={setWalletSearch} placeholder="Buscar conductor o teléfono" labelText="Buscar todas las billeteras" />
                   </div>
                 </div>
                 <div className="relative mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Filtrar billeteras">
                     {([
-                      ["", "Todas"],
-                      ["deposit_pending", "Depósito pendiente"],
-                      ["deposit_confirmed", "Depósito OK"],
-                      ["has_available", "Con disponible"],
+                      ["has_available", "Con saldo"],
                       ["no_available", "Sin disponible"],
+                      ["reserved", "Con reservas"],
+                      ["", "Todas"],
+                      ["deposit_pending", "Depósito inicial pendiente"],
+                      ["deposit_confirmed", "Depósito inicial confirmado"],
                     ] as const).map(([value, name]) => (
                       <Button
                         key={value || "all"}
@@ -2612,33 +2630,39 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                         aria-pressed={walletFilter === value}
                         onClick={() => setWalletFilter(value)}
                       >
-                        {name}
+                        {name} <span className="ml-1 tabular-nums opacity-80">{wallets.isSuccess&&!wallets.isError ? walletCounts[value || "all"] : "—"}</span>
                       </Button>
                     ))}
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-text-secondary">
-                    <span aria-live="polite">{filteredWalletRows.length} de {walletRows.length} billeteras cargadas{wallets.hasNextPage ? " · Cargar más para ampliar la búsqueda" : ""}</span>
-                    {walletSearch || walletFilter ? <Button variant="ghost" size="sm" onClick={() => { setWalletSearch(""); setWalletFilter(""); }}>Limpiar filtros</Button> : null}
+                    <span aria-live="polite">{wallets.isSuccess&&!wallets.isError ? filteredWalletRows.length+" de "+walletRows.length+" billeteras" : "Consultando inventario"} · Mayor saldo primero</span>
+                    {walletSearch || walletFilter ? <Button variant="ghost" size="sm" onClick={() => { setWalletSearch(""); setWalletFilter("has_available"); }}>Limpiar filtros</Button> : null}
                   </div>
                 </div>
               </div>
+              {wallets.isSuccess&&!wallets.isError && <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Resumen financiero de todas las billeteras">
+                <MetricCard density="compact" appearance="premium" label="Real disponible" value={walletCurrencies.length===1?formatWalletAmount(walletRows.reduce((n,w)=>n+w.realAvailableBalance,0),walletCurrencies[0]):"—"} icon={Wallet}/>
+                <MetricCard density="compact" appearance="premium" label="Promocional disponible" value={walletCurrencies.length===1?formatWalletAmount(walletRows.reduce((n,w)=>n+w.promotionalAvailableBalance,0),walletCurrencies[0]):"—"} icon={WalletCards}/>
+                <MetricCard density="compact" appearance="premium" label="Con saldo disponible" value={walletCounts.has_available} icon={Users}/>
+                <MetricCard density="compact" appearance="premium" label="Reservado" value={walletCurrencies.length===1?formatWalletAmount(walletRows.reduce((n,w)=>n+w.reservedBalance,0),walletCurrencies[0]):"—"} icon={Clock3}/>
+              </div>}
               {wallets.isError ? <RecordLoadError onRetry={() => void wallets.refetch()} /> : null}
-              {wallets.isLoading ? <LoadingState /> : !filteredWalletRows.length ? (
-                !wallets.isError ? <EmptyMarketplaceState appearance="premium" title={walletSearch || walletFilter ? "No hay billeteras con estos filtros" : "No hay billeteras"} description={walletSearch || walletFilter ? "Los filtros se aplican a las billeteras cargadas. Puedes cargar más registros o limpiar los filtros." : "No existen billeteras disponibles para mostrar."} icon={Wallet} /> : null
+              {wallets.isLoading ? <LoadingState /> : wallets.isError ? null : !filteredWalletRows.length ? (
+                !wallets.isError ? <EmptyMarketplaceState appearance="premium" title={walletSearch || walletFilter ? "No hay billeteras con estos filtros" : "No hay billeteras"} description={walletSearch || walletFilter ? "No hay coincidencias en el inventario completo. Cambia el filtro o la búsqueda." : "No existen billeteras disponibles para mostrar."} icon={Wallet} /> : null
               ) : (
                 <div className="space-y-2">
-                  {filteredWalletRows.map((wallet) => {
+                  {sortedWalletRows.map((wallet) => {
                     const reserved = Number(wallet.realReservedBalance) + Number(wallet.promotionalReservedBalance);
                     return <article key={wallet.userId} className={cn("marketplace-record marketplace-finance-row marketplace-wallet-row", premiumSurface, "shadow-none")} data-marketplace-record="wallet" data-deposit-state={wallet.initialDepositConfirmed ? "confirmed" : "pending"}>
                       <div className="marketplace-wallet-summary">
                         <RecordIdentity icon={Wallet} name={wallet.driverDisplayName} portrait={<DriverDirectoryPortrait name={wallet.driverDisplayName} url={financeMedia.data?.[wallet.userId]?.avatarUrl ?? null} googleUrl={financeMedia.data?.[wallet.userId]?.googleAvatarUrl ?? null}/>}>
                           <p className="break-words">{wallet.driverPhone || "Sin teléfono registrado"}</p>
-                          <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito OK" : "Depósito pendiente"}</span>
+                          <span className={cn("marketplace-deposit-state", wallet.initialDepositConfirmed ? "marketplace-deposit-ok" : "marketplace-deposit-pending")}>{wallet.initialDepositConfirmed ? "Depósito inicial confirmado" : "Depósito inicial pendiente"}</span>
                         </RecordIdentity>
                         <div className="marketplace-record-metrics marketplace-wallet-metrics grid min-w-0">
-                          <RecordMetric labelText="Disponible" value={formatAmount(wallet.availableBalance, wallet.currency)} tone="available" />
-                          <RecordMetric labelText="Reservado" value={formatAmount(reserved, wallet.currency)} tone="reserved" />
-                          <RecordMetric labelText="Saldo total" value={formatAmount(wallet.totalBalance, wallet.currency)} />
+                          <RecordMetric labelText="Disponible" value={formatWalletAmount(wallet.availableBalance, wallet.currency)} tone="available" />
+                          <RecordMetric labelText="Reservado" value={formatWalletAmount(reserved, wallet.currency)} tone="reserved" />
+                          <RecordMetric labelText="Saldo total" value={formatWalletAmount(wallet.totalBalance, wallet.currency)} />
                         </div>
                       </div>
                       <details className="marketplace-record-details group">
@@ -2647,19 +2671,20 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
                         </summary>
                         <div className="marketplace-record-detail-grid grid grid-cols-2 gap-3 sm:grid-cols-3">
-                          <RecordMetric labelText="Saldo real" value={formatAmount(wallet.realBalance, wallet.currency)} />
-                          <RecordMetric labelText="Saldo promocional" value={formatAmount(wallet.promotionalBalance, wallet.currency)} />
-                          <RecordMetric labelText="Promocional disponible" value={formatAmount(wallet.promotionalAvailableBalance, wallet.currency)} />
-                          <RecordMetric labelText="Real reservado" value={formatAmount(wallet.realReservedBalance, wallet.currency)} />
-                          <RecordMetric labelText="Promocional reservado" value={formatAmount(wallet.promotionalReservedBalance, wallet.currency)} />
+                          <RecordMetric labelText="Saldo real" value={formatWalletAmount(wallet.realBalance, wallet.currency)} />
+                          <RecordMetric labelText="Saldo promocional" value={formatWalletAmount(wallet.promotionalBalance, wallet.currency)} />
+                          <RecordMetric labelText="Promocional disponible" value={formatWalletAmount(wallet.promotionalAvailableBalance, wallet.currency)} />
+                          <RecordMetric labelText="Real reservado" value={formatWalletAmount(wallet.realReservedBalance, wallet.currency)} />
+                          <RecordMetric labelText="Promocional reservado" value={formatWalletAmount(wallet.promotionalReservedBalance, wallet.currency)} />
                           <RecordMetric labelText="Última actualización" value={formatDate(wallet.updatedAt)} />
                         </div>
+                        {canManagePayments && <WalletFinancialHistory projectId={projectId} userId={wallet.userId} currency={wallet.currency}/>}
                       </details>
                     </article>;
                   })}
                 </div>
               )}
-              <PaginationButton query={wallets} />
+
             </section>
           </TabsContent>
           <TabsContent value="recargas">
@@ -4557,4 +4582,20 @@ function JobDetail({ detail, projectId, jobId, initialTab = "overview", canShare
       </Tabs>
     </div>
   );
+}
+
+function WalletFinancialHistory({projectId,userId,currency}:{projectId:string;userId:string;currency:string}){
+  const [open,setOpen]=useState(false);
+  const history=useQuery({queryKey:["marketplace-driver-financial-360",projectId,userId],queryFn:()=>supabaseServices.marketplace.getDriverFinancial360(projectId,userId),enabled:open,staleTime:30_000});
+  const data=history.data;
+  return <details className="mt-3 border-t border-border-subtle pt-2" onToggle={e=>setOpen(e.currentTarget.open)}>
+    <summary className="cursor-pointer text-sm font-semibold text-primary py-2">Actividad financiera y comprobantes</summary>
+    {open && (history.isError?<RecordLoadError onRetry={()=>void history.refetch()}/>:history.isLoading?<LoadingState/>:data?<div className="space-y-3">
+      <p className="text-xs text-text-secondary">Recargas, comprobantes, premios y total de comisiones. No es el libro completo de movimientos ni un saldo histórico.</p>
+      <RecordMetric labelText="Comisiones registradas" value={formatWalletAmount(data.commissionTotal,currency)}/>
+      <div><h4 className="text-xs font-semibold mb-1">Recargas</h4>{data.topups.length?data.topups.map(t=><div key={t.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle py-2 text-xs"><span>{formatDate(t.confirmedAt??t.requestedAt)} · {label(t.status)}{t.reference?" · "+t.reference:""}</span><strong>{formatWalletAmount(t.amount,t.currency)}</strong></div>):<p className="text-xs text-text-secondary">Sin recargas registradas.</p>}</div>
+      <div><h4 className="text-xs font-semibold mb-1">Comprobantes y correcciones</h4>{data.documents.map(d=><div key={d.id} className="flex flex-wrap justify-between gap-2 border-b border-border-subtle py-2 text-xs"><span>{formatDate(d.issuedAt)} · {d.documentNumber} · {d.concept}</span><strong>{formatWalletAmount(d.amount,d.currency)}</strong></div>)}</div>
+      <div><h4 className="text-xs font-semibold mb-1">Premios por referidos</h4>{data.referralCredits.map(d=><div key={d.id} className="flex justify-between gap-2 py-2 text-xs"><span>{formatDate(d.qualifiedAt)}</span><strong>{formatWalletAmount(d.amount,d.currency)}</strong></div>)}</div>
+    </div>:null)}
+  </details>;
 }
