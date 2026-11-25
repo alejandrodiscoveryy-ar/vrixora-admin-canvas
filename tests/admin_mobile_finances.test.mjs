@@ -215,3 +215,13 @@ test("Todas es el último filtro de Billeteras",()=>{
 test("Todas es el último filtro de Recargas",()=>{
   assert.ok(topups.includes("[[\"requested\", \"Pendientes\"], [\"confirmed\", \"Confirmadas\"], [\"reconciled\", \"Conciliadas\"], [\"reversed\", \"Anuladas\"], [\"rejected\", \"Rechazadas\"], [\"\", \"Todas\"]]"));
 });
+
+test("Datos de recarga: controles grafito y distribución sin negros profundos",()=>{
+  const account=readFileSync(new URL("../src/features/admin/MarketplaceTopupPaymentDestination.tsx",import.meta.url),"utf8");
+  assert.equal((account.match(/admin-graphite-control mt-2 min-h-11/g)??[]).length,3);
+  assert.match(account,/premiumControlSurface/);
+  assert.match(account,/sm:grid-cols-2/);
+  assert.match(account,/sm:col-span-2/);
+  assert.match(account,/DialogClose asChild/);
+  assert.doesNotMatch(account,/bg-black|bg-\[#000/);
+});

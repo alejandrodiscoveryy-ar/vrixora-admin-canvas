@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Banknote, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { premiumHeaderSurface } from "@/components/admin/density";
+import { premiumHeaderSurface, premiumControlSurface } from "@/components/admin/density";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DialogClose } from "@/components/ui/dialog";
 import { getSupabaseClient } from "@/lib/supabase";
 
 export type TopupPaymentDestination = {
@@ -136,10 +137,10 @@ export function MarketplaceTopupPaymentDestination({
 
   return (
     <div data-topup-account-panel className={cn("relative isolate overflow-hidden rounded-[var(--radius-card)] border px-3 py-2.5", premiumHeaderSurface)}>
-      <Banknote aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark marketplace-finance-watermark-account" />
-      <div className="relative z-10 mt-2 space-y-3 border-t border-border-default pt-3">
+      <Banknote aria-hidden="true" className="pointer-events-none absolute marketplace-finance-watermark marketplace-finance-watermark-account opacity-40" />
+      <div className="relative z-10 space-y-4">
         <p className="text-xs text-text-secondary">
-          Se incluyen en los mensajes de pago a los conductores. Puedes cambiarlos aquí sin modificar la aplicación. El teléfono de la tarjeta y el WhatsApp pueden ser distintos.
+          Estos datos se incluyen en los mensajes de pago. El teléfono de la tarjeta y WhatsApp pueden ser distintos.
         </p>
         {isLoading ? <p className="text-sm text-text-secondary">Cargando datos de recarga…</p> : null}
         {isError ? (
@@ -150,12 +151,12 @@ export function MarketplaceTopupPaymentDestination({
         ) : null}
         {!isLoading && !isError ? (
           <>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 sm:col-span-2">
                 <Label htmlFor="topup-destination-card">Número de tarjeta receptora</Label>
                 <Input
                   id="topup-destination-card"
-                  className="mt-1.5"
+                  className={cn("admin-graphite-control mt-2 min-h-11 tabular-nums shadow-none", premiumControlSurface)}
                   inputMode="numeric"
                   autoComplete="off"
                   spellCheck={false}
@@ -165,10 +166,10 @@ export function MarketplaceTopupPaymentDestination({
                 />
               </div>
               <div>
-                <Label htmlFor="topup-destination-phone">Teléfono asociado a la tarjeta</Label>
+                <Label htmlFor="topup-destination-phone">Teléfono de la tarjeta</Label>
                 <Input
                   id="topup-destination-phone"
-                  className="mt-1.5"
+                  className={cn("admin-graphite-control mt-2 min-h-11 tabular-nums shadow-none", premiumControlSurface)}
                   type="tel"
                   autoComplete="off"
                   value={paymentPhone}
@@ -177,10 +178,10 @@ export function MarketplaceTopupPaymentDestination({
                 />
               </div>
               <div>
-                <Label htmlFor="topup-destination-whatsapp">WhatsApp para comprobantes (opcional)</Label>
+                <Label htmlFor="topup-destination-whatsapp">WhatsApp para comprobantes <span className="text-xs font-normal text-text-secondary">(opcional)</span></Label>
                 <Input
                   id="topup-destination-whatsapp"
-                  className="mt-1.5"
+                  className={cn("admin-graphite-control mt-2 min-h-11 tabular-nums shadow-none", premiumControlSurface)}
                   type="tel"
                   autoComplete="off"
                   value={whatsappPhone}
@@ -191,10 +192,11 @@ export function MarketplaceTopupPaymentDestination({
             </div>
             {!valid ? <p className="text-xs text-rose-400">Introduce una tarjeta de 12 a 19 dígitos junto a su teléfono, y números telefónicos internacionales válidos.</p> : null}
             {error ? <p className="text-xs text-rose-400" role="alert">{error}</p> : null}
-            <div className="flex justify-end">
-              <Button type="button" disabled={!valid || update.isPending} onClick={() => { setError(null); update.mutate(); }}>
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle pt-3">
+              <DialogClose asChild><Button type="button" variant="ghost" disabled={update.isPending} className="min-h-11 text-text-secondary">Cerrar</Button></DialogClose>
+              <Button type="button" className="min-h-11" disabled={!valid || update.isPending} onClick={() => { setError(null); update.mutate(); }}>
                 {update.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Guardar datos de recarga
+                Guardar datos
               </Button>
             </div>
           </>
