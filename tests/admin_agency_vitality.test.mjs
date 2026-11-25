@@ -138,7 +138,8 @@ test("captación por canales y moneda sin equivalencias falsas",()=>{
   assert.match(board,/Base tarifaria USD · finanzas en MN/);
   assert.match(board,/admin_get_marketplace_wallet_transition_summary_v1/);
   assert.match(board,/permissions.includes\("payments.view"\)&&permissions.includes\("commercial.view"\)/);
-  assert.match(board,/money\(d\?\.debt_cup,"MN"\)/);
+  assert.match(board,/value:d.debt_cup!/);
+  assert.match(board,/unit=" MN"/);
   assert.match(board,/No se convierten monedas sin tipo de cambio registrado/);
 });
 
@@ -155,4 +156,18 @@ test("selector de Analítica admite Todo y fechas personalizadas válidas",()=>{
   assert.match(selector,/disabled=\{!validDraft\}/);
   assert.match(selector,/type="date"/);
   assert.match(selector,/title="Personalizar fechas"/);
+});
+
+test("visualización estratégica sin sumar estados superpuestos ni mezclar períodos",()=>{
+  const board=readFileSync(new URL("../src/features/admin/AgencyVitalityOverview.tsx",import.meta.url),"utf8");
+  const dashboard=readFileSync(new URL("../src/features/admin/RendimientoSection.tsx",import.meta.url),"utf8");
+  assert.match(board,/data.requested-data.completed-data.cancelled-data.unassigned/);
+  assert.match(board,/data.requested>=data.completed\+data.cancelled\+data.unassigned/);
+  assert.match(board,/profiles_total-d.operation.profiles_active/);
+  assert.match(board,/Liquidadas \(incluidas en completadas\)/);
+  assert.match(board,/pathLength="100"/);
+  assert.match(board,/VisualBars/);
+  assert.match(dashboard,/const comparable=rows.slice\(0,2\)/);
+  assert.match(dashboard,/Aliados · Histórico/);
+  assert.match(dashboard,/row\[metric.key\]!=null/);
 });
