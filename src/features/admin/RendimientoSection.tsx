@@ -108,16 +108,18 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
           const comparable=rows.slice(0,2);
           const values=comparable.map(row=>row[metric.key]);
           const valid=values.every(value=>typeof value==="number"&&Number.isFinite(value)&&value>=0);
-          const total=valid?values.reduce<number>((sum,v)=>sum+v!,0):null;
-          const share=total&&total>0?values[0]!*100/total:0;
+          const max=Math.max(1,...values.map(v=>typeof v==="number"&&Number.isFinite(v)&&v>=0?v:0));
           return <div key={metric.key} className="min-w-0 rounded-xl border border-border-subtle bg-surface-2/40 p-3">
             <h4 className="text-sm font-semibold">{metric.label}</h4>
-            <svg viewBox="0 0 130 130" className="mx-auto my-2 block w-full max-w-[160px]" role="img" aria-label={metric.label+": "+comparable.map((row,index)=>row.name+" "+observedCount(values[index])).join(", ")}>
-              <circle cx="65" cy="65" r="48" fill="none" stroke="var(--border-default)" strokeWidth="14"/>
-              {total!==null&&total>0?<><circle cx="65" cy="65" r="48" fill="none" stroke="#0e7490" strokeWidth="14"/><circle cx="65" cy="65" r="48" fill="none" stroke="#a78bfa" strokeWidth="14" pathLength="100" strokeDasharray={share+" "+(100-share)} transform="rotate(-90 65 65)"/></>:null}
-              <text x="65" y="62" fill="currentColor" fontSize="20" fontWeight="600" textAnchor="middle">{total===null?"—":observedCount(total)}</text>
-              <text x="65" y="78" fill="var(--text-secondary)" fontSize="9" textAnchor="middle">{total===null?"Sin comparación":total===0?"Sin eventos":"Eventos"}</text>
+            <svg viewBox="0 0 180 112" className="mx-auto my-2 block w-full max-w-[230px]" role="img" aria-label={metric.label+": "+comparable.map((row,index)=>row.name+" "+observedCount(values[index])).join(", ")}>
+              <line x1="12" y1="90" x2="168" y2="90" stroke="var(--border-default)"/>
+              {values.map((value,index)=>{
+                const known=typeof value==="number"&&Number.isFinite(value)&&value>=0;
+                const x=48+84*index,y=known?90-value!*65/max:55,color=index===0?"#a78bfa":"#0e7490";
+                return <g key={index}>{known?<><line x1={x} y1="90" x2={x} y2={y} stroke={color} strokeWidth="3"/><circle cx={x} cy={y} r="7" fill={color}/></>:null}<text x={x} y={known?y-12:55} textAnchor="middle" fontSize="13" fontWeight="600" fill="currentColor">{observedCount(value)}</text><text x={x} y="106" textAnchor="middle" fontSize="10" fill="var(--text-secondary)">{index===0?"TukTuk":"Impulsa"}</text></g>;
+              })}
             </svg>
+            {!valid?<p className="text-center text-xs text-muted-foreground">Comparación incompleta</p>:null}
             {comparable.map((row,index)=><div key={row.name} className="flex items-center justify-between gap-2 py-1 text-xs"><span className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{background:index===0?"#a78bfa":"#0e7490"}}/>{index===0?"TukTuk":"Impulsa"}</span><strong>{observedCount(values[index])}</strong></div>)}
           </div>;
         })}
@@ -133,7 +135,7 @@ function CommercialChannelSummary({projectId}:{projectId:string}){
     <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Ver campañas y cifras exactas</summary>
       {rows.map(row=><p key={row.name} className="py-1">{row.name} · {row.period}: {observedCount(row.clicks)} clics, {observedCount(row.requests)} solicitudes, {observedCount(row.completed)} liquidados.</p>)}
       {o?.campaigns?.map(c=><p key={c.campaign} className="py-1">{c.campaign}: {observedCount(c.link_opens)} clics · {observedCount(c.requests_created)} solicitudes</p>)}
-      <p>— = sin dato. Los gráficos suman eventos atribuidos de TukTuk e Impulsa, no personas únicas. Aliados se muestra aparte. Las campañas forman parte de TukTuk oficial.</p>
+      <p>— = sin dato. Clics y solicitudes son eventos; no se suman entre canales. Aliados se muestra aparte. Las campañas forman parte de TukTuk oficial.</p>
     </details>
     {official.isError||impulsa.isError||allies.isError ? <p role="alert" className="text-xs text-muted-foreground">Alguna fuente no está disponible.</p>:null}
 
