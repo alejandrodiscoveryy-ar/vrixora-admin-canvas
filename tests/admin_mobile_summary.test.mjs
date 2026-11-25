@@ -10,8 +10,8 @@ test("panel estratégico compacto y adaptable", () => {
   assert.match(dashboard, /<MetricCard density="compact" appearance="premium"/);
 });
 test("pendientes compactos y resultados del período antes del inventario", () => {
-  assert.ok(dashboard.indexOf('aria-label="Por atender ahora"') < dashboard.indexOf('canViewAnalytics ? <StrategicCharts'));
-  assert.ok(dashboard.indexOf('canViewAnalytics ? <StrategicCharts') < dashboard.indexOf('aria-label="Indicadores principales"'));
+  assert.ok(dashboard.indexOf('aria-label="Por atender ahora"') < dashboard.indexOf('canViewAnalytics ? (Math.round'));
+  assert.ok(dashboard.indexOf('canViewAnalytics ? (Math.round') < dashboard.indexOf('aria-label="Indicadores principales"'));
   for (const label of ["Clientes nuevos","Solicitudes reales","Viajes completados","Volumen liquidado","Conductores habilitados","Usuarios de la app"]) assert.ok(dashboard.includes('label="'+label+'"'));
   assert.match(dashboard, /Revisar recargas pendientes/);
   assert.match(dashboard, /Resolver incidencias abiertas/);
@@ -20,7 +20,7 @@ test("pendientes compactos y resultados del período antes del inventario", () =
 });
 test("fuentes verificadas, comparación y conversión sin inventar cifras", () => {
   assert.match(dashboard, /permissions\.includes\("analytics\.view"\)/);
-  assert.match(dashboard, /canViewAnalytics \? <StrategicCharts/);
+  assert.match(dashboard, /canViewAnalytics \? \(Math.round/);
   assert.match(dashboard, /admin_get_agency_vitality_v1/);
   assert.match(dashboard, /target_from: from, target_to: to/);
   assert.match(dashboard, /return parseAgencyVitality\(data\)/);
