@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { VrixoraLogo } from "@/components/brand/VrixoraLogo";
+import { PwaExperience } from "@/components/pwa/PwaExperience";
+import { PWA_APP_NAME } from "@/lib/pwa";
 import { ADMIN_PROJECT_TABS, MARKETPLACE_WORKSPACE_VIEWS, PRICING_WORKSPACE_VIEWS, adminNavTone, adminSubnavTone, adminGroupDefault, type AdminProjectNavItem } from "@/lib/admin-navigation";
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions, useUserProjects } from "@/hooks/useProjects";
@@ -50,7 +52,12 @@ export const Route = createFileRoute("/admin")({
       { property: "og:title", content: "VRIXORA Centro de Control" },
       { property: "og:description", content: "Panel administrativo de Vrixora." },
       { name: "robots", content: "noindex,nofollow" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: PWA_APP_NAME },
+      { name: "mobile-web-app-capable", content: "yes" },
     ],
+    links: [{ rel: "manifest", href: "/manifest.webmanifest" }],
   }),
   component: AdminLayout,
 });
@@ -58,6 +65,7 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   return (
     <SupabaseAuthProvider>
+      <PwaExperience />
       <AdminChrome />
       <Toaster richColors position="top-right" />
     </SupabaseAuthProvider>
