@@ -9,7 +9,6 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
-import { PwaExperience } from "@/components/pwa/PwaExperience";
 import {
   PWA_APP_NAME,
   PWA_BACKGROUND_COLOR,
@@ -85,10 +84,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: PWA_THEME_COLOR },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: PWA_APP_NAME },
-      { name: "mobile-web-app-capable", content: "yes" },
       { title: PWA_APP_NAME },
       { name: "description", content: PWA_DESCRIPTION },
       { name: "author", content: "Vrixora" },
@@ -107,7 +102,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -160,7 +154,6 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PwaExperience />
       <Outlet />
     </QueryClientProvider>
   );

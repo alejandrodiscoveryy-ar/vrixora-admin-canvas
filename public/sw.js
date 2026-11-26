@@ -1,5 +1,5 @@
 // VRIXORA PWA cache + dedicated, authenticated-admin FCM push notifications.
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
 const ADMIN_PUSH_KINDS = new Set([
   "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation",
@@ -66,7 +66,10 @@ self.addEventListener("notificationclick", (event) => {
   );
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    const existing = windows.find((item) => new URL(item.url).origin === self.location.origin);
+    const existing = windows.find((item) => {
+      const url = new URL(item.url);
+      return url.origin === self.location.origin && (url.pathname === "/admin" || url.pathname.startsWith("/admin/"));
+    });
     if (existing) {
       if ("navigate" in existing) await existing.navigate(destination);
       if ("focus" in existing) return existing.focus();
@@ -153,6 +156,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Private ally pages must never use the admin offline navigation shell.
+  if (url.pathname === "/aliados" || url.pathname.startsWith("/aliados/")) return;
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).catch(async () =>
       (await caches.match("/offline.html")) || Response.error()));
@@ -160,7 +165,7 @@ self.addEventListener("fetch", (event) => {
   }
   // App scripts/styles must check the network before the PWA cache.
   // Otherwise a cached old bundle can keep showing a previous release.
-  if (request.destination === "script" || request.destination === "style") {
+  if (request.destination === "script" || request.destination === "style" || url.pathname === "/manifest.webmanifest") {
     event.respondWith((async () => {
       try {
         const response = await fetch(request);

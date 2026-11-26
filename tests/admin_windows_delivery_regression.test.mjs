@@ -39,7 +39,7 @@ test('Alarm center lives in header bell without losing authenticated project pro
 });
 
 test('A refreshed worker activates for existing Admin tabs without stale cache', () => {
-  assert.match(sw, /const CACHE_VERSION = "v5"/);
+  assert.match(sw, /const CACHE_VERSION = "v6"/);
   assert.match(sw, /\.then\(\(\) => self\.skipWaiting\(\)\)/);
   assert.doesNotMatch(sw, /if \(!self\.registration\.active\) self\.skipWaiting/);
 });

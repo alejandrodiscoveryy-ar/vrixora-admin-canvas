@@ -26,11 +26,11 @@ function createWorker(network, cached = null) {
   };
   vm.runInNewContext(source, context);
   return {
-    async request(destination) {
+    async request(destination, pathname, mode = "cors") {
       const request = {
         method: "GET",
-        url: `https://admin.vrixora.com/assets/app.abc123.${destination === "script" ? "js" : "css"}`,
-        mode: "cors",
+        url: `https://admin.vrixora.com${pathname ?? `/assets/app.abc123.${destination === "script" ? "js" : "css"}`}`,
+        mode,
         destination,
       };
       let pending;
@@ -38,15 +38,14 @@ function createWorker(network, cached = null) {
         request,
         respondWith(promise) { pending = promise; },
       });
-      assert.ok(pending, "worker should handle app assets");
-      return await pending;
+      return pending ? await pending : undefined;
     },
     stored,
   };
 }
 
 test("updating the PWA worker invalidates the old cache generation", () => {
-  assert.match(source, /const CACHE_VERSION = "v5"/);
+  assert.match(source, /const CACHE_VERSION = "v6"/);
   assert.match(source, /self\.skipWaiting\(\)/);
 });
 
@@ -74,4 +73,37 @@ test("Actualizar ahora reloads when skipWaiting already activated the worker", (
   assert.match(pwa, /navigator\.serviceWorker\.getRegistration\("\/"\)/);
   assert.match(pwa, /registration\.waiting\.postMessage\(\{ type: "SKIP_WAITING" \}\)/);
   assert.match(pwa, /window\.location\.reload\(\)/);
+});
+
+test("Aliados is not an installable admin page and keeps its existing private URL", () => {
+  const root = readFileSync(new URL("../src/routes/__root.tsx", import.meta.url), "utf8");
+  const admin = readFileSync(new URL("../src/routes/admin.tsx", import.meta.url), "utf8");
+  const allies = readFileSync(new URL("../src/routes/aliados.tsx", import.meta.url), "utf8");
+  const panel = readFileSync(new URL("../src/features/admin/MarketplaceAlliesPanel.tsx", import.meta.url), "utf8");
+  const manifest = JSON.parse(readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
+  assert.doesNotMatch(root, /PwaExperience|manifest\.webmanifest/);
+  assert.match(admin, /<PwaExperience \/>/);
+  assert.match(admin, /href: "\/manifest\.webmanifest"/);
+  assert.equal(manifest.id, "/");
+  assert.equal(manifest.scope, "/admin/");
+  assert.equal(manifest.start_url, "/admin/login");
+  assert.match(allies, /createFileRoute\("\/aliados"\)/);
+  assert.match(allies, /window\.location\.hash/);
+  assert.doesNotMatch(allies, /useSupabaseAuth|navigate\(|redirect\(/);
+  assert.match(panel, /https:\/\/admin\.vrixora\.com\/aliados/);
+  assert.match(panel, /"#k="/);
+});
+
+test("a private Aliados navigation is never intercepted by the admin offline worker", async () => {
+  const worker = createWorker(async () => { throw new Error("unexpected fetch"); }, new Response("admin shell"));
+  for (const path of ["/aliados", "/aliados/"]) {
+    assert.equal(await worker.request("document", path, "navigate"), undefined);
+  }
+});
+
+test("manifest refresh prefers the newly deployed admin scope", async () => {
+  const worker = createWorker(async () => new Response("new manifest"), new Response("old manifest"));
+  const response = await worker.request("manifest", "/manifest.webmanifest");
+  assert.equal(await response.text(), "new manifest");
+  assert.equal(worker.stored.length, 1);
 });
