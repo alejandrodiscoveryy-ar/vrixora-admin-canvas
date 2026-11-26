@@ -46,7 +46,7 @@ function createWorker(network, cached = null) {
 }
 
 test("updating the PWA worker invalidates the old cache generation", () => {
-  assert.match(source, /const CACHE_VERSION = "v5"/);
+  assert.match(source, /const CACHE_VERSION = "v6"/);
   assert.match(source, /self\.skipWaiting\(\)/);
 });
 
