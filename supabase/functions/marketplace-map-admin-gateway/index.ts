@@ -577,24 +577,20 @@ Deno.serve(async (request: Request) => {
 
       // The authenticated RPC checks marketplace.view and that every driver belongs to this project.
       // Never trust arbitrary client-supplied asset paths or use the service role before the check.
-      const details = await Promise.all(
-        driverIds.map(async (driverUserId) => {
-          const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
-            target_project_id: projectId,
-            target_driver_user_id: driverUserId,
-          });
-          if (error) throw error;
-          const root = asRecord(data);
-          return {
-            driverUserId,
-            driver: asRecord(root.driver),
-            account: asRecord(root.account),
-            vehicles: (Array.isArray(root.vehicles) ? root.vehicles : []).map((entry: unknown) =>
-              asRecord(asRecord(entry).vehicle),
-            ),
-          };
-        }),
-      );
+      const { data: mediaRows, error: mediaError } = await userClient.rpc("admin_get_marketplace_driver_media_batch_v1", {
+        target_project_id: projectId, target_driver_user_ids: driverIds, include_vehicles: true,
+      });
+      if (mediaError) throw mediaError;
+      const details = (Array.isArray(mediaRows) ? mediaRows : []).map((item: unknown) => {
+        const root = asRecord(item);
+        return {
+          driverUserId: String(root.driver_user_id),
+          driver: asRecord(root.driver),
+          account: asRecord(root.account),
+          vehicles: (Array.isArray(root.vehicles) ? root.vehicles : []).map((entry: unknown) => asRecord(entry)),
+        };
+      });
+      if (details.length !== driverIds.length) throw new Error("MARKETPLACE_DRIVER_NOT_FOUND");
 
       const mediaIds = Array.from(
         new Set(
@@ -687,32 +683,21 @@ Deno.serve(async (request: Request) => {
         return reply({ ...payload, data: payload });
       }
 
-      // Use the existing permission-checked Driver 360 RPC instead of a
-      // direct service-role query on a protected table.
+      // Retrieve only portrait metadata in permission-checked batches, never full Driver 360 records.
       const driverDetails: Array<{
         driverUserId: string;
         account: Record<string, unknown>;
         driver: Record<string, unknown>;
       }> = [];
       for (let offset = 0; offset < driverIds.length; offset += 24) {
-        const batch = await Promise.all(
-          driverIds.slice(offset, offset + 24).map(async (driverUserId) => {
-            const { data, error } = await userClient.rpc("admin_get_marketplace_driver_360", {
-              target_project_id: projectId,
-              target_driver_user_id: driverUserId,
-            });
-            // A deleted historical driver must not hide every other photo.
-            if (error?.code === "P0002") return null;
-            if (error) throw error;
-            const root = asRecord(data);
-            return {
-              driverUserId,
-              account: asRecord(root.account),
-              driver: asRecord(root.driver),
-            };
-          }),
-        );
-        for (const item of batch) if (item) driverDetails.push(item);
+        const { data: mediaRows, error: mediaError } = await userClient.rpc("admin_get_marketplace_driver_media_batch_v1", {
+          target_project_id: projectId, target_driver_user_ids: driverIds.slice(offset, offset + 24), include_vehicles: false,
+        });
+        if (mediaError) throw mediaError;
+        for (const item of Array.isArray(mediaRows) ? mediaRows : []) {
+          const root = asRecord(item);
+          driverDetails.push({ driverUserId: String(root.driver_user_id), account: asRecord(root.account), driver: asRecord(root.driver) });
+        }
       }
 
       const photoAssetIds = Array.from(
