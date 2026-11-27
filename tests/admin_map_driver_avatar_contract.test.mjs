@@ -13,8 +13,10 @@ test("map avatars use authorized RPCs, never direct service SELECT on protected 
   assert.match(block, /admin_get_marketplace_operational_map/);
   assert.match(block, /admin_get_marketplace_driver_consistency/);
   assert.match(block, /target_days: 30/);
-  assert.match(block, /admin_get_marketplace_driver_360/);
+  assert.match(block, /admin_get_marketplace_driver_media_batch_v1/);
   assert.match(block, /target_project_id: projectId/);
+  assert.match(block, /include_vehicles: false/);
+  assert.doesNotMatch(block, /admin_get_marketplace_driver_360/);
   assert.match(block, /\.from\("media_assets"\)/);
   assert.doesNotMatch(block, /\.from\("driver_profiles"\)/);
   assert.doesNotMatch(block, /\.from\("profiles"\)/);
