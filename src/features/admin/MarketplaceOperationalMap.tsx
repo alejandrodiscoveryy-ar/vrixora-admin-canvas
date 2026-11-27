@@ -860,7 +860,7 @@ export default function MarketplaceOperationalMap({
     // La pestaña Mapa conserva su estado al ocultarse, pero deja de consultar datos.
     // Al regresar, enabled=true reanuda la sincronizacion sin reiniciar Mapbox.
     enabled: isVisible,
-    refetchInterval: (query) => ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 15_000),
+    refetchInterval: (query) => query.state.status === "error" ? 60_000 : ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 15_000),
     refetchIntervalInBackground: false,
   });
 

@@ -1142,7 +1142,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const overview = useQuery({
     queryKey: ["marketplace-overview", projectId],
     queryFn: () => supabaseServices.marketplace.overview(projectId),
-    refetchInterval: 30_000,
+    staleTime: 30_000,
+    refetchInterval: (query) => query.state.status === "error" ? 120_000 : 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 
   const jobs = useInfiniteQuery({

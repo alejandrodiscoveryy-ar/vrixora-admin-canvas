@@ -36,6 +36,7 @@ test("Driver listing shows retryable error without deleting photo records", () =
   assert.match(page, /role="alert"/);
   assert.match(page, /Reintentar fotos/);
   assert.match(page, /driverMedia\.refetch\(\)/);
-  assert.match(edge, /admin_get_marketplace_driver_360/);
+  assert.match(edge, /admin_get_marketplace_driver_media_batch_v1/);
+  assert.doesNotMatch(edge, /admin_get_marketplace_driver_360/);
   assert.doesNotMatch(edge.split('if (operation === "driver_directory_media") {')[1]?.split('if (operation === "operational_driver_avatars") {')[0] ?? "", /\.from\("driver_profiles"\)/);
 });
