@@ -1590,9 +1590,11 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
   const deleteAllTestJobs = useMutation({
     mutationFn: (reasonText: string) =>
       supabaseServices.marketplace.deleteAllTestJobs(projectId, reasonText),
-    onSuccess: () => {
+    onSuccess: (count) => {
       setError(null);
+      toast.success(`Pruebas eliminadas: ${count}`);
       void invalidate(
+        "marketplace-test-history-v3",
         "marketplace-jobs",
         "marketplace-wallets",
         "marketplace-drivers",
@@ -1927,6 +1929,20 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:flex-wrap xl:justify-end">
+                  {canManageMarketplace ? (
+                    <Button type="button" size="sm" variant="outline"
+                      className="min-h-11 self-center border-rose-400/30 text-rose-300 hover:text-rose-200"
+                      disabled={deleteAllTestJobs.isPending || deleteTestJob.isPending}
+                      onClick={() => {
+                        const why = window.prompt("Motivo para eliminar todas las carreras de prueba:", "Limpieza de pruebas");
+                        if (!why?.trim()) return;
+                        if (!window.confirm("Se ocultarán TODAS las carreras de PRUEBA del proyecto, incluso fuera de los filtros. Las carreras reales se conservarán. ¿Continuar?")) return;
+                        deleteAllTestJobs.mutate(why.trim());
+                      }}>
+                      {deleteAllTestJobs.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      Borrar pruebas
+                    </Button>
+                  ) : null}
                   <FilterSelect appearance="premium" labelText="Estado" value={status} onChange={setStatus}>
                     <option value="">Todos los estados</option>
                     {statusOptions.map((item) => (
