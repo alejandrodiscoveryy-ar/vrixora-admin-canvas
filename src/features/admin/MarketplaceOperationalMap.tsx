@@ -2184,7 +2184,7 @@ export default function MarketplaceOperationalMap({
               </span>
 
               <span className={desktopToolbarTarget ? "hidden" : "hidden text-[10px] text-muted-foreground 2xl:inline"}>
-                {data.summary.activeJobs ? "Actualización cada 5 s" : "Actualización cada 15 s"}
+                {data.summary.activeJobs ? "Actualización cada 5 s" : "Actualización cada 30 s"}
               </span>
             </div>
 
