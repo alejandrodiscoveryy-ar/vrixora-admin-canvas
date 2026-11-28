@@ -92,7 +92,7 @@ function MetricGauge({ signal }: { signal: Signal }) {
     <svg viewBox="0 0 160 88" className="w-full overflow-visible" role="img" aria-label={signal.label+": "+(measured?signal.value:"Sin medición")+"; preventiva "+g.warning+"%, crítica "+g.critical+"%"}>
       <path d="M16 69 A64 64 0 0 1 144 69" fill="none" stroke="currentColor" className="text-muted-foreground opacity-15" strokeWidth="9"/>
       {zones.map((z,i)=><path key={i} d="M16 69 A64 64 0 0 1 144 69" pathLength="100" fill="none" stroke={gaugeColors[i]} strokeWidth="9" strokeDasharray={(z.end-z.start)+" 100"} strokeDashoffset={-z.start} opacity={measured?0.78:0.16}/>)}
-      {measured&&<><path d="M80 69 L"+x+" "+y stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/><circle cx="80" cy="69" r="3" fill="currentColor"/></>}
+      {measured&&<><path d={"M80 69 L"+x+" "+y} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/><circle cx="80" cy="69" r="3" fill="currentColor"/></>}
       <text x="13" y="84" fontSize="8" fill="currentColor" opacity=".65">0</text>
       <text x="147" y="84" textAnchor="end" fontSize="8" fill="currentColor" opacity=".65">100%</text>
     </svg>
