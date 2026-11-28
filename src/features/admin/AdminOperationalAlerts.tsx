@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { BellRing, BriefcaseBusiness, UserRoundPlus, Volume2, VolumeX, MonitorCheck, MonitorOff } from "lucide-react";
+import { Activity, BellRing, BriefcaseBusiness, UserRoundPlus, Volume2, VolumeX, MonitorCheck, MonitorOff } from "lucide-react";
 import { supabaseServices } from "@/lib/services";
 import {
   listenAdminPush, registerAdminPush, unregisterAdminPush, savedAdminPushToken, checkAdminPushWorker,
   type AdminPushEvent,
 } from "@/lib/admin-push";
 
-type AlertKind = "driver" | "job" | "pending";
+type AlertKind = "driver" | "job" | "pending" | "health";
 type OperationalAlert = { id: string; kind: AlertKind; title: string; description: string; occurredAt: string; targetId?: string };
 type PendingJob = { id: string; label: string; started: string };
 const POLL_INTERVAL_MS = 20_000;
@@ -18,6 +18,7 @@ const MAX_VISIBLE_ALERTS = 16;
 const PENDING_THRESHOLD_MS = 2 * 60_000;
 
 function alertDestination(projectId: string, alert: OperationalAlert) {
+  if (alert.kind === "health") return `/admin/proyectos/${encodeURIComponent(projectId)}/salud`;
   const base = `/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`;
   if (alert.kind === "driver") {
     return `${base}?vista=conductores${alert.targetId ? `&conductor=${encodeURIComponent(alert.targetId)}` : ""}`;
@@ -26,7 +27,7 @@ function alertDestination(projectId: string, alert: OperationalAlert) {
 }
 
 function tone(context: AudioContext, kind: AlertKind) {
-  const notes = kind === "driver" ? [523, 659] : kind === "pending" ? [659, 659, 784, 659] : [784, 988, 784];
+  const notes = kind === "health" ? [659, 784, 988] : kind === "driver" ? [523, 659] : kind === "pending" ? [659, 659, 784, 659] : [784, 988, 784];
   const start = context.currentTime + 0.02;
   notes.forEach((frequency, index) => {
     const oscillator = context.createOscillator();
@@ -278,13 +279,13 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
     let disposed = false;
     let unsubscribe: (() => void) | null = null;
     void listenAdminPush(projectId, (message: AdminPushEvent) => {
-      const id = message.job_id ? `${message.kind === "admin_marketplace_pickup" ? "arrival" : message.kind === "admin_marketplace_cancellation" ? "cancellation" : message.kind === "admin_marketplace_pending_job" ? message.stage === "pending_10m" ? "pending10" : "pending" : "job"}:${message.job_id}` :
+      const id = message.kind === "admin_system_health" ? `health:${message.notification_id ?? message.stage ?? "unknown"}` : message.job_id ? `${message.kind === "admin_marketplace_pickup" ? "arrival" : message.kind === "admin_marketplace_cancellation" ? "cancellation" : message.kind === "admin_marketplace_pending_job" ? message.stage === "pending_10m" ? "pending10" : "pending" : "job"}:${message.job_id}` :
         message.driver_id ? `driver:${message.driver_id}` : `push:${message.kind}`;
       let known: string[] = [];
       try { known = JSON.parse(localStorage.getItem(storageKey) || "[]") as string[]; } catch { /* optional */ }
       if (known.includes(id)) return;
       try { localStorage.setItem(storageKey, JSON.stringify([id, ...known].slice(0, MAX_KNOWN_IDS))); } catch { /* optional */ }
-      appendAlerts([{ id, kind: message.job_id ? (message.kind === "admin_marketplace_pending_job" ? "pending" : "job") : "driver",
+      appendAlerts([{ id, kind: message.kind === "admin_system_health" ? "health" : message.job_id ? (message.kind === "admin_marketplace_pending_job" ? "pending" : "job") : "driver",
         title: message.title, description: message.body, occurredAt: new Date().toISOString(),
         targetId: message.job_id || message.driver_id }]);
     }).then((off) => { if (disposed) off(); else unsubscribe = off; }).catch(() => undefined);
@@ -404,14 +405,14 @@ export function AdminOperationalAlerts({ projectId, userId }: { projectId: strin
       {alerts.length > 0 && <ul className="mt-3 grid gap-2" aria-label="Nuevas alarmas">
         {alerts.slice(0, 5).map((alert) => <li key={alert.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-1/70 p-2.5">
           <div className="flex min-w-0 flex-1 items-start gap-2">
-            {alert.kind === "driver" ? <UserRoundPlus className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" /> : <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />}
-            <a href={alertDestination(projectId, alert)} className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400" aria-label={`Abrir ${alert.kind === "driver" ? "ficha 360" : "carrera 360"}: ${alert.description}`}>
+            {alert.kind === "health" ? <Activity className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" /> : alert.kind === "driver" ? <UserRoundPlus className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" /> : <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />}
+            <a href={alertDestination(projectId, alert)} className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400" aria-label={`Abrir ${alert.kind === "health" ? "Salud del sistema" : alert.kind === "driver" ? "ficha 360" : "carrera 360"}: ${alert.description}`}>
               <p className="text-xs font-semibold">{alert.title}</p>
               <p className="max-w-xl truncate text-xs text-foreground" title={alert.description}>{alert.description}</p>
               <p className="text-[11px] text-muted-foreground">{dateLabel(alert.occurredAt)}</p>
             </a>
           </div>
-          <a href={alertDestination(projectId, alert)} className="rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">{alert.kind === "driver" ? "Ver ficha 360" : "Ver carrera 360"}</a>
+          <a href={alertDestination(projectId, alert)} className="rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25">{alert.kind === "health" ? "Ver salud" : alert.kind === "driver" ? "Ver ficha 360" : "Ver carrera 360"}</a>
         </li>)}
         {alerts.length > 5 && <li className="text-xs text-muted-foreground">Y {alerts.length - 5} avisos más.</li>}
       </ul>}
