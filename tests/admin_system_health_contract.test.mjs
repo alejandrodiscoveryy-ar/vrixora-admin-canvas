@@ -65,3 +65,15 @@ test("provider charts preserve missing data and distinguish quotas",()=>{
   assert.match(health,/RAM/);
   assert.match(health,/Swap/);
 });
+
+test("Grafana-inspired dashboard uses real threshold gauges and accessible compact panels",()=>{
+  assert.match(health,/function MetricGauge/);
+  assert.match(health,/g\.value!==null/);
+  assert.match(health,/measured&&/);
+  assert.match(health,/start:g\.warning,end:g\.critical/);
+  assert.match(health,/grid-cols-2/);
+  assert.match(health,/Disco · MB\/s/);
+  assert.match(health,/Red · MB\/s/);
+  assert.ok(health.indexOf('title="Alertas y acciones"')<health.indexOf('title="Recursos del servidor"'));
+  assert.match(health,/p\.http_status!==200\?\{cpu_pct:null/);
+});
