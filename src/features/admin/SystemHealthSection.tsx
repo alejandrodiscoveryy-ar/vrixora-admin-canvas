@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/admin/SectionCard";
 import { premiumHeaderSurface, premiumSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
 const REFRESH_MS = 60_000;
@@ -29,7 +29,7 @@ function parseProvider(raw: unknown): ProviderSample | null {
   return p;
 }
 type Level = "ok" | "warning" | "critical" | "unknown";
-type Signal = { label: string; value: string; detail: string; level: Level; action: string };
+type Signal = { label: string; value: string; detail: string; level: Level; action: string; gauge?: { value: number | null; warning: number; critical: number } };
 
 function parseSnapshot(raw: unknown): Snapshot {
   if (!raw || typeof raw !== "object") throw new Error("Medición no disponible");
@@ -71,14 +71,43 @@ function signals(d: Snapshot): Signal[] {
   const size = 100 * d.database_bytes / DATABASE_LIMIT_BYTES;
   const connections = d.max_connections > 0 ? 100 * d.client_connections / d.max_connections : null;
   return [
-    { label: "Base de datos", value: mb(d.database_bytes), detail: percent(size) + " de 500 MB de referencia Free", level: threshold(size, 75, 90), action: "Revisar tablas e historial técnico; no borrar registros operativos." },
-    { label: "Conexiones PostgreSQL", value: d.client_connections + " / " + d.max_connections, detail: connections === null ? "Límite no disponible" : percent(connections) + " del máximo configurado", level: connections === null ? "unknown" : threshold(connections, 70, 85), action: "Reducir consultas repetitivas y revisar conexiones activas; no terminar sesiones indiscriminadamente." },
+    { label: "Base de datos", value: mb(d.database_bytes), detail: percent(size) + " de 500 MB de referencia Free", level: threshold(size, 75, 90), gauge: { value: size, warning: 75, critical: 90 }, action: "Revisar tablas e historial técnico; no borrar registros operativos." },
+    { label: "Conexiones PostgreSQL", value: d.client_connections + " / " + d.max_connections, detail: connections === null ? "Límite no disponible" : percent(connections) + " del máximo configurado", level: connections === null ? "unknown" : threshold(connections, 70, 85), gauge: { value: connections, warning: 70, critical: 85 }, action: "Reducir consultas repetitivas y revisar conexiones activas; no terminar sesiones indiscriminadamente." },
     { label: "Consultas bloqueadas", value: String(d.blocked_queries), detail: d.active_queries + " consultas activas (sin esta medición)", level: d.blocked_queries > 0 ? "warning" : "ok", action: "Revisar bloqueos y transacciones antes de intervenir." },
     { label: "Historial técnico Cron", value: mb(d.cron_history_bytes), detail: "Parte del almacenamiento de la base de datos", level: threshold(100*d.cron_history_bytes/DATABASE_LIMIT_BYTES, 10, 25), action: "Revisar retención y mantenimiento técnico fuera de horas de carga." },
     { label: "Procesos programados", value: String(d.active_cron), detail: "Tareas activas; no certifica ejecución correcta", level: d.active_cron === 0 ? "critical" : "unknown", action: "Verificar que las tareas esenciales continúan activas." },
     { label: "Fallos de Cron", value: d.cron_completed_sample > 0 ? d.cron_failed_sample + " / " + d.cron_completed_sample : "—", detail: "Hasta 300 ejecuciones recientes, últimos 15 min", level: d.cron_completed_sample === 0 ? "unknown" : d.cron_failed_sample >= 2 ? "critical" : d.cron_failed_sample === 1 ? "warning" : "ok", action: "Identificar la tarea fallida antes de modificar su frecuencia." },
   ];
 }
+
+const gaugeColors = ["var(--semantic-success, #35bd91)", "var(--semantic-warning, #e7b74e)", "var(--semantic-danger, #ef6876)"];
+function MetricGauge({ signal }: { signal: Signal }) {
+  const g=signal.gauge!;
+  const measured=g.value!==null && Number.isFinite(g.value);
+  const v=measured?Math.max(0,Math.min(100,g.value!)):0;
+  const angle=Math.PI*(1-v/100);
+  const x=80+56*Math.cos(angle), y=69-56*Math.sin(angle);
+  const zones=[{start:0,end:g.warning},{start:g.warning,end:g.critical},{start:g.critical,end:100}];
+  return <div className="relative mx-auto w-full max-w-[176px]">
+    <svg viewBox="0 0 160 88" className="w-full overflow-visible" role="img" aria-label={signal.label+": "+(measured?signal.value:"Sin medición")+"; preventiva "+g.warning+"%, crítica "+g.critical+"%"}>
+      <path d="M16 69 A64 64 0 0 1 144 69" fill="none" stroke="currentColor" className="text-muted-foreground opacity-15" strokeWidth="9"/>
+      {zones.map((z,i)=><path key={i} d="M16 69 A64 64 0 0 1 144 69" pathLength="100" fill="none" stroke={gaugeColors[i]} strokeWidth="9" strokeDasharray={(z.end-z.start)+" 100"} strokeDashoffset={-z.start} opacity={measured?0.78:0.16}/>)}
+      {measured&&<><path d="M80 69 L"+x+" "+y stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/><circle cx="80" cy="69" r="3" fill="currentColor"/></>}
+      <text x="13" y="84" fontSize="8" fill="currentColor" opacity=".65">0</text>
+      <text x="147" y="84" textAnchor="end" fontSize="8" fill="currentColor" opacity=".65">100%</text>
+    </svg>
+    <p className={cn("text-center text-2xl leading-none font-semibold tabular-nums",colors[signal.level])}>{measured?g.value!.toLocaleString("es",{maximumFractionDigits:1})+"%":"—"}</p>
+    {measured&&!signal.value.endsWith("%")&&<p className="mt-1 text-center text-xs tabular-nums text-muted-foreground">{signal.value}</p>}
+  </div>;
+}
+function MetricPanel({ signal }: { signal: Signal }) {
+  return <article className={cn("min-w-0 rounded-lg border border-border-subtle p-2.5 sm:p-3",premiumSurface)} title={signal.action}>
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5"><h3 className="text-xs sm:text-sm font-semibold">{signal.label}</h3><span className={cn("text-[10px] leading-tight",colors[signal.level])}>{signal.level==="unknown"?"Sin verificar / umbral":"● "+levels[signal.level]}</span></div>
+    {signal.gauge?<MetricGauge signal={signal}/>:<p className="mt-3 text-lg sm:text-xl font-semibold tabular-nums break-words">{signal.value}</p>}
+    <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{signal.detail}</p>
+  </article>;
+}
+
 function unavailable(q: ReturnType<typeof useHealthQuery>) {
   return q.isError || q.fetchStatus === "paused" || Boolean(q.data && Date.parse(q.data.server_time)-Date.parse(q.data.snapshot.sampled_at)>12*60_000);
 }
@@ -91,7 +120,7 @@ function providerSignals(p: ProviderSample | null, stale: boolean): Signal[] {
   const value=(k: keyof ProviderSample)=>!stale && p && validNumber(p[k]) ? p[k] as number : null;
   const usage=(label:string,k:keyof ProviderSample,w:number,c:number,detail:string):Signal=>{
     const n=value(k); const valid=n!==null && n<=100;
-    return {label,value:valid?n.toLocaleString("es",{maximumFractionDigits:1})+"%":"—",detail:valid?detail:"Sin medición válida; esperando datos comparables",level:valid?threshold(n,w,c):"unknown",action:"Consultar recursos y carga en Supabase."};
+    return {label,value:valid?n.toLocaleString("es",{maximumFractionDigits:1})+"%":"—",detail:valid?detail:"Sin medición válida; esperando datos comparables",level:valid?threshold(n,w,c):"unknown",gauge:{value:valid?n:null,warning:w,critical:c},action:"Consultar recursos y carga en Supabase."};
   };
   const rate=(k:keyof ProviderSample)=>{const n=value(k);return n===null?"—":n.toLocaleString("es",{maximumFractionDigits:3})+" MB/s";};
   const load=value("load1"), cores=value("cpu_count"), latency=value("duration_ms");
@@ -146,9 +175,9 @@ export default function SystemHealthSection() {
   const providerStale=stale || providerUnavailable(q.data);
   const provider=q.data?.provider??null;
   const resourceMetrics=providerSignals(provider,providerStale);
-  const resourceHistory=(q.data?.provider_history??[]).filter(p=>p.http_status===200);
-  if(provider && provider.http_status===200 && !resourceHistory.some(p=>p.sampled_at===provider.sampled_at))resourceHistory.push(provider);
-  const resourceChart=resourceHistory.map(p=>({...p,label:new Date(p.sampled_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}));
+  const resourceHistory=[...(q.data?.provider_history??[])];
+  if(provider && !resourceHistory.some(p=>p.sampled_at===provider.sampled_at))resourceHistory.push(provider);
+  const resourceChart=resourceHistory.map(p=>({...p, ...(p.http_status!==200?{cpu_pct:null,ram_pct:null,swap_pct:null,disk_busy_pct:null,read_mbps:null,write_mbps:null,network_rx_mbps:null,network_tx_mbps:null,duration_ms:null}:{}),label:new Date(p.sampled_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}));
   const alerts = q.data && !stale ? q.data.incidents.filter(i=>!i.resolved_at) : [];
   const critical = alerts.filter(m => m.severity === "critical").length;
   const observed = d ? new Date(d.sampled_at).toLocaleString("es") : "Sin medición";
@@ -165,23 +194,28 @@ export default function SystemHealthSection() {
     {stale ? <PageAlert tone="error" title="Estado no confirmado">No se presentan mediciones antiguas como actuales. Sin conexión o última muestra de más de 12 minutos. El próximo intento será automático.</PageAlert> :
       q.isPending ? <p role="status" className="text-sm text-muted-foreground">Consultando el servidor…</p> :
       <PageAlert tone={critical ? "error" : alerts.length || providerStale ? "warning" : "info"} title={critical ? critical+" alerta(s) crítica(s)" : alerts.length ? alerts.length+" alerta(s) preventiva(s)" : providerStale ? "Métricas oficiales sin confirmar" : "Sin alertas en las métricas verificadas"}>La cobertura es parcial: los indicadores externos y de dispositivos requieren otras fuentes.</PageAlert>}
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{metrics.map(m => <article key={m.label} className={cn("rounded-[var(--radius-card)] border p-3", premiumSurface)}>
-      <div className="flex justify-between items-start gap-2"><h2 className="text-sm font-semibold">{m.label}</h2><span className={cn("text-xs font-medium", colors[m.level])}>● {levels[m.level]}</span></div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{m.value}</p><p className="mt-1 text-xs text-muted-foreground">{m.detail}</p>
-    </article>)}</div>
-    <SectionCard appearance="premium" density="compact" module="resumen" title="Recursos del servidor" description="Supabase Metrics API oficial · sin Grafana · medición centralizada cada 5 min" contentClassName="p-3 space-y-3">
-      <p className="text-xs text-muted-foreground">Última lectura: {provider?dateLabel(provider.sampled_at):"Pendiente"}{providerStale?" · Sin confirmación vigente":""}. Los umbrales de alerta son preventivos, no límites oficiales.</p>
-      {providerStale && <PageAlert tone="warning" title="Datos de recursos sin confirmar">No se presentan como saludables ni se sustituyen por ceros.</PageAlert>}
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{resourceMetrics.map(m=><article key={m.label} className={cn("rounded-lg border border-border-subtle p-3 min-w-0",premiumSurface)}><div className="flex justify-between gap-1 items-start"><h3 className="text-sm font-semibold">{m.label}</h3><span className={cn("text-xs shrink-0",colors[m.level])}>{m.level==="unknown"?"Sin umbral / dato":levels[m.level]}</span></div><p className="mt-2 text-xl font-semibold tabular-nums break-words">{m.value}</p><p className="mt-1 text-xs text-muted-foreground">{m.detail}</p></article>)}</div>
-      <div className="text-xs font-semibold">Evolución de CPU, RAM, Swap y disco (%)</div>
-      {resourceChart.length>=2?<div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={resourceChart}><CartesianGrid stroke="var(--border-subtle)" vertical={false}/><XAxis dataKey="label" tick={{fontSize:10}}/><YAxis domain={[0,100]} unit="%" tick={{fontSize:10}}/><Tooltip {...adminChartTooltipProps}/><Line type="linear" dataKey="cpu_pct" name="CPU" stroke="#38bdf8" dot={false} connectNulls={false}/><Line type="linear" dataKey="ram_pct" name="RAM" stroke="#34d399" dot={false} connectNulls={false}/><Line type="linear" dataKey="swap_pct" name="Swap" stroke="#fbbf24" dot={false} connectNulls={false}/><Line type="linear" dataKey="disk_busy_pct" name="Disco" stroke="#f472b6" dot={false} connectNulls={false}/></LineChart></ResponsiveContainer></div>:<p className="text-xs text-muted-foreground">Histórico en formación; se necesitan al menos dos muestras.</p>}
-      <p className="text-xs text-muted-foreground">CPU y disco requieren dos lecturas de contadores comparables. Las tasas pueden quedar sin valor tras un reinicio o cambio de dispositivos. Las métricas de red no equivalen a Egress facturado.</p>
-    </SectionCard>
     <SectionCard appearance="premium" density="compact" module="resumen" title="Alertas y acciones" description="Prioridad de intervención · no se oculta una incidencia al reconocerla" contentClassName="space-y-2 p-3">
       {alerts.length ? alerts.sort((a,b)=>Number(b.severity==="critical")-Number(a.severity==="critical")).map(m=><div key={m.id} className="flex flex-wrap gap-2 border border-border-subtle rounded-lg p-3"><AlertTriangle className={cn("size-4 shrink-0 mt-1",colors[m.severity])}/><div className="flex-1 min-w-0"><p className="text-sm font-semibold">{levels[m.severity]} · {m.acknowledged_at ? "En gestión" : "Abierta"}</p><p className="text-xs text-muted-foreground">{m.detail}</p><p className="text-xs text-muted-foreground mt-1">Desde {dateLabel(m.opened_at)} · Última detección {dateLabel(m.last_seen_at)}</p></div>{!m.acknowledged_at && <Button size="sm" variant="outline" disabled={ack.isPending} onClick={()=>ack.mutate(m.id)}>En gestión</Button>}</div>) : <p className="text-sm text-muted-foreground">{stale || !q.data ? "Alertas no verificables sin conexión." : "Sin acciones urgentes detectadas en la muestra."}</p>}
       {ack.isError && <PageAlert tone="error" title="No se pudo reconocer la incidencia">Intenta de nuevo cuando se restablezca la conexión.</PageAlert>}
       {q.data && !stale && q.data.incidents.some(i=>i.resolved_at) && <details className="text-sm"><summary className="cursor-pointer font-medium">Incidencias resueltas recientes</summary><div className="mt-2 space-y-2">{q.data.incidents.filter(i=>i.resolved_at).map(i=><div key={i.id} className="flex gap-2 text-xs"><CheckCircle2 className="size-4 shrink-0 text-[var(--semantic-success)]"/><div>{i.detail}<p className="text-muted-foreground">Resuelta: {dateLabel(i.resolved_at!)}</p></div></div>)}</div></details>}
       <a href={dashboard} target="_blank" rel="noreferrer" className="inline-flex gap-2 items-center text-sm text-primary"><ExternalLink className="size-4"/> Abrir Supabase para gestionar recursos</a>
+    </SectionCard>
+    <SectionCard appearance="premium" density="compact" module="resumen" title="Recursos del servidor" description="Supabase Metrics API oficial · sin Grafana · medición centralizada cada 5 min" contentClassName="p-3 space-y-3">
+      <p className="text-xs text-muted-foreground">Última lectura: {provider?dateLabel(provider.sampled_at):"Pendiente"}{providerStale?" · Sin confirmación vigente":""}. Los umbrales de alerta son preventivos, no límites oficiales.</p>
+      {providerStale && <PageAlert tone="warning" title="Datos de recursos sin confirmar">No se presentan como saludables ni se sustituyen por ceros.</PageAlert>}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 2xl:grid-cols-5">{resourceMetrics.filter(m=>m.gauge).map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">{resourceMetrics.filter(m=>!m.gauge).map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground"><span className="text-[var(--semantic-success)]">● Normal</span><span className="text-[var(--semantic-warning)]">● Preventiva</span><span className="text-[var(--semantic-danger)]">● Crítica</span><span>Escala 0–100 % · límites por recurso</span></div>
+      <div className="text-xs font-semibold">Evolución de CPU, RAM, Swap y disco (%)</div>
+      {resourceChart.length>=2?<div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={resourceChart}><CartesianGrid stroke="var(--border-subtle)" vertical={false}/><XAxis dataKey="label" tick={{fontSize:10}}/><YAxis domain={[0,100]} unit="%" tick={{fontSize:10}}/><Tooltip {...adminChartTooltipProps}/><Legend wrapperStyle={{fontSize:10}}/><Line type="linear" dataKey="cpu_pct" name="CPU" stroke="#38bdf8" dot={false} connectNulls={false}/><Line type="linear" dataKey="ram_pct" name="RAM" stroke="#34d399" dot={false} connectNulls={false}/><Line type="linear" dataKey="swap_pct" name="Swap" stroke="#fbbf24" dot={false} connectNulls={false}/><Line type="linear" dataKey="disk_busy_pct" name="Disco" stroke="#f472b6" dot={false} connectNulls={false}/></LineChart></ResponsiveContainer></div>:<p className="text-xs text-muted-foreground">Histórico en formación; se necesitan al menos dos muestras.</p>}
+      <div className="grid gap-2 lg:grid-cols-2">
+        {([{title:"Disco · MB/s",a:"read_mbps",b:"write_mbps",an:"Lectura",bn:"Escritura"},{title:"Red · MB/s",a:"network_rx_mbps",b:"network_tx_mbps",an:"Recepción",bn:"Envío"}] as const).map(c=><div key={c.title} className={cn("rounded-lg border border-border-subtle p-2 min-w-0",premiumSurface)}><h3 className="text-xs font-semibold mb-1">{c.title}</h3>{resourceChart.length>=2?<div className="h-36"><ResponsiveContainer width="100%" height="100%"><LineChart data={resourceChart}><CartesianGrid stroke="var(--border-subtle)" vertical={false}/><XAxis dataKey="label" tick={{fontSize:10}} minTickGap={28}/><YAxis tick={{fontSize:10}} width={40}/><Tooltip {...adminChartTooltipProps}/><Legend wrapperStyle={{fontSize:10}}/><Line type="linear" dataKey={c.a} name={c.an} stroke="#38bdf8" dot={false} connectNulls={false}/><Line type="linear" dataKey={c.b} name={c.bn} stroke="#fbbf24" dot={false} connectNulls={false}/></LineChart></ResponsiveContainer></div>:<p className="text-xs text-muted-foreground">Histórico en formación.</p>}</div>)}
+      </div>
+      <p className="text-xs text-muted-foreground">CPU y disco requieren dos lecturas de contadores comparables. Las tasas pueden quedar sin valor tras un reinicio o cambio de dispositivos. Las métricas de red no equivalen a Egress facturado.</p>
+    </SectionCard>
+    <SectionCard appearance="premium" density="compact" module="resumen" title="Base de datos y operaciones" description="Capacidad, conexiones y ejecución de tareas" contentClassName="p-3">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">{metrics.map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
+      {!metrics.length&&<p className="text-xs text-muted-foreground">Sin medición vigente.</p>}
     </SectionCard>
     <SectionCard appearance="premium" density="compact" module="resumen" title="Procesos esenciales" description="Última ejecución exitosa observada en la muestra de Cron" contentClassName="space-y-2 p-3">
       {!checks.length && <p className="text-sm text-muted-foreground">Sin datos vigentes.</p>}
@@ -192,7 +226,7 @@ export default function SystemHealthSection() {
       <p className="text-xs text-muted-foreground">{stale?"Histórico no actualizado. ": ""}{!stale && typeof d?.growth_24h_bytes==="number" ? "Cambio neto en 24 h: "+(d.growth_24h_bytes/1_000_000).toFixed(1)+" MB. "+(typeof d.days_to_90_percent==="number"?"Proyección lineal al 90%: "+d.days_to_90_percent+" días (estimación).":"Sin crecimiento neto positivo.") : "Proyección disponible después de reunir 24 horas de datos."}</p>
     </SectionCard>
     <SectionCard appearance="premium" density="compact" module="resumen" title="Cobertura pendiente" description="Indicadores todavía sin fuente directa" contentClassName="p-3">
-      <div className="grid gap-2 md:grid-cols-2">{missing.map(([label,detail])=><div key={label} className="border border-border-subtle rounded-lg p-3"><div className="flex flex-wrap justify-between gap-1"><h3 className="text-sm font-medium">{label}</h3><span className="text-xs text-muted-foreground">No disponible</span></div><p className="text-xs text-muted-foreground mt-1">{detail}</p></div>)}</div>
+      <details><summary className="cursor-pointer text-sm font-medium">Ver {missing.length} indicadores sin fuente directa</summary><div className="mt-2 grid gap-2 md:grid-cols-2">{missing.map(([label,detail])=><div key={label} className="border border-border-subtle rounded-lg p-3"><div className="flex flex-wrap justify-between gap-1"><h3 className="text-sm font-medium">{label}</h3><span className="text-xs text-muted-foreground">No disponible</span></div><p className="text-xs text-muted-foreground mt-1">{detail}</p></div>)}</div></details>
       <p className="mt-3 text-xs text-muted-foreground">El servidor sigue midiendo con Admin cerrado. Una caída total puede impedir las mediciones; las alertas aquí se muestran al abrir Admin. Los umbrales son preventivos, no límites oficiales. El tamaño y las conexiones son del proyecto Supabase compartido; confirma las cuotas vigentes en Usage. No se aplican cambios automáticos.</p>
     </SectionCard>
   </main>;
