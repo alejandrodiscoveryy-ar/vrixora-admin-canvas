@@ -1,12 +1,12 @@
 import { createContext, useContext, useRef, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useMatchRoute } from "@tanstack/react-router";
 import { Activity, AlertTriangle, RefreshCw, ExternalLink, CheckCircle2 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { PageAlert } from "@/components/admin/PageAlert";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/admin/SectionCard";
-import { premiumHeaderSurface, premiumSurface } from "@/components/admin/density";
+import { premiumHeaderSurface, premiumSurface, premiumControlSurface } from "@/components/admin/density";
 import { cn } from "@/lib/utils";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
@@ -138,10 +138,12 @@ function providerSignals(p: ProviderSample | null, stale: boolean): Signal[] {
 }
 export function SystemHealthProvider({ projectId, userId, enabled, children }: { projectId: string; userId: string; enabled: boolean; children: ReactNode }) {
   const q = useHealthQuery(projectId, userId, enabled);
+  const matchRoute = useMatchRoute();
+  const onHealthPage = !!matchRoute({ to: "/admin/proyectos/$id/$section", params: { id: projectId, section: "salud" } });
   const alerts = enabled && q.data && !unavailable(q) ? q.data.incidents.filter(i => !i.resolved_at) : [];
   const providerStale = enabled && !!q.data && providerUnavailable(q.data);
   return <HealthContext.Provider value={enabled ? { q, projectId } : null}>
-    {enabled && (unavailable(q) || providerStale || alerts.length > 0) && <PageAlert tone={unavailable(q) || alerts.some(s => s.severity === "critical") ? "error" : "warning"} title={unavailable(q) ? "No se puede verificar la salud del sistema" : alerts.length ? alerts.length + " alerta(s) de infraestructura" : "Métricas oficiales sin confirmar"}>
+    {enabled && !onHealthPage && (unavailable(q) || providerStale || alerts.length > 0) && <PageAlert tone={unavailable(q) || alerts.some(s => s.severity === "critical") ? "error" : "warning"} title={unavailable(q) ? "No se puede verificar la salud del sistema" : alerts.length ? alerts.length + " alerta(s) de infraestructura" : "Métricas oficiales sin confirmar"}>
       <span>{unavailable(q) ? "Última medición no confirmada. Revisa conexión y estado del proveedor." : [providerStale ? "API de métricas sin lectura reciente." : "", ...alerts.map(s => s.detail)].filter(Boolean).join(" · ")}</span>{" "}
       <Link className="font-semibold underline" to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "salud" }}>Abrir Salud del sistema</Link>
     </PageAlert>}
@@ -178,7 +180,7 @@ export default function SystemHealthSection() {
   const resourceHistory=[...(q.data?.provider_history??[])];
   if(provider && !resourceHistory.some(p=>p.sampled_at===provider.sampled_at))resourceHistory.push(provider);
   const resourceChart=resourceHistory.map(p=>({...p, ...(p.http_status!==200?{cpu_pct:null,ram_pct:null,swap_pct:null,disk_busy_pct:null,read_mbps:null,write_mbps:null,network_rx_mbps:null,network_tx_mbps:null,duration_ms:null}:{}),label:new Date(p.sampled_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}));
-  const alerts = q.data && !stale ? q.data.incidents.filter(i=>!i.resolved_at) : [];
+  const alerts = q.data && !stale ? q.data.incidents.filter(i=>!i.resolved_at).sort((a,b)=>Number(b.severity==="critical")-Number(a.severity==="critical")) : [];
   const critical = alerts.filter(m => m.severity === "critical").length;
   const checks = d && !stale ? d.essential_cron : [];
   const history = (q.data?.history ?? []).map(p=>({ ...p, mb: p.database_bytes / 1_000_000, label: new Date(p.at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}) }));
@@ -188,24 +190,29 @@ export default function SystemHealthSection() {
     <header className={cn("rounded-[var(--radius-card)] border p-3 space-y-2", premiumHeaderSurface)}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2"><Activity className="size-5 shrink-0 text-primary"/><h1 className="text-base font-semibold">Salud del sistema</h1></div>
-        <Button size="sm" variant="outline" aria-label="Actualizar salud del sistema" disabled={q.isFetching || q.fetchStatus === "paused"} onClick={() => { if(Date.now()-lastManual.current<15000)return; lastManual.current=Date.now(); void q.refetch(); }}><RefreshCw className={cn("size-4", q.isFetching && "animate-spin")}/><span className="hidden sm:inline">Actualizar</span></Button>
+        <Button size="sm" variant="subtle" className={premiumControlSurface} aria-label="Actualizar salud del sistema" disabled={q.isFetching || q.fetchStatus === "paused"} onClick={() => { if(Date.now()-lastManual.current<15000)return; lastManual.current=Date.now(); void q.refetch(); }}><RefreshCw className={cn("size-4", q.isFetching && "animate-spin")}/><span className="hidden sm:inline">Actualizar</span></Button>
       </div>
       <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2">
         <span className={cn("text-sm font-semibold",colors[stale||critical?"critical":alerts.length||providerStale?"warning":"ok"])}>{stale?"● Estado no confirmado":q.isPending?"Consultando…":critical?"● Incidencia crítica":alerts.length?"● Alerta preventiva":providerStale?"● Métricas sin confirmar":"● Sin alertas detectadas"}</span>
-        <span className="text-xs tabular-nums text-muted-foreground">{stale||q.isPending?"—":alerts.length} incidencias</span>
+        <span className="text-xs tabular-nums text-muted-foreground">{stale||q.isPending?"Incidencias sin verificar":alerts.length===1?"1 incidencia":alerts.length+" incidencias"}</span>
         <span className="text-xs text-muted-foreground">Última lectura: {d?new Date(d.sampled_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}):"—"}</span>
       </div>
       <p className="text-[11px] text-muted-foreground">{stale?"No se presentan mediciones antiguas como actuales.": "Servidor 5 min · Panel 60 s · Cobertura parcial"}</p>
+      {(alerts.length>0 || stale || (!q.isPending && providerStale) || ack.isError) && <div className="border-t border-border-subtle pt-2 space-y-1">
+        {stale && <p className="text-xs text-[var(--semantic-danger)]">No se pueden verificar las incidencias. Comprueba la conexión.</p>}
+        {!stale && !q.isPending && providerStale && <p className="text-xs text-[var(--semantic-warning)]">API de recursos sin lectura vigente.</p>}
+        {alerts.length>0 && <details className="group text-sm" aria-label="Alertas y acciones">
+          <summary className="cursor-pointer rounded-md px-1 py-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className={colors[alerts[0].severity]}>{alerts[0].detail}</span>{alerts.length>1&&<span className="ml-2 text-xs text-muted-foreground">+{alerts.length-1} más</span>}<span className="ml-2 text-xs text-muted-foreground">· Ver detalles</span></summary>
+          <div className="mt-2 space-y-2">
+            {alerts.map(m=><div key={m.id} className="flex flex-wrap gap-2 border border-border-subtle rounded-lg p-2 bg-surface-1"><AlertTriangle className={cn("size-4 shrink-0 mt-0.5",colors[m.severity])}/><div className="flex-1 min-w-0"><p className="text-xs font-semibold">{levels[m.severity]} · {m.acknowledged_at?"En gestión":"Abierta"}</p><p className="text-sm">{m.detail}</p><p className="text-xs text-muted-foreground mt-1">Desde {dateLabel(m.opened_at)} · Última detección {dateLabel(m.last_seen_at)}</p></div>{!m.acknowledged_at&&<Button size="sm" variant="subtle" className={premiumControlSurface} disabled={ack.isPending} onClick={()=>ack.mutate(m.id)}>En gestión</Button>}</div>)}
+            <a href={dashboard} target="_blank" rel="noreferrer" className="inline-flex gap-1 items-center text-xs text-primary"><ExternalLink className="size-3.5"/> Gestionar recursos en Supabase</a>
+          </div>
+        </details>}
+        {ack.isError && <p role="alert" className="text-xs text-[var(--semantic-danger)]">No se pudo reconocer la incidencia. Intenta de nuevo.</p>}
+      </div>}
     </header>
-    {(alerts.length>0 || stale || ack.isError) && <SectionCard appearance="premium" density="compact" module="resumen" title="Alertas y acciones" description="Prioridad de intervención · no se oculta una incidencia al reconocerla" contentClassName="space-y-2 p-3">
-      {alerts.length ? alerts.sort((a,b)=>Number(b.severity==="critical")-Number(a.severity==="critical")).map(m=><div key={m.id} className="flex flex-wrap gap-2 border border-border-subtle rounded-lg p-3"><AlertTriangle className={cn("size-4 shrink-0 mt-1",colors[m.severity])}/><div className="flex-1 min-w-0"><p className="text-sm font-semibold">{levels[m.severity]} · {m.acknowledged_at ? "En gestión" : "Abierta"}</p><p className="text-xs text-muted-foreground">{m.detail}</p><p className="text-xs text-muted-foreground mt-1">Desde {dateLabel(m.opened_at)} · Última detección {dateLabel(m.last_seen_at)}</p></div>{!m.acknowledged_at && <Button size="sm" variant="outline" disabled={ack.isPending} onClick={()=>ack.mutate(m.id)}>En gestión</Button>}</div>) : <p className="text-sm text-muted-foreground">{stale || !q.data ? "Alertas no verificables sin conexión." : "Sin acciones urgentes detectadas en la muestra."}</p>}
-      {ack.isError && <PageAlert tone="error" title="No se pudo reconocer la incidencia">Intenta de nuevo cuando se restablezca la conexión.</PageAlert>}
-      {q.data && !stale && q.data.incidents.some(i=>i.resolved_at) && <details className="text-sm"><summary className="cursor-pointer font-medium">Incidencias resueltas recientes</summary><div className="mt-2 space-y-2">{q.data.incidents.filter(i=>i.resolved_at).map(i=><div key={i.id} className="flex gap-2 text-xs"><CheckCircle2 className="size-4 shrink-0 text-[var(--semantic-success)]"/><div>{i.detail}<p className="text-muted-foreground">Resuelta: {dateLabel(i.resolved_at!)}</p></div></div>)}</div></details>}
-      <a href={dashboard} target="_blank" rel="noreferrer" className="inline-flex gap-2 items-center text-sm text-primary"><ExternalLink className="size-4"/> Abrir Supabase para gestionar recursos</a>
-    </SectionCard>}
     <SectionCard appearance="premium" density="compact" module="resumen" title="Recursos del servidor" description="Supabase · medición cada 5 min" contentClassName="p-2 sm:p-3 space-y-2">
       <p className="text-xs text-muted-foreground">Última lectura: {provider?dateLabel(provider.sampled_at):"Pendiente"}{providerStale?" · Sin confirmación vigente":""}.</p>
-      {providerStale && <PageAlert tone="warning" title="Datos de recursos sin confirmar">No se presentan como saludables ni se sustituyen por ceros.</PageAlert>}
       <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-3 2xl:grid-cols-5">{resourceMetrics.filter(m=>m.gauge || m.label==="API oficial de métricas").map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
       <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">{resourceMetrics.filter(m=>!m.gauge && m.label!=="API oficial de métricas").map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground"><span className="text-[var(--semantic-success)]">● Normal</span><span className="text-[var(--semantic-warning)]">● Preventiva</span><span className="text-[var(--semantic-danger)]">● Crítica</span><span>Escala 0–100 % · límites por recurso</span></div>
@@ -228,7 +235,7 @@ export default function SystemHealthSection() {
       {history.length >= 2 ? <div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={history}><CartesianGrid stroke="var(--border-subtle)" vertical={false}/><XAxis dataKey="label" tick={{fontSize:10,fill:"var(--text-secondary)"}}/><YAxis tick={{fontSize:10,fill:"var(--text-secondary)"}} unit=" MB"/><Tooltip {...adminChartTooltipProps}/><Line type="linear" dataKey="mb" name="Base de datos (MB)" stroke="var(--primary)" dot={false}/></LineChart></ResponsiveContainer></div> : <p className="text-sm text-muted-foreground">El monitor está reuniendo mediciones; aún no existe una serie suficiente.</p>}
       <p className="text-xs text-muted-foreground">{stale?"Histórico no actualizado. ": ""}{!stale && typeof d?.growth_24h_bytes==="number" ? "Cambio neto en 24 h: "+(d.growth_24h_bytes/1_000_000).toFixed(1)+" MB. "+(typeof d.days_to_90_percent==="number"?"Proyección lineal al 90%: "+d.days_to_90_percent+" días (estimación).":"Sin crecimiento neto positivo.") : "Proyección disponible después de reunir 24 horas de datos."}</p>
     </SectionCard>
-    {!alerts.length && !stale && !q.isPending && !ack.isError && <SectionCard appearance="premium" density="compact" module="resumen" title="Historial de incidencias" contentClassName="p-2">
+    {!stale && !q.isPending && <SectionCard appearance="premium" density="compact" module="resumen" title="Historial de incidencias" contentClassName="p-2">
       <details className="text-xs"><summary className="cursor-pointer font-medium">Ver incidencias resueltas</summary><div className="mt-2 space-y-2">{q.data?.incidents.filter(i=>i.resolved_at).map(i=><div key={i.id} className="flex gap-2"><CheckCircle2 className="size-4 shrink-0 text-[var(--semantic-success)]"/><div>{i.detail}<p className="text-muted-foreground">Resuelta: {dateLabel(i.resolved_at!)}</p></div></div>)}{!q.data?.incidents.some(i=>i.resolved_at)&&<p className="text-muted-foreground">Sin incidencias resueltas recientes.</p>}</div></details>
       <a href={dashboard} target="_blank" rel="noreferrer" className="mt-2 inline-flex gap-1 items-center text-xs text-primary"><ExternalLink className="size-3.5"/> Gestionar recursos en Supabase</a>
     </SectionCard>}

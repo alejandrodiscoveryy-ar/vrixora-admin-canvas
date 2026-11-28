@@ -74,17 +74,29 @@ test("Grafana-inspired dashboard uses real threshold gauges and accessible compa
   assert.match(health,/grid-cols-2/);
   assert.match(health,/Disco · MB\/s/);
   assert.match(health,/Red · MB\/s/);
-  assert.ok(health.indexOf('title="Alertas y acciones"')<health.indexOf('title="Recursos del servidor"'));
+  assert.ok(health.indexOf('aria-label="Alertas y acciones"')<health.indexOf('title="Recursos del servidor"'));
   assert.match(health,/p\.http_status!==200\?\{cpu_pct:null/);
 });
 
 test("compact health overview keeps incident priority, freshness and readable gauges",()=>{
   assert.match(health,/role="status"/);
   assert.match(health,/Última lectura:/);
-  assert.match(health,/alerts.length>0 \|\| stale \|\| ack.isError/);
+  assert.match(health,/alerts.length>0 \|\| stale \|\| \(!q.isPending && providerStale\) \|\| ack.isError/);
   assert.match(health,/max-w-\[220px\]/);
   assert.match(health,/Cómo interpretar las métricas/);
   assert.match(health,/Sin umbral/);
   assert.match(health,/dot=\{\{r:2\}\}/);
   assert.match(health,/Cobertura parcial/);
+});
+
+test("health alert is unified on its own route and stays visible elsewhere",()=>{
+  assert.match(health,/const onHealthPage = !!matchRoute/);
+  assert.match(health,/enabled && !onHealthPage &&/);
+  assert.match(health,/aria-label="Alertas y acciones"/);
+  assert.ok(health.indexOf('aria-label="Alertas y acciones"')<health.indexOf('</header>'));
+  assert.match(health,/alerts\[0\]\.detail/);
+  assert.match(health,/alerts\.map\(m=>/);
+  assert.match(health,/ack\.mutate\(m.id\)/);
+  assert.match(health,/variant="subtle" className=\{premiumControlSurface\}/);
+  assert.doesNotMatch(health,/title="Alertas y acciones"/);
 });
