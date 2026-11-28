@@ -34,6 +34,8 @@ on:
       - 'src/lib/admin-navigation.ts'
       - 'src/lib/utils.ts'
       - 'tests/admin_design_system.test.mjs'
+      - 'tests/admin_system_health_contract.test.mjs'
+      - 'supabase/migrations/20261128174000_admin_system_health_v1.sql'
       - 'tests/admin_topup_reversal.test.mjs'
       - 'tests/admin_recarga_rechazo_claro.test.mjs'
       - 'tests/admin_aliados_carnet.test.mjs'
@@ -80,6 +82,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Probar el contrato de componentes premium
         run: bun test tests/admin_design_system.test.mjs
+      - name: Validar salud del sistema y control de acceso
+        run: node --test tests/admin_system_health_contract.test.mjs
       - name: Probar anulacion segura de recargas confirmadas
         run: node --test tests/admin_topup_reversal.test.mjs
       - name: Validar rechazo claro y confirmacion separada en recargas

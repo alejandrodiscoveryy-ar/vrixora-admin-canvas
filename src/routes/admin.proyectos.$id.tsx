@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectAccess, useProjectPermissions } from "@/hooks/useProjects";
 import { Loader2 } from "lucide-react";
+import { SystemHealthProvider } from "@/features/admin/SystemHealthSection";
 import { AdminOperationalAlerts } from "@/features/admin/AdminOperationalAlerts";
 
 export const Route = createFileRoute("/admin/proyectos/$id")({
@@ -52,7 +53,9 @@ function ProjectLayout() {
       {permissions.includes("marketplace.view") && (
         <AdminOperationalAlerts projectId={id} userId={user.id} />
       )}
-      <Outlet />
+      <SystemHealthProvider projectId={id} userId={user.id} enabled={project.slug === "tuktuk-control" && permissions.includes("settings.manage")}>
+        <Outlet />
+      </SystemHealthProvider>
     </div>
   );
 }

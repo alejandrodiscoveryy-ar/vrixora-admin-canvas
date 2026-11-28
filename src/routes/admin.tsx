@@ -254,6 +254,11 @@ function ProjectNavItem({
 
   const visibleTabs = ADMIN_PROJECT_TABS.reduce<AdminProjectNavItem[]>(
     (items, item) => {
+      if (item.slug === "salud" && project.slug !== "tuktuk-control") return items;
+      if (item.slug === "" && project.slug === "tuktuk-control" && permissions.includes("settings.manage")) {
+        if (permissions.includes("project.view")) items.push({ ...item, slug: "panel-general" });
+        return items;
+      }
       if ("children" in item) {
         const visibleChildren = item.children.filter((child) =>
           permissions.includes(child.permission),

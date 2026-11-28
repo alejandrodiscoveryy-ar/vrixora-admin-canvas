@@ -544,7 +544,7 @@ test("Admin final rollout: migrated modules opt in to shared graphite without gl
 
 
 test("Admin navigation: thematic families reuse palette and preserve group membership", () => {
-  const expected = { trabajos: "trabajos", "": "panel", clientes: "usuarios", comercial: "comercial", planes: "tarifas", rendimiento: "analitica", administracion: "administracion", auditoria: "auditoria" };
+  const expected = { salud: "panel", trabajos: "trabajos", "": "panel", clientes: "usuarios", comercial: "comercial", planes: "tarifas", rendimiento: "analitica", administracion: "administracion", auditoria: "auditoria" };
   for (const tab of ADMIN_PROJECT_TABS) assert.equal(adminNavTone(tab.slug), expected[tab.slug]);
   for (const slug of ["configuracion","empleados","comunicados","integraciones"]) assert.equal(adminNavTone(slug), "administracion");
   for (const slug of ["pagos","billeteras","recargas"]) assert.equal(adminNavTone(slug), "finanzas");
