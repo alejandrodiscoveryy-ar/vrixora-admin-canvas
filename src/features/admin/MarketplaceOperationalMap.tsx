@@ -860,7 +860,9 @@ export default function MarketplaceOperationalMap({
     // La pestaña Mapa conserva su estado al ocultarse, pero deja de consultar datos.
     // Al regresar, enabled=true reanuda la sincronizacion sin reiniciar Mapbox.
     enabled: isVisible,
-    refetchInterval: (query) => query.state.status === "error" ? 60_000 : ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 15_000),
+    staleTime: 5_000,
+    refetchInterval: (query) => query.state.status === "error" ? 120_000 : ((query.state.data?.summary.activeJobs ?? 0) > 0 ? 5_000 : 30_000),
+    retry: 1,
     refetchIntervalInBackground: false,
   });
 
@@ -1015,7 +1017,7 @@ export default function MarketplaceOperationalMap({
   const staticFallback = useQuery({
     queryKey: ["marketplace-operational-map-static-fallback", projectId, routeKey],
     queryFn: () => getMarketplaceOperationalStaticMap(projectId, { showRoutes: layers.routes }),
-    enabled: Boolean(operational.data && mapConfig.isError),
+    enabled: isVisible && Boolean(operational.data && mapConfig.isError),
     staleTime: 20_000,
   });
 
@@ -1058,7 +1060,7 @@ export default function MarketplaceOperationalMap({
     queryKey: ["marketplace-map-customer-360", projectId, customerDetailsJob?.customerId],
     queryFn: () =>
       supabaseServices.marketplace.getCustomer360(projectId, customerDetailsJob!.customerId!),
-    enabled: canViewCustomers && Boolean(customerDetailsJob?.customerId),
+    enabled: isVisible && canViewCustomers && Boolean(customerDetailsJob?.customerId),
     staleTime: 60_000,
     retry: 1,
   });
