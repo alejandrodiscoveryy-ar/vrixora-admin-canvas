@@ -14,7 +14,8 @@ test('Muestra destinatarios reales en la carrera', () => {
 test('Acceso restringido y lenguaje honesto', () => {
   assert.ok(sql.includes('require_project_permission'));
   assert.ok(sql.includes('revoke all on function'));
-  assert.ok(map.includes('refetchInterval: selectedJob?.status === "published" ? 5_000 : false'));
+  assert.ok(map.includes('refetchInterval: (query) => selectedJob?.status !== "published" ? false : query.state.status === "error" ? 60_000 : 5_000'));
+  assert.match(map, /queryKey: \["marketplace-job-notification-recipients", projectId, selectedJobId\],[\s\S]*?enabled: isVisible && Boolean\(panelOpen && agendaTab === "services"/);
   assert.ok(map.includes('no confirma recepción en el teléfono'));
 });
 
