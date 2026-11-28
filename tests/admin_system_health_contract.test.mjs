@@ -77,3 +77,14 @@ test("Grafana-inspired dashboard uses real threshold gauges and accessible compa
   assert.ok(health.indexOf('title="Alertas y acciones"')<health.indexOf('title="Recursos del servidor"'));
   assert.match(health,/p\.http_status!==200\?\{cpu_pct:null/);
 });
+
+test("compact health overview keeps incident priority, freshness and readable gauges",()=>{
+  assert.match(health,/role="status"/);
+  assert.match(health,/Última lectura:/);
+  assert.match(health,/alerts.length>0 \|\| stale \|\| ack.isError/);
+  assert.match(health,/max-w-\[220px\]/);
+  assert.match(health,/Cómo interpretar las métricas/);
+  assert.match(health,/Sin umbral/);
+  assert.match(health,/dot=\{\{r:2\}\}/);
+  assert.match(health,/Cobertura parcial/);
+});
