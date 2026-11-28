@@ -1051,7 +1051,8 @@ export default function MarketplaceOperationalMap({
     queryKey: ["marketplace-job-notification-recipients", projectId, selectedJobId],
     queryFn: () => getMarketplaceJobNotificationRecipients(projectId, selectedJobId!),
     enabled: isVisible && Boolean(panelOpen && agendaTab === "services" && selectedJob && customerDetailsJobId === selectedJobId),
-    refetchInterval: selectedJob?.status === "published" ? 5_000 : false,
+    staleTime: 5_000,
+    refetchInterval: (query) => selectedJob?.status !== "published" ? false : query.state.status === "error" ? 60_000 : 5_000,
     refetchIntervalInBackground: false,
     retry: 1,
   });
