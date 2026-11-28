@@ -16,8 +16,8 @@ const FIREBASE_CONFIG = {
 const VAPID_PUBLIC_KEY = "BF-az4NW8nREYEw-RvnBOfQ2wrJGttOjBhR_PD0SKWEKDHWqWvFBLdmka5e_0d-_Mptdrpxxfy1aF-FFPQpvfEE";
 const FIREBASE_APP_NAME = "vrixora-admin-push";
 const TOKEN_STORAGE = "vrixora:admin:fcm-token:v1";
-export const ADMIN_PUSH_KINDS = ["admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation"] as const;
-export type AdminPushEvent = { kind: string; job_id?: string; driver_id?: string; stage?: string; title: string; body: string; url: string };
+export const ADMIN_PUSH_KINDS = ["admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation", "admin_system_health"] as const;
+export type AdminPushEvent = { kind: string; notification_id?: string; job_id?: string; driver_id?: string; stage?: string; title: string; body: string; url: string };
 
 function app() {
   return getApps().some((item) => item.name === FIREBASE_APP_NAME)
@@ -36,6 +36,7 @@ function safeAdminUrl(raw: string | undefined, projectId: string) {
 }
 
 function alertEntityUrl(data: { kind?: string; job_id?: string; driver_id?: string; url?: string }, projectId: string) {
+  if (data.kind === "admin_system_health") return `/admin/proyectos/${encodeURIComponent(projectId)}/salud`;
   const base = `/admin/proyectos/${encodeURIComponent(projectId)}/trabajos`;
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (data.kind === "admin_marketplace_new_driver" && data.driver_id && uuid.test(data.driver_id)) {
@@ -137,6 +138,7 @@ export async function listenAdminPush(projectId: string, handle: (event: AdminPu
     if (data.project_id !== projectId) return;
     const event: AdminPushEvent = {
       kind,
+      notification_id: data.notification_id,
       job_id: data.job_id,
       driver_id: data.driver_id,
       stage: data.stage,
@@ -150,7 +152,7 @@ export async function listenAdminPush(projectId: string, handle: (event: AdminPu
       body: event.body,
       icon: "/icon-192.png",
       badge: "/favicon.png",
-      tag: `vrixora:${kind}:${event.job_id ?? event.driver_id ?? "admin"}`,
+      tag: `vrixora:${kind}:${event.job_id ?? event.driver_id ?? event.notification_id ?? "admin"}`,
       requireInteraction: kind !== "admin_marketplace_new_driver",
       data: { url: event.url },
     })).catch((error) => {
