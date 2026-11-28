@@ -100,3 +100,18 @@ test("health alert is unified on its own route and stays visible elsewhere",()=>
   assert.match(health,/variant="subtle" className=\{premiumControlSurface\}/);
   assert.doesNotMatch(health,/title="Alertas y acciones"/);
 });
+
+test("v4 operations reuse central sampling and protect partial evidence",()=>{
+  const ops=read("supabase/migrations/20261128213000_system_health_operations_v4.sql");
+  assert.match(ops,/after insert on app_private.system_health_samples_v2/);
+  assert.doesNotMatch(ops,/cron\.schedule\(|net\.http/);
+  assert.match(ops,/enable row level security/);
+  assert.match(ops,/base:=public.admin_get_system_health_v3\(target_project_id\)/);
+  assert.match(ops,/not j\.is_test and j\.test_deleted_at is null/);
+  assert.match(ops,/w\.id=t\.ledger_transaction_id and w\.project_id=t\.project_id and w\.user_id=t\.user_id/);
+  assert.match(health,/error\?\.code==="PGRST202"/);
+  assert.match(health,/opsFresh/);
+  assert.match(health,/Sin muestra vigente de servicios/);
+  assert.match(health,/no confirma recepción/);
+  assert.match(health,/no generan avisos push automáticos aún/);
+});
