@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   BadgeCheck,
   BarChart3,
   BriefcaseBusiness,
@@ -94,7 +95,7 @@ export const MARKETPLACE_WORKSPACE_VIEWS = [
 ] satisfies Array<AdminProjectTab>;
 
 export const ADMIN_PROJECT_TABS = [
-  { slug: "salud", label: "Salud del sistema", icon: HeartPulse, permission: "settings.manage" },
+  { slug: "salud", label: "Salud del sistema", icon: Activity, permission: "settings.manage" },
   {
     slug: "trabajos",
     label: "Trabajos",
