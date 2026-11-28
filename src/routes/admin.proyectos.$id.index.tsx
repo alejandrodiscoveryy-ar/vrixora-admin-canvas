@@ -4,7 +4,7 @@ import { parseAgencyVitality, agencyVitalitySignals, controlConversionFunnel } f
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { adminChartTooltipProps } from "@/lib/chart-theme";
 
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, Navigate, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   type LucideIcon,
@@ -35,13 +35,23 @@ import type { AdminModuleKey, SemanticState } from "@/components/admin/types";
 import { PageAlert } from "@/components/admin/PageAlert";
 
 export const Route = createFileRoute("/admin/proyectos/$id/")({
-  component: ResumenPage,
+  component: ProjectLandingPage,
 });
 
 const REFRESH_INTERVAL = 60_000;
 
-function ResumenPage() {
+function ProjectLandingPage() {
   const { id } = Route.useParams();
+  const { data: project, isLoading: projectLoading } = useProject(id);
+  const { data: permissions = [], isLoading: permissionsLoading } = useProjectPermissions(id);
+  if (projectLoading || permissionsLoading) return null;
+  if (project?.slug === "tuktuk-control" && permissions.includes("settings.manage")) {
+    return <Navigate to="/admin/proyectos/$id/$section" params={{ id, section: "salud" }} replace />;
+  }
+  return <ResumenPage id={id} />;
+}
+
+export function ResumenPage({ id }: { id: string }) {
   const { data: permissions = [], isLoading: permissionsLoading } =
     useProjectPermissions(id);
 
