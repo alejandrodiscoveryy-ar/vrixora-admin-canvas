@@ -11,7 +11,7 @@ const projectLayout = readFileSync('src/routes/admin.proyectos.$id.tsx','utf8');
 test('Only admin web messages have an OS-displayed notification and safe link', () => {
   assert.match(core, /const adminAlert = ADMIN_WEB_PUSH_KINDS\.has\(notificationKind\)/);
   assert.match(core, /notification:\s*\{\s*title,\s*body,/);
-  assert.match(core, /fcm_options:\s*\{\s*link:\s*"https:\/\/admin\.vrixora\.com\/admin\/proyectos\//);
+  assert.match(core, /fcm_options:\s*\{\s*link:\s*notificationKind === "admin_system_health" \? "https:\/\/admin\.vrixora\.com\/admin\/proyectos\/[^"]+\/salud" : "https:\/\/admin\.vrixora\.com\/admin\/proyectos\/[^"]+\/trabajos"/);
   assert.match(core, /\}\s*:\s*\{\s*headers:\s*\{\s*Urgency:\s*"high"\s*\}\s*\}/);
   assert.match(core, /"tuktuk_nuevas_carreras_v1"/);
 });
@@ -39,7 +39,7 @@ test('Alarm center lives in header bell without losing authenticated project pro
 });
 
 test('A refreshed worker activates for existing Admin tabs without stale cache', () => {
-  assert.match(sw, /const CACHE_VERSION = "v5"/);
+  assert.match(sw, /const CACHE_VERSION = "v6"/);
   assert.match(sw, /\.then\(\(\) => self\.skipWaiting\(\)\)/);
   assert.doesNotMatch(sw, /if \(!self\.registration\.active\) self\.skipWaiting/);
 });
@@ -71,4 +71,12 @@ test('Operator sound setting survives reload and does not mislabel blocked audio
   assert.doesNotMatch(panel, /else void context\.resume\(\)\.then\(\(\) => tone/);
   assert.match(panel, /context\.onstatechange = null/);
   assert.match(panel, /if \(!pushEnabled && !soundPreferredRef\.current\) toggleSound\(\)/);
+});
+
+test('health notification routes to health and preserves existing operational alerts', () => {
+  assert.match(sw, /data.kind === "admin_system_health"/);
+  assert.match(push, /data.kind === "admin_system_health"/);
+  assert.match(panel, /alert.kind === "health"/);
+  assert.match(panel, /message.notification_id/);
+  assert.match(core, /admin_system_health/);
 });
