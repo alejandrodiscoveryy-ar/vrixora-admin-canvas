@@ -102,7 +102,8 @@ begin
   update app_private.system_health_incidents_v2 i set resolved_at=t
     where i.resolved_at is null and i.last_seen_at<=t-interval '9 minutes'
       and not exists(select 1 from jsonb_array_elements(alerts) a where a->>'code'=i.code)
-      and not (i.code='growth' and not (d ? 'growth_24h_bytes'));
+      and not (i.code='growth' and not (d ? 'growth_24h_bytes'))
+      and not (i.code='cron_failed' and (d->>'cron_completed_sample')::int=0);
   insert into app_private.system_health_samples_v2 values(bucket,d);
   delete from app_private.system_health_samples_v2 where sampled_at<bucket-interval '7 days';
   delete from app_private.system_health_incidents_v2 where resolved_at<t-interval '30 days';
