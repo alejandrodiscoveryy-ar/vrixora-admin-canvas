@@ -11,9 +11,9 @@ Deno.env.set("FIREBASE_SERVICE_ACCOUNT_JSON", JSON.stringify({ project_id: "synt
   client_email: "synthetic@example.invalid", private_key: "-----BEGIN PRIVATE KEY-----\n" + encoded + "\n-----END PRIVATE KEY-----" }));
 Deno.env.set("TUKTUK_PUSH_DISPATCH_SECRET", "synthetic-dispatch-secret");
 const kinds = ["daily_exchange_rate", "exchange_rate_update", "app_announcement", "app_update", "new_subscription", "marketplace_job_available"];
-const allowedKinds = [...kinds, "marketplace_job_cancelled", "admin_marketplace_cancellation", "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup"];
+const allowedKinds = [...kinds, "marketplace_job_cancelled", "admin_marketplace_cancellation", "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_system_health"];
 const originalFetch = globalThis.fetch;
-function setup(events = kinds) {
+function setup(events = kinds, healthEligible = true) {
   const db = new FakeAdmin(), messages: Record<string, any>[] = [], order: string[] = [];
   db.tables.notification_outbox = events.map((kind, index) => ({
     id: index + 1, project_id: "dfb41cea-a812-46f2-b511-7a60bd3d78af", user_id: "synthetic-user",
@@ -31,6 +31,7 @@ function setup(events = kinds) {
   let claimed = false;
   db.onRpc = (name, args) => {
     order.push(name);
+    if (name === "system_health_push_recipient_v1") return { data: healthEligible, error: null };
     if (name === "claim_push_notification_batch") {
       equal(args.allowed_kinds, allowedKinds);
       equal(args.lease_seconds, 300); equal(args.max_attempts, 5);
@@ -219,4 +220,23 @@ Deno.test("dispatcher: solo recordatorio vigente y conductor elegible genera FCM
     equal(summary.sent, 1); equal(messages.length, 1);
     equal(messages[0].android.notification.channel_id, "tuktuk_nuevas_carreras_v1");
   } finally { globalThis.fetch = originalFetch; }
+});
+Deno.test("health alerts use only authorized admin web devices even if payload requests client", async () => {
+  for (const eligible of [true,false]) {
+    const { db, messages } = setup(["admin_system_health"],eligible);
+    db.tables.push_device_tokens[0].platform = "web";
+    db.tables.push_device_tokens[1].platform = "web";
+    db.tables.notification_outbox[0].data = { target_audience:"client",target_platform:"android",stage:"opened" };
+    try {
+      const response=await run(db);
+      equal(response.status,200);
+      equal(messages.length,eligible?1:0);
+      if (eligible) {
+        equal(messages[0].token,"synthetic-admin");
+        ok(messages[0].webpush.notification);
+        ok(messages[0].webpush.fcm_options.link.endsWith("/salud"));
+        equal(messages[0].android,undefined);
+      } else equal(db.tables.notification_outbox[0].delivery_status,"skipped");
+    } finally { globalThis.fetch=originalFetch; }
+  }
 });

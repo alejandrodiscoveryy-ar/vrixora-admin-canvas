@@ -9,7 +9,7 @@ export const DEFAULT_TIME_BUDGET_MS = 45_000;
 export const MAX_TIME_BUDGET_MS = 50_000;
 export const MAX_ATTEMPTS = 5;
 const ADMIN_WEB_PUSH_KINDS = new Set([
-  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation",
+  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation", "admin_system_health",
 ]);
 
 export type WorkerOptions = {
@@ -116,7 +116,7 @@ export function buildFcmMessage(
         requireInteraction: notificationKind !== "admin_marketplace_new_driver",
       },
       fcm_options: {
-        link: "https://admin.vrixora.com/admin/proyectos/dfb41cea-a812-46f2-b511-7a60bd3d78af/trabajos",
+        link: notificationKind === "admin_system_health" ? "https://admin.vrixora.com/admin/proyectos/dfb41cea-a812-46f2-b511-7a60bd3d78af/salud" : "https://admin.vrixora.com/admin/proyectos/dfb41cea-a812-46f2-b511-7a60bd3d78af/trabajos",
       },
     } : { headers: { Urgency: "high" } };
   } else {

@@ -41,6 +41,7 @@ const ALLOWED_KINDS = [
   "admin_marketplace_new_driver",
   "admin_marketplace_pending_job",
   "admin_marketplace_pickup",
+  "admin_system_health",
 ];
 const AUTH_HEADER = "x-tuktuk-dispatch-secret";
 
@@ -255,9 +256,22 @@ export default {
           }
         }
       }
-      const targetPlatform = typeof row.data?.target_platform === "string" ? row.data.target_platform : null;
+      if (row.kind === "admin_system_health") {
+        const { data: eligible, error: eligibilityError } = await admin.rpc("system_health_push_recipient_v1", {
+          target_project_id: row.project_id, target_user_id: row.user_id,
+        });
+        if (eligibilityError) {
+          await releaseForRetry(admin, row, "Could not verify health alert permission");
+          return { sent: 0, failed: 1, skipped: 0, invalid: 0 };
+        }
+        if (eligible !== true) {
+          await finishRow(admin, row, "skipped", "Health alert recipient no longer authorized");
+          return { sent: 0, failed: 0, skipped: 1, invalid: 0 };
+        }
+      }
+      const targetPlatform = row.kind === "admin_system_health" ? "web" : typeof row.data?.target_platform === "string" ? row.data.target_platform : null;
       const requestedAudience = typeof row.data?.target_audience === "string" ? row.data.target_audience : null;
-      const targetAudience = requestedAudience === "admin" || requestedAudience === "client"
+      const targetAudience = row.kind === "admin_system_health" ? "admin" : requestedAudience === "admin" || requestedAudience === "client"
         ? requestedAudience
         : row.kind === "new_subscription"
           ? "admin"
