@@ -21,7 +21,15 @@ type Snapshot = Record<Field, number> & { sampled_at: string; essential_cron: Cr
 type Incident = { id: number; code: string; severity: "warning" | "critical"; detail: string; opened_at: string; last_seen_at: string; resolved_at: string | null; acknowledged_at: string | null };
 type HistoryPoint = { at: string; database_bytes: number; client_connections: number; blocked_queries: number };
 type ProviderSample = { sampled_at: string; http_status: number; duration_ms?: number; metric_families?: number; ram_pct?: number | null; ram_total_mb?: number | null; swap_pct?: number | null; swap_total_mb?: number | null; cpu_pct?: number | null; cpu_iowait_pct?: number | null; disk_busy_pct?: number | null; load1?: number | null; cpu_count?: number | null; read_mbps?: number | null; write_mbps?: number | null; network_rx_mbps?: number | null; network_tx_mbps?: number | null };
-type HealthData = { server_time: string; snapshot: Snapshot; incidents: Incident[]; history: HistoryPoint[]; provider: ProviderSample | null; provider_history: ProviderSample[] };
+type OperationsSample = { sampled_at: string; push_due_10m: number; push_processing_10m: number; push_failed_created_1h: number; push_sent_created_1h: number; published_jobs: number; published_no_trace_2m: number; jobs_in_incident: number; gps_stored: number; gps_recent_5m: number; topups_pending: number; topups_no_ledger_24h: number; impulsa_pending: number };
+const operationsFields = ["push_due_10m","push_processing_10m","push_failed_created_1h","push_sent_created_1h","published_jobs","published_no_trace_2m","jobs_in_incident","gps_stored","gps_recent_5m","topups_pending","topups_no_ledger_24h","impulsa_pending"] as const;
+function parseOperations(raw: unknown): OperationsSample | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p=raw as OperationsSample;
+  if (typeof p.sampled_at!=="string" || !Number.isFinite(Date.parse(p.sampled_at)) || !operationsFields.every(k=>Number.isSafeInteger(p[k])&&p[k]>=0)) return null;
+  return p;
+}
+type HealthData = { operations: OperationsSample | null; server_time: string; snapshot: Snapshot; incidents: Incident[]; history: HistoryPoint[]; provider: ProviderSample | null; provider_history: ProviderSample[] };
 function parseProvider(raw: unknown): ProviderSample | null {
   if (!raw || typeof raw !== "object") return null;
   const p = raw as ProviderSample;
@@ -46,13 +54,14 @@ function parseHealth(raw: unknown): HealthData {
   if (!raw || typeof raw !== "object") throw new Error("Monitor no disponible");
   const row = raw as Record<string, unknown>;
   if (typeof row.server_time !== "string" || !Number.isFinite(Date.parse(row.server_time)) || !Array.isArray(row.incidents) || !Array.isArray(row.history)) throw new Error("Monitor incompleto");
-  return { server_time: row.server_time, snapshot: parseSnapshot(row.snapshot), incidents: row.incidents as Incident[], history: row.history as HistoryPoint[], provider: parseProvider(row.provider), provider_history: Array.isArray(row.provider_history) ? row.provider_history.map(parseProvider).filter((p): p is ProviderSample => p !== null) : [] };
+  return { operations: parseOperations(row.operations), server_time: row.server_time, snapshot: parseSnapshot(row.snapshot), incidents: row.incidents as Incident[], history: row.history as HistoryPoint[], provider: parseProvider(row.provider), provider_history: Array.isArray(row.provider_history) ? row.provider_history.map(parseProvider).filter((p): p is ProviderSample => p !== null) : [] };
 }
 function useHealthQuery(projectId: string, userId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["admin-system-health-v3", projectId, userId],
+    queryKey: ["admin-system-health-v4", projectId, userId],
     queryFn: async ({ signal }) => {
-      const { data, error } = await getSupabaseClient().rpc("admin_get_system_health_v3", { target_project_id: projectId }).abortSignal(signal);
+      let { data, error } = await getSupabaseClient().rpc("admin_get_system_health_v4", { target_project_id: projectId }).abortSignal(signal);
+      if (error?.code==="PGRST202") ({data,error}=await getSupabaseClient().rpc("admin_get_system_health_v3", {target_project_id:projectId}).abortSignal(signal));
       if (error) throw error;
       return parseHealth(data);
     },
@@ -158,7 +167,7 @@ const missing = [
   ["HTTP 5xx y 429", "Errores y restricciones de la API"],
   ["Renovaciones y cierres de sesión", "Eventos de autenticación"],
   ["Sincronización de dispositivos", "Pendientes locales y conciliación"],
-  ["Radar, GPS, billetera e Impulsa", "Salud funcional de extremo a extremo"],
+  ["Pruebas de extremo a extremo", "Radar, GPS, billetera e Impulsa: señales parciales disponibles; falta probar el recorrido completo"],
 ];
 
 export default function SystemHealthSection() {
@@ -185,6 +194,28 @@ export default function SystemHealthSection() {
   const checks = d && !stale ? d.essential_cron : [];
   const history = (q.data?.history ?? []).map(p=>({ ...p, mb: p.database_bytes / 1_000_000, label: new Date(p.at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}) }));
   if(d && !history.some(p=>Math.abs(Date.parse(p.at)-Date.parse(d.sampled_at))<300_000)) history.push({at:d.sampled_at,database_bytes:d.database_bytes,client_connections:d.client_connections,blocked_queries:d.blocked_queries,mb:d.database_bytes/1_000_000,label:new Date(d.sampled_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})});
+  const ops=q.data?.operations;
+  const opsFresh=!stale && !!ops && !!q.data && Date.parse(q.data.server_time)-Date.parse(ops.sampled_at)<=12*60_000;
+  const observedSignal=(label:string,k:typeof operationsFields[number],detail:string,attention=false):Signal=>{
+    const n=opsFresh && ops?ops[k]:null;
+    return {label,value:n===null?"—":String(n),detail,level:n===null?"unknown":attention&&n>0?"warning":"unknown",action:"Evidencia parcial: investigar el origen antes de intervenir."};
+  };
+  const serviceSignals=[
+    observedSignal("Push pendientes vencidos","push_due_10m","En cola ≥10 min y elegibles para envío",true),
+    observedSignal("Push en proceso","push_processing_10m","Reclamados hace ≥10 min",true),
+    observedSignal("Push fallidos","push_failed_created_1h","Filas creadas en la última hora",true),
+    observedSignal("Push enviados","push_sent_created_1h","Filas creadas en la última hora; no confirma recepción"),
+  ];
+  const operationalSignals=[
+    observedSignal("Carreras publicadas","published_jobs","Vigentes · excluye pruebas"),
+    observedSignal("Radar sin evaluación","published_no_trace_2m","Publicadas ≥2 min sin traza; revisar contexto",true),
+    observedSignal("Carreras en incidencia","jobs_in_incident","Estado operativo registrado",true),
+    observedSignal("GPS reciente","gps_recent_5m","Posiciones recibidas en 5 min; no equivale a conectados"),
+    observedSignal("GPS registrado","gps_stored","Últimas posiciones guardadas"),
+    observedSignal("Recargas pendientes","topups_pending","Solicitudes pendientes de gestión"),
+    observedSignal("Recargas sin asiento","topups_no_ledger_24h","Confirmadas en 24 h sin movimiento vinculado",true),
+    observedSignal("Impulsa pendiente","impulsa_pending","Solicitudes por revisar"),
+  ];
   const dateLabel=(value:string)=>new Date(value).toLocaleString("es");
   return <main className="space-y-3 min-w-0" aria-label="Salud del sistema">
     <header className={cn("rounded-[var(--radius-card)] border p-3 space-y-2", premiumHeaderSurface)}>
@@ -226,6 +257,16 @@ export default function SystemHealthSection() {
     <SectionCard appearance="premium" density="compact" module="resumen" title="Base de datos y operaciones" description="Capacidad, conexiones y ejecución de tareas" contentClassName="p-3">
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">{metrics.map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
       {!metrics.length&&<p className="text-xs text-muted-foreground">Sin medición vigente.</p>}
+    </SectionCard>
+    <SectionCard appearance="premium" density="compact" module="resumen" title="Servicios digitales" description="Cola de notificaciones · observación cada 5 min" contentClassName="p-2 sm:p-3 space-y-2">
+      {!opsFresh&&<p role="status" className="text-xs text-muted-foreground">Sin muestra vigente de servicios. No se sustituyen datos por ceros.</p>}
+      {opsFresh&&ops&&<p className="text-xs text-muted-foreground">Lectura: {dateLabel(ops.sampled_at)}</p>}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">{serviceSignals.map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
+      <p className="text-xs text-muted-foreground">La cola no certifica la entrega al teléfono ni incluye todos los canales externos.</p>
+    </SectionCard>
+    <SectionCard appearance="premium" density="compact" module="resumen" title="Operaciones de TukTuk" description="Evidencia registrada en el servidor · cobertura parcial" contentClassName="p-2 sm:p-3 space-y-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">{operationalSignals.map(m=><MetricPanel key={m.label} signal={m}/>)}</div>
+      <p className="text-xs text-muted-foreground">Los conteos no garantizan el funcionamiento extremo a extremo. Sin actividad tampoco equivale a una falla. Estas señales son de revisión, no generan avisos push automáticos aún.</p>
     </SectionCard>
     <SectionCard appearance="premium" density="compact" module="resumen" title="Procesos esenciales" description="Última ejecución exitosa observada en la muestra de Cron" contentClassName="space-y-2 p-3">
       {!checks.length && <p className="text-sm text-muted-foreground">Sin datos vigentes.</p>}
