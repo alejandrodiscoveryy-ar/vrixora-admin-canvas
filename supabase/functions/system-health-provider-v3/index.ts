@@ -52,7 +52,7 @@ export function parseMetrics(body: string) {
     net_tx:counters("node_network_transmit_bytes_total",iface),
   };
 }
-if (import.meta.main) Deno.serve(async req=>{
+Deno.serve(async req=>{
   const out=(status:number)=>Response.json({accepted:status===200},{status,headers:{"Cache-Control":"no-store"}});
   if(req.method!=="POST")return out(405);
   const nonce=req.headers.get("x-health-challenge")||"";
