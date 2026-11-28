@@ -20,7 +20,14 @@ type CronCheck = { name: string; enabled: boolean; last_success: string | null; 
 type Snapshot = Record<Field, number> & { sampled_at: string; essential_cron: CronCheck[]; growth_24h_bytes?: number; days_to_90_percent?: number | null };
 type Incident = { id: number; code: string; severity: "warning" | "critical"; detail: string; opened_at: string; last_seen_at: string; resolved_at: string | null; acknowledged_at: string | null };
 type HistoryPoint = { at: string; database_bytes: number; client_connections: number; blocked_queries: number };
-type HealthData = { server_time: string; snapshot: Snapshot; incidents: Incident[]; history: HistoryPoint[] };
+type ProviderSample = { sampled_at: string; http_status: number; duration_ms?: number; metric_families?: number; ram_pct?: number | null; ram_total_mb?: number | null; swap_pct?: number | null; swap_total_mb?: number | null; cpu_pct?: number | null; cpu_iowait_pct?: number | null; disk_busy_pct?: number | null; load1?: number | null; cpu_count?: number | null; read_mbps?: number | null; write_mbps?: number | null; network_rx_mbps?: number | null; network_tx_mbps?: number | null };
+type HealthData = { server_time: string; snapshot: Snapshot; incidents: Incident[]; history: HistoryPoint[]; provider: ProviderSample | null; provider_history: ProviderSample[] };
+function parseProvider(raw: unknown): ProviderSample | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as ProviderSample;
+  if (typeof p.sampled_at !== "string" || !Number.isFinite(Date.parse(p.sampled_at)) || !Number.isInteger(p.http_status)) return null;
+  return p;
+}
 type Level = "ok" | "warning" | "critical" | "unknown";
 type Signal = { label: string; value: string; detail: string; level: Level; action: string };
 
@@ -39,13 +46,13 @@ function parseHealth(raw: unknown): HealthData {
   if (!raw || typeof raw !== "object") throw new Error("Monitor no disponible");
   const row = raw as Record<string, unknown>;
   if (typeof row.server_time !== "string" || !Number.isFinite(Date.parse(row.server_time)) || !Array.isArray(row.incidents) || !Array.isArray(row.history)) throw new Error("Monitor incompleto");
-  return { server_time: row.server_time, snapshot: parseSnapshot(row.snapshot), incidents: row.incidents as Incident[], history: row.history as HistoryPoint[] };
+  return { server_time: row.server_time, snapshot: parseSnapshot(row.snapshot), incidents: row.incidents as Incident[], history: row.history as HistoryPoint[], provider: parseProvider(row.provider), provider_history: Array.isArray(row.provider_history) ? row.provider_history.map(parseProvider).filter((p): p is ProviderSample => p !== null) : [] };
 }
 function useHealthQuery(projectId: string, userId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["admin-system-health-v2", projectId, userId],
+    queryKey: ["admin-system-health-v3", projectId, userId],
     queryFn: async ({ signal }) => {
-      const { data, error } = await getSupabaseClient().rpc("admin_get_system_health_v2", { target_project_id: projectId }).abortSignal(signal);
+      const { data, error } = await getSupabaseClient().rpc("admin_get_system_health_v3", { target_project_id: projectId }).abortSignal(signal);
       if (error) throw error;
       return parseHealth(data);
     },
@@ -76,12 +83,37 @@ function unavailable(q: ReturnType<typeof useHealthQuery>) {
   return q.isError || q.fetchStatus === "paused" || Boolean(q.data && Date.parse(q.data.server_time)-Date.parse(q.data.snapshot.sampled_at)>12*60_000);
 }
 
+function providerUnavailable(data: HealthData | undefined) {
+  return !data?.provider || data.provider.http_status !== 200 || Date.parse(data.server_time)-Date.parse(data.provider.sampled_at)>12*60_000;
+}
+const validNumber=(n: unknown): n is number => typeof n==="number" && Number.isFinite(n) && n>=0;
+function providerSignals(p: ProviderSample | null, stale: boolean): Signal[] {
+  const value=(k: keyof ProviderSample)=>!stale && p && validNumber(p[k]) ? p[k] as number : null;
+  const usage=(label:string,k:keyof ProviderSample,w:number,c:number,detail:string):Signal=>{
+    const n=value(k); const valid=n!==null && n<=100;
+    return {label,value:valid?n.toLocaleString("es",{maximumFractionDigits:1})+"%":"—",detail:valid?detail:"Sin medición válida; esperando datos comparables",level:valid?threshold(n,w,c):"unknown",action:"Consultar recursos y carga en Supabase."};
+  };
+  const rate=(k:keyof ProviderSample)=>{const n=value(k);return n===null?"—":n.toLocaleString("es",{maximumFractionDigits:3})+" MB/s";};
+  const load=value("load1"), cores=value("cpu_count"), latency=value("duration_ms");
+  return [
+    usage("CPU","cpu_pct",70,90,"Uso medio durante el intervalo (incluye espera de E/S)"),
+    usage("Memoria RAM","ram_pct",80,90,"Memoria no disponible / total"+(value("ram_total_mb")!==null?" · "+value("ram_total_mb")+" MB":"")),
+    usage("Swap","swap_pct",50,85,"Espacio de intercambio"+(value("swap_total_mb")!==null?" · "+value("swap_total_mb")+" MB":"")),
+    usage("Actividad de disco","disk_busy_pct",70,90,"Dispositivo más ocupado; no es Disk IO Balance"),
+    usage("Espera de E/S","cpu_iowait_pct",15,30,"Porcentaje de tiempo de CPU esperando disco"),
+    {label:"Lectura / escritura",value:rate("read_mbps")+" / "+rate("write_mbps"),detail:"Máximo por dispositivo observado; no es cuota de disco",level:"unknown",action:"Comparar con los límites del proveedor."},
+    {label:"Red: recepción / envío",value:rate("network_rx_mbps")+" / "+rate("network_tx_mbps"),detail:"Máximo por interfaz observada; no es consumo facturable",level:"unknown",action:"Consultar cuotas mensuales en Usage."},
+    {label:"Carga del servidor",value:load===null?"—":load.toLocaleString("es",{maximumFractionDigits:2}),detail:"Media de 1 minuto"+(cores!==null?" · "+cores+" CPU lógicas":""),level:"unknown",action:"Revisar CPU y espera de E/S."},
+    {label:"API oficial de métricas",value:latency===null?"—":latency+" ms",detail:stale?"Sin respuesta reciente válida":"HTTP 200 · "+(value("metric_families")??"—")+" familias de métricas",level:stale?"unknown":"ok",action:"Verificar disponibilidad de Supabase."}
+  ];
+}
 export function SystemHealthProvider({ projectId, userId, enabled, children }: { projectId: string; userId: string; enabled: boolean; children: ReactNode }) {
   const q = useHealthQuery(projectId, userId, enabled);
   const alerts = enabled && q.data && !unavailable(q) ? q.data.incidents.filter(i => !i.resolved_at) : [];
+  const providerStale = enabled && !!q.data && providerUnavailable(q.data);
   return <HealthContext.Provider value={enabled ? { q, projectId } : null}>
-    {enabled && (unavailable(q) || alerts.length > 0) && <PageAlert tone={unavailable(q) || alerts.some(s => s.severity === "critical") ? "error" : "warning"} title={unavailable(q) ? "No se puede verificar la salud del sistema" : alerts.length + " alerta(s) de infraestructura"}>
-      <span>{unavailable(q) ? "Última medición no confirmada. Revisa conexión y estado del proveedor." : alerts.map(s => s.detail).join(" · ")}</span>{" "}
+    {enabled && (unavailable(q) || providerStale || alerts.length > 0) && <PageAlert tone={unavailable(q) || alerts.some(s => s.severity === "critical") ? "error" : "warning"} title={unavailable(q) ? "No se puede verificar la salud del sistema" : alerts.length ? alerts.length + " alerta(s) de infraestructura" : "Métricas oficiales sin confirmar"}>
+      <span>{unavailable(q) ? "Última medición no confirmada. Revisa conexión y estado del proveedor." : [providerStale ? "API de métricas sin lectura reciente." : "", ...alerts.map(s => s.detail)].filter(Boolean).join(" · ")}</span>{" "}
       <Link className="font-semibold underline" to="/admin/proyectos/$id/$section" params={{ id: projectId, section: "salud" }}>Abrir Salud del sistema</Link>
     </PageAlert>}
     {children}
@@ -89,8 +121,7 @@ export function SystemHealthProvider({ projectId, userId, enabled, children }: {
 }
 
 const missing = [
-  ["CPU y memoria RAM", "Consumo de infraestructura"],
-  ["Disk IO Balance", "Capacidad de operaciones de disco"],
+  ["Disk IO Balance exacto", "Créditos de ráfaga; actividad de disco y espera de E/S ya se miden"],
   ["Egress y Cached Egress", "Cuotas mensuales de tráfico"],
   ["Log Ingestion y Log Query", "Cuotas mensuales de registros"],
   ["HTTP 5xx y 429", "Errores y restricciones de la API"],
@@ -112,6 +143,12 @@ export default function SystemHealthSection() {
   const stale = unavailable(q);
   const d = q.data?.snapshot;
   const metrics = d && !stale ? signals(d) : [];
+  const providerStale=stale || providerUnavailable(q.data);
+  const provider=q.data?.provider??null;
+  const resourceMetrics=providerSignals(provider,providerStale);
+  const resourceHistory=(q.data?.provider_history??[]).filter(p=>p.http_status===200);
+  if(provider && provider.http_status===200 && !resourceHistory.some(p=>p.sampled_at===provider.sampled_at))resourceHistory.push(provider);
+  const resourceChart=resourceHistory.map(p=>({...p,label:new Date(p.sampled_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}));
   const alerts = q.data && !stale ? q.data.incidents.filter(i=>!i.resolved_at) : [];
   const critical = alerts.filter(m => m.severity === "critical").length;
   const observed = d ? new Date(d.sampled_at).toLocaleString("es") : "Sin medición";
@@ -127,11 +164,19 @@ export default function SystemHealthSection() {
     </header>
     {stale ? <PageAlert tone="error" title="Estado no confirmado">No se presentan mediciones antiguas como actuales. Sin conexión o última muestra de más de 12 minutos. El próximo intento será automático.</PageAlert> :
       q.isPending ? <p role="status" className="text-sm text-muted-foreground">Consultando el servidor…</p> :
-      <PageAlert tone={critical ? "error" : alerts.length ? "warning" : "info"} title={critical ? critical+" alerta(s) crítica(s)" : alerts.length ? alerts.length+" alerta(s) preventiva(s)" : "Sin alertas en las métricas verificadas"}>La cobertura es parcial: los indicadores externos y de dispositivos requieren otras fuentes.</PageAlert>}
+      <PageAlert tone={critical ? "error" : alerts.length || providerStale ? "warning" : "info"} title={critical ? critical+" alerta(s) crítica(s)" : alerts.length ? alerts.length+" alerta(s) preventiva(s)" : providerStale ? "Métricas oficiales sin confirmar" : "Sin alertas en las métricas verificadas"}>La cobertura es parcial: los indicadores externos y de dispositivos requieren otras fuentes.</PageAlert>}
     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{metrics.map(m => <article key={m.label} className={cn("rounded-[var(--radius-card)] border p-3", premiumSurface)}>
       <div className="flex justify-between items-start gap-2"><h2 className="text-sm font-semibold">{m.label}</h2><span className={cn("text-xs font-medium", colors[m.level])}>● {levels[m.level]}</span></div>
       <p className="mt-2 text-2xl font-semibold tabular-nums">{m.value}</p><p className="mt-1 text-xs text-muted-foreground">{m.detail}</p>
     </article>)}</div>
+    <SectionCard appearance="premium" density="compact" module="resumen" title="Recursos del servidor" description="Supabase Metrics API oficial · sin Grafana · medición centralizada cada 5 min" contentClassName="p-3 space-y-3">
+      <p className="text-xs text-muted-foreground">Última lectura: {provider?dateLabel(provider.sampled_at):"Pendiente"}{providerStale?" · Sin confirmación vigente":""}. Los umbrales de alerta son preventivos, no límites oficiales.</p>
+      {providerStale && <PageAlert tone="warning" title="Datos de recursos sin confirmar">No se presentan como saludables ni se sustituyen por ceros.</PageAlert>}
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{resourceMetrics.map(m=><article key={m.label} className={cn("rounded-lg border border-border-subtle p-3 min-w-0",premiumSurface)}><div className="flex justify-between gap-1 items-start"><h3 className="text-sm font-semibold">{m.label}</h3><span className={cn("text-xs shrink-0",colors[m.level])}>{m.level==="unknown"?"Sin umbral / dato":levels[m.level]}</span></div><p className="mt-2 text-xl font-semibold tabular-nums break-words">{m.value}</p><p className="mt-1 text-xs text-muted-foreground">{m.detail}</p></article>)}</div>
+      <div className="text-xs font-semibold">Evolución de CPU, RAM, Swap y disco (%)</div>
+      {resourceChart.length>=2?<div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={resourceChart}><CartesianGrid stroke="var(--border-subtle)" vertical={false}/><XAxis dataKey="label" tick={{fontSize:10}}/><YAxis domain={[0,100]} unit="%" tick={{fontSize:10}}/><Tooltip {...adminChartTooltipProps}/><Line type="linear" dataKey="cpu_pct" name="CPU" stroke="#38bdf8" dot={false} connectNulls={false}/><Line type="linear" dataKey="ram_pct" name="RAM" stroke="#34d399" dot={false} connectNulls={false}/><Line type="linear" dataKey="swap_pct" name="Swap" stroke="#fbbf24" dot={false} connectNulls={false}/><Line type="linear" dataKey="disk_busy_pct" name="Disco" stroke="#f472b6" dot={false} connectNulls={false}/></LineChart></ResponsiveContainer></div>:<p className="text-xs text-muted-foreground">Histórico en formación; se necesitan al menos dos muestras.</p>}
+      <p className="text-xs text-muted-foreground">CPU y disco requieren dos lecturas de contadores comparables. Las tasas pueden quedar sin valor tras un reinicio o cambio de dispositivos. Las métricas de red no equivalen a Egress facturado.</p>
+    </SectionCard>
     <SectionCard appearance="premium" density="compact" module="resumen" title="Alertas y acciones" description="Prioridad de intervención · no se oculta una incidencia al reconocerla" contentClassName="space-y-2 p-3">
       {alerts.length ? alerts.sort((a,b)=>Number(b.severity==="critical")-Number(a.severity==="critical")).map(m=><div key={m.id} className="flex flex-wrap gap-2 border border-border-subtle rounded-lg p-3"><AlertTriangle className={cn("size-4 shrink-0 mt-1",colors[m.severity])}/><div className="flex-1 min-w-0"><p className="text-sm font-semibold">{levels[m.severity]} · {m.acknowledged_at ? "En gestión" : "Abierta"}</p><p className="text-xs text-muted-foreground">{m.detail}</p><p className="text-xs text-muted-foreground mt-1">Desde {dateLabel(m.opened_at)} · Última detección {dateLabel(m.last_seen_at)}</p></div>{!m.acknowledged_at && <Button size="sm" variant="outline" disabled={ack.isPending} onClick={()=>ack.mutate(m.id)}>En gestión</Button>}</div>) : <p className="text-sm text-muted-foreground">{stale || !q.data ? "Alertas no verificables sin conexión." : "Sin acciones urgentes detectadas en la muestra."}</p>}
       {ack.isError && <PageAlert tone="error" title="No se pudo reconocer la incidencia">Intenta de nuevo cuando se restablezca la conexión.</PageAlert>}
@@ -146,7 +191,7 @@ export default function SystemHealthSection() {
       {history.length >= 2 ? <div className="h-48 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={history}><CartesianGrid stroke="var(--border-subtle)" vertical={false}/><XAxis dataKey="label" tick={{fontSize:10,fill:"var(--text-secondary)"}}/><YAxis tick={{fontSize:10,fill:"var(--text-secondary)"}} unit=" MB"/><Tooltip {...adminChartTooltipProps}/><Line type="linear" dataKey="mb" name="Base de datos (MB)" stroke="var(--primary)" dot={false}/></LineChart></ResponsiveContainer></div> : <p className="text-sm text-muted-foreground">El monitor está reuniendo mediciones; aún no existe una serie suficiente.</p>}
       <p className="text-xs text-muted-foreground">{stale?"Histórico no actualizado. ": ""}{!stale && typeof d?.growth_24h_bytes==="number" ? "Cambio neto en 24 h: "+(d.growth_24h_bytes/1_000_000).toFixed(1)+" MB. "+(typeof d.days_to_90_percent==="number"?"Proyección lineal al 90%: "+d.days_to_90_percent+" días (estimación).":"Sin crecimiento neto positivo.") : "Proyección disponible después de reunir 24 horas de datos."}</p>
     </SectionCard>
-    <SectionCard appearance="premium" density="compact" module="resumen" title="Cobertura pendiente" description="Sin acceso a métricas externas desde PostgreSQL" contentClassName="p-3">
+    <SectionCard appearance="premium" density="compact" module="resumen" title="Cobertura pendiente" description="Indicadores todavía sin fuente directa" contentClassName="p-3">
       <div className="grid gap-2 md:grid-cols-2">{missing.map(([label,detail])=><div key={label} className="border border-border-subtle rounded-lg p-3"><div className="flex flex-wrap justify-between gap-1"><h3 className="text-sm font-medium">{label}</h3><span className="text-xs text-muted-foreground">No disponible</span></div><p className="text-xs text-muted-foreground mt-1">{detail}</p></div>)}</div>
       <p className="mt-3 text-xs text-muted-foreground">El servidor sigue midiendo con Admin cerrado. Una caída total puede impedir las mediciones; las alertas aquí se muestran al abrir Admin. Los umbrales son preventivos, no límites oficiales. El tamaño y las conexiones son del proyecto Supabase compartido; confirma las cuotas vigentes en Usage. No se aplican cambios automáticos.</p>
     </SectionCard>
