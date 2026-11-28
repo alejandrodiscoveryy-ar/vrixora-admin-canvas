@@ -110,10 +110,10 @@ revoke all on function app_private.collect_system_health_v2() from public,anon,a
 create or replace function app_private.health_counter_delta_v3(a jsonb,b jsonb,use_max boolean default false)
 returns numeric language sql immutable set search_path='' as $$
 select case when jsonb_typeof(a)='object' and jsonb_typeof(b)='object'
-  and exists(select 1 from jsonb_each(a))
-  and not exists(select 1 from jsonb_each(a) x where not (b ? x.key) or jsonb_typeof(x.value)<>'number' or jsonb_typeof(b->x.key)<>'number' or (x.value#>>'{}')::numeric<(b->>x.key)::numeric)
-  and not exists(select 1 from jsonb_each(b) y where not (a ? y.key))
-then (select case when use_max then max((x.value#>>'{}')::numeric-(b->>x.key)::numeric) else sum((x.value#>>'{}')::numeric-(b->>x.key)::numeric) end from jsonb_each(a)x) end
+  and exists(select 1 from jsonb_each(case when jsonb_typeof(a)='object' then a else '{}'::jsonb end))
+  and not exists(select 1 from jsonb_each(case when jsonb_typeof(a)='object' then a else '{}'::jsonb end) x where not (b ? x.key) or jsonb_typeof(x.value)<>'number' or jsonb_typeof(b->x.key)<>'number' or (x.value#>>'{}')::numeric<(b->>x.key)::numeric)
+  and not exists(select 1 from jsonb_each(case when jsonb_typeof(b)='object' then b else '{}'::jsonb end) y where not (a ? y.key))
+then (select case when use_max then max((x.value#>>'{}')::numeric-(b->>x.key)::numeric) else sum((x.value#>>'{}')::numeric-(b->>x.key)::numeric) end from jsonb_each(case when jsonb_typeof(a)='object' then a else '{}'::jsonb end)x) end
 $$;
 revoke all on function app_private.health_counter_delta_v3(jsonb,jsonb,boolean) from public,anon,authenticated;
 
