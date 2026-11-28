@@ -427,3 +427,7 @@ verify_jwt = false
 
 [functions.marketplace-impulsa-analytics]
 verify_jwt = false
+
+# Collector authenticates via a database-issued, short-lived one-use challenge.
+[functions.system-health-provider-v3]
+verify_jwt = false
