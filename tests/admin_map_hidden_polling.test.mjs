@@ -15,13 +15,17 @@ test("El mapa sigue montado al cambiar de vista pero recibe visibilidad real", (
 test("El sondeo de posiciones se pausa al ocultar Mapa y se reactiva al volver", () => {
   assert.match(map, /isVisible: boolean;/);
   assert.match(map, /queryKey: \["marketplace-operational-map-live", projectId\],[\s\S]*?enabled: isVisible,[\s\S]*?refetchInterval: \(query\) =>/);
-  assert.match(map, /activeJobs \?\? 0\) > 0 \? 5_000 : 15_000/);
+  assert.match(map, /activeJobs \?\? 0\) > 0 \? 5_000 : 30_000/);
   assert.match(map, /refetchIntervalInBackground: false/);
+  assert.match(map, /status === "error" \? 120_000/);
+  assert.match(map, /Actualización cada 30 s/);
 });
 
 test("Los sondeos auxiliares no continuan mientras Mapa esta oculto", () => {
   assert.match(map, /queryKey: \["marketplace-operational-driver-avatars", projectId\],[\s\S]*?enabled: isVisible/);
   assert.match(map, /enabled: isVisible && Boolean\(routeKey\) && mapLoaded/);
+  assert.match(map, /enabled: isVisible && Boolean\(operational\.data && mapConfig\.isError\)/);
+  assert.match(map, /enabled: isVisible && canViewCustomers/);
   assert.match(map, /enabled: isVisible && Boolean\(panelOpen && agendaTab === "services"/);
 });
 

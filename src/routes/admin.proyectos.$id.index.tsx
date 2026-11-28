@@ -38,7 +38,7 @@ export const Route = createFileRoute("/admin/proyectos/$id/")({
   component: ResumenPage,
 });
 
-const REFRESH_INTERVAL = 30_000;
+const REFRESH_INTERVAL = 60_000;
 
 function ResumenPage() {
   const { id } = Route.useParams();
@@ -62,14 +62,20 @@ function ResumenPage() {
     queryKey: ["admin-clients", id],
     queryFn: () => supabaseServices.licenses.listClients(id),
     enabled: !permissionsLoading && canViewUsers,
-    refetchInterval: REFRESH_INTERVAL,
+    staleTime: 30_000,
+    refetchInterval: (query) => query.state.status === "error" ? 120_000 : REFRESH_INTERVAL,
+    refetchIntervalInBackground: false,
+    retry: 1,
   });
 
   const marketplace = useQuery({
     queryKey: ["marketplace-overview", id],
     queryFn: () => supabaseServices.marketplace.overview(id),
     enabled: !permissionsLoading && canViewMarketplace,
-    refetchInterval: REFRESH_INTERVAL,
+    staleTime: 30_000,
+    refetchInterval: (query) => query.state.status === "error" ? 120_000 : REFRESH_INTERVAL,
+    refetchIntervalInBackground: false,
+    retry: 1,
   });
 
   const range = useMemo(
@@ -289,7 +295,7 @@ function StrategicCharts({ projectId, from, to, fleet, appUsers }: { projectId: 
       if (error) throw error;
       return parseAgencyVitality(data);
     },
-    staleTime: 60_000, refetchInterval: 60_000, refetchOnWindowFocus: false, retry: 1,
+    staleTime: 60_000, refetchInterval: (query) => query.state.status === "error" ? 120_000 : 60_000, refetchIntervalInBackground: false, refetchOnWindowFocus: false, retry: 1,
   });
   const d = query.isError ? undefined : query.data;
   const fmt = (v: number) => new Intl.NumberFormat("es-CU", { maximumFractionDigits: 1 }).format(v);
