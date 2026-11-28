@@ -6,6 +6,8 @@ import { useSupabaseAuth } from "@/lib/supabase-auth";
 import { useProject, useProjectPermissions } from "@/hooks/useProjects";
 import type { ProjectPermission } from "@/lib/services";
 
+const SystemHealthSection = lazy(() => import("@/features/admin/SystemHealthSection"));
+const GeneralSummary = lazy(() => import("./admin.proyectos.$id.index").then(m => ({ default: m.ResumenPage })));
 const ClientesSection = lazy(() => import("@/features/admin/ClientesSection"));
 const LicenciasSection = lazy(() => import("@/features/admin/LicenciasSection"));
 const PagosSection = lazy(() => import("@/features/admin/PagosSection"));
@@ -23,6 +25,8 @@ const AdministrationWorkspace = lazy(() => import("@/features/admin/Administrati
 import { Card, CardContent } from "@/components/ui/card";
 
 const SECTION_PERMISSION: Record<string, ProjectPermission> = {
+  salud: "settings.manage",
+  "panel-general": "project.view",
   clientes: "customers.view",
   comercial: "commercial.view",
   licencias: "licenses.view",
@@ -104,6 +108,11 @@ function SectionPage() {
 
   const content = (() => {
     switch (section) {
+    case "salud":
+      return project.slug === "tuktuk-control" ? <SystemHealthSection /> : null;
+    case "panel-general":
+      return <GeneralSummary id={id} />;
+
     case "clientes":
       return <ClientesSection projectId={id} />;
 
