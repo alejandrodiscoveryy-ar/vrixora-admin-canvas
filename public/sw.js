@@ -1,8 +1,8 @@
 // VRIXORA PWA cache + dedicated, authenticated-admin FCM push notifications.
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const APP_CACHE = `vrixora-admin-pwa-${CACHE_VERSION}`;
 const ADMIN_PUSH_KINDS = new Set([
-  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation",
+  "admin_marketplace_new_job", "admin_marketplace_new_driver", "admin_marketplace_pending_job", "admin_marketplace_pickup", "admin_marketplace_cancellation", "admin_system_health",
 ]);
 let firebaseMessagingReady = false;
 const ESSENTIAL_ASSETS = [
@@ -44,6 +44,7 @@ function adminAlertTarget(data, raw) {
   const project = typeof data?.project_id === "string" ? data.project_id : "";
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuid.test(project)) return safeTarget(raw);
+  if (data.kind === "admin_system_health") return safeTarget(`/admin/proyectos/${encodeURIComponent(project)}/salud`);
   const base = `/admin/proyectos/${encodeURIComponent(project)}/trabajos`;
   if (data.kind === "admin_marketplace_new_driver" && uuid.test(data.driver_id || "")) {
     return safeTarget(`${base}?vista=conductores&conductor=${encodeURIComponent(data.driver_id)}`);
@@ -131,7 +132,7 @@ messaging.onBackgroundMessage((payload) => {
   return self.registration.showNotification(data.title || "Vrixora: alerta operativa", {
     body: data.body || "Hay una operación que requiere atención.",
     icon: "/icon-192.png", badge: "/favicon.png",
-    tag: `vrixora:${data.kind}:${data.job_id || data.driver_id || 'admin'}`,
+    tag: `vrixora:${data.kind}:${data.job_id || data.driver_id || data.notification_id || 'admin'}`,
     requireInteraction: data.kind !== 'admin_marketplace_new_driver',
     renotify: true,
     data: { url: adminAlertTarget(data, data.url || fallback) },
