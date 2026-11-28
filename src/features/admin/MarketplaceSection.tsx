@@ -1160,6 +1160,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     initialPageParam: null as null | { at: string; id: string },
     getNextPageParam: (page) => page.nextCursor,
     enabled: tab === "trabajos",
+    staleTime: 15_000,
+    retry: 1,
   });
 
   const drivers = useInfiniteQuery({
@@ -1172,6 +1174,8 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     initialPageParam: null as null | { at: string; id: string },
     getNextPageParam: (page) => page.nextCursor,
     enabled: tab === "conductores",
+    staleTime: 30_000,
+    retry: 1,
   });
 
   // Buscar y filtrar contra el directorio entero, no solo la primera página.
@@ -1219,7 +1223,9 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     },
     enabled: tab === "billeteras" && canPayments,
     staleTime: 30_000,
-    refetchInterval: tab === "billeteras" ? 60_000 : false,
+    refetchInterval: (query) => tab !== "billeteras" ? false : query.state.status === "error" ? 120_000 : 60_000,
+    refetchIntervalInBackground: false,
+    retry: 1,
   });
 
   const topups = useInfiniteQuery({
@@ -1633,7 +1639,10 @@ export default function MarketplaceSection({ projectId, welcomeDrivers = false }
     enabled: tab === "trabajos" &&
       canManageMarketplace &&
       jobRows.length > 0,
-    refetchInterval: 30_000,
+    staleTime: 30_000,
+    refetchInterval: (query) => query.state.status === "error" ? 120_000 : 60_000,
+    refetchIntervalInBackground: false,
+    retry: 1,
   });
 
 
