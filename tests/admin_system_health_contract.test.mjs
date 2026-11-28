@@ -36,8 +36,32 @@ test("continuous collector is private, scheduled and bounded",()=>{
   assert.match(continuous,/revoke all on function app_private.collect_system_health_v2\(\) from public,anon,authenticated/);
   assert.match(continuous,/on conflict\(code\) where resolved_at is null/);
   assert.match(continuous,/last_seen_at<=t-interval '9 minutes'/);
-  assert.match(health,/admin_get_system_health_v2/);
+  assert.match(health,/admin_get_system_health_v3/);
   assert.match(health,/12\*60_000/);
   assert.match(health,/admin_ack_system_health_incident_v2/);
   assert.match(health,/Proyección disponible después de reunir 24 horas/);
+});
+
+const providerSql=read("supabase/migrations/20261128193000_system_health_provider_v3.sql");
+const providerCompat=read("supabase/migrations/20261128193200_system_health_counter_compat_v3.sql");
+const collector=read("supabase/functions/system-health-provider-v3/index.ts");
+test("official metrics remain server-side and use one-time challenges",()=>{
+  assert.match(collector,/SUPABASE_SECRET_KEYS/);
+  assert.match(collector,/customer\/v1\/privileged\/metrics/);
+  assert.match(collector,/system_health_claim_provider_v3/);
+  assert.match(providerSql,/claimed_at is null and completed_at is null/);
+  assert.match(providerSql,/grant execute on function public.system_health_claim_provider_v3\(text\) to service_role/);
+  assert.match(providerSql,/cron.schedule\('tuktuk-system-health-provider-v3','\*\/5 \* \* \* \*'/);
+  assert.match(providerSql,/requested_at<t-interval '7 days'/);
+  assert.match(providerSql,/i.code not like 'provider_%'/);
+  assert.match(providerCompat,/total between secs\*cpu_count\*0.65 and secs\*cpu_count\*1.35/);
+  assert.doesNotMatch(health,/SUPABASE_SECRET_KEYS|customer\/v1\/privileged\/metrics/);
+});
+test("provider charts preserve missing data and distinguish quotas",()=>{
+  assert.match(health,/providerUnavailable/);
+  assert.match(health,/no es Disk IO Balance/);
+  assert.match(health,/no es consumo facturable/);
+  assert.match(health,/connectNulls=\{false\}/);
+  assert.match(health,/RAM/);
+  assert.match(health,/Swap/);
 });
